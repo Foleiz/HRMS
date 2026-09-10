@@ -1,163 +1,195 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Building2,
+  LayoutDashboard,
   Users,
   Clock,
+  FileText,
   CalendarCheck,
   CreditCard,
-  UserCheck,
+  CheckCircle2,
+  Building2,
+  BarChart3,
+  Settings,
+  Search,
+  PanelLeftClose,
+  PanelLeftOpen,
   Landmark,
-  FileSpreadsheet,
-  LayoutDashboard,
 } from 'lucide-react';
 
-interface NavItem {
+interface MenuItem {
   title: string;
   href: string;
-  icon: React.ReactNode;
-  badge?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  matchPrefix?: string;
 }
 
-interface NavSection {
-  heading: string;
-  items: NavItem[];
-}
+const menuItems: MenuItem[] = [
+  {
+    title: 'แดชบอร์ด',
+    href: '/',
+    icon: LayoutDashboard,
+  },
+  {
+    title: 'พนักงาน',
+    href: '/employees',
+    matchPrefix: '/employees',
+    icon: Users,
+  },
+  {
+    title: 'การเข้างาน',
+    href: '/attendance',
+    matchPrefix: '/attendance',
+    icon: Clock,
+  },
+  {
+    title: 'ยื่นเอกสาร',
+    href: '/documents',
+    matchPrefix: '/documents',
+    icon: FileText,
+  },
+  {
+    title: 'การลา',
+    href: '/leave',
+    matchPrefix: '/leave',
+    icon: CalendarCheck,
+  },
+  {
+    title: 'เงินเดือน',
+    href: '/payroll',
+    matchPrefix: '/payroll',
+    icon: CreditCard,
+  },
+  {
+    title: 'การอนุมัติ',
+    href: '/approvals',
+    matchPrefix: '/approvals',
+    icon: CheckCircle2,
+  },
+  {
+    title: 'โครงสร้างองค์กร',
+    href: '/organization',
+    matchPrefix: '/organization',
+    icon: Building2,
+  },
+  {
+    title: 'รายงาน',
+    href: '/reports',
+    matchPrefix: '/reports',
+    icon: BarChart3,
+  },
+  {
+    title: 'ตั้งค่า',
+    href: '/settings',
+    matchPrefix: '/settings',
+    icon: Settings,
+  },
+];
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const sections: NavSection[] = [
-    {
-      heading: 'ภาพรวมระบบ',
-      items: [
-        {
-          title: 'Dashboard',
-          href: '/',
-          icon: <LayoutDashboard className="w-5 h-5" />,
-        },
-        {
-          title: 'ข้อมูลธนาคาร (Reference)',
-          href: '/master/banks',
-          icon: <Landmark className="w-5 h-5 text-indigo-500" />,
-          badge: 'Demo',
-        },
-      ],
-    },
-    {
-      heading: '👨‍💻 Dev 1: Time & Operations',
-      items: [
-        {
-          title: 'ผังองค์กรและฝ่าย/แผนก',
-          href: '/organization',
-          icon: <Building2 className="w-5 h-5 text-blue-500" />,
-        },
-        {
-          title: 'กะและเวลาการทำงาน',
-          href: '/attendance/shifts',
-          icon: <Clock className="w-5 h-5 text-blue-500" />,
-        },
-        {
-          title: 'นำเข้าเวลาเข้า-ออก (Excel)',
-          href: '/attendance/import',
-          icon: <FileSpreadsheet className="w-5 h-5 text-blue-500" />,
-        },
-      ],
-    },
-    {
-      heading: '👩‍💻 Dev 2: Talent & Compensation',
-      items: [
-        {
-          title: 'ทะเบียนข้อมูลพนักงาน',
-          href: '/employees',
-          icon: <Users className="w-5 h-5 text-emerald-500" />,
-        },
-        {
-          title: 'ระบบการลาและโควตา',
-          href: '/leave',
-          icon: <CalendarCheck className="w-5 h-5 text-emerald-500" />,
-        },
-        {
-          title: 'ประมวลผลเงินเดือน',
-          href: '/payroll',
-          icon: <CreditCard className="w-5 h-5 text-emerald-500" />,
-        },
-      ],
-    },
-    {
-      heading: 'พอร์ทัลพนักงาน',
-      items: [
-        {
-          title: 'Employee Self-Service',
-          href: '/ess',
-          icon: <UserCheck className="w-5 h-5 text-amber-500" />,
-        },
-      ],
-    },
-  ];
+  const filteredItems = menuItems.filter((item) =>
+    item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
+
+  const isActive = (item: MenuItem) => {
+    if (item.href === '/' && pathname === '/') return true;
+    if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return true;
+    return false;
+  };
 
   return (
-    <aside className="w-72 bg-slate-900 text-slate-100 flex flex-col h-screen border-r border-slate-800 shrink-0 select-none">
-      {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
-          HR
-        </div>
-        <div>
-          <h1 className="font-bold text-base tracking-wide text-white">HRMS Enterprise</h1>
-          <p className="text-xs text-slate-400">Next.js + .NET + Supabase</p>
-        </div>
+    <aside
+      className={`bg-white border-r border-slate-200/80 flex flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* 1. Header: Logo & System Name */}
+      <div className="h-20 px-5 flex items-center justify-between border-b border-slate-100/80">
+        <Link href="/" className="flex items-center gap-3 overflow-hidden">
+          {/* Logo Badge Icon (3 avatars in navy square) */}
+          <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+
+          {!isCollapsed && (
+            <div className="leading-tight select-none">
+              <div className="text-[15px] font-bold text-slate-900 tracking-tight">Human</div>
+              <div className="text-[15px] font-bold text-[#0B2046] tracking-tight">Resource</div>
+            </div>
+          )}
+        </Link>
+
+        {/* Toggle Collapse Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
+          className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 ml-1"
+        >
+          {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-        {sections.map((section, idx) => (
-          <div key={idx} className="space-y-1">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-3 py-1">
-              {section.heading}
-            </h2>
-            {section.items.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* User / Workspace Footer */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-200">
-            Dev
-          </div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-medium text-slate-200 truncate">HRMS Dev Team</p>
-            <p className="text-xs text-slate-400 truncate">Supabase PostgreSQL</p>
+      {/* 2. Search Input */}
+      {!isCollapsed && (
+        <div className="px-4 pt-4 pb-2">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ค้นหา"
+              className="w-full pl-9 pr-3 py-2 bg-[#F1F5F9] border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+            />
           </div>
         </div>
+      )}
+
+      {/* 3. Navigation Menu Items */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+        {filteredItems.map((item) => {
+          const active = isActive(item);
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={isCollapsed ? item.title : undefined}
+              className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                active
+                  ? 'bg-[#0B2046] text-white shadow-sm font-semibold'
+                  : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+              } ${isCollapsed ? 'justify-center px-0' : ''}`}
+            >
+              <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+              {!isCollapsed && <span className="truncate">{item.title}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* 4. Footer Mini Link (Quick Bank Reference Access) */}
+      <div className="p-3 border-t border-slate-100">
+        <Link
+          href="/master/banks"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors ${
+            isCollapsed ? 'justify-center px-0' : ''
+          }`}
+          title="ข้อมูลธนาคาร (Phase 0 Reference)"
+        >
+          <Landmark className="w-4 h-4 text-indigo-500 shrink-0" />
+          {!isCollapsed && <span className="truncate">ข้อมูลธนาคาร (Reference)</span>}
+        </Link>
       </div>
     </aside>
   );

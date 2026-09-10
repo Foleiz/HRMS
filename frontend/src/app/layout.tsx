@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Prompt } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const prompt = Prompt({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  variable: "--font-prompt",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "HRMS - Enterprise Human Resource Management System",
-  description: "Enterprise HRMS Platform for Workforce & Compensation",
+  title: "Human Resource - ระบบบริหารงานบุคคล (HRMS)",
+  description: "Enterprise Human Resource Management System",
 };
 
 export default function RootLayout({
@@ -24,11 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-slate-900 text-slate-100">
+    <html lang="th" className={`${prompt.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-sans bg-[#F8FAFC] text-slate-800">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
