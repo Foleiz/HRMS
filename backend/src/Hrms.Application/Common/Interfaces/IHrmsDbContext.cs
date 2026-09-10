@@ -7,6 +7,10 @@ public interface IHrmsDbContext
 {
     DbSet<Bank> Banks { get; }
     DbSet<Employee> Employees { get; }
+    DbSet<EmployeeContact> EmployeeContacts { get; }
+    DbSet<EmployeeAddress> EmployeeAddresses { get; }
+    DbSet<EmployeeBankAccount> EmployeeBankAccounts { get; }
+    DbSet<EmployeeSocialSecurity> EmployeeSocialSecurities { get; }
     DbSet<UserAccount> UserAccounts { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }

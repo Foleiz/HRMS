@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +26,10 @@ interface MenuItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   matchPrefix?: string;
+  /** สิทธิ์ที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
+  requiredPermissions?: string[];
+  /** บทบาทที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
+  requiredRoles?: string[];
 }
 
 const menuItems: MenuItem[] = [
@@ -38,12 +43,14 @@ const menuItems: MenuItem[] = [
     href: '/employees',
     matchPrefix: '/employees',
     icon: Users,
+    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE'],
   },
   {
     title: 'การเข้างาน',
     href: '/attendance',
     matchPrefix: '/attendance',
     icon: Clock,
+    requiredPermissions: ['TIME_VIEW', 'TIME_MANAGE'],
   },
   {
     title: 'ยื่นเอกสาร',
@@ -62,39 +69,66 @@ const menuItems: MenuItem[] = [
     href: '/payroll',
     matchPrefix: '/payroll',
     icon: CreditCard,
+    requiredPermissions: ['PAYROLL_RUN'],
   },
   {
     title: 'การอนุมัติ',
     href: '/approvals',
     matchPrefix: '/approvals',
     icon: CheckCircle2,
+    requiredPermissions: ['LEAVE_APPROVE', 'TIME_MANAGE'],
   },
   {
     title: 'โครงสร้างองค์กร',
     href: '/organization',
     matchPrefix: '/organization',
     icon: Building2,
+    requiredPermissions: ['SYS_ADMIN', 'EMP_MANAGE'],
   },
   {
     title: 'รายงาน',
     href: '/reports',
     matchPrefix: '/reports',
     icon: BarChart3,
+    requiredRoles: ['ADMIN', 'HR_MGR', 'DEPT_MGR'],
   },
   {
     title: 'ตั้งค่า',
     href: '/settings',
     matchPrefix: '/settings',
     icon: Settings,
+    requiredPermissions: ['SYS_ADMIN'],
   },
 ];
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const { user, hasPermission, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const filteredItems = menuItems.filter((item) =>
+  // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
+  const accessibleItems = menuItems.filter((item) => {
+    // 1. หากเป็น ADMIN หรือยังไม่ล็อกอิน ให้ bypass/default
+    if (!user) return true;
+    if (hasRole('ADMIN')) return true;
+
+    // 2. ตรวจสอบ Role ถ้ามีการกำหนด
+    if (item.requiredRoles && item.requiredRoles.length > 0) {
+      const hasAnyRole = item.requiredRoles.some((role) => hasRole(role));
+      if (!hasAnyRole) return false;
+    }
+
+    // 3. ตรวจสอบ Permission ถ้ามีการกำหนด
+    if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+      const hasAnyPermission = item.requiredPermissions.some((perm) => hasPermission(perm));
+      if (!hasAnyPermission) return false;
+    }
+
+    return true;
+  });
+
+  const filteredItems = accessibleItems.filter((item) =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
 
@@ -178,19 +212,21 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* 4. Footer Mini Link (Quick Bank Reference Access) */}
-      <div className="p-3 border-t border-slate-100">
-        <Link
-          href="/master/banks"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors ${
-            isCollapsed ? 'justify-center px-0' : ''
-          }`}
-          title="ข้อมูลธนาคาร (Phase 0 Reference)"
-        >
-          <Landmark className="w-4 h-4 text-indigo-500 shrink-0" />
-          {!isCollapsed && <span className="truncate">ข้อมูลธนาคาร (Reference)</span>}
-        </Link>
-      </div>
+      {/* 4. Footer Mini Link (Quick Bank Reference Access) - แสดงเฉพาะ ADMIN หรือผู้มีสิทธิ์ SYS_ADMIN */}
+      {(!user || hasRole('ADMIN') || hasPermission('SYS_ADMIN')) && (
+        <div className="p-3 border-t border-slate-100">
+          <Link
+            href="/master/banks"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors ${
+              isCollapsed ? 'justify-center px-0' : ''
+            }`}
+            title="ข้อมูลธนาคาร (Phase 0 Reference)"
+          >
+            <Landmark className="w-4 h-4 text-indigo-500 shrink-0" />
+            {!isCollapsed && <span className="truncate">ข้อมูลธนาคาร (Reference)</span>}
+          </Link>
+        </div>
+      )}
     </aside>
   );
 };
