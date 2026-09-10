@@ -14,11 +14,13 @@ import {
   LogIn,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { breadcrumb: customBreadcrumb } = useBreadcrumb();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +37,7 @@ export const Navbar: React.FC = () => {
 
   // Dynamic Breadcrumb based on route
   const getBreadcrumb = () => {
+    if (customBreadcrumb) return customBreadcrumb;
     if (pathname === '/') return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
     if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
@@ -43,7 +46,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/leave')) return { section: 'การลา', page: 'จัดการการลาและโควตา' };
     if (pathname.startsWith('/payroll')) return { section: 'เงินเดือน', page: 'ประมวลผลเงินเดือน' };
     if (pathname.startsWith('/approvals')) return { section: 'การอนุมัติ', page: 'รายการรออนุมัติ' };
-    if (pathname.startsWith('/organization')) return { section: 'โครงสร้างองค์กร', page: 'ผังองค์กรและฝ่าย' };
+    if (pathname.startsWith('/organization')) return { section: 'โครงสร้างองค์กร', page: 'จัดการฝ่าย' };
     if (pathname.startsWith('/reports')) return { section: 'รายงาน', page: 'รายงานภาพรวม' };
     if (pathname.startsWith('/settings')) return { section: 'ตั้งค่า', page: 'ตั้งค่าระบบ' };
     return { section: 'พนักงาน', page: 'จัดการพนักงาน' };

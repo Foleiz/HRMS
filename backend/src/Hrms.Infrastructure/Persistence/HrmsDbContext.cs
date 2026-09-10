@@ -30,6 +30,17 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RoleDataScope> RoleDataScopes => Set<RoleDataScope>();
 
+    // Organization Master Data (Dev 1 Sprint 1)
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<Division> Divisions => Set<Division>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Position> Positions => Set<Position>();
+    public DbSet<EmployeeLevel> EmployeeLevels => Set<EmployeeLevel>();
+
+    // Work Calendar Master Data (Dev 1 Sprint 2)
+    public DbSet<WorkWeek> WorkWeeks => Set<WorkWeek>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -263,6 +274,165 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany(p => p.RoleDataScopes)
                 .HasForeignKey(e => e.PermissionId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: Company
+        modelBuilder.Entity<Company>(entity =>
+        {
+            entity.ToTable("company", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyCode).HasColumnName("company_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CompanyName).HasColumnName("company_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.Phone).HasColumnName("phone").HasMaxLength(50);
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.LogoData).HasColumnName("logo_data");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.HasIndex(e => e.CompanyCode).IsUnique();
+        });
+
+        // Configuration: Division
+        modelBuilder.Entity<Division>(entity =>
+        {
+            entity.ToTable("division", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.DivisionCode).HasColumnName("division_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DivisionName).HasColumnName("division_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.HeadEmployeeId).HasColumnName("head_employee_id");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Company)
+                .WithMany(c => c.Divisions)
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.HeadEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.HeadEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => new { e.CompanyId, e.DivisionCode }).IsUnique();
+        });
+
+        // Configuration: Department
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.ToTable("department", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.DivisionId).HasColumnName("division_id").IsRequired();
+            entity.Property(e => e.ParentDepartmentId).HasColumnName("parent_department_id");
+            entity.Property(e => e.DepartmentCode).HasColumnName("department_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DepartmentName).HasColumnName("department_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.HeadEmployeeId).HasColumnName("head_employee_id");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Division)
+                .WithMany(d => d.Departments)
+                .HasForeignKey(e => e.DivisionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ParentDepartment)
+                .WithMany(d => d.SubDepartments)
+                .HasForeignKey(e => e.ParentDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.HeadEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.HeadEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => new { e.DivisionId, e.DepartmentCode }).IsUnique();
+        });
+
+        // Configuration: Position
+        modelBuilder.Entity<Position>(entity =>
+        {
+            entity.ToTable("position", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id").IsRequired();
+            entity.Property(e => e.EmployeeLevelId).HasColumnName("employee_level_id");
+            entity.Property(e => e.PositionCode).HasColumnName("position_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.PositionName).HasColumnName("position_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Department)
+                .WithMany(d => d.Positions)
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.EmployeeLevel)
+                .WithMany(l => l.Positions)
+                .HasForeignKey(e => e.EmployeeLevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.PositionCode).IsUnique();
+        });
+
+        // Configuration: EmployeeLevel
+        modelBuilder.Entity<EmployeeLevel>(entity =>
+        {
+            entity.ToTable("employee_level", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.LevelCode).HasColumnName("level_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.LevelName).HasColumnName("level_name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LevelRank).HasColumnName("level_rank");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.MinSalary).HasColumnName("min_salary");
+            entity.Property(e => e.MaxSalary).HasColumnName("max_salary");
+            entity.Property(e => e.ApprovalLimit).HasColumnName("approval_limit");
+            entity.Property(e => e.DefaultFlowId).HasColumnName("default_flow_id");
+            entity.HasIndex(e => e.LevelCode).IsUnique();
+        });
+
+        // Configuration: WorkWeek (Dev 1 Sprint 2)
+        modelBuilder.Entity<WorkWeek>(entity =>
+        {
+            entity.ToTable("work_week", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week").IsRequired();
+            entity.Property(e => e.IsWorkingDay).HasColumnName("is_working_day").IsRequired();
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.CompanyId, e.DayOfWeek }).IsUnique();
+        });
+
+        // Configuration: Holiday (Dev 1 Sprint 2)
+        modelBuilder.Entity<Holiday>(entity =>
+        {
+            entity.ToTable("holiday", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.HolidayDate).HasColumnName("holiday_date").IsRequired();
+            entity.Property(e => e.HolidayName).HasColumnName("holiday_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.HolidayType).HasColumnName("holiday_type").IsRequired().HasMaxLength(50);
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.CompanyId, e.HolidayDate }).IsUnique();
         });
     }
 }

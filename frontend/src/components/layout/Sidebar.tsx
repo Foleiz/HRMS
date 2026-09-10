@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Landmark,
+  CalendarDays,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -84,6 +85,12 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/organization',
     icon: Building2,
     requiredPermissions: ['SYS_ADMIN', 'EMP_MANAGE'],
+  },
+  {
+    title: 'วันทำงานและวันหยุด',
+    href: '/work-calendar',
+    matchPrefix: '/work-calendar',
+    icon: CalendarDays,
   },
   {
     title: 'รายงาน',
