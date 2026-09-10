@@ -14,5 +14,12 @@ public interface IHrmsDbContext
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<RoleDataScope> RoleDataScopes { get; }
 
+    // Organization Master Data (Dev 1 Sprint 1)
+    DbSet<Company> Companies { get; }
+    DbSet<Division> Divisions { get; }
+    DbSet<Department> Departments { get; }
+    DbSet<Position> Positions { get; }
+    DbSet<EmployeeLevel> EmployeeLevels { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
