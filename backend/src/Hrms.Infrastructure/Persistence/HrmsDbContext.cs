@@ -33,6 +33,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<EmployeeLevel> EmployeeLevels => Set<EmployeeLevel>();
 
+    // Work Calendar Master Data (Dev 1 Sprint 2)
+    public DbSet<WorkWeek> WorkWeeks => Set<WorkWeek>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -293,6 +297,43 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ApprovalLimit).HasColumnName("approval_limit");
             entity.Property(e => e.DefaultFlowId).HasColumnName("default_flow_id");
             entity.HasIndex(e => e.LevelCode).IsUnique();
+        });
+
+        // Configuration: WorkWeek (Dev 1 Sprint 2)
+        modelBuilder.Entity<WorkWeek>(entity =>
+        {
+            entity.ToTable("work_week", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week").IsRequired();
+            entity.Property(e => e.IsWorkingDay).HasColumnName("is_working_day").IsRequired();
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.CompanyId, e.DayOfWeek }).IsUnique();
+        });
+
+        // Configuration: Holiday (Dev 1 Sprint 2)
+        modelBuilder.Entity<Holiday>(entity =>
+        {
+            entity.ToTable("holiday", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.HolidayDate).HasColumnName("holiday_date").IsRequired();
+            entity.Property(e => e.HolidayName).HasColumnName("holiday_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.HolidayType).HasColumnName("holiday_type").IsRequired().HasMaxLength(50);
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.CompanyId, e.HolidayDate }).IsUnique();
         });
     }
 }

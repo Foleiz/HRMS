@@ -21,5 +21,9 @@ public interface IHrmsDbContext
     DbSet<Position> Positions { get; }
     DbSet<EmployeeLevel> EmployeeLevels { get; }
 
+    // Work Calendar Master Data (Dev 1 Sprint 2)
+    DbSet<WorkWeek> WorkWeeks { get; }
+    DbSet<Holiday> Holidays { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
