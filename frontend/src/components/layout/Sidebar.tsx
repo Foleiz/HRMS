@@ -111,26 +111,26 @@ export const Sidebar: React.FC = () => {
       }`}
     >
       {/* 1. Header: Logo & System Name */}
-      <div className="h-20 px-5 flex items-center justify-between border-b border-slate-100/80">
-        <Link href="/" className="flex items-center gap-3 overflow-hidden">
-          {/* Logo Badge Icon (3 avatars in navy square) */}
-          <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
-            <Users className="w-5 h-5" />
-          </div>
+      <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all ${isCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}>
+        {!isCollapsed && (
+          <Link href="/" className="flex items-center gap-3 overflow-hidden">
+            {/* Logo Badge Icon (3 avatars in navy square) */}
+            <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
 
-          {!isCollapsed && (
             <div className="leading-tight select-none">
               <div className="text-[15px] font-bold text-slate-900 tracking-tight">Human</div>
               <div className="text-[15px] font-bold text-[#0B2046] tracking-tight">Resource</div>
             </div>
-          )}
-        </Link>
+          </Link>
+        )}
 
         {/* Toggle Collapse Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
-          className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 ml-1"
+          className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
         >
           {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
