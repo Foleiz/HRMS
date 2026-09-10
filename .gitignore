@@ -33,3 +33,7 @@ Thumbs.db
 !.vscode/extensions.json
 *.swp
 *~
+
+## Daily Reports & Local Assistant Skills
+daily_reports/
+.agent/
