@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 
 const prompt = Prompt({
   weight: ["300", "400", "500", "600", "700"],
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${prompt.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-[#F8FAFC] text-slate-800">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <BreadcrumbProvider>{children}</BreadcrumbProvider>
+        </AuthProvider>
       </body>
     </html>
   );
