@@ -20,4 +20,8 @@ public class ValidationException : Exception
     {
         Errors = errors;
     }
+
+    public ValidationException(string error) : this(new List<string> { error })
+    {
+    }
 }

@@ -14,8 +14,17 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     {
     }
 
-    // Master Data: Reference Feature
+    // Master Data
     public DbSet<Bank> Banks => Set<Bank>();
+
+    // Authentication & Core Entities
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<RoleDataScope> RoleDataScopes => Set<RoleDataScope>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,7 +33,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
         // กำหนด Default Schema เป็น 'hrms'
         modelBuilder.HasDefaultSchema("hrms");
 
-        // Configuration ของ Entity Bank
+        // Configuration: Bank
         modelBuilder.Entity<Bank>(entity =>
         {
             entity.ToTable("bank", "hrms");
@@ -34,6 +43,127 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.BankName).HasColumnName("bank_name").IsRequired().HasMaxLength(255);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.BankCode).IsUnique();
+        });
+
+        // Configuration: Employee
+        modelBuilder.Entity<Employee>(entity =>
+        {
+            entity.ToTable("employee", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeCode).HasColumnName("employee_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Prefix).HasColumnName("prefix").HasMaxLength(50);
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(30);
+            entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
+            entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
+            entity.Property(e => e.BirthDate).HasColumnName("birth_date");
+            entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(30);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Ignore(e => e.FullName);
+        });
+
+        // Configuration: UserAccount
+        modelBuilder.Entity<UserAccount>(entity =>
+        {
+            entity.ToTable("user_account", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.Username).HasColumnName("username").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Employee)
+                .WithOne(e => e.UserAccount)
+                .HasForeignKey<UserAccount>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuration: Role
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.ToTable("role", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.RoleCode).HasColumnName("role_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.RoleName).HasColumnName("role_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+        });
+
+        // Configuration: Permission
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.ToTable("permission", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.PermissionCode).HasColumnName("permission_code").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PermissionName).HasColumnName("permission_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Description).HasColumnName("description");
+        });
+
+        // Configuration: UserRole
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.ToTable("user_role", "hrms");
+            entity.HasKey(e => new { e.UserId, e.RoleId });
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: RolePermission
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.ToTable("role_permission", "hrms");
+            entity.HasKey(e => new { e.RoleId, e.PermissionId });
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.PermissionId).HasColumnName("permission_id");
+
+            entity.HasOne(e => e.Role)
+                .WithMany(r => r.RolePermissions)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Permission)
+                .WithMany(p => p.RolePermissions)
+                .HasForeignKey(e => e.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: RoleDataScope
+        modelBuilder.Entity<RoleDataScope>(entity =>
+        {
+            entity.ToTable("role_data_scope", "hrms");
+            entity.HasKey(e => new { e.RoleId, e.PermissionId });
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.PermissionId).HasColumnName("permission_id");
+            entity.Property(e => e.DataVisibilityScope).HasColumnName("data_visibility_scope").IsRequired().HasMaxLength(30);
+
+            entity.HasOne(e => e.Role)
+                .WithMany(r => r.RoleDataScopes)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Permission)
+                .WithMany(p => p.RoleDataScopes)
+                .HasForeignKey(e => e.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
