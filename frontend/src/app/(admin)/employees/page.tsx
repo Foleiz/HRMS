@@ -53,7 +53,7 @@ export default function EmployeesPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(8);
 
   // HR Comments State: stored in localStorage { [empId: number]: string }
   const [comments, setComments] = useState<Record<number, string>>({});
@@ -615,40 +615,68 @@ export default function EmployeesPage() {
           </table>
         </div>
 
-        {/* 5. Pagination ด้านล่าง (ตรงตามภาพ Figma: ← 1 2 3 4 →) */}
-        <div className="py-3 px-4 border-t border-slate-100 flex items-center justify-end gap-1.5 text-xs">
-          {/* Previous Page Button */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Page numbers */}
-          {[1, 2, 3, 4].slice(0, Math.max(totalPages, 2)).map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPage(p)}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
-                currentPage === p
-                  ? 'bg-[#0B2046] text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
+        {/* 5. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
+        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          {/* ซ้ายล่าง: Rows per page selector */}
+          <div className="flex items-center gap-2 text-slate-600">
+            <span>แสดง</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
-              {p}
-            </button>
-          ))}
+              <option value={5}>5</option>
+              <option value={8}>8</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>แถวต่อหน้า</span>
+            <span className="text-slate-400 text-[11px] ml-1">
+              (ทั้งหมด {filteredEmployees.length} รายการ)
+            </span>
+          </div>
 
-          {/* Next Page Button */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          {/* ขวาล่าง: Pagination Buttons */}
+          <div className="flex items-center gap-1.5">
+            {/* Previous Page Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าก่อนหน้า"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Dynamic Page Numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setCurrentPage(p)}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
+                  currentPage === p
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+
+            {/* Next Page Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าถัดไป"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
