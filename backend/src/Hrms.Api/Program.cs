@@ -4,6 +4,7 @@ using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Auth.Services;
 using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Organization.Services;
+using Hrms.Application.Features.Shift.Services;
 using Hrms.Application.Features.WorkCalendar.Services;
 using Hrms.Infrastructure.Persistence;
 using Hrms.Infrastructure.Security;
@@ -38,6 +39,7 @@ builder.Services.AddScoped<IBankService, BankService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IWorkCalendarService, WorkCalendarService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
 
 // 4. JWT Authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "HrmsSecretKeyForEnterpriseSystemSecurity2026!@#VeryLongKeyForHmacSha256";
@@ -99,7 +101,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AllowFrontend");
 

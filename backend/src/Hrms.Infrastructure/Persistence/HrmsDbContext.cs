@@ -37,6 +37,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<WorkWeek> WorkWeeks => Set<WorkWeek>();
     public DbSet<Holiday> Holidays => Set<Holiday>();
 
+    // Work Shifts (Dev 1 Sprint 3)
+    public DbSet<Shift> Shifts => Set<Shift>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -334,6 +337,25 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(e => new { e.CompanyId, e.HolidayDate }).IsUnique();
+        });
+
+        // Configuration: Shift (Dev 1 Sprint 3)
+        modelBuilder.Entity<Shift>(entity =>
+        {
+            entity.ToTable("shift", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.ShiftCode).HasColumnName("shift_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.ShiftName).HasColumnName("shift_name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.StartTime).HasColumnName("start_time").IsRequired();
+            entity.Property(e => e.EndTime).HasColumnName("end_time").IsRequired();
+            entity.Property(e => e.IsCrossDay).HasColumnName("is_cross_day").IsRequired();
+            entity.Property(e => e.BreakMinutes).HasColumnName("break_minutes").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.LateGraceMinutes).HasColumnName("late_grace_minutes").IsRequired();
+            entity.Property(e => e.EarlyLeaveGraceMinutes).HasColumnName("early_leave_grace_minutes").IsRequired();
+
+            entity.HasIndex(e => e.ShiftCode).IsUnique();
         });
     }
 }

@@ -42,7 +42,7 @@ const menuItems: MenuItem[] = [
   },
   {
     title: 'การเข้างาน',
-    href: '/attendance',
+    href: '/attendance/shifts',
     matchPrefix: '/attendance',
     icon: Clock,
   },
