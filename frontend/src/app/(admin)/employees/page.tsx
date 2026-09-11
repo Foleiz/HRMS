@@ -517,7 +517,7 @@ export default function EmployeesPage() {
     setIsSubmitting(true);
     try {
       const addressItem = {
-        addressType: formData.addressType || 'บ้านตัวเอง',
+        addressType: 'CURRENT',
         addressLine: formData.addressLine?.trim() || '',
         subDistrict: formData.subDistrict?.trim() || '',
         district: formData.district?.trim() || '',

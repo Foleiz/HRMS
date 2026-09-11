@@ -195,7 +195,7 @@ public class EmployeeService : IEmployeeService
             {
                 employee.Addresses.Add(new EmployeeAddress
                 {
-                    AddressType = addr.AddressType,
+                    AddressType = NormalizeAddressType(addr.AddressType),
                     AddressLine = addr.AddressLine,
                     SubDistrict = addr.SubDistrict,
                     District = addr.District,
@@ -392,7 +392,7 @@ public class EmployeeService : IEmployeeService
             {
                 employee.Addresses.Add(new EmployeeAddress
                 {
-                    AddressType = addr.AddressType,
+                    AddressType = NormalizeAddressType(addr.AddressType),
                     AddressLine = addr.AddressLine,
                     SubDistrict = addr.SubDistrict,
                     District = addr.District,
@@ -407,7 +407,7 @@ public class EmployeeService : IEmployeeService
             var primaryAddr = employee.Addresses.FirstOrDefault(a => a.IsCurrent) ?? employee.Addresses.FirstOrDefault();
             if (primaryAddr != null)
             {
-                primaryAddr.AddressType = request.AddressType ?? primaryAddr.AddressType;
+                primaryAddr.AddressType = NormalizeAddressType(request.AddressType ?? primaryAddr.AddressType);
                 primaryAddr.AddressLine = request.AddressLine;
                 primaryAddr.SubDistrict = request.SubDistrict;
                 primaryAddr.District = request.District;
@@ -418,7 +418,7 @@ public class EmployeeService : IEmployeeService
             {
                 employee.Addresses.Add(new EmployeeAddress
                 {
-                    AddressType = request.AddressType ?? "CURRENT",
+                    AddressType = NormalizeAddressType(request.AddressType),
                     AddressLine = request.AddressLine,
                     SubDistrict = request.SubDistrict,
                     District = request.District,
@@ -718,6 +718,20 @@ public class EmployeeService : IEmployeeService
         }
 
         return (null, null);
+    }
+
+    private static string NormalizeAddressType(string? addressType)
+    {
+        if (string.IsNullOrWhiteSpace(addressType)) return "CURRENT";
+        var upper = addressType.Trim().ToUpperInvariant();
+        return upper switch
+        {
+            "REGISTERED" => "REGISTERED",
+            "CURRENT" => "CURRENT",
+            "OTHER" => "OTHER",
+            "ทะเบียนบ้าน" or "ที่อยู่ตามทะเบียนบ้าน" => "REGISTERED",
+            _ => "CURRENT"
+        };
     }
 }
 
