@@ -307,6 +307,9 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.SocialSecurity)
             .Include(e => e.Addresses)
             .Include(e => e.BankAccounts)
+            .Include(e => e.Educations)
+            .Include(e => e.FamilyMembers)
+            .Include(e => e.EmergencyContacts)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (employee == null)
@@ -362,6 +365,128 @@ public class EmployeeService : IEmployeeService
             employee.SocialSecurity.SocialSecurityNoMasked = _cryptoService.MaskCitizenId(request.SocialSecurityNo.Trim());
             employee.SocialSecurity.HospitalName = request.HospitalName?.Trim();
             employee.SocialSecurity.HospitalCode = request.HospitalCode?.Trim();
+        }
+
+        // 6. ที่อยู่ (Address)
+        if (request.Addresses != null && request.Addresses.Any())
+        {
+            employee.Addresses.Clear();
+            foreach (var addr in request.Addresses)
+            {
+                employee.Addresses.Add(new EmployeeAddress
+                {
+                    AddressType = addr.AddressType,
+                    AddressLine = addr.AddressLine,
+                    SubDistrict = addr.SubDistrict,
+                    District = addr.District,
+                    Province = addr.Province,
+                    PostalCode = addr.PostalCode,
+                    IsCurrent = addr.IsCurrent
+                });
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(request.AddressLine) || !string.IsNullOrWhiteSpace(request.Province))
+        {
+            var primaryAddr = employee.Addresses.FirstOrDefault(a => a.IsCurrent) ?? employee.Addresses.FirstOrDefault();
+            if (primaryAddr != null)
+            {
+                primaryAddr.AddressType = request.AddressType ?? primaryAddr.AddressType;
+                primaryAddr.AddressLine = request.AddressLine;
+                primaryAddr.SubDistrict = request.SubDistrict;
+                primaryAddr.District = request.District;
+                primaryAddr.Province = request.Province;
+                primaryAddr.PostalCode = request.PostalCode;
+            }
+            else
+            {
+                employee.Addresses.Add(new EmployeeAddress
+                {
+                    AddressType = request.AddressType ?? "CURRENT",
+                    AddressLine = request.AddressLine,
+                    SubDistrict = request.SubDistrict,
+                    District = request.District,
+                    Province = request.Province,
+                    PostalCode = request.PostalCode,
+                    IsCurrent = true
+                });
+            }
+        }
+
+        // 7. ประวัติการศึกษา (Educations)
+        if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
+        {
+            var primaryEdu = employee.Educations.FirstOrDefault();
+            if (primaryEdu != null)
+            {
+                primaryEdu.EducationLevel = request.EducationLevel ?? primaryEdu.EducationLevel;
+                primaryEdu.Institution = request.Institution ?? primaryEdu.Institution;
+                primaryEdu.Major = request.Major ?? primaryEdu.Major;
+                primaryEdu.GraduationYear = request.GraduationYear ?? primaryEdu.GraduationYear;
+                primaryEdu.Gpa = request.Gpa ?? primaryEdu.Gpa;
+            }
+            else
+            {
+                employee.Educations.Add(new EmployeeEducation
+                {
+                    EducationLevel = request.EducationLevel ?? "ปริญญาตรี",
+                    Institution = request.Institution ?? "-",
+                    Major = request.Major,
+                    GraduationYear = request.GraduationYear,
+                    Gpa = request.Gpa
+                });
+            }
+        }
+
+        // 8. ข้อมูลครอบครัว (Family Members)
+        if (request.FamilyMembers != null)
+        {
+            employee.FamilyMembers.Clear();
+            foreach (var fm in request.FamilyMembers)
+            {
+                if (string.IsNullOrWhiteSpace(fm.FirstName)) continue;
+                byte[]? fmEncrypted = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.Encrypt(fm.CitizenId.Trim()) : null;
+                string? fmMasked = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.MaskCitizenId(fm.CitizenId.Trim()) : null;
+
+                employee.FamilyMembers.Add(new FamilyMember
+                {
+                    RelationshipType = fm.RelationshipType ?? "บิดา",
+                    Prefix = fm.Prefix,
+                    FirstName = !string.IsNullOrWhiteSpace(fm.Prefix) ? $"{fm.Prefix.Trim()} {fm.FirstName.Trim()}" : fm.FirstName.Trim(),
+                    LastName = fm.LastName?.Trim(),
+                    CitizenId = fm.CitizenId?.Trim(),
+                    CitizenIdEncrypted = fmEncrypted,
+                    CitizenIdMasked = fmMasked,
+                    BirthDate = fm.BirthDate
+                });
+            }
+        }
+
+        // 9. กรณีฉุกเฉินติดต่อใคร (Emergency Contact)
+        if (request.EmergencyContact != null && !string.IsNullOrWhiteSpace(request.EmergencyContact.FirstName))
+        {
+            var primaryEc = employee.EmergencyContacts.FirstOrDefault(c => c.IsPrimary) ?? employee.EmergencyContacts.FirstOrDefault();
+            if (primaryEc != null)
+            {
+                primaryEc.Prefix = request.EmergencyContact.Prefix;
+                primaryEc.FirstName = !string.IsNullOrWhiteSpace(request.EmergencyContact.Prefix) ? $"{request.EmergencyContact.Prefix.Trim()} {request.EmergencyContact.FirstName.Trim()}" : request.EmergencyContact.FirstName.Trim();
+                primaryEc.LastName = request.EmergencyContact.LastName?.Trim() ?? primaryEc.LastName;
+                primaryEc.Relationship = request.EmergencyContact.Relationship ?? primaryEc.Relationship;
+                primaryEc.Address = request.EmergencyContact.Address ?? primaryEc.Address;
+                primaryEc.PrimaryPhone = request.EmergencyContact.PrimaryPhone?.Trim() ?? primaryEc.PrimaryPhone;
+            }
+            else
+            {
+                employee.EmergencyContacts.Add(new EmergencyContact
+                {
+                    Prefix = request.EmergencyContact.Prefix,
+                    FirstName = !string.IsNullOrWhiteSpace(request.EmergencyContact.Prefix) ? $"{request.EmergencyContact.Prefix.Trim()} {request.EmergencyContact.FirstName.Trim()}" : request.EmergencyContact.FirstName.Trim(),
+                    LastName = request.EmergencyContact.LastName?.Trim() ?? "-",
+                    Relationship = request.EmergencyContact.Relationship ?? "บิดา",
+                    Address = request.EmergencyContact.Address,
+                    PrimaryPhone = request.EmergencyContact.PrimaryPhone?.Trim() ?? "-",
+                    IsPrimary = true
+                });
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

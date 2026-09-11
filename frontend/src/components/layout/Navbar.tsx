@@ -40,6 +40,7 @@ export const Navbar: React.FC = () => {
     if (customBreadcrumb) return customBreadcrumb;
     if (pathname === '/') return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
+    if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
     if (pathname.match(/^\/employees\/\d+/)) return { section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' };
     if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
     if (pathname.startsWith('/attendance')) return { section: 'การเข้างาน', page: 'ตรวจบันทึกเวลา' };
@@ -61,7 +62,10 @@ export const Navbar: React.FC = () => {
       <div className="flex items-center gap-3.5">
         <button
           onClick={() => {
-            if (pathname.match(/^\/employees\/\d+/)) {
+            const editMatch = pathname.match(/^\/employees\/(\d+)\/edit/);
+            if (editMatch) {
+              router.push(`/employees/${editMatch[1]}`);
+            } else if (pathname.match(/^\/employees\/\d+/)) {
               router.push('/employees');
             } else {
               router.back();

@@ -46,8 +46,29 @@ public class UpdateEmployeeRequest
     public string? HospitalCode { get; set; }
 
     // ที่อยู่
+    public string? AddressType { get; set; }
+    public string? AddressLine { get; set; }
+    public string? SubDistrict { get; set; }
+    public string? District { get; set; }
+    public string? Province { get; set; }
+    public string? PostalCode { get; set; }
     public List<CreateEmployeeAddressDto>? Addresses { get; set; }
 
     // บัญชีธนาคาร
+    public string? BankName { get; set; }
+    public string? AccountNumber { get; set; }
     public List<CreateEmployeeBankAccountDto>? BankAccounts { get; set; }
+
+    // ประวัติการศึกษา
+    public string? EducationLevel { get; set; }
+    public string? Institution { get; set; }
+    public string? Major { get; set; }
+    public int? GraduationYear { get; set; }
+    public decimal? Gpa { get; set; }
+
+    // ข้อมูลครอบครัว
+    public List<CreateFamilyMemberDto>? FamilyMembers { get; set; }
+
+    // กรณีฉุกเฉินติดต่อใคร
+    public CreateEmergencyContactDto? EmergencyContact { get; set; }
 }

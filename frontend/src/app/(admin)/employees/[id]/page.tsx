@@ -318,7 +318,7 @@ export default function EmployeeDetailPage() {
             {/* แก้ไขข้อมูล Button */}
             <button
               type="button"
-              onClick={() => router.push('/employees')}
+              onClick={() => router.push(`/employees/${employee.id}/edit`)}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#0B2046] text-white text-xs font-medium rounded-lg hover:bg-[#153468] transition-colors shadow-2xs cursor-pointer"
             >
               <span>แก้ไขข้อมูล</span>
