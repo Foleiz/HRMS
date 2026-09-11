@@ -28,5 +28,6 @@ public class EmployeeAssignment
     public virtual Department? Department { get; set; }
     public virtual Position? Position { get; set; }
     public virtual EmployeeLevel? EmployeeLevel { get; set; }
+    public virtual EmployeeType? EmployeeType { get; set; }
     public virtual WorkSchedule? WorkSchedule { get; set; }
 }

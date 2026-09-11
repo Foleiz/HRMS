@@ -464,7 +464,7 @@ public class EmployeeShiftService : IEmployeeShiftService
         };
     }
 
-    public async Task<List<AssignableEmployeeDto>> GetAssignableEmployeesAsync(long? departmentId = null)
+    public async Task<List<AssignableEmployeeDto>> GetAssignableEmployeesAsync(long? departmentId = null, long? employeeTypeId = null)
     {
         var employees = await _context.Employees
             .OrderBy(e => e.EmployeeCode)
@@ -473,12 +473,20 @@ public class EmployeeShiftService : IEmployeeShiftService
         var currentAssignments = await _context.EmployeeAssignments
             .Include(ea => ea.Department)
             .Include(ea => ea.Position)
+            .Include(ea => ea.EmployeeType)
             .Where(ea => ea.IsCurrent)
             .ToListAsync();
 
         var assignMap = currentAssignments.ToDictionary(
             ea => ea.EmployeeId,
-            ea => (ea.DepartmentId, ea.Department?.DepartmentName?.Trim() ?? "-", ea.Position?.PositionName?.Trim() ?? "-")
+            ea => (
+                DepartmentId: ea.DepartmentId,
+                DepartmentName: ea.Department?.DepartmentName?.Trim() ?? "-",
+                PositionName: ea.Position?.PositionName?.Trim() ?? "-",
+                EmployeeTypeId: ea.EmployeeTypeId,
+                EmployeeTypeCode: ea.EmployeeType?.TypeCode ?? string.Empty,
+                EmployeeTypeName: ea.EmployeeType?.TypeName ?? "พนักงานประจำ"
+            )
         );
 
         var list = new List<AssignableEmployeeDto>();
@@ -490,17 +498,40 @@ public class EmployeeShiftService : IEmployeeShiftService
                 continue;
             }
 
+            if (employeeTypeId.HasValue && employeeTypeId.Value > 0 && info.EmployeeTypeId != employeeTypeId.Value)
+            {
+                continue;
+            }
+
             list.Add(new AssignableEmployeeDto
             {
                 Id = e.Id,
                 EmployeeCode = e.EmployeeCode,
                 FullName = e.FullName,
                 DepartmentId = info.DepartmentId == 0 ? null : info.DepartmentId,
-                DepartmentName = string.IsNullOrEmpty(info.Item2) ? "-" : info.Item2,
-                PositionName = string.IsNullOrEmpty(info.Item3) ? "-" : info.Item3
+                DepartmentName = string.IsNullOrEmpty(info.DepartmentName) ? "-" : info.DepartmentName,
+                PositionName = string.IsNullOrEmpty(info.PositionName) ? "-" : info.PositionName,
+                EmployeeTypeId = info.EmployeeTypeId,
+                EmployeeTypeCode = info.EmployeeTypeCode ?? string.Empty,
+                EmployeeTypeName = string.IsNullOrEmpty(info.EmployeeTypeName) ? "พนักงานประจำ" : info.EmployeeTypeName
             });
         }
 
         return list;
+    }
+
+    public async Task<List<EmployeeTypeLookupDto>> GetEmployeeTypesAsync()
+    {
+        return await _context.EmployeeTypes
+            .Where(t => t.Status == "ACTIVE")
+            .OrderBy(t => t.Id)
+            .Select(t => new EmployeeTypeLookupDto
+            {
+                Id = t.Id,
+                TypeCode = t.TypeCode,
+                TypeName = t.TypeName,
+                WageType = t.WageType
+            })
+            .ToListAsync();
     }
 }

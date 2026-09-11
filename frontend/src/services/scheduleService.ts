@@ -11,6 +11,7 @@ import {
   UpdateEmployeeShiftRequest,
   MonthlyRosterResponse,
   AssignableEmployee,
+  EmployeeTypeLookup,
 } from '@/types/schedule';
 
 export const scheduleService = {
@@ -93,9 +94,16 @@ export const employeeShiftService = {
     return res.data.data!;
   },
 
-  async getAssignableEmployees(departmentId?: number): Promise<AssignableEmployee[]> {
-    const params = departmentId ? { departmentId } : {};
+  async getAssignableEmployees(departmentId?: number, employeeTypeId?: number): Promise<AssignableEmployee[]> {
+    const params: Record<string, any> = {};
+    if (departmentId) params.departmentId = departmentId;
+    if (employeeTypeId) params.employeeTypeId = employeeTypeId;
     const res = await apiClient.get<ApiResponse<AssignableEmployee[]>>('/employeeshifts/employees', { params });
+    return res.data.data || [];
+  },
+
+  async getEmployeeTypes(): Promise<EmployeeTypeLookup[]> {
+    const res = await apiClient.get<ApiResponse<EmployeeTypeLookup[]>>('/employeeshifts/employee-types');
     return res.data.data || [];
   },
 };

@@ -44,6 +44,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<WorkSchedule> WorkSchedules => Set<WorkSchedule>();
     public DbSet<EmployeeShift> EmployeeShifts => Set<EmployeeShift>();
     public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
+    public DbSet<EmployeeType> EmployeeTypes => Set<EmployeeType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -446,6 +447,23 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.WorkScheduleId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeType
+        modelBuilder.Entity<EmployeeType>(entity =>
+        {
+            entity.ToTable("employee_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.TypeCode).HasColumnName("type_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.TypeName).HasColumnName("type_name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.WageType).HasColumnName("wage_type").HasMaxLength(20);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
         });
     }
 }

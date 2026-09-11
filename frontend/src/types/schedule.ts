@@ -104,6 +104,13 @@ export interface MonthlyRosterResponse {
   employees: MonthlyRosterItem[];
 }
 
+export interface EmployeeTypeLookup {
+  id: number;
+  typeCode: string;
+  typeName: string;
+  wageType: string;
+}
+
 export interface AssignableEmployee {
   id: number;
   employeeCode: string;
@@ -111,4 +118,7 @@ export interface AssignableEmployee {
   departmentId?: number | null;
   departmentName: string;
   positionName: string;
+  employeeTypeId?: number | null;
+  employeeTypeCode?: string;
+  employeeTypeName?: string;
 }

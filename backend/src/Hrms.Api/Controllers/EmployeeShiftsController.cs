@@ -159,9 +159,16 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet("employees")]
-    public async Task<IActionResult> GetAssignableEmployees([FromQuery] long? departmentId)
+    public async Task<IActionResult> GetAssignableEmployees([FromQuery] long? departmentId, [FromQuery] long? employeeTypeId)
     {
-        var result = await _service.GetAssignableEmployeesAsync(departmentId);
+        var result = await _service.GetAssignableEmployeesAsync(departmentId, employeeTypeId);
         return Ok(ApiResponse<List<AssignableEmployeeDto>>.Ok(result));
+    }
+
+    [HttpGet("employee-types")]
+    public async Task<IActionResult> GetEmployeeTypes()
+    {
+        var result = await _service.GetEmployeeTypesAsync();
+        return Ok(ApiResponse<List<EmployeeTypeLookupDto>>.Ok(result));
     }
 }

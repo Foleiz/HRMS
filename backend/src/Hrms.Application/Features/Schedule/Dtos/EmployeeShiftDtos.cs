@@ -96,6 +96,17 @@ public class MonthlyRosterResponse
 }
 
 /// <summary>
+/// ข้อมูลประเภทการจ้างงานสำหรับตัวเลือกการกรอง
+/// </summary>
+public class EmployeeTypeLookupDto
+{
+    public long Id { get; set; }
+    public string TypeCode { get; set; } = string.Empty;
+    public string TypeName { get; set; } = string.Empty;
+    public string WageType { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// ข้อมูลพนักงานสำหรับตัวเลือกการมอบหมายกะ
 /// </summary>
 public class AssignableEmployeeDto
@@ -106,4 +117,7 @@ public class AssignableEmployeeDto
     public long? DepartmentId { get; set; }
     public string DepartmentName { get; set; } = "-";
     public string PositionName { get; set; } = "-";
+    public long? EmployeeTypeId { get; set; }
+    public string EmployeeTypeCode { get; set; } = string.Empty;
+    public string EmployeeTypeName { get; set; } = "พนักงานประจำ";
 }

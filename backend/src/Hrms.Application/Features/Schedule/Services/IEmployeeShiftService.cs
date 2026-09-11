@@ -19,7 +19,8 @@ public interface IEmployeeShiftService
     Task<EmployeeShiftDto> UpdateAssignmentAsync(long id, UpdateEmployeeShiftRequest request);
     Task<bool> DeleteAssignmentAsync(long id);
     Task<MonthlyRosterResponse> GetMonthlyRosterAsync(int year, int month, long? departmentId = null, string? search = null);
-    Task<List<AssignableEmployeeDto>> GetAssignableEmployeesAsync(long? departmentId = null);
+    Task<List<AssignableEmployeeDto>> GetAssignableEmployeesAsync(long? departmentId = null, long? employeeTypeId = null);
+    Task<List<EmployeeTypeLookupDto>> GetEmployeeTypesAsync();
 }
 
 /// <summary>

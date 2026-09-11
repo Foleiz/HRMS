@@ -32,6 +32,7 @@ public interface IHrmsDbContext
     DbSet<WorkSchedule> WorkSchedules { get; }
     DbSet<EmployeeShift> EmployeeShifts { get; }
     DbSet<EmployeeAssignment> EmployeeAssignments { get; }
+    DbSet<EmployeeType> EmployeeTypes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

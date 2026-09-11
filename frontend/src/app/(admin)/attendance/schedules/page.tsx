@@ -39,6 +39,7 @@ import {
   MonthlyRosterResponse,
   AssignableEmployee,
   RosterDayShift,
+  EmployeeTypeLookup,
 } from '@/types/schedule';
 import { Shift, CreateShiftRequest } from '@/types/shift';
 import { Department } from '@/types/organization';
@@ -86,6 +87,9 @@ function SchedulesContent() {
   const [assignments, setAssignments] = useState<EmployeeShift[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [assignableEmployees, setAssignableEmployees] = useState<AssignableEmployee[]>([]);
+  const [employeeTypes, setEmployeeTypes] = useState<EmployeeTypeLookup[]>([]);
+  const [singleAssignTypeFilter, setSingleAssignTypeFilter] = useState<string>('ALL');
+  const [batchAssignTypeFilter, setBatchAssignTypeFilter] = useState<string>('ALL');
 
   // Roster Calendar Data
   const [rosterData, setRosterData] = useState<MonthlyRosterResponse | null>(null);
@@ -240,12 +244,14 @@ function SchedulesContent() {
 
   const loadLookups = useCallback(async () => {
     try {
-      const [deptsData, empsData] = await Promise.all([
+      const [deptsData, empsData, typesData] = await Promise.all([
         organizationService.getDepartments(),
         employeeShiftService.getAssignableEmployees(),
+        employeeShiftService.getEmployeeTypes(),
       ]);
       setDepartments(deptsData);
       setAssignableEmployees(empsData);
+      setEmployeeTypes(typesData);
     } catch (err: any) {
       console.error('Error loading lookups:', err);
     }
@@ -1495,11 +1501,30 @@ function SchedulesContent() {
             </div>
 
             <form onSubmit={handleSaveSingleAssign} className="p-5 space-y-4">
-              {/* Employee Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  เลือกพนักงาน <span className="text-rose-500">*</span>
-                </label>
+              {/* Employee Selection & Type Filter */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    เลือกพนักงาน <span className="text-rose-500">*</span>
+                  </label>
+                  {assignModalMode === 'create' && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-slate-500">ประเภท:</span>
+                      <select
+                        value={singleAssignTypeFilter}
+                        onChange={(e) => setSingleAssignTypeFilter(e.target.value)}
+                        className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-200 rounded-md focus:outline-none text-slate-700 font-medium"
+                      >
+                        <option value="ALL">ทุกประเภทการจ้างงาน</option>
+                        {employeeTypes.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.typeName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
                 {assignModalMode === 'create' ? (
                   <select
                     value={assignForm.employeeId}
@@ -1508,16 +1533,27 @@ function SchedulesContent() {
                     required
                   >
                     <option value="0">-- กรุณาเลือกพนักงาน --</option>
-                    {assignableEmployees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.employeeCode} - {emp.fullName} ({emp.departmentName || 'ไม่ระบุแผนก'})
-                      </option>
-                    ))}
+                    {assignableEmployees
+                      .filter((emp) =>
+                        singleAssignTypeFilter === 'ALL'
+                          ? true
+                          : emp.employeeTypeId === Number(singleAssignTypeFilter)
+                      )
+                      .map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.employeeCode} - {emp.fullName} ({emp.departmentName || 'ไม่ระบุแผนก'}) · [{emp.employeeTypeName || 'พนักงานประจำ'}]
+                        </option>
+                      ))}
                   </select>
                 ) : (
-                  <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium">
-                    {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.fullName ||
-                      `พนักงานรหัส #${assignForm.employeeId}`}
+                  <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium flex items-center justify-between">
+                    <span>
+                      {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.fullName ||
+                        `พนักงานรหัส #${assignForm.employeeId}`}
+                    </span>
+                    <span className="text-xs text-slate-500 font-normal">
+                      {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.employeeTypeName || 'พนักงานประจำ'}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1708,10 +1744,23 @@ function SchedulesContent() {
                     <div className="flex items-center gap-2 text-xs">
                       <button
                         type="button"
-                        onClick={() => setBatchSelectedEmpIds(assignableEmployees.map((e) => e.id))}
-                        className="text-blue-600 hover:underline"
+                        onClick={() => {
+                          const matchingIds = assignableEmployees
+                            .filter((e) => {
+                              const matchSearch =
+                                e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
+                                e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
+                                (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
+                              const matchType =
+                                batchAssignTypeFilter === 'ALL' || e.employeeTypeId === Number(batchAssignTypeFilter);
+                              return matchSearch && matchType;
+                            })
+                            .map((e) => e.id);
+                          setBatchSelectedEmpIds(Array.from(new Set([...batchSelectedEmpIds, ...matchingIds])));
+                        }}
+                        className="text-blue-600 hover:underline font-medium"
                       >
-                        เลือกทั้งหมด
+                        เลือกทั้งหมดตามตัวกรอง
                       </button>
                       <span>|</span>
                       <button
@@ -1724,25 +1773,46 @@ function SchedulesContent() {
                     </div>
                   </div>
 
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="พิมพ์กรองชื่อ หรือแผนก..."
-                      value={empFilterKeyword}
-                      onChange={(e) => setEmpFilterKeyword(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
-                    />
+                  {/* Search and Employee Type Filter Bar */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="พิมพ์กรองชื่อ หรือแผนก..."
+                        value={empFilterKeyword}
+                        onChange={(e) => setEmpFilterKeyword(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <select
+                        value={batchAssignTypeFilter}
+                        onChange={(e) => setBatchAssignTypeFilter(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-slate-700 font-medium"
+                      >
+                        <option value="ALL">ทุกประเภทการจ้างงาน</option>
+                        {employeeTypes.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.typeName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="border border-slate-200 rounded-lg max-h-44 overflow-y-auto divide-y divide-slate-100 p-1">
+                  <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 p-1">
                     {assignableEmployees
-                      .filter(
-                        (e) =>
+                      .filter((e) => {
+                        const matchSearch =
                           e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
                           e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-                          (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()))
-                      )
+                          (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
+                        const matchType =
+                          batchAssignTypeFilter === 'ALL' || e.employeeTypeId === Number(batchAssignTypeFilter);
+                        return matchSearch && matchType;
+                      })
                       .map((emp) => {
                         const checked = batchSelectedEmpIds.includes(emp.id);
                         return (
@@ -1762,12 +1832,17 @@ function SchedulesContent() {
                               }}
                               className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]"
                             />
-                            <div className="flex-1">
-                              <span className="font-semibold text-slate-800">{emp.fullName}</span>
-                              <span className="text-slate-400 text-[11px] ml-2 font-mono">{emp.employeeCode}</span>
-                              {emp.departmentName && (
-                                <span className="text-slate-500 text-[11px] ml-2">({emp.departmentName})</span>
-                              )}
+                            <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
+                              <div className="truncate">
+                                <span className="font-semibold text-slate-800">{emp.fullName}</span>
+                                <span className="text-slate-400 text-[11px] ml-2 font-mono">{emp.employeeCode}</span>
+                                {emp.departmentName && (
+                                  <span className="text-slate-500 text-[11px] ml-1.5">({emp.departmentName})</span>
+                                )}
+                              </div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                {emp.employeeTypeName || 'พนักงานประจำ'}
+                              </span>
                             </div>
                           </label>
                         );
