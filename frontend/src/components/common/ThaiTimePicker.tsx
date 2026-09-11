@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Clock, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Clock, ChevronDown } from 'lucide-react';
 
 interface ThaiTimePickerProps {
   value: string; // Format "HH:mm"
@@ -367,37 +367,16 @@ export default function ThaiTimePicker({
     };
   }, [isOpen]);
 
-  const activeHourInt = parseInt(selectedHour, 10);
-  const isNightShift = activeHourInt >= 18 || activeHourInt < 6;
-
   return (
     <div className="relative" ref={containerRef}>
-      {/* Label and Day/Night Badge Header Line (Ample Space) */}
-      <div className="flex items-center justify-between mb-1.5">
-        {label ? (
+      {/* Label Header */}
+      {label && (
+        <div className="mb-1.5">
           <label className="block text-xs font-semibold text-slate-700">
             {label} {required && <span className="text-rose-500">*</span>}
           </label>
-        ) : (
-          <div />
-        )}
-
-        {/* Day / Night Badge placed cleanly in label row */}
-        <span
-          className={`whitespace-nowrap shrink-0 inline-flex items-center gap-1 text-[10px] font-sans font-semibold px-2 py-0.5 rounded-md border transition-colors ${
-            isNightShift
-              ? 'bg-purple-50 text-purple-700 border-purple-200'
-              : 'bg-amber-50 text-amber-700 border-amber-200'
-          }`}
-        >
-          {isNightShift ? (
-            <Moon className="w-3 h-3 text-purple-600 shrink-0" />
-          ) : (
-            <Sun className="w-3 h-3 text-amber-600 shrink-0" />
-          )}
-          <span className="whitespace-nowrap">{isNightShift ? 'กะกลางคืน' : 'กะกลางวัน'}</span>
-        </span>
-      </div>
+        </div>
+      )}
 
       {/* Trigger Box with Direct Keyboard Typing + Dropdown Toggle */}
       <div
