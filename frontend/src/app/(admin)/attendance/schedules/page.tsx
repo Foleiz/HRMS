@@ -207,7 +207,7 @@ function SchedulesContent() {
   // -------------------------------------------------------------
   // 3. Tab 1 States: มอบหมายกะให้พนักงาน (Shift Roster)
   // -------------------------------------------------------------
-  const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'list'>('list');
   const [assignmentSearch, setAssignmentSearch] = useState('');
   const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
 
@@ -838,17 +838,6 @@ function SchedulesContent() {
             <div className="flex items-center gap-2.5 shrink-0">
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                 <button
-                  onClick={() => setAssignmentViewMode('calendar')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
-                    assignmentViewMode === 'calendar'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>ปฏิทิน</span>
-                </button>
-                <button
                   onClick={() => setAssignmentViewMode('list')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     assignmentViewMode === 'list'
@@ -858,6 +847,17 @@ function SchedulesContent() {
                 >
                   <List className="w-3.5 h-3.5" />
                   <span>รายการ</span>
+                </button>
+                <button
+                  onClick={() => setAssignmentViewMode('calendar')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
+                    assignmentViewMode === 'calendar'
+                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>ปฏิทิน</span>
                 </button>
               </div>
 
