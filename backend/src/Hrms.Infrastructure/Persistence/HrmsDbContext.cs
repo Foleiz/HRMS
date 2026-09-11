@@ -502,5 +502,70 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
             entity.HasIndex(e => new { e.CompanyId, e.HolidayDate }).IsUnique();
         });
+
+        // Configuration: EmployeeEducation
+        modelBuilder.Entity<EmployeeEducation>(entity =>
+        {
+            entity.ToTable("employee_education", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.EducationLevel).HasColumnName("education_level").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Institution).HasColumnName("institution").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Major).HasColumnName("major").HasMaxLength(255);
+            entity.Property(e => e.GraduationYear).HasColumnName("graduation_year");
+            entity.Property(e => e.Gpa).HasColumnName("gpa");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Educations)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: FamilyMember
+        modelBuilder.Entity<FamilyMember>(entity =>
+        {
+            entity.ToTable("family_member", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.RelationshipType).HasColumnName("relationship_type").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(150);
+            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(30);
+            entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
+            entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
+            entity.Property(e => e.BirthDate).HasColumnName("birth_date");
+            entity.Property(e => e.MaritalStatus).HasColumnName("marital_status").HasMaxLength(30);
+            entity.Property(e => e.EducationStatus).HasColumnName("education_status").HasMaxLength(100);
+            entity.Ignore(e => e.Prefix);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.FamilyMembers)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmergencyContact
+        modelBuilder.Entity<EmergencyContact>(entity =>
+        {
+            entity.ToTable("emergency_contact", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Relationship).HasColumnName("relationship").HasMaxLength(100);
+            entity.Property(e => e.PrimaryPhone).HasColumnName("primary_phone").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SecondaryPhone).HasColumnName("secondary_phone").HasMaxLength(50);
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.IsPrimary).HasColumnName("is_primary").IsRequired();
+            entity.Ignore(e => e.Prefix);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.EmergencyContacts)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

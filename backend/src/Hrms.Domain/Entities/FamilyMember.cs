@@ -1,4 +1,5 @@
-﻿using Hrms.Domain.Common;
+using System.ComponentModel.DataAnnotations.Schema;
+using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -9,6 +10,7 @@ public class FamilyMember : BaseEntity
 {
     public long EmployeeId { get; set; }
     public string RelationshipType { get; set; } = string.Empty;
+    [NotMapped]
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string? LastName { get; set; }

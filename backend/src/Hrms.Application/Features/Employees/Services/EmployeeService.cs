@@ -96,7 +96,6 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Educations)
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
-            .Include(e => e.Position)
             .Include(e => e.BankAccounts)
                 .ThenInclude(b => b.Bank)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -154,8 +153,6 @@ public class EmployeeService : IEmployeeService
             MaritalStatusId = request.MaritalStatusId,
             MilitaryStatus = request.MilitaryStatus,
             IsTopLevel = request.IsTopLevel,
-            PositionId = request.PositionId,
-            EmployeeType = request.EmployeeType,
             SpouseHasIncome = request.SpouseHasIncome,
             NumberOfChildren = request.NumberOfChildren,
             ParentDeductionCount = request.ParentDeductionCount,
@@ -266,7 +263,7 @@ public class EmployeeService : IEmployeeService
                 {
                     RelationshipType = fm.RelationshipType ?? "บิดา",
                     Prefix = fm.Prefix,
-                    FirstName = fm.FirstName.Trim(),
+                    FirstName = !string.IsNullOrWhiteSpace(fm.Prefix) ? $"{fm.Prefix.Trim()} {fm.FirstName.Trim()}" : fm.FirstName.Trim(),
                     LastName = fm.LastName?.Trim(),
                     CitizenId = fm.CitizenId?.Trim(),
                     CitizenIdEncrypted = fmEncrypted,
@@ -282,7 +279,7 @@ public class EmployeeService : IEmployeeService
             employee.EmergencyContacts.Add(new EmergencyContact
             {
                 Prefix = request.EmergencyContact.Prefix,
-                FirstName = request.EmergencyContact.FirstName.Trim(),
+                FirstName = !string.IsNullOrWhiteSpace(request.EmergencyContact.Prefix) ? $"{request.EmergencyContact.Prefix.Trim()} {request.EmergencyContact.FirstName.Trim()}" : request.EmergencyContact.FirstName.Trim(),
                 LastName = request.EmergencyContact.LastName?.Trim() ?? "-",
                 Relationship = request.EmergencyContact.Relationship ?? "บิดา",
                 Address = request.EmergencyContact.Address,
@@ -417,9 +414,9 @@ public class EmployeeService : IEmployeeService
             NumberOfChildren = e.NumberOfChildren,
             ParentDeductionCount = e.ParentDeductionCount,
             DisabilityDeductionCount = e.DisabilityDeductionCount,
-            PositionId = e.PositionId,
-            PositionName = e.Position?.PositionName,
-            EmployeeType = e.EmployeeType,
+            PositionId = null,
+            PositionName = null,
+            EmployeeType = null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             Contact = e.Contact != null ? new EmployeeContactDto

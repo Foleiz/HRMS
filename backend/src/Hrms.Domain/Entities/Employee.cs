@@ -34,10 +34,6 @@ public class Employee : BaseEntity
     public string? MilitaryStatus { get; set; }
     public bool IsTopLevel { get; set; } = false;
 
-    // ข้อมูลการจ้างงาน
-    public long? PositionId { get; set; }
-    public string? EmployeeType { get; set; }
-
     // ข้อมูลลดหย่อนภาษีครอบครัว (Family Tax Deductions)
     public bool SpouseHasIncome { get; set; } = false;
     public int NumberOfChildren { get; set; } = 0;
@@ -52,7 +48,6 @@ public class Employee : BaseEntity
 
     // Navigation Properties
     public virtual UserAccount? UserAccount { get; set; }
-    public virtual Position? Position { get; set; }
     public virtual EmployeeContact? Contact { get; set; }
     public virtual EmployeeSocialSecurity? SocialSecurity { get; set; }
     public virtual ICollection<EmployeeAddress> Addresses { get; set; } = new List<EmployeeAddress>();

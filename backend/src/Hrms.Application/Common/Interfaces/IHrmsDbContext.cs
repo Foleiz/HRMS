@@ -11,6 +11,9 @@ public interface IHrmsDbContext
     DbSet<EmployeeAddress> EmployeeAddresses { get; }
     DbSet<EmployeeBankAccount> EmployeeBankAccounts { get; }
     DbSet<EmployeeSocialSecurity> EmployeeSocialSecurities { get; }
+    DbSet<EmployeeEducation> EmployeeEducations { get; }
+    DbSet<FamilyMember> FamilyMembers { get; }
+    DbSet<EmergencyContact> EmergencyContacts { get; }
     DbSet<UserAccount> UserAccounts { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }

@@ -1,4 +1,5 @@
-﻿using Hrms.Domain.Common;
+using System.ComponentModel.DataAnnotations.Schema;
+using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -8,6 +9,7 @@ namespace Hrms.Domain.Entities;
 public class EmergencyContact : BaseEntity
 {
     public long EmployeeId { get; set; }
+    [NotMapped]
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
