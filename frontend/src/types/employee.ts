@@ -64,17 +64,81 @@ export interface Employee {
   bankAccounts: EmployeeBankAccount[];
 }
 
+export interface FamilyMember {
+  id?: number;
+  relationshipType: string;
+  prefix?: string;
+  firstName: string;
+  lastName?: string;
+  citizenId?: string;
+  citizenIdMasked?: string;
+  birthDate?: string;
+}
+
+export interface EmergencyContact {
+  id?: number;
+  relationship?: string;
+  prefix?: string;
+  firstName: string;
+  lastName: string;
+  address?: string;
+  primaryPhone: string;
+  isPrimary?: boolean;
+}
+
+export interface EmployeeEducation {
+  id?: number;
+  educationLevel: string;
+  institution: string;
+  major?: string;
+  graduationYear?: number;
+  gpa?: number;
+}
+
 export interface CreateEmployeePayload {
+  // ข้อมูลทั่วไป
   employeeCode: string;
   prefix?: string;
   firstName: string;
   lastName: string;
   citizenId?: string;
-  birthDate?: string;
   gender?: string;
-  personalPhone?: string;
+  nationality?: string;
+  religion?: string;
+
+  // ข้อมูลส่วนบุคคล & ที่อยู่
+  birthDate?: string;
+  maritalStatus?: string;
+  militaryStatus?: string;
+  addressType?: string;
+  addressLine?: string;
+  subDistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+
+  // การติดต่อ & การศึกษา
   personalEmail?: string;
   organizationEmail?: string;
+  personalPhone?: string;
+  educationLevel?: string;
+  institution?: string;
+  major?: string;
+  graduationYear?: number;
+  gpa?: number;
+
+  // การเงิน & ตำแหน่งงาน
+  bankName?: string;
+  accountNumber?: string;
+  positionId?: number;
+  positionName?: string;
+  employeeType?: string;
+
+  // ครอบครัว & กรณีฉุกเฉิน
+  familyMembers?: FamilyMember[];
+  emergencyContact?: EmergencyContact;
+
+  // อื่นๆ (เช่น ประกันสังคม)
   socialSecurityNo?: string;
   hospitalName?: string;
 }

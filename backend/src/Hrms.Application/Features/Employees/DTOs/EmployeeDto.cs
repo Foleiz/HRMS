@@ -38,6 +38,11 @@ public class EmployeeDto
     public int ParentDeductionCount { get; set; }
     public int DisabilityDeductionCount { get; set; }
 
+    // ข้อมูลการจ้างงาน
+    public long? PositionId { get; set; }
+    public string? PositionName { get; set; }
+    public string? EmployeeType { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
@@ -46,6 +51,9 @@ public class EmployeeDto
     public EmployeeSocialSecurityDto? SocialSecurity { get; set; }
     public List<EmployeeAddressDto> Addresses { get; set; } = new();
     public List<EmployeeBankAccountDto> BankAccounts { get; set; } = new();
+    public List<EmployeeEducationDto> Educations { get; set; } = new();
+    public List<FamilyMemberDto> FamilyMembers { get; set; } = new();
+    public List<EmergencyContactDto> EmergencyContacts { get; set; } = new();
 }
 
 public class EmployeeContactDto
@@ -85,4 +93,37 @@ public class EmployeeBankAccountDto
     public string? AccountName { get; set; }
     public bool IsPrimary { get; set; }
     public string Status { get; set; } = "ACTIVE";
+}
+
+public class EmployeeEducationDto
+{
+    public long Id { get; set; }
+    public string EducationLevel { get; set; } = string.Empty;
+    public string Institution { get; set; } = string.Empty;
+    public string? Major { get; set; }
+    public int? GraduationYear { get; set; }
+    public decimal? Gpa { get; set; }
+}
+
+public class FamilyMemberDto
+{
+    public long Id { get; set; }
+    public string RelationshipType { get; set; } = string.Empty;
+    public string? Prefix { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
+    public string? CitizenIdMasked { get; set; }
+    public DateOnly? BirthDate { get; set; }
+}
+
+public class EmergencyContactDto
+{
+    public long Id { get; set; }
+    public string? Relationship { get; set; }
+    public string? Prefix { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public string PrimaryPhone { get; set; } = string.Empty;
+    public bool IsPrimary { get; set; }
 }

@@ -50,7 +50,47 @@ public class CreateEmployeeRequest
     public List<CreateEmployeeAddressDto>? Addresses { get; set; }
 
     // บัญชีธนาคาร
+    public string? BankName { get; set; }
+    public string? AccountNumber { get; set; }
     public List<CreateEmployeeBankAccountDto>? BankAccounts { get; set; }
+
+    // ตำแหน่งงานและประเภทพนักงาน
+    public long? PositionId { get; set; }
+    public string? PositionName { get; set; }
+    public string? EmployeeType { get; set; }
+
+    // วุฒิการศึกษา
+    public string? EducationLevel { get; set; }
+    public string? Institution { get; set; }
+    public string? Major { get; set; }
+    public int? GraduationYear { get; set; }
+    public decimal? Gpa { get; set; }
+
+    // ข้อมูลครอบครัว
+    public List<CreateFamilyMemberDto>? FamilyMembers { get; set; }
+
+    // กรณีฉุกเฉินติดต่อใคร
+    public CreateEmergencyContactDto? EmergencyContact { get; set; }
+}
+
+public class CreateFamilyMemberDto
+{
+    public string RelationshipType { get; set; } = string.Empty;
+    public string? Prefix { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
+    public string? CitizenId { get; set; }
+    public DateOnly? BirthDate { get; set; }
+}
+
+public class CreateEmergencyContactDto
+{
+    public string? Relationship { get; set; }
+    public string? Prefix { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public string PrimaryPhone { get; set; } = string.Empty;
 }
 
 public class CreateEmployeeAddressDto

@@ -93,6 +93,10 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Contact)
             .Include(e => e.SocialSecurity)
             .Include(e => e.Addresses)
+            .Include(e => e.Educations)
+            .Include(e => e.FamilyMembers)
+            .Include(e => e.EmergencyContacts)
+            .Include(e => e.Position)
             .Include(e => e.BankAccounts)
                 .ThenInclude(b => b.Bank)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -110,12 +114,12 @@ public class EmployeeService : IEmployeeService
         // 1. ตรวจสอบสิทธิ์สร้างพนักงาน
         if (!_currentUserService.HasPermission("EMP_MANAGE"))
         {
-            throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มข้อมูลพนักงาน");
+            throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างข้อมูลพนักงาน");
         }
 
-        // 2. ตรวจสอบรหัสพนักงานซ้ำ
+        // 2. ตรวจสอบความซ้ำซ้อนของรหัสพนักงาน
         bool codeExists = await _dbContext.Employees
-            .AnyAsync(e => e.EmployeeCode.ToLower() == request.EmployeeCode.Trim().ToLower(), cancellationToken);
+            .AnyAsync(e => e.EmployeeCode == request.EmployeeCode.Trim(), cancellationToken);
         if (codeExists)
         {
             throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
@@ -136,6 +140,7 @@ public class EmployeeService : IEmployeeService
             Prefix = request.Prefix?.Trim(),
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
+            CitizenId = request.CitizenId?.Trim(),
             CitizenIdEncrypted = encryptedCitizenId,
             CitizenIdMasked = maskedCitizenId,
             BirthDate = request.BirthDate,
@@ -149,6 +154,8 @@ public class EmployeeService : IEmployeeService
             MaritalStatusId = request.MaritalStatusId,
             MilitaryStatus = request.MilitaryStatus,
             IsTopLevel = request.IsTopLevel,
+            PositionId = request.PositionId,
+            EmployeeType = request.EmployeeType,
             SpouseHasIncome = request.SpouseHasIncome,
             NumberOfChildren = request.NumberOfChildren,
             ParentDeductionCount = request.ParentDeductionCount,
@@ -209,12 +216,79 @@ public class EmployeeService : IEmployeeService
                 {
                     BankId = acc.BankId,
                     AccountNumber = acc.AccountNumber.Trim(),
-                    AccountType = acc.AccountType,
-                    AccountName = acc.AccountName,
+                    AccountType = acc.AccountType ?? "SAVINGS",
+                    AccountName = acc.AccountName ?? employee.FullName,
                     IsPrimary = acc.IsPrimary,
-                    Status = acc.Status
+                    Status = acc.Status ?? "ACTIVE"
                 });
             }
+        }
+        else if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        {
+            var bank = await _dbContext.Banks
+                .FirstOrDefaultAsync(b => b.BankName.Contains(request.BankName ?? "") || b.BankCode == (request.BankName ?? ""), cancellationToken);
+            long bankId = bank?.Id ?? 1;
+
+            employee.BankAccounts.Add(new EmployeeBankAccount
+            {
+                BankId = bankId,
+                AccountNumber = request.AccountNumber.Trim(),
+                AccountType = "SAVINGS",
+                AccountName = employee.FullName,
+                IsPrimary = true,
+                Status = "ACTIVE"
+            });
+        }
+
+        // 8. ประวัติการศึกษา
+        if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
+        {
+            employee.Educations.Add(new EmployeeEducation
+            {
+                EducationLevel = request.EducationLevel ?? "ปริญญาตรี",
+                Institution = request.Institution ?? "-",
+                Major = request.Major,
+                GraduationYear = request.GraduationYear,
+                Gpa = request.Gpa
+            });
+        }
+
+        // 9. ข้อมูลครอบครัว (Family Members)
+        if (request.FamilyMembers != null && request.FamilyMembers.Any())
+        {
+            foreach (var fm in request.FamilyMembers)
+            {
+                if (string.IsNullOrWhiteSpace(fm.FirstName)) continue;
+                byte[]? fmEncrypted = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.Encrypt(fm.CitizenId.Trim()) : null;
+                string? fmMasked = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.MaskCitizenId(fm.CitizenId.Trim()) : null;
+
+                employee.FamilyMembers.Add(new FamilyMember
+                {
+                    RelationshipType = fm.RelationshipType ?? "บิดา",
+                    Prefix = fm.Prefix,
+                    FirstName = fm.FirstName.Trim(),
+                    LastName = fm.LastName?.Trim(),
+                    CitizenId = fm.CitizenId?.Trim(),
+                    CitizenIdEncrypted = fmEncrypted,
+                    CitizenIdMasked = fmMasked,
+                    BirthDate = fm.BirthDate
+                });
+            }
+        }
+
+        // 10. กรณีฉุกเฉินติดต่อใคร (Emergency Contact)
+        if (request.EmergencyContact != null && !string.IsNullOrWhiteSpace(request.EmergencyContact.FirstName))
+        {
+            employee.EmergencyContacts.Add(new EmergencyContact
+            {
+                Prefix = request.EmergencyContact.Prefix,
+                FirstName = request.EmergencyContact.FirstName.Trim(),
+                LastName = request.EmergencyContact.LastName?.Trim() ?? "-",
+                Relationship = request.EmergencyContact.Relationship ?? "บิดา",
+                Address = request.EmergencyContact.Address,
+                PrimaryPhone = request.EmergencyContact.PrimaryPhone?.Trim() ?? "-",
+                IsPrimary = true
+            });
         }
 
         _dbContext.Employees.Add(employee);
@@ -343,6 +417,9 @@ public class EmployeeService : IEmployeeService
             NumberOfChildren = e.NumberOfChildren,
             ParentDeductionCount = e.ParentDeductionCount,
             DisabilityDeductionCount = e.DisabilityDeductionCount,
+            PositionId = e.PositionId,
+            PositionName = e.Position?.PositionName,
+            EmployeeType = e.EmployeeType,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             Contact = e.Contact != null ? new EmployeeContactDto
@@ -379,6 +456,36 @@ public class EmployeeService : IEmployeeService
                 AccountName = b.AccountName,
                 IsPrimary = b.IsPrimary,
                 Status = b.Status
+            }).ToList(),
+            Educations = e.Educations.Select(ed => new EmployeeEducationDto
+            {
+                Id = ed.Id,
+                EducationLevel = ed.EducationLevel,
+                Institution = ed.Institution,
+                Major = ed.Major,
+                GraduationYear = ed.GraduationYear,
+                Gpa = ed.Gpa
+            }).ToList(),
+            FamilyMembers = e.FamilyMembers.Select(fm => new FamilyMemberDto
+            {
+                Id = fm.Id,
+                RelationshipType = fm.RelationshipType,
+                Prefix = fm.Prefix,
+                FirstName = fm.FirstName,
+                LastName = fm.LastName,
+                CitizenIdMasked = fm.CitizenIdMasked,
+                BirthDate = fm.BirthDate
+            }).ToList(),
+            EmergencyContacts = e.EmergencyContacts.Select(ec => new EmergencyContactDto
+            {
+                Id = ec.Id,
+                Relationship = ec.Relationship,
+                Prefix = ec.Prefix,
+                FirstName = ec.FirstName,
+                LastName = ec.LastName,
+                Address = ec.Address,
+                PrimaryPhone = ec.PrimaryPhone,
+                IsPrimary = ec.IsPrimary
             }).ToList()
         };
     }

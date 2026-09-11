@@ -60,21 +60,62 @@ export default function EmployeesPage() {
   const [commentModalEmp, setCommentModalEmp] = useState<Employee | null>(null);
   const [commentInput, setCommentInput] = useState('');
 
+  // Modal Tabs & Family Member state
+  const [activeModalTab, setActiveModalTab] = useState<'personal' | 'family'>('personal');
+  const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
+
   // Form State for creating employee
-  const [formData, setFormData] = useState<CreateEmployeePayload>({
+  const initialFormData: CreateEmployeePayload = {
     employeeCode: '',
-    prefix: 'นาย',
+    prefix: '',
     firstName: '',
     lastName: '',
     citizenId: '',
-    birthDate: '2026-01-02',
-    gender: 'ชาย',
-    personalPhone: '',
+    gender: '',
+    nationality: 'ไทย',
+    religion: 'พุทธ',
+    birthDate: '',
+    maritalStatus: '',
+    militaryStatus: '',
+    addressType: 'บ้านตัวเอง',
+    addressLine: '',
+    subDistrict: '',
+    district: '',
+    province: '',
+    postalCode: '',
     personalEmail: '',
     organizationEmail: '',
-    socialSecurityNo: '',
-    hospitalName: '',
-  });
+    personalPhone: '',
+    educationLevel: '',
+    institution: '',
+    major: '',
+    graduationYear: 2569,
+    gpa: undefined,
+    bankName: '',
+    accountNumber: '',
+    positionName: '',
+    employeeType: '',
+    familyMembers: [
+      {
+        relationshipType: 'บิดา',
+        prefix: '',
+        firstName: '',
+        lastName: '',
+        citizenId: '',
+        birthDate: '',
+      },
+    ],
+    emergencyContact: {
+      relationship: 'บิดา',
+      prefix: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      primaryPhone: '',
+    },
+  };
+
+  const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
 
   // Load comments from localStorage
   useEffect(() => {
@@ -169,28 +210,66 @@ export default function EmployeesPage() {
     currentPage * itemsPerPage
   );
 
+  const handleAddFamilyMember = () => {
+    const current = formData.familyMembers || [];
+    const nextIdx = current.length;
+    setFormData({
+      ...formData,
+      familyMembers: [
+        ...current,
+        {
+          relationshipType: 'บิดา',
+          prefix: '',
+          firstName: '',
+          lastName: '',
+          citizenId: '',
+          birthDate: '',
+        },
+      ],
+    });
+    setActiveFamilyIndex(nextIdx);
+  };
+
+  const handleRemoveFamilyMember = (indexToRemove: number) => {
+    const current = formData.familyMembers || [];
+    if (current.length <= 1) return;
+    const updated = current.filter((_, idx) => idx !== indexToRemove);
+    setFormData({ ...formData, familyMembers: updated });
+    setActiveFamilyIndex(Math.max(0, indexToRemove - 1));
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      await employeeService.create(formData);
+      const payload: CreateEmployeePayload = {
+        ...formData,
+        employeeCode: formData.employeeCode.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        citizenId: formData.citizenId?.trim() || undefined,
+        prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
+        gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
+        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
+        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
+        maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
+        militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
+        educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
+        institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
+        bankName: formData.bankName && formData.bankName !== 'เลือกธนาคาร' ? formData.bankName : undefined,
+        positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
+        employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
+        familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()),
+        emergencyContact: formData.emergencyContact?.firstName?.trim() ? formData.emergencyContact : undefined,
+      };
+
+      await employeeService.create(payload);
       setSuccessMessage('บันทึกข้อมูลพนักงานเรียบร้อย');
       setIsCreateModalOpen(false);
-      setFormData({
-        employeeCode: '',
-        prefix: 'นาย',
-        firstName: '',
-        lastName: '',
-        citizenId: '',
-        birthDate: '2026-01-02',
-        gender: 'ชาย',
-        personalPhone: '',
-        personalEmail: '',
-        organizationEmail: '',
-        socialSecurityNo: '',
-        hospitalName: '',
-      });
+      setFormData(initialFormData);
+      setActiveModalTab('personal');
+      setActiveFamilyIndex(0);
       loadData();
       setTimeout(() => setSuccessMessage(null), 3500);
     } catch (err: unknown) {
@@ -820,147 +899,845 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      {/* 8. Modal: เพิ่มพนักงานใหม่ */}
+      {/* 8. Modal: เพิ่มพนักงานใหม่ (Figma 1:1 - ข้อมูลส่วนตัว & ข้อมูลครอบครัว) */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-[#0B2046]" />
-                เพิ่มข้อมูลพนักงานใหม่
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-3 sm:p-6 animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-6xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col">
+            {/* Header Tabs: ข้อมูลส่วนตัว / ข้อมูลครอบครัว */}
+            <div className="px-6 sm:px-8 pt-5 pb-0 border-b border-slate-200/80 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center space-x-8">
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab('personal')}
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 ${
+                    activeModalTab === 'personal'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  ข้อมูลส่วนตัว
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab('family')}
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 ${
+                    activeModalTab === 'family'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  ข้อมูลครอบครัว
+                </button>
+              </div>
+
               <button
+                type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 p-1 -mt-2 rounded-lg hover:bg-slate-100 transition-colors"
+                title="ปิดหน้าต่าง"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit}>
-              <div className="p-6 space-y-3.5 max-h-[70vh] overflow-y-auto text-xs">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      รหัสพนักงาน <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="เช่น EMP-008"
-                      value={formData.employeeCode}
-                      onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">คำนำหน้า</label>
-                    <select
-                      value={formData.prefix}
-                      onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    >
-                      <option value="นาย">นาย</option>
-                      <option value="นางสาว">นางสาว</option>
-                      <option value="นาง">นาง</option>
-                    </select>
-                  </div>
-                </div>
+            {/* Form Content */}
+            <form onSubmit={handleCreateSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 text-xs text-slate-700">
+                {activeModalTab === 'personal' ? (
+                  /* ================= TAB 1: ข้อมูลส่วนตัว ================= */
+                  <div className="space-y-6">
+                    {/* Top 3 Columns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+                      {/* Column 1 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="เช่น EMP001"
+                            value={formData.employeeCode}
+                            onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      ชื่อจริง <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="ชื่อ"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      นามสกุล <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="นามสกุล"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                </div>
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.prefix}
+                            onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกคำนำหน้า</option>
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                          </select>
+                        </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      เลขบัตรประชาชน (13 หลัก)
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={13}
-                      placeholder="เลขบัตร ปชช."
-                      value={formData.citizenId}
-                      onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">เพศ</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    >
-                      <option value="ชาย">ชาย</option>
-                      <option value="หญิง">หญิง</option>
-                    </select>
-                  </div>
-                </div>
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อ (First Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="กรอกชื่อ"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">เบอร์โทรศัพท์</label>
-                    <input
-                      type="text"
-                      placeholder="095-xxx-xxxx"
-                      value={formData.personalPhone}
-                      onChange={(e) => setFormData({ ...formData, personalPhone: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="กรอกนามสกุล"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={13}
+                            placeholder="เลขบัตรประชาชน 13 หลัก"
+                            value={formData.citizenId}
+                            onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เพศ (Gender) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.gender}
+                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกเพศ</option>
+                            <option value="ชาย">ชาย</option>
+                            <option value="หญิง">หญิง</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สัญชาติ (Nationality) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.nationality}
+                            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="ไทย">ไทย</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ศาสนา (Religion) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.religion}
+                            onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="พุทธ">พุทธ</option>
+                            <option value="คริสต์">คริสต์</option>
+                            <option value="อิสลาม">อิสลาม</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                            <option value="ไม่ระบุ">ไม่ระบุ</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Column 2 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.birthDate}
+                            onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.maritalStatus}
+                            onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกสถานภาพ</option>
+                            <option value="โสด">โสด</option>
+                            <option value="สมรส">สมรส</option>
+                            <option value="หย่าร้าง">หย่าร้าง</option>
+                            <option value="หม้าย">หม้าย</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.militaryStatus}
+                            onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกสถานภาพทางทหาร</option>
+                            <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
+                            <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
+                            <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
+                          </select>
+                        </div>
+
+                        {/* ที่อยู่ (Address) */}
+                        <div className="pt-1 space-y-3">
+                          <label className="font-semibold text-slate-700 block">
+                            ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                          </label>
+
+                          {/* ประเภทที่อยู่ Radio Buttons */}
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1.5">
+                              ประเภทที่อยู่ <span className="text-rose-500">*</span>
+                            </span>
+                            <div className="flex flex-wrap items-center gap-3">
+                              {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
+                                <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                                  <input
+                                    type="radio"
+                                    name="addressType"
+                                    value={t}
+                                    checked={formData.addressType === t}
+                                    onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
+                                    className="accent-[#0B2046]"
+                                  />
+                                  <span>{t}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              บ้านเลขที่ <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="บ้านเลขที่ 4"
+                              value={formData.addressLine}
+                              onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              ตำบล / แขวง <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="แขวงหัวหมาก"
+                              value={formData.subDistrict}
+                              onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              อำเภอ / เขต <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="บางกะปิ"
+                              value={formData.district}
+                              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <span className="text-slate-500 text-[11px] block mb-1">
+                                จังหวัด <span className="text-rose-500">*</span>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="กรุงเทพมหานคร"
+                                value={formData.province}
+                                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-slate-500 text-[11px] block mb-1">
+                                รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="10240"
+                                value={formData.postalCode}
+                                onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column 3 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            อีเมล (E-mail) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="test001@gmail.com"
+                            value={formData.personalEmail}
+                            onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="name@company.com"
+                            value={formData.organizationEmail}
+                            onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="095-111-222-1"
+                            value={formData.personalPhone}
+                            onChange={(e) => setFormData({ ...formData, personalPhone: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ระดับวุฒิการศึกษา (Education level) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.educationLevel}
+                            onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกวุฒิการศึกษา</option>
+                            <option value="มัธยมศึกษา">มัธยมศึกษา</option>
+                            <option value="ปวช.">ปวช.</option>
+                            <option value="ปวส.">ปวส.</option>
+                            <option value="ปริญญาตรี">ปริญญาตรี</option>
+                            <option value="ปริญญาโท">ปริญญาโท</option>
+                            <option value="ปริญญาเอก">ปริญญาเอก</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อสถาบันการศึกษา (Institution) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น จุฬาลงกรณ์มหาวิทยาลัย, ม.รามคำแหง"
+                            value={formData.institution}
+                            onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สาขาวิชา (Major) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="สาขาวิชาที่เรียน"
+                            value={formData.major}
+                            onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ปีที่สำเร็จการศึกษา (Graduation year) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.graduationYear}
+                            onChange={(e) => setFormData({ ...formData, graduationYear: Number(e.target.value) })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            {[2570, 2569, 2568, 2567, 2566, 2565, 2564, 2563, 2562, 2561, 2560].map((y) => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="4"
+                            placeholder="3.99"
+                            value={formData.gpa ?? ''}
+                            onChange={(e) => setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section ด้านล่าง: การเงิน & ตำแหน่งงาน (ตรงตามภาพที่ 3 ใน Figma) */}
+                    <div className="pt-5 border-t border-slate-100">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+                        <div className="space-y-3.5">
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ชื่อธนาคาร (Bank name) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.bankName}
+                              onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            >
+                              <option value="">เลือกธนาคาร</option>
+                              <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
+                              <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์</option>
+                              <option value="ธนาคารกรุงเทพ">ธนาคารกรุงเทพ</option>
+                              <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
+                              <option value="ธนาคารกรุงศรีอยุธยา">ธนาคารกรุงศรีอยุธยา</option>
+                              <option value="ธนาคารทหารไทยธนชาต">ธนาคารทหารไทยธนชาต (TTB)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              เลขที่บัญชี (Account Number) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="xxx-xxx-xx-x-x"
+                              value={formData.accountNumber}
+                              onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ตำแหน่ง <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.positionName}
+                              onChange={(e) => setFormData({ ...formData, positionName: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            >
+                              <option value="">เลือกตำแหน่ง</option>
+                              <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
+                              <option value="หัวหน้าทีมนักพัฒนา">หัวหน้าทีมนักพัฒนา</option>
+                              <option value="เจ้าหน้าที่ยิงโฆษณาออนไลน์">เจ้าหน้าที่ยิงโฆษณาออนไลน์</option>
+                              <option value="ผู้จัดการลูกค้ารายใหญ่">ผู้จัดการลูกค้ารายใหญ่</option>
+                              <option value="สมุห์บัญชี">สมุห์บัญชี</option>
+                              <option value="ผู้ควบคุมคลังสินค้า">ผู้ควบคุมคลังสินค้า</option>
+                              <option value="วิศวกรควบคุมคุณภาพ">วิศวกรควบคุมคุณภาพ</option>
+                              <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
+                              <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ประเภทพนักงาน <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.employeeType}
+                              onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            >
+                              <option value="">เลือกประเภท</option>
+                              <option value="พนักงานประจำ">พนักงานประจำ</option>
+                              <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
+                              <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
+                              <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">อีเมล</label>
-                    <input
-                      type="email"
-                      placeholder="email@company.com"
-                      value={formData.organizationEmail}
-                      onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
+                ) : (
+                  /* ================= TAB 2: ข้อมูลครอบครัว ================= */
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+                    {/* คอลัมน์ซ้าย: สมาชิกในครอบครัว */}
+                    <div className="space-y-4">
+                      {/* Family Member Switcher Tabs */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {formData.familyMembers?.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveFamilyIndex(idx)}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                              activeFamilyIndex === idx
+                                ? 'bg-slate-900 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            {idx + 1}
+                          </button>
+                        ))}
+
+                        {/* ปุ่ม + เพิ่มสมาชิกครอบครัว */}
+                        <button
+                          type="button"
+                          onClick={handleAddFamilyMember}
+                          className="w-7 h-7 rounded-full border border-slate-300 hover:border-slate-800 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
+                          title="เพิ่มสมาชิกครอบครัวคนถัดไป"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+
+                        {formData.familyMembers && formData.familyMembers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
+                            className="text-[11px] text-rose-500 hover:underline ml-auto"
+                          >
+                            ลบสมาชิกคนที่ {activeFamilyIndex + 1}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
+                      {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
+                        <div className="space-y-3.5">
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.familyMembers[activeFamilyIndex].relationshipType}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].relationshipType = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            >
+                              <option value="บิดา">บิดา</option>
+                              <option value="มารดา">มารดา</option>
+                              <option value="คู่สมรส">คู่สมรส</option>
+                              <option value="บุตร">บุตร</option>
+                              <option value="พี่น้อง">พี่น้อง</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.familyMembers[activeFamilyIndex].prefix || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].prefix = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            >
+                              <option value="">เลือกคำนำหน้า</option>
+                              <option value="นาย">นาย</option>
+                              <option value="นางสาว">นางสาว</option>
+                              <option value="นาง">นาง</option>
+                              <option value="เด็กชาย">เด็กชาย</option>
+                              <option value="เด็กหญิง">เด็กหญิง</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ชื่อ (First Name) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="กรอกชื่อ"
+                              value={formData.familyMembers[activeFamilyIndex].firstName}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].firstName = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="กรอกนามสกุล"
+                              value={formData.familyMembers[activeFamilyIndex].lastName || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].lastName = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              maxLength={13}
+                              placeholder="เลขบัตรประชาชน 13 หลัก"
+                              value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].citizenId = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="date"
+                              value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].birthDate = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                              }}
+                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* คอลัมน์ขวา: กรณีฉุกเฉินติดต่อใคร */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 pb-1">
+                        กรณีฉุกเฉินติดต่อใคร
+                      </h3>
+
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.emergencyContact?.relationship || 'บิดา'}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  relationship: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="บิดา">บิดา</option>
+                            <option value="มารดา">มารดา</option>
+                            <option value="คู่สมรส">คู่สมรส</option>
+                            <option value="บุตร">บุตร</option>
+                            <option value="ญาติ">ญาติ</option>
+                            <option value="เพื่อน">เพื่อน</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.emergencyContact?.prefix || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  prefix: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          >
+                            <option value="">เลือกคำนำหน้า</option>
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อ (First Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกชื่อ"
+                            value={formData.emergencyContact?.firstName || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { lastName: '', primaryPhone: '' }),
+                                  firstName: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกนามสกุล"
+                            value={formData.emergencyContact?.lastName || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', primaryPhone: '' }),
+                                  lastName: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกที่อยู่"
+                            value={formData.emergencyContact?.address || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  address: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เบอร์โทร (Phone number) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกเบอร์โทร"
+                            value={formData.emergencyContact?.primaryPhone || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '' }),
+                                  primaryPhone: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              {/* Modal Footer */}
+              <div className="px-6 sm:px-8 py-4 bg-slate-50/90 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-3.5 py-1.5 text-xs text-slate-600 hover:bg-slate-200 rounded-lg"
+                  className="px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition-colors"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-1.5 bg-[#0B2046] hover:bg-[#143268] text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
+                  className="px-6 py-2 bg-[#0B2046] hover:bg-[#15346e] text-white text-xs font-semibold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
-                  {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    'บันทึกข้อมูล'
+                  )}
                 </button>
               </div>
             </form>
