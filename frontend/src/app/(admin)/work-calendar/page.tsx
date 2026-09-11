@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import {
   WorkWeekDay,
   Holiday,
@@ -116,8 +117,8 @@ export default function WorkCalendarPage() {
       setWorkWeek(weekData);
       setHolidays(holidayData);
       const firstWorking = weekData.find((d) => d.isWorkingDay && d.startTime && d.endTime);
-      if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime);
-      if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime);
+      if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime.substring(0, 5));
+      if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime.substring(0, 5));
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
     } finally {
@@ -349,35 +350,36 @@ export default function WorkCalendarPage() {
             </div>
 
             {/* Time Setting Bar */}
-            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900">กำหนดเวลาทำงานปกติของบริษัท</h3>
-                  <p className="text-[11px] text-slate-500">
+                  <h3 className="text-sm font-bold text-slate-900">กำหนดเวลาทำงานปกติของบริษัท</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     ระบุเวลาเข้าและเลิกงานมาตรฐาน สำหรับวันทำงานปกติทั้งหมด
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm text-xs">
-                <span className="text-slate-500 font-medium">เข้า:</span>
-                <input
-                  type="time"
-                  value={bulkStartTime}
-                  onChange={(e) => setBulkStartTime(e.target.value)}
-                  className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
-                />
-                <span className="text-slate-300">|</span>
-                <span className="text-slate-500 font-medium">ออก:</span>
-                <input
-                  type="time"
-                  value={bulkEndTime}
-                  onChange={(e) => setBulkEndTime(e.target.value)}
-                  className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
-                />
+              <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 shrink-0">
+                <div className="w-44">
+                  <ThaiTimePicker
+                    label="เวลาเข้างาน"
+                    value={bulkStartTime}
+                    onChange={(val) => setBulkStartTime(val)}
+                    align="right"
+                  />
+                </div>
+                <div className="w-44">
+                  <ThaiTimePicker
+                    label="เวลาเลิกงาน"
+                    value={bulkEndTime}
+                    onChange={(val) => setBulkEndTime(val)}
+                    align="right"
+                  />
+                </div>
               </div>
             </div>
 
