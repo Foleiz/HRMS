@@ -79,6 +79,30 @@ export const autoFormatPhone = (val: string): string => {
   return digits;
 };
 
+export interface BankConfig {
+  name: string;
+  shortName: string;
+  digits: number;
+}
+
+export const BANK_CONFIGS: BankConfig[] = [
+  { name: 'ธนาคารกสิกรไทย', shortName: 'KBANK', digits: 10 },
+  { name: 'ธนาคารไทยพาณิชย์', shortName: 'SCB', digits: 10 },
+  { name: 'ธนาคารกรุงเทพ', shortName: 'BBL', digits: 10 },
+  { name: 'ธนาคารกรุงไทย', shortName: 'KTB', digits: 10 },
+  { name: 'ธนาคารกรุงศรีอยุธยา', shortName: 'BAY', digits: 10 },
+  { name: 'ธนาคารทหารไทยธนชาต', shortName: 'ttb', digits: 10 },
+  { name: 'ธนาคารออมสิน', shortName: 'GSB', digits: 12 },
+  { name: 'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร', shortName: 'ธ.ก.ส.', digits: 15 },
+];
+
+export const getRequiredBankDigits = (bankName?: string): number => {
+  if (!bankName || bankName === 'เลือกธนาคาร') return 10;
+  if (bankName.includes('ออมสิน')) return 12;
+  if (bankName.includes('เกษตร') || bankName.includes('ธ.ก.ส') || bankName.includes('BAAC')) return 15;
+  return 10;
+};
+
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -404,8 +428,16 @@ export default function EmployeesPage() {
     }
 
     // การเงิน & ตำแหน่งงาน
-    if (!data.bankName || data.bankName === 'เลือกธนาคาร') errors.bankName = 'กรุณาเลือกธนาคาร';
-    if (!data.accountNumber?.trim()) errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
+    if (!data.bankName || data.bankName === 'เลือกธนาคาร') {
+      errors.bankName = 'กรุณาเลือกธนาคาร';
+    }
+    const reqBankDigits = getRequiredBankDigits(data.bankName);
+    const cleanAccountDigits = (data.accountNumber || '').replace(/\D/g, '');
+    if (!data.accountNumber?.trim()) {
+      errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
+    } else if (cleanAccountDigits.length !== reqBankDigits) {
+      errors.accountNumber = `เลขที่บัญชีต้องมี ${reqBankDigits} หลัก (ปัจจุบัน ${cleanAccountDigits.length} หลัก)`;
+    }
     if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
     if (!data.employeeType || data.employeeType === 'เลือกประเภท') errors.employeeType = 'กรุณาเลือกประเภทพนักงาน';
 
@@ -542,6 +574,7 @@ export default function EmployeesPage() {
         educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
         institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
         bankName: formData.bankName && formData.bankName !== 'เลือกธนาคาร' ? formData.bankName : undefined,
+        accountNumber: formData.accountNumber?.trim() ? formData.accountNumber.replace(/\D/g, '') : undefined,
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
         addresses: [addressItem],
@@ -1772,32 +1805,56 @@ export default function EmployeesPage() {
                             <select
                               value={formData.bankName}
                               onChange={(e) => {
-                                setFormData({ ...formData, bankName: e.target.value });
+                                const newBank = e.target.value;
+                                const maxDigits = getRequiredBankDigits(newBank);
+                                const currentDigits = formData.accountNumber ? formData.accountNumber.replace(/\D/g, '') : '';
+                                const newAcc = currentDigits.slice(0, maxDigits);
+                                setFormData({
+                                  ...formData,
+                                  bankName: newBank,
+                                  accountNumber: newAcc,
+                                });
                                 clearFieldError('bankName');
+                                if (newAcc.length === maxDigits) {
+                                  clearFieldError('accountNumber');
+                                }
                               }}
                               className={`${getFieldClass('bankName')} cursor-pointer`}
                             >
                               <option value="">เลือกธนาคาร</option>
-                              <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
-                              <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์</option>
-                              <option value="ธนาคารกรุงเทพ">ธนาคารกรุงเทพ</option>
-                              <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
-                              <option value="ธนาคารกรุงศรีอยุธยา">ธนาคารกรุงศรีอยุธยา</option>
-                              <option value="ธนาคารทหารไทยธนชาต">ธนาคารทหารไทยธนชาต (TTB)</option>
+                              {BANK_CONFIGS.map((b) => (
+                                <option key={b.name} value={b.name}>
+                                  {b.name} ({b.shortName}) - {b.digits} หลัก
+                                </option>
+                              ))}
                             </select>
                             {renderFieldError('bankName')}
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
-                              เลขที่บัญชี (Account Number) <span className="text-rose-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="font-semibold text-slate-700">
+                                เลขที่บัญชี (Account Number) <span className="text-rose-500">*</span>
+                              </label>
+                              <span
+                                className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
+                                  formData.accountNumber?.length === getRequiredBankDigits(formData.bankName)
+                                    ? 'bg-emerald-50 text-emerald-600 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
+                              </span>
+                            </div>
                             <input
                               type="text"
-                              placeholder="xxx-xxx-xx-x-x"
+                              maxLength={getRequiredBankDigits(formData.bankName)}
+                              placeholder={`ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`}
                               value={formData.accountNumber}
                               onChange={(e) => {
-                                setFormData({ ...formData, accountNumber: e.target.value });
+                                const maxDigits = getRequiredBankDigits(formData.bankName);
+                                const val = e.target.value.replace(/\D/g, '').slice(0, maxDigits);
+                                setFormData({ ...formData, accountNumber: val });
                                 clearFieldError('accountNumber');
                               }}
                               className={getFieldClass('accountNumber', true)}
