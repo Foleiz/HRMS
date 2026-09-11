@@ -9,16 +9,17 @@ interface ThaiTimePickerProps {
   label?: string;
   required?: boolean;
   disabled?: boolean;
+  align?: 'left' | 'right' | 'auto';
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 const QUICK_MINUTES = ['00', '15', '30', '45'];
 
-const ITEM_HEIGHT = 40; // Exact height of each item in pixels
-const VISIBLE_ROWS = 5; // 5 visible rows: 2 above, 1 selected, 2 below
-const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS; // 200px
-const PADDING = ITEM_HEIGHT * 2; // 80px (2 items of padding top and bottom)
+const ITEM_HEIGHT = 38; // Exact height of each item in pixels
+const VISIBLE_ROWS = 3; // 3 visible rows: 1 above, 1 selected, 1 below
+const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS; // 114px
+const PADDING = ITEM_HEIGHT * 1; // 38px (1 item of padding top and bottom)
 
 interface WheelColumnProps {
   items: string[];
@@ -239,9 +240,28 @@ export default function ThaiTimePicker({
   label,
   required,
   disabled,
+  align = 'auto',
 }: ThaiTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownAlign, setDropdownAlign] = useState<'left' | 'right'>(
+    align === 'right' ? 'right' : 'left'
+  );
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      if (align === 'left' || align === 'right') {
+        setDropdownAlign(align);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.right + 160 > window.innerWidth || rect.left > window.innerWidth / 2) {
+          setDropdownAlign('right');
+        } else {
+          setDropdownAlign('left');
+        }
+      }
+    }
+  }, [isOpen, align]);
 
   // Extract hour and minute from value
   const [valHour, valMinute] = (value && value.includes(':') ? value : '08:30').split(':');
@@ -434,39 +454,43 @@ export default function ThaiTimePicker({
 
       {/* Dropdown Wheel / Drum Picker with Smooth Animations */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 p-4 animate-in fade-in zoom-in-95 duration-200 select-none">
+        <div
+          className={`absolute ${
+            dropdownAlign === 'right' ? 'right-0' : 'left-0'
+          } top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 p-3.5 animate-in fade-in zoom-in-95 duration-150 select-none`}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 text-xs">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs">
             <span className="font-bold text-slate-800 flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#0B2046]" />
-              <span>เลือกเวลา (ระบบ 24 ชม.)</span>
+              <Clock className="w-3.5 h-3.5 text-[#0B2046]" />
+              <span>เลือกเวลา (24 ชม.)</span>
             </span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-bold text-[#0B2046] hover:text-blue-800 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+              className="text-xs font-bold text-[#0B2046] hover:text-blue-800 px-2.5 py-0.5 rounded-lg hover:bg-slate-100 transition-colors"
             >
               เสร็จสิ้น
             </button>
           </div>
 
           {/* Column Titles: ชม. และ น. */}
-          <div className="grid grid-cols-2 gap-2 text-center text-xs font-bold text-slate-600 mb-1.5">
+          <div className="grid grid-cols-2 gap-2 text-center text-xs font-bold text-slate-500 mb-1">
             <div>ชม.</div>
             <div>น.</div>
           </div>
 
           {/* Wheel Frame Area */}
-          <div className="relative bg-slate-50/80 rounded-2xl border border-slate-200/80 overflow-hidden shadow-inner">
+          <div className="relative bg-slate-50/80 rounded-xl border border-slate-200/80 overflow-hidden shadow-inner">
             {/* Center Selection Highlight Box */}
             <div
               style={{ top: `${PADDING}px`, height: `${ITEM_HEIGHT}px` }}
-              className="absolute left-2.5 right-2.5 bg-white rounded-xl shadow-md border border-slate-200/90 pointer-events-none z-0 transition-all duration-200"
+              className="absolute left-2 right-2 bg-white rounded-lg shadow-sm border border-slate-200/90 pointer-events-none z-0 transition-all duration-200"
             />
 
             {/* Top & Bottom Smooth Gradient Fade Masks */}
-            <div className="pointer-events-none absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-slate-50/90 via-slate-50/60 to-transparent z-20" />
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50/90 via-slate-50/60 to-transparent z-20" />
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-slate-50/90 via-slate-50/50 to-transparent z-20" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50/90 via-slate-50/50 to-transparent z-20" />
 
             {/* The 2 Scrollable & Draggable Wheel Columns */}
             <div className="grid grid-cols-2 gap-2 relative z-10">
@@ -485,33 +509,30 @@ export default function ThaiTimePicker({
             </div>
           </div>
 
-          {/* Quick Minute Selection Presets */}
-          <div className="mt-3 pt-3 border-t border-slate-100">
-            <div className="text-[10px] font-semibold text-slate-400 mb-1.5">ปุ่มลัดนาทียอดนิยม:</div>
+          {/* Quick Minute Selection Presets with Live Time Badge */}
+          <div className="mt-2.5 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-semibold text-slate-400">ปุ่มลัดนาที:</span>
+              <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 px-2 py-0.5 rounded">
+                {selectedHour}:{selectedMinute} น.
+              </span>
+            </div>
             <div className="grid grid-cols-4 gap-1.5">
               {QUICK_MINUTES.map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => handleMinuteSelect(m)}
-                  className={`py-1.5 rounded-xl text-xs font-mono font-bold transition-all duration-150 ${
+                  className={`py-1 rounded-lg text-xs font-mono font-bold transition-all duration-150 ${
                     selectedMinute === m
-                      ? 'bg-[#0B2046] text-white shadow-sm scale-105'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-102'
+                      ? 'bg-[#0B2046] text-white shadow-xs scale-105'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   :{m} น.
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Live Selection Result Footer */}
-          <div className="mt-3 flex items-center justify-between text-xs bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <span className="text-slate-500 font-medium">เวลาที่เลือก:</span>
-            <span className="font-mono font-black text-slate-900 text-sm">
-              {selectedHour}:{selectedMinute} น.
-            </span>
           </div>
         </div>
       )}

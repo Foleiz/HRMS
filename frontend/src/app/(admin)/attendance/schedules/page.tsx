@@ -2189,24 +2189,25 @@ function SchedulesContent() {
       {/* MODAL 3: Create / Edit Shift Master Modal */}
       {/* ============================================================= */}
       {shiftModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">
-                  {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  กำหนดช่วงเวลาเข้า-ออก และเงื่อนไขการผ่อนปรนเวลา
-                </p>
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-4 animate-fade-in">
+          <div className="min-h-full flex items-center justify-center py-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between rounded-t-2xl">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    กำหนดช่วงเวลาเข้า-ออก และเงื่อนไขการผ่อนปรนเวลา
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShiftModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setShiftModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
             <form onSubmit={handleSaveShift} className="p-5 space-y-4">
               {/* Shift Code & Name */}
@@ -2263,6 +2264,7 @@ function SchedulesContent() {
                     <ThaiTimePicker
                       value={shiftForm.startTime}
                       onChange={(val) => handleShiftTimeChange('startTime', val)}
+                      align="left"
                     />
                   </div>
                   <div>
@@ -2270,6 +2272,7 @@ function SchedulesContent() {
                     <ThaiTimePicker
                       value={shiftForm.endTime}
                       onChange={(val) => handleShiftTimeChange('endTime', val)}
+                      align="right"
                     />
                   </div>
                 </div>
@@ -2401,7 +2404,8 @@ function SchedulesContent() {
             </form>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* ============================================================= */}
       {/* MODAL 5: View Staff Assigned to Shift */}
