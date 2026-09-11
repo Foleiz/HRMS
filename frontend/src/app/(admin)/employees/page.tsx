@@ -40,6 +40,16 @@ export const getGenderDisplay = (gender?: string, genderId?: number, prefix?: st
   return '-';
 };
 
+export const formatMaskedCitizenId = (val?: string): string => {
+  if (!val) return '-';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 13 && !clean.includes('x') && !clean.includes('*')) {
+    return `${digits[0]}-${digits.substring(1, 5)}-xxxxx-xx-${digits[12]}`;
+  }
+  return clean;
+};
+
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -595,7 +605,7 @@ export default function EmployeesPage() {
 
                       {/* 3. รหัสบัตรประชาชน */}
                       <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap">
-                        {emp.citizenIdMasked || '-'}
+                        {formatMaskedCitizenId(emp.citizenIdMasked)}
                       </td>
 
                       {/* 4. ฝ่าย */}

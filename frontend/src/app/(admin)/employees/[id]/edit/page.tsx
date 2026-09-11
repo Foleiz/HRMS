@@ -241,9 +241,14 @@ export default function EmployeeEditPage() {
     setSuccessMessage(null);
 
     try {
-      // ตรวจสอบ CitizenId ว่าถูก Mask อยู่หรือไม่ หากเป็น Masked ไม่ต้องส่งไปอัปเดตทับ
-      const isCitizenIdMasked = formData.citizenId && formData.citizenId.includes('x');
-      const cleanCitizenId = isCitizenIdMasked ? undefined : formData.citizenId?.trim() || undefined;
+      // ตรวจสอบ CitizenId ว่าถูก Mask หรือไม่สมบูรณ์หรือไม่ หากเป็น Masked ไม่ต้องส่งไปอัปเดตทับ
+      const rawDigits = formData.citizenId ? formData.citizenId.replace(/\D/g, '') : '';
+      const isMaskedOrIncomplete = !formData.citizenId ||
+        formData.citizenId.includes('x') ||
+        formData.citizenId.includes('X') ||
+        formData.citizenId.includes('*') ||
+        rawDigits.length !== 13;
+      const cleanCitizenId = isMaskedOrIncomplete ? undefined : rawDigits;
 
       const payload: Partial<CreateEmployeePayload> = {
         ...formData,
@@ -474,6 +479,9 @@ export default function EmployeeEditPage() {
                       onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้
+                    </p>
                   </div>
 
                   {/* เพศ */}

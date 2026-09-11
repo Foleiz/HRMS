@@ -341,11 +341,16 @@ public class EmployeeService : IEmployeeService
         employee.DisabilityDeductionCount = request.DisabilityDeductionCount;
         employee.UpdatedAt = DateTime.UtcNow;
 
-        // 3. เข้ารหัส Citizen ID ใหม่ถ้ามีการระบุ
+        // 3. เข้ารหัส Citizen ID ใหม่ถ้ามีการระบุเป็นเลข 13 หลักที่ถูกต้อง (ป้องกันค่า Masked ทับ)
         if (!string.IsNullOrWhiteSpace(request.CitizenId))
         {
-            employee.CitizenIdEncrypted = _cryptoService.Encrypt(request.CitizenId.Trim());
-            employee.CitizenIdMasked = _cryptoService.MaskCitizenId(request.CitizenId.Trim());
+            var rawDigits = System.Text.RegularExpressions.Regex.Replace(request.CitizenId, @"\D", "");
+            if (rawDigits.Length == 13 && !request.CitizenId.Contains('*') && !request.CitizenId.Contains('x') && !request.CitizenId.Contains('X'))
+            {
+                employee.CitizenId = rawDigits;
+                employee.CitizenIdEncrypted = _cryptoService.Encrypt(rawDigits);
+                employee.CitizenIdMasked = _cryptoService.MaskCitizenId(rawDigits);
+            }
         }
 
         // 4. ข้อมูลติดต่อ
@@ -526,9 +531,9 @@ public class EmployeeService : IEmployeeService
             FirstName = e.FirstName,
             LastName = e.LastName,
             FullName = e.FullName,
-            CitizenIdMasked = !string.IsNullOrWhiteSpace(e.CitizenIdMasked)
-                ? e.CitizenIdMasked
-                : (!string.IsNullOrWhiteSpace(e.CitizenId) ? _cryptoService.MaskCitizenId(e.CitizenId) : null),
+            CitizenIdMasked = !string.IsNullOrWhiteSpace(e.CitizenId)
+                ? _cryptoService.MaskCitizenId(e.CitizenId)
+                : (!string.IsNullOrWhiteSpace(e.CitizenIdMasked) ? e.CitizenIdMasked : null),
             BirthDate = e.BirthDate,
             Gender = gender,
             GenderId = genderId,

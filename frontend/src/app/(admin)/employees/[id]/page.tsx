@@ -43,6 +43,16 @@ const formatThaiDate = (dateStr?: string) => {
   }
 };
 
+const formatMaskedCitizenId = (val?: string): string => {
+  if (!val) return '-';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 13 && !clean.includes('x') && !clean.includes('*')) {
+    return `${digits[0]}-${digits.substring(1, 5)}-xxxxx-xx-${digits[12]}`;
+  }
+  return clean;
+};
+
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -354,7 +364,7 @@ export default function EmployeeDetailPage() {
 
                 <div>
                   <p className="text-slate-800 font-bold mb-1">เลขบัตรประชาชน (National ID)</p>
-                  <p className="text-slate-600 font-mono">{employee.citizenIdMasked || '-'}</p>
+                  <p className="text-slate-600 font-mono">{formatMaskedCitizenId(employee.citizenIdMasked)}</p>
                 </div>
 
                 <div>
