@@ -277,10 +277,7 @@ export default function WorkCalendarPage() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            วันทำงานประจำสัปดาห์
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {workingDaysCount} วัน/สัปดาห์
-            </span>
+            <span>วันทำงานประจำสัปดาห์</span>
           </button>
 
           <button
@@ -295,10 +292,7 @@ export default function WorkCalendarPage() {
             }`}
           >
             <CalendarDays className="w-4 h-4" />
-            วันหยุดประจำปี
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {holidays.length} วัน
-            </span>
+            <span>วันหยุดประจำปี</span>
           </button>
         </div>
 
