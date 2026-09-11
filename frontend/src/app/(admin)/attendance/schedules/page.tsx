@@ -601,9 +601,9 @@ function SchedulesContent() {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* Sub-menu Tabs & Context Actions */}
+      {/* Sub-menu Tabs */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm flex items-center justify-between gap-4 overflow-x-auto">
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         {/* Tabs on Left */}
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           {/* Tab 1: มอบหมายกะให้พนักงาน */}
@@ -631,41 +631,6 @@ function SchedulesContent() {
             <Clock className="w-4 h-4" />
             <span>กะการทำงาน</span>
           </button>
-        </div>
-
-        {/* Action Buttons on Right */}
-        <div className="flex items-center gap-2 pb-2 shrink-0">
-          {activeTab === 'roster' && (
-            <>
-              <button
-                onClick={() => {
-                  setBatchModalOpen(true);
-                  setBatchResult(null);
-                }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
-              >
-                <Users className="w-4 h-4 text-slate-500" />
-                <span>มอบหมายกะกลุ่ม</span>
-              </button>
-              <button
-                onClick={() => openSingleAssignCreate()}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>มอบหมายกะเดี่ยว</span>
-              </button>
-            </>
-          )}
-
-          {activeTab === 'shifts' && (
-            <button
-              onClick={openShiftCreate}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
-            >
-              <Plus className="w-4 h-4" />
-              <span>เพิ่มกะการทำงานใหม่</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -721,30 +686,54 @@ function SchedulesContent() {
               </button>
             </div>
 
-            {/* View Mode Switcher: Matrix vs List */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
-              <button
-                onClick={() => setAssignmentViewMode('matrix')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  assignmentViewMode === 'matrix'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>มุมมองปฏิทินกะ (Matrix)</span>
-              </button>
-              <button
-                onClick={() => setAssignmentViewMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  assignmentViewMode === 'list'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>มุมมองรายการ (List)</span>
-              </button>
+            {/* View Mode Switcher & Actions */}
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setAssignmentViewMode('matrix')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                    assignmentViewMode === 'matrix'
+                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>มุมมองปฏิทินกะ (Matrix)</span>
+                </button>
+                <button
+                  onClick={() => setAssignmentViewMode('list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                    assignmentViewMode === 'list'
+                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>มุมมองรายการ (List)</span>
+                </button>
+              </div>
+
+              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setBatchModalOpen(true);
+                    setBatchResult(null);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
+                >
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <span>มอบหมายกะกลุ่ม</span>
+                </button>
+                <button
+                  onClick={() => openSingleAssignCreate()}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>มอบหมายกะเดี่ยว</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1092,29 +1081,41 @@ function SchedulesContent() {
               </button>
             </div>
 
-            {/* View Switcher: Grid vs Table */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
+            {/* View Switcher & Action */}
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setShiftViewMode('grid')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                    shiftViewMode === 'grid'
+                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>การ์ด (Grid)</span>
+                </button>
+                <button
+                  onClick={() => setShiftViewMode('table')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                    shiftViewMode === 'table'
+                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>ตาราง (Table)</span>
+                </button>
+              </div>
+
+              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
               <button
-                onClick={() => setShiftViewMode('grid')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  shiftViewMode === 'grid'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={openShiftCreate}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>การ์ด (Grid)</span>
-              </button>
-              <button
-                onClick={() => setShiftViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  shiftViewMode === 'table'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>ตาราง (Table)</span>
+                <Plus className="w-4 h-4" />
+                <span>เพิ่มกะการทำงานใหม่</span>
               </button>
             </div>
           </div>
