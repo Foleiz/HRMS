@@ -40,9 +40,13 @@ apiClient.interceptors.response.use(
       errorMessage = error.message;
     }
 
-    // จัดการกรณี 401 Unauthorized
+    // จัดการกรณี 401 Unauthorized: เคลียร์ Session และพาไปหน้า Login ทันที
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('hrms_token');
+      localStorage.removeItem('hrms_user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(new Error(errorMessage));
