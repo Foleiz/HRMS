@@ -42,9 +42,15 @@ const menuItems: MenuItem[] = [
     icon: Users,
   },
   {
+    title: 'ตรวจบันทึกเวลา',
+    href: '/attendance/daily',
+    matchPrefix: '/attendance/daily',
+    icon: Clock,
+  },
+  {
     title: 'การจัดตารางงาน',
     href: '/attendance/schedules',
-    matchPrefix: '/attendance',
+    matchPrefix: '/attendance/schedules',
     icon: CalendarRange,
   },
   {

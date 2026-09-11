@@ -46,6 +46,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
     public DbSet<EmployeeType> EmployeeTypes => Set<EmployeeType>();
 
+    // Daily Attendance (Dev 1 Sprint 5)
+    public DbSet<AttendanceDaily> AttendanceDailies => Set<AttendanceDaily>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -467,6 +470,44 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.TypeName).HasColumnName("type_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.WageType).HasColumnName("wage_type").HasMaxLength(20);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
+        });
+
+        // Configuration: AttendanceDaily (Dev 1 Sprint 5)
+        modelBuilder.Entity<AttendanceDaily>(entity =>
+        {
+            entity.ToTable("attendance_daily", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.WorkDate).HasColumnName("work_date").IsRequired();
+            entity.Property(e => e.ShiftId).HasColumnName("shift_id");
+            entity.Property(e => e.WorkScheduleId).HasColumnName("work_schedule_id");
+            entity.Property(e => e.ScheduledStart).HasColumnName("scheduled_start");
+            entity.Property(e => e.ScheduledEnd).HasColumnName("scheduled_end");
+            entity.Property(e => e.ActualIn).HasColumnName("actual_in");
+            entity.Property(e => e.ActualOut).HasColumnName("actual_out");
+            entity.Property(e => e.WorkedMinutes).HasColumnName("worked_minutes").HasDefaultValue(0);
+            entity.Property(e => e.LateMinutes).HasColumnName("late_minutes").HasDefaultValue(0);
+            entity.Property(e => e.EarlyLeaveMinutes).HasColumnName("early_leave_minutes").HasDefaultValue(0);
+            entity.Property(e => e.IsAbsent).HasColumnName("is_absent").HasDefaultValue(false);
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30).HasDefaultValue("PRESENT");
+
+            entity.HasIndex(e => new { e.EmployeeId, e.WorkDate }).IsUnique();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Shift)
+                .WithMany()
+                .HasForeignKey(e => e.ShiftId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.WorkSchedule)
+                .WithMany()
+                .HasForeignKey(e => e.WorkScheduleId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

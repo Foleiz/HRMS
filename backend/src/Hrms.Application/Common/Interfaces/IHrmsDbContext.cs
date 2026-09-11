@@ -34,5 +34,8 @@ public interface IHrmsDbContext
     DbSet<EmployeeAssignment> EmployeeAssignments { get; }
     DbSet<EmployeeType> EmployeeTypes { get; }
 
+    // Daily Attendance (Dev 1 Sprint 5)
+    DbSet<AttendanceDaily> AttendanceDailies { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

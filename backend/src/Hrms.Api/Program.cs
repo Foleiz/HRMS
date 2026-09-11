@@ -1,6 +1,7 @@
 using System.Text;
 using Hrms.Api.Middlewares;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Auth.Services;
 using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Organization.Services;
@@ -43,6 +44,7 @@ builder.Services.AddScoped<IWorkCalendarService, WorkCalendarService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IWorkScheduleService, WorkScheduleService>();
 builder.Services.AddScoped<IEmployeeShiftService, EmployeeShiftService>();
+builder.Services.AddScoped<IAttendanceDailyService, AttendanceDailyService>();
 
 // 4. JWT Authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "HrmsSecretKeyForEnterpriseSystemSecurity2026!@#VeryLongKeyForHmacSha256";
