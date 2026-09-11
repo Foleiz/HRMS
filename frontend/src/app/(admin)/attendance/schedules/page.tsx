@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
   Clock,
@@ -36,6 +37,8 @@ import {
   Moon,
   Building2,
   CalendarRange,
+  Copy,
+  Info,
 } from 'lucide-react';
 import { scheduleService, employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
@@ -53,7 +56,7 @@ import {
   MonthlyRosterResponse,
   AssignableEmployee,
 } from '@/types/schedule';
-import { Shift } from '@/types/shift';
+import { Shift, CreateShiftRequest, UpdateShiftRequest } from '@/types/shift';
 import { Department } from '@/types/organization';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 
@@ -64,45 +67,131 @@ const THAI_MONTHS = [
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
-export default function SchedulesPage() {
+type TabKey = 'roster' | 'shifts' | 'patterns';
+
+function SchedulesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
 
-  // Active Main Tab: 'schedules' (ตารางหลัก) | 'assignments' (การมอบหมายกะ)
-  const [activeTab, setActiveTab] = useState<'schedules' | 'assignments'>('schedules');
+  // -------------------------------------------------------------
+  // 1. Tab Navigation: Roster (1) -> Shifts (2) -> Patterns (3)
+  // -------------------------------------------------------------
+  const initialTab = (searchParams.get('tab') as TabKey) || 'roster';
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    ['roster', 'shifts', 'patterns'].includes(initialTab) ? initialTab : 'roster'
+  );
 
-  // Loading states
-  const [loadingSchedules, setLoadingSchedules] = useState(true);
-  const [loadingAssignments, setLoadingAssignments] = useState(true);
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tab);
+    router.replace(`/attendance/schedules?${params.toString()}`, { scroll: false });
+  };
+
+  // -------------------------------------------------------------
+  // 2. Loading & Data States
+  // -------------------------------------------------------------
   const [loadingRoster, setLoadingRoster] = useState(false);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
+  const [loadingShifts, setLoadingShifts] = useState(true);
+  const [loadingSchedules, setLoadingSchedules] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Data states
+  // Core Data
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [workSchedules, setWorkSchedules] = useState<WorkSchedule[]>([]);
   const [assignments, setAssignments] = useState<EmployeeShift[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [assignableEmployees, setAssignableEmployees] = useState<AssignableEmployee[]>([]);
 
-  // Roster State
+  // Roster Calendar Data
   const [rosterData, setRosterData] = useState<MonthlyRosterResponse | null>(null);
   const [rosterYear, setRosterYear] = useState<number>(new Date().getFullYear());
   const [rosterMonth, setRosterMonth] = useState<number>(new Date().getMonth() + 1);
 
-  // Tab 1 (Schedules) filters
-  const [scheduleSearch, setScheduleSearch] = useState('');
-  const [scheduleStatusFilter, setScheduleStatusFilter] = useState('ALL');
-  const [scheduleViewMode, setScheduleViewMode] = useState<'grid' | 'table'>('grid');
-
-  // Tab 2 (Assignments) filters & view
-  const [assignmentViewMode, setAssignmentViewMode] = useState<'list' | 'matrix'>('list');
-  const [assignmentSearch, setAssignmentSearch] = useState('');
-  const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
-
-  // Alerts
+  // Global Alerts
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Modal states: Work Schedule (Create / Edit)
+  // Auto-dismiss alerts
+  useEffect(() => {
+    if (successMessage) {
+      const t = setTimeout(() => setSuccessMessage(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      const t = setTimeout(() => setErrorMessage(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [errorMessage]);
+
+  // -------------------------------------------------------------
+  // 3. Tab 1 States: ปฏิทินกะและการมอบหมายกะ (Shift Roster)
+  // -------------------------------------------------------------
+  const [assignmentViewMode, setAssignmentViewMode] = useState<'matrix' | 'list'>('matrix');
+  const [assignmentSearch, setAssignmentSearch] = useState('');
+  const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
+
+  // Single Assign Modal
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignModalMode, setAssignModalMode] = useState<'create' | 'edit'>('create');
+  const [assignForm, setAssignForm] = useState<AssignEmployeeShiftRequest & { id?: number }>({
+    employeeId: 0,
+    shiftId: 0,
+    effectiveFrom: new Date().toISOString().split('T')[0],
+    effectiveTo: '',
+  });
+
+  // Batch Assign Modal
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchTargetType, setBatchTargetType] = useState<'department' | 'selected'>('department');
+  const [batchSelectedDept, setBatchSelectedDept] = useState<number | null>(null);
+  const [batchSelectedEmpIds, setBatchSelectedEmpIds] = useState<number[]>([]);
+  const [batchShiftId, setBatchShiftId] = useState<number>(0);
+  const [batchEffectiveFrom, setBatchEffectiveFrom] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [batchEffectiveTo, setBatchEffectiveTo] = useState<string>('');
+  const [batchResult, setBatchResult] = useState<BatchAssignResult | null>(null);
+  const [empFilterKeyword, setEmpFilterKeyword] = useState('');
+
+  // -------------------------------------------------------------
+  // 4. Tab 2 States: กะการทำงาน (Shift Master)
+  // -------------------------------------------------------------
+  const [shiftViewMode, setShiftViewMode] = useState<'grid' | 'table'>('grid');
+  const [shiftSearchQuery, setShiftSearchQuery] = useState('');
+  const [shiftFilterType, setShiftFilterType] = useState<string>('ALL'); // ALL, NORMAL, CROSS_DAY
+  const [shiftFilterStatus, setShiftFilterStatus] = useState<string>('ALL'); // ALL, ACTIVE, INACTIVE
+
+  // Shift Modal (Create / Edit)
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const [shiftModalMode, setShiftModalMode] = useState<'create' | 'edit'>('create');
+  const [shiftForm, setShiftForm] = useState<CreateShiftRequest & { id?: number }>({
+    shiftCode: '',
+    shiftName: '',
+    startTime: '08:30',
+    endTime: '17:30',
+    isCrossDay: false,
+    breakMinutes: 60,
+    status: 'ACTIVE',
+    lateGraceMinutes: 10,
+    earlyLeaveGraceMinutes: 5,
+  });
+
+  // Employee details modal for shift
+  const [employeeModalOpen, setEmployeeModalOpen] = useState(false);
+  const [selectedShiftForEmployees, setSelectedShiftForEmployees] = useState<Shift | null>(null);
+
+  // -------------------------------------------------------------
+  // 5. Tab 3 States: รูปแบบตารางงานหลัก (Schedule Patterns)
+  // -------------------------------------------------------------
+  const [scheduleViewMode, setScheduleViewMode] = useState<'grid' | 'table'>('grid');
+  const [scheduleSearch, setScheduleSearch] = useState('');
+  const [scheduleStatusFilter, setScheduleStatusFilter] = useState('ALL');
+
+  // Work Schedule Modal (Create / Edit)
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleModalMode, setScheduleModalMode] = useState<'create' | 'edit'>('create');
   const [scheduleForm, setScheduleForm] = useState<CreateWorkScheduleRequest & { id?: number }>({
@@ -116,34 +205,35 @@ export default function SchedulesPage() {
     status: 'ACTIVE',
   });
 
-  // Modal states: Single Assign Shift
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [assignModalMode, setAssignModalMode] = useState<'create' | 'edit'>('create');
-  const [assignForm, setAssignForm] = useState<AssignEmployeeShiftRequest & { id?: number }>({
-    employeeId: 0,
-    shiftId: 0,
-    effectiveFrom: new Date().toISOString().split('T')[0],
-    effectiveTo: '',
-  });
-
-  // Modal states: Batch Assign Shift
-  const [batchModalOpen, setBatchModalOpen] = useState(false);
-  const [batchTargetType, setBatchTargetType] = useState<'department' | 'selected'>('department');
-  const [batchSelectedDept, setBatchSelectedDept] = useState<number | null>(null);
-  const [batchSelectedEmpIds, setBatchSelectedEmpIds] = useState<number[]>([]);
-  const [batchShiftId, setBatchShiftId] = useState<number>(0);
-  const [batchEffectiveFrom, setBatchEffectiveFrom] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [batchEffectiveTo, setBatchEffectiveTo] = useState<string>('');
-  const [batchResult, setBatchResult] = useState<BatchAssignResult | null>(null);
-  const [empFilterKeyword, setEmpFilterKeyword] = useState('');
-
-  // Delete Confirm Modal
+  // -------------------------------------------------------------
+  // Shared Delete Confirmation Modal
+  // -------------------------------------------------------------
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ type: 'schedule' | 'assignment'; id: number; title: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: 'assignment' | 'shift' | 'schedule';
+    id: number;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
 
   // -------------------------------------------------------------
-  // Load Initial Data
+  // Data Loaders
   // -------------------------------------------------------------
+  const loadShifts = useCallback(async () => {
+    try {
+      setLoadingShifts(true);
+      const data = await shiftService.getShifts();
+      setShifts(data);
+      if (data.length > 0 && batchShiftId === 0) {
+        setBatchShiftId(data[0].id);
+      }
+    } catch (err: any) {
+      console.error('Error loading shifts:', err);
+    } finally {
+      setLoadingShifts(false);
+    }
+  }, [batchShiftId]);
+
   const loadSchedules = useCallback(async () => {
     try {
       setLoadingSchedules(true);
@@ -185,37 +275,33 @@ export default function SchedulesPage() {
     }
   }, []);
 
-  const loadMasterLookups = useCallback(async () => {
+  const loadLookups = useCallback(async () => {
     try {
-      const [shiftsData, deptsData, empsData] = await Promise.all([
-        shiftService.getShifts('ACTIVE'),
+      const [deptsData, empsData] = await Promise.all([
         organizationService.getDepartments(),
         employeeShiftService.getAssignableEmployees(),
       ]);
-      setShifts(shiftsData);
       setDepartments(deptsData);
       setAssignableEmployees(empsData);
-      if (shiftsData.length > 0 && batchShiftId === 0) {
-        setBatchShiftId(shiftsData[0].id);
-      }
     } catch (err: any) {
-      console.error('Error loading master lookups:', err);
+      console.error('Error loading lookups:', err);
     }
-  }, [batchShiftId]);
+  }, []);
 
   useEffect(() => {
     setBreadcrumb({
       section: 'การเข้างาน',
-      page: 'ตารางการทำงานและการมอบหมายกะ',
+      page: 'การจัดตารางงาน',
     });
+    loadShifts();
     loadSchedules();
     loadAssignments();
-    loadMasterLookups();
-  }, [setBreadcrumb, loadSchedules, loadAssignments, loadMasterLookups]);
+    loadLookups();
+  }, [setBreadcrumb, loadShifts, loadSchedules, loadAssignments, loadLookups]);
 
-  // Load roster whenever roster view is active or year/month changes
+  // Load roster when on Tab 1 and Matrix view
   useEffect(() => {
-    if (activeTab === 'assignments' && assignmentViewMode === 'matrix') {
+    if (activeTab === 'roster' && assignmentViewMode === 'matrix') {
       const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
       loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
     }
@@ -224,17 +310,7 @@ export default function SchedulesPage() {
   // -------------------------------------------------------------
   // Filtered Lists
   // -------------------------------------------------------------
-  const filteredWorkSchedules = useMemo(() => {
-    return workSchedules.filter((ws) => {
-      const matchSearch =
-        ws.scheduleCode.toLowerCase().includes(scheduleSearch.toLowerCase()) ||
-        ws.scheduleName.toLowerCase().includes(scheduleSearch.toLowerCase());
-      const matchStatus =
-        scheduleStatusFilter === 'ALL' || ws.status === scheduleStatusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [workSchedules, scheduleSearch, scheduleStatusFilter]);
-
+  // Tab 1: Filtered Assignments
   const filteredAssignments = useMemo(() => {
     return assignments.filter((a) => {
       const q = assignmentSearch.toLowerCase();
@@ -248,40 +324,293 @@ export default function SchedulesPage() {
       const matchDept =
         assignmentDeptFilter === 'ALL' ||
         (a.departmentName &&
-          departments.find((d) => d.id === Number(assignmentDeptFilter))?.departmentName === a.departmentName);
+          departments.find((d) => String(d.id) === assignmentDeptFilter)?.departmentName === a.departmentName);
 
       return matchSearch && matchDept;
     });
   }, [assignments, assignmentSearch, assignmentDeptFilter, departments]);
 
-  const filteredAssignableEmps = useMemo(() => {
-    return assignableEmployees.filter((e) => {
-      const matchDept =
-        batchTargetType === 'department' && batchSelectedDept
-          ? e.departmentId === batchSelectedDept
-          : true;
-      const matchSearch =
-        e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-        e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-        e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase());
-      return matchDept && matchSearch;
+  // Tab 2: Filtered Shifts
+  const filteredShifts = useMemo(() => {
+    return shifts.filter((shift) => {
+      const matchQuery =
+        shift.shiftCode.toLowerCase().includes(shiftSearchQuery.toLowerCase()) ||
+        shift.shiftName.toLowerCase().includes(shiftSearchQuery.toLowerCase());
+      const matchType =
+        shiftFilterType === 'ALL' ||
+        (shiftFilterType === 'CROSS_DAY' && shift.isCrossDay) ||
+        (shiftFilterType === 'NORMAL' && !shift.isCrossDay);
+      const matchStatus =
+        shiftFilterStatus === 'ALL' || shift.status === shiftFilterStatus;
+      return matchQuery && matchType && matchStatus;
     });
-  }, [assignableEmployees, batchTargetType, batchSelectedDept, empFilterKeyword]);
+  }, [shifts, shiftSearchQuery, shiftFilterType, shiftFilterStatus]);
 
-  // Stats
-  const activeSchedulesCount = useMemo(
-    () => workSchedules.filter((s) => s.status === 'ACTIVE').length,
-    [workSchedules]
-  );
-  const assignedEmployeesCount = useMemo(() => {
-    const uniqueIds = new Set(assignments.map((a) => a.employeeId));
-    return uniqueIds.size;
-  }, [assignments]);
+  // Tab 3: Filtered Work Schedules
+  const filteredWorkSchedules = useMemo(() => {
+    return workSchedules.filter((ws) => {
+      const matchSearch =
+        ws.scheduleCode.toLowerCase().includes(scheduleSearch.toLowerCase()) ||
+        ws.scheduleName.toLowerCase().includes(scheduleSearch.toLowerCase());
+      const matchStatus =
+        scheduleStatusFilter === 'ALL' || ws.status === scheduleStatusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [workSchedules, scheduleSearch, scheduleStatusFilter]);
 
   // -------------------------------------------------------------
-  // Work Schedule Modal Handlers
+  // Helpers
   // -------------------------------------------------------------
-  const openCreateScheduleModal = () => {
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+
+  const getDayOfWeek = (year: number, month: number, day: number) => {
+    return new Date(year, month - 1, day).getDay();
+  };
+
+  const prevMonth = () => {
+    if (rosterMonth === 1) {
+      setRosterMonth(12);
+      setRosterYear((y) => y - 1);
+    } else {
+      setRosterMonth((m) => m - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (rosterMonth === 12) {
+      setRosterMonth(1);
+      setRosterYear((y) => y + 1);
+    } else {
+      setRosterMonth((m) => m + 1);
+    }
+  };
+
+  const currentMonthDays = useMemo(() => {
+    const totalDays = getDaysInMonth(rosterYear, rosterMonth);
+    const days = [];
+    for (let d = 1; d <= totalDays; d++) {
+      const dayOfWeek = getDayOfWeek(rosterYear, rosterMonth, d);
+      days.push({
+        day: d,
+        dayOfWeek,
+        dayName: THAI_DAYS[dayOfWeek],
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+      });
+    }
+    return days;
+  }, [rosterYear, rosterMonth]);
+
+  const calcShiftDuration = (start: string, end: string, isCrossDay: boolean, breakMinutes: number) => {
+    if (!start || !end) return { total: 0, net: 0 };
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let startMin = sh * 60 + sm;
+    let endMin = eh * 60 + em;
+    if (isCrossDay || endMin < startMin) {
+      endMin += 24 * 60;
+    }
+    const grossMinutes = endMin - startMin;
+    const netMinutes = Math.max(0, grossMinutes - (breakMinutes || 0));
+    return {
+      total: Number((grossMinutes / 60).toFixed(1)),
+      net: Number((netMinutes / 60).toFixed(1)),
+    };
+  };
+
+  const handleShiftTimeChange = (field: 'startTime' | 'endTime', value: string) => {
+    const updated = { ...shiftForm, [field]: value };
+    if (updated.startTime && updated.endTime) {
+      if (updated.endTime < updated.startTime) {
+        updated.isCrossDay = true;
+      }
+    }
+    setShiftForm(updated);
+  };
+
+  // -------------------------------------------------------------
+  // Actions: Tab 1 (Shift Roster & Assignments)
+  // -------------------------------------------------------------
+  const openSingleAssignCreate = (empId?: number) => {
+    setAssignModalMode('create');
+    setAssignForm({
+      employeeId: empId || (assignableEmployees[0]?.id ?? 0),
+      shiftId: shifts[0]?.id ?? 0,
+      effectiveFrom: new Date().toISOString().split('T')[0],
+      effectiveTo: '',
+    });
+    setAssignModalOpen(true);
+  };
+
+  const openSingleAssignEdit = (assignment: EmployeeShift) => {
+    setAssignModalMode('edit');
+    setAssignForm({
+      id: assignment.id,
+      employeeId: assignment.employeeId,
+      shiftId: assignment.shiftId,
+      effectiveFrom: assignment.effectiveFrom.split('T')[0],
+      effectiveTo: assignment.effectiveTo ? assignment.effectiveTo.split('T')[0] : '',
+    });
+    setAssignModalOpen(true);
+  };
+
+  const handleSaveSingleAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      if (assignModalMode === 'create') {
+        await employeeShiftService.assignShift({
+          employeeId: Number(assignForm.employeeId),
+          shiftId: Number(assignForm.shiftId),
+          effectiveFrom: assignForm.effectiveFrom,
+          effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
+        });
+        setSuccessMessage('มอบหมายกะให้พนักงานสำเร็จเรียบร้อย');
+      } else if (assignForm.id) {
+        await employeeShiftService.updateAssignment(assignForm.id, {
+          shiftId: Number(assignForm.shiftId),
+          effectiveFrom: assignForm.effectiveFrom,
+          effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
+        });
+        setSuccessMessage('อัปเดตการมอบหมายกะสำเร็จ');
+      }
+      setAssignModalOpen(false);
+      loadAssignments();
+      if (assignmentViewMode === 'matrix') {
+        const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
+        loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลกะพนักงาน');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRunBatchAssign = async () => {
+    if (batchShiftId === 0) {
+      setErrorMessage('กรุณาเลือกกะการทำงานที่ต้องการมอบหมาย');
+      return;
+    }
+    if (batchTargetType === 'department' && !batchSelectedDept) {
+      setErrorMessage('กรุณาเลือกแผนกเป้าหมาย');
+      return;
+    }
+    if (batchTargetType === 'selected' && batchSelectedEmpIds.length === 0) {
+      setErrorMessage('กรุณาเลือกพนักงานอย่างน้อย 1 รายการ');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const req: BatchAssignEmployeeShiftRequest = {
+        shiftId: batchShiftId,
+        effectiveFrom: batchEffectiveFrom,
+        effectiveTo: batchEffectiveTo ? batchEffectiveTo : null,
+        departmentId: batchTargetType === 'department' ? batchSelectedDept : null,
+        employeeIds: batchTargetType === 'selected' ? batchSelectedEmpIds : undefined,
+      };
+      const res = await employeeShiftService.batchAssignShift(req);
+      setBatchResult(res);
+      setSuccessMessage(`จัดกะสำเร็จ ${res.successCount} คน, ข้อผิดพลาด ${res.failedCount} คน`);
+      loadAssignments();
+      if (assignmentViewMode === 'matrix') {
+        const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
+        loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการมอบหมายกะแบบกลุ่ม');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Actions: Tab 2 (Shift Master)
+  // -------------------------------------------------------------
+  const openShiftCreate = () => {
+    setShiftModalMode('create');
+    setShiftForm({
+      shiftCode: '',
+      shiftName: '',
+      startTime: '08:30',
+      endTime: '17:30',
+      isCrossDay: false,
+      breakMinutes: 60,
+      status: 'ACTIVE',
+      lateGraceMinutes: 10,
+      earlyLeaveGraceMinutes: 5,
+    });
+    setShiftModalOpen(true);
+  };
+
+  const openShiftEdit = (shift: Shift) => {
+    setShiftModalMode('edit');
+    setShiftForm({
+      id: shift.id,
+      shiftCode: shift.shiftCode,
+      shiftName: shift.shiftName,
+      startTime: shift.startTime.substring(0, 5),
+      endTime: shift.endTime.substring(0, 5),
+      isCrossDay: shift.isCrossDay,
+      breakMinutes: shift.breakMinutes,
+      status: shift.status,
+      lateGraceMinutes: shift.lateGraceMinutes,
+      earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+    });
+    setShiftModalOpen(true);
+  };
+
+  const handleDuplicateShift = (shift: Shift) => {
+    setShiftModalMode('create');
+    setShiftForm({
+      shiftCode: `${shift.shiftCode}_COPY`,
+      shiftName: `${shift.shiftName} (คัดลอก)`,
+      startTime: shift.startTime.substring(0, 5),
+      endTime: shift.endTime.substring(0, 5),
+      isCrossDay: shift.isCrossDay,
+      breakMinutes: shift.breakMinutes,
+      status: 'ACTIVE',
+      lateGraceMinutes: shift.lateGraceMinutes,
+      earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+    });
+    setShiftModalOpen(true);
+  };
+
+  const handleSaveShift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      if (shiftModalMode === 'create') {
+        await shiftService.createShift(shiftForm);
+        setSuccessMessage('สร้างกะการทำงานใหม่เรียบร้อยแล้ว');
+      } else if (shiftForm.id) {
+        await shiftService.updateShift(shiftForm.id, {
+          shiftName: shiftForm.shiftName,
+          startTime: shiftForm.startTime,
+          endTime: shiftForm.endTime,
+          isCrossDay: shiftForm.isCrossDay,
+          breakMinutes: shiftForm.breakMinutes,
+          status: shiftForm.status,
+          lateGraceMinutes: shiftForm.lateGraceMinutes,
+          earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
+        });
+        setSuccessMessage('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
+      }
+      setShiftModalOpen(false);
+      loadShifts();
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกกะการทำงาน');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Actions: Tab 3 (Work Schedule Patterns)
+  // -------------------------------------------------------------
+  const openScheduleCreate = () => {
     setScheduleModalMode('create');
     setScheduleForm({
       scheduleCode: '',
@@ -296,594 +625,932 @@ export default function SchedulesPage() {
     setScheduleModalOpen(true);
   };
 
-  const openEditScheduleModal = (ws: WorkSchedule) => {
+  const openScheduleEdit = (schedule: WorkSchedule) => {
     setScheduleModalMode('edit');
     setScheduleForm({
-      id: ws.id,
-      scheduleCode: ws.scheduleCode,
-      scheduleName: ws.scheduleName,
-      workStart: ws.workStart || '08:30',
-      workEnd: ws.workEnd || '17:30',
-      breakMinutes: ws.breakMinutes,
-      lateGraceMinutes: ws.lateGraceMinutes,
-      earlyLeaveGraceMinutes: ws.earlyLeaveGraceMinutes,
-      status: ws.status,
+      id: schedule.id,
+      scheduleCode: schedule.scheduleCode,
+      scheduleName: schedule.scheduleName,
+      workStart: (schedule.workStart || '08:30').substring(0, 5),
+      workEnd: (schedule.workEnd || '17:30').substring(0, 5),
+      breakMinutes: schedule.breakMinutes,
+      lateGraceMinutes: schedule.lateGraceMinutes,
+      earlyLeaveGraceMinutes: schedule.earlyLeaveGraceMinutes,
+      status: schedule.status,
     });
     setScheduleModalOpen(true);
   };
 
   const handleSaveSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setSubmitting(true);
-
     try {
+      setSubmitting(true);
+      const payload = {
+        scheduleName: scheduleForm.scheduleName,
+        workStart: scheduleForm.workStart || '08:30',
+        workEnd: scheduleForm.workEnd || '17:30',
+        breakMinutes: scheduleForm.breakMinutes,
+        lateGraceMinutes: scheduleForm.lateGraceMinutes,
+        earlyLeaveGraceMinutes: scheduleForm.earlyLeaveGraceMinutes,
+        status: scheduleForm.status as 'ACTIVE' | 'INACTIVE',
+      };
+
       if (scheduleModalMode === 'create') {
-        await scheduleService.createWorkSchedule(scheduleForm);
-        setSuccessMessage(`เพิ่มตารางการทำงาน '${scheduleForm.scheduleName}' สำเร็จ`);
-      } else if (scheduleForm.id) {
-        await scheduleService.updateWorkSchedule(scheduleForm.id, {
-          scheduleName: scheduleForm.scheduleName,
-          workStart: scheduleForm.workStart,
-          workEnd: scheduleForm.workEnd,
-          breakMinutes: scheduleForm.breakMinutes,
-          lateGraceMinutes: scheduleForm.lateGraceMinutes,
-          earlyLeaveGraceMinutes: scheduleForm.earlyLeaveGraceMinutes,
-          status: scheduleForm.status,
+        await scheduleService.createWorkSchedule({
+          scheduleCode: scheduleForm.scheduleCode,
+          ...payload,
         });
-        setSuccessMessage(`แก้ไขตารางการทำงาน '${scheduleForm.scheduleName}' สำเร็จ`);
+        setSuccessMessage('สร้างรูปแบบตารางการทำงานใหม่สำเร็จ');
+      } else if (scheduleForm.id) {
+        await scheduleService.updateWorkSchedule(scheduleForm.id, payload);
+        setSuccessMessage('แก้ไขรูปแบบตารางการทำงานสำเร็จ');
       }
       setScheduleModalOpen(false);
       loadSchedules();
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
-      setErrorMessage(msg);
+      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกตารางการทำงาน');
     } finally {
       setSubmitting(false);
     }
   };
 
   // -------------------------------------------------------------
-  // Shift Assignment Modal Handlers
+  // Actions: Shared Delete
   // -------------------------------------------------------------
-  const openCreateAssignModal = (prefillEmployeeId?: number) => {
-    setAssignModalMode('create');
-    setAssignForm({
-      employeeId: prefillEmployeeId || (assignableEmployees[0]?.id ?? 0),
-      shiftId: shifts[0]?.id ?? 0,
-      effectiveFrom: new Date().toISOString().split('T')[0],
-      effectiveTo: '',
-    });
-    setAssignModalOpen(true);
-  };
-
-  const openEditAssignModal = (a: EmployeeShift) => {
-    setAssignModalMode('edit');
-    setAssignForm({
-      id: a.id,
-      employeeId: a.employeeId,
-      shiftId: a.shiftId,
-      effectiveFrom: a.effectiveFrom,
-      effectiveTo: a.effectiveTo || '',
-    });
-    setAssignModalOpen(true);
-  };
-
-  const handleSaveAssign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSubmitting(true);
-
-    try {
-      if (assignModalMode === 'create') {
-        await employeeShiftService.assignShift({
-          employeeId: Number(assignForm.employeeId),
-          shiftId: Number(assignForm.shiftId),
-          effectiveFrom: assignForm.effectiveFrom,
-          effectiveTo: assignForm.effectiveTo || null,
-        });
-        setSuccessMessage('มอบหมายกะการทำงานให้พนักงานสำเร็จ');
-      } else if (assignForm.id) {
-        await employeeShiftService.updateAssignment(assignForm.id, {
-          shiftId: Number(assignForm.shiftId),
-          effectiveFrom: assignForm.effectiveFrom,
-          effectiveTo: assignForm.effectiveTo || null,
-        });
-        setSuccessMessage('แก้ไขข้อมูลการมอบหมายกะสำเร็จ');
-      }
-      setAssignModalOpen(false);
-      loadAssignments();
-      if (assignmentViewMode === 'matrix') {
-        const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
-        loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
-      }
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการมอบหมายกะ';
-      setErrorMessage(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // -------------------------------------------------------------
-  // Batch Assign Modal Handlers
-  // -------------------------------------------------------------
-  const openBatchAssignModal = () => {
-    setBatchTargetType('department');
-    setBatchSelectedDept(departments[0]?.id ?? null);
-    setBatchSelectedEmpIds([]);
-    setBatchShiftId(shifts[0]?.id ?? 0);
-    setBatchEffectiveFrom(new Date().toISOString().split('T')[0]);
-    setBatchEffectiveTo('');
-    setBatchResult(null);
-    setEmpFilterKeyword('');
-    setBatchModalOpen(true);
-  };
-
-  const handleBatchAssign = async () => {
-    setErrorMessage(null);
-    setSubmitting(true);
-
-    try {
-      const requestData: BatchAssignEmployeeShiftRequest = {
-        shiftId: batchShiftId,
-        effectiveFrom: batchEffectiveFrom,
-        effectiveTo: batchEffectiveTo || null,
-        departmentId: batchTargetType === 'department' ? batchSelectedDept : null,
-        employeeIds: batchTargetType === 'selected' ? batchSelectedEmpIds : [],
-      };
-
-      const result = await employeeShiftService.batchAssignShift(requestData);
-      setBatchResult(result);
-      loadAssignments();
-      if (assignmentViewMode === 'matrix') {
-        const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
-        loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
-      }
-      setSuccessMessage(`ประมวลผลมอบหมายกะแบบกลุ่มสำเร็จ: ${result.successCount} รายการ`);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการมอบหมายกะแบบกลุ่ม';
-      setErrorMessage(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // -------------------------------------------------------------
-  // Delete Handler
-  // -------------------------------------------------------------
-  const confirmDelete = (type: 'schedule' | 'assignment', id: number, title: string) => {
-    setItemToDelete({ type, id, title });
-    setDeleteConfirmOpen(true);
-  };
-
-  const handleDelete = async () => {
+  const confirmDelete = async () => {
     if (!itemToDelete) return;
-    setSubmitting(true);
-    setErrorMessage(null);
-
     try {
-      if (itemToDelete.type === 'schedule') {
-        await scheduleService.deleteWorkSchedule(itemToDelete.id);
-        setSuccessMessage(`ลบตารางการทำงาน '${itemToDelete.title}' สำเร็จ`);
-        loadSchedules();
-      } else {
+      setSubmitting(true);
+      if (itemToDelete.type === 'assignment') {
         await employeeShiftService.deleteAssignment(itemToDelete.id);
-        setSuccessMessage(`ยกเลิกการมอบหมายกะ '${itemToDelete.title}' สำเร็จ`);
+        setSuccessMessage('ยกเลิกการมอบหมายกะเรียบร้อยแล้ว');
         loadAssignments();
         if (assignmentViewMode === 'matrix') {
           const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
           loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
         }
+      } else if (itemToDelete.type === 'shift') {
+        await shiftService.deleteShift(itemToDelete.id);
+        setSuccessMessage('ลบข้อมูลกะการทำงานเรียบร้อยแล้ว');
+        loadShifts();
+      } else if (itemToDelete.type === 'schedule') {
+        await scheduleService.deleteWorkSchedule(itemToDelete.id);
+        setSuccessMessage('ลบรูปแบบตารางการทำงานสำเร็จ');
+        loadSchedules();
       }
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล';
-      setErrorMessage(msg);
+      setErrorMessage(err.response?.data?.message || 'ไม่สามารถลบรายการได้เนื่องจากมีข้อมูลผูกพันในระบบ');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Shift badge color helper
-  const getShiftBadgeStyle = (shiftCode: string) => {
-    if (shiftCode.includes('NIGHT')) {
-      return 'bg-purple-50 text-purple-700 border-purple-200';
-    }
-    if (shiftCode.includes('FLEX')) {
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    }
-    return 'bg-blue-50 text-blue-700 border-blue-200';
-  };
-
   return (
-    <div className="space-y-6 pb-12 font-sans text-slate-800">
-      {/* -------------------------------------------------------- */}
-      {/* 1. Header & Quick Actions */}
-      {/* -------------------------------------------------------- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* ------------------------------------------------------------- */}
+      {/* Top Header: Title & Quick Stats */}
+      {/* ------------------------------------------------------------- */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <CalendarDays className="w-7 h-7 text-[#0B2046]" />
-            ตารางการทำงานและการมอบหมายกะ
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            กำหนดรูปแบบตารางเวลาการทำงานหลัก มอบหมายกะรายบุคคล/แบบกลุ่ม และตรวจสอบปฏิทินกะรายเดือน
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
+              <CalendarRange className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">การจัดตารางงาน</h1>
+              <p className="text-sm text-slate-500">
+                ระบบศูนย์กลางจัดตารางเวลา กะการทำงาน และปฏิทินจัดเวรพนักงาน (Work Scheduling & Rostering)
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {activeTab === 'schedules' ? (
-            <button
-              onClick={openCreateScheduleModal}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#15326c] text-white font-medium text-sm shadow-sm hover:shadow transition-all active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              เพิ่มตารางการทำงาน
-            </button>
-          ) : (
+        {/* Global Action depending on Active Tab */}
+        <div className="flex items-center gap-2">
+          {activeTab === 'roster' && (
             <>
               <button
-                onClick={() => openCreateAssignModal()}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm shadow-sm transition-all"
+                onClick={() => {
+                  setBatchModalOpen(true);
+                  setBatchResult(null);
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition shadow-sm"
               >
-                <Plus className="w-4 h-4 text-[#0B2046]" />
-                มอบหมายกะเดี่ยว
+                <Users className="w-4 h-4 text-slate-500" />
+                <span>มอบหมายกะกลุ่ม</span>
               </button>
               <button
-                onClick={openBatchAssignModal}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#15326c] text-white font-medium text-sm shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                onClick={() => openSingleAssignCreate()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-sm font-medium transition shadow-sm shadow-[#0B2046]/20"
               >
-                <Users className="w-4 h-4" />
-                มอบหมายกะแบบกลุ่ม
+                <Plus className="w-4 h-4" />
+                <span>มอบหมายกะเดี่ยว</span>
               </button>
             </>
+          )}
+
+          {activeTab === 'shifts' && (
+            <button
+              onClick={openShiftCreate}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-sm font-medium transition shadow-sm shadow-[#0B2046]/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>เพิ่มกะการทำงานใหม่</span>
+            </button>
+          )}
+
+          {activeTab === 'patterns' && (
+            <button
+              onClick={openScheduleCreate}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-sm font-medium transition shadow-sm shadow-[#0B2046]/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>เพิ่มรูปแบบตารางงาน</span>
+            </button>
           )}
         </div>
       </div>
 
-      {/* -------------------------------------------------------- */}
-      {/* 2. Toast Alerts */}
-      {/* -------------------------------------------------------- */}
+      {/* ------------------------------------------------------------- */}
+      {/* Global Alert Banners */}
+      {/* ------------------------------------------------------------- */}
       {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl shadow-sm animate-fade-in">
+          <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span className="text-sm font-medium">{successMessage}</span>
           </div>
-          <button
-            onClick={() => setSuccessMessage(null)}
-            className="text-emerald-500 hover:text-emerald-700 p-1"
-          >
+          <button onClick={() => setSuccessMessage(null)} className="text-emerald-500 hover:text-emerald-700">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl shadow-sm animate-fade-in">
+          <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
             <span className="text-sm font-medium">{errorMessage}</span>
           </div>
-          <button
-            onClick={() => setErrorMessage(null)}
-            className="text-rose-500 hover:text-rose-700 p-1"
-          >
+          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-700">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* -------------------------------------------------------- */}
-      {/* 3. Stat Cards */}
-      {/* -------------------------------------------------------- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Schedules */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <CalendarDays className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-500">ตารางการทำงานทั้งหมด</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{workSchedules.length}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">รูปแบบแม่แบบระบบ</div>
-          </div>
-        </div>
+      {/* ------------------------------------------------------------- */}
+      {/* 3 Main Tabs: Roster -> Shift Master -> Schedule Patterns */}
+      {/* ------------------------------------------------------------- */}
+      <div className="border-b border-slate-200 bg-white rounded-t-xl px-4 pt-3 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          {/* Tab 1: Roster */}
+          <button
+            onClick={() => handleTabChange('roster')}
+            className={`flex items-center gap-2.5 px-5 py-3 text-sm font-semibold border-b-2 transition -mb-[1px] ${
+              activeTab === 'roster'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>1. ปฏิทินกะและการมอบหมายกะ (Shift Roster)</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                activeTab === 'roster' ? 'bg-[#0B2046]/10 text-[#0B2046]' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {rosterData?.employees.length ?? assignments.length} คน
+            </span>
+          </button>
 
-        {/* Active Schedules */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-500">เปิดใช้งานอยู่</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{activeSchedulesCount}</div>
-            <div className="text-[11px] text-emerald-600 font-medium mt-0.5">สถานะปกติ</div>
-          </div>
-        </div>
+          {/* Tab 2: Shift Master */}
+          <button
+            onClick={() => handleTabChange('shifts')}
+            className={`flex items-center gap-2.5 px-5 py-3 text-sm font-semibold border-b-2 transition -mb-[1px] ${
+              activeTab === 'shifts'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>2. กะการทำงาน (Shift Master)</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                activeTab === 'shifts' ? 'bg-[#0B2046]/10 text-[#0B2046]' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {shifts.length} กะ
+            </span>
+          </button>
 
-        {/* Assigned Employees */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <Users className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-500">พนักงานที่มีกะงาน</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{assignedEmployeesCount}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">จาก {assignableEmployees.length} คนในองค์กร</div>
-          </div>
-        </div>
-
-        {/* Available Shifts */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-500">กะการทำงานพร้อมใช้</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{shifts.length}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">กะมาตรฐานและกะหมุนเวียน</div>
-          </div>
+          {/* Tab 3: Schedule Patterns */}
+          <button
+            onClick={() => handleTabChange('patterns')}
+            className={`flex items-center gap-2.5 px-5 py-3 text-sm font-semibold border-b-2 transition -mb-[1px] ${
+              activeTab === 'patterns'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>3. รูปแบบตารางงานหลัก (Schedule Patterns)</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                activeTab === 'patterns' ? 'bg-[#0B2046]/10 text-[#0B2046]' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {workSchedules.length} รูปแบบ
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* -------------------------------------------------------- */}
-      {/* 4. Tab Selector */}
-      {/* -------------------------------------------------------- */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-medium">
-        <button
-          onClick={() => setActiveTab('schedules')}
-          className={`pb-3.5 border-b-2 flex items-center gap-2 transition-all ${
-            activeTab === 'schedules'
-              ? 'border-[#0B2046] text-[#0B2046] font-semibold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <CalendarRange className="w-4 h-4" />
-          รูปแบบตารางการทำงานหลัก
-          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600">
-            {workSchedules.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('assignments')}
-          className={`pb-3.5 border-b-2 flex items-center gap-2 transition-all ${
-            activeTab === 'assignments'
-              ? 'border-[#0B2046] text-[#0B2046] font-semibold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          การมอบหมายกะและปฏิทินกะพนักงาน
-          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600">
-            {assignments.length}
-          </span>
-        </button>
-      </div>
-
-      {/* ======================================================== */}
-      {/* TAB 1: WORK SCHEDULES MASTER */}
-      {/* ======================================================== */}
-      {activeTab === 'schedules' && (
-        <div className="space-y-4">
-          {/* Controls Bar */}
-          <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 flex-wrap">
+      {/* ============================================================= */}
+      {/* TAB 1: ปฏิทินกะและการมอบหมายกะ (Shift Roster) */}
+      {/* ============================================================= */}
+      {activeTab === 'roster' && (
+        <div className="space-y-6">
+          {/* Filter & View Switcher Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 flex-1">
               {/* Search */}
-              <div className="relative flex-1 min-w-[200px] max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="ค้นหารหัสหรือชื่อตารางการทำงาน..."
-                  value={scheduleSearch}
-                  onChange={(e) => setScheduleSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10 focus:border-[#0B2046]"
+                  placeholder="ค้นหาชื่อพนักงาน, รหัส หรือชื่อกะ..."
+                  value={assignmentSearch}
+                  onChange={(e) => setAssignmentSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 />
               </div>
 
-              {/* Status Filter */}
-              <select
-                value={scheduleStatusFilter}
-                onChange={(e) => setScheduleStatusFilter(e.target.value)}
-                className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10"
+              {/* Department Filter */}
+              <div className="min-w-[180px]">
+                <select
+                  value={assignmentDeptFilter}
+                  onChange={(e) => setAssignmentDeptFilter(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ALL">ทุกแผนก / สังกัด</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={() => {
+                  loadAssignments();
+                  if (assignmentViewMode === 'matrix') {
+                    const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
+                    loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
+                  }
+                }}
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                title="รีเฟรชข้อมูล"
               >
-                <option value="ALL">สถานะทั้งหมด</option>
-                <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
-              </select>
+                <RefreshCw className={`w-4 h-4 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
+              </button>
             </div>
 
-            {/* View Mode & Refresh */}
-            <div className="flex items-center gap-2 self-end md:self-auto">
+            {/* View Mode Switcher: Matrix vs List */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
               <button
-                onClick={loadSchedules}
-                disabled={loadingSchedules}
-                title="รีเฟรชข้อมูล"
-                className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                onClick={() => setAssignmentViewMode('matrix')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  assignmentViewMode === 'matrix'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <RefreshCw className={`w-4 h-4 ${loadingSchedules ? 'animate-spin' : ''}`} />
+                <Calendar className="w-3.5 h-3.5" />
+                <span>มุมมองปฏิทินกะ (Matrix)</span>
               </button>
-
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                <button
-                  onClick={() => setScheduleViewMode('grid')}
-                  className={`p-1.5 rounded-lg text-sm transition-all ${
-                    scheduleViewMode === 'grid'
-                      ? 'bg-white text-[#0B2046] shadow-sm font-medium'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                  title="มุมมองการ์ด"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setScheduleViewMode('table')}
-                  className={`p-1.5 rounded-lg text-sm transition-all ${
-                    scheduleViewMode === 'table'
-                      ? 'bg-white text-[#0B2046] shadow-sm font-medium'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                  title="มุมมองตาราง"
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => setAssignmentViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  assignmentViewMode === 'list'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>มุมมองรายการ (List)</span>
+              </button>
             </div>
           </div>
 
-          {/* Content Loading */}
-          {loadingSchedules ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
-              กำลังโหลดข้อมูลตารางการทำงาน...
+          {/* VIEW 1: MONTHLY GANTT MATRIX VIEW */}
+          {assignmentViewMode === 'matrix' && (
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4">
+              {/* Month Navigator & Shift Legends */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                    <button
+                      onClick={prevMonth}
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
+                      title="เดือนก่อนหน้า"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div className="px-3 text-sm font-bold text-slate-800">
+                      {THAI_MONTHS[rosterMonth - 1]} {rosterYear + 543}
+                    </div>
+                    <button
+                      onClick={nextMonth}
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
+                      title="เดือนถัดไป"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <span className="text-xs text-slate-500">
+                    แสดงพนักงาน {rosterData?.employees.length ?? 0} คน ในตารางจัดเวร
+                  </span>
+                </div>
+
+                {/* Shift Badges Legend */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500">สัญลักษณ์กะ:</span>
+                  {shifts.map((s) => (
+                    <span
+                      key={s.id}
+                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                        s.isCrossDay
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : 'bg-blue-50 text-blue-700 border-blue-200'
+                      }`}
+                      title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
+                    >
+                      {s.isCrossDay ? <Moon className="w-2.5 h-2.5" /> : <Sun className="w-2.5 h-2.5" />}
+                      <span>{s.shiftCode}</span>
+                    </span>
+                  ))}
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                    OFF (วันหยุด)
+                  </span>
+                </div>
+              </div>
+
+              {/* Gantt Table */}
+              {loadingRoster ? (
+                <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+                  <p className="text-sm">กำลังโหลดตารางจัดเวรประจำเดือน...</p>
+                </div>
+              ) : rosterData && rosterData.employees.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                        <th className="p-2.5 sticky left-0 bg-slate-50 z-10 w-48 min-w-[190px] font-bold border-r border-slate-200 shadow-[2px_0_4px_rgba(0,0,0,0.02)]">
+                          ข้อมูลพนักงาน / สังกัด
+                        </th>
+                        {currentMonthDays.map((d) => (
+                          <th
+                            key={d.day}
+                            className={`p-1 text-center min-w-[34px] border-r border-slate-100 font-medium ${
+                              d.isWeekend ? 'bg-amber-50/70 text-amber-800' : 'text-slate-600'
+                            }`}
+                          >
+                            <div className="text-[10px] text-slate-400">{d.dayName}</div>
+                            <div className="font-bold">{d.day}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {rosterData.employees.map((emp) => (
+                        <tr key={emp.employeeId} className="hover:bg-slate-50/80 transition group">
+                          {/* Sticky Employee Column */}
+                          <td className="p-2.5 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200 shadow-[2px_0_4px_rgba(0,0,0,0.02)]">
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0 pr-2">
+                                <div className="font-semibold text-slate-900 truncate">
+                                  {emp.employeeName}
+                                </div>
+                                <div className="text-[11px] text-slate-500 truncate">
+                                  {emp.employeeCode} · {emp.departmentName || '-'}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => openSingleAssignCreate(emp.employeeId)}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-[#0B2046] hover:bg-slate-200/70 rounded transition"
+                                title="มอบหมายกะให้พนักงานคนนี้"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* 1..31 Days Cells */}
+                          {currentMonthDays.map((d) => {
+                            const shift = emp.days[d.day];
+                            const isWeekend = d.isWeekend;
+                            const isCross = shift?.isCrossDay ?? false;
+
+                            return (
+                              <td
+                                key={d.day}
+                                className={`p-1 text-center border-r border-slate-100 align-middle ${
+                                  isWeekend ? 'bg-amber-50/30' : ''
+                                }`}
+                              >
+                                {shift ? (
+                                  <span
+                                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-xs ${
+                                      isCross
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : 'bg-blue-100 text-blue-800'
+                                    }`}
+                                    title={`${shift.shiftCode}: ${shift.shiftName || ''} (${shift.startTime?.substring(0, 5) || ''}-${shift.endTime?.substring(0, 5) || ''})`}
+                                  >
+                                    {shift.shiftCode.length > 5 ? shift.shiftCode.substring(0, 5) : shift.shiftCode}
+                                  </span>
+                                ) : isWeekend ? (
+                                  <span className="text-[10px] text-slate-300 font-medium select-none">OFF</span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-300 select-none">-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-400">
+                  <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                  <p className="text-base font-semibold text-slate-600">ไม่พบข้อมูลการจัดเวรในเดือนนี้</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    กรุณากดปุ่ม "มอบหมายกะเดี่ยว" หรือ "มอบหมายกะกลุ่ม" ด้านบนเพื่อเริ่มกำหนดเวรการทำงาน
+                  </p>
+                </div>
+              )}
             </div>
-          ) : filteredWorkSchedules.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
-              <CalendarDays className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <div className="text-base font-semibold text-slate-700">ไม่พบข้อมูลตารางการทำงาน</div>
-              <p className="text-sm text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มตารางการทำงาน" ด้านบน</p>
+          )}
+
+          {/* VIEW 2: DETAILED ASSIGNMENT LIST VIEW */}
+          {assignmentViewMode === 'list' && (
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">รายการมอบหมายกะพนักงานทั้งหมด</h3>
+                  <p className="text-xs text-slate-500">
+                    รายการการกำหนดกะแบบเฉพาะบุคคล ({filteredAssignments.length} รายการ)
+                  </p>
+                </div>
+              </div>
+
+              {loadingAssignments ? (
+                <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+                  <p className="text-sm">กำลังโหลดรายการมอบหมายกะ...</p>
+                </div>
+              ) : filteredAssignments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                        <th className="p-3.5">รหัส / ชื่อพนักงาน</th>
+                        <th className="p-3.5">แผนก / สังกัด</th>
+                        <th className="p-3.5">กะการทำงาน</th>
+                        <th className="p-3.5">เวลาการทำงาน</th>
+                        <th className="p-3.5">มีผลตั้งแต่วันที่</th>
+                        <th className="p-3.5">สิ้นสุดวันที่</th>
+                        <th className="p-3.5">สถานะ</th>
+                        <th className="p-3.5 text-right">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredAssignments.map((a) => (
+                        <tr key={a.id} className="hover:bg-slate-50/60 transition">
+                          <td className="p-3.5">
+                            <div className="font-semibold text-slate-900">{a.employeeName}</div>
+                            <div className="text-xs text-slate-500">{a.employeeCode}</div>
+                          </td>
+                          <td className="p-3.5 text-slate-600">
+                            {a.departmentName || '-'}
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                  a.isCrossDay ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                }`}
+                              >
+                                {a.shiftCode}
+                              </span>
+                              <span className="text-slate-700">{a.shiftName}</span>
+                            </div>
+                          </td>
+                          <td className="p-3.5 text-slate-600 font-mono text-xs">
+                            {a.startTime?.substring(0, 5)} - {a.endTime?.substring(0, 5)} น.
+                            {a.isCrossDay && <span className="ml-1 text-purple-600 font-semibold">(ข้ามวัน)</span>}
+                          </td>
+                          <td className="p-3.5 text-slate-700">
+                            {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </td>
+                          <td className="p-3.5 text-slate-700">
+                            {a.effectiveTo ? (
+                              new Date(a.effectiveTo).toLocaleDateString('th-TH', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            ) : (
+                              <span className="text-emerald-600 font-medium text-xs">ต่อเนื่อง (ไม่มีกำหนดสิ้นสุด)</span>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                a.isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  a.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                                }`}
+                              />
+                              {a.isActive ? 'กำลังใช้งาน' : 'ยกเลิก'}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => openSingleAssignEdit(a)}
+                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                                title="แก้ไขช่วงเวลากะ"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setItemToDelete({
+                                    type: 'assignment',
+                                    id: a.id,
+                                    title: `ยกเลิกการมอบหมายกะ: ${a.employeeName}`,
+                                    subtitle: `กะ ${a.shiftName} (${a.shiftCode})`,
+                                  });
+                                  setDeleteConfirmOpen(true);
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                title="ยกเลิกการมอบหมายกะ"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-400">
+                  <p className="text-base font-semibold text-slate-600">ไม่พบรายการมอบหมายกะ</p>
+                  <p className="text-xs text-slate-400 mt-1">ยังไม่มีการกำหนดกะเฉพาะบุคคลในระบบ</p>
+                </div>
+              )}
             </div>
-          ) : scheduleViewMode === 'grid' ? (
-            /* Grid View */
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredWorkSchedules.map((ws) => (
+          )}
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* TAB 2: กะการทำงาน (Shift Master) */}
+      {/* ============================================================= */}
+      {activeTab === 'shifts' && (
+        <div className="space-y-6">
+          {/* Shift Filter & View Switcher Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 flex-1">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหารหัส หรือชื่อกะการทำงาน..."
+                  value={shiftSearchQuery}
+                  onChange={(e) => setShiftSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              {/* Filter Shift Type */}
+              <div className="min-w-[150px]">
+                <select
+                  value={shiftFilterType}
+                  onChange={(e) => setShiftFilterType(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ALL">ประเภทกะทั้งหมด</option>
+                  <option value="NORMAL">กะกลางวัน (ปกติ)</option>
+                  <option value="CROSS_DAY">กะข้ามวัน (กะดึก)</option>
+                </select>
+              </div>
+
+              {/* Filter Status */}
+              <div className="min-w-[140px]">
+                <select
+                  value={shiftFilterStatus}
+                  onChange={(e) => setShiftFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ALL">สถานะทั้งหมด</option>
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ระงับใช้งาน</option>
+                </select>
+              </div>
+
+              {/* Refresh */}
+              <button
+                onClick={loadShifts}
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                title="รีเฟรชข้อมูลกะ"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingShifts ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            {/* View Switcher: Grid vs Table */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
+              <button
+                onClick={() => setShiftViewMode('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  shiftViewMode === 'grid'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>การ์ด (Grid)</span>
+              </button>
+              <button
+                onClick={() => setShiftViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  shiftViewMode === 'table'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>ตาราง (Table)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Shift Content */}
+          {loadingShifts ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+              <p className="text-sm">กำลังโหลดข้อมูลกะการทำงาน...</p>
+            </div>
+          ) : filteredShifts.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
+              <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-semibold text-slate-700">ไม่พบข้อมูลกะการทำงานที่ค้นหา</p>
+              <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มกะการทำงานใหม่" เพื่อสร้างกะแรก</p>
+            </div>
+          ) : shiftViewMode === 'grid' ? (
+            /* GRID VIEW */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredShifts.map((shift) => (
                 <div
-                  key={ws.id}
-                  className="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 shadow-sm hover:shadow-md transition-all p-5 flex flex-col justify-between group"
+                  key={shift.id}
+                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group"
                 >
                   <div>
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
-                          {ws.scheduleCode}
-                        </span>
-                        <h3 className="font-bold text-slate-900 text-base mt-2 line-clamp-1 group-hover:text-[#0B2046] transition-colors">
-                          {ws.scheduleName}
-                        </h3>
-                      </div>
+                    {/* Card Header: Code & Day/Night Badge */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
+                        {shift.shiftCode}
+                      </span>
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                          ws.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200'
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          shift.isCrossDay
+                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}
                       >
-                        {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                        {shift.isCrossDay ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                        <span>{shift.isCrossDay ? 'กะข้ามวัน (กลางคืน)' : 'กะกลางวัน'}</span>
                       </span>
                     </div>
 
-                    {/* Work Hours & Break */}
-                    <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
+                    {/* Shift Name */}
+                    <h3 className="font-bold text-slate-900 text-base mb-3 group-hover:text-[#0B2046] transition">
+                      {shift.shiftName}
+                    </h3>
+
+                    {/* Time Window Display */}
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          เวลามาตรฐาน
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {ws.workStart && ws.workEnd
-                            ? `${ws.workStart} - ${ws.workEnd} น.`
-                            : 'กำหนดตามกะที่มอบหมาย'}
+                        <span className="text-slate-500">เวลาทำงาน:</span>
+                        <span className="font-bold font-mono text-slate-800 text-sm">
+                          {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)} น.
                         </span>
                       </div>
-
-                      {ws.netWorkHours !== null && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-500">ชั่วโมงทำงานจริง</span>
-                          <span className="font-semibold text-blue-700">
-                            {ws.netWorkHours} ชม. (พัก {ws.breakMinutes} นาที)
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500">ชั่วโมงทำงานสุทธิ:</span>
+                        <span className="font-semibold text-slate-700">
+                          {shift.netWorkHours ?? 8} ชม. (พัก {shift.breakMinutes} นาที)
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Grace Periods */}
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 rounded-lg bg-amber-50/60 border border-amber-100/80">
-                        <div className="text-[11px] text-amber-700">ผ่อนปรนสาย</div>
-                        <div className="font-bold text-amber-900 mt-0.5">{ws.lateGraceMinutes} นาที</div>
+                    {/* Separate Grace Times */}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+                        <div className="text-slate-400 text-[11px]">ผ่อนปรนมาสาย:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5">
+                          {shift.lateGraceMinutes > 0 ? `${shift.lateGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
+                        </div>
                       </div>
-                      <div className="p-2 rounded-lg bg-orange-50/60 border border-orange-100/80">
-                        <div className="text-[11px] text-orange-700">ผ่อนปรนออกก่อน</div>
-                        <div className="font-bold text-orange-900 mt-0.5">{ws.earlyLeaveGraceMinutes} นาที</div>
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+                        <div className="text-slate-400 text-[11px]">ผ่อนปรนกลับก่อน:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5">
+                          {shift.earlyLeaveGraceMinutes > 0 ? `${shift.earlyLeaveGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-end gap-1.5">
-                    <button
-                      onClick={() => openEditScheduleModal(ws)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-[#0B2046] transition-colors"
+                  {/* Card Actions Footer */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs font-medium ${
+                        shift.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
+                      }`}
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      แก้ไข
-                    </button>
-                    <button
-                      onClick={() => confirmDelete('schedule', ws.id, ws.scheduleName)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      ลบ
-                    </button>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          shift.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
+                        }`}
+                      />
+                      {shift.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
+                    </span>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          setSelectedShiftForEmployees(shift);
+                          setEmployeeModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="ดูพนักงานที่เข้ากะนี้"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDuplicateShift(shift)}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                        title="คัดลอกกะนี้เพื่อสร้างใหม่"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openShiftEdit(shift)}
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                        title="แก้ไขรายละเอียดกะ"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setItemToDelete({
+                            type: 'shift',
+                            id: shift.id,
+                            title: `ลบกะการทำงาน: ${shift.shiftName}`,
+                            subtitle: `รหัสกะ: ${shift.shiftCode} (${shift.startTime.substring(0, 5)} - ${shift.endTime.substring(0, 5)})`,
+                          });
+                          setDeleteConfirmOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title="ลบกะการทำงาน"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            /* Table View */
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            /* TABLE VIEW */
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3 px-4">รหัสตาราง</th>
-                      <th className="py-3 px-4">ชื่อตารางการทำงาน</th>
-                      <th className="py-3 px-4">เวลาปฏิบัติงาน</th>
-                      <th className="py-3 px-4 text-center">เวลาพัก</th>
-                      <th className="py-3 px-4 text-center">ผ่อนปรนสาย</th>
-                      <th className="py-3 px-4 text-center">ผ่อนปรนออกก่อน</th>
-                      <th className="py-3 px-4 text-center">สถานะ</th>
-                      <th className="py-3 px-4 text-right">การจัดการ</th>
+                <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                      <th className="p-3.5">รหัสกะ</th>
+                      <th className="p-3.5">ชื่อกะการทำงาน</th>
+                      <th className="p-3.5">ประเภทกะ</th>
+                      <th className="p-3.5">เวลาทำงาน</th>
+                      <th className="p-3.5">พัก (นาที)</th>
+                      <th className="p-3.5">ผ่อนปรนสาย</th>
+                      <th className="p-3.5">ผ่อนปรนกลับก่อน</th>
+                      <th className="p-3.5">สถานะ</th>
+                      <th className="p-3.5 text-right">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredWorkSchedules.map((ws) => (
-                      <tr key={ws.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3.5 px-4 font-semibold text-slate-900">{ws.scheduleCode}</td>
-                        <td className="py-3.5 px-4 font-medium text-slate-800">{ws.scheduleName}</td>
-                        <td className="py-3.5 px-4 text-slate-600">
-                          {ws.workStart && ws.workEnd ? `${ws.workStart} - ${ws.workEnd} น.` : '-'}
-                        </td>
-                        <td className="py-3.5 px-4 text-center text-slate-600">{ws.breakMinutes} นาที</td>
-                        <td className="py-3.5 px-4 text-center text-amber-700 font-medium">{ws.lateGraceMinutes} นาที</td>
-                        <td className="py-3.5 px-4 text-center text-orange-700 font-medium">{ws.earlyLeaveGraceMinutes} นาที</td>
-                        <td className="py-3.5 px-4 text-center">
+                    {filteredShifts.map((s) => (
+                      <tr key={s.id} className="hover:bg-slate-50/60 transition">
+                        <td className="p-3.5 font-mono font-bold text-slate-800">{s.shiftCode}</td>
+                        <td className="p-3.5 font-semibold text-slate-900">{s.shiftName}</td>
+                        <td className="p-3.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              ws.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-slate-100 text-slate-500'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              s.isCrossDay
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}
                           >
-                            {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                            {s.isCrossDay ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                            <span>{s.isCrossDay ? 'กะข้ามวัน' : 'ปกติ'}</span>
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="p-3.5 font-mono text-xs text-slate-700">
+                          {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
+                        </td>
+                        <td className="p-3.5 text-slate-600">{s.breakMinutes} นาที</td>
+                        <td className="p-3.5 text-slate-700">
+                          {s.lateGraceMinutes > 0 ? `${s.lateGraceMinutes} นาที` : '-'}
+                        </td>
+                        <td className="p-3.5 text-slate-700">
+                          {s.earlyLeaveGraceMinutes > 0 ? `${s.earlyLeaveGraceMinutes} นาที` : '-'}
+                        </td>
+                        <td className="p-3.5">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              s.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                s.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            />
+                            {s.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
-                              onClick={() => openEditScheduleModal(ws)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#0B2046] hover:bg-slate-100"
+                              onClick={() => {
+                                setSelectedShiftForEmployees(s);
+                                setEmployeeModalOpen(true);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="ดูพนักงานที่เข้ากะนี้"
+                            >
+                              <Users className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDuplicateShift(s)}
+                              className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                              title="คัดลอกกะ"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => openShiftEdit(s)}
+                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
                               title="แก้ไข"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => confirmDelete('schedule', ws.id, ws.scheduleName)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              onClick={() => {
+                                setItemToDelete({
+                                  type: 'shift',
+                                  id: s.id,
+                                  title: `ลบกะการทำงาน: ${s.shiftName}`,
+                                  subtitle: `รหัสกะ: ${s.shiftCode}`,
+                                });
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                               title="ลบ"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -900,654 +1567,380 @@ export default function SchedulesPage() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* TAB 2: SHIFT ASSIGNMENTS & MONTHLY ROSTER */}
-      {/* ======================================================== */}
-      {activeTab === 'assignments' && (
-        <div className="space-y-4">
-          {/* Controls Bar */}
-          <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 flex-wrap">
-              {/* View Switch: List vs Matrix */}
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                <button
-                  onClick={() => setAssignmentViewMode('list')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                    assignmentViewMode === 'list'
-                      ? 'bg-white text-[#0B2046] shadow-sm font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <List className="w-3.5 h-3.5" />
-                  ตารางรายชื่อ
-                </button>
-                <button
-                  onClick={() => setAssignmentViewMode('matrix')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                    assignmentViewMode === 'matrix'
-                      ? 'bg-white text-[#0B2046] shadow-sm font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  ปฏิทินกะรายเดือน (Gantt)
-                </button>
-              </div>
-
+      {/* ============================================================= */}
+      {/* TAB 3: รูปแบบตารางงานหลัก (Schedule Patterns) */}
+      {/* ============================================================= */}
+      {activeTab === 'patterns' && (
+        <div className="space-y-6">
+          {/* Schedule Filter & View Switcher Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 flex-1">
               {/* Search */}
-              <div className="relative min-w-[180px] max-w-xs">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="ค้นหาพนักงานหรือกะ..."
-                  value={assignmentSearch}
-                  onChange={(e) => setAssignmentSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10"
+                  placeholder="ค้นหารหัส หรือชื่อรูปแบบตาราง..."
+                  value={scheduleSearch}
+                  onChange={(e) => setScheduleSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 />
               </div>
 
-              {/* Department Filter */}
-              <select
-                value={assignmentDeptFilter}
-                onChange={(e) => setAssignmentDeptFilter(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10"
-              >
-                <option value="ALL">แผนกทั้งหมด</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Matrix Month Navigator (when in matrix view) */}
-            {assignmentViewMode === 'matrix' && (
-              <div className="flex items-center gap-2 self-end md:self-auto">
-                <button
-                  onClick={() => {
-                    if (rosterMonth === 1) {
-                      setRosterMonth(12);
-                      setRosterYear(rosterYear - 1);
-                    } else {
-                      setRosterMonth(rosterMonth - 1);
-                    }
-                  }}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
-                  title="เดือนก่อนหน้า"
+              {/* Status Filter */}
+              <div className="min-w-[140px]">
+                <select
+                  value={scheduleStatusFilter}
+                  onChange={(e) => setScheduleStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <div className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 min-w-[130px] text-center">
-                  {THAI_MONTHS[rosterMonth - 1]} {rosterYear + 543}
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (rosterMonth === 12) {
-                      setRosterMonth(1);
-                      setRosterYear(rosterYear + 1);
-                    } else {
-                      setRosterMonth(rosterMonth + 1);
-                    }
-                  }}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
-                  title="เดือนถัดไป"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    setRosterYear(new Date().getFullYear());
-                    setRosterMonth(new Date().getMonth() + 1);
-                  }}
-                  className="px-2.5 py-1 text-xs font-medium text-[#0B2046] hover:bg-slate-100 rounded-lg"
-                >
-                  เดือนนี้
-                </button>
+                  <option value="ALL">สถานะทั้งหมด</option>
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ระงับใช้งาน</option>
+                </select>
               </div>
-            )}
-          </div>
 
-          {/* LIST VIEW */}
-          {assignmentViewMode === 'list' && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              {loadingAssignments ? (
-                <div className="p-12 text-center text-slate-400">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
-                  กำลังโหลดข้อมูลการมอบหมายกะ...
-                </div>
-              ) : filteredAssignments.length === 0 ? (
-                <div className="p-12 text-center text-slate-500">
-                  <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <div className="text-base font-semibold text-slate-700">ไม่พบประวัติการมอบหมายกะ</div>
-                  <p className="text-sm text-slate-400 mt-1">
-                    คลิกปุ่ม "มอบหมายกะเดี่ยว" หรือ "มอบหมายกะแบบกลุ่ม" เพื่อเริ่มจัดสรรกะการทำงาน
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      <tr>
-                        <th className="py-3 px-4">พนักงาน</th>
-                        <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
-                        <th className="py-3 px-4">กะการทำงาน</th>
-                        <th className="py-3 px-4">เวลาปฏิบัติงาน</th>
-                        <th className="py-3 px-4">วันที่เริ่มมีผล</th>
-                        <th className="py-3 px-4">วันที่สิ้นสุด</th>
-                        <th className="py-3 px-4 text-center">สถานะ</th>
-                        <th className="py-3 px-4 text-right">การจัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredAssignments.map((a) => (
-                        <tr key={a.id} className="hover:bg-slate-50/70 transition-colors">
-                          {/* Employee */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 text-[#0B2046] font-bold text-xs flex items-center justify-center shrink-0">
-                                {a.employeeCode.slice(-3)}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-slate-900">{a.employeeName}</div>
-                                <div className="text-xs text-slate-400">{a.employeeCode}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Dept / Position */}
-                          <td className="py-3.5 px-4">
-                            <div className="text-slate-800 font-medium">{a.departmentName || '-'}</div>
-                            <div className="text-xs text-slate-400">{a.positionName || '-'}</div>
-                          </td>
-
-                          {/* Shift */}
-                          <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getShiftBadgeStyle(
-                                a.shiftCode
-                              )}`}
-                            >
-                              {a.isCrossDay ? (
-                                <Moon className="w-3 h-3 text-purple-600" />
-                              ) : (
-                                <Sun className="w-3 h-3 text-amber-500" />
-                              )}
-                              {a.shiftName} ({a.shiftCode})
-                            </span>
-                          </td>
-
-                          {/* Hours */}
-                          <td className="py-3.5 px-4 text-slate-600">
-                            {a.startTime} - {a.endTime} น.
-                          </td>
-
-                          {/* Effective Dates */}
-                          <td className="py-3.5 px-4 font-mono text-xs text-slate-700">{a.effectiveFrom}</td>
-                          <td className="py-3.5 px-4 font-mono text-xs text-slate-700">
-                            {a.effectiveTo ? (
-                              a.effectiveTo
-                            ) : (
-                              <span className="text-emerald-600 font-sans font-medium">ต่อเนื่อง</span>
-                            )}
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3.5 px-4 text-center">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                a.isActive
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-slate-100 text-slate-500 border border-slate-200'
-                              }`}
-                            >
-                              {a.isActive ? 'ใช้งานอยู่' : 'ยังไม่มีผล/หมดอายุ'}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => openEditAssignModal(a)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-[#0B2046] hover:bg-slate-100"
-                                title="แก้ไข"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  confirmDelete(
-                                    'assignment',
-                                    a.id,
-                                    `${a.employeeName} (${a.shiftName})`
-                                  )
-                                }
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                title="ยกเลิกการมอบหมาย"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* MONTHLY MATRIX (GANTT ROSTER) VIEW */}
-          {assignmentViewMode === 'matrix' && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              {loadingRoster ? (
-                <div className="p-12 text-center text-slate-400">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
-                  กำลังประมวลผลตารางกะรายเดือน...
-                </div>
-              ) : !rosterData || rosterData.employees.length === 0 ? (
-                <div className="p-12 text-center text-slate-500">
-                  <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <div className="text-base font-semibold text-slate-700">ไม่พบข้อมูลพนักงานในรอบเดือนนี้</div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto max-h-[650px] relative">
-                  <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
-                    {/* Header */}
-                    <thead className="bg-slate-50 text-slate-700 sticky top-0 z-20 shadow-sm border-b border-slate-200">
-                      <tr>
-                        {/* Sticky Employee column */}
-                        <th className="py-3 px-4 font-bold min-w-[200px] sticky left-0 bg-slate-50 z-30 border-r border-slate-200">
-                          พนักงาน ({rosterData.employees.length} คน)
-                        </th>
-
-                        {/* Day headers */}
-                        {Array.from({ length: rosterData.daysInMonth }, (_, i) => i + 1).map((day) => {
-                          const dateObj = new Date(rosterYear, rosterMonth - 1, day);
-                          const dayOfWeek = dateObj.getDay();
-                          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-                          return (
-                            <th
-                              key={day}
-                              className={`py-2 px-1 text-center min-w-[42px] border-r border-slate-100 ${
-                                isWeekend ? 'bg-amber-50/70 text-amber-900 font-bold' : 'text-slate-700'
-                              }`}
-                            >
-                              <div className="text-[10px] text-slate-400">{THAI_DAYS[dayOfWeek]}</div>
-                              <div className="text-xs font-semibold">{day}</div>
-                            </th>
-                          );
-                        })}
-                      </tr>
-                    </thead>
-
-                    {/* Body */}
-                    <tbody className="divide-y divide-slate-100">
-                      {rosterData.employees.map((emp) => (
-                        <tr key={emp.employeeId} className="hover:bg-slate-50/80 transition-colors">
-                          {/* Sticky Employee Name & Dept */}
-                          <td className="py-2.5 px-4 sticky left-0 bg-white hover:bg-slate-50/80 z-10 border-r border-slate-200">
-                            <div className="font-semibold text-slate-900 leading-tight">{emp.employeeName}</div>
-                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                              <span>{emp.employeeCode}</span>
-                              <span>•</span>
-                              <span className="truncate max-w-[120px]">{emp.departmentName}</span>
-                            </div>
-                          </td>
-
-                          {/* Day Cells */}
-                          {Array.from({ length: rosterData.daysInMonth }, (_, i) => i + 1).map((day) => {
-                            const dateObj = new Date(rosterYear, rosterMonth - 1, day);
-                            const dayOfWeek = dateObj.getDay();
-                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                            const shift = emp.days[day];
-
-                            return (
-                              <td
-                                key={day}
-                                className={`py-1.5 px-1 text-center border-r border-slate-100 ${
-                                  isWeekend ? 'bg-amber-50/30' : ''
-                                }`}
-                              >
-                                {shift ? (
-                                  <div
-                                    title={`${shift.shiftName} (${shift.startTime}-${shift.endTime} น.)`}
-                                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight cursor-default transition-transform hover:scale-105 ${getShiftBadgeStyle(
-                                      shift.shiftCode
-                                    )}`}
-                                  >
-                                    {shift.shiftCode.length > 6
-                                      ? shift.shiftCode.slice(0, 5) + '..'
-                                      : shift.shiftCode}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-300 font-mono">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL 1: CREATE / EDIT WORK SCHEDULE */}
-      {/* ======================================================== */}
-      {scheduleModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
-                  <CalendarDays className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {scheduleModalMode === 'create' ? 'เพิ่มตารางการทำงานใหม่' : 'แก้ไขตารางการทำงาน'}
-                  </h3>
-                  <p className="text-xs text-slate-500">กำหนดเงื่อนไขเวลาปฏิบัติงานและนาทีผ่อนปรน</p>
-                </div>
-              </div>
+              {/* Refresh */}
               <button
-                onClick={() => setScheduleModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                onClick={loadSchedules}
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                title="รีเฟรชข้อมูลตารางหลัก"
               >
-                <X className="w-5 h-5" />
+                <RefreshCw className={`w-4 h-4 ${loadingSchedules ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSchedule} className="mt-5 space-y-4">
-              {/* Code & Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    รหัสตารางงาน <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    disabled={scheduleModalMode === 'edit'}
-                    placeholder="เช่น SCH_HQ"
-                    value={scheduleForm.scheduleCode}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleCode: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10 disabled:opacity-60"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    ชื่อตารางการทำงาน <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="เช่น ตารางทำงานสำนักงานใหญ่ (จันทร์-ศุกร์)"
-                    value={scheduleForm.scheduleName}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10"
-                  />
-                </div>
-              </div>
-
-              {/* Work Start & Work End with ThaiTimePicker */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    เวลาเริ่มต้นปฏิบัติงานมาตรฐาน
-                  </label>
-                  <ThaiTimePicker
-                    value={scheduleForm.workStart || '08:30'}
-                    onChange={(val) => setScheduleForm({ ...scheduleForm, workStart: val })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    เวลาสิ้นสุดปฏิบัติงานมาตรฐาน
-                  </label>
-                  <ThaiTimePicker
-                    value={scheduleForm.workEnd || '17:30'}
-                    onChange={(val) => setScheduleForm({ ...scheduleForm, workEnd: val })}
-                  />
-                </div>
-              </div>
-
-              {/* Break minutes & Grace minutes */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาพัก (นาที)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={scheduleForm.breakMinutes}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, breakMinutes: Number(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-amber-800 mb-1">ผ่อนปรนสาย (นาที)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={scheduleForm.lateGraceMinutes}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, lateGraceMinutes: Number(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 bg-amber-50/50 border border-amber-200 rounded-xl text-sm font-semibold text-amber-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-orange-800 mb-1">
-                    ผ่อนปรนออกก่อน (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={scheduleForm.earlyLeaveGraceMinutes}
-                    onChange={(e) =>
-                      setScheduleForm({
-                        ...scheduleForm,
-                        earlyLeaveGraceMinutes: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-orange-50/50 border border-orange-200 rounded-xl text-sm font-semibold text-orange-900"
-                  />
-                </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะการใช้งาน</label>
-                <div className="flex items-center gap-4 mt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="radio"
-                      name="scheduleStatus"
-                      checked={scheduleForm.status === 'ACTIVE'}
-                      onChange={() => setScheduleForm({ ...scheduleForm, status: 'ACTIVE' })}
-                      className="text-[#0B2046]"
-                    />
-                    เปิดใช้งาน (Active)
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="radio"
-                      name="scheduleStatus"
-                      checked={scheduleForm.status === 'INACTIVE'}
-                      onChange={() => setScheduleForm({ ...scheduleForm, status: 'INACTIVE' })}
-                      className="text-[#0B2046]"
-                    />
-                    ปิดใช้งาน (Inactive)
-                  </label>
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setScheduleModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#15326c] rounded-xl shadow-sm transition-all"
-                >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  บันทึกตารางการทำงาน
-                </button>
-              </div>
-            </form>
+            {/* View Switcher: Grid vs Table */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
+              <button
+                onClick={() => setScheduleViewMode('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  scheduleViewMode === 'grid'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>การ์ด (Grid)</span>
+              </button>
+              <button
+                onClick={() => setScheduleViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  scheduleViewMode === 'table'
+                    ? 'bg-white text-[#0B2046] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>ตาราง (Table)</span>
+              </button>
+            </div>
           </div>
+
+          {/* Patterns Content */}
+          {loadingSchedules ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+              <p className="text-sm">กำลังโหลดรูปแบบตารางการทำงาน...</p>
+            </div>
+          ) : filteredWorkSchedules.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
+              <Layers className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-semibold text-slate-700">ไม่พบข้อมูลตารางการทำงานหลัก</p>
+              <p className="text-xs text-slate-400 mt-1">
+                กดปุ่ม "เพิ่มรูปแบบตารางงาน" เพื่อสร้างตารางเวลามาตรฐานสำหรับองค์กร
+              </p>
+            </div>
+          ) : scheduleViewMode === 'grid' ? (
+            /* GRID VIEW */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredWorkSchedules.map((ws) => (
+                <div
+                  key={ws.id}
+                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
+                        {ws.scheduleCode}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          ws.status === 'ACTIVE'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            ws.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
+                          }`}
+                        />
+                        {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-slate-900 text-base mb-3 group-hover:text-[#0B2046] transition">
+                      {ws.scheduleName}
+                    </h3>
+
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500">ช่วงเวลามาตรฐาน:</span>
+                        <span className="font-bold font-mono text-slate-800 text-sm">
+                          {ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} -{' '}
+                          {ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'} น.
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500">เวลาพักกลางวัน:</span>
+                        <span className="font-semibold text-slate-700">{ws.breakMinutes} นาที</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+                        <div className="text-slate-400 text-[11px]">ผ่อนปรนมาสาย:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5">
+                          {ws.lateGraceMinutes > 0 ? `${ws.lateGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
+                        </div>
+                      </div>
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+                        <div className="text-slate-400 text-[11px]">ผ่อนปรนกลับก่อน:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5">
+                          {ws.earlyLeaveGraceMinutes > 0 ? `${ws.earlyLeaveGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => openScheduleEdit(ws)}
+                      className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                      title="แก้ไขรูปแบบตาราง"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setItemToDelete({
+                          type: 'schedule',
+                          id: ws.id,
+                          title: `ลบรูปแบบตาราง: ${ws.scheduleName}`,
+                          subtitle: `รหัส: ${ws.scheduleCode} (${ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} - ${ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'})`,
+                        });
+                        setDeleteConfirmOpen(true);
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                      title="ลบรูปแบบตาราง"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* TABLE VIEW */
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                      <th className="p-3.5">รหัสตาราง</th>
+                      <th className="p-3.5">ชื่อรูปแบบตาราง</th>
+                      <th className="p-3.5">เวลาเริ่ม - สิ้นสุด</th>
+                      <th className="p-3.5">พัก (นาที)</th>
+                      <th className="p-3.5">ผ่อนปรนสาย</th>
+                      <th className="p-3.5">ผ่อนปรนกลับก่อน</th>
+                      <th className="p-3.5">สถานะ</th>
+                      <th className="p-3.5 text-right">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredWorkSchedules.map((ws) => (
+                      <tr key={ws.id} className="hover:bg-slate-50/60 transition">
+                        <td className="p-3.5 font-mono font-bold text-slate-800">{ws.scheduleCode}</td>
+                        <td className="p-3.5 font-semibold text-slate-900">{ws.scheduleName}</td>
+                        <td className="p-3.5 font-mono text-xs text-slate-700">
+                          {ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} -{' '}
+                          {ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'} น.
+                        </td>
+                        <td className="p-3.5 text-slate-600">{ws.breakMinutes} นาที</td>
+                        <td className="p-3.5 text-slate-700">
+                          {ws.lateGraceMinutes > 0 ? `${ws.lateGraceMinutes} นาที` : '-'}
+                        </td>
+                        <td className="p-3.5 text-slate-700">
+                          {ws.earlyLeaveGraceMinutes > 0 ? `${ws.earlyLeaveGraceMinutes} นาที` : '-'}
+                        </td>
+                        <td className="p-3.5">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              ws.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                ws.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            />
+                            {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => openScheduleEdit(ws)}
+                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setItemToDelete({
+                                  type: 'schedule',
+                                  id: ws.id,
+                                  title: `ลบรูปแบบตาราง: ${ws.scheduleName}`,
+                                  subtitle: `รหัส: ${ws.scheduleCode}`,
+                                });
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 2: SINGLE ASSIGN SHIFT */}
-      {/* ======================================================== */}
+      {/* ============================================================= */}
+      {/* MODAL 1: Single Assign Shift Modal */}
+      {/* ============================================================= */}
       {assignModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {assignModalMode === 'create' ? 'มอบหมายกะการทำงาน' : 'แก้ไขการมอบหมายกะ'}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    บันทึกกะและช่วงวันที่มีผล (ระบบจะป้องกันกะซ้อนทับอัตโนมัติ)
-                  </p>
-                </div>
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {assignModalMode === 'create' ? 'มอบหมายกะให้พนักงาน' : 'แก้ไขการมอบหมายกะ'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  กำหนดกะเฉพาะบุคคล (ป้องกันการกำหนดช่วงเวลาซ้อนทับอัตโนมัติ)
+                </p>
               </div>
               <button
                 onClick={() => setAssignModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveAssign} className="mt-5 space-y-4">
+            <form onSubmit={handleSaveSingleAssign} className="p-5 space-y-4">
               {/* Employee Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  พนักงานที่ต้องการมอบหมาย <span className="text-rose-500">*</span>
+                  เลือกพนักงาน <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  required
-                  disabled={assignModalMode === 'edit'}
-                  value={assignForm.employeeId}
-                  onChange={(e) => setAssignForm({ ...assignForm, employeeId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10 disabled:opacity-60 font-medium"
-                >
-                  <option value={0} disabled>
-                    -- เลือกพนักงาน --
-                  </option>
-                  {assignableEmployees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.employeeCode} - {e.fullName} ({e.departmentName})
-                    </option>
-                  ))}
-                </select>
+                {assignModalMode === 'create' ? (
+                  <select
+                    value={assignForm.employeeId}
+                    onChange={(e) => setAssignForm({ ...assignForm, employeeId: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    required
+                  >
+                    <option value="0">-- กรุณาเลือกพนักงาน --</option>
+                    {assignableEmployees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.employeeCode} - {emp.fullName} ({emp.departmentName || 'ไม่ระบุแผนก'})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium">
+                    {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.fullName ||
+                      `พนักงานรหัส #${assignForm.employeeId}`}
+                  </div>
+                )}
               </div>
 
               {/* Shift Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  กะการทำงาน <span className="text-rose-500">*</span>
+                  กะการทำงานเป้าหมาย <span className="text-rose-500">*</span>
                 </label>
                 <select
-                  required
                   value={assignForm.shiftId}
                   onChange={(e) => setAssignForm({ ...assignForm, shiftId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/10 font-medium"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  required
                 >
-                  <option value={0} disabled>
-                    -- เลือกกะการทำงาน --
-                  </option>
+                  <option value="0">-- กรุณาเลือกกะการทำงาน --</option>
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.startTime} - {s.endTime} น.)
+                      {s.shiftCode} - {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
+                      {s.isCrossDay ? ' กะข้ามวัน' : ''})
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Date range */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Date Ranges */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    วันเริ่มต้นกะ <span className="text-rose-500">*</span>
+                    มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="date"
-                    required
                     value={assignForm.effectiveFrom}
                     onChange={(e) => setAssignForm({ ...assignForm, effectiveFrom: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    required
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    วันสิ้นสุดกะ (ไม่ระบุ = ต่อเนื่อง)
+                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าไม่มีกำหนด)</span>
                   </label>
                   <input
                     type="date"
                     value={assignForm.effectiveTo || ''}
                     onChange={(e) => setAssignForm({ ...assignForm, effectiveTo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                   />
                 </div>
               </div>
 
-              {/* PostgreSQL GiST No-Overlap note */}
-              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 flex items-start gap-2.5">
-                <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-800 leading-relaxed">
-                  <strong>กฎความปลอดภัยตารางกะ:</strong> พนักงานคนเดียวกันจะไม่สามารถมีกะซ้อนทับกันในช่วงเวลาเดียวกันได้
-                  ระบบควบคุมด้วยกฎ <code>ex_employee_shift_no_overlap</code> ของ PostgreSQL
-                </p>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+              {/* Form Actions */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setAssignModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#15326c] rounded-xl shadow-sm transition-all"
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  บันทึกการมอบหมาย
+                  <span>บันทึกการมอบหมาย</span>
                 </button>
               </div>
             </form>
@@ -1555,49 +1948,48 @@ export default function SchedulesPage() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 3: BATCH ASSIGN SHIFT */}
-      {/* ======================================================== */}
+      {/* ============================================================= */}
+      {/* MODAL 2: Batch Assign Shift Modal */}
+      {/* ============================================================= */}
       {batchModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-                  <Users className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">มอบหมายกะการทำงานแบบกลุ่ม (Batch Assign)</h3>
-                  <p className="text-xs text-slate-500">มอบหมายกะให้พนักงานหลายคนหรือยกแผนกในคราวเดียว</p>
+                  <h3 className="font-bold text-slate-900 text-base">มอบหมายกะแบบกลุ่ม (Batch Assignment)</h3>
+                  <p className="text-xs text-slate-500">จัดกะให้พนักงานทั้งแผนก หรือเลือกเฉพาะหลายคนพร้อมกันในครั้งเดียว</p>
                 </div>
               </div>
               <button
                 onClick={() => setBatchModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="mt-5 space-y-4 overflow-y-auto flex-1 pr-1">
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
               {/* Batch Result Report */}
               {batchResult && (
-                <div
-                  className={`p-4 rounded-xl border ${
-                    batchResult.failedCount === 0
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-amber-50 border-amber-200 text-amber-900'
-                  }`}
-                >
-                  <div className="font-bold text-sm flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ประมวลผลเสร็จสิ้น: มอบหมายสำเร็จ {batchResult.successCount} คน, ล้มเหลว {batchResult.failedCount} คน
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">ผลการประมวลผลการจัดกะ:</span>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-emerald-700 font-semibold">สำเร็จ: {batchResult.successCount}</span>
+                      <span className="text-rose-700 font-semibold">ข้อผิดพลาด: {batchResult.failedCount}</span>
+                    </div>
                   </div>
-                  {batchResult.errors.length > 0 && (
-                    <div className="mt-2 text-xs space-y-1 text-rose-700">
-                      <strong>รายการที่ซ้อนทับหรือไม่สำเร็จ:</strong>
-                      {batchResult.errors.map((err, idx) => (
-                        <div key={idx}>• {err}</div>
+                  {batchResult.errors && batchResult.errors.length > 0 && (
+                    <div className="max-h-32 overflow-y-auto text-xs text-rose-700 bg-rose-50/70 p-2 rounded-lg space-y-1">
+                      {batchResult.errors.map((err, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{err}</span>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -1606,248 +1998,706 @@ export default function SchedulesPage() {
 
               {/* Target Type Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  รูปแบบการเลือกกลุ่มเป้าหมาย
-                </label>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">เป้าหมายที่ต้องการมอบหมาย</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setBatchTargetType('department')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${
                       batchTargetType === 'department'
-                        ? 'border-[#0B2046] bg-[#0B2046]/5 font-semibold text-[#0B2046]'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      มอบหมายยกแผนก
-                    </div>
-                    <div className="text-[11px] font-normal text-slate-400 mt-1">
-                      พนักงานทุกคนที่สังกัดในแผนกที่เลือก
+                    <Building2 className="w-5 h-5 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">ตามรายแผนก</div>
+                      <div className="text-[11px] text-slate-500">มอบหมายให้พนักงานทุกคนในแผนก</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setBatchTargetType('selected')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${
                       batchTargetType === 'selected'
-                        ? 'border-[#0B2046] bg-[#0B2046]/5 font-semibold text-[#0B2046]'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <CheckSquare className="w-4 h-4" />
-                      เลือกพนักงานหลายคน
-                    </div>
-                    <div className="text-[11px] font-normal text-slate-400 mt-1">
-                      เลือกรายชื่อทีละคน ({batchSelectedEmpIds.length} คนที่เลือก)
+                    <UserCheck className="w-5 h-5 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">เลือกพนักงานเอง</div>
+                      <div className="text-[11px] text-slate-500">ติ๊กเลือกพนักงานเฉพาะกลุ่ม</div>
                     </div>
                   </button>
                 </div>
               </div>
 
-              {/* Target: Department */}
-              {batchTargetType === 'department' && (
+              {/* Department Option */}
+              {batchTargetType === 'department' ? (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">เลือกแผนก</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    เลือกแผนกเป้าหมาย <span className="text-rose-500">*</span>
+                  </label>
                   <select
-                    value={batchSelectedDept || 0}
-                    onChange={(e) => setBatchSelectedDept(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"
+                    value={batchSelectedDept || ''}
+                    onChange={(e) => setBatchSelectedDept(Number(e.target.value) || null)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                   >
+                    <option value="">-- กรุณาเลือกแผนก --</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.departmentName}
+                        {d.departmentName} ({d.departmentCode})
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
-
-              {/* Target: Multiselect Employees */}
-              {batchTargetType === 'selected' && (
+              ) : (
+                /* Select Specific Employees */
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700">
-                      เลือกรายชื่อพนักงาน ({batchSelectedEmpIds.length} คน)
+                      เลือกพนักงาน ({batchSelectedEmpIds.length} คนที่เลือก)
                     </label>
                     <div className="flex items-center gap-2 text-xs">
                       <button
                         type="button"
-                        onClick={() =>
-                          setBatchSelectedEmpIds(filteredAssignableEmps.map((e) => e.id))
-                        }
-                        className="text-[#0B2046] hover:underline font-medium"
+                        onClick={() => setBatchSelectedEmpIds(assignableEmployees.map((e) => e.id))}
+                        className="text-blue-600 hover:underline"
                       >
-                        เลือกทั้งหมด ({filteredAssignableEmps.length})
+                        เลือกทั้งหมด
                       </button>
-                      <span>•</span>
+                      <span>|</span>
                       <button
                         type="button"
                         onClick={() => setBatchSelectedEmpIds([])}
-                        className="text-slate-400 hover:underline"
+                        className="text-slate-500 hover:underline"
                       >
-                        ล้างที่เลือก
+                        ล้างการเลือก
                       </button>
                     </div>
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="พิมพ์ชื่อหรือรหัสพนักงานเพื่อกรอง..."
-                    value={empFilterKeyword}
-                    onChange={(e) => setEmpFilterKeyword(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="พิมพ์กรองชื่อ หรือแผนก..."
+                      value={empFilterKeyword}
+                      onChange={(e) => setEmpFilterKeyword(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
 
-                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
-                    {filteredAssignableEmps.map((emp) => {
-                      const isSelected = batchSelectedEmpIds.includes(emp.id);
-                      return (
-                        <div
-                          key={emp.id}
-                          onClick={() => {
-                            if (isSelected) {
-                              setBatchSelectedEmpIds(batchSelectedEmpIds.filter((id) => id !== emp.id));
-                            } else {
-                              setBatchSelectedEmpIds([...batchSelectedEmpIds, emp.id]);
-                            }
-                          }}
-                          className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
-                            isSelected ? 'bg-[#0B2046]/5' : 'hover:bg-slate-100/70'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-[#0B2046]" />
-                            ) : (
-                              <Square className="w-4 h-4 text-slate-300" />
-                            )}
-                            <div>
-                              <div className="font-semibold text-xs text-slate-900">{emp.fullName}</div>
-                              <div className="text-[11px] text-slate-400">
-                                {emp.employeeCode} • {emp.departmentName}
-                              </div>
+                  <div className="border border-slate-200 rounded-lg max-h-44 overflow-y-auto divide-y divide-slate-100 p-1">
+                    {assignableEmployees
+                      .filter(
+                        (e) =>
+                          e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
+                          e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
+                          (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()))
+                      )
+                      .map((emp) => {
+                        const checked = batchSelectedEmpIds.includes(emp.id);
+                        return (
+                          <label
+                            key={emp.id}
+                            className="flex items-center gap-2.5 p-2 hover:bg-slate-50 rounded cursor-pointer text-xs"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setBatchSelectedEmpIds([...batchSelectedEmpIds, emp.id]);
+                                } else {
+                                  setBatchSelectedEmpIds(batchSelectedEmpIds.filter((id) => id !== emp.id));
+                                }
+                              }}
+                              className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]"
+                            />
+                            <div className="flex-1">
+                              <span className="font-semibold text-slate-800">{emp.fullName}</span>
+                              <span className="text-slate-400 text-[11px] ml-2 font-mono">{emp.employeeCode}</span>
+                              {emp.departmentName && (
+                                <span className="text-slate-500 text-[11px] ml-2">({emp.departmentName})</span>
+                              )}
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          </label>
+                        );
+                      })}
                   </div>
                 </div>
               )}
 
-              {/* Shift Selection */}
+              {/* Choose Shift */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  กะการทำงานที่จะมอบหมาย <span className="text-rose-500">*</span>
+                  กะการทำงานที่ต้องการมอบหมาย <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={batchShiftId}
                   onChange={(e) => setBatchShiftId(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.startTime} - {s.endTime} น.)
+                      {s.shiftCode} - {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.)
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Date Range */}
+              {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">วันเริ่มต้นกะ</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="date"
-                    required
                     value={batchEffectiveFrom}
                     onChange={(e) => setBatchEffectiveFrom(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    วันสิ้นสุดกะ (ไม่ระบุ = ต่อเนื่อง)
+                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าต่อเนื่อง)</span>
                   </label>
                   <input
                     type="date"
                     value={batchEffectiveTo}
                     onChange={(e) => setBatchEffectiveTo(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 shrink-0 mt-4">
+            {/* Modal Actions */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50">
               <button
                 type="button"
                 onClick={() => setBatchModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
               >
                 ปิดหน้าต่าง
               </button>
               <button
                 type="button"
-                onClick={handleBatchAssign}
+                onClick={handleRunBatchAssign}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#15326c] rounded-xl shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                เริ่มประมวลผลการมอบหมายกะ
+                <span>ดำเนินการจัดกะแบบกลุ่ม</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 4: DELETE CONFIRMATION */}
-      {/* ======================================================== */}
+      {/* ============================================================= */}
+      {/* MODAL 3: Create / Edit Shift Master Modal */}
+      {/* ============================================================= */}
+      {shiftModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  กำหนดช่วงเวลาเข้า-ออก และเงื่อนไขการผ่อนปรนเวลา
+                </p>
+              </div>
+              <button
+                onClick={() => setShiftModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveShift} className="p-5 space-y-4">
+              {/* Shift Code & Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    รหัสกะ <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น DAY_OFFICE"
+                    value={shiftForm.shiftCode}
+                    onChange={(e) => setShiftForm({ ...shiftForm, shiftCode: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ชื่อกะการทำงาน <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น กะกลางวันสำนักงาน"
+                    value={shiftForm.shiftName}
+                    onChange={(e) => setShiftForm({ ...shiftForm, shiftName: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+              </div>
+
+              {/* Working Hours with ThaiTimePicker */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">กำหนดเวลาทำงาน</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      id="isCrossDay"
+                      checked={shiftForm.isCrossDay}
+                      onChange={(e) => setShiftForm({ ...shiftForm, isCrossDay: e.target.checked })}
+                      className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]"
+                    />
+                    <label htmlFor="isCrossDay" className="text-xs font-medium text-slate-700 cursor-pointer">
+                      กะข้ามวัน (เช่น 20:00 - 05:00)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-slate-500 mb-1">เวลาเริ่มงาน</label>
+                    <ThaiTimePicker
+                      value={shiftForm.startTime}
+                      onChange={(val) => handleShiftTimeChange('startTime', val)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-500 mb-1">เวลาเลิกงาน</label>
+                    <ThaiTimePicker
+                      value={shiftForm.endTime}
+                      onChange={(val) => handleShiftTimeChange('endTime', val)}
+                    />
+                  </div>
+                </div>
+
+                {/* Duration summary badge */}
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                  <span>ชั่วโมงสุทธิโดยประมาณ:</span>
+                  <span className="font-bold text-[#0B2046]">
+                    {calcShiftDuration(
+                      shiftForm.startTime,
+                      shiftForm.endTime,
+                      !!shiftForm.isCrossDay,
+                      shiftForm.breakMinutes
+                    ).net}{' '}
+                    ชั่วโมง
+                  </span>
+                </div>
+              </div>
+
+              {/* Break Minutes */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  เวลาพักกลางวัน / กะ (นาที)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="180"
+                  value={shiftForm.breakMinutes}
+                  onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              {/* Separate Grace Times: Late & Early Leave */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ผ่อนปรนมาสาย (นาที)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={shiftForm.lateGraceMinutes}
+                    onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                  <div className="flex gap-1 mt-1.5">
+                    {[0, 5, 10, 15].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setShiftForm({ ...shiftForm, lateGraceMinutes: m })}
+                        className={`text-[10px] px-2 py-0.5 rounded border ${
+                          shiftForm.lateGraceMinutes === m
+                            ? 'bg-[#0B2046] text-white border-[#0B2046]'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {m}น.
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ผ่อนปรนกลับก่อน (นาที)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={shiftForm.earlyLeaveGraceMinutes}
+                    onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                  <div className="flex gap-1 mt-1.5">
+                    {[0, 5, 10, 15].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: m })}
+                        className={`text-[10px] px-2 py-0.5 rounded border ${
+                          shiftForm.earlyLeaveGraceMinutes === m
+                            ? 'bg-[#0B2046] text-white border-[#0B2046]'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {m}น.
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะกะการทำงาน</label>
+                <select
+                  value={shiftForm.status}
+                  onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน (Active)</option>
+                  <option value="INACTIVE">ระงับการใช้งานชั่วคราว (Inactive)</option>
+                </select>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShiftModalOpen(false)}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
+                >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{shiftModalMode === 'create' ? 'สร้างกะใหม่' : 'บันทึกการแก้ไข'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 4: Create / Edit Work Schedule Modal */}
+      {/* ============================================================= */}
+      {scheduleModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {scheduleModalMode === 'create' ? 'เพิ่มรูปแบบตารางงานหลัก' : 'แก้ไขรูปแบบตารางงานหลัก'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  กำหนดโครงสร้างตารางเวลามาตรฐานสำหรับพนักงานทั่วไปในองค์กร
+                </p>
+              </div>
+              <button
+                onClick={() => setScheduleModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSchedule} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    รหัสตาราง <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น SCH_OFFICE_5D"
+                    value={scheduleForm.scheduleCode}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleCode: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ชื่อรูปแบบตาราง <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น ตารางมาตรฐาน 5 วัน จันทร์-ศุกร์"
+                    value={scheduleForm.scheduleName}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleName: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาเริ่มงาน</label>
+                  <ThaiTimePicker
+                    value={scheduleForm.workStart || '08:30'}
+                    onChange={(val) => setScheduleForm({ ...scheduleForm, workStart: val })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาเลิกงาน</label>
+                  <ThaiTimePicker
+                    value={scheduleForm.workEnd || '17:30'}
+                    onChange={(val) => setScheduleForm({ ...scheduleForm, workEnd: val })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาพัก (นาที)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="180"
+                  value={scheduleForm.breakMinutes}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, breakMinutes: Number(e.target.value) })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">ผ่อนปรนมาสาย (นาที)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={scheduleForm.lateGraceMinutes}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, lateGraceMinutes: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">ผ่อนปรนกลับก่อน (นาที)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={scheduleForm.earlyLeaveGraceMinutes}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <select
+                  value={scheduleForm.status}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน (Active)</option>
+                  <option value="INACTIVE">ระงับการใช้งาน (Inactive)</option>
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setScheduleModalOpen(false)}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
+                >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>บันทึกตารางงาน</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 5: View Staff Assigned to Shift */}
+      {/* ============================================================= */}
+      {employeeModalOpen && selectedShiftForEmployees && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">พนักงานในกะ: {selectedShiftForEmployees.shiftName}</h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  รหัส {selectedShiftForEmployees.shiftCode} ({selectedShiftForEmployees.startTime.substring(0, 5)} -{' '}
+                  {selectedShiftForEmployees.endTime.substring(0, 5)} น.)
+                </p>
+              </div>
+              <button
+                onClick={() => setEmployeeModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 max-h-80 overflow-y-auto">
+              {assignments.filter((a) => a.shiftId === selectedShiftForEmployees.id).length === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p className="text-sm font-medium text-slate-600">ยังไม่มีพนักงานที่ถูกมอบหมายกะนี้</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    สามารถไปที่ "แท็บ 1: ปฏิทินกะและการมอบหมายกะ" เพื่อเริ่มจัดเวรได้ทันที
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {assignments
+                    .filter((a) => a.shiftId === selectedShiftForEmployees.id)
+                    .map((a) => (
+                      <div key={a.id} className="py-2.5 flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-slate-800 text-sm">{a.employeeName}</div>
+                          <div className="text-xs text-slate-500">
+                            {a.employeeCode} · {a.departmentName || '-'}
+                          </div>
+                        </div>
+                        <div className="text-right text-xs text-slate-500">
+                          <div>
+                            ตั้งแต่{' '}
+                            {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: '2-digit',
+                            })}
+                          </div>
+                          <div>
+                            {a.effectiveTo
+                              ? `ถึง ${new Date(a.effectiveTo).toLocaleDateString('th-TH', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: '2-digit',
+                                })}`
+                              : 'ต่อเนื่อง'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setEmployeeModalOpen(false)}
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 6: Shared Delete Confirmation Modal */}
+      {/* ============================================================= */}
       {deleteConfirmOpen && itemToDelete && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
-              {itemToDelete.type === 'schedule' ? 'ยืนยันการลบตารางการทำงาน' : 'ยืนยันการยกเลิกการมอบหมายกะ'}
-            </h3>
-            <p className="text-sm text-slate-500 mt-2">
-              คุณต้องการลบ{' '}
-              <span className="font-semibold text-slate-800">"{itemToDelete.title}"</span>{' '}
-              ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
-            </p>
 
-            <div className="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-slate-100">
+            <div className="text-center space-y-1">
+              <h3 className="font-bold text-slate-900 text-lg">{itemToDelete.title}</h3>
+              {itemToDelete.subtitle && (
+                <p className="text-xs text-slate-500 font-medium">{itemToDelete.subtitle}</p>
+              )}
+              <p className="text-xs text-slate-500 mt-2">
+                คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การดำเนินการนี้ไม่สามารถเรียกคืนได้
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setDeleteConfirmOpen(false);
                   setItemToDelete(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={confirmDelete}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                ยืนยันการลบ
+                <span>ยืนยันการลบ</span>
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+export default function SchedulesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+          <p className="text-sm">กำลังโหลดข้อมูลระบบการจัดตารางงาน...</p>
+        </div>
+      }
+    >
+      <SchedulesContent />
+    </Suspense>
   );
 }

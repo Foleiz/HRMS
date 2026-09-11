@@ -42,15 +42,9 @@ const menuItems: MenuItem[] = [
     icon: Users,
   },
   {
-    title: 'กะการทำงาน',
-    href: '/attendance/shifts',
-    matchPrefix: '/attendance/shifts',
-    icon: Clock,
-  },
-  {
-    title: 'ตารางเวลาทำงาน',
+    title: 'การจัดตารางงาน',
     href: '/attendance/schedules',
-    matchPrefix: '/attendance/schedules',
+    matchPrefix: '/attendance',
     icon: CalendarRange,
   },
   {
