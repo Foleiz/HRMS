@@ -56,11 +56,14 @@ public class WorkCalendarService : IWorkCalendarService
             records = new List<WorkWeek>();
             for (short d = 0; d < 7; d++)
             {
+                var isWork = (d >= 1 && d <= 5);
                 records.Add(new WorkWeek
                 {
                     CompanyId = targetCompanyId,
                     DayOfWeek = d,
-                    IsWorkingDay = (d >= 1 && d <= 5)
+                    IsWorkingDay = isWork,
+                    StartTime = isWork ? new TimeOnly(8, 30) : null,
+                    EndTime = isWork ? new TimeOnly(17, 30) : null
                 });
             }
             _context.WorkWeeks.AddRange(records);
@@ -73,7 +76,9 @@ public class WorkCalendarService : IWorkCalendarService
             DayOfWeek = r.DayOfWeek,
             DayNameThai = (r.DayOfWeek >= 0 && r.DayOfWeek < 7) ? DayNames[r.DayOfWeek].thai : $"วัน {r.DayOfWeek}",
             DayNameEnglish = (r.DayOfWeek >= 0 && r.DayOfWeek < 7) ? DayNames[r.DayOfWeek].eng : $"Day {r.DayOfWeek}",
-            IsWorkingDay = r.IsWorkingDay
+            IsWorkingDay = r.IsWorkingDay,
+            StartTime = r.StartTime.HasValue ? r.StartTime.Value.ToString("HH:mm") : null,
+            EndTime = r.EndTime.HasValue ? r.EndTime.Value.ToString("HH:mm") : null
         }).ToList();
     }
 
@@ -85,12 +90,30 @@ public class WorkCalendarService : IWorkCalendarService
             .Where(w => w.CompanyId == targetCompanyId)
             .ToListAsync();
 
+        static TimeOnly? ParseTime(string? timeStr)
+        {
+            if (string.IsNullOrWhiteSpace(timeStr)) return null;
+            if (TimeOnly.TryParse(timeStr, out var t)) return t;
+            return null;
+        }
+
         foreach (var item in request.Days)
         {
             var match = existing.FirstOrDefault(w => w.DayOfWeek == item.DayOfWeek);
+            var parsedStart = item.IsWorkingDay ? ParseTime(item.StartTime) : null;
+            var parsedEnd = item.IsWorkingDay ? ParseTime(item.EndTime) : null;
+
+            if (item.IsWorkingDay)
+            {
+                parsedStart ??= new TimeOnly(8, 30);
+                parsedEnd ??= new TimeOnly(17, 30);
+            }
+
             if (match != null)
             {
                 match.IsWorkingDay = item.IsWorkingDay;
+                match.StartTime = parsedStart;
+                match.EndTime = parsedEnd;
             }
             else
             {
@@ -98,7 +121,9 @@ public class WorkCalendarService : IWorkCalendarService
                 {
                     CompanyId = targetCompanyId,
                     DayOfWeek = item.DayOfWeek,
-                    IsWorkingDay = item.IsWorkingDay
+                    IsWorkingDay = item.IsWorkingDay,
+                    StartTime = parsedStart,
+                    EndTime = parsedEnd
                 });
             }
         }

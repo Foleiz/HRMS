@@ -4,11 +4,15 @@ export interface WorkWeekDay {
   dayNameThai: string;
   dayNameEnglish: string;
   isWorkingDay: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 
 export interface UpdateWorkWeekItem {
   dayOfWeek: number;
   isWorkingDay: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 
 export interface UpdateWorkWeekRequest {

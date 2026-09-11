@@ -108,6 +108,13 @@ public class ShiftService : IShiftService
             throw new InvalidOperationException($"รหัสกะการทำงาน '{code}' มีอยู่ในระบบแล้ว");
         }
 
+        var name = request.ShiftName.Trim();
+        var existsName = await _context.Shifts.AnyAsync(s => s.ShiftName.ToLower() == name.ToLower());
+        if (existsName)
+        {
+            throw new InvalidOperationException($"ชื่อกะการทำงาน '{name}' มีอยู่ในระบบแล้ว");
+        }
+
         var startTime = ParseTime(request.StartTime, "เวลาเริ่มงาน");
         var endTime = ParseTime(request.EndTime, "เวลาเลิกงาน");
 
@@ -153,7 +160,14 @@ public class ShiftService : IShiftService
             isCrossDay = true;
         }
 
-        shift.ShiftName = request.ShiftName.Trim();
+        var name = request.ShiftName.Trim();
+        var existsName = await _context.Shifts.AnyAsync(s => s.Id != id && s.ShiftName.ToLower() == name.ToLower());
+        if (existsName)
+        {
+            throw new InvalidOperationException($"ชื่อกะการทำงาน '{name}' มีอยู่ในระบบแล้ว");
+        }
+
+        shift.ShiftName = name;
         shift.StartTime = startTime;
         shift.EndTime = endTime;
         shift.IsCrossDay = isCrossDay;

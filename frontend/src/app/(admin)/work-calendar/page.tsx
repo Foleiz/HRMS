@@ -13,13 +13,14 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-  RefreshCw,
   Sun,
   Moon,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import {
   WorkWeekDay,
   Holiday,
@@ -77,6 +78,10 @@ export default function WorkCalendarPage() {
   const [workWeek, setWorkWeek] = useState<WorkWeekDay[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
+  // Bulk working hours states
+  const [bulkStartTime, setBulkStartTime] = useState('08:30');
+  const [bulkEndTime, setBulkEndTime] = useState('17:30');
+
   // Alert states
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -111,6 +116,9 @@ export default function WorkCalendarPage() {
       ]);
       setWorkWeek(weekData);
       setHolidays(holidayData);
+      const firstWorking = weekData.find((d) => d.isWorkingDay && d.startTime && d.endTime);
+      if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime.substring(0, 5));
+      if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime.substring(0, 5));
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
     } finally {
@@ -140,7 +148,18 @@ export default function WorkCalendarPage() {
   // Handle Work Week toggle
   const handleToggleDay = (dayOfWeek: number) => {
     setWorkWeek((prev) =>
-      prev.map((d) => (d.dayOfWeek === dayOfWeek ? { ...d, isWorkingDay: !d.isWorkingDay } : d))
+      prev.map((d) => {
+        if (d.dayOfWeek === dayOfWeek) {
+          const nextWorking = !d.isWorkingDay;
+          return {
+            ...d,
+            isWorkingDay: nextWorking,
+            startTime: nextWorking ? bulkStartTime : null,
+            endTime: nextWorking ? bulkEndTime : null,
+          };
+        }
+        return d;
+      })
     );
   };
 
@@ -148,10 +167,15 @@ export default function WorkCalendarPage() {
     try {
       setSaving(true);
       const updated = await workCalendarService.updateWorkWeek({
-        days: workWeek.map((d) => ({ dayOfWeek: d.dayOfWeek, isWorkingDay: d.isWorkingDay })),
+        days: workWeek.map((d) => ({
+          dayOfWeek: d.dayOfWeek,
+          isWorkingDay: d.isWorkingDay,
+          startTime: d.isWorkingDay ? bulkStartTime : null,
+          endTime: d.isWorkingDay ? bulkEndTime : null,
+        })),
       });
       setWorkWeek(updated);
-      setSuccessMessage('บันทึกการตั้งค่าวันทำงานประจำสัปดาห์สำเร็จ');
+      setSuccessMessage('บันทึกการตั้งค่าวันทำงานและเวลาเข้า-ออกงานสำเร็จ');
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'ไม่สามารถบันทึกการตั้งค่าวันทำงานได้');
     } finally {
@@ -263,7 +287,7 @@ export default function WorkCalendarPage() {
       )}
 
       {/* 2. Sub-navigation Tabs */}
-      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm flex items-center justify-between gap-4 overflow-x-auto">
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           <button
             onClick={() => {
@@ -277,10 +301,7 @@ export default function WorkCalendarPage() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            วันทำงานประจำสัปดาห์
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {workingDaysCount} วัน/สัปดาห์
-            </span>
+            <span>วันทำงานประจำสัปดาห์</span>
           </button>
 
           <button
@@ -295,22 +316,9 @@ export default function WorkCalendarPage() {
             }`}
           >
             <CalendarDays className="w-4 h-4" />
-            วันหยุดประจำปี
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {holidays.length} วัน
-            </span>
+            <span>วันหยุดประจำปี</span>
           </button>
         </div>
-
-        <button
-          onClick={loadData}
-          disabled={loading}
-          title="รีเฟรชข้อมูล"
-          className="mb-2 hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-100 transition-all shrink-0 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>รีเฟรชข้อมูล</span>
-        </button>
       </div>
 
       {/* 3. Tab Content Panels */}
@@ -320,11 +328,12 @@ export default function WorkCalendarPage() {
         {/* ========================================================= */}
         {activeTab === 'work-week' && (
           <div className="space-y-6">
+            {/* Header / Sub-title */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
-                <h2 className="text-sm font-bold text-slate-900">กำหนดวันทำงานปกติและวันหยุดประจำสัปดาห์</h2>
+                <h2 className="text-sm font-bold text-slate-900">กำหนดวันและเวลาทำงานปกติของบริษัท</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  ระบบจะใช้วันทำงานเหล่านี้ในการตรวจสอบเวลาเข้า-ออกงาน และคำนวณการทำงานล่วงเวลา (OT)
+                  ระบุวันทำงานปกติและเวลาเข้า-ออกงานมาตรฐานขององค์กร เพื่อใช้คำนวณการเข้างาน สาย และการทำงานล่วงเวลา (OT)
                 </p>
               </div>
 
@@ -336,6 +345,40 @@ export default function WorkCalendarPage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold whitespace-nowrap">
                   <Moon className="w-3.5 h-3.5" />
                   วันหยุด {offDaysCount} วัน
+                </div>
+              </div>
+            </div>
+
+            {/* Time Setting Bar */}
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">กำหนดเวลาทำงานปกติของบริษัท</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ระบุเวลาเข้าและเลิกงานมาตรฐาน สำหรับวันทำงานปกติทั้งหมด
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 shrink-0">
+                <div className="w-44">
+                  <ThaiTimePicker
+                    label="เวลาเข้างาน"
+                    value={bulkStartTime}
+                    onChange={(val) => setBulkStartTime(val)}
+                    align="right"
+                  />
+                </div>
+                <div className="w-44">
+                  <ThaiTimePicker
+                    label="เวลาเลิกงาน"
+                    value={bulkEndTime}
+                    onChange={(val) => setBulkEndTime(val)}
+                    align="right"
+                  />
                 </div>
               </div>
             </div>
@@ -391,7 +434,7 @@ export default function WorkCalendarPage() {
                             className={`w-1.5 h-1.5 rounded-full ${
                               day.isWorkingDay ? 'bg-emerald-500' : 'bg-slate-400'
                             }`}
-                          ></span>
+                          />
                           {day.isWorkingDay ? 'วันทำงานปกติ' : 'วันหยุดประจำสัปดาห์'}
                         </span>
                       </div>

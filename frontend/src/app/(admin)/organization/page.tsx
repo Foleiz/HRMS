@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-  RefreshCw,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -377,8 +376,8 @@ export default function OrganizationPage() {
         </div>
       )}
 
-      {/* 2. Sub-navigation Tabs (Matching Figma Screenshot 1:1) */}
-      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm flex items-center justify-between gap-4 overflow-x-auto">
+      {/* 2. Sub-navigation Tabs */}
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           <button
             onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
@@ -390,9 +389,6 @@ export default function OrganizationPage() {
           >
             <GitFork className="w-4 h-4" />
             จัดการฝ่าย
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {divisions.length}
-            </span>
           </button>
 
           <button
@@ -405,9 +401,6 @@ export default function OrganizationPage() {
           >
             <Building2 className="w-4 h-4" />
             จัดการแผนก
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {departments.length}
-            </span>
           </button>
 
           <button
@@ -420,9 +413,6 @@ export default function OrganizationPage() {
           >
             <Briefcase className="w-4 h-4" />
             จัดการตำแหน่ง
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {positions.length}
-            </span>
           </button>
 
           <button
@@ -435,9 +425,6 @@ export default function OrganizationPage() {
           >
             <Layers className="w-4 h-4" />
             ระดับพนักงาน
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {levels.length}
-            </span>
           </button>
 
           <button
@@ -452,16 +439,6 @@ export default function OrganizationPage() {
             ข้อมูลบริษัท
           </button>
         </div>
-
-        <button
-          onClick={loadData}
-          disabled={loading}
-          title="รีเฟรชข้อมูล"
-          className="mb-2 hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-100 transition-all shrink-0 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>รีเฟรชข้อมูล</span>
-        </button>
       </div>
 
       {/* 4. Tab Content Panels */}
