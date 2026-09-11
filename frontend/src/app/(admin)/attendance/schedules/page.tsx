@@ -16,47 +16,30 @@ import {
   AlertTriangle,
   X,
   Loader2,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
   List,
-  Sparkles,
-  SlidersHorizontal,
-  CalendarDays,
   RefreshCw,
   UserCheck,
-  ShieldAlert,
-  Check,
-  Layers,
-  ChevronDown,
-  Eye,
-  CheckSquare,
-  Square,
+  Building2,
   Sun,
   Moon,
-  Building2,
-  CalendarRange,
   Copy,
-  Info,
 } from 'lucide-react';
-import { scheduleService, employeeShiftService } from '@/services/scheduleService';
+import { employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
 import { organizationService } from '@/services/organizationService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import {
-  WorkSchedule,
-  CreateWorkScheduleRequest,
-  UpdateWorkScheduleRequest,
   EmployeeShift,
   AssignEmployeeShiftRequest,
   BatchAssignEmployeeShiftRequest,
   BatchAssignResult,
-  UpdateEmployeeShiftRequest,
   MonthlyRosterResponse,
   AssignableEmployee,
 } from '@/types/schedule';
-import { Shift, CreateShiftRequest, UpdateShiftRequest } from '@/types/shift';
+import { Shift, CreateShiftRequest } from '@/types/shift';
 import { Department } from '@/types/organization';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 
@@ -67,7 +50,7 @@ const THAI_MONTHS = [
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
-type TabKey = 'roster' | 'shifts' | 'patterns';
+type TabKey = 'roster' | 'shifts';
 
 function SchedulesContent() {
   const router = useRouter();
@@ -75,11 +58,11 @@ function SchedulesContent() {
   const { setBreadcrumb } = useBreadcrumb();
 
   // -------------------------------------------------------------
-  // 1. Tab Navigation: Roster (1) -> Shifts (2) -> Patterns (3)
+  // 1. Tab Navigation: Roster (1) -> Shifts (2)
   // -------------------------------------------------------------
   const initialTab = (searchParams.get('tab') as TabKey) || 'roster';
   const [activeTab, setActiveTab] = useState<TabKey>(
-    ['roster', 'shifts', 'patterns'].includes(initialTab) ? initialTab : 'roster'
+    ['roster', 'shifts'].includes(initialTab) ? initialTab : 'roster'
   );
 
   const handleTabChange = (tab: TabKey) => {
@@ -95,12 +78,10 @@ function SchedulesContent() {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [loadingShifts, setLoadingShifts] = useState(true);
-  const [loadingSchedules, setLoadingSchedules] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   // Core Data
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [workSchedules, setWorkSchedules] = useState<WorkSchedule[]>([]);
   const [assignments, setAssignments] = useState<EmployeeShift[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [assignableEmployees, setAssignableEmployees] = useState<AssignableEmployee[]>([]);
@@ -130,7 +111,7 @@ function SchedulesContent() {
   }, [errorMessage]);
 
   // -------------------------------------------------------------
-  // 3. Tab 1 States: ปฏิทินกะและการมอบหมายกะ (Shift Roster)
+  // 3. Tab 1 States: มอบหมายกะให้พนักงาน (Shift Roster)
   // -------------------------------------------------------------
   const [assignmentViewMode, setAssignmentViewMode] = useState<'matrix' | 'list'>('matrix');
   const [assignmentSearch, setAssignmentSearch] = useState('');
@@ -185,32 +166,11 @@ function SchedulesContent() {
   const [selectedShiftForEmployees, setSelectedShiftForEmployees] = useState<Shift | null>(null);
 
   // -------------------------------------------------------------
-  // 5. Tab 3 States: รูปแบบตารางงานหลัก (Schedule Patterns)
-  // -------------------------------------------------------------
-  const [scheduleViewMode, setScheduleViewMode] = useState<'grid' | 'table'>('grid');
-  const [scheduleSearch, setScheduleSearch] = useState('');
-  const [scheduleStatusFilter, setScheduleStatusFilter] = useState('ALL');
-
-  // Work Schedule Modal (Create / Edit)
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [scheduleModalMode, setScheduleModalMode] = useState<'create' | 'edit'>('create');
-  const [scheduleForm, setScheduleForm] = useState<CreateWorkScheduleRequest & { id?: number }>({
-    scheduleCode: '',
-    scheduleName: '',
-    workStart: '08:30',
-    workEnd: '17:30',
-    breakMinutes: 60,
-    lateGraceMinutes: 15,
-    earlyLeaveGraceMinutes: 0,
-    status: 'ACTIVE',
-  });
-
-  // -------------------------------------------------------------
   // Shared Delete Confirmation Modal
   // -------------------------------------------------------------
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{
-    type: 'assignment' | 'shift' | 'schedule';
+    type: 'assignment' | 'shift';
     id: number;
     title: string;
     subtitle?: string;
@@ -233,18 +193,6 @@ function SchedulesContent() {
       setLoadingShifts(false);
     }
   }, [batchShiftId]);
-
-  const loadSchedules = useCallback(async () => {
-    try {
-      setLoadingSchedules(true);
-      const data = await scheduleService.getWorkSchedules();
-      setWorkSchedules(data);
-    } catch (err: any) {
-      console.error('Error loading work schedules:', err);
-    } finally {
-      setLoadingSchedules(false);
-    }
-  }, []);
 
   const loadAssignments = useCallback(async () => {
     try {
@@ -294,10 +242,9 @@ function SchedulesContent() {
       page: 'การจัดตารางงาน',
     });
     loadShifts();
-    loadSchedules();
     loadAssignments();
     loadLookups();
-  }, [setBreadcrumb, loadShifts, loadSchedules, loadAssignments, loadLookups]);
+  }, [setBreadcrumb, loadShifts, loadAssignments, loadLookups]);
 
   // Load roster when on Tab 1 and Matrix view
   useEffect(() => {
@@ -345,18 +292,6 @@ function SchedulesContent() {
       return matchQuery && matchType && matchStatus;
     });
   }, [shifts, shiftSearchQuery, shiftFilterType, shiftFilterStatus]);
-
-  // Tab 3: Filtered Work Schedules
-  const filteredWorkSchedules = useMemo(() => {
-    return workSchedules.filter((ws) => {
-      const matchSearch =
-        ws.scheduleCode.toLowerCase().includes(scheduleSearch.toLowerCase()) ||
-        ws.scheduleName.toLowerCase().includes(scheduleSearch.toLowerCase());
-      const matchStatus =
-        scheduleStatusFilter === 'ALL' || ws.status === scheduleStatusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [workSchedules, scheduleSearch, scheduleStatusFilter]);
 
   // -------------------------------------------------------------
   // Helpers
@@ -608,73 +543,6 @@ function SchedulesContent() {
   };
 
   // -------------------------------------------------------------
-  // Actions: Tab 3 (Work Schedule Patterns)
-  // -------------------------------------------------------------
-  const openScheduleCreate = () => {
-    setScheduleModalMode('create');
-    setScheduleForm({
-      scheduleCode: '',
-      scheduleName: '',
-      workStart: '08:30',
-      workEnd: '17:30',
-      breakMinutes: 60,
-      lateGraceMinutes: 15,
-      earlyLeaveGraceMinutes: 0,
-      status: 'ACTIVE',
-    });
-    setScheduleModalOpen(true);
-  };
-
-  const openScheduleEdit = (schedule: WorkSchedule) => {
-    setScheduleModalMode('edit');
-    setScheduleForm({
-      id: schedule.id,
-      scheduleCode: schedule.scheduleCode,
-      scheduleName: schedule.scheduleName,
-      workStart: (schedule.workStart || '08:30').substring(0, 5),
-      workEnd: (schedule.workEnd || '17:30').substring(0, 5),
-      breakMinutes: schedule.breakMinutes,
-      lateGraceMinutes: schedule.lateGraceMinutes,
-      earlyLeaveGraceMinutes: schedule.earlyLeaveGraceMinutes,
-      status: schedule.status,
-    });
-    setScheduleModalOpen(true);
-  };
-
-  const handleSaveSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setSubmitting(true);
-      const payload = {
-        scheduleName: scheduleForm.scheduleName,
-        workStart: scheduleForm.workStart || '08:30',
-        workEnd: scheduleForm.workEnd || '17:30',
-        breakMinutes: scheduleForm.breakMinutes,
-        lateGraceMinutes: scheduleForm.lateGraceMinutes,
-        earlyLeaveGraceMinutes: scheduleForm.earlyLeaveGraceMinutes,
-        status: scheduleForm.status as 'ACTIVE' | 'INACTIVE',
-      };
-
-      if (scheduleModalMode === 'create') {
-        await scheduleService.createWorkSchedule({
-          scheduleCode: scheduleForm.scheduleCode,
-          ...payload,
-        });
-        setSuccessMessage('สร้างรูปแบบตารางการทำงานใหม่สำเร็จ');
-      } else if (scheduleForm.id) {
-        await scheduleService.updateWorkSchedule(scheduleForm.id, payload);
-        setSuccessMessage('แก้ไขรูปแบบตารางการทำงานสำเร็จ');
-      }
-      setScheduleModalOpen(false);
-      loadSchedules();
-    } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกตารางการทำงาน');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // -------------------------------------------------------------
   // Actions: Shared Delete
   // -------------------------------------------------------------
   const confirmDelete = async () => {
@@ -693,10 +561,6 @@ function SchedulesContent() {
         await shiftService.deleteShift(itemToDelete.id);
         setSuccessMessage('ลบข้อมูลกะการทำงานเรียบร้อยแล้ว');
         loadShifts();
-      } else if (itemToDelete.type === 'schedule') {
-        await scheduleService.deleteWorkSchedule(itemToDelete.id);
-        setSuccessMessage('ลบรูปแบบตารางการทำงานสำเร็จ');
-        loadSchedules();
       }
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -767,19 +631,6 @@ function SchedulesContent() {
             <Clock className="w-4 h-4" />
             <span>กะการทำงาน</span>
           </button>
-
-          {/* Tab 3: ตารางงานหลัก */}
-          <button
-            onClick={() => handleTabChange('patterns')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'patterns'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>ตารางงานหลัก</span>
-          </button>
         </div>
 
         {/* Action Buttons on Right */}
@@ -815,21 +666,11 @@ function SchedulesContent() {
               <span>เพิ่มกะการทำงานใหม่</span>
             </button>
           )}
-
-          {activeTab === 'patterns' && (
-            <button
-              onClick={openScheduleCreate}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
-            >
-              <Plus className="w-4 h-4" />
-              <span>เพิ่มรูปแบบตารางงาน</span>
-            </button>
-          )}
         </div>
       </div>
 
       {/* ============================================================= */}
-      {/* TAB 1: ปฏิทินกะและการมอบหมายกะ (Shift Roster) */}
+      {/* TAB 1: มอบหมายกะให้พนักงาน (Shift Roster) */}
       {/* ============================================================= */}
       {activeTab === 'roster' && (
         <div className="space-y-6">
@@ -1529,265 +1370,6 @@ function SchedulesContent() {
       )}
 
       {/* ============================================================= */}
-      {/* TAB 3: รูปแบบตารางงานหลัก (Schedule Patterns) */}
-      {/* ============================================================= */}
-      {activeTab === 'patterns' && (
-        <div className="space-y-6">
-          {/* Schedule Filter & View Switcher Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3 flex-1">
-              {/* Search */}
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัส หรือชื่อรูปแบบตาราง..."
-                  value={scheduleSearch}
-                  onChange={(e) => setScheduleSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <div className="min-w-[140px]">
-                <select
-                  value={scheduleStatusFilter}
-                  onChange={(e) => setScheduleStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                >
-                  <option value="ALL">สถานะทั้งหมด</option>
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ระงับใช้งาน</option>
-                </select>
-              </div>
-
-              {/* Refresh */}
-              <button
-                onClick={loadSchedules}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
-                title="รีเฟรชข้อมูลตารางหลัก"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingSchedules ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-
-            {/* View Switcher: Grid vs Table */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
-              <button
-                onClick={() => setScheduleViewMode('grid')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  scheduleViewMode === 'grid'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>การ์ด (Grid)</span>
-              </button>
-              <button
-                onClick={() => setScheduleViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-                  scheduleViewMode === 'table'
-                    ? 'bg-white text-[#0B2046] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>ตาราง (Table)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Patterns Content */}
-          {loadingSchedules ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
-              <p className="text-sm">กำลังโหลดรูปแบบตารางการทำงาน...</p>
-            </div>
-          ) : filteredWorkSchedules.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
-              <Layers className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-              <p className="text-base font-semibold text-slate-700">ไม่พบข้อมูลตารางการทำงานหลัก</p>
-              <p className="text-xs text-slate-400 mt-1">
-                กดปุ่ม "เพิ่มรูปแบบตารางงาน" เพื่อสร้างตารางเวลามาตรฐานสำหรับองค์กร
-              </p>
-            </div>
-          ) : scheduleViewMode === 'grid' ? (
-            /* GRID VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredWorkSchedules.map((ws) => (
-                <div
-                  key={ws.id}
-                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
-                        {ws.scheduleCode}
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          ws.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            ws.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                          }`}
-                        />
-                        {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
-                      </span>
-                    </div>
-
-                    <h3 className="font-bold text-slate-900 text-base mb-3 group-hover:text-[#0B2046] transition">
-                      {ws.scheduleName}
-                    </h3>
-
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">ช่วงเวลามาตรฐาน:</span>
-                        <span className="font-bold font-mono text-slate-800 text-sm">
-                          {ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} -{' '}
-                          {ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'} น.
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
-                        <span className="text-slate-500">เวลาพักกลางวัน:</span>
-                        <span className="font-semibold text-slate-700">{ws.breakMinutes} นาที</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
-                        <div className="text-slate-400 text-[11px]">ผ่อนปรนมาสาย:</div>
-                        <div className="font-semibold text-slate-700 mt-0.5">
-                          {ws.lateGraceMinutes > 0 ? `${ws.lateGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
-                        </div>
-                      </div>
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
-                        <div className="text-slate-400 text-[11px]">ผ่อนปรนกลับก่อน:</div>
-                        <div className="font-semibold text-slate-700 mt-0.5">
-                          {ws.earlyLeaveGraceMinutes > 0 ? `${ws.earlyLeaveGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => openScheduleEdit(ws)}
-                      className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                      title="แก้ไขรูปแบบตาราง"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setItemToDelete({
-                          type: 'schedule',
-                          id: ws.id,
-                          title: `ลบรูปแบบตาราง: ${ws.scheduleName}`,
-                          subtitle: `รหัส: ${ws.scheduleCode} (${ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} - ${ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'})`,
-                        });
-                        setDeleteConfirmOpen(true);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                      title="ลบรูปแบบตาราง"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* TABLE VIEW */
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
-                      <th className="p-3.5">รหัสตาราง</th>
-                      <th className="p-3.5">ชื่อรูปแบบตาราง</th>
-                      <th className="p-3.5">เวลาเริ่ม - สิ้นสุด</th>
-                      <th className="p-3.5">พัก (นาที)</th>
-                      <th className="p-3.5">ผ่อนปรนสาย</th>
-                      <th className="p-3.5">ผ่อนปรนกลับก่อน</th>
-                      <th className="p-3.5">สถานะ</th>
-                      <th className="p-3.5 text-right">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredWorkSchedules.map((ws) => (
-                      <tr key={ws.id} className="hover:bg-slate-50/60 transition">
-                        <td className="p-3.5 font-mono font-bold text-slate-800">{ws.scheduleCode}</td>
-                        <td className="p-3.5 font-semibold text-slate-900">{ws.scheduleName}</td>
-                        <td className="p-3.5 font-mono text-xs text-slate-700">
-                          {ws.workStart ? ws.workStart.substring(0, 5) : '08:30'} -{' '}
-                          {ws.workEnd ? ws.workEnd.substring(0, 5) : '17:30'} น.
-                        </td>
-                        <td className="p-3.5 text-slate-600">{ws.breakMinutes} นาที</td>
-                        <td className="p-3.5 text-slate-700">
-                          {ws.lateGraceMinutes > 0 ? `${ws.lateGraceMinutes} นาที` : '-'}
-                        </td>
-                        <td className="p-3.5 text-slate-700">
-                          {ws.earlyLeaveGraceMinutes > 0 ? `${ws.earlyLeaveGraceMinutes} นาที` : '-'}
-                        </td>
-                        <td className="p-3.5">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              ws.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                ws.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            />
-                            {ws.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => openScheduleEdit(ws)}
-                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setItemToDelete({
-                                  type: 'schedule',
-                                  id: ws.id,
-                                  title: `ลบรูปแบบตาราง: ${ws.scheduleName}`,
-                                  subtitle: `รหัส: ${ws.scheduleCode}`,
-                                });
-                                setDeleteConfirmOpen(true);
-                              }}
-                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ============================================================= */}
       {/* MODAL 1: Single Assign Shift Modal */}
       {/* ============================================================= */}
       {assignModalOpen && (
@@ -2379,147 +1961,6 @@ function SchedulesContent() {
       )}
 
       {/* ============================================================= */}
-      {/* MODAL 4: Create / Edit Work Schedule Modal */}
-      {/* ============================================================= */}
-      {scheduleModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">
-                  {scheduleModalMode === 'create' ? 'เพิ่มรูปแบบตารางงานหลัก' : 'แก้ไขรูปแบบตารางงานหลัก'}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  กำหนดโครงสร้างตารางเวลามาตรฐานสำหรับพนักงานทั่วไปในองค์กร
-                </p>
-              </div>
-              <button
-                onClick={() => setScheduleModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSchedule} className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    รหัสตาราง <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="เช่น SCH_OFFICE_5D"
-                    value={scheduleForm.scheduleCode}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleCode: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    ชื่อรูปแบบตาราง <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="เช่น ตารางมาตรฐาน 5 วัน จันทร์-ศุกร์"
-                    value={scheduleForm.scheduleName}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleName: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาเริ่มงาน</label>
-                  <ThaiTimePicker
-                    value={scheduleForm.workStart || '08:30'}
-                    onChange={(val) => setScheduleForm({ ...scheduleForm, workStart: val })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาเลิกงาน</label>
-                  <ThaiTimePicker
-                    value={scheduleForm.workEnd || '17:30'}
-                    onChange={(val) => setScheduleForm({ ...scheduleForm, workEnd: val })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">เวลาพัก (นาที)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="180"
-                  value={scheduleForm.breakMinutes}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, breakMinutes: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">ผ่อนปรนมาสาย (นาที)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={scheduleForm.lateGraceMinutes}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, lateGraceMinutes: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">ผ่อนปรนกลับก่อน (นาที)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={scheduleForm.earlyLeaveGraceMinutes}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
-                <select
-                  value={scheduleForm.status}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                >
-                  <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                  <option value="INACTIVE">ระงับการใช้งาน (Inactive)</option>
-                </select>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setScheduleModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
-                >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>บันทึกตารางงาน</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================= */}
       {/* MODAL 5: View Staff Assigned to Shift */}
       {/* ============================================================= */}
       {employeeModalOpen && selectedShiftForEmployees && (
@@ -2547,7 +1988,7 @@ function SchedulesContent() {
                   <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                   <p className="text-sm font-medium text-slate-600">ยังไม่มีพนักงานที่ถูกมอบหมายกะนี้</p>
                   <p className="text-xs text-slate-400 mt-1">
-                    สามารถไปที่ "แท็บ 1: ปฏิทินกะและการมอบหมายกะ" เพื่อเริ่มจัดเวรได้ทันที
+                    สามารถไปที่ "แท็บ 1: มอบหมายกะให้พนักงาน" เพื่อเริ่มจัดเวรได้ทันที
                   </p>
                 </div>
               ) : (
