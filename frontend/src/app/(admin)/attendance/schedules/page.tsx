@@ -1170,7 +1170,7 @@ function SchedulesContent() {
                                 day: 'numeric',
                               })
                             ) : (
-                              <span className="text-emerald-600 font-medium text-xs">ต่อเนื่อง (ไม่มีกำหนดสิ้นสุด)</span>
+                              <span className="text-emerald-600 font-medium text-xs">ไม่มีกำหนดสิ้นสุด</span>
                             )}
                           </td>
                           <td className="p-3.5">
@@ -1990,7 +1990,7 @@ function SchedulesContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าต่อเนื่อง)</span>
+                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าไม่มีกำหนดสิ้นสุด)</span>
                   </label>
                   <input
                     type="date"
@@ -2302,7 +2302,7 @@ function SchedulesContent() {
                                   month: 'short',
                                   year: '2-digit',
                                 })}`
-                              : 'ต่อเนื่อง'}
+                              : 'ไม่มีกำหนดสิ้นสุด'}
                           </div>
                         </div>
                       </div>
