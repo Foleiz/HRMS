@@ -10,12 +10,16 @@ public class WorkWeekDto
     public string DayNameThai { get; set; } = string.Empty;
     public string DayNameEnglish { get; set; } = string.Empty;
     public bool IsWorkingDay { get; set; }
+    public string? StartTime { get; set; } // "HH:mm"
+    public string? EndTime { get; set; }   // "HH:mm"
 }
 
 public class UpdateWorkWeekItem
 {
     public short DayOfWeek { get; set; }
     public bool IsWorkingDay { get; set; }
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
 }
 
 public class UpdateWorkWeekRequest

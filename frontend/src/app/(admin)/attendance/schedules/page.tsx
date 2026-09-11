@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
+  CalendarDays,
   Clock,
   Users,
   Plus,
@@ -26,6 +28,7 @@ import {
   Sun,
   Moon,
   Copy,
+  ArrowRight,
 } from 'lucide-react';
 import { employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
@@ -1141,6 +1144,36 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {activeTab === 'shifts' && (
         <div className="space-y-6">
+          {/* Company Standard Work Hours Info Banner */}
+          <div className="p-4 bg-gradient-to-r from-slate-50 via-blue-50/40 to-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
+                <CalendarDays className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-slate-900">เวลาทำงานมาตรฐานของบริษัท:</span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    จันทร์ – ศุกร์ (08:30 – 17:30 น.)
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">• วันหยุด เสาร์ – อาทิตย์</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  พนักงานประจำทั่วไปจะยึดตามวันและเวลาทำงานของปฏิทินบริษัท หากต้องการจัดเวร/กะพิเศษเฉพาะบุคคลหรือแผนก สามารถเพิ่มกะด้านล่างนี้ได้
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/work-calendar"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-[#0B2046] font-semibold text-xs shadow-xs transition-all whitespace-nowrap shrink-0 group"
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
+              <span>ปรับแต่งปฏิทินวันทำงานบริษัท</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+
           {/* Shift Filter & View Switcher Bar */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
             {/* Left: Filters & Search */}

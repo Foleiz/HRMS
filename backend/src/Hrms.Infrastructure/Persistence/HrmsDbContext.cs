@@ -317,6 +317,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
             entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week").IsRequired();
             entity.Property(e => e.IsWorkingDay).HasColumnName("is_working_day").IsRequired();
+            entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.EndTime).HasColumnName("end_time");
 
             entity.HasOne(e => e.Company)
                 .WithMany()
