@@ -19,13 +19,13 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
 const mockAvatarImages = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80', // EMP-001 (ชาย)
+  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80', // EMP-002 (หญิง)
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80', // EMP-003 (ชาย)
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80', // EMP-004 (หญิง)
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80', // EMP-005 (หญิง)
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80', // EMP-006 (หญิง)
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80', // EMP-007 (ชาย)
 ];
 
 const formatThaiDate = (dateStr?: string) => {
@@ -143,14 +143,6 @@ export default function EmployeeDetailPage() {
   const primaryEducation = employee.educations?.[0];
   const avatarUrl = mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
 
-  // ข้อมูลจำลองโครงสร้างฝ่าย/แผนก/ตำแหน่งตาม Figma เพื่อแสดงผลให้ตรง 1:1
-  const mockOrg = {
-    division: 'ไอที',
-    department: 'ไอที',
-    team: 'Fullstack team1',
-    position: 'Fullstack Developer',
-  };
-
   return (
     <div className="font-sans">
       {/* 2-Column Layout (ขยายความสูงให้พอดีกันและขอบล่างเท่ากัน 100%) */}
@@ -190,7 +182,7 @@ export default function EmployeeDetailPage() {
               {employee.prefix ? `${employee.prefix} ` : ''}{employee.firstName} {employee.lastName}
             </h1>
             <p className="text-xs text-slate-400 text-center mt-0.5">
-              {mockOrg.position}
+              {employee.positionName || '-'}
             </p>
           </div>
 
@@ -208,8 +200,13 @@ export default function EmployeeDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-slate-400 font-medium">อีเมล</p>
                 <p className="text-xs font-semibold text-slate-800 break-all">
-                  {employee.contact?.personalEmail || employee.contact?.organizationEmail || '-'}
+                  {employee.contact?.organizationEmail || employee.contact?.personalEmail || '-'}
                 </p>
+                {employee.contact?.organizationEmail && employee.contact?.personalEmail && (
+                  <p className="text-[10px] text-slate-400 mt-0.5 break-all">
+                    ส่วนตัว: {employee.contact.personalEmail}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -256,7 +253,7 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-medium">ฝ่าย</p>
-                  <p className="text-xs font-semibold text-slate-800">{mockOrg.division}</p>
+                  <p className="text-xs font-semibold text-slate-800">{employee.divisionName || '-'}</p>
                 </div>
               </div>
 
@@ -267,7 +264,7 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-medium">แผนก</p>
-                  <p className="text-xs font-semibold text-slate-800">{mockOrg.department}</p>
+                  <p className="text-xs font-semibold text-slate-800">{employee.departmentName || '-'}</p>
                 </div>
               </div>
 
@@ -278,7 +275,7 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-medium">ทีม</p>
-                  <p className="text-xs font-semibold text-slate-800">{mockOrg.team}</p>
+                  <p className="text-xs font-semibold text-slate-800">-</p>
                 </div>
               </div>
 
@@ -289,7 +286,7 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-medium">ตำแหน่ง</p>
-                  <p className="text-xs font-semibold text-slate-800">{mockOrg.position}</p>
+                  <p className="text-xs font-semibold text-slate-800">{employee.positionName || '-'}</p>
                 </div>
               </div>
             </div>

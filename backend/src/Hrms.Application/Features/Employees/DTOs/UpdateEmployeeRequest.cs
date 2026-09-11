@@ -72,4 +72,10 @@ public class UpdateEmployeeRequest
 
     // กรณีฉุกเฉินติดต่อใคร
     public CreateEmergencyContactDto? EmergencyContact { get; set; }
+
+    // ตำแหน่งงานและการจ้างงาน
+    public string? PositionName { get; set; }
+    public string? EmployeeType { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? DivisionName { get; set; }
 }

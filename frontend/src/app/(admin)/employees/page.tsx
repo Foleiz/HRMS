@@ -921,17 +921,17 @@ export default function EmployeesPage() {
 
                       {/* 4. ฝ่าย */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment?.division || '-'}
+                        {emp.divisionName || assignment?.division || '-'}
                       </td>
 
                       {/* 5. แผนก */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment?.department || '-'}
+                        {emp.departmentName || assignment?.department || '-'}
                       </td>
 
                       {/* 6. ตำแหน่ง */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment?.position || '-'}
+                        {emp.positionName || assignment?.position || '-'}
                       </td>
 
                       {/* 7. วันเกิด */}

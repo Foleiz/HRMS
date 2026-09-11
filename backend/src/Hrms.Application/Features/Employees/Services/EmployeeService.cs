@@ -39,6 +39,12 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Addresses)
             .Include(e => e.BankAccounts)
                 .ThenInclude(b => b.Bank)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Position)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Division)
             .AsNoTracking();
 
         // 2. Data Scoping
@@ -98,6 +104,12 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.EmergencyContacts)
             .Include(e => e.BankAccounts)
                 .ThenInclude(b => b.Bank)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Position)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Division)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (employee == null)
@@ -290,6 +302,45 @@ public class EmployeeService : IEmployeeService
             });
         }
 
+        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
+        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        {
+            var pos = await _dbContext.Positions
+                .Include(p => p.Department)
+                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
+
+            if (pos == null)
+            {
+                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
+                pos = new Position
+                {
+                    DepartmentId = defaultDept?.Id ?? 1,
+                    PositionCode = "POS_" + Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                    PositionName = request.PositionName.Trim(),
+                    Status = "ACTIVE"
+                };
+                _dbContext.Positions.Add(pos);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var deptId = pos.DepartmentId;
+            var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
+            if (divId == 0)
+            {
+                divId = await _dbContext.Divisions.Select(d => d.Id).FirstOrDefaultAsync(cancellationToken);
+            }
+
+            employee.Assignments.Add(new EmployeeAssignment
+            {
+                DivisionId = divId,
+                DepartmentId = deptId,
+                PositionId = pos.Id,
+                EffectiveFrom = DateOnly.FromDateTime(DateTime.Today),
+                IsCurrent = true,
+                WageType = request.EmployeeType?.Contains("รายวัน") == true ? "DAILY" : "MONTHLY"
+            });
+        }
+
         _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -312,6 +363,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Educations)
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
+            .Include(e => e.Assignments)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (employee == null)
@@ -506,6 +558,59 @@ public class EmployeeService : IEmployeeService
             }
         }
 
+        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
+        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        {
+            var currentAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent);
+            var pos = await _dbContext.Positions
+                .Include(p => p.Department)
+                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
+
+            if (pos == null)
+            {
+                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
+                pos = new Position
+                {
+                    DepartmentId = defaultDept?.Id ?? 1,
+                    PositionCode = "POS_" + Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                    PositionName = request.PositionName.Trim(),
+                    Status = "ACTIVE"
+                };
+                _dbContext.Positions.Add(pos);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var deptId = pos.DepartmentId;
+            var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
+            if (divId == 0)
+            {
+                divId = await _dbContext.Divisions.Select(d => d.Id).FirstOrDefaultAsync(cancellationToken);
+            }
+
+            if (currentAssignment != null)
+            {
+                currentAssignment.PositionId = pos.Id;
+                currentAssignment.DepartmentId = deptId;
+                currentAssignment.DivisionId = divId;
+                if (!string.IsNullOrWhiteSpace(request.EmployeeType))
+                {
+                    currentAssignment.WageType = request.EmployeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY";
+                }
+            }
+            else
+            {
+                employee.Assignments.Add(new EmployeeAssignment
+                {
+                    DivisionId = divId,
+                    DepartmentId = deptId,
+                    PositionId = pos.Id,
+                    EffectiveFrom = DateOnly.FromDateTime(DateTime.Today),
+                    IsCurrent = true,
+                    WageType = request.EmployeeType?.Contains("รายวัน") == true ? "DAILY" : "MONTHLY"
+                });
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(employee.Id, cancellationToken);
@@ -531,6 +636,7 @@ public class EmployeeService : IEmployeeService
     private EmployeeDto MapToDto(Employee e)
     {
         var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
+        var currentAssignment = e.Assignments?.FirstOrDefault(a => a.IsCurrent) ?? e.Assignments?.FirstOrDefault();
 
         return new EmployeeDto
         {
@@ -558,9 +664,11 @@ public class EmployeeService : IEmployeeService
             NumberOfChildren = e.NumberOfChildren,
             ParentDeductionCount = e.ParentDeductionCount,
             DisabilityDeductionCount = e.DisabilityDeductionCount,
-            PositionId = null,
-            PositionName = null,
-            EmployeeType = null,
+            PositionId = currentAssignment?.PositionId,
+            PositionName = currentAssignment?.Position?.PositionName?.Trim(),
+            DepartmentName = currentAssignment?.Department?.DepartmentName?.Trim(),
+            DivisionName = currentAssignment?.Division?.DivisionName?.Trim(),
+            EmployeeType = currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             Contact = e.Contact != null ? new EmployeeContactDto

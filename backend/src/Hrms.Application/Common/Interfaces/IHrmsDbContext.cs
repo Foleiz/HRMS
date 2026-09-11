@@ -27,6 +27,7 @@ public interface IHrmsDbContext
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }
     DbSet<EmployeeLevel> EmployeeLevels { get; }
+    DbSet<EmployeeAssignment> EmployeeAssignments { get; }
 
     // Work Calendar Master Data (Dev 1 Sprint 2)
     DbSet<WorkWeek> WorkWeeks { get; }

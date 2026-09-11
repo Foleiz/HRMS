@@ -145,6 +145,7 @@ export default function EmployeeEditPage() {
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
         const primaryEducation = emp.educations?.[0];
         const primaryEmergency = emp.emergencyContacts?.find((c) => c.isPrimary) || emp.emergencyContacts?.[0];
+        const primaryBank = emp.bankAccounts?.find((b) => b.isPrimary) || emp.bankAccounts?.[0];
 
         setFormData({
           employeeCode: emp.employeeCode || '',
@@ -172,10 +173,10 @@ export default function EmployeeEditPage() {
           major: primaryEducation?.major || '',
           graduationYear: primaryEducation?.graduationYear || 2569,
           gpa: primaryEducation?.gpa ? Number(primaryEducation.gpa) : undefined,
-          bankName: '',
-          accountNumber: '',
-          positionName: '',
-          employeeType: '',
+          bankName: primaryBank?.bankName || '',
+          accountNumber: primaryBank?.accountNumber || '',
+          positionName: emp.positionName || '',
+          employeeType: emp.employeeType || '',
           familyMembers:
             emp.familyMembers && emp.familyMembers.length > 0
               ? emp.familyMembers.map((fm) => ({

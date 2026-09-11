@@ -56,8 +56,13 @@ export interface Employee {
   numberOfChildren: number;
   parentDeductionCount: number;
   disabilityDeductionCount: number;
-  createdAt: string;
+  createdAt?: string;
   updatedAt: string;
+  positionId?: number;
+  positionName?: string;
+  departmentName?: string;
+  divisionName?: string;
+  employeeType?: string;
   contact?: EmployeeContact;
   socialSecurity?: EmployeeSocialSecurity;
   addresses: EmployeeAddress[];

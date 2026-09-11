@@ -39,6 +39,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<EmployeeLevel> EmployeeLevels => Set<EmployeeLevel>();
+    public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
 
     // Work Calendar Master Data (Dev 1 Sprint 2)
     public DbSet<WorkWeek> WorkWeeks => Set<WorkWeek>();
@@ -566,6 +567,43 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany(e => e.EmergencyContacts)
                 .HasForeignKey(e => e.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeAssignment
+        modelBuilder.Entity<EmployeeAssignment>(entity =>
+        {
+            entity.ToTable("employee_assignment", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.DivisionId).HasColumnName("division_id").IsRequired();
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id").IsRequired();
+            entity.Property(e => e.PositionId).HasColumnName("position_id").IsRequired();
+            entity.Property(e => e.EmployeeLevelId).HasColumnName("employee_level_id");
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.WorkScheduleId).HasColumnName("work_schedule_id");
+            entity.Property(e => e.ManagerEmployeeId).HasColumnName("manager_employee_id");
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
+            entity.Property(e => e.IsCurrent).HasColumnName("is_current").IsRequired();
+            entity.Property(e => e.WageType).HasColumnName("wage_type").IsRequired().HasMaxLength(20);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Assignments)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Division)
+                .WithMany()
+                .HasForeignKey(e => e.DivisionId);
+
+            entity.HasOne(e => e.Department)
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId);
+
+            entity.HasOne(e => e.Position)
+                .WithMany()
+                .HasForeignKey(e => e.PositionId);
         });
     }
 }
