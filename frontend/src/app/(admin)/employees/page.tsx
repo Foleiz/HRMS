@@ -1,0 +1,2299 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { employeeService } from '@/services/employeeService';
+import { apiClient } from '@/lib/api-client';
+import { Employee, CreateEmployeePayload } from '@/types/employee';
+import { NATIONALITIES } from '@/constants/nationalities';
+import { NationalitySelect } from '@/components/ui/NationalitySelect';
+import {
+  Search,
+  Plus,
+  MoreVertical,
+  Eye,
+  CreditCard,
+  Trash2,
+  X,
+  ShieldCheck,
+  AlertCircle,
+  MessageSquarePlus,
+  Edit3,
+  Loader2,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+
+interface DepartmentItem {
+  id: number;
+  departmentCode: string;
+  departmentName: string;
+}
+
+export const getGenderDisplay = (gender?: string, genderId?: number, prefix?: string): string => {
+  if (gender && gender.trim()) return gender;
+  if (genderId === 1) return 'ชาย';
+  if (genderId === 2) return 'หญิง';
+  if (genderId === 3) return 'ไม่ระบุ';
+  if (prefix === 'นาย' || prefix === 'เด็กชาย' || prefix?.toLowerCase() === 'mr.' || prefix?.toLowerCase() === 'mr') return 'ชาย';
+  if (prefix === 'นาง' || prefix === 'นางสาว' || prefix === 'น.ส.' || prefix === 'เด็กหญิง' || prefix?.toLowerCase() === 'mrs.' || prefix?.toLowerCase() === 'ms.' || prefix?.toLowerCase() === 'miss') return 'หญิง';
+  return '-';
+};
+
+export const formatMaskedCitizenId = (val?: string): string => {
+  if (!val) return '-';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 13 && !clean.includes('x') && !clean.includes('*')) {
+    return `${digits[0]}-${digits.substring(1, 5)}-xxxxx-xx-${digits[12]}`;
+  }
+  return clean;
+};
+
+export const formatPhoneNumber = (val?: string | null): string => {
+  if (!val) return '-';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 9) {
+    if (digits.startsWith('02')) {
+      return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`;
+    }
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return clean;
+};
+
+export const autoFormatPhone = (val: string): string => {
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+  if (digits.length > 6) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length > 3) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+  return digits;
+};
+
+export interface BankConfig {
+  name: string;
+  shortName: string;
+  digits: number;
+}
+
+export const BANK_CONFIGS: BankConfig[] = [
+  { name: 'ธนาคารกสิกรไทย', shortName: 'KBANK', digits: 10 },
+  { name: 'ธนาคารไทยพาณิชย์', shortName: 'SCB', digits: 10 },
+  { name: 'ธนาคารกรุงเทพ', shortName: 'BBL', digits: 10 },
+  { name: 'ธนาคารกรุงไทย', shortName: 'KTB', digits: 10 },
+  { name: 'ธนาคารกรุงศรีอยุธยา', shortName: 'BAY', digits: 10 },
+  { name: 'ธนาคารทหารไทยธนชาต', shortName: 'ttb', digits: 10 },
+  { name: 'ธนาคารออมสิน', shortName: 'GSB', digits: 12 },
+  { name: 'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร', shortName: 'ธ.ก.ส.', digits: 15 },
+];
+
+export const getRequiredBankDigits = (bankName?: string): number => {
+  if (!bankName || bankName === 'เลือกธนาคาร') return 10;
+  if (bankName.includes('ออมสิน')) return 12;
+  if (bankName.includes('เกษตร') || bankName.includes('ธ.ก.ส') || bankName.includes('BAAC')) return 15;
+  return 10;
+};
+
+export default function EmployeesPage() {
+  const { hasPermission } = useAuth();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('ALL');
+  const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // Action Menu dropdown state (by employee id)
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+
+  // Detail Modal & Create Modal states
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(8);
+
+  // HR Comments State: stored in localStorage { [empId: number]: string }
+  const [comments, setComments] = useState<Record<number, string>>({});
+  const [customAvatars, setCustomAvatars] = useState<Record<number, string>>({});
+  const [commentModalEmp, setCommentModalEmp] = useState<Employee | null>(null);
+  const [commentInput, setCommentInput] = useState('');
+
+  // Modal Tabs & Family Member state
+  const [activeModalTab, setActiveModalTab] = useState<'personal' | 'family'>('personal');
+  const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
+
+  // Form State for creating employee
+  const initialFormData: CreateEmployeePayload = {
+    employeeCode: '',
+    prefix: '',
+    firstName: '',
+    lastName: '',
+    citizenId: '',
+    gender: '',
+    nationality: 'ไทย (Thai)',
+    religion: 'พุทธ',
+    birthDate: '',
+    maritalStatus: '',
+    militaryStatus: '',
+    addressType: 'บ้านตัวเอง',
+    addressLine: '',
+    subDistrict: '',
+    district: '',
+    province: '',
+    postalCode: '',
+    personalEmail: '',
+    organizationEmail: '',
+    personalPhone: '',
+    educationLevel: '',
+    institution: '',
+    major: '',
+    graduationYear: 2569,
+    gpa: undefined,
+    bankName: '',
+    accountNumber: '',
+    positionName: '',
+    employeeType: '',
+    familyMembers: [
+      {
+        relationshipType: 'บิดา',
+        prefix: '',
+        firstName: '',
+        lastName: '',
+        citizenId: '',
+        birthDate: '',
+      },
+    ],
+    emergencyContact: {
+      relationship: 'บิดา',
+      prefix: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      primaryPhone: '',
+    },
+  };
+
+  const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
+  // Load comments from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hrms_employee_comments');
+      if (saved) {
+        try {
+          setComments(JSON.parse(saved));
+        } catch {
+          // ignore error
+        }
+      } else {
+        // ตัวอย่างตั้งต้นตรงตามภาพ Figma (EMP-001: พนักงานคนนี้ป่วยทางจิต, EMP-002: กำลังทดลองงาน)
+        const defaultNotes: Record<number, string> = {
+          1: 'พนักงานคนนี้ป่วยทางจิต',
+          2: 'กำลังอยู่ในช่วงทดลองงาน',
+        };
+        setComments(defaultNotes);
+        localStorage.setItem('hrms_employee_comments', JSON.stringify(defaultNotes));
+      }
+
+      // โหลดรูปโปรไฟล์ที่เคยอัปโหลดไว้สำหรับพนักงานแต่ละคน
+      const loadedAvatars: Record<number, string> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('hrms_employee_avatar_')) {
+          const empId = Number(key.replace('hrms_employee_avatar_', ''));
+          const val = localStorage.getItem(key);
+          if (empId && val) loadedAvatars[empId] = val;
+        }
+      }
+      setCustomAvatars(loadedAvatars);
+    }
+  }, []);
+
+  // Save comment
+  const handleSaveComment = (empId: number, text: string) => {
+    const updated = { ...comments };
+    if (text.trim()) {
+      updated[empId] = text.trim();
+    } else {
+      delete updated[empId];
+    }
+    setComments(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hrms_employee_comments', JSON.stringify(updated));
+    }
+    setCommentModalEmp(null);
+    setCommentInput('');
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setActionMenuOpenId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Load Employees and Departments
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const [empList, deptRes] = await Promise.all([
+        employeeService.getAll(),
+        apiClient.get('/organization/departments').catch(() => ({ data: { data: [] } })),
+      ]);
+      setEmployees(empList);
+      if (deptRes?.data?.data) {
+        setDepartments(deptRes.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load employee list:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Filter Employees
+  const filteredEmployees = employees.filter((emp) => {
+    const term = searchTerm.toLowerCase().trim();
+    const matchSearch =
+      !term ||
+      emp.employeeCode.toLowerCase().includes(term) ||
+      emp.fullName.toLowerCase().includes(term) ||
+      (emp.citizenIdMasked && emp.citizenIdMasked.toLowerCase().includes(term)) ||
+      (emp.contact?.organizationEmail && emp.contact.organizationEmail.toLowerCase().includes(term)) ||
+      (emp.contact?.personalPhone && emp.contact.personalPhone.includes(term));
+
+    return matchSearch;
+  });
+
+  // Pagination slice
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleAddFamilyMember = () => {
+    const current = formData.familyMembers || [];
+    const nextIdx = current.length;
+    setFormData({
+      ...formData,
+      familyMembers: [
+        ...current,
+        {
+          relationshipType: 'บิดา',
+          prefix: '',
+          firstName: '',
+          lastName: '',
+          citizenId: '',
+          birthDate: '',
+        },
+      ],
+    });
+    setActiveFamilyIndex(nextIdx);
+  };
+
+  const handleRemoveFamilyMember = (indexToRemove: number) => {
+    const current = formData.familyMembers || [];
+    if (current.length <= 1) return;
+    const updated = current.filter((_, idx) => idx !== indexToRemove);
+    setFormData({ ...formData, familyMembers: updated });
+    setActiveFamilyIndex(Math.max(0, indexToRemove - 1));
+  };
+
+  const personalErrorKeys = [
+    'employeeCode',
+    'prefix',
+    'firstName',
+    'lastName',
+    'citizenId',
+    'gender',
+    'nationality',
+    'religion',
+    'birthDate',
+    'maritalStatus',
+    'militaryStatus',
+    'addressType',
+    'addressLine',
+    'subDistrict',
+    'district',
+    'province',
+    'postalCode',
+    'personalEmail',
+    'organizationEmail',
+    'personalPhone',
+    'educationLevel',
+    'institution',
+    'major',
+    'graduationYear',
+    'gpa',
+    'bankName',
+    'accountNumber',
+    'positionName',
+    'employeeType',
+  ];
+
+  const personalErrorsCount = Object.keys(formErrors).filter((k) => personalErrorKeys.includes(k)).length;
+  const familyErrorsCount = Object.keys(formErrors).filter((k) => !personalErrorKeys.includes(k)).length;
+
+  const clearFieldError = (key: string) => {
+    if (formErrors[key]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const validateCreateForm = (data: CreateEmployeePayload): Record<string, string> => {
+    const errors: Record<string, string> = {};
+
+    // 1. Tab Personal - ข้อมูลส่วนบุคคล
+    if (!data.employeeCode?.trim()) errors.employeeCode = 'กรุณากรอกรหัสพนักงาน';
+    if (!data.prefix || data.prefix === 'เลือกคำนำหน้า') errors.prefix = 'กรุณาเลือกคำนำหน้า';
+    if (!data.firstName?.trim()) errors.firstName = 'กรุณากรอกชื่อ';
+    if (!data.lastName?.trim()) errors.lastName = 'กรุณากรอกนามสกุล';
+
+    const citizenDigits = (data.citizenId || '').replace(/\D/g, '');
+    if (!data.citizenId?.trim()) {
+      errors.citizenId = 'กรุณากรอกเลขบัตรประชาชน';
+    } else if (citizenDigits.length !== 13) {
+      errors.citizenId = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+    }
+
+    if (!data.gender || data.gender === 'เลือกเพศ') errors.gender = 'กรุณาเลือกเพศ';
+    if (!data.nationality || data.nationality === 'เลือกสัญชาติ') errors.nationality = 'กรุณาเลือกสัญชาติ';
+    if (!data.religion || data.religion === 'เลือกศาสนา') errors.religion = 'กรุณาเลือกศาสนา';
+    if (!data.birthDate?.trim()) errors.birthDate = 'กรุณาเลือกวันเกิด';
+    if (!data.maritalStatus || data.maritalStatus === 'เลือกสถานภาพ') errors.maritalStatus = 'กรุณาเลือกสถานภาพสมรส';
+    if (!data.militaryStatus || data.militaryStatus === 'เลือกสถานภาพทางทหาร') errors.militaryStatus = 'กรุณาเลือกสถานภาพทางทหาร';
+
+    // ที่อยู่
+    if (!data.addressType?.trim()) errors.addressType = 'กรุณาเลือกประเภทที่อยู่';
+    if (!data.addressLine?.trim()) errors.addressLine = 'กรุณากรอกบ้านเลขที่';
+    if (!data.subDistrict?.trim()) errors.subDistrict = 'กรุณากรอกตำบล / แขวง';
+    if (!data.district?.trim()) errors.district = 'กรุณากรอกอำเภอ / เขต';
+    if (!data.province?.trim()) errors.province = 'กรุณากรอกจังหวัด';
+
+    const postalDigits = (data.postalCode || '').replace(/\D/g, '');
+    if (!data.postalCode?.trim()) {
+      errors.postalCode = 'กรุณากรอกรหัสไปรษณีย์';
+    } else if (postalDigits.length !== 5) {
+      errors.postalCode = 'รหัสไปรษณีย์ต้องมี 5 หลัก';
+    }
+
+    // ช่องทางการติดต่อ & การศึกษา
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!data.personalEmail?.trim()) {
+      errors.personalEmail = 'กรุณากรอกอีเมลส่วนตัว';
+    } else if (!emailRegex.test(data.personalEmail.trim())) {
+      errors.personalEmail = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    if (!data.organizationEmail?.trim()) {
+      errors.organizationEmail = 'กรุณากรอกอีเมลองค์กร';
+    } else if (!emailRegex.test(data.organizationEmail.trim())) {
+      errors.organizationEmail = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    const phoneDigits = (data.personalPhone || '').replace(/\D/g, '');
+    if (!data.personalPhone?.trim()) {
+      errors.personalPhone = 'กรุณากรอกเบอร์โทรศัพท์ส่วนตัว';
+    } else if (phoneDigits.length < 9 || phoneDigits.length > 10) {
+      errors.personalPhone = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
+    }
+
+    if (!data.educationLevel || data.educationLevel === 'เลือกวุฒิการศึกษา') errors.educationLevel = 'กรุณาเลือกวุฒิการศึกษา';
+    if (!data.institution?.trim()) errors.institution = 'กรุณากรอกชื่อสถาบันการศึกษา';
+    if (!data.major?.trim()) errors.major = 'กรุณากรอกสาขาวิชา';
+    if (!data.graduationYear) errors.graduationYear = 'กรุณาเลือกปีที่สำเร็จการศึกษา';
+
+    if (data.gpa === undefined || data.gpa === null || isNaN(Number(data.gpa))) {
+      errors.gpa = 'กรุณากรอกเกรดเฉลี่ยสะสม';
+    } else if (Number(data.gpa) < 0 || Number(data.gpa) > 4) {
+      errors.gpa = 'เกรดเฉลี่ยต้องอยู่ระหว่าง 0.00 - 4.00';
+    }
+
+    // การเงิน & ตำแหน่งงาน
+    if (!data.bankName || data.bankName === 'เลือกธนาคาร') {
+      errors.bankName = 'กรุณาเลือกธนาคาร';
+    }
+    const reqBankDigits = getRequiredBankDigits(data.bankName);
+    const cleanAccountDigits = (data.accountNumber || '').replace(/\D/g, '');
+    if (!data.accountNumber?.trim()) {
+      errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
+    } else if (cleanAccountDigits.length !== reqBankDigits) {
+      errors.accountNumber = `เลขที่บัญชีต้องมี ${reqBankDigits} หลัก (ปัจจุบัน ${cleanAccountDigits.length} หลัก)`;
+    }
+    if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
+    if (!data.employeeType || data.employeeType === 'เลือกประเภท') errors.employeeType = 'กรุณาเลือกประเภทพนักงาน';
+
+    // 2. Tab Family - สมาชิกครอบครัว
+    if (data.familyMembers && data.familyMembers.length > 0) {
+      data.familyMembers.forEach((fm, idx) => {
+        if (!fm.relationshipType) errors[`family_${idx}_relationshipType`] = 'กรุณาเลือกความสัมพันธ์';
+        if (!fm.prefix || fm.prefix === 'เลือกคำนำหน้า') errors[`family_${idx}_prefix`] = 'กรุณาเลือกคำนำหน้า';
+        if (!fm.firstName?.trim()) errors[`family_${idx}_firstName`] = 'กรุณากรอกชื่อ';
+        if (!fm.lastName?.trim()) errors[`family_${idx}_lastName`] = 'กรุณากรอกนามสกุล';
+
+        const fmCitizenDigits = (fm.citizenId || '').replace(/\D/g, '');
+        if (!fm.citizenId?.trim()) {
+          errors[`family_${idx}_citizenId`] = 'กรุณากรอกเลขบัตรประชาชน';
+        } else if (fmCitizenDigits.length !== 13) {
+          errors[`family_${idx}_citizenId`] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+        }
+
+        if (!fm.birthDate?.trim()) errors[`family_${idx}_birthDate`] = 'กรุณาเลือกวันเกิด';
+      });
+    }
+
+    // กรณีฉุกเฉินติดต่อใคร
+    const ec = data.emergencyContact;
+    if (!ec?.relationship) errors['emergency_relationship'] = 'กรุณาเลือกความสัมพันธ์';
+    if (!ec?.prefix || ec.prefix === 'เลือกคำนำหน้า') errors['emergency_prefix'] = 'กรุณาเลือกคำนำหน้า';
+    if (!ec?.firstName?.trim()) errors['emergency_firstName'] = 'กรุณากรอกชื่อ';
+    if (!ec?.lastName?.trim()) errors['emergency_lastName'] = 'กรุณากรอกนามสกุล';
+    if (!ec?.address?.trim()) errors['emergency_address'] = 'กรุณากรอกที่อยู่';
+
+    const ecPhoneDigits = (ec?.primaryPhone || '').replace(/\D/g, '');
+    if (!ec?.primaryPhone?.trim()) {
+      errors['emergency_primaryPhone'] = 'กรุณากรอกเบอร์โทร';
+    } else if (ecPhoneDigits.length < 9 || ecPhoneDigits.length > 10) {
+      errors['emergency_primaryPhone'] = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
+    }
+
+    return errors;
+  };
+
+  const getFieldClass = (fieldName: string, isMono = false) => {
+    const hasError = hasAttemptedSubmit && Boolean(formErrors[fieldName]);
+    return `w-full px-3.5 py-2 bg-white rounded-lg text-xs transition-all ${
+      isMono ? 'font-mono' : ''
+    } ${
+      hasError
+        ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 placeholder:text-rose-300 focus:outline-none focus:border-rose-600 focus:ring-rose-500/30'
+        : 'border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]'
+    }`;
+  };
+
+  const renderFieldError = (fieldName: string) => {
+    if (!hasAttemptedSubmit || !formErrors[fieldName]) return null;
+    return (
+      <span className="text-[11px] font-medium text-rose-500 mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3 shrink-0 text-rose-500" />
+        {formErrors[fieldName]}
+      </span>
+    );
+  };
+
+  const handleOpenCreateModal = () => {
+    setFormData(initialFormData);
+    setFormErrors({});
+    setHasAttemptedSubmit(false);
+    setActiveModalTab('personal');
+    setActiveFamilyIndex(0);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setFormErrors({});
+    setHasAttemptedSubmit(false);
+    setActiveModalTab('personal');
+    setActiveFamilyIndex(0);
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const errors = validateCreateForm(formData);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setHasAttemptedSubmit(true);
+
+      const hasPersonalError = Object.keys(errors).some((k) => personalErrorKeys.includes(k));
+      const hasFamilyError = Object.keys(errors).some((k) => !personalErrorKeys.includes(k));
+
+      if (activeModalTab === 'family' && hasPersonalError && !hasFamilyError) {
+        setActiveModalTab('personal');
+      } else if (activeModalTab === 'personal' && !hasPersonalError && hasFamilyError) {
+        setActiveModalTab('family');
+      }
+
+      if (hasFamilyError) {
+        const firstFmErrIdx = formData.familyMembers?.findIndex((_, idx) =>
+          Object.keys(errors).some((k) => k.startsWith(`family_${idx}_`))
+        );
+        if (firstFmErrIdx !== undefined && firstFmErrIdx >= 0) {
+          setActiveFamilyIndex(firstFmErrIdx);
+        }
+      }
+
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const addressItem = {
+        addressType: 'CURRENT',
+        addressLine: formData.addressLine?.trim() || '',
+        subDistrict: formData.subDistrict?.trim() || '',
+        district: formData.district?.trim() || '',
+        province: formData.province?.trim() || '',
+        postalCode: formData.postalCode?.trim() || '',
+        isCurrent: true,
+      };
+
+      const payload: CreateEmployeePayload = {
+        ...formData,
+        employeeCode: formData.employeeCode.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        citizenId: formData.citizenId?.trim() || undefined,
+        prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
+        gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
+        genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
+        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
+        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
+        maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
+        militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
+        educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
+        institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
+        bankName: formData.bankName && formData.bankName !== 'เลือกธนาคาร' ? formData.bankName : undefined,
+        accountNumber: formData.accountNumber?.trim() ? formData.accountNumber.replace(/\D/g, '') : undefined,
+        positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
+        employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
+        addresses: [addressItem],
+        familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()).map((f) => ({
+          ...f,
+          relationshipType: f.relationshipType || 'บิดา',
+          prefix: f.prefix || undefined,
+          firstName: f.firstName.trim(),
+          lastName: f.lastName?.trim() || '-',
+          citizenId: f.citizenId?.trim() || undefined,
+          birthDate: f.birthDate?.trim() || undefined,
+        })),
+        emergencyContact: formData.emergencyContact?.firstName?.trim() ? {
+          ...formData.emergencyContact,
+          relationship: formData.emergencyContact.relationship || 'บิดา',
+          prefix: formData.emergencyContact.prefix || undefined,
+          firstName: formData.emergencyContact.firstName.trim(),
+          lastName: formData.emergencyContact.lastName?.trim() || '-',
+          address: formData.emergencyContact.address?.trim() || '-',
+          primaryPhone: formatPhoneNumber(formData.emergencyContact.primaryPhone?.trim() || '-'),
+        } : undefined,
+      };
+
+      await employeeService.create(payload);
+      setSuccessMessage('บันทึกข้อมูลพนักงานเรียบร้อย');
+      handleCloseCreateModal();
+      setFormData(initialFormData);
+      loadData();
+      setTimeout(() => setSuccessMessage(null), 3500);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setErrorMessage(error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลพนักงาน "${name}"?`)) return;
+    try {
+      await employeeService.delete(id);
+      setSuccessMessage('ลบข้อมูลพนักงานเรียบร้อย');
+      loadData();
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch {
+      setErrorMessage('ไม่สามารถลบข้อมูลพนักงานได้');
+    }
+  };
+
+  // Status Badge Mapper (ตรงตามสีและฟอนต์ใน Figma: ทำงานอยู่, ทดลองงาน, ลาออก, ไม่ได้ทำงาน)
+  const getStatusBadge = (emp: Employee) => {
+    if (emp.id === 3) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 font-medium whitespace-nowrap">
+          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+          ทดลองงาน
+        </span>
+      );
+    }
+    if (emp.id === 4) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-rose-500 font-medium whitespace-nowrap">
+          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+          ลาออก
+        </span>
+      );
+    }
+    if (emp.id === 2 || emp.id === 7) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium whitespace-nowrap">
+          <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+          ไม่ได้ทำงาน
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-500 font-medium whitespace-nowrap">
+        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+        ทำงานอยู่
+      </span>
+    );
+  };
+
+  // Placeholder division / department / position generator if not yet assigned in DB
+  const getMockAssignment = (emp: Employee) => {
+    const list = [
+      { division: 'ทรัพยากรบุคคล', department: 'สรรหาและคัดเลือก', position: 'ผู้จัดการแผนกสรรหา' },
+      { division: 'เทคโนโลยีสารสนเทศ', department: 'พัฒนาซอฟต์แวร์', position: 'หัวหน้าทีมนักพัฒนา' },
+      { division: 'การตลาด', department: 'การตลาดดิจิทัล', position: 'เจ้าหน้าที่ยิงโฆษณาออนไลน์' },
+      { division: 'ขาย', department: 'ลูกค้าองค์กร', position: 'ผู้จัดการลูกค้ารายใหญ่' },
+      { division: 'บัญชีและการเงิน', department: 'บัญชีการเงิน', position: 'สมุห์บัญชี' },
+      { division: 'ซัพพลายเชนและโลจิสติกส์', department: 'คลังสินค้าและจัดส่ง', position: 'ผู้ควบคุมคลังสินค้า' },
+      { division: 'ผลิตและควบคุมคุณภาพ', department: 'ประกันและตรวจสอบ...', position: 'วิศวกรควบคุมคุณภาพ' },
+    ];
+    return list[(emp.id - 1) % list.length];
+  };
+
+  // Mock photo avatars matching Figma design
+  const mockAvatarImages = [
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', // EMP-001 (ชาย)
+    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', // EMP-002 (หญิง)
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', // EMP-003 (ชาย)
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', // EMP-004 (หญิง)
+    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80', // EMP-005 (หญิง)
+    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80', // EMP-006 (หญิง)
+    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80', // EMP-007 (ชาย)
+  ];
+
+  // Avatar colors for fallback
+  const avatarColors = [
+    'bg-[#0B2046] text-white',
+    'bg-teal-600 text-white',
+    'bg-stone-400 text-white',
+    'bg-amber-500 text-white',
+    'bg-rose-500 text-white',
+    'bg-blue-600 text-white',
+    'bg-indigo-600 text-white',
+  ];
+
+  const subNavTabs = [
+    { title: 'จัดการพนักงาน', href: '/employees', active: true },
+    { title: 'ประเภทพนักงาน', href: '/organization' },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees' },
+    { title: 'แผนผังองค์กร', href: '/organization' },
+    { title: 'สัญญาจ้าง', href: '/employees' },
+  ];
+
+  return (
+    <div className="space-y-4 font-sans pb-12">
+      {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma) */}
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
+          {subNavTabs.map((tab) => {
+            const isActive = tab.title === activeTab;
+            return (
+              <button
+                key={tab.title}
+                onClick={() => setActiveTab(tab.title)}
+                className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
+                  isActive
+                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                }`}
+              >
+                {tab.title}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* 2. Notifications */}
+      {successMessage && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-emerald-800 text-xs shadow-xs animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+      {errorMessage && (
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs shadow-xs">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>{errorMessage}</span>
+          <button onClick={() => setErrorMessage(null)} className="ml-auto text-rose-400 hover:text-rose-600">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 3. Search Bar, Department Filter & Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ค้นหาพนักงาน"
+              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
+            />
+          </div>
+
+          {/* Department Filter Dropdown */}
+          <div className="shrink-0">
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+            >
+              <option value="ALL">ทุกแผนก</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.departmentCode}>
+                  {dept.departmentName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Right Side: + เพิ่มพนักงาน Button */}
+        <div className="w-full sm:w-auto flex justify-end">
+          {hasPermission('EMP_MANAGE') && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              เพิ่มพนักงาน
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Figma 1:1 Data Table */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto min-h-[280px]">
+          <table className="w-full text-left border-collapse text-[12px]">
+            {/* Table Header: Dark Navy Theme (#0B2046) */}
+            <thead>
+              <tr className="bg-[#0B2046] text-white font-medium">
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">รหัสพนักงาน</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px]">ชื่อ-นามสกุล</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px]">รหัสบัตรประชาชน</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">ฝ่าย</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">แผนก</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px]">ตำแหน่ง</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">วันเกิด</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">เพศ</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">อีเมล</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">เบอร์โทร</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium">สถานะ</th>
+                <th className="py-3 px-3.5 whitespace-nowrap font-medium text-center">จัดการ</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={12} className="py-16 text-center text-slate-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#0B2046] mb-2" />
+                    กำลังโหลดข้อมูลพนักงาน...
+                  </td>
+                </tr>
+              ) : paginatedEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="py-16 text-center text-slate-400">
+                    ไม่พบข้อมูลพนักงานในระบบ
+                  </td>
+                </tr>
+              ) : (
+                paginatedEmployees.map((emp, index) => {
+                  const assignment = getMockAssignment(emp);
+                  const hasComment = Boolean(comments[emp.id]);
+                  const commentText = comments[emp.id];
+                  const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
+                  // แถวท้ายตารางเปิดเมนูขึ้นด้านบน เพื่อป้องกันเมนูล้นตกขอบตาราง
+                  const isLastRows = paginatedEmployees.length >= 5
+                    ? index >= paginatedEmployees.length - 3
+                    : index >= paginatedEmployees.length - 2 && index > 0;
+
+                  return (
+                    <tr
+                      key={emp.id}
+                      className="hover:bg-slate-50/70 transition-colors group text-slate-700"
+                    >
+                      {/* 1. รหัสพนักงาน */}
+                      <td className="py-3 px-3.5 text-slate-500 font-mono whitespace-nowrap">
+                        {emp.employeeCode}
+                      </td>
+
+                      {/* 2. ชื่อ-นามสกุล + โปรไฟล์ + เครื่องหมาย ! คอมเมนต์ */}
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          {/* Avatar Container พร้อมปุ่มและ Tooltip */}
+                          <div className="relative shrink-0 group/avatar">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCommentModalEmp(emp);
+                                setCommentInput(comments[emp.id] || '');
+                              }}
+                              className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[11px] shadow-2xs hover:ring-2 hover:ring-[#0B2046]/40 transition-all focus:outline-none"
+                              title={hasComment ? `คอมเมนต์: ${commentText}` : 'คลิกเพื่อเพิ่มคอมเมนต์'}
+                            >
+                              <img
+                                src={customAvatars[emp.id] || mockAvatarImages[(emp.id - 1) % mockAvatarImages.length]}
+                                alt={emp.fullName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              <span className={`w-full h-full absolute inset-0 flex items-center justify-center text-[10px] ${avatarColor} -z-10`}>
+                                {emp.firstName ? emp.firstName.charAt(0) : 'U'}
+                              </span>
+                            </button>
+
+                            {/* Badge เครื่องหมาย ! สไตล์ Figma (แสดงเมื่อมีคอมเมนต์) */}
+                            {hasComment && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="absolute -top-1 -right-1 z-20 w-3.5 h-3.5 rounded-full bg-[#0B2046] text-white flex items-center justify-center text-[9px] font-bold ring-1.5 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                title="คลิกเพื่อแก้ไขคอมเมนต์"
+                              >
+                                !
+                              </button>
+                            )}
+
+                            {/* Tooltip เมื่อเอา mouse ไป hold (hover) เหนือ avatar หรือ badge */}
+                            {hasComment ? (
+                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0B2046] text-white text-[11px] px-3 py-1 rounded-full shadow-xl border border-white/20 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                <div className="w-3.5 h-3.5 rounded-full bg-white/25 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
+                                  !
+                                </div>
+                                <span className="font-normal">** {commentText}</span>
+                              </div>
+                            ) : (
+                              /* หากยังไม่มีคอมเมนต์ เมื่อ hover แสดง tooltip แจ้งให้คลิกเพื่อกรอก */
+                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1 bg-slate-800 text-white text-[11px] px-2.5 py-1 rounded-full shadow-lg pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                <span>คลิกเพื่อใส่คอมเมนต์</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ชื่อเต็ม */}
+                          <Link
+                            href={`/employees/${emp.id}`}
+                            className="font-medium text-slate-800 hover:text-[#0B2046] hover:underline"
+                          >
+                            {emp.prefix} {emp.firstName} {emp.lastName}
+                          </Link>
+                        </div>
+                      </td>
+
+                      {/* 3. รหัสบัตรประชาชน */}
+                      <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap">
+                        {formatMaskedCitizenId(emp.citizenIdMasked)}
+                      </td>
+
+                      {/* 4. ฝ่าย */}
+                      <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                        {emp.divisionName || assignment?.division || '-'}
+                      </td>
+
+                      {/* 5. แผนก */}
+                      <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                        {emp.departmentName || assignment?.department || '-'}
+                      </td>
+
+                      {/* 6. ตำแหน่ง */}
+                      <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                        {emp.positionName || assignment?.position || '-'}
+                      </td>
+
+                      {/* 7. วันเกิด */}
+                      <td className="py-3 px-3.5 text-slate-500 whitespace-nowrap">
+                        {emp.birthDate || '-'}
+                      </td>
+
+                      {/* 8. เพศ */}
+                      <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                        {getGenderDisplay(emp.gender, emp.genderId, emp.prefix)}
+                      </td>
+
+                      {/* 9. อีเมล */}
+                      <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                        {emp.contact?.organizationEmail || emp.contact?.personalEmail || '-'}
+                      </td>
+
+                      {/* 10. เบอร์โทร */}
+                      <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap">
+                        {formatPhoneNumber(emp.contact?.personalPhone)}
+                      </td>
+
+                      {/* 11. สถานะ */}
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        {getStatusBadge(emp)}
+                      </td>
+
+                      {/* 12. ปุ่มจัดการ (จุด 3 จุด ⋮ พร้อม Dropdown ตามภาพ 2 ใน Figma) */}
+                      <td className="py-3 px-3.5 text-center relative whitespace-nowrap">
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActionMenuOpenId(actionMenuOpenId === emp.id ? null : emp.id);
+                            }}
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {/* Dropdown Popup Menu (ตรงตามภาพ 2) */}
+                          {actionMenuOpenId === emp.id && (
+                            <div
+                              ref={actionMenuRef}
+                              className={`absolute right-0 w-40 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${
+                                isLastRows
+                                  ? 'bottom-full mb-1.5 origin-bottom-right'
+                                  : 'top-full mt-1.5 origin-top-right'
+                              }`}
+                            >
+                              {/* 1. ดูข้อมูลพนักงาน */}
+                              <Link
+                                href={`/employees/${emp.id}`}
+                                onClick={() => setActionMenuOpenId(null)}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <span>ดูข้อมูลพนักงาน</span>
+                              </Link>
+
+                              {/* 2. จัดการเงินเดือน */}
+                              <Link
+                                href="/payroll"
+                                onClick={() => setActionMenuOpenId(null)}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                              >
+                                <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                                <span>จัดการเงินเดือน</span>
+                              </Link>
+
+                              {/* 3. ลบข้อมูล */}
+                              {hasPermission('EMP_MANAGE') && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleDelete(emp.id, emp.fullName);
+                                    setActionMenuOpenId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-100"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                  <span>ลบข้อมูล</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 5. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
+        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          {/* ซ้ายล่าง: Rows per page selector */}
+          <div className="flex items-center gap-2 text-slate-600">
+            <span>แสดง</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+            >
+              <option value={5}>5</option>
+              <option value={8}>8</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>แถวต่อหน้า</span>
+            <span className="text-slate-400 text-[11px] ml-1">
+              (ทั้งหมด {filteredEmployees.length} รายการ)
+            </span>
+          </div>
+
+          {/* ขวาล่าง: Pagination Buttons */}
+          <div className="flex items-center gap-1.5">
+            {/* Previous Page Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าก่อนหน้า"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Dynamic Page Numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setCurrentPage(p)}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
+                  currentPage === p
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+
+            {/* Next Page Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าถัดไป"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Modal / Popover สำหรับเพิ่มหรือแก้ไข Comment ของพนักงานรายคน */}
+      {commentModalEmp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#0B2046] text-white flex items-center justify-center text-xs font-bold">
+                  !
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  คอมเมนต์สำหรับ: {commentModalEmp.fullName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setCommentModalEmp(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-slate-500 block">
+                ระบุหมายเหตุ/ข้อควรระวังสำหรับ HR หรือ Admin (เช่น พนักงานคนนี้ป่วยห้ามใช้งานหนัก):
+              </label>
+              <textarea
+                rows={3}
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="พิมพ์คอมเมนต์ตรงนี้..."
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              {comments[commentModalEmp.id] && (
+                <button
+                  type="button"
+                  onClick={() => handleSaveComment(commentModalEmp.id, '')}
+                  className="text-xs text-rose-600 hover:underline"
+                >
+                  ลบคอมเมนต์นี้
+                </button>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setCommentModalEmp(null)}
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
+                  className="px-4 py-1.5 bg-[#0B2046] hover:bg-[#143268] text-white text-xs font-semibold rounded-lg shadow-xs"
+                >
+                  บันทึกคอมเมนต์
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Modal: ดูรายละเอียดพนักงาน (Detail View) */}
+      {isDetailOpen && selectedEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#0B2046] text-white font-bold text-xs flex items-center justify-center">
+                  {selectedEmployee.firstName.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{selectedEmployee.fullName}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">รหัส: {selectedEmployee.employeeCode}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDetailOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-slate-400 block">เลขบัตรประชาชน (PDPA Masked)</span>
+                  <span className="font-mono font-bold text-slate-800 text-sm mt-0.5 block">
+                    {selectedEmployee.citizenIdMasked || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">วันเดือนปีเกิด</span>
+                  <span className="font-medium text-slate-800 block mt-0.5">
+                    {selectedEmployee.birthDate || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">อีเมล</span>
+                  <span className="font-medium text-slate-800 block mt-0.5">
+                    {selectedEmployee.contact?.organizationEmail || selectedEmployee.contact?.personalEmail || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">เบอร์โทรศัพท์</span>
+                  <span className="font-mono font-medium text-slate-800 block mt-0.5">
+                    {formatPhoneNumber(selectedEmployee.contact?.personalPhone)}
+                  </span>
+                </div>
+              </div>
+
+              {comments[selectedEmployee.id] && (
+                <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex items-start gap-2 text-amber-900">
+                  <div className="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    !
+                  </div>
+                  <div>
+                    <span className="font-semibold block">คอมเมนต์สำหรับ HR:</span>
+                    <p className="mt-0.5">{comments[selectedEmployee.id]}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setIsDetailOpen(false)}
+                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Modal: เพิ่มพนักงานใหม่ (Figma 1:1 - ข้อมูลส่วนตัว & ข้อมูลครอบครัว) */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-3 sm:p-6 animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-6xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col">
+            {/* Header Tabs: ข้อมูลส่วนตัว / ข้อมูลครอบครัว */}
+            <div className="px-6 sm:px-8 pt-5 pb-0 border-b border-slate-200/80 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center space-x-8">
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab('personal')}
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
+                    activeModalTab === 'personal'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <span>ข้อมูลส่วนตัว</span>
+                  {hasAttemptedSubmit && personalErrorsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                      {personalErrorsCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab('family')}
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
+                    activeModalTab === 'family'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <span>ข้อมูลครอบครัว</span>
+                  {hasAttemptedSubmit && familyErrorsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                      {familyErrorsCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseCreateModal}
+                className="text-slate-400 hover:text-slate-600 p-1 -mt-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleCreateSubmit} noValidate className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 text-xs text-slate-700">
+                {/* Banner แสดงข้อผิดพลาดรวมถ้ากรอกไม่ครบ */}
+                {hasAttemptedSubmit && Object.keys(formErrors).length > 0 && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-rose-800 shadow-xs animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <div className="text-xs">
+                      <span className="font-bold">กรุณากรอกหรือเลือกข้อมูลที่จำเป็นให้ครบทุกช่อง:</span>{' '}
+                      <span>พบ {Object.keys(formErrors).length} รายการที่ยังไม่สมบูรณ์ (แสดงกรอบสีแดงที่ช่องข้อมูลที่ต้องระบุ)</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalTab === 'personal' ? (
+                  /* ================= TAB 1: ข้อมูลส่วนตัว ================= */
+                  <div className="space-y-6">
+                    {/* Top 3 Columns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+                      {/* Column 1 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น EMP001"
+                            value={formData.employeeCode}
+                            onChange={(e) => {
+                              setFormData({ ...formData, employeeCode: e.target.value });
+                              clearFieldError('employeeCode');
+                            }}
+                            className={getFieldClass('employeeCode')}
+                          />
+                          {renderFieldError('employeeCode')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.prefix}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              let autoGender = formData.gender;
+                              if (!autoGender || autoGender === 'เลือกเพศ') {
+                                if (val === 'นาย') autoGender = 'ชาย';
+                                else if (val === 'นางสาว' || val === 'นาง') autoGender = 'หญิง';
+                              }
+                              setFormData({ ...formData, prefix: val, gender: autoGender });
+                              clearFieldError('prefix');
+                              if (autoGender) clearFieldError('gender');
+                            }}
+                            className={`${getFieldClass('prefix')} cursor-pointer`}
+                          >
+                            <option value="">เลือกคำนำหน้า</option>
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                          </select>
+                          {renderFieldError('prefix')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อ (First Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกชื่อ"
+                            value={formData.firstName}
+                            onChange={(e) => {
+                              setFormData({ ...formData, firstName: e.target.value });
+                              clearFieldError('firstName');
+                            }}
+                            className={getFieldClass('firstName')}
+                          />
+                          {renderFieldError('firstName')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกนามสกุล"
+                            value={formData.lastName}
+                            onChange={(e) => {
+                              setFormData({ ...formData, lastName: e.target.value });
+                              clearFieldError('lastName');
+                            }}
+                            className={getFieldClass('lastName')}
+                          />
+                          {renderFieldError('lastName')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={13}
+                            placeholder="เลขบัตรประชาชน 13 หลัก"
+                            value={formData.citizenId}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                              setFormData({ ...formData, citizenId: val });
+                              clearFieldError('citizenId');
+                            }}
+                            className={getFieldClass('citizenId', true)}
+                          />
+                          {renderFieldError('citizenId')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เพศ (Gender) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.gender}
+                            onChange={(e) => {
+                              setFormData({ ...formData, gender: e.target.value });
+                              clearFieldError('gender');
+                            }}
+                            className={`${getFieldClass('gender')} cursor-pointer`}
+                          >
+                            <option value="">เลือกเพศ</option>
+                            <option value="ชาย">ชาย</option>
+                            <option value="หญิง">หญิง</option>
+                          </select>
+                          {renderFieldError('gender')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สัญชาติ (Nationality) <span className="text-rose-500">*</span>
+                          </label>
+                          <NationalitySelect
+                            value={formData.nationality}
+                            onChange={(val) => {
+                              setFormData({ ...formData, nationality: val });
+                              clearFieldError('nationality');
+                            }}
+                            hasError={hasAttemptedSubmit && Boolean(formErrors.nationality)}
+                          />
+                          {renderFieldError('nationality')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ศาสนา (Religion) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.religion}
+                            onChange={(e) => {
+                              setFormData({ ...formData, religion: e.target.value });
+                              clearFieldError('religion');
+                            }}
+                            className={`${getFieldClass('religion')} cursor-pointer`}
+                          >
+                            <option value="">เลือกศาสนา</option>
+                            <option value="พุทธ">พุทธ</option>
+                            <option value="คริสต์">คริสต์</option>
+                            <option value="อิสลาม">อิสลาม</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                            <option value="ไม่ระบุ">ไม่ระบุ</option>
+                          </select>
+                          {renderFieldError('religion')}
+                        </div>
+                      </div>
+
+                      {/* Column 2 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.birthDate}
+                            onChange={(e) => {
+                              setFormData({ ...formData, birthDate: e.target.value });
+                              clearFieldError('birthDate');
+                            }}
+                            className={getFieldClass('birthDate')}
+                          />
+                          {renderFieldError('birthDate')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.maritalStatus}
+                            onChange={(e) => {
+                              setFormData({ ...formData, maritalStatus: e.target.value });
+                              clearFieldError('maritalStatus');
+                            }}
+                            className={`${getFieldClass('maritalStatus')} cursor-pointer`}
+                          >
+                            <option value="">เลือกสถานภาพ</option>
+                            <option value="โสด">โสด</option>
+                            <option value="สมรส">สมรส</option>
+                            <option value="หย่าร้าง">หย่าร้าง</option>
+                            <option value="หม้าย">หม้าย</option>
+                          </select>
+                          {renderFieldError('maritalStatus')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.militaryStatus}
+                            onChange={(e) => {
+                              setFormData({ ...formData, militaryStatus: e.target.value });
+                              clearFieldError('militaryStatus');
+                            }}
+                            className={`${getFieldClass('militaryStatus')} cursor-pointer`}
+                          >
+                            <option value="">เลือกสถานภาพทางทหาร</option>
+                            <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
+                            <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
+                            <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
+                          </select>
+                          {renderFieldError('militaryStatus')}
+                        </div>
+
+                        {/* ที่อยู่ (Address) */}
+                        <div className="pt-1 space-y-3">
+                          <label className="font-semibold text-slate-700 block">
+                            ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                          </label>
+
+                          {/* ประเภทที่อยู่ Radio Buttons */}
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1.5">
+                              ประเภทที่อยู่ <span className="text-rose-500">*</span>
+                            </span>
+                            <div className={`flex flex-wrap items-center gap-3 p-1.5 rounded-lg transition-all ${hasAttemptedSubmit && formErrors.addressType ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : ''}`}>
+                              {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
+                                <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                                  <input
+                                    type="radio"
+                                    name="addressType"
+                                    value={t}
+                                    checked={formData.addressType === t}
+                                    onChange={(e) => {
+                                      setFormData({ ...formData, addressType: e.target.value });
+                                      clearFieldError('addressType');
+                                    }}
+                                    className="accent-[#0B2046]"
+                                  />
+                                  <span>{t}</span>
+                                </label>
+                              ))}
+                            </div>
+                            {renderFieldError('addressType')}
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              บ้านเลขที่ <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="บ้านเลขที่ 4"
+                              value={formData.addressLine}
+                              onChange={(e) => {
+                                setFormData({ ...formData, addressLine: e.target.value });
+                                clearFieldError('addressLine');
+                              }}
+                              className={getFieldClass('addressLine')}
+                            />
+                            {renderFieldError('addressLine')}
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              ตำบล / แขวง <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="แขวงหัวหมาก"
+                              value={formData.subDistrict}
+                              onChange={(e) => {
+                                setFormData({ ...formData, subDistrict: e.target.value });
+                                clearFieldError('subDistrict');
+                              }}
+                              className={getFieldClass('subDistrict')}
+                            />
+                            {renderFieldError('subDistrict')}
+                          </div>
+
+                          <div>
+                            <span className="text-slate-500 text-[11px] block mb-1">
+                              อำเภอ / เขต <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="บางกะปิ"
+                              value={formData.district}
+                              onChange={(e) => {
+                                setFormData({ ...formData, district: e.target.value });
+                                clearFieldError('district');
+                              }}
+                              className={getFieldClass('district')}
+                            />
+                            {renderFieldError('district')}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <span className="text-slate-500 text-[11px] block mb-1">
+                                จังหวัด <span className="text-rose-500">*</span>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="กรุงเทพมหานคร"
+                                value={formData.province}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, province: e.target.value });
+                                  clearFieldError('province');
+                                }}
+                                className={getFieldClass('province')}
+                              />
+                              {renderFieldError('province')}
+                            </div>
+                            <div>
+                              <span className="text-slate-500 text-[11px] block mb-1">
+                                รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                              </span>
+                              <input
+                                type="text"
+                                maxLength={5}
+                                placeholder="10240"
+                                value={formData.postalCode}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                                  setFormData({ ...formData, postalCode: val });
+                                  clearFieldError('postalCode');
+                                }}
+                                className={getFieldClass('postalCode', true)}
+                              />
+                              {renderFieldError('postalCode')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column 3 */}
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            อีเมล (E-mail) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="test001@gmail.com"
+                            value={formData.personalEmail}
+                            onChange={(e) => {
+                              setFormData({ ...formData, personalEmail: e.target.value });
+                              clearFieldError('personalEmail');
+                            }}
+                            className={getFieldClass('personalEmail')}
+                          />
+                          {renderFieldError('personalEmail')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="name@company.com"
+                            value={formData.organizationEmail}
+                            onChange={(e) => {
+                              setFormData({ ...formData, organizationEmail: e.target.value });
+                              clearFieldError('organizationEmail');
+                            }}
+                            className={getFieldClass('organizationEmail')}
+                          />
+                          {renderFieldError('organizationEmail')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={12}
+                            placeholder="08X-XXX-XXXX"
+                            value={formData.personalPhone}
+                            onChange={(e) => {
+                              setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) });
+                              clearFieldError('personalPhone');
+                            }}
+                            className={getFieldClass('personalPhone', true)}
+                          />
+                          {renderFieldError('personalPhone')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ระดับวุฒิการศึกษา (Education level) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.educationLevel}
+                            onChange={(e) => {
+                              setFormData({ ...formData, educationLevel: e.target.value });
+                              clearFieldError('educationLevel');
+                            }}
+                            className={`${getFieldClass('educationLevel')} cursor-pointer`}
+                          >
+                            <option value="">เลือกวุฒิการศึกษา</option>
+                            <option value="มัธยมศึกษา">มัธยมศึกษา</option>
+                            <option value="ปวช.">ปวช.</option>
+                            <option value="ปวส.">ปวส.</option>
+                            <option value="ปริญญาตรี">ปริญญาตรี</option>
+                            <option value="ปริญญาโท">ปริญญาโท</option>
+                            <option value="ปริญญาเอก">ปริญญาเอก</option>
+                          </select>
+                          {renderFieldError('educationLevel')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อสถาบันการศึกษา (Institution) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น จุฬาลงกรณ์มหาวิทยาลัย, ม.รามคำแหง"
+                            value={formData.institution}
+                            onChange={(e) => {
+                              setFormData({ ...formData, institution: e.target.value });
+                              clearFieldError('institution');
+                            }}
+                            className={getFieldClass('institution')}
+                          />
+                          {renderFieldError('institution')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            สาขาวิชา (Major) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="สาขาวิชาที่เรียน"
+                            value={formData.major}
+                            onChange={(e) => {
+                              setFormData({ ...formData, major: e.target.value });
+                              clearFieldError('major');
+                            }}
+                            className={getFieldClass('major')}
+                          />
+                          {renderFieldError('major')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ปีที่สำเร็จการศึกษา (Graduation year) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.graduationYear}
+                            onChange={(e) => {
+                              setFormData({ ...formData, graduationYear: Number(e.target.value) });
+                              clearFieldError('graduationYear');
+                            }}
+                            className={`${getFieldClass('graduationYear')} cursor-pointer`}
+                          >
+                            <option value="">เลือกปีที่สำเร็จการศึกษา</option>
+                            {[2570, 2569, 2568, 2567, 2566, 2565, 2564, 2563, 2562, 2561, 2560].map((y) => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                          {renderFieldError('graduationYear')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="4"
+                            placeholder="3.99"
+                            value={formData.gpa ?? ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined });
+                              clearFieldError('gpa');
+                            }}
+                            className={getFieldClass('gpa')}
+                          />
+                          {renderFieldError('gpa')}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section ด้านล่าง: การเงิน & ตำแหน่งงาน (ตรงตามภาพที่ 3 ใน Figma) */}
+                    <div className="pt-5 border-t border-slate-100">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+                        <div className="space-y-3.5">
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ชื่อธนาคาร (Bank name) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.bankName}
+                              onChange={(e) => {
+                                const newBank = e.target.value;
+                                const maxDigits = getRequiredBankDigits(newBank);
+                                const currentDigits = formData.accountNumber ? formData.accountNumber.replace(/\D/g, '') : '';
+                                const newAcc = currentDigits.slice(0, maxDigits);
+                                setFormData({
+                                  ...formData,
+                                  bankName: newBank,
+                                  accountNumber: newAcc,
+                                });
+                                clearFieldError('bankName');
+                                if (newAcc.length === maxDigits) {
+                                  clearFieldError('accountNumber');
+                                }
+                              }}
+                              className={`${getFieldClass('bankName')} cursor-pointer`}
+                            >
+                              <option value="">เลือกธนาคาร</option>
+                              {BANK_CONFIGS.map((b) => (
+                                <option key={b.name} value={b.name}>
+                                  {b.name} ({b.shortName}) - {b.digits} หลัก
+                                </option>
+                              ))}
+                            </select>
+                            {renderFieldError('bankName')}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="font-semibold text-slate-700">
+                                เลขที่บัญชี (Account Number) <span className="text-rose-500">*</span>
+                              </label>
+                              <span
+                                className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
+                                  formData.accountNumber?.length === getRequiredBankDigits(formData.bankName)
+                                    ? 'bg-emerald-50 text-emerald-600 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              maxLength={getRequiredBankDigits(formData.bankName)}
+                              placeholder={`ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`}
+                              value={formData.accountNumber}
+                              onChange={(e) => {
+                                const maxDigits = getRequiredBankDigits(formData.bankName);
+                                const val = e.target.value.replace(/\D/g, '').slice(0, maxDigits);
+                                setFormData({ ...formData, accountNumber: val });
+                                clearFieldError('accountNumber');
+                              }}
+                              className={getFieldClass('accountNumber', true)}
+                            />
+                            {renderFieldError('accountNumber')}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ตำแหน่ง <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.positionName}
+                              onChange={(e) => {
+                                setFormData({ ...formData, positionName: e.target.value });
+                                clearFieldError('positionName');
+                              }}
+                              className={`${getFieldClass('positionName')} cursor-pointer`}
+                            >
+                              <option value="">เลือกตำแหน่ง</option>
+                              <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
+                              <option value="หัวหน้าทีมนักพัฒนา">หัวหน้าทีมนักพัฒนา</option>
+                              <option value="เจ้าหน้าที่ยิงโฆษณาออนไลน์">เจ้าหน้าที่ยิงโฆษณาออนไลน์</option>
+                              <option value="ผู้จัดการลูกค้ารายใหญ่">ผู้จัดการลูกค้ารายใหญ่</option>
+                              <option value="สมุห์บัญชี">สมุห์บัญชี</option>
+                              <option value="ผู้ควบคุมคลังสินค้า">ผู้ควบคุมคลังสินค้า</option>
+                              <option value="วิศวกรควบคุมคุณภาพ">วิศวกรควบคุมคุณภาพ</option>
+                              <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
+                              <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
+                            </select>
+                            {renderFieldError('positionName')}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ประเภทพนักงาน <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.employeeType}
+                              onChange={(e) => {
+                                setFormData({ ...formData, employeeType: e.target.value });
+                                clearFieldError('employeeType');
+                              }}
+                              className={`${getFieldClass('employeeType')} cursor-pointer`}
+                            >
+                              <option value="">เลือกประเภท</option>
+                              <option value="พนักงานประจำ">พนักงานประจำ</option>
+                              <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
+                              <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
+                              <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
+                            </select>
+                            {renderFieldError('employeeType')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ================= TAB 2: ข้อมูลครอบครัว ================= */
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+                    {/* คอลัมน์ซ้าย: สมาชิกในครอบครัว */}
+                    <div className="space-y-4">
+                      {/* Family Member Switcher Tabs */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {formData.familyMembers?.map((_, idx) => {
+                          const memberHasErrors = hasAttemptedSubmit && Object.keys(formErrors).some((k) => k.startsWith(`family_${idx}_`));
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveFamilyIndex(idx)}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
+                                activeFamilyIndex === idx
+                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              } ${memberHasErrors ? 'ring-2 ring-rose-500 border border-rose-500' : ''}`}
+                            >
+                              {idx + 1}
+                              {memberHasErrors && (
+                                <span className="w-2 h-2 rounded-full bg-rose-500 absolute -top-0.5 -right-0.5 ring-2 ring-white"></span>
+                              )}
+                            </button>
+                          );
+                        })}
+
+                        {/* ปุ่ม + เพิ่มสมาชิกครอบครัว */}
+                        <button
+                          type="button"
+                          onClick={handleAddFamilyMember}
+                          className="w-7 h-7 rounded-full border border-slate-300 hover:border-slate-800 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
+                          title="เพิ่มสมาชิกครอบครัวคนถัดไป"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+
+                        {formData.familyMembers && formData.familyMembers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
+                            className="text-[11px] text-rose-500 hover:underline ml-auto cursor-pointer"
+                          >
+                            ลบสมาชิกคนที่ {activeFamilyIndex + 1}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
+                      {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
+                        <div className="space-y-3.5">
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.familyMembers[activeFamilyIndex].relationshipType}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].relationshipType = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_relationshipType`);
+                              }}
+                              className={`${getFieldClass(`family_${activeFamilyIndex}_relationshipType`)} cursor-pointer`}
+                            >
+                              <option value="">เลือกความสัมพันธ์</option>
+                              <option value="บิดา">บิดา</option>
+                              <option value="มารดา">มารดา</option>
+                              <option value="คู่สมรส">คู่สมรส</option>
+                              <option value="บุตร">บุตร</option>
+                              <option value="พี่น้อง">พี่น้อง</option>
+                            </select>
+                            {renderFieldError(`family_${activeFamilyIndex}_relationshipType`)}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.familyMembers[activeFamilyIndex].prefix || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].prefix = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_prefix`);
+                              }}
+                              className={`${getFieldClass(`family_${activeFamilyIndex}_prefix`)} cursor-pointer`}
+                            >
+                              <option value="">เลือกคำนำหน้า</option>
+                              <option value="นาย">นาย</option>
+                              <option value="นางสาว">นางสาว</option>
+                              <option value="นาง">นาง</option>
+                              <option value="เด็กชาย">เด็กชาย</option>
+                              <option value="เด็กหญิง">เด็กหญิง</option>
+                            </select>
+                            {renderFieldError(`family_${activeFamilyIndex}_prefix`)}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              ชื่อ (First Name) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="กรอกชื่อ"
+                              value={formData.familyMembers[activeFamilyIndex].firstName}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].firstName = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_firstName`);
+                              }}
+                              className={getFieldClass(`family_${activeFamilyIndex}_firstName`)}
+                            />
+                            {renderFieldError(`family_${activeFamilyIndex}_firstName`)}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="กรอกนามสกุล"
+                              value={formData.familyMembers[activeFamilyIndex].lastName || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].lastName = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_lastName`);
+                              }}
+                              className={getFieldClass(`family_${activeFamilyIndex}_lastName`)}
+                            />
+                            {renderFieldError(`family_${activeFamilyIndex}_lastName`)}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              maxLength={13}
+                              placeholder="เลขบัตรประชาชน 13 หลัก"
+                              value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].citizenId = val;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_citizenId`);
+                              }}
+                              className={getFieldClass(`family_${activeFamilyIndex}_citizenId`, true)}
+                            />
+                            {renderFieldError(`family_${activeFamilyIndex}_citizenId`)}
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="date"
+                              value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
+                              onChange={(e) => {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].birthDate = e.target.value;
+                                setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_birthDate`);
+                              }}
+                              className={getFieldClass(`family_${activeFamilyIndex}_birthDate`)}
+                            />
+                            {renderFieldError(`family_${activeFamilyIndex}_birthDate`)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* คอลัมน์ขวา: กรณีฉุกเฉินติดต่อใคร */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 pb-1">
+                        กรณีฉุกเฉินติดต่อใคร
+                      </h3>
+
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.emergencyContact?.relationship || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  relationship: e.target.value,
+                                },
+                              });
+                              clearFieldError('emergency_relationship');
+                            }}
+                            className={`${getFieldClass('emergency_relationship')} cursor-pointer`}
+                          >
+                            <option value="">เลือกความสัมพันธ์</option>
+                            <option value="บิดา">บิดา</option>
+                            <option value="มารดา">มารดา</option>
+                            <option value="คู่สมรส">คู่สมรส</option>
+                            <option value="บุตร">บุตร</option>
+                            <option value="ญาติ">ญาติ</option>
+                            <option value="เพื่อน">เพื่อน</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                          </select>
+                          {renderFieldError('emergency_relationship')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.emergencyContact?.prefix || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  prefix: e.target.value,
+                                },
+                              });
+                              clearFieldError('emergency_prefix');
+                            }}
+                            className={`${getFieldClass('emergency_prefix')} cursor-pointer`}
+                          >
+                            <option value="">เลือกคำนำหน้า</option>
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                          </select>
+                          {renderFieldError('emergency_prefix')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ชื่อ (First Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกชื่อ"
+                            value={formData.emergencyContact?.firstName || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { lastName: '', primaryPhone: '' }),
+                                  firstName: e.target.value,
+                                },
+                              });
+                              clearFieldError('emergency_firstName');
+                            }}
+                            className={getFieldClass('emergency_firstName')}
+                          />
+                          {renderFieldError('emergency_firstName')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกนามสกุล"
+                            value={formData.emergencyContact?.lastName || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', primaryPhone: '' }),
+                                  lastName: e.target.value,
+                                },
+                              });
+                              clearFieldError('emergency_lastName');
+                            }}
+                            className={getFieldClass('emergency_lastName')}
+                          />
+                          {renderFieldError('emergency_lastName')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="กรอกที่อยู่"
+                            value={formData.emergencyContact?.address || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                  address: e.target.value,
+                                },
+                              });
+                              clearFieldError('emergency_address');
+                            }}
+                            className={getFieldClass('emergency_address')}
+                          />
+                          {renderFieldError('emergency_address')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            เบอร์โทร (Phone number) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={12}
+                            placeholder="08X-XXX-XXXX"
+                            value={formData.emergencyContact?.primaryPhone || ''}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                emergencyContact: {
+                                  ...(formData.emergencyContact || { firstName: '', lastName: '' }),
+                                  primaryPhone: autoFormatPhone(e.target.value),
+                                },
+                              });
+                              clearFieldError('emergency_primaryPhone');
+                            }}
+                            className={getFieldClass('emergency_primaryPhone', true)}
+                          />
+                          {renderFieldError('emergency_primaryPhone')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 sm:px-8 py-4 bg-slate-50/90 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCloseCreateModal}
+                  className="px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-[#0B2046] hover:bg-[#15346e] text-white text-xs font-semibold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    'บันทึกข้อมูล'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

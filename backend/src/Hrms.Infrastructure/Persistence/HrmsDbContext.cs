@@ -19,6 +19,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Authentication & Core Entities
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeContact> EmployeeContacts => Set<EmployeeContact>();
+    public DbSet<EmployeeAddress> EmployeeAddresses => Set<EmployeeAddress>();
+    public DbSet<EmployeeBankAccount> EmployeeBankAccounts => Set<EmployeeBankAccount>();
+    public DbSet<EmployeeSocialSecurity> EmployeeSocialSecurities => Set<EmployeeSocialSecurity>();
+    public DbSet<EmployeeEducation> EmployeeEducations => Set<EmployeeEducation>();
+    public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
+    public DbSet<EmergencyContact> EmergencyContacts => Set<EmergencyContact>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
@@ -32,6 +39,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<EmployeeLevel> EmployeeLevels => Set<EmployeeLevel>();
+    public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
 
     // Work Calendar Master Data (Dev 1 Sprint 2)
     public DbSet<WorkWeek> WorkWeeks => Set<WorkWeek>();
@@ -43,7 +51,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Work Schedules & Employee Shifts (Dev 1 Sprint 4)
     public DbSet<WorkSchedule> WorkSchedules => Set<WorkSchedule>();
     public DbSet<EmployeeShift> EmployeeShifts => Set<EmployeeShift>();
-    public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
     public DbSet<EmployeeType> EmployeeTypes => Set<EmployeeType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -80,9 +87,169 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
             entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(30);
+            entity.Property(e => e.GenderId).HasColumnName("gender_id");
+            entity.Property(e => e.Nationality).HasColumnName("nationality").HasMaxLength(100);
+            entity.Property(e => e.NationalityId).HasColumnName("nationality_id");
+            entity.Property(e => e.Religion).HasColumnName("religion").HasMaxLength(100);
+            entity.Property(e => e.ReligionId).HasColumnName("religion_id");
+            entity.Property(e => e.MaritalStatus).HasColumnName("marital_status").HasMaxLength(30);
+            entity.Property(e => e.MaritalStatusId).HasColumnName("marital_status_id");
+            entity.Property(e => e.MilitaryStatus).HasColumnName("military_status").HasMaxLength(50);
+            entity.Property(e => e.IsTopLevel).HasColumnName("is_top_level");
+            entity.Property(e => e.SpouseHasIncome).HasColumnName("spouse_has_income");
+            entity.Property(e => e.NumberOfChildren).HasColumnName("number_of_children");
+            entity.Property(e => e.ParentDeductionCount).HasColumnName("parent_deduction_count");
+            entity.Property(e => e.DisabilityDeductionCount).HasColumnName("disability_deduction_count");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.Ignore(e => e.FullName);
+        });
+
+        // Configuration: EmployeeContact
+        modelBuilder.Entity<EmployeeContact>(entity =>
+        {
+            entity.ToTable("employee_contact", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.PersonalPhone).HasColumnName("personal_phone").HasMaxLength(50);
+            entity.Property(e => e.PersonalEmail).HasColumnName("personal_email").HasMaxLength(255);
+            entity.Property(e => e.OrganizationEmail).HasColumnName("organization_email").HasMaxLength(255);
+
+            entity.HasOne(e => e.Employee)
+                .WithOne(e => e.Contact)
+                .HasForeignKey<EmployeeContact>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeAddress
+        modelBuilder.Entity<EmployeeAddress>(entity =>
+        {
+            entity.ToTable("employee_address", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.AddressType).HasColumnName("address_type").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.AddressLine).HasColumnName("address_line");
+            entity.Property(e => e.SubDistrict).HasColumnName("sub_district").HasMaxLength(150);
+            entity.Property(e => e.District).HasColumnName("district").HasMaxLength(150);
+            entity.Property(e => e.Province).HasColumnName("province").HasMaxLength(150);
+            entity.Property(e => e.PostalCode).HasColumnName("postal_code").HasMaxLength(20);
+            entity.Property(e => e.IsCurrent).HasColumnName("is_current").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Addresses)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeBankAccount
+        modelBuilder.Entity<EmployeeBankAccount>(entity =>
+        {
+            entity.ToTable("employee_bank_account", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.BankId).HasColumnName("bank_id").IsRequired();
+            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AccountType).HasColumnName("account_type").HasMaxLength(50);
+            entity.Property(e => e.AccountName).HasColumnName("account_name").HasMaxLength(255);
+            entity.Property(e => e.IsPrimary).HasColumnName("is_primary");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.BankAccounts)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Bank)
+                .WithMany()
+                .HasForeignKey(e => e.BankId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuration: EmployeeSocialSecurity
+        modelBuilder.Entity<EmployeeSocialSecurity>(entity =>
+        {
+            entity.ToTable("employee_social_security", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.SocialSecurityNo).HasColumnName("social_security_no").HasMaxLength(50);
+            entity.Property(e => e.SocialSecurityNoEncrypted).HasColumnName("social_security_no_encrypted");
+            entity.Property(e => e.SocialSecurityNoMasked).HasColumnName("social_security_no_masked").HasMaxLength(20);
+            entity.Property(e => e.HospitalName).HasColumnName("hospital_name").HasMaxLength(255);
+            entity.Property(e => e.HospitalCode).HasColumnName("hospital_code").HasMaxLength(50);
+
+            entity.HasOne(e => e.Employee)
+                .WithOne(e => e.SocialSecurity)
+                .HasForeignKey<EmployeeSocialSecurity>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeEducation
+        modelBuilder.Entity<EmployeeEducation>(entity =>
+        {
+            entity.ToTable("employee_education", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.EducationLevel).HasColumnName("education_level").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Institution).HasColumnName("institution").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Major).HasColumnName("major").HasMaxLength(255);
+            entity.Property(e => e.GraduationYear).HasColumnName("graduation_year");
+            entity.Property(e => e.Gpa).HasColumnName("gpa").HasPrecision(4, 2);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Educations)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: FamilyMember
+        modelBuilder.Entity<FamilyMember>(entity =>
+        {
+            entity.ToTable("family_member", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.RelationshipType).HasColumnName("relationship_type").IsRequired().HasMaxLength(30);
+            entity.Ignore(e => e.Prefix);
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(150);
+            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(30);
+            entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
+            entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
+            entity.Property(e => e.BirthDate).HasColumnName("birth_date");
+            entity.Property(e => e.MaritalStatus).HasColumnName("marital_status").HasMaxLength(30);
+            entity.Property(e => e.EducationStatus).HasColumnName("education_status").HasMaxLength(100);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.FamilyMembers)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmergencyContact
+        modelBuilder.Entity<EmergencyContact>(entity =>
+        {
+            entity.ToTable("emergency_contact", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Ignore(e => e.Prefix);
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Relationship).HasColumnName("relationship").HasMaxLength(100);
+            entity.Property(e => e.PrimaryPhone).HasColumnName("primary_phone").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SecondaryPhone).HasColumnName("secondary_phone").HasMaxLength(50);
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.IsPrimary).HasColumnName("is_primary").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.EmergencyContacts)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configuration: UserAccount
@@ -427,9 +594,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.WageType).HasColumnName("wage_type").IsRequired().HasMaxLength(20);
 
             entity.HasOne(e => e.Employee)
-                .WithMany()
+                .WithMany(e => e.Assignments)
                 .HasForeignKey(e => e.EmployeeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.Division)
                 .WithMany()

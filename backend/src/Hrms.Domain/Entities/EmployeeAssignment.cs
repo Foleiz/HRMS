@@ -1,14 +1,13 @@
-using System;
+using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
 /// <summary>
-/// ข้อมูลการโอนย้ายและแต่งตั้งตำแหน่ง/แผนกงานของพนักงาน
+/// ประวัติและสถานะการมอบหมายงาน/ตำแหน่งงานของพนักงาน (Employee Assignment)
 /// แมปกับตาราง hrms.employee_assignment
 /// </summary>
-public class EmployeeAssignment
+public class EmployeeAssignment : BaseEntity
 {
-    public long Id { get; set; }
     public long EmployeeId { get; set; }
     public long DivisionId { get; set; }
     public long DepartmentId { get; set; }
@@ -20,7 +19,7 @@ public class EmployeeAssignment
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public bool IsCurrent { get; set; } = true;
-    public string WageType { get; set; } = "MONTHLY";
+    public string WageType { get; set; } = "MONTHLY"; // MONTHLY, DAILY
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }

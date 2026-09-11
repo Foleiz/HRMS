@@ -48,6 +48,11 @@ public class ExceptionHandlingMiddleware
                 message = notFoundEx.Message;
                 break;
 
+            case ForbiddenException forbiddenEx:
+                statusCode = HttpStatusCode.Forbidden;
+                message = forbiddenEx.Message;
+                break;
+
             case BusinessRuleException businessEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = businessEx.Message;

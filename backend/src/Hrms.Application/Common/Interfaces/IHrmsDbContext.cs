@@ -7,6 +7,13 @@ public interface IHrmsDbContext
 {
     DbSet<Bank> Banks { get; }
     DbSet<Employee> Employees { get; }
+    DbSet<EmployeeContact> EmployeeContacts { get; }
+    DbSet<EmployeeAddress> EmployeeAddresses { get; }
+    DbSet<EmployeeBankAccount> EmployeeBankAccounts { get; }
+    DbSet<EmployeeSocialSecurity> EmployeeSocialSecurities { get; }
+    DbSet<EmployeeEducation> EmployeeEducations { get; }
+    DbSet<FamilyMember> FamilyMembers { get; }
+    DbSet<EmergencyContact> EmergencyContacts { get; }
     DbSet<UserAccount> UserAccounts { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }
@@ -20,6 +27,7 @@ public interface IHrmsDbContext
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }
     DbSet<EmployeeLevel> EmployeeLevels { get; }
+    DbSet<EmployeeAssignment> EmployeeAssignments { get; }
 
     // Work Calendar Master Data (Dev 1 Sprint 2)
     DbSet<WorkWeek> WorkWeeks { get; }
@@ -31,7 +39,6 @@ public interface IHrmsDbContext
     // Work Schedules & Employee Shifts (Dev 1 Sprint 4)
     DbSet<WorkSchedule> WorkSchedules { get; }
     DbSet<EmployeeShift> EmployeeShifts { get; }
-    DbSet<EmployeeAssignment> EmployeeAssignments { get; }
     DbSet<EmployeeType> EmployeeTypes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
