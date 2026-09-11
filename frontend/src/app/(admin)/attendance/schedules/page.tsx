@@ -284,6 +284,7 @@ function SchedulesContent() {
   // Shift Modal (Create / Edit)
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
   const [shiftModalMode, setShiftModalMode] = useState<'create' | 'edit'>('create');
+  const [shiftModalError, setShiftModalError] = useState<string | null>(null);
   const [shiftForm, setShiftForm] = useState<CreateShiftRequest & { id?: number }>({
     shiftCode: '',
     shiftName: '',
@@ -661,6 +662,7 @@ function SchedulesContent() {
   // -------------------------------------------------------------
   const openShiftCreate = () => {
     setShiftModalMode('create');
+    setShiftModalError(null);
     setShiftForm({
       shiftCode: '',
       shiftName: '',
@@ -677,6 +679,7 @@ function SchedulesContent() {
 
   const openShiftEdit = (shift: Shift) => {
     setShiftModalMode('edit');
+    setShiftModalError(null);
     setShiftForm({
       id: shift.id,
       shiftCode: shift.shiftCode,
@@ -694,9 +697,10 @@ function SchedulesContent() {
 
   const handleDuplicateShift = (shift: Shift) => {
     setShiftModalMode('create');
+    setShiftModalError(null);
     setShiftForm({
-      shiftCode: `${shift.shiftCode}_COPY`,
-      shiftName: `${shift.shiftName} (คัดลอก)`,
+      shiftCode: shift.shiftCode,
+      shiftName: shift.shiftName,
       startTime: shift.startTime.substring(0, 5),
       endTime: shift.endTime.substring(0, 5),
       isCrossDay: shift.isCrossDay,
@@ -710,6 +714,44 @@ function SchedulesContent() {
 
   const handleSaveShift = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShiftModalError(null);
+
+    const codeUpper = shiftForm.shiftCode.trim().toUpperCase();
+    const nameTrimmed = shiftForm.shiftName.trim();
+
+    // Validate duplicate shift code or name
+    if (shiftModalMode === 'create') {
+      const duplicateCode = shifts.some((s) => s.shiftCode.trim().toUpperCase() === codeUpper);
+      if (duplicateCode) {
+        setShiftModalError(`รหัสกะการทำงาน "${codeUpper}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนรหัสกะใหม่`);
+        return;
+      }
+
+      const duplicateName = shifts.some(
+        (s) => s.shiftName.trim().toLowerCase() === nameTrimmed.toLowerCase()
+      );
+      if (duplicateName) {
+        setShiftModalError(`ชื่อกะการทำงาน "${nameTrimmed}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนชื่อกะใหม่`);
+        return;
+      }
+    } else if (shiftForm.id) {
+      const duplicateCode = shifts.some(
+        (s) => s.id !== shiftForm.id && s.shiftCode.trim().toUpperCase() === codeUpper
+      );
+      if (duplicateCode) {
+        setShiftModalError(`รหัสกะการทำงาน "${codeUpper}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนรหัสกะใหม่`);
+        return;
+      }
+
+      const duplicateName = shifts.some(
+        (s) => s.id !== shiftForm.id && s.shiftName.trim().toLowerCase() === nameTrimmed.toLowerCase()
+      );
+      if (duplicateName) {
+        setShiftModalError(`ชื่อกะการทำงาน "${nameTrimmed}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนชื่อกะใหม่`);
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       if (shiftModalMode === 'create') {
@@ -731,7 +773,9 @@ function SchedulesContent() {
       setShiftModalOpen(false);
       loadShifts();
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกกะการทำงาน');
+      const msg = err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกกะการทำงาน';
+      setShiftModalError(msg);
+      setErrorMessage(msg);
     } finally {
       setSubmitting(false);
     }
@@ -2304,6 +2348,23 @@ function SchedulesContent() {
               </div>
 
             <form onSubmit={handleSaveShift} className="p-5 space-y-4">
+              {/* In-Modal Alert Error Banner */}
+              {shiftModalError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-2 shadow-xs animate-fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span className="font-semibold">{shiftModalError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShiftModalError(null)}
+                    className="text-rose-400 hover:text-rose-600 p-0.5 rounded transition"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {/* Shift Code & Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -2315,8 +2376,15 @@ function SchedulesContent() {
                     required
                     placeholder="เช่น DAY_OFFICE"
                     value={shiftForm.shiftCode}
-                    onChange={(e) => setShiftForm({ ...shiftForm, shiftCode: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    onChange={(e) => {
+                      if (shiftModalError) setShiftModalError(null);
+                      setShiftForm({ ...shiftForm, shiftCode: e.target.value.toUpperCase() });
+                    }}
+                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg font-mono focus:outline-none focus:ring-2 transition ${
+                      shiftModalError && shiftModalError.includes('รหัสกะ')
+                        ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-200 focus:ring-[#0B2046]/20 focus:border-[#0B2046]'
+                    }`}
                   />
                 </div>
                 <div>
@@ -2328,8 +2396,15 @@ function SchedulesContent() {
                     required
                     placeholder="เช่น กะกลางวันสำนักงาน"
                     value={shiftForm.shiftName}
-                    onChange={(e) => setShiftForm({ ...shiftForm, shiftName: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    onChange={(e) => {
+                      if (shiftModalError) setShiftModalError(null);
+                      setShiftForm({ ...shiftForm, shiftName: e.target.value });
+                    }}
+                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                      shiftModalError && shiftModalError.includes('ชื่อกะ')
+                        ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-200 focus:ring-[#0B2046]/20 focus:border-[#0B2046]'
+                    }`}
                   />
                 </div>
               </div>
