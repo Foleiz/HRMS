@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
   Calendar,
   CalendarDays,
@@ -18,7 +17,6 @@ import {
   Moon,
   Check,
   Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -61,19 +59,6 @@ function formatThaiDate(dateStr: string): string {
   const thaiYear = year + 543;
 
   return `${dayName} ${day} ${thaiMonths[month]} ${thaiYear}`;
-}
-
-function calculateDuration(start?: string | null, end?: string | null): string {
-  if (!start || !end) return '-';
-  const [sH, sM] = start.split(':').map(Number);
-  const [eH, eM] = end.split(':').map(Number);
-  if (isNaN(sH) || isNaN(sM) || isNaN(eH) || isNaN(eM)) return '-';
-  let totalMin = (eH * 60 + eM) - (sH * 60 + sM);
-  if (totalMin < 0) totalMin += 24 * 60;
-  const hours = Math.floor(totalMin / 60);
-  const mins = totalMin % 60;
-  if (mins === 0) return `${hours} ชม.`;
-  return `${hours} ชม. ${mins} นาที`;
 }
 
 export default function WorkCalendarPage() {
@@ -130,6 +115,9 @@ export default function WorkCalendarPage() {
       ]);
       setWorkWeek(weekData);
       setHolidays(holidayData);
+      const firstWorking = weekData.find((d) => d.isWorkingDay && d.startTime && d.endTime);
+      if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime);
+      if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime);
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
     } finally {
@@ -165,19 +153,12 @@ export default function WorkCalendarPage() {
           return {
             ...d,
             isWorkingDay: nextWorking,
-            startTime: nextWorking ? (d.startTime || '08:30') : null,
-            endTime: nextWorking ? (d.endTime || '17:30') : null,
+            startTime: nextWorking ? bulkStartTime : null,
+            endTime: nextWorking ? bulkEndTime : null,
           };
         }
         return d;
       })
-    );
-  };
-
-  // Handle time change for specific day
-  const handleTimeChange = (dayOfWeek: number, field: 'startTime' | 'endTime', value: string) => {
-    setWorkWeek((prev) =>
-      prev.map((d) => (d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d))
     );
   };
 
@@ -190,7 +171,7 @@ export default function WorkCalendarPage() {
           : d
       )
     );
-    setSuccessMessage(`ปรับเวลาทำงานเป็น ${bulkStartTime} - ${bulkEndTime} ให้ทุกวันทำงานเรียบร้อยแล้ว (อย่าลืมกดปุ่มบันทึก)`);
+    setSuccessMessage(`นำเวลาทำงาน ${bulkStartTime} - ${bulkEndTime} น. ไปใช้กับทุกวันทำงานเรียบร้อยแล้ว (อย่าลืมกดปุ่มบันทึก)`);
   };
 
   const handleSaveWorkWeek = async () => {
@@ -200,8 +181,8 @@ export default function WorkCalendarPage() {
         days: workWeek.map((d) => ({
           dayOfWeek: d.dayOfWeek,
           isWorkingDay: d.isWorkingDay,
-          startTime: d.isWorkingDay ? (d.startTime || '08:30') : null,
-          endTime: d.isWorkingDay ? (d.endTime || '17:30') : null,
+          startTime: d.isWorkingDay ? bulkStartTime : null,
+          endTime: d.isWorkingDay ? bulkEndTime : null,
         })),
       });
       setWorkWeek(updated);
@@ -379,38 +360,16 @@ export default function WorkCalendarPage() {
               </div>
             </div>
 
-            {/* Quick Link Notice Banner to Shift Schedules */}
-            <div className="p-3.5 bg-gradient-to-r from-blue-50/80 via-slate-50 to-indigo-50/80 border border-blue-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
-              <div className="flex items-center gap-2.5 text-slate-700">
-                <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
+            {/* Time Setting Bar */}
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center shrink-0">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-slate-900">เวลาทำงานมาตรฐานระดับองค์กร</span>
-                  <span className="text-slate-500 block sm:inline sm:ml-1.5">
-                    — ใช้เป็นค่าเริ่มต้นสำหรับพนักงานทั่วไป หากต้องการจัดเวร สลับกะ หรือจัดตารางเฉพาะบุคคล/แผนก
-                  </span>
-                </div>
-              </div>
-              <Link
-                href="/attendance/schedules"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 text-[#0B2046] font-semibold text-xs shadow-sm transition-all whitespace-nowrap shrink-0 group"
-              >
-                <span>ไปยังหน้าจัดกะและตารางงาน</span>
-                <ArrowRight className="w-3.5 h-3.5 text-blue-600 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-
-            {/* Quick Bulk Apply Bar */}
-            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900">กำหนดเวลาทำงานพร้อมกันทุกวันทำงาน</h3>
+                  <h3 className="text-xs font-bold text-slate-900">กำหนดเวลาทำงานปกติของบริษัท</h3>
                   <p className="text-[11px] text-slate-500">
-                    ระบุเวลาเข้าและเลิกงานที่ต้องการ แล้วกดปุ่มเพื่ออัปเดตให้กับทุกวันที่เปิดทำงาน (ไม่กระทบวันหยุด)
+                    ระบุเวลาเข้าและเลิกงานมาตรฐาน แล้วกดปุ่มเพื่อนำไปใช้กับทุกวันทำงาน
                   </p>
                 </div>
               </div>
@@ -458,92 +417,33 @@ export default function WorkCalendarPage() {
                   return (
                     <div
                       key={day.id}
-                      className={`relative p-4 rounded-2xl border-2 transition-all flex flex-col justify-between min-h-[220px] ${
+                      onClick={() => handleToggleDay(day.dayOfWeek)}
+                      className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between min-h-[140px] ${
                         day.isWorkingDay
                           ? 'border-[#0B2046] bg-white shadow-md shadow-[#0B2046]/5 hover:border-[#081836]'
-                          : 'border-slate-200 bg-slate-50/70 opacity-90 hover:opacity-100 hover:border-slate-300'
+                          : 'border-slate-200 bg-slate-50/60 opacity-80 hover:opacity-100 hover:border-slate-300'
                       }`}
                     >
-                      {/* Top: Day Name, Badge & Toggle Switch */}
-                      <div className="space-y-1.5">
+                      {/* Top: Day Name & Badge */}
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${colors.badge}`}>
                             {day.dayNameThai.replace('วัน', '')}
                           </span>
-                          
-                          {/* Toggle Switch */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleDay(day.dayOfWeek)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              day.isWorkingDay ? 'bg-[#0B2046]' : 'bg-slate-300'
+                          <span
+                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                              day.isWorkingDay ? 'bg-[#0B2046] text-white' : 'bg-slate-200 text-slate-400'
                             }`}
-                            title={day.isWorkingDay ? 'คลิกเพื่อตั้งเป็นวันหยุด' : 'คลิกเพื่อตั้งเป็นวันทำงาน'}
                           >
-                            <span
-                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                day.isWorkingDay ? 'translate-x-4' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </span>
                         </div>
-
-                        <div>
-                          <div className="text-sm font-bold text-slate-900">{day.dayNameThai}</div>
-                          <div className="text-[11px] text-slate-400 font-medium">{day.dayNameEnglish}</div>
-                        </div>
+                        <div className="text-sm font-bold text-slate-800 pt-1">{day.dayNameThai}</div>
+                        <div className="text-[11px] text-slate-400 font-medium">{day.dayNameEnglish}</div>
                       </div>
 
-                      {/* Middle: Work Time Inputs or Off Day Box */}
-                      {day.isWorkingDay ? (
-                        <div className="space-y-2 py-2.5 my-1.5 border-y border-slate-100">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" /> เข้างาน
-                            </span>
-                            <input
-                              type="time"
-                              value={day.startTime || '08:30'}
-                              onChange={(e) => handleTimeChange(day.dayOfWeek, 'startTime', e.target.value)}
-                              className="w-24 px-2 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046] focus:bg-white text-center"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" /> เลิกงาน
-                            </span>
-                            <input
-                              type="time"
-                              value={day.endTime || '17:30'}
-                              onChange={(e) => handleTimeChange(day.dayOfWeek, 'endTime', e.target.value)}
-                              className="w-24 px-2 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B2046] focus:bg-white text-center"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-                            <span>ชั่วโมงทำงาน:</span>
-                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                              {calculateDuration(day.startTime, day.endTime)}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="py-5 my-1.5 border-y border-dashed border-slate-200 text-center flex flex-col items-center justify-center gap-1.5 text-slate-400">
-                          <Moon className="w-5 h-5 text-slate-300" />
-                          <span className="text-[11px] font-medium">วันหยุดประจำสัปดาห์</span>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleDay(day.dayOfWeek)}
-                            className="mt-0.5 text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                          >
-                            + เปิดเป็นวันทำงาน
-                          </button>
-                        </div>
-                      )}
-
                       {/* Bottom Status Pill */}
-                      <div className="pt-1">
+                      <div className="pt-3">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap w-full justify-center ${
                             day.isWorkingDay
@@ -566,9 +466,9 @@ export default function WorkCalendarPage() {
             )}
 
             {/* Save Button */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
               <span className="text-xs text-slate-400">
-                💡 สามารถคลิกสลับวันทำงาน/วันหยุด และกำหนดเวลาเข้า-ออกงานแยกตามวันได้อย่างอิสระ
+                คลิกที่การ์ดประจำวันเพื่อสลับระหว่างวันทำงานปกติกับวันหยุดประจำสัปดาห์
               </span>
 
               <button
@@ -577,7 +477,7 @@ export default function WorkCalendarPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                บันทึกการตั้งค่าวันและเวลาทำงาน
+                บันทึกการตั้งค่าวันทำงาน
               </button>
             </div>
           </div>
