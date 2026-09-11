@@ -49,6 +49,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Daily Attendance (Dev 1 Sprint 5)
     public DbSet<AttendanceDaily> AttendanceDailies => Set<AttendanceDaily>();
 
+    // Attendance Import (Dev 1 Sprint 6)
+    public DbSet<AttendanceImportBatch> AttendanceImportBatches => Set<AttendanceImportBatch>();
+    public DbSet<AttendanceImportError> AttendanceImportErrors => Set<AttendanceImportError>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -508,6 +512,58 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.WorkScheduleId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: AttendanceImportBatch (Dev 1 Sprint 6)
+        modelBuilder.Entity<AttendanceImportBatch>(entity =>
+        {
+            entity.ToTable("attendance_import_batch", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileHash).HasColumnName("file_hash").HasMaxLength(64);
+            entity.Property(e => e.FileData).HasColumnName("file_data");
+            entity.Property(e => e.Source).HasColumnName("source").HasMaxLength(50);
+            entity.Property(e => e.DeviceName).HasColumnName("device_name").HasMaxLength(100);
+            entity.Property(e => e.UnitName).HasColumnName("unit_name").HasMaxLength(100);
+            entity.Property(e => e.DateFrom).HasColumnName("date_from");
+            entity.Property(e => e.DateTo).HasColumnName("date_to");
+            entity.Property(e => e.ExportedAt).HasColumnName("exported_at");
+            entity.Property(e => e.ImportedByUserId).HasColumnName("imported_by_user_id");
+            entity.Property(e => e.ImportedAt).HasColumnName("imported_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.TotalRecords).HasColumnName("total_records").HasDefaultValue(0);
+            entity.Property(e => e.SuccessRecords).HasColumnName("success_records").HasDefaultValue(0);
+            entity.Property(e => e.FailedRecords).HasColumnName("failed_records").HasDefaultValue(0);
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20).HasDefaultValue("IMPORTED");
+
+            entity.HasOne(e => e.ImportedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ImportedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasMany(e => e.Errors)
+                .WithOne(e => e.Batch)
+                .HasForeignKey(e => e.ImportBatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: AttendanceImportError (Dev 1 Sprint 6)
+        modelBuilder.Entity<AttendanceImportError>(entity =>
+        {
+            entity.ToTable("attendance_import_error", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.ImportBatchId).HasColumnName("import_batch_id").IsRequired();
+            entity.Property(e => e.RowNumber).HasColumnName("row_number").IsRequired();
+            entity.Property(e => e.RawRowData).HasColumnName("raw_row_data").HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message").IsRequired();
+            entity.Property(e => e.ErrorCode).HasColumnName("error_code").HasMaxLength(50);
+            entity.Property(e => e.EmployeeCode).HasColumnName("employee_code").HasMaxLength(50);
+            entity.Property(e => e.EmployeeName).HasColumnName("employee_name").HasMaxLength(255);
+            entity.Property(e => e.DepartmentName).HasColumnName("department_name").HasMaxLength(100);
+            entity.Property(e => e.RawPunchTimestamp).HasColumnName("raw_punch_timestamp").HasMaxLength(50);
+            entity.Property(e => e.DevicePunchState).HasColumnName("device_punch_state").HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         });
     }
 }

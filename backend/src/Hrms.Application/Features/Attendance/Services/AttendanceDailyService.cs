@@ -14,14 +14,15 @@ namespace Hrms.Application.Features.Attendance.Services;
 public class AttendanceDailyService : IAttendanceDailyService
 {
     private readonly IHrmsDbContext _context;
-    private static readonly TimeZoneInfo ThaiZone = GetThaiTimeZone();
 
     public AttendanceDailyService(IHrmsDbContext context)
     {
         _context = context;
     }
 
-    private static TimeZoneInfo GetThaiTimeZone()
+    public static readonly TimeZoneInfo ThaiZone = GetThaiTimeZone();
+
+    public static TimeZoneInfo GetThaiTimeZone()
     {
         try
         {
@@ -40,12 +41,12 @@ public class AttendanceDailyService : IAttendanceDailyService
         }
     }
 
-    private static DateTime ToThaiLocalTime(DateTime utc)
+    public static DateTime ToThaiLocalTime(DateTime utc)
     {
         return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ThaiZone);
     }
 
-    private static DateTime ToUtcTime(DateTime local)
+    public static DateTime ToUtcTime(DateTime local)
     {
         return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), ThaiZone);
     }
@@ -53,7 +54,7 @@ public class AttendanceDailyService : IAttendanceDailyService
     public async Task<PagedAttendanceResult> GetDailyAttendanceAsync(DailyAttendanceFilterQuery filter, CancellationToken cancellationToken = default)
     {
         DateOnly queryDate;
-        if (!string.IsNullOrWhiteSpace(filter.Date) && DateOnly.TryParse(filter.Date, out var parsedDate))
+        if (!string.IsNullOrWhiteSpace(filter.Date) && DateOnly.TryParse(filter.Date, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDate))
         {
             queryDate = parsedDate;
         }
@@ -172,7 +173,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         DateOnly workDate;
         var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
 
-        if (!string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, out var parsedDate))
+        if (!string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDate))
         {
             workDate = parsedDate;
         }
@@ -232,7 +233,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         DateOnly workDate;
         var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
 
-        if (!string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, out var parsedDate))
+        if (!string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDate))
         {
             workDate = parsedDate;
         }
@@ -375,11 +376,10 @@ public class AttendanceDailyService : IAttendanceDailyService
                 if (existingRecord.ShiftId == null && shiftByEmp.TryGetValue(emp.Id, out var esMatch))
                 {
                     existingRecord.ShiftId = esMatch.ShiftId;
-                    existingRecord.Shift = esMatch.Shift;
                     if (esMatch.Shift != null)
                     {
                         PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
-                        RecalculateAttendance(existingRecord);
+                        RecalculateAttendance(existingRecord, esMatch.Shift);
                     }
                 }
                 continue;
@@ -411,7 +411,6 @@ public class AttendanceDailyService : IAttendanceDailyService
                 else
                 {
                     newRecord.ShiftId = es.ShiftId;
-                    newRecord.Shift = es.Shift;
                     if (es.Shift != null)
                     {
                         PopulateScheduledTimes(newRecord, es.Shift, date);
@@ -467,7 +466,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         return countNew;
     }
 
-    private static void PopulateScheduledTimes(AttendanceDaily record, ShiftEntity shift, DateOnly workDate)
+    public static void PopulateScheduledTimes(AttendanceDaily record, ShiftEntity shift, DateOnly workDate)
     {
         var startTime = shift.StartTime;
         var startLocal = new DateTime(workDate.Year, workDate.Month, workDate.Day, startTime.Hour, startTime.Minute, 0);
@@ -479,7 +478,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         record.ScheduledEnd = ToUtcTime(endLocal);
     }
 
-    private void RecalculateAttendance(AttendanceDaily record)
+    public static void RecalculateAttendance(AttendanceDaily record, ShiftEntity? shiftOverride = null)
     {
         if (record.IsAbsent)
         {
@@ -495,7 +494,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             return;
         }
 
-        var shift = record.Shift;
+        var shift = shiftOverride ?? record.Shift;
         int lateMinutes = 0;
         int earlyMinutes = 0;
 
