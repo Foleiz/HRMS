@@ -661,10 +661,6 @@ export default function EmployeesPage() {
 
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', active: true },
-    { title: 'จัดการฝ่าย', href: '/organization' },
-    { title: 'จัดการแผนก', href: '/organization' },
-    { title: 'จัดการตำแหน่ง', href: '/organization' },
-    { title: 'ระดับพนักงาน', href: '/organization' },
     { title: 'ประเภทพนักงาน', href: '/organization' },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees' },
     { title: 'แผนผังองค์กร', href: '/organization' },
