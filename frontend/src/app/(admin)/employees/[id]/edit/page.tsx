@@ -17,6 +17,7 @@ import { employeeService } from '@/services/employeeService';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
+import { NationalitySelect } from '@/components/ui/NationalitySelect';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -530,18 +531,10 @@ export default function EmployeeEditPage() {
                     <label className="font-semibold text-slate-700 block mb-1">
                       สัญชาติ (Nationality) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <NationalitySelect
                       value={formData.nationality}
-                      onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
-                    >
-                      <option value="">เลือกสัญชาติ</option>
-                      {NATIONALITIES.map((n) => (
-                        <option key={n.id} value={n.name}>
-                          {n.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, nationality: val })}
+                    />
                   </div>
 
                   {/* ศาสนา */}

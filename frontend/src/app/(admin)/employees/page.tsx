@@ -7,6 +7,7 @@ import { employeeService } from '@/services/employeeService';
 import { apiClient } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload } from '@/types/employee';
 import { NATIONALITIES } from '@/constants/nationalities';
+import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import {
   Search,
   Plus,
@@ -1392,21 +1393,14 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 block mb-1">
                             สัญชาติ (Nationality) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <NationalitySelect
                             value={formData.nationality}
-                            onChange={(e) => {
-                              setFormData({ ...formData, nationality: e.target.value });
+                            onChange={(val) => {
+                              setFormData({ ...formData, nationality: val });
                               clearFieldError('nationality');
                             }}
-                            className={`${getFieldClass('nationality')} cursor-pointer`}
-                          >
-                            <option value="">เลือกสัญชาติ</option>
-                            {NATIONALITIES.map((n) => (
-                              <option key={n.id} value={n.name}>
-                                {n.name}
-                              </option>
-                            ))}
-                          </select>
+                            hasError={hasAttemptedSubmit && Boolean(formErrors.nationality)}
+                          />
                           {renderFieldError('nationality')}
                         </div>
 
