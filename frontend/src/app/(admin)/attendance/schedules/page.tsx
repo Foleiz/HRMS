@@ -26,7 +26,6 @@ import {
   Sun,
   Moon,
   Copy,
-  Table,
 } from 'lucide-react';
 import { employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
@@ -115,7 +114,7 @@ function SchedulesContent() {
   // -------------------------------------------------------------
   // 3. Tab 1 States: มอบหมายกะให้พนักงาน (Shift Roster)
   // -------------------------------------------------------------
-  const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'matrix' | 'list'>('calendar');
+  const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'list'>('calendar');
   const [assignmentSearch, setAssignmentSearch] = useState('');
   const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
 
@@ -262,9 +261,9 @@ function SchedulesContent() {
     loadLookups();
   }, [setBreadcrumb, loadShifts, loadAssignments, loadLookups]);
 
-  // Load roster when on Tab 1 and Calendar or Matrix view
+  // Load roster when on Tab 1 and Calendar view
   useEffect(() => {
-    if (activeTab === 'roster' && (assignmentViewMode === 'matrix' || assignmentViewMode === 'calendar')) {
+    if (activeTab === 'roster' && assignmentViewMode === 'calendar') {
       const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
       loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
     }
@@ -316,10 +315,6 @@ function SchedulesContent() {
     return new Date(year, month, 0).getDate();
   };
 
-  const getDayOfWeek = (year: number, month: number, day: number) => {
-    return new Date(year, month - 1, day).getDay();
-  };
-
   const prevMonth = () => {
     if (rosterMonth === 1) {
       setRosterMonth(12);
@@ -337,21 +332,6 @@ function SchedulesContent() {
       setRosterMonth((m) => m + 1);
     }
   };
-
-  const currentMonthDays = useMemo(() => {
-    const totalDays = getDaysInMonth(rosterYear, rosterMonth);
-    const days = [];
-    for (let d = 1; d <= totalDays; d++) {
-      const dayOfWeek = getDayOfWeek(rosterYear, rosterMonth, d);
-      days.push({
-        day: d,
-        dayOfWeek,
-        dayName: THAI_DAYS[dayOfWeek],
-        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-      });
-    }
-    return days;
-  }, [rosterYear, rosterMonth]);
 
   // Real 7-day Month Grid calculation (Monday=0, Sunday=6)
   const monthCalendarGrid = useMemo(() => {
@@ -482,7 +462,7 @@ function SchedulesContent() {
       }
       setAssignModalOpen(false);
       loadAssignments();
-      if (assignmentViewMode === 'matrix') {
+      if (assignmentViewMode === 'calendar') {
         const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
         loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
       }
@@ -520,7 +500,7 @@ function SchedulesContent() {
       setBatchResult(res);
       setSuccessMessage(`จัดกะสำเร็จ ${res.successCount} คน, ข้อผิดพลาด ${res.failedCount} คน`);
       loadAssignments();
-      if (assignmentViewMode === 'matrix') {
+      if (assignmentViewMode === 'calendar') {
         const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
         loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
       }
@@ -623,7 +603,7 @@ function SchedulesContent() {
         await employeeShiftService.deleteAssignment(itemToDelete.id);
         setSuccessMessage('ยกเลิกการมอบหมายกะเรียบร้อยแล้ว');
         loadAssignments();
-        if (assignmentViewMode === 'matrix') {
+        if (assignmentViewMode === 'calendar') {
           const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
           loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
         }
@@ -745,7 +725,7 @@ function SchedulesContent() {
               <button
                 onClick={() => {
                   loadAssignments();
-                  if (assignmentViewMode === 'matrix' || assignmentViewMode === 'calendar') {
+                  if (assignmentViewMode === 'calendar') {
                     const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
                     loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
                   }
@@ -770,17 +750,6 @@ function SchedulesContent() {
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>ปฏิทิน</span>
-                </button>
-                <button
-                  onClick={() => setAssignmentViewMode('matrix')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
-                    assignmentViewMode === 'matrix'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Table className="w-3.5 h-3.5" />
-                  <span>ตารางจัดเวร</span>
                 </button>
                 <button
                   onClick={() => setAssignmentViewMode('list')}
@@ -1022,160 +991,6 @@ function SchedulesContent() {
                       );
                     })}
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* VIEW 1: MONTHLY GANTT MATRIX VIEW */}
-          {assignmentViewMode === 'matrix' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4">
-              {/* Month Navigator & Shift Legends */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                    <button
-                      onClick={prevMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
-                      title="เดือนก่อนหน้า"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <div className="px-3 text-sm font-bold text-slate-800">
-                      {THAI_MONTHS[rosterMonth - 1]} {rosterYear + 543}
-                    </div>
-                    <button
-                      onClick={nextMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
-                      title="เดือนถัดไป"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <span className="text-xs text-slate-500">
-                    แสดงพนักงาน {rosterData?.employees.length ?? 0} คน ในตารางจัดเวร
-                  </span>
-                </div>
-
-                {/* Shift Badges Legend */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500">สัญลักษณ์กะ:</span>
-                  {shifts.map((s) => (
-                    <span
-                      key={s.id}
-                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                        s.isCrossDay
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}
-                      title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
-                    >
-                      {s.isCrossDay ? <Moon className="w-2.5 h-2.5" /> : <Sun className="w-2.5 h-2.5" />}
-                      <span>{s.shiftName}</span>
-                    </span>
-                  ))}
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
-                    OFF (วันหยุด)
-                  </span>
-                </div>
-              </div>
-
-              {/* Gantt Table */}
-              {loadingRoster ? (
-                <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
-                  <p className="text-sm">กำลังโหลดตารางจัดเวรประจำเดือน...</p>
-                </div>
-              ) : rosterData && rosterData.employees.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                        <th className="p-2.5 sticky left-0 bg-slate-50 z-10 w-48 min-w-[190px] font-bold border-r border-slate-200 shadow-[2px_0_4px_rgba(0,0,0,0.02)]">
-                          ข้อมูลพนักงาน / สังกัด
-                        </th>
-                        {currentMonthDays.map((d) => (
-                          <th
-                            key={d.day}
-                            className={`p-1 text-center min-w-[34px] border-r border-slate-100 font-medium ${
-                              d.isWeekend ? 'bg-amber-50/70 text-amber-800' : 'text-slate-600'
-                            }`}
-                          >
-                            <div className="text-[10px] text-slate-400">{d.dayName}</div>
-                            <div className="font-bold">{d.day}</div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {rosterData.employees.map((emp) => (
-                        <tr key={emp.employeeId} className="hover:bg-slate-50/80 transition group">
-                          {/* Sticky Employee Column */}
-                          <td className="p-2.5 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200 shadow-[2px_0_4px_rgba(0,0,0,0.02)]">
-                            <div className="flex items-center justify-between">
-                              <div className="min-w-0 pr-2">
-                                <div className="font-semibold text-slate-900 truncate">
-                                  {emp.employeeName}
-                                </div>
-                                <div className="text-[11px] text-slate-500 truncate">
-                                  {emp.employeeCode} · {emp.departmentName || '-'}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => openSingleAssignCreate(emp.employeeId)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-[#0B2046] hover:bg-slate-200/70 rounded transition"
-                                title="มอบหมายกะให้พนักงานคนนี้"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-
-                          {/* 1..31 Days Cells */}
-                          {currentMonthDays.map((d) => {
-                            const shift = emp.days[d.day];
-                            const isWeekend = d.isWeekend;
-                            const isCross = shift?.isCrossDay ?? false;
-
-                            return (
-                              <td
-                                key={d.day}
-                                className={`p-1 text-center border-r border-slate-100 align-middle ${
-                                  isWeekend ? 'bg-amber-50/30' : ''
-                                }`}
-                              >
-                                {shift ? (
-                                  <span
-                                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-xs max-w-[75px] truncate align-middle ${
-                                      isCross
-                                        ? 'bg-purple-100 text-purple-800'
-                                        : 'bg-blue-100 text-blue-800'
-                                    }`}
-                                    title={`${shift.shiftName} (${shift.startTime?.substring(0, 5) || ''}-${shift.endTime?.substring(0, 5) || ''})`}
-                                  >
-                                    {shift.shiftName}
-                                  </span>
-                                ) : isWeekend ? (
-                                  <span className="text-[10px] text-slate-300 font-medium select-none">OFF</span>
-                                ) : (
-                                  <span className="text-[10px] text-slate-300 select-none">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-16 text-center text-slate-400">
-                  <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                  <p className="text-base font-semibold text-slate-600">ไม่พบข้อมูลการจัดเวรในเดือนนี้</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    กรุณากดปุ่ม "มอบหมายกะเดี่ยว" หรือ "มอบหมายกะกลุ่ม" ด้านบนเพื่อเริ่มกำหนดเวรการทำงาน
-                  </p>
                 </div>
               )}
             </div>
