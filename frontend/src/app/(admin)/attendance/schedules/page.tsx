@@ -783,7 +783,7 @@ function SchedulesContent() {
                       title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
                     >
                       {s.isCrossDay ? <Moon className="w-2.5 h-2.5" /> : <Sun className="w-2.5 h-2.5" />}
-                      <span>{s.shiftCode}</span>
+                      <span>{s.shiftName}</span>
                     </span>
                   ))}
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
@@ -858,14 +858,14 @@ function SchedulesContent() {
                               >
                                 {shift ? (
                                   <span
-                                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-xs ${
+                                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-xs max-w-[75px] truncate align-middle ${
                                       isCross
                                         ? 'bg-purple-100 text-purple-800'
                                         : 'bg-blue-100 text-blue-800'
                                     }`}
-                                    title={`${shift.shiftCode}: ${shift.shiftName || ''} (${shift.startTime?.substring(0, 5) || ''}-${shift.endTime?.substring(0, 5) || ''})`}
+                                    title={`${shift.shiftName} (${shift.startTime?.substring(0, 5) || ''}-${shift.endTime?.substring(0, 5) || ''})`}
                                   >
-                                    {shift.shiftCode.length > 5 ? shift.shiftCode.substring(0, 5) : shift.shiftCode}
+                                    {shift.shiftName}
                                   </span>
                                 ) : isWeekend ? (
                                   <span className="text-[10px] text-slate-300 font-medium select-none">OFF</span>
@@ -1143,13 +1143,13 @@ function SchedulesContent() {
                   className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group"
                 >
                   <div>
-                    {/* Card Header: Code & Day/Night Badge */}
+                    {/* Card Header: Shift Name & Day/Night Badge */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
-                        {shift.shiftCode}
-                      </span>
+                      <h3 className="font-bold text-slate-900 text-base group-hover:text-[#0B2046] transition truncate">
+                        {shift.shiftName}
+                      </h3>
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 ${
                           shift.isCrossDay
                             ? 'bg-purple-50 text-purple-700 border border-purple-200'
                             : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -1159,11 +1159,6 @@ function SchedulesContent() {
                         <span>{shift.isCrossDay ? 'กะข้ามวัน (กลางคืน)' : 'กะกลางวัน'}</span>
                       </span>
                     </div>
-
-                    {/* Shift Name */}
-                    <h3 className="font-bold text-slate-900 text-base mb-3 group-hover:text-[#0B2046] transition">
-                      {shift.shiftName}
-                    </h3>
 
                     {/* Time Window Display */}
                     <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4">
