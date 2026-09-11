@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { employeeService } from '@/services/employeeService';
 import { apiClient } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload } from '@/types/employee';
+import { NATIONALITIES } from '@/constants/nationalities';
 import {
   Search,
   Plus,
@@ -119,7 +120,7 @@ export default function EmployeesPage() {
     lastName: '',
     citizenId: '',
     gender: '',
-    nationality: 'ไทย',
+    nationality: 'ไทย (Thai)',
     religion: 'พุทธ',
     birthDate: '',
     maritalStatus: '',
@@ -533,7 +534,7 @@ export default function EmployeesPage() {
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
-        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
+        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
@@ -1400,8 +1401,11 @@ export default function EmployeesPage() {
                             className={`${getFieldClass('nationality')} cursor-pointer`}
                           >
                             <option value="">เลือกสัญชาติ</option>
-                            <option value="ไทย">ไทย</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
+                            {NATIONALITIES.map((n) => (
+                              <option key={n.id} value={n.name}>
+                                {n.name}
+                              </option>
+                            ))}
                           </select>
                           {renderFieldError('nationality')}
                         </div>

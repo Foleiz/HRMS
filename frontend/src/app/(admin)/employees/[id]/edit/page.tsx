@@ -16,6 +16,7 @@ import {
 import { employeeService } from '@/services/employeeService';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { NATIONALITIES } from '@/constants/nationalities';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -83,7 +84,7 @@ export default function EmployeeEditPage() {
     lastName: '',
     citizenId: '',
     gender: '',
-    nationality: 'ไทย',
+    nationality: 'ไทย (Thai)',
     religion: 'พุทธ',
     birthDate: '',
     maritalStatus: '',
@@ -151,7 +152,7 @@ export default function EmployeeEditPage() {
           lastName: emp.lastName || '',
           citizenId: emp.citizenIdMasked || '',
           gender: emp.gender || (emp.genderId === 1 || emp.prefix === 'นาย' ? 'ชาย' : (emp.genderId === 2 || emp.prefix === 'นางสาว' || emp.prefix === 'นาง' ? 'หญิง' : '')),
-          nationality: emp.nationality || 'ไทย',
+          nationality: emp.nationality === 'ไทย' ? 'ไทย (Thai)' : (emp.nationality || 'ไทย (Thai)'),
           religion: emp.religion || 'พุทธ',
           birthDate: emp.birthDate ? emp.birthDate.substring(0, 10) : '',
           maritalStatus: emp.maritalStatus || '',
@@ -283,7 +284,7 @@ export default function EmployeeEditPage() {
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
-        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
+        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
@@ -534,8 +535,12 @@ export default function EmployeeEditPage() {
                       onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
-                      <option value="ไทย">ไทย</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
+                      <option value="">เลือกสัญชาติ</option>
+                      {NATIONALITIES.map((n) => (
+                        <option key={n.id} value={n.name}>
+                          {n.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
