@@ -1142,15 +1142,12 @@ function SchedulesContent() {
                               });
                               const PeriodIcon = period.icon;
                               return (
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${period.badgeClass}`}
-                                  >
-                                    <PeriodIcon className="w-3.5 h-3.5" />
-                                    <span>{a.shiftName}</span>
-                                  </span>
-                                  <span className="text-xs font-mono text-slate-400">({a.shiftCode})</span>
-                                </div>
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${period.badgeClass}`}
+                                >
+                                  <PeriodIcon className="w-3.5 h-3.5" />
+                                  <span>{a.shiftName}</span>
+                                </span>
                               );
                             })()}
                           </td>
