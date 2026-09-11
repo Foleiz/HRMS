@@ -390,9 +390,6 @@ export default function OrganizationPage() {
           >
             <GitFork className="w-4 h-4" />
             จัดการฝ่าย
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {divisions.length}
-            </span>
           </button>
 
           <button
@@ -405,9 +402,6 @@ export default function OrganizationPage() {
           >
             <Building2 className="w-4 h-4" />
             จัดการแผนก
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {departments.length}
-            </span>
           </button>
 
           <button
@@ -420,9 +414,6 @@ export default function OrganizationPage() {
           >
             <Briefcase className="w-4 h-4" />
             จัดการตำแหน่ง
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {positions.length}
-            </span>
           </button>
 
           <button
@@ -435,9 +426,6 @@ export default function OrganizationPage() {
           >
             <Layers className="w-4 h-4" />
             ระดับพนักงาน
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              {levels.length}
-            </span>
           </button>
 
           <button

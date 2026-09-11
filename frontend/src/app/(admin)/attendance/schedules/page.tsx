@@ -739,72 +739,51 @@ function SchedulesContent() {
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs & Context Actions */}
       {/* ------------------------------------------------------------- */}
-      <div className="bg-white rounded-xl border border-slate-200/80 px-4 py-3 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm flex items-center justify-between gap-4 overflow-x-auto">
         {/* Tabs on Left */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           {/* Tab 1: มอบหมายกะให้พนักงาน */}
           <button
             onClick={() => handleTabChange('roster')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'roster'
-                ? 'bg-[#0B2046] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <UserCheck className="w-4 h-4" />
             <span>มอบหมายกะให้พนักงาน</span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                activeTab === 'roster' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              {rosterData?.employees.length ?? assignments.length}
-            </span>
           </button>
 
           {/* Tab 2: กะการทำงาน */}
           <button
             onClick={() => handleTabChange('shifts')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'shifts'
-                ? 'bg-[#0B2046] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <Clock className="w-4 h-4" />
             <span>กะการทำงาน</span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                activeTab === 'shifts' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              {shifts.length}
-            </span>
           </button>
 
           {/* Tab 3: ตารางงานหลัก */}
           <button
             onClick={() => handleTabChange('patterns')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'patterns'
-                ? 'bg-[#0B2046] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <Layers className="w-4 h-4" />
             <span>ตารางงานหลัก</span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                activeTab === 'patterns' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              {workSchedules.length}
-            </span>
           </button>
         </div>
 
         {/* Action Buttons on Right */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 pb-2 shrink-0">
           {activeTab === 'roster' && (
             <>
               <button
@@ -812,14 +791,14 @@ function SchedulesContent() {
                   setBatchModalOpen(true);
                   setBatchResult(null);
                 }}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
               >
                 <Users className="w-4 h-4 text-slate-500" />
                 <span>มอบหมายกะกลุ่ม</span>
               </button>
               <button
                 onClick={() => openSingleAssignCreate()}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
               >
                 <Plus className="w-4 h-4" />
                 <span>มอบหมายกะเดี่ยว</span>
@@ -830,7 +809,7 @@ function SchedulesContent() {
           {activeTab === 'shifts' && (
             <button
               onClick={openShiftCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มกะการทำงานใหม่</span>
@@ -840,7 +819,7 @@ function SchedulesContent() {
           {activeTab === 'patterns' && (
             <button
               onClick={openScheduleCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มรูปแบบตารางงาน</span>
