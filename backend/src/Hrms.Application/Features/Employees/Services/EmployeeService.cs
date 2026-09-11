@@ -481,6 +481,49 @@ public class EmployeeService : IEmployeeService
             }
         }
 
+        // 6.1 บัญชีธนาคาร (Bank Accounts)
+        if (request.BankAccounts != null && request.BankAccounts.Any())
+        {
+            employee.BankAccounts.Clear();
+            foreach (var acc in request.BankAccounts)
+            {
+                employee.BankAccounts.Add(new EmployeeBankAccount
+                {
+                    BankId = acc.BankId,
+                    AccountNumber = acc.AccountNumber.Trim(),
+                    AccountType = acc.AccountType ?? "SAVINGS",
+                    AccountName = acc.AccountName ?? employee.FullName,
+                    IsPrimary = acc.IsPrimary,
+                    Status = acc.Status ?? "ACTIVE"
+                });
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        {
+            var bank = await _dbContext.Banks
+                .FirstOrDefaultAsync(b => b.BankName.Contains(request.BankName ?? "") || b.BankCode == (request.BankName ?? ""), cancellationToken);
+
+            var primaryBank = employee.BankAccounts.FirstOrDefault(b => b.IsPrimary) ?? employee.BankAccounts.FirstOrDefault();
+            if (primaryBank != null)
+            {
+                primaryBank.BankId = bank?.Id ?? 1;
+                primaryBank.AccountNumber = request.AccountNumber.Trim();
+                primaryBank.AccountName = employee.FullName;
+            }
+            else
+            {
+                employee.BankAccounts.Add(new EmployeeBankAccount
+                {
+                    BankId = bank?.Id ?? 1,
+                    AccountNumber = request.AccountNumber.Trim(),
+                    AccountType = "SAVINGS",
+                    AccountName = employee.FullName,
+                    IsPrimary = true,
+                    Status = "ACTIVE"
+                });
+            }
+        }
+
         // 7. ประวัติการศึกษา (Educations)
         if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
         {
