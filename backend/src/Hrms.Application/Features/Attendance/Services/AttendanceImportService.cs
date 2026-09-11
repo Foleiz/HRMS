@@ -1,5 +1,7 @@
+using ExcelDataReader;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Attendance.Dtos;
 using Hrms.Domain.Entities;
@@ -69,16 +71,30 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        // 3. Parse Rows with MiniExcel
+        // 3. Read All Rows Dynamically with ExcelDataReader (supports .xls, .xlsx, .csv)
         memoryStream.Position = 0;
-        List<IDictionary<string, object>> rawRows;
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        List<IDictionary<string, object?>> allRawRows = new();
+
         try
         {
-            var ext = Path.GetExtension(fileName).ToLowerInvariant();
-            var excelType = ext == ".csv" ? ExcelType.CSV : ExcelType.XLSX;
-            rawRows = memoryStream.Query(useHeaderRow: true, excelType: excelType)
-                .Select(r => (IDictionary<string, object>)r)
-                .ToList();
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            using var reader = ext == ".csv"
+                ? ExcelReaderFactory.CreateCsvReader(memoryStream, new ExcelReaderConfiguration { FallbackEncoding = System.Text.Encoding.UTF8 })
+                : ExcelReaderFactory.CreateReader(memoryStream);
+
+            while (reader.Read())
+            {
+                var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                for (int col = 0; col < reader.FieldCount; col++)
+                {
+                    var val = reader.GetValue(col);
+                    string colKey = GetColumnName(col);
+                    row[colKey] = val;
+                }
+                allRawRows.Add(row);
+            }
         }
         catch (Exception ex)
         {
@@ -104,7 +120,7 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        if (rawRows.Count == 0)
+        if (allRawRows.Count == 0)
         {
             return new AttendanceImportResultDto
             {
@@ -128,14 +144,155 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        // 4. Create Batch Entity
+        // 4. Dynamic Header Row Detection & Metadata Extraction (Syaco & Biometric Exports)
+        int headerRowIndex = -1;
+        string? extractedUnit = null;
+        DateOnly? metadataDateFrom = null;
+        DateOnly? metadataDateTo = null;
+        DateTime? metadataExportedAt = null;
+
+        for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
+        {
+            var row = allRawRows[r];
+            var cellValues = row.Values
+                .Where(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()))
+                .Select(v => v!.ToString()!.Trim())
+                .ToList();
+
+            if (cellValues.Count == 0) continue;
+
+            bool hasEmpCode = cellValues.Any(IsEmpCodeHeader);
+            bool hasOtherHeader = cellValues.Any(IsOtherHeader);
+
+            if (hasEmpCode && (hasOtherHeader || cellValues.Count >= 3))
+            {
+                headerRowIndex = r;
+                break;
+            }
+        }
+
+        if (headerRowIndex == -1)
+        {
+            headerRowIndex = 0; // Fallback
+        }
+
+        // Scan rows before headerRowIndex for metadata (e.g. unit: Syaco date from: 2026-08-03 to ...)
+        for (int r = 0; r < headerRowIndex; r++)
+        {
+            var text = string.Join(" ", allRawRows[r].Values
+                .Where(v => v != null)
+                .Select(v => v!.ToString()));
+
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            var unitMatch = Regex.Match(text, @"unit\s*:\s*([^\s]+)", RegexOptions.IgnoreCase);
+            if (unitMatch.Success && string.IsNullOrWhiteSpace(extractedUnit))
+            {
+                extractedUnit = unitMatch.Groups[1].Value.Trim();
+            }
+
+            var dateRangeMatch = Regex.Match(text, @"date\s+from\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})(?:\s+[\d:]+)?\s+to\s+(\d{4}[-/]\d{1,2}[-/]\d{1,2})", RegexOptions.IgnoreCase);
+            if (dateRangeMatch.Success)
+            {
+                if (DateOnly.TryParse(dateRangeMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out var df))
+                    metadataDateFrom = df;
+                if (DateOnly.TryParse(dateRangeMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out var dt))
+                    metadataDateTo = dt;
+            }
+
+            var printMatch = Regex.Match(text, @"print\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)", RegexOptions.IgnoreCase);
+            if (printMatch.Success)
+            {
+                if (DateTime.TryParse(printMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var prDt))
+                    metadataExportedAt = AttendanceDailyService.ToUtcTime(prDt);
+            }
+        }
+
+        // Map column indices to actual header names
+        var headerRow = allRawRows[headerRowIndex];
+        var colKeyToHeaderName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in headerRow)
+        {
+            if (kvp.Value != null)
+            {
+                var hStr = kvp.Value.ToString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(hStr))
+                {
+                    colKeyToHeaderName[kvp.Key] = hStr;
+                }
+            }
+        }
+
+        // Build data rows
+        var rawRows = new List<(int RowNumber, IDictionary<string, object?> Data)>();
+        for (int r = headerRowIndex + 1; r < allRawRows.Count; r++)
+        {
+            var row = allRawRows[r];
+            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            bool hasData = false;
+
+            foreach (var kvp in row)
+            {
+                if (kvp.Value != null && !string.IsNullOrWhiteSpace(kvp.Value.ToString()))
+                {
+                    hasData = true;
+                }
+                if (colKeyToHeaderName.TryGetValue(kvp.Key, out var headerName))
+                {
+                    dict[headerName] = kvp.Value;
+                }
+                else
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+            }
+
+            if (hasData)
+            {
+                rawRows.Add((r + 1, dict));
+            }
+        }
+
+        if (rawRows.Count == 0)
+        {
+            return new AttendanceImportResultDto
+            {
+                BatchId = 0,
+                FileName = fileName,
+                FileHash = fileHash,
+                Source = source ?? "EXCEL",
+                TotalRecords = 0,
+                SuccessRecords = 0,
+                FailedRecords = 0,
+                Status = "FAILED",
+                Errors = new List<AttendanceImportErrorDto>
+                {
+                    new AttendanceImportErrorDto
+                    {
+                        RowNumber = 0,
+                        ErrorMessage = "ไม่พบรายการข้อมูลบันทึกเวลาที่สามารถประมวลผลได้หลังจากแถวหัวตาราง",
+                        ErrorCode = "NO_DATA_ROWS"
+                    }
+                }
+            };
+        }
+
+        // 5. Create Batch Entity
+        var resolvedSource = !string.IsNullOrWhiteSpace(source) 
+            ? source.Trim() 
+            : (!string.IsNullOrWhiteSpace(extractedUnit) ? "FINGERPRINT" : "EXCEL");
+
         var batch = new AttendanceImportBatch
         {
             FileName = fileName,
             FileHash = fileHash,
             FileData = fileBytes,
-            Source = string.IsNullOrWhiteSpace(source) ? "EXCEL" : source.Trim(),
-            DeviceName = deviceName?.Trim(),
+            Source = resolvedSource,
+            DeviceName = !string.IsNullOrWhiteSpace(deviceName) ? deviceName.Trim() : extractedUnit,
+            UnitName = extractedUnit,
+            DateFrom = metadataDateFrom,
+            DateTo = metadataDateTo,
+            ExportedAt = metadataExportedAt,
             ImportedByUserId = importedByUserId,
             ImportedAt = DateTime.UtcNow,
             Status = "IMPORTED"
@@ -143,17 +300,38 @@ public class AttendanceImportService : IAttendanceImportService
         _context.AttendanceImportBatches.Add(batch);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 5. Preload Employees and Assignments for Fast O(1) Lookup
+        // 6. Preload Employees and Assignments for Fast O(1) Lookup
         var employees = await _context.Employees
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var empByCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
+        var empByNumericCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
+        var empByName = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var emp in employees)
         {
             if (!string.IsNullOrWhiteSpace(emp.EmployeeCode))
             {
-                empByCode[emp.EmployeeCode.Trim()] = emp;
+                var c = emp.EmployeeCode.Trim();
+                empByCode[c] = emp;
+
+                var digits = new string(c.Where(char.IsDigit).ToArray());
+                if (!string.IsNullOrEmpty(digits))
+                {
+                    empByNumericCode[digits] = emp;
+                    if (int.TryParse(digits, out int numVal))
+                    {
+                        empByNumericCode[numVal.ToString()] = emp;
+                    }
+                }
+            }
+
+            var fullName = $"{emp.FirstName} {emp.LastName}".Trim();
+            var normalizedName = NormalizeThaiName(fullName);
+            if (!string.IsNullOrEmpty(normalizedName))
+            {
+                empByName[normalizedName] = emp;
             }
         }
 
@@ -168,12 +346,12 @@ public class AttendanceImportService : IAttendanceImportService
             .Include(es => es.Shift)
             .ToListAsync(cancellationToken);
 
-        // 6. Process Rows
+        // 7. Process Rows
         int totalRecords = rawRows.Count;
         int successRecords = 0;
         int failedRecords = 0;
-        DateOnly? minDate = null;
-        DateOnly? maxDate = null;
+        DateOnly? minDate = metadataDateFrom;
+        DateOnly? maxDate = metadataDateTo;
 
         var errorsList = new List<AttendanceImportError>();
         var errorDtos = new List<AttendanceImportErrorDto>();
@@ -183,43 +361,90 @@ public class AttendanceImportService : IAttendanceImportService
 
         for (int i = 0; i < rawRows.Count; i++)
         {
-            int rowNumber = i + 2; // 1-indexed, skipping header row
-            var row = rawRows[i];
-
+            var (rowNumber, row) = rawRows[i];
             string rawRowJson = JsonSerializer.Serialize(row);
 
             // Extract fields using flexible keys
             var empCodeRaw = GetStringValue(row, "employeecode", "empcode", "badgeno", "userid", "employeeid", "empid", "รหัสพนักงาน", "รหัส", "เลขประจำตัว");
-            var empNameRaw = GetStringValue(row, "employeename", "name", "empname", "ชื่อพนักงาน", "ชื่อ", "ชื่อสกุล", "ชื่อนามสกุล");
-            var deptRaw = GetStringValue(row, "department", "dept", "แผนก", "ฝ่าย");
-            var dateRaw = GetValue(row, "workdate", "date", "วันที่", "วันที่ทำงาน");
-            var timeRaw = GetValue(row, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา");
+            var empNameRaw = GetStringValue(row, "employeename", "name", "empname", "ชื่อพนักงาน", "ชื่อ", "ชื่อสกุล", "ชื่อนามสกุล", "ชื่อ-สกุล");
+            var deptRaw = GetStringValue(row, "department", "dept", "แผนก", "ฝ่าย", "แผนก-ฝ่าย.", "แผนกฝ่าย.", "แผนกฝ่าย", "แผนก-ฝ่าย");
+            var dateRaw = GetValue(row, "workdate", "date", "วันที่", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+            var timeRaw = GetValue(row, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
             var stateRaw = GetStringValue(row, "punchstate", "state", "type", "inout", "status", "สถานะ", "ประเภท", "ประเภทการสแกน", "การเข้าออก");
             var timeInRaw = GetValue(row, "timein", "checkin", "in", "เวลาเข้า", "เวลาเข้างาน", "เข้างาน");
             var timeOutRaw = GetValue(row, "timeout", "checkout", "out", "เวลาออก", "เวลาเลิกงาน", "ออกงาน");
+            var deviceRaw = GetStringValue(row, "เครื่อง", "ชื่อเครื่อง", "อุปกรณ์", "เครื่องสแกน", "device", "devicename", "machine");
+            var remarkRaw = GetStringValue(row, "ประมวลผล", "การประมวลผล", "หมายเหตุ", "remark", "processed");
 
-            // Validation 1: Employee Code
-            if (string.IsNullOrWhiteSpace(empCodeRaw))
+            // Skip sub-headers / empty separator rows (e.g. unit subheadings where code & time are null)
+            if (string.IsNullOrWhiteSpace(empCodeRaw) && string.IsNullOrWhiteSpace(empNameRaw) && dateRaw == null && timeRaw == null)
             {
-                failedRecords++;
-                AddError(batch.Id, rowNumber, rawRowJson, "ไม่พบข้อมูลรหัสพนักงานในแถวนี้", "MISSING_EMPLOYEE_CODE", empCodeRaw, empNameRaw, deptRaw, null, stateRaw, errorsList, errorDtos);
+                totalRecords--;
                 continue;
             }
 
-            if (!empByCode.TryGetValue(empCodeRaw.Trim(), out var employee))
+            // If batch device name is empty and row has device, set it
+            if (string.IsNullOrWhiteSpace(batch.DeviceName) && !string.IsNullOrWhiteSpace(deviceRaw))
+            {
+                batch.DeviceName = deviceRaw.Trim();
+            }
+
+            // Employee Matching (Multi-level: Code -> Numeric Suffix -> Full Name)
+            Employee? employee = null;
+            if (!string.IsNullOrWhiteSpace(empCodeRaw))
+            {
+                var cleanCode = empCodeRaw.Trim();
+                if (empByCode.TryGetValue(cleanCode, out employee))
+                {
+                    // direct code match
+                }
+                else if (empByNumericCode.TryGetValue(cleanCode, out employee))
+                {
+                    // numeric code match (e.g. "001" -> EMP001)
+                }
+                else if (cleanCode.All(char.IsDigit) && int.TryParse(cleanCode, out int nId))
+                {
+                    if (empByCode.TryGetValue($"EMP{cleanCode}", out employee) ||
+                        empByCode.TryGetValue($"EMP{nId:D3}", out employee))
+                    {
+                        // prefix match
+                    }
+                }
+                else
+                {
+                    var digitsOnly = new string(cleanCode.Where(char.IsDigit).ToArray());
+                    if (!string.IsNullOrEmpty(digitsOnly) && empByNumericCode.TryGetValue(digitsOnly, out employee))
+                    {
+                        // digits only match
+                    }
+                }
+            }
+
+            // Fallback match by Name
+            if (employee == null && !string.IsNullOrWhiteSpace(empNameRaw))
+            {
+                var cleanName = NormalizeThaiName(empNameRaw);
+                if (empByName.TryGetValue(cleanName, out employee))
+                {
+                    // name matched
+                }
+            }
+
+            if (employee == null)
             {
                 failedRecords++;
-                AddError(batch.Id, rowNumber, rawRowJson, $"ไม่พบรหัสพนักงาน '{empCodeRaw.Trim()}' ในฐานข้อมูลระบบ", "EMPLOYEE_NOT_FOUND", empCodeRaw, empNameRaw, deptRaw, null, stateRaw, errorsList, errorDtos);
+                AddError(batch.Id, rowNumber, rawRowJson, 
+                    $"ไม่พบข้อมูลพนักงานสำหรับรหัส '{empCodeRaw}' {(string.IsNullOrWhiteSpace(empNameRaw) ? "" : $"หรือชื่อ '{empNameRaw}'")} ในระบบ", 
+                    "EMPLOYEE_NOT_FOUND", empCodeRaw, empNameRaw, deptRaw, null, stateRaw, errorsList, errorDtos);
                 continue;
             }
 
-            // Fill employee info from DB if missing in row
             var empName = !string.IsNullOrWhiteSpace(empNameRaw) ? empNameRaw : $"{employee.FirstName} {employee.LastName}".Trim();
             var deptName = !string.IsNullOrWhiteSpace(deptRaw) 
                 ? deptRaw 
                 : (currentAssignments.TryGetValue(employee.Id, out var asg) ? asg.Department?.DepartmentName : null);
 
-            // Validation 2: Parse WorkDate
+            // Parse WorkDate
             DateOnly workDate;
             if (dateRaw != null)
             {
@@ -240,7 +465,8 @@ public class AttendanceImportService : IAttendanceImportService
                 var parsedDt = ParseDateTime(timeRaw);
                 if (parsedDt.HasValue)
                 {
-                    workDate = DateOnly.FromDateTime(parsedDt.Value);
+                    var y = parsedDt.Value.Year > 2400 ? parsedDt.Value.Year - 543 : parsedDt.Value.Year;
+                    workDate = new DateOnly(y, parsedDt.Value.Month, parsedDt.Value.Day);
                 }
                 else
                 {
@@ -266,23 +492,15 @@ public class AttendanceImportService : IAttendanceImportService
 
             if (timeInRaw != null || timeOutRaw != null)
             {
-                // Format B: Two distinct columns for In and Out
-                if (timeInRaw != null)
-                {
-                    punchInUtc = ParseTimeToUtc(timeInRaw, workDate);
-                }
-                if (timeOutRaw != null)
-                {
-                    punchOutUtc = ParseTimeToUtc(timeOutRaw, workDate);
-                }
+                if (timeInRaw != null) punchInUtc = ParseTimeToUtc(timeInRaw, workDate);
+                if (timeOutRaw != null) punchOutUtc = ParseTimeToUtc(timeOutRaw, workDate);
             }
             else if (timeRaw != null)
             {
-                // Format A: Single punch time with state/type
                 var punchUtc = ParseTimeToUtc(timeRaw, workDate);
                 if (punchUtc.HasValue)
                 {
-                    var punchType = DeterminePunchType(stateRaw, punchUtc.Value);
+                    var punchType = DeterminePunchType(stateRaw, remarkRaw, punchUtc.Value);
                     if (punchType == "IN")
                     {
                         punchInUtc = punchUtc;
@@ -310,7 +528,6 @@ public class AttendanceImportService : IAttendanceImportService
             var key = (employee.Id, workDate);
             if (!dailyDict.TryGetValue(key, out var dailyRecord))
             {
-                // Check if already in DB
                 dailyRecord = await _context.AttendanceDailies
                     .Include(a => a.Shift)
                     .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
@@ -325,7 +542,6 @@ public class AttendanceImportService : IAttendanceImportService
                         Status = "PRESENT"
                     };
 
-                    // Resolve shift assignment
                     var shift = ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
                     if (shift != null)
                     {
@@ -339,24 +555,38 @@ public class AttendanceImportService : IAttendanceImportService
                 dailyDict[key] = dailyRecord;
             }
 
-            // Resolve shift for calculation if not attached
             var activeShift = dailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
 
-            // Merge punch times
-            if (punchInUtc.HasValue)
+            // Merge punch times (Smart Earliest = In, Latest = Out)
+            var currentPunchUtc = punchInUtc ?? punchOutUtc;
+            if (currentPunchUtc.HasValue)
             {
-                if (!dailyRecord.ActualIn.HasValue || punchInUtc.Value < dailyRecord.ActualIn.Value)
+                if (!dailyRecord.ActualIn.HasValue)
                 {
-                    dailyRecord.ActualIn = punchInUtc.Value;
+                    dailyRecord.ActualIn = currentPunchUtc.Value;
+                }
+                else if (currentPunchUtc.Value < dailyRecord.ActualIn.Value)
+                {
+                    if (!dailyRecord.ActualOut.HasValue)
+                    {
+                        dailyRecord.ActualOut = dailyRecord.ActualIn.Value;
+                    }
+                    dailyRecord.ActualIn = currentPunchUtc.Value;
+                }
+                else if (currentPunchUtc.Value > dailyRecord.ActualIn.Value)
+                {
+                    if (!dailyRecord.ActualOut.HasValue || currentPunchUtc.Value > dailyRecord.ActualOut.Value)
+                    {
+                        dailyRecord.ActualOut = currentPunchUtc.Value;
+                    }
                 }
             }
 
-            if (punchOutUtc.HasValue)
+            if (dailyRecord.ActualIn.HasValue && dailyRecord.ActualOut.HasValue && dailyRecord.ActualIn.Value > dailyRecord.ActualOut.Value)
             {
-                if (!dailyRecord.ActualOut.HasValue || punchOutUtc.Value > dailyRecord.ActualOut.Value)
-                {
-                    dailyRecord.ActualOut = punchOutUtc.Value;
-                }
+                var temp = dailyRecord.ActualIn.Value;
+                dailyRecord.ActualIn = dailyRecord.ActualOut.Value;
+                dailyRecord.ActualOut = temp;
             }
 
             dailyRecord.IsAbsent = false;
@@ -367,7 +597,7 @@ public class AttendanceImportService : IAttendanceImportService
             successRecords++;
         }
 
-        // 7. Save errors and batch updates
+        // 8. Save errors and batch updates
         if (errorsList.Count > 0)
         {
             _context.AttendanceImportErrors.AddRange(errorsList);
@@ -431,6 +661,7 @@ public class AttendanceImportService : IAttendanceImportService
             var s = query.Search.Trim().ToLower();
             q = q.Where(b => (b.FileName != null && b.FileName.ToLower().Contains(s)) ||
                              (b.DeviceName != null && b.DeviceName.ToLower().Contains(s)) ||
+                             (b.UnitName != null && b.UnitName.ToLower().Contains(s)) ||
                              (b.Source != null && b.Source.ToLower().Contains(s)));
         }
 
@@ -540,47 +771,55 @@ public class AttendanceImportService : IAttendanceImportService
 
     public async Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(string format = "xlsx", CancellationToken cancellationToken = default)
     {
-        var sampleRows = new[]
+        var sampleRows = new List<Dictionary<string, object?>>
         {
-            new
+            new Dictionary<string, object?>
             {
-                รหัสพนักงาน = "EMP001",
-                ชื่อพนักงาน = "สมชาย ใจดี",
-                แผนก = "ฝ่ายพัฒนาซอฟต์แวร์",
-                วันที่ = "2026-10-06",
-                เวลา = "08:30:00",
-                ประเภทการสแกน = "เข้า",
-                หมายเหตุ = "เวลาสแกนเข้างานปกติ (IN)"
+                ["รหัส"] = "EMP001",
+                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
+                ["วันที่-เวลา"] = "2026-08-03 08:25:00",
+                ["สถานะ"] = "เข้า",
+                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
             },
-            new
+            new Dictionary<string, object?>
             {
-                รหัสพนักงาน = "EMP001",
-                ชื่อพนักงาน = "สมชาย ใจดี",
-                แผนก = "ฝ่ายพัฒนาซอฟต์แวร์",
-                วันที่ = "2026-10-06",
-                เวลา = "17:35:00",
-                ประเภทการสแกน = "ออก",
-                หมายเหตุ = "เวลาสแกนออกงานปกติ (OUT)"
+                ["รหัส"] = "EMP001",
+                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
+                ["วันที่-เวลา"] = "2026-08-03 17:35:00",
+                ["สถานะ"] = "ออก",
+                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
             },
-            new
+            new Dictionary<string, object?>
             {
-                รหัสพนักงาน = "EMP002",
-                ชื่อพนักงาน = "สมหญิง สดใส",
-                แผนก = "ฝ่ายบุคคล",
-                วันที่ = "2026-10-06",
-                เวลา = "08:45:00",
-                ประเภทการสแกน = "เข้า",
-                หมายเหตุ = "ตัวอย่างการสแกนเข้างานสาย"
+                ["รหัส"] = "EMP002",
+                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
+                ["วันที่-เวลา"] = "2026-08-03 08:45:00",
+                ["สถานะ"] = "เข้า",
+                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
             },
-            new
+            new Dictionary<string, object?>
             {
-                รหัสพนักงาน = "EMP002",
-                ชื่อพนักงาน = "สมหญิง สดใส",
-                แผนก = "ฝ่ายบุคคล",
-                วันที่ = "2026-10-06",
-                เวลา = "17:30:00",
-                ประเภทการสแกน = "ออก",
-                หมายเหตุ = "ตัวอย่างการสแกนออกงานปกติ"
+                ["รหัส"] = "EMP002",
+                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
+                ["วันที่-เวลา"] = "2026-08-03 17:30:00",
+                ["สถานะ"] = "ออก",
+                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
             }
         };
 
@@ -594,6 +833,36 @@ public class AttendanceImportService : IAttendanceImportService
     // ---------------------------------------------------------
     // Helper Methods
     // ---------------------------------------------------------
+
+    private static bool IsEmpCodeHeader(string text)
+    {
+        var norm = NormalizeHeader(text);
+        return norm is "รหัส" or "รหัสพนักงาน" or "เลขประจำตัว" or "employeecode" or "empcode" or "badgeno" or "userid" or "empid" or "employeeid";
+    }
+
+    private static bool IsOtherHeader(string text)
+    {
+        var norm = NormalizeHeader(text);
+        return norm is "ชื่อ" or "ชื่อสกุล" or "ชื่อนามสกุล" or "ชื่อพนักงาน" or "ชื่อสกุล"
+            or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
+            or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
+            or "name" or "department" or "date" or "time" or "status";
+    }
+
+    private static string NormalizeThaiName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+        return name.Trim()
+            .Replace(" ", "")
+            .Replace("นาย", "")
+            .Replace("นางสาว", "")
+            .Replace("น.ส.", "")
+            .Replace("นาง", "")
+            .Replace("คุณ", "")
+            .Replace("ด.ช.", "")
+            .Replace("ด.ญ.", "")
+            .ToLowerInvariant();
+    }
 
     private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
     {
@@ -650,7 +919,7 @@ public class AttendanceImportService : IAttendanceImportService
         });
     }
 
-    private static string? GetStringValue(IDictionary<string, object> row, params string[] candidates)
+    private static string? GetStringValue(IDictionary<string, object?> row, params string[] candidates)
     {
         var val = GetValue(row, candidates);
         if (val == null) return null;
@@ -658,7 +927,7 @@ public class AttendanceImportService : IAttendanceImportService
         return string.IsNullOrWhiteSpace(s) ? null : s;
     }
 
-    private static object? GetValue(IDictionary<string, object> row, params string[] candidates)
+    private static object? GetValue(IDictionary<string, object?> row, params string[] candidates)
     {
         foreach (var key in row.Keys)
         {
@@ -674,7 +943,18 @@ public class AttendanceImportService : IAttendanceImportService
         return null;
     }
 
-    private static string NormalizeHeader(string header)
+        private static string GetColumnName(int index)
+    {
+        string name = "";
+        while (index >= 0)
+        {
+            name = (char)('A' + (index % 26)) + name;
+            index = (index / 26) - 1;
+        }
+        return name;
+    }
+
+private static string NormalizeHeader(string header)
     {
         return header.Trim().ToLowerInvariant()
             .Replace(" ", "")
@@ -688,21 +968,24 @@ public class AttendanceImportService : IAttendanceImportService
     {
         if (val is DateTime dt)
         {
-            return DateOnly.FromDateTime(dt);
+            var y = dt.Year > 2400 ? dt.Year - 543 : dt.Year;
+            return new DateOnly(y, dt.Month, dt.Day);
         }
 
         var str = val.ToString()?.Trim();
         if (string.IsNullOrWhiteSpace(str)) return null;
 
-        var formats = new[] { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "yyyy/MM/dd", "d-M-yyyy", "dd-MM-yyyy" };
-        if (DateOnly.TryParseExact(str, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d))
-        {
-            return d;
-        }
-
         if (DateTime.TryParse(str, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDt))
         {
-            return DateOnly.FromDateTime(parsedDt);
+            var y = parsedDt.Year > 2400 ? parsedDt.Year - 543 : parsedDt.Year;
+            return new DateOnly(y, parsedDt.Month, parsedDt.Day);
+        }
+
+        var formats = new[] { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "yyyy/MM/dd", "d-M-yyyy", "dd-MM-yyyy", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm", "dd/MM/yyyy HH:mm" };
+        if (DateTime.TryParseExact(str, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dtExact))
+        {
+            var y = dtExact.Year > 2400 ? dtExact.Year - 543 : dtExact.Year;
+            return new DateOnly(y, dtExact.Month, dtExact.Day);
         }
 
         return null;
@@ -730,11 +1013,8 @@ public class AttendanceImportService : IAttendanceImportService
     {
         if (val is DateTime dt)
         {
-            if (dt.TimeOfDay != TimeSpan.Zero)
-            {
-                var local = new DateTime(workDate.Year, workDate.Month, workDate.Day, dt.Hour, dt.Minute, dt.Second);
-                return AttendanceDailyService.ToUtcTime(local);
-            }
+            var local = new DateTime(workDate.Year, workDate.Month, workDate.Day, dt.Hour, dt.Minute, dt.Second);
+            return AttendanceDailyService.ToUtcTime(local);
         }
 
         if (val is TimeSpan ts)
@@ -746,9 +1026,14 @@ public class AttendanceImportService : IAttendanceImportService
         var str = val.ToString()?.Trim();
         if (string.IsNullOrWhiteSpace(str)) return null;
 
-        var timeFormats = new[] { "HH:mm:ss", "HH:mm", "H:mm:ss", "H:mm", "h:mm tt", "hh:mm tt" };
+        // Check if string contains full datetime like "2026-08-03 08:25:00"
+        if (DateTime.TryParse(str, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fullDt))
+        {
+            var local = new DateTime(workDate.Year, workDate.Month, workDate.Day, fullDt.Hour, fullDt.Minute, fullDt.Second);
+            return AttendanceDailyService.ToUtcTime(local);
+        }
 
-        // Try time-only formats first
+        var timeFormats = new[] { "HH:mm:ss", "HH:mm", "H:mm:ss", "H:mm", "h:mm tt", "hh:mm tt" };
         if (TimeOnly.TryParseExact(str, timeFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var timeOnly))
         {
             var local = new DateTime(workDate.Year, workDate.Month, workDate.Day, timeOnly.Hour, timeOnly.Minute, timeOnly.Second);
@@ -761,32 +1046,21 @@ public class AttendanceImportService : IAttendanceImportService
             return AttendanceDailyService.ToUtcTime(local);
         }
 
-        // Check if string contains full datetime
-        if (DateTime.TryParse(str, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fullDt) && fullDt.TimeOfDay != TimeSpan.Zero)
-        {
-            var local = new DateTime(workDate.Year, workDate.Month, workDate.Day, fullDt.Hour, fullDt.Minute, fullDt.Second);
-            return AttendanceDailyService.ToUtcTime(local);
-        }
-
         return null;
     }
 
-    private static string DeterminePunchType(string? stateRaw, DateTime punchUtc)
+    private static string DeterminePunchType(string? stateRaw, string? remarkRaw, DateTime punchUtc)
     {
-        if (!string.IsNullOrWhiteSpace(stateRaw))
+        var combined = $"{(stateRaw ?? "")} {(remarkRaw ?? "")}".Trim().ToLowerInvariant();
+        if (combined.Contains("cin") || combined.Contains("c/in") || combined.Contains("checkin") || combined.Contains("เข้า") || combined.Contains(" in") || combined.StartsWith("in"))
         {
-            var s = stateRaw.Trim().ToLowerInvariant();
-            if (s.Contains("in") || s.Contains("เข้า") || s == "0" || s.Contains("checkin"))
-            {
-                return "IN";
-            }
-            if (s.Contains("out") || s.Contains("ออก") || s == "1" || s.Contains("checkout"))
-            {
-                return "OUT";
-            }
+            return "IN";
+        }
+        if (combined.Contains("cout") || combined.Contains("c/out") || combined.Contains("checkout") || combined.Contains("ออก") || combined.Contains(" out") || combined.StartsWith("out") || combined.Contains("early"))
+        {
+            return "OUT";
         }
 
-        // Fallback based on Thai local hour
         var localTime = AttendanceDailyService.ToThaiLocalTime(punchUtc);
         return localTime.Hour < 12 ? "IN" : "OUT";
     }
