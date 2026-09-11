@@ -162,18 +162,6 @@ export default function WorkCalendarPage() {
     );
   };
 
-  // Handle bulk apply working hours
-  const handleApplyBulkTime = () => {
-    setWorkWeek((prev) =>
-      prev.map((d) =>
-        d.isWorkingDay
-          ? { ...d, startTime: bulkStartTime, endTime: bulkEndTime }
-          : d
-      )
-    );
-    setSuccessMessage(`นำเวลาทำงาน ${bulkStartTime} - ${bulkEndTime} น. ไปใช้กับทุกวันทำงานเรียบร้อยแล้ว (อย่าลืมกดปุ่มบันทึก)`);
-  };
-
   const handleSaveWorkWeek = async () => {
     try {
       setSaving(true);
@@ -369,38 +357,27 @@ export default function WorkCalendarPage() {
                 <div>
                   <h3 className="text-xs font-bold text-slate-900">กำหนดเวลาทำงานปกติของบริษัท</h3>
                   <p className="text-[11px] text-slate-500">
-                    ระบุเวลาเข้าและเลิกงานมาตรฐาน แล้วกดปุ่มเพื่อนำไปใช้กับทุกวันทำงาน
+                    ระบุเวลาเข้าและเลิกงานมาตรฐาน สำหรับวันทำงานปกติทั้งหมด
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm text-xs">
-                  <span className="text-slate-500 font-medium">เข้า:</span>
-                  <input
-                    type="time"
-                    value={bulkStartTime}
-                    onChange={(e) => setBulkStartTime(e.target.value)}
-                    className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
-                  />
-                  <span className="text-slate-300">|</span>
-                  <span className="text-slate-500 font-medium">ออก:</span>
-                  <input
-                    type="time"
-                    value={bulkEndTime}
-                    onChange={(e) => setBulkEndTime(e.target.value)}
-                    className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleApplyBulkTime}
-                  className="px-3.5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                  นำไปใช้กับทุกวันทำงาน
-                </button>
+              <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm text-xs">
+                <span className="text-slate-500 font-medium">เข้า:</span>
+                <input
+                  type="time"
+                  value={bulkStartTime}
+                  onChange={(e) => setBulkStartTime(e.target.value)}
+                  className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
+                />
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-500 font-medium">ออก:</span>
+                <input
+                  type="time"
+                  value={bulkEndTime}
+                  onChange={(e) => setBulkEndTime(e.target.value)}
+                  className="font-semibold text-slate-800 bg-transparent focus:outline-none text-xs"
+                />
               </div>
             </div>
 
