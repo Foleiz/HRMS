@@ -25,5 +25,8 @@ public interface IHrmsDbContext
     DbSet<WorkWeek> WorkWeeks { get; }
     DbSet<Holiday> Holidays { get; }
 
+    // Work Shifts (Dev 1 Sprint 3)
+    DbSet<Shift> Shifts { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
