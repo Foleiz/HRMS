@@ -40,6 +40,7 @@ export const Navbar: React.FC = () => {
     if (customBreadcrumb) return customBreadcrumb;
     if (pathname === '/') return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
+    if (pathname.match(/^\/employees\/\d+/)) return { section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' };
     if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
     if (pathname.startsWith('/attendance')) return { section: 'การเข้างาน', page: 'ตรวจบันทึกเวลา' };
     if (pathname.startsWith('/documents')) return { section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' };
@@ -59,9 +60,15 @@ export const Navbar: React.FC = () => {
       {/* 1. Left Side: Circular Back Button & Breadcrumb */}
       <div className="flex items-center gap-3.5">
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            if (pathname.match(/^\/employees\/\d+/)) {
+              router.push('/employees');
+            } else {
+              router.back();
+            }
+          }}
           title="ย้อนกลับ"
-          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center transition-all shadow-sm active:scale-95"
+          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>

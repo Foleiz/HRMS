@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
 const mockAvatarImages = [
@@ -51,6 +52,13 @@ export default function EmployeeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'user'>('personal');
+
+  const { setBreadcrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumb({ section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   useEffect(() => {
     if (!employeeId || isNaN(employeeId)) {
@@ -118,33 +126,13 @@ export default function EmployeeDetailPage() {
   };
 
   return (
-    <div className="space-y-4 font-sans pb-16">
-      {/* 1. Breadcrumb Bar ด้านบนสุด ตรงตาม Figma */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.push('/employees')}
-          className="w-8 h-8 rounded-full bg-[#0B2046] text-white flex items-center justify-center hover:bg-[#153468] shadow-sm transition-all focus:outline-none cursor-pointer"
-          title="ย้อนกลับ"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-1.5 text-[13px]">
-          <Link href="/employees" className="text-slate-500 hover:text-slate-800 transition-colors font-medium">
-            พนักงาน
-          </Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-800 font-bold">ดูข้อมูลพนักงาน</span>
-        </div>
-      </div>
-
-      {/* 2. Main 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    <div className="font-sans">
+      {/* 2-Column Layout (ขยายความสูงให้พอดีกันและขอบล่างเท่ากัน 100%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch min-h-[calc(100vh-128px)]">
         {/* ============================================================ */}
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs">
+        <div className="lg:col-span-4 xl:col-span-3 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
           {/* Avatar โปรไฟล์ */}
           <div className="flex flex-col items-center">
             <div className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md mb-3 bg-slate-100 flex items-center justify-center">
@@ -285,7 +273,7 @@ export default function EmployeeDetailPage() {
         {/* ============================================================ */}
         {/* ขวา: Detail Content with Tabs                                */}
         {/* ============================================================ */}
-        <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs min-h-[560px]">
+        <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
           {/* Top Bar: Tabs & Action Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-3.5 gap-3">
             {/* Tabs */}
@@ -341,7 +329,7 @@ export default function EmployeeDetailPage() {
           {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
           {/* ============================================================ */}
           {activeTab === 'personal' && (
-            <div className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-y-7 gap-x-8 text-xs animate-in fade-in duration-150">
+            <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-7 gap-x-8 text-xs animate-in fade-in duration-150">
               {/* --- คอลัมน์ที่ 1 --- */}
               <div className="space-y-5">
                 <div>
@@ -490,7 +478,7 @@ export default function EmployeeDetailPage() {
           {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
           {/* ============================================================ */}
           {activeTab === 'family' && (
-            <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
+            <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
               {/* ซ้าย: สมาชิกในครอบครัว */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -608,7 +596,7 @@ export default function EmployeeDetailPage() {
           {/* TAB 3: ข้อมูลผู้ใช้งาน (User Account)                        */}
           {/* ============================================================ */}
           {activeTab === 'user' && (
-            <div className="pt-6 max-w-xl space-y-5 text-xs animate-in fade-in duration-150">
+            <div className="pt-6 flex-1 max-w-xl space-y-5 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-[#0B2046]" />
                 <h3 className="font-bold text-slate-800 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
