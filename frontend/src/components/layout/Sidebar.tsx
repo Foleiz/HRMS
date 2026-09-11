@@ -49,12 +49,6 @@ const menuItems: MenuItem[] = [
     icon: Clock,
   },
   {
-    title: 'นำเข้าเวลาเข้างาน',
-    href: '/attendance/import',
-    matchPrefix: '/attendance/import',
-    icon: UploadCloud,
-  },
-  {
     title: 'การจัดตารางงาน',
     href: '/attendance/schedules',
     matchPrefix: '/attendance/schedules',
