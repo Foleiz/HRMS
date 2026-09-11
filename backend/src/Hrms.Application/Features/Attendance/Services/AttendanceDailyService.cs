@@ -372,14 +372,17 @@ public class AttendanceDailyService : IAttendanceDailyService
         {
             if (existingMap.TryGetValue(emp.Id, out var existingRecord))
             {
-                // If existing record has no shift, resolve it
-                if (existingRecord.ShiftId == null && shiftByEmp.TryGetValue(emp.Id, out var esMatch))
+                // If existing record has no shift or needs scheduled times refreshed
+                if (shiftByEmp.TryGetValue(emp.Id, out var esMatch) && esMatch.Shift != null)
                 {
-                    existingRecord.ShiftId = esMatch.ShiftId;
-                    if (esMatch.Shift != null)
+                    if (existingRecord.ShiftId == null || existingRecord.ShiftId == esMatch.ShiftId)
                     {
+                        existingRecord.ShiftId = esMatch.ShiftId;
                         PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
-                        RecalculateAttendance(existingRecord, esMatch.Shift);
+                        if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
+                        {
+                            RecalculateAttendance(existingRecord, esMatch.Shift);
+                        }
                     }
                 }
                 continue;

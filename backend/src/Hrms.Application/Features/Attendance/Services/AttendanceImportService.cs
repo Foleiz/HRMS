@@ -556,6 +556,12 @@ public class AttendanceImportService : IAttendanceImportService
             }
 
             var activeShift = dailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
+            if (activeShift != null)
+            {
+                dailyRecord.ShiftId = activeShift.Id;
+                dailyRecord.Shift = activeShift;
+                AttendanceDailyService.PopulateScheduledTimes(dailyRecord, activeShift, workDate);
+            }
 
             // Merge punch times (Smart Earliest = In, Latest = Out)
             var currentPunchUtc = punchInUtc ?? punchOutUtc;
