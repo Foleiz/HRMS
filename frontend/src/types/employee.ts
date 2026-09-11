@@ -62,6 +62,9 @@ export interface Employee {
   socialSecurity?: EmployeeSocialSecurity;
   addresses: EmployeeAddress[];
   bankAccounts: EmployeeBankAccount[];
+  educations?: EmployeeEducation[];
+  familyMembers?: FamilyMember[];
+  emergencyContacts?: EmergencyContact[];
 }
 
 export interface FamilyMember {
@@ -73,6 +76,8 @@ export interface FamilyMember {
   citizenId?: string;
   citizenIdMasked?: string;
   birthDate?: string;
+  maritalStatus?: string;
+  educationStatus?: string;
 }
 
 export interface EmergencyContact {
@@ -83,6 +88,7 @@ export interface EmergencyContact {
   lastName: string;
   address?: string;
   primaryPhone: string;
+  secondaryPhone?: string;
   isPrimary?: boolean;
 }
 

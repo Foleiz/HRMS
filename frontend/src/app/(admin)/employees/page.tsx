@@ -573,9 +573,12 @@ export default function EmployeesPage() {
                           </div>
 
                           {/* ชื่อเต็ม */}
-                          <span className="font-medium text-slate-800">
+                          <Link
+                            href={`/employees/${emp.id}`}
+                            className="font-medium text-slate-800 hover:text-[#0B2046] hover:underline"
+                          >
                             {emp.prefix} {emp.firstName} {emp.lastName}
-                          </span>
+                          </Link>
                         </div>
                       </td>
 
@@ -645,18 +648,14 @@ export default function EmployeesPage() {
                               className="absolute right-0 top-7 w-40 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100"
                             >
                               {/* 1. ดูข้อมูลพนักงาน */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedEmployee(emp);
-                                  setIsDetailOpen(true);
-                                  setActionMenuOpenId(null);
-                                }}
+                              <Link
+                                href={`/employees/${emp.id}`}
+                                onClick={() => setActionMenuOpenId(null)}
                                 className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
                               >
                                 <Eye className="w-3.5 h-3.5 text-slate-500" />
                                 <span>ดูข้อมูลพนักงาน</span>
-                              </button>
+                              </Link>
 
                               {/* 2. จัดการเงินเดือน */}
                               <Link
