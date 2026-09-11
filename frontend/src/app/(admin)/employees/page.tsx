@@ -1006,7 +1006,17 @@ export default function EmployeesPage() {
                                 <span>ดูข้อมูลพนักงาน</span>
                               </Link>
 
-                              {/* 2. จัดการเงินเดือน */}
+                              {/* 2. แก้ไขข้อมูลพนักงาน */}
+                              <Link
+                                href={`/employees/${emp.id}/edit`}
+                                onClick={() => setActionMenuOpenId(null)}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                <span>แก้ไขข้อมูลพนักงาน</span>
+                              </Link>
+
+                              {/* 3. จัดการเงินเดือน */}
                               <Link
                                 href="/payroll"
                                 onClick={() => setActionMenuOpenId(null)}

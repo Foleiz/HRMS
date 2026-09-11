@@ -95,6 +95,7 @@ public class EmployeeService : IEmployeeService
             }
         }
 
+        string idStr = id.ToString();
         var employee = await _dbContext.Employees
             .Include(e => e.Contact)
             .Include(e => e.SocialSecurity)
@@ -110,7 +111,7 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
         {
@@ -355,6 +356,7 @@ public class EmployeeService : IEmployeeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
         }
 
+        string idStr = id.ToString();
         var employee = await _dbContext.Employees
             .Include(e => e.Contact)
             .Include(e => e.SocialSecurity)
@@ -364,7 +366,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
             .Include(e => e.Assignments)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
         {
@@ -666,7 +668,9 @@ public class EmployeeService : IEmployeeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงาน");
         }
 
-        var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+        string idStr = id.ToString();
+        var employee = await _dbContext.Employees
+            .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
         if (employee == null)
         {
             throw new NotFoundException("Employee", id);
