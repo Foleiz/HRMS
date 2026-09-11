@@ -394,6 +394,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ShiftId).HasColumnName("shift_id").IsRequired();
             entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").IsRequired();
             entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
+            entity.Property(e => e.WorkDays).HasColumnName("work_days");
 
             entity.HasOne(e => e.Employee)
                 .WithMany()

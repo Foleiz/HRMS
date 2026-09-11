@@ -53,6 +53,29 @@ const THAI_MONTHS = [
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
+const WEEK_DAYS = [
+  { id: 1, label: 'จันทร์', short: 'จ.' },
+  { id: 2, label: 'อังคาร', short: 'อ.' },
+  { id: 3, label: 'พุธ', short: 'พ.' },
+  { id: 4, label: 'พฤหัสบดี', short: 'พฤ.' },
+  { id: 5, label: 'ศุกร์', short: 'ศ.' },
+  { id: 6, label: 'เสาร์', short: 'ส.' },
+  { id: 0, label: 'อาทิตย์', short: 'อา.' },
+];
+
+const formatWorkDays = (workDays?: number[]) => {
+  if (!workDays || workDays.length === 0) return 'จันทร์ - ศุกร์';
+  const sorted = [...workDays].sort((a, b) => {
+    const normA = a === 0 ? 7 : a;
+    const normB = b === 0 ? 7 : b;
+    return normA - normB;
+  });
+  if (sorted.length === 7) return 'ทุกวัน (จ.-อา.)';
+  if (sorted.length === 5 && sorted.every((d, i) => d === i + 1)) return 'จันทร์ - ศุกร์';
+  if (sorted.length === 6 && sorted.every((d, i) => d === i + 1)) return 'จันทร์ - เสาร์';
+  return sorted.map((d) => WEEK_DAYS.find((w) => w.id === d)?.short || '').filter(Boolean).join(', ');
+};
+
 export interface ShiftPeriodInfo {
   period: 'MORNING' | 'AFTERNOON' | 'NIGHT';
   label: string;
@@ -233,6 +256,7 @@ function SchedulesContent() {
     shiftId: 0,
     effectiveFrom: new Date().toISOString().split('T')[0],
     effectiveTo: '',
+    workDays: [1, 2, 3, 4, 5],
   });
 
   // Batch Assign Modal
@@ -243,6 +267,7 @@ function SchedulesContent() {
   const [batchShiftId, setBatchShiftId] = useState<number>(0);
   const [batchEffectiveFrom, setBatchEffectiveFrom] = useState<string>(new Date().toISOString().split('T')[0]);
   const [batchEffectiveTo, setBatchEffectiveTo] = useState<string>('');
+  const [batchWorkDays, setBatchWorkDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [batchResult, setBatchResult] = useState<BatchAssignResult | null>(null);
   const [empFilterKeyword, setEmpFilterKeyword] = useState('');
 
@@ -521,6 +546,7 @@ function SchedulesContent() {
       shiftId: shifts[0]?.id ?? 0,
       effectiveFrom: dateStr || new Date().toISOString().split('T')[0],
       effectiveTo: '',
+      workDays: [1, 2, 3, 4, 5],
     });
     setAssignModalOpen(true);
   };
@@ -533,6 +559,7 @@ function SchedulesContent() {
       shiftId: assignment.shiftId,
       effectiveFrom: assignment.effectiveFrom.split('T')[0],
       effectiveTo: assignment.effectiveTo ? assignment.effectiveTo.split('T')[0] : '',
+      workDays: assignment.workDays && assignment.workDays.length > 0 ? assignment.workDays : [1, 2, 3, 4, 5],
     });
     setAssignModalOpen(true);
   };
@@ -547,6 +574,7 @@ function SchedulesContent() {
           shiftId: Number(assignForm.shiftId),
           effectiveFrom: assignForm.effectiveFrom,
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
+          workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
         });
         setSuccessMessage('มอบหมายกะให้พนักงานสำเร็จเรียบร้อย');
       } else if (assignForm.id) {
@@ -554,6 +582,7 @@ function SchedulesContent() {
           shiftId: Number(assignForm.shiftId),
           effectiveFrom: assignForm.effectiveFrom,
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
+          workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
         });
         setSuccessMessage('อัปเดตการมอบหมายกะสำเร็จ');
       }
@@ -590,6 +619,7 @@ function SchedulesContent() {
         shiftId: batchShiftId,
         effectiveFrom: batchEffectiveFrom,
         effectiveTo: batchEffectiveTo ? batchEffectiveTo : null,
+        workDays: batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5],
         departmentId: batchTargetType === 'department' ? batchSelectedDept : null,
         employeeIds: batchTargetType === 'selected' ? batchSelectedEmpIds : undefined,
       };
@@ -1114,6 +1144,7 @@ function SchedulesContent() {
                         <th className="p-3.5">รหัส / ชื่อพนักงาน</th>
                         <th className="p-3.5">แผนก / สังกัด</th>
                         <th className="p-3.5">กะการทำงาน</th>
+                        <th className="p-3.5">วันทำงาน</th>
                         <th className="p-3.5">เวลาการทำงาน</th>
                         <th className="p-3.5">มีผลตั้งแต่วันที่</th>
                         <th className="p-3.5">สิ้นสุดวันที่</th>
@@ -1150,6 +1181,12 @@ function SchedulesContent() {
                                 </span>
                               );
                             })()}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span>{formatWorkDays(a.workDays)}</span>
+                            </span>
                           </td>
                           <td className="p-3.5 text-slate-600 font-mono text-xs">
                             {a.startTime?.substring(0, 5)} - {a.endTime?.substring(0, 5)} น.
@@ -1712,6 +1749,68 @@ function SchedulesContent() {
                 </div>
               </div>
 
+              {/* Day of Week Selector */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
+                  </label>
+                  {/* Quick Preset Buttons */}
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5] })}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      จ.-ศ.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6] })}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      จ.-ส.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6, 0] })}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      ทุกวัน
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1.5">
+                  {WEEK_DAYS.map((day) => {
+                    const isSelected = (assignForm.workDays || [1, 2, 3, 4, 5]).includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => {
+                          const current = assignForm.workDays || [1, 2, 3, 4, 5];
+                          const next = isSelected
+                            ? current.filter((d) => d !== day.id)
+                            : [...current, day.id];
+                          if (next.length > 0) {
+                            setAssignForm({ ...assignForm, workDays: next });
+                          }
+                        }}
+                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 ${
+                          isSelected
+                            ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-[11px]">{day.short}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Form Actions */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
@@ -1998,6 +2097,67 @@ function SchedulesContent() {
                     onChange={(e) => setBatchEffectiveTo(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                   />
+                </div>
+              </div>
+
+              {/* Day of Week Selector */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
+                  </label>
+                  {/* Quick Preset Buttons */}
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setBatchWorkDays([1, 2, 3, 4, 5])}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      จ.-ศ.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchWorkDays([1, 2, 3, 4, 5, 6])}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      จ.-ส.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchWorkDays([1, 2, 3, 4, 5, 6, 0])}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    >
+                      ทุกวัน
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1.5">
+                  {WEEK_DAYS.map((day) => {
+                    const isSelected = batchWorkDays.includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => {
+                          const next = isSelected
+                            ? batchWorkDays.filter((d) => d !== day.id)
+                            : [...batchWorkDays, day.id];
+                          if (next.length > 0) {
+                            setBatchWorkDays(next);
+                          }
+                        }}
+                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 ${
+                          isSelected
+                            ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-[11px]">{day.short}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

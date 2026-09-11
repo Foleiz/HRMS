@@ -117,6 +117,7 @@ public class EmployeeShiftService : IEmployeeShiftService
             IsCrossDay = es.Shift?.IsCrossDay ?? false,
             EffectiveFrom = es.EffectiveFrom.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EffectiveTo = es.EffectiveTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            WorkDays = es.WorkDays != null ? es.WorkDays.ToList() : new List<int> { 1, 2, 3, 4, 5 },
             IsActive = isActive
         };
     }
@@ -211,12 +212,17 @@ public class EmployeeShiftService : IEmployeeShiftService
 
         await EnsureNoOverlapAsync(request.EmployeeId, from, to);
 
+        var workDays = request.WorkDays != null && request.WorkDays.Count > 0
+            ? request.WorkDays.Distinct().ToArray()
+            : new[] { 1, 2, 3, 4, 5 };
+
         var es = new EmployeeShift
         {
             EmployeeId = request.EmployeeId,
             ShiftId = request.ShiftId,
             EffectiveFrom = from,
-            EffectiveTo = to
+            EffectiveTo = to,
+            WorkDays = workDays
         };
 
         _context.EmployeeShifts.Add(es);
@@ -248,6 +254,10 @@ public class EmployeeShiftService : IEmployeeShiftService
 
         var from = ParseDate(request.EffectiveFrom, "วันเริ่มต้นกะ");
         var to = ParseNullableDate(request.EffectiveTo, "วันสิ้นสุดกะ");
+
+        var batchWorkDays = request.WorkDays != null && request.WorkDays.Count > 0
+            ? request.WorkDays.Distinct().ToArray()
+            : new[] { 1, 2, 3, 4, 5 };
 
         var employeeIdsToAssign = new HashSet<long>(request.EmployeeIds ?? new List<long>());
 
@@ -292,7 +302,8 @@ public class EmployeeShiftService : IEmployeeShiftService
                     EmployeeId = empId,
                     ShiftId = request.ShiftId,
                     EffectiveFrom = from,
-                    EffectiveTo = to
+                    EffectiveTo = to,
+                    WorkDays = batchWorkDays
                 };
 
                 _context.EmployeeShifts.Add(es);
@@ -332,6 +343,10 @@ public class EmployeeShiftService : IEmployeeShiftService
         es.EffectiveFrom = from;
         es.EffectiveTo = to;
         es.Shift = shift;
+        if (request.WorkDays != null && request.WorkDays.Count > 0)
+        {
+            es.WorkDays = request.WorkDays.Distinct().ToArray();
+        }
 
         try
         {
@@ -431,8 +446,11 @@ public class EmployeeShiftService : IEmployeeShiftService
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var dayDate = new DateOnly(year, month, day);
+                var dayOfWeek = (int)dayDate.DayOfWeek;
                 var activeShift = empShifts.FirstOrDefault(es =>
-                    es.EffectiveFrom <= dayDate && (es.EffectiveTo == null || es.EffectiveTo >= dayDate));
+                    es.EffectiveFrom <= dayDate && 
+                    (es.EffectiveTo == null || es.EffectiveTo >= dayDate) &&
+                    (es.WorkDays == null || es.WorkDays.Length == 0 || es.WorkDays.Contains(dayOfWeek)));
 
                 if (activeShift != null && activeShift.Shift != null)
                 {

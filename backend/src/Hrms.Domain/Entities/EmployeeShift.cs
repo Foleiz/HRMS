@@ -14,6 +14,7 @@ public class EmployeeShift
     public long ShiftId { get; set; }
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
+    public int[]? WorkDays { get; set; }
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }

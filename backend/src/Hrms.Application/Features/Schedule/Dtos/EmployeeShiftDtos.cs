@@ -22,6 +22,7 @@ public class EmployeeShiftDto
     public bool IsCrossDay { get; set; }
     public string EffectiveFrom { get; set; } = string.Empty; // YYYY-MM-DD
     public string? EffectiveTo { get; set; }                 // YYYY-MM-DD or null
+    public List<int> WorkDays { get; set; } = new();         // 1=Mon, ..., 6=Sat, 0=Sun
     public bool IsActive { get; set; }
 }
 
@@ -34,6 +35,7 @@ public class AssignEmployeeShiftRequest
     public long ShiftId { get; set; }
     public string EffectiveFrom { get; set; } = string.Empty; // YYYY-MM-DD
     public string? EffectiveTo { get; set; }                 // YYYY-MM-DD
+    public List<int>? WorkDays { get; set; }
 }
 
 /// <summary>
@@ -46,6 +48,7 @@ public class BatchAssignEmployeeShiftRequest
     public long ShiftId { get; set; }
     public string EffectiveFrom { get; set; } = string.Empty;
     public string? EffectiveTo { get; set; }
+    public List<int>? WorkDays { get; set; }
 }
 
 /// <summary>
@@ -56,6 +59,7 @@ public class UpdateEmployeeShiftRequest
     public long ShiftId { get; set; }
     public string EffectiveFrom { get; set; } = string.Empty;
     public string? EffectiveTo { get; set; }
+    public List<int>? WorkDays { get; set; }
 }
 
 /// <summary>

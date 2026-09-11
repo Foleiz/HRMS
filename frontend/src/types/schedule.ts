@@ -48,6 +48,7 @@ export interface EmployeeShift {
   isCrossDay: boolean;
   effectiveFrom: string; // YYYY-MM-DD
   effectiveTo?: string | null; // YYYY-MM-DD or null
+  workDays?: number[]; // 1=Mon, ..., 6=Sat, 0=Sun
   isActive: boolean;
 }
 
@@ -56,6 +57,7 @@ export interface AssignEmployeeShiftRequest {
   shiftId: number;
   effectiveFrom: string;
   effectiveTo?: string | null;
+  workDays?: number[];
 }
 
 export interface BatchAssignEmployeeShiftRequest {
@@ -64,6 +66,7 @@ export interface BatchAssignEmployeeShiftRequest {
   shiftId: number;
   effectiveFrom: string;
   effectiveTo?: string | null;
+  workDays?: number[];
 }
 
 export interface BatchAssignResult {
@@ -77,6 +80,7 @@ export interface UpdateEmployeeShiftRequest {
   shiftId: number;
   effectiveFrom: string;
   effectiveTo?: string | null;
+  workDays?: number[];
 }
 
 export interface RosterDayShift {
