@@ -760,7 +760,7 @@ export default function EmployeesPage() {
 
       {/* 4. Figma 1:1 Data Table */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[280px]">
           <table className="w-full text-left border-collapse text-[12px]">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
@@ -795,11 +795,15 @@ export default function EmployeesPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedEmployees.map((emp) => {
+                paginatedEmployees.map((emp, index) => {
                   const assignment = getMockAssignment(emp);
                   const hasComment = Boolean(comments[emp.id]);
                   const commentText = comments[emp.id];
                   const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
+                  // แถวท้ายตารางเปิดเมนูขึ้นด้านบน เพื่อป้องกันเมนูล้นตกขอบตาราง
+                  const isLastRows = paginatedEmployees.length >= 5
+                    ? index >= paginatedEmployees.length - 3
+                    : index >= paginatedEmployees.length - 2 && index > 0;
 
                   return (
                     <tr
@@ -942,7 +946,11 @@ export default function EmployeesPage() {
                           {actionMenuOpenId === emp.id && (
                             <div
                               ref={actionMenuRef}
-                              className="absolute right-0 top-7 w-40 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100"
+                              className={`absolute right-0 w-40 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${
+                                isLastRows
+                                  ? 'bottom-full mb-1.5 origin-bottom-right'
+                                  : 'top-full mt-1.5 origin-top-right'
+                              }`}
                             >
                               {/* 1. ดูข้อมูลพนักงาน */}
                               <Link
