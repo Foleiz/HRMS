@@ -640,11 +640,11 @@ function SchedulesContent() {
       {activeTab === 'roster' && (
         <div className="space-y-6">
           {/* Filter & View Switcher Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
             {/* Left: Filters & Search */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               {/* Search */}
-              <div className="relative w-64 sm:w-72">
+              <div className="relative w-56 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -656,7 +656,7 @@ function SchedulesContent() {
               </div>
 
               {/* Department Filter */}
-              <div className="w-48">
+              <div className="w-44">
                 <select
                   value={assignmentDeptFilter}
                   onChange={(e) => setAssignmentDeptFilter(e.target.value)}
@@ -680,7 +680,7 @@ function SchedulesContent() {
                     loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
                   }
                 }}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
@@ -688,33 +688,33 @@ function SchedulesContent() {
             </div>
 
             {/* Right: View Mode Switcher & Actions */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => setAssignmentViewMode('matrix')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     assignmentViewMode === 'matrix'
                       ? 'bg-white text-[#0B2046] shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>มุมมองปฏิทินกะ (Matrix)</span>
+                  <span>ปฏิทิน</span>
                 </button>
                 <button
                   onClick={() => setAssignmentViewMode('list')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     assignmentViewMode === 'list'
                       ? 'bg-white text-[#0B2046] shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <List className="w-3.5 h-3.5" />
-                  <span>มุมมองรายการ (List)</span>
+                  <span>รายการ</span>
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+              <div className="h-6 w-px bg-slate-200" />
 
               <div className="flex items-center gap-2">
                 <button
@@ -722,14 +722,14 @@ function SchedulesContent() {
                     setBatchModalOpen(true);
                     setBatchResult(null);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs whitespace-nowrap"
                 >
                   <Users className="w-3.5 h-3.5 text-slate-500" />
                   <span>มอบหมายกะกลุ่ม</span>
                 </button>
                 <button
                   onClick={() => openSingleAssignCreate()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>มอบหมายกะเดี่ยว</span>
@@ -1032,9 +1032,9 @@ function SchedulesContent() {
       {activeTab === 'shifts' && (
         <div className="space-y-6">
           {/* Shift Filter & View Switcher Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
             {/* Left: Filters & Search */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               {/* Search */}
               <div className="relative w-56 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1076,7 +1076,7 @@ function SchedulesContent() {
               {/* Refresh */}
               <button
                 onClick={loadShifts}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0"
                 title="รีเฟรชข้อมูลกะ"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingShifts ? 'animate-spin' : ''}`} />
@@ -1084,37 +1084,37 @@ function SchedulesContent() {
             </div>
 
             {/* Right: View Switcher & Action */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => setShiftViewMode('grid')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     shiftViewMode === 'grid'
                       ? 'bg-white text-[#0B2046] shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>การ์ด (Grid)</span>
+                  <span>การ์ด</span>
                 </button>
                 <button
                   onClick={() => setShiftViewMode('table')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     shiftViewMode === 'table'
                       ? 'bg-white text-[#0B2046] shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <List className="w-3.5 h-3.5" />
-                  <span>ตาราง (Table)</span>
+                  <span>ตาราง</span>
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+              <div className="h-6 w-px bg-slate-200" />
 
               <button
                 onClick={openShiftCreate}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>เพิ่มกะการทำงานใหม่</span>
