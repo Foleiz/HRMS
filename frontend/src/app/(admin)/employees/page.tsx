@@ -500,44 +500,44 @@ export default function EmployeesPage() {
                         </div>
                       </td>
 
-                      {/* 3. รหัสบัตรประชาชน (Masked Format: 1-1000-XXXXX-XX-X) */}
+                      {/* 3. รหัสบัตรประชาชน */}
                       <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap">
-                        {emp.citizenIdMasked || '1-1000-XXXXX-XX-X'}
+                        {emp.citizenIdMasked || '-'}
                       </td>
 
                       {/* 4. ฝ่าย */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment.division}
+                        {assignment?.division || '-'}
                       </td>
 
                       {/* 5. แผนก */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment.department}
+                        {assignment?.department || '-'}
                       </td>
 
                       {/* 6. ตำแหน่ง */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {assignment.position}
+                        {assignment?.position || '-'}
                       </td>
 
                       {/* 7. วันเกิด */}
                       <td className="py-3 px-3.5 text-slate-500 whitespace-nowrap">
-                        {emp.birthDate || '2 มกราคม 2026'}
+                        {emp.birthDate || '-'}
                       </td>
 
                       {/* 8. เพศ */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.gender || 'ชาย'}
+                        {emp.gender || '-'}
                       </td>
 
                       {/* 9. อีเมล */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.contact?.organizationEmail || emp.contact?.personalEmail || 'Test01@gmail.com'}
+                        {emp.contact?.organizationEmail || emp.contact?.personalEmail || '-'}
                       </td>
 
                       {/* 10. เบอร์โทร */}
                       <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap">
-                        {emp.contact?.personalPhone || '095-123-456-0'}
+                        {emp.contact?.personalPhone || '-'}
                       </td>
 
                       {/* 11. สถานะ */}
@@ -772,25 +772,25 @@ export default function EmployeesPage() {
                 <div>
                   <span className="text-slate-400 block">เลขบัตรประชาชน (PDPA Masked)</span>
                   <span className="font-mono font-bold text-slate-800 text-sm mt-0.5 block">
-                    {selectedEmployee.citizenIdMasked || '1-1000-XXXXX-XX-X'}
+                    {selectedEmployee.citizenIdMasked || '-'}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">วันเดือนปีเกิด</span>
                   <span className="font-medium text-slate-800 block mt-0.5">
-                    {selectedEmployee.birthDate || '2 มกราคม 2026'}
+                    {selectedEmployee.birthDate || '-'}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">อีเมล</span>
                   <span className="font-medium text-slate-800 block mt-0.5">
-                    {selectedEmployee.contact?.organizationEmail || 'Test01@gmail.com'}
+                    {selectedEmployee.contact?.organizationEmail || selectedEmployee.contact?.personalEmail || '-'}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">เบอร์โทรศัพท์</span>
                   <span className="font-mono font-medium text-slate-800 block mt-0.5">
-                    {selectedEmployee.contact?.personalPhone || '095-123-456-0'}
+                    {selectedEmployee.contact?.personalPhone || '-'}
                   </span>
                 </div>
               </div>

@@ -315,7 +315,7 @@ public class EmployeeService : IEmployeeService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static EmployeeDto MapToDto(Employee e)
+    private EmployeeDto MapToDto(Employee e)
     {
         return new EmployeeDto
         {
@@ -325,7 +325,9 @@ public class EmployeeService : IEmployeeService
             FirstName = e.FirstName,
             LastName = e.LastName,
             FullName = e.FullName,
-            CitizenIdMasked = e.CitizenIdMasked,
+            CitizenIdMasked = !string.IsNullOrWhiteSpace(e.CitizenIdMasked)
+                ? e.CitizenIdMasked
+                : (!string.IsNullOrWhiteSpace(e.CitizenId) ? _cryptoService.MaskCitizenId(e.CitizenId) : null),
             BirthDate = e.BirthDate,
             Gender = e.Gender,
             GenderId = e.GenderId,
