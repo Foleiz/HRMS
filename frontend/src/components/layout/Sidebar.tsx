@@ -19,6 +19,7 @@ import {
   PanelLeftOpen,
   Landmark,
   CalendarDays,
+  CalendarRange,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -41,10 +42,16 @@ const menuItems: MenuItem[] = [
     icon: Users,
   },
   {
-    title: 'การเข้างาน',
+    title: 'กะการทำงาน',
     href: '/attendance/shifts',
-    matchPrefix: '/attendance',
+    matchPrefix: '/attendance/shifts',
     icon: Clock,
+  },
+  {
+    title: 'ตารางเวลาทำงาน',
+    href: '/attendance/schedules',
+    matchPrefix: '/attendance/schedules',
+    icon: CalendarRange,
   },
   {
     title: 'ยื่นเอกสาร',

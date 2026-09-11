@@ -28,5 +28,10 @@ public interface IHrmsDbContext
     // Work Shifts (Dev 1 Sprint 3)
     DbSet<Shift> Shifts { get; }
 
+    // Work Schedules & Employee Shifts (Dev 1 Sprint 4)
+    DbSet<WorkSchedule> WorkSchedules { get; }
+    DbSet<EmployeeShift> EmployeeShifts { get; }
+    DbSet<EmployeeAssignment> EmployeeAssignments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

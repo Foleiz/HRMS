@@ -25,7 +25,9 @@ import {
   SlidersHorizontal,
   ChevronRight,
   Sparkles,
+  CalendarDays,
 } from 'lucide-react';
+import Link from 'next/link';
 import { shiftService } from '@/services/shiftService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { Shift, CreateShiftRequest, UpdateShiftRequest } from '@/types/shift';
@@ -895,6 +897,30 @@ export default function ShiftsPage() {
       {/* 5. Active Sub-Tab: ASSIGNMENTS (มอบหมายกะให้พนักงาน) */}
       {activeSubTab === 'assignments' && (
         <div className="space-y-4">
+          {/* Banner linking to /attendance/schedules */}
+          <div className="bg-gradient-to-r from-[#0B2046]/5 via-blue-50/60 to-indigo-50/60 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#0B2046]/20">
+                <CalendarDays className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-slate-900">
+                  ระบบจัดตารางเวลาและการมอบหมายกะขั้นสูง (Sprint 4)
+                </div>
+                <div className="text-xs text-slate-600 mt-0.5">
+                  รองรับการมอบหมายกะแบบกลุ่ม (Batch Assign) และปฏิทินกะรายเดือนแบบ Gantt Matrix พร้อมระบบป้องกันกะซ้อนทับ (PostgreSQL Exclusion)
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/attendance/schedules"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2046] hover:bg-[#15326c] text-white text-xs font-semibold shadow-sm transition-all whitespace-nowrap shrink-0"
+            >
+              <span>เปิดหน้าระบบจัดตารางงาน</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 flex-1 max-w-xl">
               <div className="relative flex-1">
