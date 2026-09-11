@@ -123,6 +123,15 @@ export interface CreateEmployeePayload {
   district?: string;
   province?: string;
   postalCode?: string;
+  addresses?: Array<{
+    addressType: string;
+    addressLine?: string;
+    subDistrict?: string;
+    district?: string;
+    province?: string;
+    postalCode?: string;
+    isCurrent?: boolean;
+  }>;
 
   // การติดต่อ & การศึกษา
   personalEmail?: string;

@@ -163,6 +163,8 @@ export default function EmployeesPage() {
   };
 
   const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   // Load comments from localStorage
   useEffect(() => {
@@ -285,11 +287,243 @@ export default function EmployeesPage() {
     setActiveFamilyIndex(Math.max(0, indexToRemove - 1));
   };
 
+  const personalErrorKeys = [
+    'employeeCode',
+    'prefix',
+    'firstName',
+    'lastName',
+    'citizenId',
+    'gender',
+    'nationality',
+    'religion',
+    'birthDate',
+    'maritalStatus',
+    'militaryStatus',
+    'addressType',
+    'addressLine',
+    'subDistrict',
+    'district',
+    'province',
+    'postalCode',
+    'personalEmail',
+    'organizationEmail',
+    'personalPhone',
+    'educationLevel',
+    'institution',
+    'major',
+    'graduationYear',
+    'gpa',
+    'bankName',
+    'accountNumber',
+    'positionName',
+    'employeeType',
+  ];
+
+  const personalErrorsCount = Object.keys(formErrors).filter((k) => personalErrorKeys.includes(k)).length;
+  const familyErrorsCount = Object.keys(formErrors).filter((k) => !personalErrorKeys.includes(k)).length;
+
+  const clearFieldError = (key: string) => {
+    if (formErrors[key]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const validateCreateForm = (data: CreateEmployeePayload): Record<string, string> => {
+    const errors: Record<string, string> = {};
+
+    // 1. Tab Personal - ข้อมูลส่วนบุคคล
+    if (!data.employeeCode?.trim()) errors.employeeCode = 'กรุณากรอกรหัสพนักงาน';
+    if (!data.prefix || data.prefix === 'เลือกคำนำหน้า') errors.prefix = 'กรุณาเลือกคำนำหน้า';
+    if (!data.firstName?.trim()) errors.firstName = 'กรุณากรอกชื่อ';
+    if (!data.lastName?.trim()) errors.lastName = 'กรุณากรอกนามสกุล';
+
+    const citizenDigits = (data.citizenId || '').replace(/\D/g, '');
+    if (!data.citizenId?.trim()) {
+      errors.citizenId = 'กรุณากรอกเลขบัตรประชาชน';
+    } else if (citizenDigits.length !== 13) {
+      errors.citizenId = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+    }
+
+    if (!data.gender || data.gender === 'เลือกเพศ') errors.gender = 'กรุณาเลือกเพศ';
+    if (!data.nationality || data.nationality === 'เลือกสัญชาติ') errors.nationality = 'กรุณาเลือกสัญชาติ';
+    if (!data.religion || data.religion === 'เลือกศาสนา') errors.religion = 'กรุณาเลือกศาสนา';
+    if (!data.birthDate?.trim()) errors.birthDate = 'กรุณาเลือกวันเกิด';
+    if (!data.maritalStatus || data.maritalStatus === 'เลือกสถานภาพ') errors.maritalStatus = 'กรุณาเลือกสถานภาพสมรส';
+    if (!data.militaryStatus || data.militaryStatus === 'เลือกสถานภาพทางทหาร') errors.militaryStatus = 'กรุณาเลือกสถานภาพทางทหาร';
+
+    // ที่อยู่
+    if (!data.addressType?.trim()) errors.addressType = 'กรุณาเลือกประเภทที่อยู่';
+    if (!data.addressLine?.trim()) errors.addressLine = 'กรุณากรอกบ้านเลขที่';
+    if (!data.subDistrict?.trim()) errors.subDistrict = 'กรุณากรอกตำบล / แขวง';
+    if (!data.district?.trim()) errors.district = 'กรุณากรอกอำเภอ / เขต';
+    if (!data.province?.trim()) errors.province = 'กรุณากรอกจังหวัด';
+
+    const postalDigits = (data.postalCode || '').replace(/\D/g, '');
+    if (!data.postalCode?.trim()) {
+      errors.postalCode = 'กรุณากรอกรหัสไปรษณีย์';
+    } else if (postalDigits.length !== 5) {
+      errors.postalCode = 'รหัสไปรษณีย์ต้องมี 5 หลัก';
+    }
+
+    // ช่องทางการติดต่อ & การศึกษา
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!data.personalEmail?.trim()) {
+      errors.personalEmail = 'กรุณากรอกอีเมลส่วนตัว';
+    } else if (!emailRegex.test(data.personalEmail.trim())) {
+      errors.personalEmail = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    if (!data.organizationEmail?.trim()) {
+      errors.organizationEmail = 'กรุณากรอกอีเมลองค์กร';
+    } else if (!emailRegex.test(data.organizationEmail.trim())) {
+      errors.organizationEmail = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    const phoneDigits = (data.personalPhone || '').replace(/\D/g, '');
+    if (!data.personalPhone?.trim()) {
+      errors.personalPhone = 'กรุณากรอกเบอร์โทรศัพท์ส่วนตัว';
+    } else if (phoneDigits.length < 9 || phoneDigits.length > 10) {
+      errors.personalPhone = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
+    }
+
+    if (!data.educationLevel || data.educationLevel === 'เลือกวุฒิการศึกษา') errors.educationLevel = 'กรุณาเลือกวุฒิการศึกษา';
+    if (!data.institution?.trim()) errors.institution = 'กรุณากรอกชื่อสถาบันการศึกษา';
+    if (!data.major?.trim()) errors.major = 'กรุณากรอกสาขาวิชา';
+    if (!data.graduationYear) errors.graduationYear = 'กรุณาเลือกปีที่สำเร็จการศึกษา';
+
+    if (data.gpa === undefined || data.gpa === null || isNaN(Number(data.gpa))) {
+      errors.gpa = 'กรุณากรอกเกรดเฉลี่ยสะสม';
+    } else if (Number(data.gpa) < 0 || Number(data.gpa) > 4) {
+      errors.gpa = 'เกรดเฉลี่ยต้องอยู่ระหว่าง 0.00 - 4.00';
+    }
+
+    // การเงิน & ตำแหน่งงาน
+    if (!data.bankName || data.bankName === 'เลือกธนาคาร') errors.bankName = 'กรุณาเลือกธนาคาร';
+    if (!data.accountNumber?.trim()) errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
+    if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
+    if (!data.employeeType || data.employeeType === 'เลือกประเภท') errors.employeeType = 'กรุณาเลือกประเภทพนักงาน';
+
+    // 2. Tab Family - สมาชิกครอบครัว
+    if (data.familyMembers && data.familyMembers.length > 0) {
+      data.familyMembers.forEach((fm, idx) => {
+        if (!fm.relationshipType) errors[`family_${idx}_relationshipType`] = 'กรุณาเลือกความสัมพันธ์';
+        if (!fm.prefix || fm.prefix === 'เลือกคำนำหน้า') errors[`family_${idx}_prefix`] = 'กรุณาเลือกคำนำหน้า';
+        if (!fm.firstName?.trim()) errors[`family_${idx}_firstName`] = 'กรุณากรอกชื่อ';
+        if (!fm.lastName?.trim()) errors[`family_${idx}_lastName`] = 'กรุณากรอกนามสกุล';
+
+        const fmCitizenDigits = (fm.citizenId || '').replace(/\D/g, '');
+        if (!fm.citizenId?.trim()) {
+          errors[`family_${idx}_citizenId`] = 'กรุณากรอกเลขบัตรประชาชน';
+        } else if (fmCitizenDigits.length !== 13) {
+          errors[`family_${idx}_citizenId`] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+        }
+
+        if (!fm.birthDate?.trim()) errors[`family_${idx}_birthDate`] = 'กรุณาเลือกวันเกิด';
+      });
+    }
+
+    // กรณีฉุกเฉินติดต่อใคร
+    const ec = data.emergencyContact;
+    if (!ec?.relationship) errors['emergency_relationship'] = 'กรุณาเลือกความสัมพันธ์';
+    if (!ec?.prefix || ec.prefix === 'เลือกคำนำหน้า') errors['emergency_prefix'] = 'กรุณาเลือกคำนำหน้า';
+    if (!ec?.firstName?.trim()) errors['emergency_firstName'] = 'กรุณากรอกชื่อ';
+    if (!ec?.lastName?.trim()) errors['emergency_lastName'] = 'กรุณากรอกนามสกุล';
+    if (!ec?.address?.trim()) errors['emergency_address'] = 'กรุณากรอกที่อยู่';
+
+    const ecPhoneDigits = (ec?.primaryPhone || '').replace(/\D/g, '');
+    if (!ec?.primaryPhone?.trim()) {
+      errors['emergency_primaryPhone'] = 'กรุณากรอกเบอร์โทร';
+    } else if (ecPhoneDigits.length < 9 || ecPhoneDigits.length > 10) {
+      errors['emergency_primaryPhone'] = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
+    }
+
+    return errors;
+  };
+
+  const getFieldClass = (fieldName: string, isMono = false) => {
+    const hasError = hasAttemptedSubmit && Boolean(formErrors[fieldName]);
+    return `w-full px-3.5 py-2 bg-white rounded-lg text-xs transition-all ${
+      isMono ? 'font-mono' : ''
+    } ${
+      hasError
+        ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 placeholder:text-rose-300 focus:outline-none focus:border-rose-600 focus:ring-rose-500/30'
+        : 'border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]'
+    }`;
+  };
+
+  const renderFieldError = (fieldName: string) => {
+    if (!hasAttemptedSubmit || !formErrors[fieldName]) return null;
+    return (
+      <span className="text-[11px] font-medium text-rose-500 mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3 shrink-0 text-rose-500" />
+        {formErrors[fieldName]}
+      </span>
+    );
+  };
+
+  const handleOpenCreateModal = () => {
+    setFormData(initialFormData);
+    setFormErrors({});
+    setHasAttemptedSubmit(false);
+    setActiveModalTab('personal');
+    setActiveFamilyIndex(0);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setFormErrors({});
+    setHasAttemptedSubmit(false);
+    setActiveModalTab('personal');
+    setActiveFamilyIndex(0);
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setErrorMessage(null);
+
+    const errors = validateCreateForm(formData);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setHasAttemptedSubmit(true);
+
+      const hasPersonalError = Object.keys(errors).some((k) => personalErrorKeys.includes(k));
+      const hasFamilyError = Object.keys(errors).some((k) => !personalErrorKeys.includes(k));
+
+      if (activeModalTab === 'family' && hasPersonalError && !hasFamilyError) {
+        setActiveModalTab('personal');
+      } else if (activeModalTab === 'personal' && !hasPersonalError && hasFamilyError) {
+        setActiveModalTab('family');
+      }
+
+      if (hasFamilyError) {
+        const firstFmErrIdx = formData.familyMembers?.findIndex((_, idx) =>
+          Object.keys(errors).some((k) => k.startsWith(`family_${idx}_`))
+        );
+        if (firstFmErrIdx !== undefined && firstFmErrIdx >= 0) {
+          setActiveFamilyIndex(firstFmErrIdx);
+        }
+      }
+
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
+      const addressItem = {
+        addressType: formData.addressType || 'บ้านตัวเอง',
+        addressLine: formData.addressLine?.trim() || '',
+        subDistrict: formData.subDistrict?.trim() || '',
+        district: formData.district?.trim() || '',
+        province: formData.province?.trim() || '',
+        postalCode: formData.postalCode?.trim() || '',
+        isCurrent: true,
+      };
+
       const payload: CreateEmployeePayload = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
@@ -308,16 +542,31 @@ export default function EmployeesPage() {
         bankName: formData.bankName && formData.bankName !== 'เลือกธนาคาร' ? formData.bankName : undefined,
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
-        familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()),
-        emergencyContact: formData.emergencyContact?.firstName?.trim() ? formData.emergencyContact : undefined,
+        addresses: [addressItem],
+        familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()).map((f) => ({
+          ...f,
+          relationshipType: f.relationshipType || 'บิดา',
+          prefix: f.prefix || undefined,
+          firstName: f.firstName.trim(),
+          lastName: f.lastName?.trim() || '-',
+          citizenId: f.citizenId?.trim() || undefined,
+          birthDate: f.birthDate?.trim() || undefined,
+        })),
+        emergencyContact: formData.emergencyContact?.firstName?.trim() ? {
+          ...formData.emergencyContact,
+          relationship: formData.emergencyContact.relationship || 'บิดา',
+          prefix: formData.emergencyContact.prefix || undefined,
+          firstName: formData.emergencyContact.firstName.trim(),
+          lastName: formData.emergencyContact.lastName?.trim() || '-',
+          address: formData.emergencyContact.address?.trim() || '-',
+          primaryPhone: formatPhoneNumber(formData.emergencyContact.primaryPhone?.trim() || '-'),
+        } : undefined,
       };
 
       await employeeService.create(payload);
       setSuccessMessage('บันทึกข้อมูลพนักงานเรียบร้อย');
-      setIsCreateModalOpen(false);
+      handleCloseCreateModal();
       setFormData(initialFormData);
-      setActiveModalTab('personal');
-      setActiveFamilyIndex(0);
       loadData();
       setTimeout(() => setSuccessMessage(null), 3500);
     } catch (err: unknown) {
@@ -499,8 +748,8 @@ export default function EmployeesPage() {
         <div className="w-full sm:w-auto flex justify-end">
           {hasPermission('EMP_MANAGE') && (
             <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95"
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               เพิ่มพนักงาน
@@ -956,31 +1205,41 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => setActiveModalTab('personal')}
-                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 ${
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
                     activeModalTab === 'personal'
                       ? 'border-slate-900 text-slate-900'
                       : 'border-transparent text-slate-400 hover:text-slate-600'
                   }`}
                 >
-                  ข้อมูลส่วนตัว
+                  <span>ข้อมูลส่วนตัว</span>
+                  {hasAttemptedSubmit && personalErrorsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                      {personalErrorsCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveModalTab('family')}
-                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 ${
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
                     activeModalTab === 'family'
                       ? 'border-slate-900 text-slate-900'
                       : 'border-transparent text-slate-400 hover:text-slate-600'
                   }`}
                 >
-                  ข้อมูลครอบครัว
+                  <span>ข้อมูลครอบครัว</span>
+                  {hasAttemptedSubmit && familyErrorsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                      {familyErrorsCount}
+                    </span>
+                  )}
                 </button>
               </div>
 
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 -mt-2 rounded-lg hover:bg-slate-100 transition-colors"
+                onClick={handleCloseCreateModal}
+                className="text-slate-400 hover:text-slate-600 p-1 -mt-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                 title="ปิดหน้าต่าง"
               >
                 <X className="w-5 h-5" />
@@ -988,8 +1247,19 @@ export default function EmployeesPage() {
             </div>
 
             {/* Form Content */}
-            <form onSubmit={handleCreateSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <form onSubmit={handleCreateSubmit} noValidate className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 text-xs text-slate-700">
+                {/* Banner แสดงข้อผิดพลาดรวมถ้ากรอกไม่ครบ */}
+                {hasAttemptedSubmit && Object.keys(formErrors).length > 0 && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-rose-800 shadow-xs animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <div className="text-xs">
+                      <span className="font-bold">กรุณากรอกหรือเลือกข้อมูลที่จำเป็นให้ครบทุกช่อง:</span>{' '}
+                      <span>พบ {Object.keys(formErrors).length} รายการที่ยังไม่สมบูรณ์ (แสดงกรอบสีแดงที่ช่องข้อมูลที่ต้องระบุ)</span>
+                    </div>
+                  </div>
+                )}
+
                 {activeModalTab === 'personal' ? (
                   /* ================= TAB 1: ข้อมูลส่วนตัว ================= */
                   <div className="space-y-6">
@@ -1003,12 +1273,15 @@ export default function EmployeesPage() {
                           </label>
                           <input
                             type="text"
-                            required
                             placeholder="เช่น EMP001"
                             value={formData.employeeCode}
-                            onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, employeeCode: e.target.value });
+                              clearFieldError('employeeCode');
+                            }}
+                            className={getFieldClass('employeeCode')}
                           />
+                          {renderFieldError('employeeCode')}
                         </div>
 
                         <div>
@@ -1025,14 +1298,17 @@ export default function EmployeesPage() {
                                 else if (val === 'นางสาว' || val === 'นาง') autoGender = 'หญิง';
                               }
                               setFormData({ ...formData, prefix: val, gender: autoGender });
+                              clearFieldError('prefix');
+                              if (autoGender) clearFieldError('gender');
                             }}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            className={`${getFieldClass('prefix')} cursor-pointer`}
                           >
                             <option value="">เลือกคำนำหน้า</option>
                             <option value="นาย">นาย</option>
                             <option value="นางสาว">นางสาว</option>
                             <option value="นาง">นาง</option>
                           </select>
+                          {renderFieldError('prefix')}
                         </div>
 
                         <div>
@@ -1041,12 +1317,15 @@ export default function EmployeesPage() {
                           </label>
                           <input
                             type="text"
-                            required
                             placeholder="กรอกชื่อ"
                             value={formData.firstName}
-                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, firstName: e.target.value });
+                              clearFieldError('firstName');
+                            }}
+                            className={getFieldClass('firstName')}
                           />
+                          {renderFieldError('firstName')}
                         </div>
 
                         <div>
@@ -1055,12 +1334,15 @@ export default function EmployeesPage() {
                           </label>
                           <input
                             type="text"
-                            required
                             placeholder="กรอกนามสกุล"
                             value={formData.lastName}
-                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, lastName: e.target.value });
+                              clearFieldError('lastName');
+                            }}
+                            className={getFieldClass('lastName')}
                           />
+                          {renderFieldError('lastName')}
                         </div>
 
                         <div>
@@ -1072,9 +1354,14 @@ export default function EmployeesPage() {
                             maxLength={13}
                             placeholder="เลขบัตรประชาชน 13 หลัก"
                             value={formData.citizenId}
-                            onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                              setFormData({ ...formData, citizenId: val });
+                              clearFieldError('citizenId');
+                            }}
+                            className={getFieldClass('citizenId', true)}
                           />
+                          {renderFieldError('citizenId')}
                         </div>
 
                         <div>
@@ -1083,13 +1370,17 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.gender}
-                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, gender: e.target.value });
+                              clearFieldError('gender');
+                            }}
+                            className={`${getFieldClass('gender')} cursor-pointer`}
                           >
                             <option value="">เลือกเพศ</option>
                             <option value="ชาย">ชาย</option>
                             <option value="หญิง">หญิง</option>
                           </select>
+                          {renderFieldError('gender')}
                         </div>
 
                         <div>
@@ -1098,12 +1389,17 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.nationality}
-                            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, nationality: e.target.value });
+                              clearFieldError('nationality');
+                            }}
+                            className={`${getFieldClass('nationality')} cursor-pointer`}
                           >
+                            <option value="">เลือกสัญชาติ</option>
                             <option value="ไทย">ไทย</option>
                             <option value="อื่นๆ">อื่นๆ</option>
                           </select>
+                          {renderFieldError('nationality')}
                         </div>
 
                         <div>
@@ -1112,15 +1408,20 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.religion}
-                            onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, religion: e.target.value });
+                              clearFieldError('religion');
+                            }}
+                            className={`${getFieldClass('religion')} cursor-pointer`}
                           >
+                            <option value="">เลือกศาสนา</option>
                             <option value="พุทธ">พุทธ</option>
                             <option value="คริสต์">คริสต์</option>
                             <option value="อิสลาม">อิสลาม</option>
                             <option value="อื่นๆ">อื่นๆ</option>
                             <option value="ไม่ระบุ">ไม่ระบุ</option>
                           </select>
+                          {renderFieldError('religion')}
                         </div>
                       </div>
 
@@ -1133,9 +1434,13 @@ export default function EmployeesPage() {
                           <input
                             type="date"
                             value={formData.birthDate}
-                            onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, birthDate: e.target.value });
+                              clearFieldError('birthDate');
+                            }}
+                            className={getFieldClass('birthDate')}
                           />
+                          {renderFieldError('birthDate')}
                         </div>
 
                         <div>
@@ -1144,8 +1449,11 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.maritalStatus}
-                            onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, maritalStatus: e.target.value });
+                              clearFieldError('maritalStatus');
+                            }}
+                            className={`${getFieldClass('maritalStatus')} cursor-pointer`}
                           >
                             <option value="">เลือกสถานภาพ</option>
                             <option value="โสด">โสด</option>
@@ -1153,6 +1461,7 @@ export default function EmployeesPage() {
                             <option value="หย่าร้าง">หย่าร้าง</option>
                             <option value="หม้าย">หม้าย</option>
                           </select>
+                          {renderFieldError('maritalStatus')}
                         </div>
 
                         <div>
@@ -1161,14 +1470,18 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.militaryStatus}
-                            onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, militaryStatus: e.target.value });
+                              clearFieldError('militaryStatus');
+                            }}
+                            className={`${getFieldClass('militaryStatus')} cursor-pointer`}
                           >
                             <option value="">เลือกสถานภาพทางทหาร</option>
                             <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
                             <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
                             <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
                           </select>
+                          {renderFieldError('militaryStatus')}
                         </div>
 
                         {/* ที่อยู่ (Address) */}
@@ -1182,7 +1495,7 @@ export default function EmployeesPage() {
                             <span className="text-slate-500 text-[11px] block mb-1.5">
                               ประเภทที่อยู่ <span className="text-rose-500">*</span>
                             </span>
-                            <div className="flex flex-wrap items-center gap-3">
+                            <div className={`flex flex-wrap items-center gap-3 p-1.5 rounded-lg transition-all ${hasAttemptedSubmit && formErrors.addressType ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : ''}`}>
                               {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
                                 <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
                                   <input
@@ -1190,13 +1503,17 @@ export default function EmployeesPage() {
                                     name="addressType"
                                     value={t}
                                     checked={formData.addressType === t}
-                                    onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
+                                    onChange={(e) => {
+                                      setFormData({ ...formData, addressType: e.target.value });
+                                      clearFieldError('addressType');
+                                    }}
                                     className="accent-[#0B2046]"
                                   />
                                   <span>{t}</span>
                                 </label>
                               ))}
                             </div>
+                            {renderFieldError('addressType')}
                           </div>
 
                           <div>
@@ -1207,9 +1524,13 @@ export default function EmployeesPage() {
                               type="text"
                               placeholder="บ้านเลขที่ 4"
                               value={formData.addressLine}
-                              onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              onChange={(e) => {
+                                setFormData({ ...formData, addressLine: e.target.value });
+                                clearFieldError('addressLine');
+                              }}
+                              className={getFieldClass('addressLine')}
                             />
+                            {renderFieldError('addressLine')}
                           </div>
 
                           <div>
@@ -1220,9 +1541,13 @@ export default function EmployeesPage() {
                               type="text"
                               placeholder="แขวงหัวหมาก"
                               value={formData.subDistrict}
-                              onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              onChange={(e) => {
+                                setFormData({ ...formData, subDistrict: e.target.value });
+                                clearFieldError('subDistrict');
+                              }}
+                              className={getFieldClass('subDistrict')}
                             />
+                            {renderFieldError('subDistrict')}
                           </div>
 
                           <div>
@@ -1233,9 +1558,13 @@ export default function EmployeesPage() {
                               type="text"
                               placeholder="บางกะปิ"
                               value={formData.district}
-                              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              onChange={(e) => {
+                                setFormData({ ...formData, district: e.target.value });
+                                clearFieldError('district');
+                              }}
+                              className={getFieldClass('district')}
                             />
+                            {renderFieldError('district')}
                           </div>
 
                           <div className="grid grid-cols-2 gap-3">
@@ -1247,9 +1576,13 @@ export default function EmployeesPage() {
                                 type="text"
                                 placeholder="กรุงเทพมหานคร"
                                 value={formData.province}
-                                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                                onChange={(e) => {
+                                  setFormData({ ...formData, province: e.target.value });
+                                  clearFieldError('province');
+                                }}
+                                className={getFieldClass('province')}
                               />
+                              {renderFieldError('province')}
                             </div>
                             <div>
                               <span className="text-slate-500 text-[11px] block mb-1">
@@ -1257,11 +1590,17 @@ export default function EmployeesPage() {
                               </span>
                               <input
                                 type="text"
+                                maxLength={5}
                                 placeholder="10240"
                                 value={formData.postalCode}
-                                onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                                  setFormData({ ...formData, postalCode: val });
+                                  clearFieldError('postalCode');
+                                }}
+                                className={getFieldClass('postalCode', true)}
                               />
+                              {renderFieldError('postalCode')}
                             </div>
                           </div>
                         </div>
@@ -1277,9 +1616,13 @@ export default function EmployeesPage() {
                             type="email"
                             placeholder="test001@gmail.com"
                             value={formData.personalEmail}
-                            onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, personalEmail: e.target.value });
+                              clearFieldError('personalEmail');
+                            }}
+                            className={getFieldClass('personalEmail')}
                           />
+                          {renderFieldError('personalEmail')}
                         </div>
 
                         <div>
@@ -1290,9 +1633,13 @@ export default function EmployeesPage() {
                             type="email"
                             placeholder="name@company.com"
                             value={formData.organizationEmail}
-                            onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, organizationEmail: e.target.value });
+                              clearFieldError('organizationEmail');
+                            }}
+                            className={getFieldClass('organizationEmail')}
                           />
+                          {renderFieldError('organizationEmail')}
                         </div>
 
                         <div>
@@ -1304,9 +1651,13 @@ export default function EmployeesPage() {
                             maxLength={12}
                             placeholder="08X-XXX-XXXX"
                             value={formData.personalPhone}
-                            onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                            onChange={(e) => {
+                              setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) });
+                              clearFieldError('personalPhone');
+                            }}
+                            className={getFieldClass('personalPhone', true)}
                           />
+                          {renderFieldError('personalPhone')}
                         </div>
 
                         <div>
@@ -1315,8 +1666,11 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.educationLevel}
-                            onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, educationLevel: e.target.value });
+                              clearFieldError('educationLevel');
+                            }}
+                            className={`${getFieldClass('educationLevel')} cursor-pointer`}
                           >
                             <option value="">เลือกวุฒิการศึกษา</option>
                             <option value="มัธยมศึกษา">มัธยมศึกษา</option>
@@ -1326,6 +1680,7 @@ export default function EmployeesPage() {
                             <option value="ปริญญาโท">ปริญญาโท</option>
                             <option value="ปริญญาเอก">ปริญญาเอก</option>
                           </select>
+                          {renderFieldError('educationLevel')}
                         </div>
 
                         <div>
@@ -1336,9 +1691,13 @@ export default function EmployeesPage() {
                             type="text"
                             placeholder="เช่น จุฬาลงกรณ์มหาวิทยาลัย, ม.รามคำแหง"
                             value={formData.institution}
-                            onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, institution: e.target.value });
+                              clearFieldError('institution');
+                            }}
+                            className={getFieldClass('institution')}
                           />
+                          {renderFieldError('institution')}
                         </div>
 
                         <div>
@@ -1349,9 +1708,13 @@ export default function EmployeesPage() {
                             type="text"
                             placeholder="สาขาวิชาที่เรียน"
                             value={formData.major}
-                            onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, major: e.target.value });
+                              clearFieldError('major');
+                            }}
+                            className={getFieldClass('major')}
                           />
+                          {renderFieldError('major')}
                         </div>
 
                         <div>
@@ -1360,13 +1723,18 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.graduationYear}
-                            onChange={(e) => setFormData({ ...formData, graduationYear: Number(e.target.value) })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            onChange={(e) => {
+                              setFormData({ ...formData, graduationYear: Number(e.target.value) });
+                              clearFieldError('graduationYear');
+                            }}
+                            className={`${getFieldClass('graduationYear')} cursor-pointer`}
                           >
+                            <option value="">เลือกปีที่สำเร็จการศึกษา</option>
                             {[2570, 2569, 2568, 2567, 2566, 2565, 2564, 2563, 2562, 2561, 2560].map((y) => (
                               <option key={y} value={y}>{y}</option>
                             ))}
                           </select>
+                          {renderFieldError('graduationYear')}
                         </div>
 
                         <div>
@@ -1380,9 +1748,13 @@ export default function EmployeesPage() {
                             max="4"
                             placeholder="3.99"
                             value={formData.gpa ?? ''}
-                            onChange={(e) => setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined })}
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            onChange={(e) => {
+                              setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined });
+                              clearFieldError('gpa');
+                            }}
+                            className={getFieldClass('gpa')}
                           />
+                          {renderFieldError('gpa')}
                         </div>
                       </div>
                     </div>
@@ -1397,8 +1769,11 @@ export default function EmployeesPage() {
                             </label>
                             <select
                               value={formData.bankName}
-                              onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              onChange={(e) => {
+                                setFormData({ ...formData, bankName: e.target.value });
+                                clearFieldError('bankName');
+                              }}
+                              className={`${getFieldClass('bankName')} cursor-pointer`}
                             >
                               <option value="">เลือกธนาคาร</option>
                               <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
@@ -1408,6 +1783,7 @@ export default function EmployeesPage() {
                               <option value="ธนาคารกรุงศรีอยุธยา">ธนาคารกรุงศรีอยุธยา</option>
                               <option value="ธนาคารทหารไทยธนชาต">ธนาคารทหารไทยธนชาต (TTB)</option>
                             </select>
+                            {renderFieldError('bankName')}
                           </div>
 
                           <div>
@@ -1418,9 +1794,13 @@ export default function EmployeesPage() {
                               type="text"
                               placeholder="xxx-xxx-xx-x-x"
                               value={formData.accountNumber}
-                              onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              onChange={(e) => {
+                                setFormData({ ...formData, accountNumber: e.target.value });
+                                clearFieldError('accountNumber');
+                              }}
+                              className={getFieldClass('accountNumber', true)}
                             />
+                            {renderFieldError('accountNumber')}
                           </div>
 
                           <div>
@@ -1429,8 +1809,11 @@ export default function EmployeesPage() {
                             </label>
                             <select
                               value={formData.positionName}
-                              onChange={(e) => setFormData({ ...formData, positionName: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              onChange={(e) => {
+                                setFormData({ ...formData, positionName: e.target.value });
+                                clearFieldError('positionName');
+                              }}
+                              className={`${getFieldClass('positionName')} cursor-pointer`}
                             >
                               <option value="">เลือกตำแหน่ง</option>
                               <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
@@ -1443,6 +1826,7 @@ export default function EmployeesPage() {
                               <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
                               <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
                             </select>
+                            {renderFieldError('positionName')}
                           </div>
 
                           <div>
@@ -1451,8 +1835,11 @@ export default function EmployeesPage() {
                             </label>
                             <select
                               value={formData.employeeType}
-                              onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              onChange={(e) => {
+                                setFormData({ ...formData, employeeType: e.target.value });
+                                clearFieldError('employeeType');
+                              }}
+                              className={`${getFieldClass('employeeType')} cursor-pointer`}
                             >
                               <option value="">เลือกประเภท</option>
                               <option value="พนักงานประจำ">พนักงานประจำ</option>
@@ -1460,6 +1847,7 @@ export default function EmployeesPage() {
                               <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
                               <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
                             </select>
+                            {renderFieldError('employeeType')}
                           </div>
                         </div>
                       </div>
@@ -1472,20 +1860,26 @@ export default function EmployeesPage() {
                     <div className="space-y-4">
                       {/* Family Member Switcher Tabs */}
                       <div className="flex items-center gap-2 mb-2">
-                        {formData.familyMembers?.map((_, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setActiveFamilyIndex(idx)}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                              activeFamilyIndex === idx
-                                ? 'bg-slate-900 text-white shadow-xs'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            {idx + 1}
-                          </button>
-                        ))}
+                        {formData.familyMembers?.map((_, idx) => {
+                          const memberHasErrors = hasAttemptedSubmit && Object.keys(formErrors).some((k) => k.startsWith(`family_${idx}_`));
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveFamilyIndex(idx)}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
+                                activeFamilyIndex === idx
+                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              } ${memberHasErrors ? 'ring-2 ring-rose-500 border border-rose-500' : ''}`}
+                            >
+                              {idx + 1}
+                              {memberHasErrors && (
+                                <span className="w-2 h-2 rounded-full bg-rose-500 absolute -top-0.5 -right-0.5 ring-2 ring-white"></span>
+                              )}
+                            </button>
+                          );
+                        })}
 
                         {/* ปุ่ม + เพิ่มสมาชิกครอบครัว */}
                         <button
@@ -1501,7 +1895,7 @@ export default function EmployeesPage() {
                           <button
                             type="button"
                             onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
-                            className="text-[11px] text-rose-500 hover:underline ml-auto"
+                            className="text-[11px] text-rose-500 hover:underline ml-auto cursor-pointer"
                           >
                             ลบสมาชิกคนที่ {activeFamilyIndex + 1}
                           </button>
@@ -1521,15 +1915,18 @@ export default function EmployeesPage() {
                                 const list = [...(formData.familyMembers || [])];
                                 list[activeFamilyIndex].relationshipType = e.target.value;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_relationshipType`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              className={`${getFieldClass(`family_${activeFamilyIndex}_relationshipType`)} cursor-pointer`}
                             >
+                              <option value="">เลือกความสัมพันธ์</option>
                               <option value="บิดา">บิดา</option>
                               <option value="มารดา">มารดา</option>
                               <option value="คู่สมรส">คู่สมรส</option>
                               <option value="บุตร">บุตร</option>
                               <option value="พี่น้อง">พี่น้อง</option>
                             </select>
+                            {renderFieldError(`family_${activeFamilyIndex}_relationshipType`)}
                           </div>
 
                           <div>
@@ -1542,8 +1939,9 @@ export default function EmployeesPage() {
                                 const list = [...(formData.familyMembers || [])];
                                 list[activeFamilyIndex].prefix = e.target.value;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_prefix`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              className={`${getFieldClass(`family_${activeFamilyIndex}_prefix`)} cursor-pointer`}
                             >
                               <option value="">เลือกคำนำหน้า</option>
                               <option value="นาย">นาย</option>
@@ -1552,6 +1950,7 @@ export default function EmployeesPage() {
                               <option value="เด็กชาย">เด็กชาย</option>
                               <option value="เด็กหญิง">เด็กหญิง</option>
                             </select>
+                            {renderFieldError(`family_${activeFamilyIndex}_prefix`)}
                           </div>
 
                           <div>
@@ -1566,9 +1965,11 @@ export default function EmployeesPage() {
                                 const list = [...(formData.familyMembers || [])];
                                 list[activeFamilyIndex].firstName = e.target.value;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_firstName`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              className={getFieldClass(`family_${activeFamilyIndex}_firstName`)}
                             />
+                            {renderFieldError(`family_${activeFamilyIndex}_firstName`)}
                           </div>
 
                           <div>
@@ -1583,9 +1984,11 @@ export default function EmployeesPage() {
                                 const list = [...(formData.familyMembers || [])];
                                 list[activeFamilyIndex].lastName = e.target.value;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_lastName`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              className={getFieldClass(`family_${activeFamilyIndex}_lastName`)}
                             />
+                            {renderFieldError(`family_${activeFamilyIndex}_lastName`)}
                           </div>
 
                           <div>
@@ -1598,12 +2001,15 @@ export default function EmployeesPage() {
                               placeholder="เลขบัตรประชาชน 13 หลัก"
                               value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
                               onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 13);
                                 const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].citizenId = e.target.value;
+                                list[activeFamilyIndex].citizenId = val;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_citizenId`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              className={getFieldClass(`family_${activeFamilyIndex}_citizenId`, true)}
                             />
+                            {renderFieldError(`family_${activeFamilyIndex}_citizenId`)}
                           </div>
 
                           <div>
@@ -1617,9 +2023,11 @@ export default function EmployeesPage() {
                                 const list = [...(formData.familyMembers || [])];
                                 list[activeFamilyIndex].birthDate = e.target.value;
                                 setFormData({ ...formData, familyMembers: list });
+                                clearFieldError(`family_${activeFamilyIndex}_birthDate`);
                               }}
-                              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              className={getFieldClass(`family_${activeFamilyIndex}_birthDate`)}
                             />
+                            {renderFieldError(`family_${activeFamilyIndex}_birthDate`)}
                           </div>
                         </div>
                       )}
@@ -1637,18 +2045,20 @@ export default function EmployeesPage() {
                             ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                           </label>
                           <select
-                            value={formData.emergencyContact?.relationship || 'บิดา'}
-                            onChange={(e) =>
+                            value={formData.emergencyContact?.relationship || ''}
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
                                   relationship: e.target.value,
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              });
+                              clearFieldError('emergency_relationship');
+                            }}
+                            className={`${getFieldClass('emergency_relationship')} cursor-pointer`}
                           >
+                            <option value="">เลือกความสัมพันธ์</option>
                             <option value="บิดา">บิดา</option>
                             <option value="มารดา">มารดา</option>
                             <option value="คู่สมรส">คู่สมรส</option>
@@ -1657,6 +2067,7 @@ export default function EmployeesPage() {
                             <option value="เพื่อน">เพื่อน</option>
                             <option value="อื่นๆ">อื่นๆ</option>
                           </select>
+                          {renderFieldError('emergency_relationship')}
                         </div>
 
                         <div>
@@ -1665,22 +2076,24 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.emergencyContact?.prefix || ''}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
                                   prefix: e.target.value,
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                              });
+                              clearFieldError('emergency_prefix');
+                            }}
+                            className={`${getFieldClass('emergency_prefix')} cursor-pointer`}
                           >
                             <option value="">เลือกคำนำหน้า</option>
                             <option value="นาย">นาย</option>
                             <option value="นางสาว">นางสาว</option>
                             <option value="นาง">นาง</option>
                           </select>
+                          {renderFieldError('emergency_prefix')}
                         </div>
 
                         <div>
@@ -1691,17 +2104,19 @@ export default function EmployeesPage() {
                             type="text"
                             placeholder="กรอกชื่อ"
                             value={formData.emergencyContact?.firstName || ''}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { lastName: '', primaryPhone: '' }),
                                   firstName: e.target.value,
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              });
+                              clearFieldError('emergency_firstName');
+                            }}
+                            className={getFieldClass('emergency_firstName')}
                           />
+                          {renderFieldError('emergency_firstName')}
                         </div>
 
                         <div>
@@ -1712,17 +2127,19 @@ export default function EmployeesPage() {
                             type="text"
                             placeholder="กรอกนามสกุล"
                             value={formData.emergencyContact?.lastName || ''}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { firstName: '', primaryPhone: '' }),
                                   lastName: e.target.value,
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              });
+                              clearFieldError('emergency_lastName');
+                            }}
+                            className={getFieldClass('emergency_lastName')}
                           />
+                          {renderFieldError('emergency_lastName')}
                         </div>
 
                         <div>
@@ -1733,17 +2150,19 @@ export default function EmployeesPage() {
                             type="text"
                             placeholder="กรอกที่อยู่"
                             value={formData.emergencyContact?.address || ''}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
                                   address: e.target.value,
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              });
+                              clearFieldError('emergency_address');
+                            }}
+                            className={getFieldClass('emergency_address')}
                           />
+                          {renderFieldError('emergency_address')}
                         </div>
 
                         <div>
@@ -1755,17 +2174,19 @@ export default function EmployeesPage() {
                             maxLength={12}
                             placeholder="08X-XXX-XXXX"
                             value={formData.emergencyContact?.primaryPhone || ''}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({
                                 ...formData,
                                 emergencyContact: {
                                   ...(formData.emergencyContact || { firstName: '', lastName: '' }),
                                   primaryPhone: autoFormatPhone(e.target.value),
                                 },
-                              })
-                            }
-                            className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                              });
+                              clearFieldError('emergency_primaryPhone');
+                            }}
+                            className={getFieldClass('emergency_primaryPhone', true)}
                           />
+                          {renderFieldError('emergency_primaryPhone')}
                         </div>
                       </div>
                     </div>
@@ -1777,8 +2198,8 @@ export default function EmployeesPage() {
               <div className="px-6 sm:px-8 py-4 bg-slate-50/90 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition-colors"
+                  onClick={handleCloseCreateModal}
+                  className="px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition-colors cursor-pointer"
                 >
                   ยกเลิก
                 </button>
