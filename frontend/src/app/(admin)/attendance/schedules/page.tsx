@@ -640,26 +640,27 @@ function SchedulesContent() {
       {activeTab === 'roster' && (
         <div className="space-y-6">
           {/* Filter & View Switcher Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            {/* Left: Filters & Search */}
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Search */}
-              <div className="relative flex-1 min-w-[220px] max-w-md">
+              <div className="relative w-64 sm:w-72">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="ค้นหาชื่อพนักงาน, รหัส หรือชื่อกะ..."
+                  placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
                   value={assignmentSearch}
                   onChange={(e) => setAssignmentSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 />
               </div>
 
               {/* Department Filter */}
-              <div className="min-w-[180px]">
+              <div className="w-48">
                 <select
                   value={assignmentDeptFilter}
                   onChange={(e) => setAssignmentDeptFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
                   <option value="ALL">ทุกแผนก / สังกัด</option>
                   {departments.map((d) => (
@@ -679,15 +680,15 @@ function SchedulesContent() {
                     loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
                   }
                 }}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50"
                 title="รีเฟรชข้อมูล"
               >
-                <RefreshCw className={`w-4 h-4 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
-            {/* View Mode Switcher & Actions */}
-            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            {/* Right: View Mode Switcher & Actions */}
+            <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => setAssignmentViewMode('matrix')}
@@ -721,16 +722,16 @@ function SchedulesContent() {
                     setBatchModalOpen(true);
                     setBatchResult(null);
                   }}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs"
                 >
-                  <Users className="w-4 h-4 text-slate-500" />
+                  <Users className="w-3.5 h-3.5 text-slate-500" />
                   <span>มอบหมายกะกลุ่ม</span>
                 </button>
                 <button
                   onClick={() => openSingleAssignCreate()}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>มอบหมายกะเดี่ยว</span>
                 </button>
               </div>
@@ -1031,26 +1032,27 @@ function SchedulesContent() {
       {activeTab === 'shifts' && (
         <div className="space-y-6">
           {/* Shift Filter & View Switcher Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            {/* Left: Filters & Search */}
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Search */}
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <div className="relative w-56 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="ค้นหารหัส หรือชื่อกะการทำงาน..."
                   value={shiftSearchQuery}
                   onChange={(e) => setShiftSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 />
               </div>
 
               {/* Filter Shift Type */}
-              <div className="min-w-[150px]">
+              <div className="w-40">
                 <select
                   value={shiftFilterType}
                   onChange={(e) => setShiftFilterType(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
                   <option value="ALL">ประเภทกะทั้งหมด</option>
                   <option value="NORMAL">กะกลางวัน (ปกติ)</option>
@@ -1059,11 +1061,11 @@ function SchedulesContent() {
               </div>
 
               {/* Filter Status */}
-              <div className="min-w-[140px]">
+              <div className="w-36">
                 <select
                   value={shiftFilterStatus}
                   onChange={(e) => setShiftFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
                   <option value="ALL">สถานะทั้งหมด</option>
                   <option value="ACTIVE">เปิดใช้งาน</option>
@@ -1074,15 +1076,15 @@ function SchedulesContent() {
               {/* Refresh */}
               <button
                 onClick={loadShifts}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50"
                 title="รีเฟรชข้อมูลกะ"
               >
-                <RefreshCw className={`w-4 h-4 ${loadingShifts ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingShifts ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
-            {/* View Switcher & Action */}
-            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            {/* Right: View Switcher & Action */}
+            <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => setShiftViewMode('grid')}
@@ -1112,9 +1114,9 @@ function SchedulesContent() {
 
               <button
                 onClick={openShiftCreate}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs sm:text-sm font-medium transition shadow-xs shadow-[#0B2046]/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>เพิ่มกะการทำงานใหม่</span>
               </button>
             </div>
