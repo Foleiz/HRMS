@@ -36,9 +36,23 @@ apiClient.interceptors.response.use(
 
     if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
+    } else if (error.response?.data?.errors) {
+      const errs = error.response.data.errors;
+      const details = Object.entries(errs)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+        .join('; ');
+      errorMessage = details || error.response.data.title || 'ข้อมูลที่ส่งไม่ถูกต้อง (Validation Error)';
+    } else if (error.response?.data?.title) {
+      errorMessage = error.response.data.title;
     } else if (error.message) {
       errorMessage = error.message;
     }
+
+    console.error('API Error Details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: errorMessage,
+    });
 
     // จัดการกรณี 401 Unauthorized: เคลียร์ Session และพาไปหน้า Login ทันที
     if (error.response?.status === 401 && typeof window !== 'undefined') {

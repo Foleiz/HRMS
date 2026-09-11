@@ -251,6 +251,7 @@ export default function EmployeeEditPage() {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         citizenId: cleanCitizenId,
+        birthDate: formData.birthDate?.trim() || undefined,
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
@@ -259,11 +260,32 @@ export default function EmployeeEditPage() {
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
         educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
         institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
-        familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()).map((f) => ({
-          ...f,
-          citizenId: f.citizenId && f.citizenId.includes('x') ? undefined : f.citizenId,
-        })),
-        emergencyContact: formData.emergencyContact?.firstName?.trim() ? formData.emergencyContact : undefined,
+        major: formData.major?.trim() || undefined,
+        graduationYear: formData.graduationYear ? Number(formData.graduationYear) : undefined,
+        gpa:
+          formData.gpa !== undefined && formData.gpa !== null && !isNaN(Number(formData.gpa)) && Number(formData.gpa) > 0
+            ? Number(formData.gpa)
+            : undefined,
+        familyMembers: formData.familyMembers
+          ?.filter((f) => f.firstName?.trim())
+          .map((f) => ({
+            relationshipType: f.relationshipType || 'บิดา',
+            prefix: f.prefix || undefined,
+            firstName: f.firstName.trim(),
+            lastName: f.lastName?.trim() || '-',
+            citizenId: f.citizenId && !f.citizenId.includes('x') ? f.citizenId.trim() : undefined,
+            birthDate: f.birthDate?.trim() || undefined,
+          })),
+        emergencyContact: formData.emergencyContact?.firstName?.trim()
+          ? {
+              relationship: formData.emergencyContact.relationship || 'บิดา',
+              prefix: formData.emergencyContact.prefix || undefined,
+              firstName: formData.emergencyContact.firstName.trim(),
+              lastName: formData.emergencyContact.lastName?.trim() || '-',
+              primaryPhone: formData.emergencyContact.primaryPhone?.trim() || '-',
+              address: formData.emergencyContact.address?.trim() || undefined,
+            }
+          : undefined,
       };
 
       await employeeService.update(employeeId, payload);
