@@ -130,6 +130,7 @@ export default function EmployeesPage() {
 
   // HR Comments State: stored in localStorage { [empId: number]: string }
   const [comments, setComments] = useState<Record<number, string>>({});
+  const [customAvatars, setCustomAvatars] = useState<Record<number, string>>({});
   const [commentModalEmp, setCommentModalEmp] = useState<Employee | null>(null);
   const [commentInput, setCommentInput] = useState('');
 
@@ -211,6 +212,18 @@ export default function EmployeesPage() {
         setComments(defaultNotes);
         localStorage.setItem('hrms_employee_comments', JSON.stringify(defaultNotes));
       }
+
+      // โหลดรูปโปรไฟล์ที่เคยอัปโหลดไว้สำหรับพนักงานแต่ละคน
+      const loadedAvatars: Record<number, string> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('hrms_employee_avatar_')) {
+          const empId = Number(key.replace('hrms_employee_avatar_', ''));
+          const val = localStorage.getItem(key);
+          if (empId && val) loadedAvatars[empId] = val;
+        }
+      }
+      setCustomAvatars(loadedAvatars);
     }
   }, []);
 
@@ -861,7 +874,7 @@ export default function EmployeesPage() {
                               title={hasComment ? `คอมเมนต์: ${commentText}` : 'คลิกเพื่อเพิ่มคอมเมนต์'}
                             >
                               <img
-                                src={mockAvatarImages[(emp.id - 1) % mockAvatarImages.length]}
+                                src={customAvatars[emp.id] || mockAvatarImages[(emp.id - 1) % mockAvatarImages.length]}
                                 alt={emp.fullName}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {

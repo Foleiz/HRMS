@@ -12,6 +12,8 @@ import {
   Shield,
   Loader2,
   AlertCircle,
+  Camera,
+  CheckCircle2,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
@@ -79,6 +81,52 @@ export default function EmployeeDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'user'>('personal');
 
+  // Custom Avatar & Photo Feedback
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // โหลดรูปโปรไฟล์ที่เคยอัปโหลดไว้จาก localStorage
+  useEffect(() => {
+    if (employeeId && !isNaN(employeeId) && typeof window !== 'undefined') {
+      const savedAvatar = localStorage.getItem(`hrms_employee_avatar_${employeeId}`);
+      if (savedAvatar) {
+        setCustomAvatar(savedAvatar);
+      }
+    }
+  }, [employeeId]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setCustomAvatar(base64);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`hrms_employee_avatar_${employeeId}`, base64);
+      }
+      setPhotoFeedback('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
+      setTimeout(() => setPhotoFeedback(null), 3000);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const { setBreadcrumb } = useBreadcrumb();
 
   useEffect(() => {
@@ -141,7 +189,7 @@ export default function EmployeeDetailPage() {
 
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
   const primaryEducation = employee.educations?.[0];
-  const avatarUrl = mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
+  const avatarUrl = customAvatar || mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
 
   return (
     <div className="font-sans">
@@ -151,21 +199,64 @@ export default function EmployeeDetailPage() {
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
         <div className="lg:col-span-4 xl:col-span-3 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
-          {/* Avatar โปรไฟล์ */}
+          {/* Avatar โปรไฟล์ พร้อมฟังก์ชันโฮเวอร์เพื่อแก้ไขรูป */}
           <div className="flex flex-col items-center">
-            <div className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md mb-3 bg-slate-100 flex items-center justify-center">
-              <img
-                src={avatarUrl}
-                alt={employee.fullName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              <span className="w-full h-full absolute inset-0 flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white -z-10">
-                {employee.firstName?.charAt(0) || 'U'}
-              </span>
+            {/* ซ่อน File Input ไว้เปิดเมื่อคลิก */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+            />
+
+            {/* Avatar Container พร้อม Hover Overlay ตามความต้องการของผู้ใช้ */}
+            <div className="relative mb-3 group/avatar">
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md bg-slate-100 flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-[#0B2046]/40 group-hover/avatar:shadow-xl focus:outline-none block"
+                title="คลิกเพื่อแก้ไขรูปโปรไฟล์"
+              >
+                <img
+                  src={avatarUrl}
+                  alt={employee.fullName}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <span className="w-full h-full absolute inset-0 flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white -z-10">
+                  {employee.firstName?.charAt(0) || 'U'}
+                </span>
+
+                {/* Overlay แสดงเมื่อเอา mouse ไป hold (hover) ที่รูปโปรไฟล์ */}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
+                  <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
+                  <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
+                    แก้ไขรูปภาพ
+                  </span>
+                </div>
+              </button>
+
+              {/* ปุ่มกล้องเล็ก ๆ ที่มุมล่างขวาเพื่อความชัดเจน */}
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#0B2046] text-white border-2 border-white shadow-md flex items-center justify-center hover:bg-[#153468] hover:scale-110 transition-all cursor-pointer z-20"
+                title="แก้ไขรูปโปรไฟล์"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
             </div>
+
+            {/* Notification ข้อความแจ้งเตือนเมื่อเปลี่ยนรูปเสร็จ */}
+            {photoFeedback && (
+              <div className="mb-2 px-3 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-medium rounded-full border border-emerald-200 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{photoFeedback}</span>
+              </div>
+            )}
 
             {/* Badges: Employee Code & Active Status */}
             <div className="flex items-center gap-2 mb-2">
