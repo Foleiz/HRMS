@@ -17,6 +17,33 @@ import { employeeService } from '@/services/employeeService';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
+const formatPhoneNumber = (val?: string | null): string => {
+  if (!val) return '';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 9) {
+    if (digits.startsWith('02')) {
+      return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`;
+    }
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return clean;
+};
+
+const autoFormatPhone = (val: string): string => {
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+  if (digits.length > 6) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length > 3) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+  return digits;
+};
+
 export default function EmployeeEditPage() {
   const params = useParams();
   const router = useRouter();
@@ -141,7 +168,7 @@ export default function EmployeeEditPage() {
           postalCode: primaryAddress?.postalCode || '',
           personalEmail: emp.contact?.personalEmail || '',
           organizationEmail: emp.contact?.organizationEmail || '',
-          personalPhone: emp.contact?.personalPhone || '',
+          personalPhone: formatPhoneNumber(emp.contact?.personalPhone) || '',
           educationLevel: primaryEducation?.educationLevel || '',
           institution: primaryEducation?.institution || '',
           major: primaryEducation?.major || '',
@@ -180,8 +207,8 @@ export default function EmployeeEditPage() {
                 firstName: primaryEmergency.firstName || '',
                 lastName: primaryEmergency.lastName || '',
                 address: primaryEmergency.address || '',
-                primaryPhone: primaryEmergency.primaryPhone || '',
-                secondaryPhone: primaryEmergency.secondaryPhone || '',
+                primaryPhone: formatPhoneNumber(primaryEmergency.primaryPhone) || '',
+                secondaryPhone: formatPhoneNumber(primaryEmergency.secondaryPhone) || '',
               }
             : {
                 relationship: 'บิดา',
@@ -721,9 +748,10 @@ export default function EmployeeEditPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="095-111-222-1"
+                      maxLength={12}
+                      placeholder="08X-XXX-XXXX"
                       value={formData.personalPhone}
-                      onChange={(e) => setFormData({ ...formData, personalPhone: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
@@ -1089,6 +1117,7 @@ export default function EmployeeEditPage() {
                       </label>
                       <input
                         type="text"
+                        maxLength={12}
                         placeholder="08X-XXX-XXXX"
                         value={formData.emergencyContact?.primaryPhone || ''}
                         onChange={(e) =>
@@ -1098,7 +1127,7 @@ export default function EmployeeEditPage() {
                               ...formData.emergencyContact,
                               firstName: formData.emergencyContact?.firstName || '',
                               lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: e.target.value,
+                              primaryPhone: autoFormatPhone(e.target.value),
                             },
                           })
                         }

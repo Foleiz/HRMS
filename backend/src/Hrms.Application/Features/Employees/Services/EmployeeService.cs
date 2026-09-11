@@ -170,7 +170,7 @@ public class EmployeeService : IEmployeeService
         {
             employee.Contact = new EmployeeContact
             {
-                PersonalPhone = request.PersonalPhone?.Trim(),
+                PersonalPhone = FormatPhoneNumber(request.PersonalPhone),
                 PersonalEmail = request.PersonalEmail?.Trim(),
                 OrganizationEmail = request.OrganizationEmail?.Trim()
             };
@@ -358,9 +358,18 @@ public class EmployeeService : IEmployeeService
         {
             employee.Contact = new EmployeeContact { EmployeeId = employee.Id };
         }
-        employee.Contact.PersonalPhone = request.PersonalPhone?.Trim();
-        employee.Contact.PersonalEmail = request.PersonalEmail?.Trim();
-        employee.Contact.OrganizationEmail = request.OrganizationEmail?.Trim();
+        if (request.PersonalPhone != null)
+        {
+            employee.Contact.PersonalPhone = FormatPhoneNumber(request.PersonalPhone);
+        }
+        if (request.PersonalEmail != null)
+        {
+            employee.Contact.PersonalEmail = request.PersonalEmail?.Trim();
+        }
+        if (request.OrganizationEmail != null)
+        {
+            employee.Contact.OrganizationEmail = request.OrganizationEmail?.Trim();
+        }
 
         // 5. ประกันสังคม
         if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo))
@@ -556,7 +565,7 @@ public class EmployeeService : IEmployeeService
             UpdatedAt = e.UpdatedAt,
             Contact = e.Contact != null ? new EmployeeContactDto
             {
-                PersonalPhone = e.Contact.PersonalPhone,
+                PersonalPhone = FormatPhoneNumber(e.Contact.PersonalPhone),
                 PersonalEmail = e.Contact.PersonalEmail,
                 OrganizationEmail = e.Contact.OrganizationEmail
             } : null,
@@ -616,10 +625,29 @@ public class EmployeeService : IEmployeeService
                 FirstName = ec.FirstName,
                 LastName = ec.LastName,
                 Address = ec.Address,
-                PrimaryPhone = ec.PrimaryPhone,
+                PrimaryPhone = FormatPhoneNumber(ec.PrimaryPhone) ?? string.Empty,
                 IsPrimary = ec.IsPrimary
             }).ToList()
         };
+    }
+
+    private static string? FormatPhoneNumber(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return null;
+        var digits = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
+        if (digits.Length == 10)
+        {
+            return $"{digits.Substring(0, 3)}-{digits.Substring(3, 3)}-{digits.Substring(6)}";
+        }
+        if (digits.Length == 9)
+        {
+            if (digits.StartsWith("02"))
+            {
+                return $"{digits.Substring(0, 2)}-{digits.Substring(2, 3)}-{digits.Substring(5)}";
+            }
+            return $"{digits.Substring(0, 3)}-{digits.Substring(3, 3)}-{digits.Substring(6)}";
+        }
+        return phone.Trim();
     }
 
     private static (string? gender, long? genderId) ResolveGenderAndId(string? gender, long? genderId, string? prefix)

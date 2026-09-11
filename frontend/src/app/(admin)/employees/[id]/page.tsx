@@ -53,6 +53,22 @@ const formatMaskedCitizenId = (val?: string): string => {
   return clean;
 };
 
+const formatPhoneNumber = (val?: string | null): string => {
+  if (!val) return '-';
+  const clean = val.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 9) {
+    if (digits.startsWith('02')) {
+      return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`;
+    }
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return clean;
+};
+
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -205,7 +221,7 @@ export default function EmployeeDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-slate-400 font-medium">เบอร์โทรศัพท์</p>
                 <p className="text-xs font-semibold text-slate-800 font-mono">
-                  {employee.contact?.personalPhone || '-'}
+                  {formatPhoneNumber(employee.contact?.personalPhone)}
                 </p>
               </div>
             </div>
@@ -455,7 +471,7 @@ export default function EmployeeDetailPage() {
 
                 <div>
                   <p className="text-slate-800 font-bold mb-1">เบอร์โทรศัพท์ส่วนตัว (Phone number)</p>
-                  <p className="text-slate-600 font-mono">{employee.contact?.personalPhone || '-'}</p>
+                  <p className="text-slate-600 font-mono">{formatPhoneNumber(employee.contact?.personalPhone)}</p>
                 </div>
 
                 <div>
@@ -581,14 +597,14 @@ export default function EmployeeDetailPage() {
                         <div>
                           <p className="text-slate-400">เบอร์โทรศัพท์ฉุกเฉิน</p>
                           <p className="font-mono text-sm font-bold text-[#0B2046]">
-                            {contact.primaryPhone || '-'}
+                            {formatPhoneNumber(contact.primaryPhone)}
                           </p>
                         </div>
 
                         {contact.secondaryPhone && (
                           <div>
                             <p className="text-slate-400">เบอร์โทรศัพท์สำรอง</p>
-                            <p className="font-mono text-slate-700">{contact.secondaryPhone}</p>
+                            <p className="font-mono text-slate-700">{formatPhoneNumber(contact.secondaryPhone)}</p>
                           </div>
                         )}
 
