@@ -25,6 +25,7 @@ import {
   Building2,
   Sun,
   Moon,
+  Sunrise,
   Copy,
 } from 'lucide-react';
 import { employeeShiftService } from '@/services/scheduleService';
@@ -51,6 +52,94 @@ const THAI_MONTHS = [
 ];
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+
+export interface ShiftPeriodInfo {
+  period: 'MORNING' | 'AFTERNOON' | 'NIGHT';
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badgeClass: string;
+  pillClass: string;
+  dotClass: string;
+  iconColor: string;
+}
+
+export const getShiftPeriodInfo = (shift?: {
+  shiftName?: string;
+  shiftCode?: string;
+  startTime?: string;
+  endTime?: string;
+  isCrossDay?: boolean;
+} | null): ShiftPeriodInfo => {
+  if (!shift) {
+    return {
+      period: 'MORNING',
+      label: 'กะเช้า',
+      icon: Sunrise,
+      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+      pillClass: 'bg-amber-500/10 text-amber-700 border-amber-200',
+      dotClass: 'bg-amber-500',
+      iconColor: 'text-amber-600',
+    };
+  }
+
+  const name = (shift.shiftName || '').toLowerCase();
+  const code = (shift.shiftCode || '').toLowerCase();
+  const startHour = shift.startTime ? parseInt(shift.startTime.split(':')[0], 10) : 8;
+
+  // 1. Check morning (กะเช้า)
+  if (
+    name.includes('เช้า') ||
+    code.includes('morn') ||
+    (!name.includes('กลางวัน') &&
+      !name.includes('บ่าย') &&
+      !name.includes('กลางคืน') &&
+      !name.includes('ดึก') &&
+      !shift.isCrossDay &&
+      startHour >= 5 &&
+      startHour < 12)
+  ) {
+    return {
+      period: 'MORNING',
+      label: 'กะเช้า',
+      icon: Sunrise,
+      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+      pillClass: 'bg-amber-500/10 text-amber-700 border-amber-200',
+      dotClass: 'bg-amber-500',
+      iconColor: 'text-amber-600',
+    };
+  }
+
+  // 2. Check night / cross-day (กะกลางคืน / ข้ามวัน)
+  if (
+    name.includes('กลางคืน') ||
+    name.includes('ดึก') ||
+    code.includes('night') ||
+    (!name.includes('กลางวัน') &&
+      !name.includes('บ่าย') &&
+      (shift.isCrossDay || startHour >= 20 || startHour < 5))
+  ) {
+    return {
+      period: 'NIGHT',
+      label: 'กะกลางคืน',
+      icon: Moon,
+      badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+      pillClass: 'bg-purple-500/10 text-purple-700 border-purple-200',
+      dotClass: 'bg-purple-500',
+      iconColor: 'text-purple-600',
+    };
+  }
+
+  // 3. Afternoon / Day (กะกลางวัน)
+  return {
+    period: 'AFTERNOON',
+    label: 'กะกลางวัน',
+    icon: Sun,
+    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+    pillClass: 'bg-sky-500/10 text-sky-700 border-sky-200',
+    dotClass: 'bg-sky-500',
+    iconColor: 'text-sky-600',
+  };
+};
 
 type TabKey = 'roster' | 'shifts';
 
@@ -304,10 +393,12 @@ function SchedulesContent() {
       const matchQuery =
         shift.shiftCode.toLowerCase().includes(shiftSearchQuery.toLowerCase()) ||
         shift.shiftName.toLowerCase().includes(shiftSearchQuery.toLowerCase());
+      const periodInfo = getShiftPeriodInfo(shift);
       const matchType =
         shiftFilterType === 'ALL' ||
-        (shiftFilterType === 'CROSS_DAY' && shift.isCrossDay) ||
-        (shiftFilterType === 'NORMAL' && !shift.isCrossDay);
+        shiftFilterType === periodInfo.period ||
+        (shiftFilterType === 'CROSS_DAY' && (shift.isCrossDay || periodInfo.period === 'NIGHT')) ||
+        (shiftFilterType === 'NORMAL' && periodInfo.period !== 'NIGHT');
       const matchStatus =
         shiftFilterStatus === 'ALL' || shift.status === shiftFilterStatus;
       return matchQuery && matchType && matchStatus;
@@ -839,20 +930,20 @@ function SchedulesContent() {
                 {/* Shift Badges Legend */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-medium text-slate-500">ประเภทกะ:</span>
-                  {shifts.map((s) => (
-                    <span
-                      key={s.id}
-                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                        s.isCrossDay
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}
-                      title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
-                    >
-                      {s.isCrossDay ? <Moon className="w-2.5 h-2.5" /> : <Sun className="w-2.5 h-2.5" />}
-                      <span>{s.shiftName}</span>
-                    </span>
-                  ))}
+                  {shifts.map((s) => {
+                    const period = getShiftPeriodInfo(s);
+                    const PeriodIcon = period.icon;
+                    return (
+                      <span
+                        key={s.id}
+                        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${period.badgeClass}`}
+                        title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
+                      >
+                        <PeriodIcon className="w-3 h-3" />
+                        <span>{s.shiftName}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -959,27 +1050,23 @@ function SchedulesContent() {
 
                           {/* Scheduled Shift Pills */}
                           <div className="space-y-1 flex-1">
-                            {dayShifts.slice(0, 3).map((item, idx) => (
-                              <div
-                                key={`${item.employeeId}-${idx}`}
-                                className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded font-medium border truncate ${
-                                  item.shift.isCrossDay
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                    : 'bg-blue-50 text-blue-700 border-blue-200'
-                                }`}
-                                title={`${item.employeeName} (${item.employeeCode}) - ${item.shift.shiftName} (${item.shift.startTime.substring(0, 5)}-${item.shift.endTime.substring(0, 5)})`}
-                              >
-                                <div className="flex items-center gap-1 min-w-0 truncate">
-                                  {item.shift.isCrossDay ? (
-                                    <Moon className="w-2.5 h-2.5 shrink-0 text-purple-600" />
-                                  ) : (
-                                    <Sun className="w-2.5 h-2.5 shrink-0 text-blue-600" />
-                                  )}
-                                  <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
-                                  <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
+                            {dayShifts.slice(0, 3).map((item, idx) => {
+                              const period = getShiftPeriodInfo(item.shift);
+                              const PeriodIcon = period.icon;
+                              return (
+                                <div
+                                  key={`${item.employeeId}-${idx}`}
+                                  className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded font-medium border truncate ${period.badgeClass}`}
+                                  title={`${item.employeeName} (${item.employeeCode}) - ${item.shift.shiftName} (${item.shift.startTime.substring(0, 5)}-${item.shift.endTime.substring(0, 5)})`}
+                                >
+                                  <div className="flex items-center gap-1 min-w-0 truncate">
+                                    <PeriodIcon className="w-2.5 h-2.5 shrink-0" />
+                                    <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
+                                    <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
 
                             {dayShifts.length > 3 && (
                               <div className="text-[10px] font-semibold text-slate-500 group-hover:text-[#0B2046] text-right pt-0.5">
@@ -1045,16 +1132,27 @@ function SchedulesContent() {
                             {a.departmentName || '-'}
                           </td>
                           <td className="p-3.5">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                  a.isCrossDay ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                                }`}
-                              >
-                                {a.shiftCode}
-                              </span>
-                              <span className="text-slate-700">{a.shiftName}</span>
-                            </div>
+                            {(() => {
+                              const period = getShiftPeriodInfo({
+                                shiftName: a.shiftName,
+                                shiftCode: a.shiftCode,
+                                startTime: a.startTime,
+                                endTime: a.endTime,
+                                isCrossDay: a.isCrossDay,
+                              });
+                              const PeriodIcon = period.icon;
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border ${period.badgeClass}`}
+                                  >
+                                    <PeriodIcon className="w-3 h-3" />
+                                    <span>{a.shiftCode}</span>
+                                  </span>
+                                  <span className="text-slate-700">{a.shiftName}</span>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="p-3.5 text-slate-600 font-mono text-xs">
                             {a.startTime?.substring(0, 5)} - {a.endTime?.substring(0, 5)} น.
@@ -1158,15 +1256,16 @@ function SchedulesContent() {
               </div>
 
               {/* Filter Shift Type */}
-              <div className="w-40">
+              <div className="w-44">
                 <select
                   value={shiftFilterType}
                   onChange={(e) => setShiftFilterType(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 >
                   <option value="ALL">ประเภทกะทั้งหมด</option>
-                  <option value="NORMAL">กะกลางวัน (ปกติ)</option>
-                  <option value="CROSS_DAY">กะข้ามวัน (กะดึก)</option>
+                  <option value="MORNING">กะเช้า</option>
+                  <option value="AFTERNOON">กะกลางวัน</option>
+                  <option value="NIGHT">กะกลางคืน (ข้ามวัน)</option>
                 </select>
               </div>
 
@@ -1258,16 +1357,18 @@ function SchedulesContent() {
                       <h3 className="font-bold text-slate-900 text-base group-hover:text-[#0B2046] transition truncate">
                         {shift.shiftName}
                       </h3>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 ${
-                          shift.isCrossDay
-                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {shift.isCrossDay ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                        <span>{shift.isCrossDay ? 'กะข้ามวัน (กลางคืน)' : 'กะกลางวัน'}</span>
-                      </span>
+                      {(() => {
+                        const period = getShiftPeriodInfo(shift);
+                        const PeriodIcon = period.icon;
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 border ${period.badgeClass}`}
+                          >
+                            <PeriodIcon className="w-3.5 h-3.5" />
+                            <span>{period.label}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* Time Window Display */}
@@ -1276,6 +1377,9 @@ function SchedulesContent() {
                         <span className="text-slate-500">เวลาทำงาน:</span>
                         <span className="font-bold font-mono text-slate-800 text-sm">
                           {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)} น.
+                          {shift.isCrossDay && (
+                            <span className="ml-1.5 text-[11px] font-medium text-purple-600">(ข้ามวัน)</span>
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
@@ -1387,19 +1491,24 @@ function SchedulesContent() {
                         <td className="p-3.5 font-mono font-bold text-slate-800">{s.shiftCode}</td>
                         <td className="p-3.5 font-semibold text-slate-900">{s.shiftName}</td>
                         <td className="p-3.5">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              s.isCrossDay
-                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}
-                          >
-                            {s.isCrossDay ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                            <span>{s.isCrossDay ? 'กะข้ามวัน' : 'ปกติ'}</span>
-                          </span>
+                          {(() => {
+                            const period = getShiftPeriodInfo(s);
+                            const PeriodIcon = period.icon;
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${period.badgeClass}`}
+                              >
+                                <PeriodIcon className="w-3 h-3" />
+                                <span>{period.label}</span>
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="p-3.5 font-mono text-xs text-slate-700">
                           {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
+                          {s.isCrossDay && (
+                            <span className="ml-1.5 text-[11px] text-purple-600 font-semibold">(ข้ามวัน)</span>
+                          )}
                         </td>
                         <td className="p-3.5 text-slate-600">{s.breakMinutes} นาที</td>
                         <td className="p-3.5 text-slate-700">
@@ -2293,18 +2402,23 @@ function SchedulesContent() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            item.shift.isCrossDay
-                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                              : 'bg-blue-50 text-blue-700 border-blue-200'
-                          }`}
-                        >
-                          {item.shift.isCrossDay ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                          <span>{item.shift.shiftName}</span>
-                        </span>
+                        {(() => {
+                          const period = getShiftPeriodInfo(item.shift);
+                          const PeriodIcon = period.icon;
+                          return (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${period.badgeClass}`}
+                            >
+                              <PeriodIcon className="w-3 h-3" />
+                              <span>{item.shift.shiftName}</span>
+                            </span>
+                          );
+                        })()}
                         <span className="font-mono text-xs text-slate-600">
                           {item.shift.startTime.substring(0, 5)} - {item.shift.endTime.substring(0, 5)} น.
+                          {item.shift.isCrossDay && (
+                            <span className="ml-1 text-[11px] font-normal text-purple-600">(ข้ามวัน)</span>
+                          )}
                         </span>
                       </div>
                     </div>
