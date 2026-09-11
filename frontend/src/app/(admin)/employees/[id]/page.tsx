@@ -359,7 +359,9 @@ export default function EmployeeDetailPage() {
 
                 <div>
                   <p className="text-slate-800 font-bold mb-1">เพศ (Gender)</p>
-                  <p className="text-slate-600">{employee.gender || '-'}</p>
+                  <p className="text-slate-600">
+                    {employee.gender || (employee.genderId === 1 || employee.prefix === 'นาย' ? 'ชาย' : (employee.genderId === 2 || employee.prefix === 'นางสาว' || employee.prefix === 'นาง' ? 'หญิง' : '-'))}
+                  </p>
                 </div>
 
                 <div>

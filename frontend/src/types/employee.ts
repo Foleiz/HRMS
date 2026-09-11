@@ -109,6 +109,7 @@ export interface CreateEmployeePayload {
   lastName: string;
   citizenId?: string;
   gender?: string;
+  genderId?: number;
   nationality?: string;
   religion?: string;
 

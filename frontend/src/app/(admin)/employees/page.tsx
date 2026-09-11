@@ -30,6 +30,16 @@ interface DepartmentItem {
   departmentName: string;
 }
 
+export const getGenderDisplay = (gender?: string, genderId?: number, prefix?: string): string => {
+  if (gender && gender.trim()) return gender;
+  if (genderId === 1) return 'ชาย';
+  if (genderId === 2) return 'หญิง';
+  if (genderId === 3) return 'ไม่ระบุ';
+  if (prefix === 'นาย' || prefix === 'เด็กชาย' || prefix?.toLowerCase() === 'mr.' || prefix?.toLowerCase() === 'mr') return 'ชาย';
+  if (prefix === 'นาง' || prefix === 'นางสาว' || prefix === 'น.ส.' || prefix === 'เด็กหญิง' || prefix?.toLowerCase() === 'mrs.' || prefix?.toLowerCase() === 'ms.' || prefix?.toLowerCase() === 'miss') return 'หญิง';
+  return '-';
+};
+
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -251,6 +261,7 @@ export default function EmployeesPage() {
         citizenId: formData.citizenId?.trim() || undefined,
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
+        genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
@@ -609,7 +620,7 @@ export default function EmployeesPage() {
 
                       {/* 8. เพศ */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.gender || '-'}
+                        {getGenderDisplay(emp.gender, emp.genderId, emp.prefix)}
                       </td>
 
                       {/* 9. อีเมล */}
@@ -969,7 +980,15 @@ export default function EmployeesPage() {
                           </label>
                           <select
                             value={formData.prefix}
-                            onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              let autoGender = formData.gender;
+                              if (!autoGender || autoGender === 'เลือกเพศ') {
+                                if (val === 'นาย') autoGender = 'ชาย';
+                                else if (val === 'นางสาว' || val === 'นาง') autoGender = 'หญิง';
+                              }
+                              setFormData({ ...formData, prefix: val, gender: autoGender });
+                            }}
                             className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                           >
                             <option value="">เลือกคำนำหน้า</option>

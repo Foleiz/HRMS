@@ -133,6 +133,8 @@ public class EmployeeService : IEmployeeService
             maskedCitizenId = _cryptoService.MaskCitizenId(request.CitizenId.Trim());
         }
 
+        var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
+
         var employee = new Employee
         {
             EmployeeCode = request.EmployeeCode.Trim(),
@@ -143,8 +145,8 @@ public class EmployeeService : IEmployeeService
             CitizenIdEncrypted = encryptedCitizenId,
             CitizenIdMasked = maskedCitizenId,
             BirthDate = request.BirthDate,
-            Gender = request.Gender,
-            GenderId = request.GenderId,
+            Gender = gender,
+            GenderId = genderId,
             Nationality = request.Nationality,
             NationalityId = request.NationalityId,
             Religion = request.Religion,
@@ -318,12 +320,13 @@ public class EmployeeService : IEmployeeService
         }
 
         // 2. อัปเดตข้อมูลทั่วไป
+        var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
         employee.Prefix = request.Prefix?.Trim();
         employee.FirstName = request.FirstName.Trim();
         employee.LastName = request.LastName.Trim();
         employee.BirthDate = request.BirthDate;
-        employee.Gender = request.Gender;
-        employee.GenderId = request.GenderId;
+        employee.Gender = gender;
+        employee.GenderId = genderId;
         employee.Nationality = request.Nationality;
         employee.NationalityId = request.NationalityId;
         employee.Religion = request.Religion;
@@ -513,6 +516,8 @@ public class EmployeeService : IEmployeeService
 
     private EmployeeDto MapToDto(Employee e)
     {
+        var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
+
         return new EmployeeDto
         {
             Id = e.Id,
@@ -525,8 +530,8 @@ public class EmployeeService : IEmployeeService
                 ? e.CitizenIdMasked
                 : (!string.IsNullOrWhiteSpace(e.CitizenId) ? _cryptoService.MaskCitizenId(e.CitizenId) : null),
             BirthDate = e.BirthDate,
-            Gender = e.Gender,
-            GenderId = e.GenderId,
+            Gender = gender,
+            GenderId = genderId,
             Nationality = e.Nationality,
             NationalityId = e.NationalityId,
             Religion = e.Religion,
@@ -611,4 +616,75 @@ public class EmployeeService : IEmployeeService
             }).ToList()
         };
     }
+
+    private static (string? gender, long? genderId) ResolveGenderAndId(string? gender, long? genderId, string? prefix)
+    {
+        // 1. If gender is specified
+        if (!string.IsNullOrWhiteSpace(gender))
+        {
+            var trimmedGender = gender.Trim();
+            if (genderId.HasValue && genderId.Value > 0) return (trimmedGender, genderId);
+
+            if (trimmedGender.Equals("ชาย", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("Male", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("M", StringComparison.OrdinalIgnoreCase))
+            {
+                return ("ชาย", 1);
+            }
+            if (trimmedGender.Equals("หญิง", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("Female", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("F", StringComparison.OrdinalIgnoreCase))
+            {
+                return ("หญิง", 2);
+            }
+            if (trimmedGender.Equals("ไม่ระบุ", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("Other", StringComparison.OrdinalIgnoreCase) ||
+                trimmedGender.Equals("O", StringComparison.OrdinalIgnoreCase))
+            {
+                return ("ไม่ระบุ", 3);
+            }
+            return (trimmedGender, genderId);
+        }
+
+        // 2. If genderId is specified but gender is empty
+        if (genderId.HasValue)
+        {
+            return genderId.Value switch
+            {
+                1 => ("ชาย", 1),
+                2 => ("หญิง", 2),
+                3 => ("ไม่ระบุ", 3),
+                _ => (null, genderId)
+            };
+        }
+
+        // 3. Fallback from prefix
+        if (!string.IsNullOrWhiteSpace(prefix))
+        {
+            var trimmedPrefix = prefix.Trim();
+            if (trimmedPrefix.Equals("นาย", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("เด็กชาย", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("ด.ช.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("Mr.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("Mr", StringComparison.OrdinalIgnoreCase))
+            {
+                return ("ชาย", 1);
+            }
+
+            if (trimmedPrefix.Equals("นาง", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("นางสาว", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("น.ส.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("เด็กหญิง", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("ด.ญ.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("Mrs.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("Ms.", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPrefix.Equals("Miss", StringComparison.OrdinalIgnoreCase))
+            {
+                return ("หญิง", 2);
+            }
+        }
+
+        return (null, null);
+    }
 }
+
