@@ -14,6 +14,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  ChevronRight,
+  ChevronDown,
+  Users,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { organizationService } from '@/services/organizationService';
@@ -301,6 +305,72 @@ export default function LeaveManagementPage() {
         b.leaveTypeName.toLowerCase().includes(q)
     );
   }, [leaveBalances, balanceSearch]);
+
+  // Group balances by Employee for expandable accordion view
+  const [expandedEmployeeIds, setExpandedEmployeeIds] = useState<Set<number>>(new Set());
+
+  const toggleExpandEmployee = (empId: number) => {
+    setExpandedEmployeeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(empId)) {
+        next.delete(empId);
+      } else {
+        next.add(empId);
+      }
+      return next;
+    });
+  };
+
+  const expandAllEmployees = () => {
+    setExpandedEmployeeIds(new Set(groupedEmployees.map((g) => g.employeeId)));
+  };
+
+  const collapseAllEmployees = () => {
+    setExpandedEmployeeIds(new Set());
+  };
+
+  const groupedEmployees = useMemo(() => {
+    const map = new Map<number, {
+      employeeId: number;
+      employeeCode: string;
+      employeeName: string;
+      departmentName: string;
+      positionTitle: string;
+      totalQuota: number;
+      totalCarried: number;
+      totalUsed: number;
+      totalAdjusted: number;
+      totalRemaining: number;
+      balances: LeaveBalance[];
+    }>();
+
+    for (const b of filteredBalances) {
+      if (!map.has(b.employeeId)) {
+        map.set(b.employeeId, {
+          employeeId: b.employeeId,
+          employeeCode: b.employeeCode,
+          employeeName: b.employeeName,
+          departmentName: b.departmentName,
+          positionTitle: b.positionTitle,
+          totalQuota: 0,
+          totalCarried: 0,
+          totalUsed: 0,
+          totalAdjusted: 0,
+          totalRemaining: 0,
+          balances: [],
+        });
+      }
+      const group = map.get(b.employeeId)!;
+      group.totalQuota += b.annualQuotaDays;
+      group.totalCarried += b.activeCarriedForwardDays;
+      group.totalUsed += b.usedDays;
+      group.totalAdjusted += b.adjustedDays;
+      group.totalRemaining += b.netRemainingLeaveDays;
+      group.balances.push(b);
+    }
+
+    return Array.from(map.values());
+  }, [filteredBalances]);
 
   const quotaUnitDisplay = (unit: string) => {
     switch (unit) {
@@ -597,7 +667,7 @@ export default function LeaveManagementPage() {
           </div>
         )}
 
-        {/* Tab 3: ยอดวันลาพนักงาน (Employee Leave Balances) */}
+        {/* Tab 3: ยอดวันลาพนักงาน (Employee Leave Balances - Grouped Expandable Accordion) */}
         {activeTab === 'balances' && (
           <div className="p-6 space-y-5">
             {/* Filter & Action Header */}
@@ -631,6 +701,22 @@ export default function LeaveManagementPage() {
                     className="w-full pl-9 pr-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
+
+                {/* Expand / Collapse All */}
+                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                  <button
+                    onClick={expandAllEmployees}
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white transition-all flex items-center gap-1"
+                  >
+                    <ChevronsUpDown className="w-3.5 h-3.5" /> ขยายทั้งหมด
+                  </button>
+                  <button
+                    onClick={collapseAllEmployees}
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white transition-all"
+                  >
+                    ยุบทั้งหมด
+                  </button>
+                </div>
               </div>
 
               {/* Initialize Balance Button */}
@@ -642,107 +728,185 @@ export default function LeaveManagementPage() {
               </button>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
-                    <th className="py-3.5 px-5">พนักงาน</th>
-                    <th className="py-3.5 px-4">ประเภทการลา</th>
-                    <th className="py-3.5 px-4 text-center">สิทธิ์ปีนี้</th>
-                    <th className="py-3.5 px-4 text-center">ยกมา</th>
-                    <th className="py-3.5 px-4 text-center">ใช้ไป</th>
-                    <th className="py-3.5 px-4 text-center">ปรับยอด</th>
-                    <th className="py-3.5 px-4 text-center">คงเหลือ</th>
-                    <th className="py-3.5 px-4 text-center">หมดอายุยกยอด</th>
-                    <th className="py-3.5 px-4 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={9} className="py-12 text-center text-gray-400">
-                        <div className="inline-flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดยอดวันลา...
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredBalances.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-12 text-center text-gray-400">
-                        ไม่พบข้อมูลยอดวันลาสำหรับเงื่อนไขที่เลือก
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredBalances.map((b) => (
-                      <tr key={b.id} className="hover:bg-gray-50/60 transition-colors">
-                        <td className="py-4 px-5">
-                          <div className="font-semibold text-gray-800">{b.employeeName}</div>
-                          <div className="text-xs text-gray-400">
-                            {b.employeeCode} · {b.departmentName}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 font-medium text-gray-700">
-                          {b.leaveTypeName}
-                        </td>
-                        <td className="py-4 px-4 text-center text-gray-700">
-                          {b.annualQuotaDays} วัน
-                        </td>
-                        <td className="py-4 px-4 text-center text-gray-700">
-                          {b.activeCarriedForwardDays} วัน
-                        </td>
-                        <td className="py-4 px-4 text-center font-semibold text-rose-600">
-                          {b.usedDays} วัน
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <span
-                            className={`text-xs font-semibold ${
-                              b.adjustedDays > 0
-                                ? 'text-emerald-600'
-                                : b.adjustedDays < 0
-                                ? 'text-rose-600'
-                                : 'text-gray-400'
+            {/* Subheader info count */}
+            <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Users className="w-4 h-4 text-gray-400" />
+                <span>
+                  แสดงพนักงาน {groupedEmployees.length} คน (ทั้งหมด {filteredBalances.length} รายการสิทธิ์วันลา)
+                </span>
+              </div>
+            </div>
+
+            {/* Grouped Employees Accordion List */}
+            {loading ? (
+              <div className="py-16 text-center text-gray-400 border border-gray-100 rounded-2xl">
+                <div className="inline-flex items-center gap-2 text-sm">
+                  <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดยอดวันลา...
+                </div>
+              </div>
+            ) : groupedEmployees.length === 0 ? (
+              <div className="py-16 text-center text-gray-400 border border-gray-100 rounded-2xl text-sm">
+                ไม่พบข้อมูลยอดวันลาสำหรับเงื่อนไขที่เลือก
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {groupedEmployees.map((emp) => {
+                  const isExpanded = expandedEmployeeIds.has(emp.employeeId);
+                  const initials = emp.employeeName ? emp.employeeName.trim().slice(0, 2) : 'EM';
+
+                  return (
+                    <div
+                      key={emp.employeeId}
+                      className={`rounded-2xl border transition-all overflow-hidden ${
+                        isExpanded
+                          ? 'bg-white border-blue-200 shadow-sm'
+                          : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-xs'
+                      }`}
+                    >
+                      {/* Master Row Header */}
+                      <div
+                        onClick={() => toggleExpandEmployee(emp.employeeId)}
+                        className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none"
+                      >
+                        {/* Employee Details */}
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className={`p-1 rounded-lg text-gray-400 transition-transform duration-200 ${
+                              isExpanded ? 'rotate-90 text-blue-600' : ''
                             }`}
                           >
-                            {b.adjustedDays > 0 ? `+${b.adjustedDays}` : b.adjustedDays} วัน
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-center font-bold text-blue-600">
-                          {b.netRemainingLeaveDays} วัน
-                        </td>
-                        <td className="py-4 px-4 text-center text-xs text-gray-500">
-                          {b.carryForwardExpiry
-                            ? new Date(b.carryForwardExpiry).toLocaleDateString('th-TH', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenAdjustBalance(b)}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="ปรับยอดวันลา"
-                            >
-                              <ArrowRightLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenTransactions(b)}
-                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                              title="ดูประวัติความเคลื่อนไหว"
-                            >
-                              <History className="w-4 h-4" />
-                            </button>
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0">
+                            {initials}
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-gray-900 text-sm">{emp.employeeName}</span>
+                              <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                {emp.employeeCode}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {emp.departmentName} · {emp.positionTitle}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Summary Metrics */}
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-11 sm:pl-0">
+                          <div className="text-left sm:text-right">
+                            <span className="text-[11px] text-gray-400 block">สิทธิ์ที่เปิด</span>
+                            <span className="text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
+                              {emp.balances.length} ประเภท
+                            </span>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <span className="text-[11px] text-gray-400 block">สิทธิ์ปีนี้</span>
+                            <span className="text-xs font-bold text-gray-800">{emp.totalQuota} วัน</span>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <span className="text-[11px] text-gray-400 block">ใช้ไปรวม</span>
+                            <span className={`text-xs font-bold ${emp.totalUsed > 0 ? 'text-rose-600' : 'text-gray-500'}`}>
+                              {emp.totalUsed} วัน
+                            </span>
+                          </div>
+                          <div className="text-left sm:text-right pr-2">
+                            <span className="text-[11px] text-gray-400 block">คงเหลือรวม</span>
+                            <span className="text-sm font-black text-blue-600">{emp.totalRemaining} วัน</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expanded Sub-Table */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-1 bg-slate-50/70 border-t border-gray-100 animate-in fade-in duration-150">
+                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 bg-white shadow-xs">
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-100 font-semibold text-gray-500">
+                                  <th className="py-2.5 px-4">ประเภทการลา</th>
+                                  <th className="py-2.5 px-3 text-center">สิทธิ์ปีนี้</th>
+                                  <th className="py-2.5 px-3 text-center">ยกมา</th>
+                                  <th className="py-2.5 px-3 text-center">ใช้ไป</th>
+                                  <th className="py-2.5 px-3 text-center">ปรับยอด</th>
+                                  <th className="py-2.5 px-3 text-center font-bold text-gray-700">คงเหลือ</th>
+                                  <th className="py-2.5 px-3 text-center">หมดอายุยกยอด</th>
+                                  <th className="py-2.5 px-3 text-center">จัดการ</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {emp.balances.map((b) => (
+                                  <tr key={b.id} className="hover:bg-blue-50/30 transition-colors">
+                                    <td className="py-3 px-4">
+                                      <span className="font-semibold text-gray-800">{b.leaveTypeName}</span>
+                                    </td>
+                                    <td className="py-3 px-3 text-center text-gray-600">{b.annualQuotaDays} วัน</td>
+                                    <td className="py-3 px-3 text-center text-gray-600">{b.activeCarriedForwardDays} วัน</td>
+                                    <td className="py-3 px-3 text-center font-bold text-rose-600">{b.usedDays} วัน</td>
+                                    <td className="py-3 px-3 text-center">
+                                      <span
+                                        className={`font-semibold ${
+                                          b.adjustedDays > 0
+                                            ? 'text-emerald-600'
+                                            : b.adjustedDays < 0
+                                            ? 'text-rose-600'
+                                            : 'text-gray-400'
+                                        }`}
+                                      >
+                                        {b.adjustedDays > 0 ? `+${b.adjustedDays}` : b.adjustedDays} วัน
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-3 text-center font-bold text-blue-600 text-sm">
+                                      {b.netRemainingLeaveDays} วัน
+                                    </td>
+                                    <td className="py-3 px-3 text-center text-gray-400">
+                                      {b.carryForwardExpiry
+                                        ? new Date(b.carryForwardExpiry).toLocaleDateString('th-TH', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                          })
+                                        : '-'}
+                                    </td>
+                                    <td className="py-3 px-3 text-center">
+                                      <div className="inline-flex items-center gap-1">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenAdjustBalance(b);
+                                          }}
+                                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                          title="ปรับยอดวันลา"
+                                        >
+                                          <ArrowRightLeft className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenTransactions(b);
+                                          }}
+                                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                          title="ดูประวัติความเคลื่อนไหว"
+                                        >
+                                          <History className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
