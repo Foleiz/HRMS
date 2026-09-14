@@ -80,3 +80,25 @@ export interface RevertBatchResult {
   message: string;
 }
 
+export interface BatchAttendanceRecord {
+  id: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string | null;
+  workDate: string;
+  actualIn: string | null;
+  actualOut: string | null;
+  workedMinutes: number;
+  lateMinutes: number;
+  earlyLeaveMinutes: number;
+  isAbsent: boolean;
+  status: string;
+}
+
+export interface PagedBatchRecordResult {
+  items: BatchAttendanceRecord[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}

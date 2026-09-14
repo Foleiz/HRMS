@@ -27,6 +27,12 @@ public interface IAttendanceImportService
         int pageSize = 50, 
         CancellationToken cancellationToken = default);
 
+    Task<PagedBatchRecordResult> GetBatchRecordsAsync(
+        long batchId,
+        int page = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default);
+
     Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(
         string format = "xlsx", 
         CancellationToken cancellationToken = default);

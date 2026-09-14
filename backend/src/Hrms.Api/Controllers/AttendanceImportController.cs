@@ -134,6 +134,21 @@ public class AttendanceImportController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงรายการบันทึกเวลาที่นำเข้าสำเร็จของชุดการนำเข้า (Batch Attendance Records)
+    /// สำหรับปุ่ม "ตรวจเวลา" ในหน้าประวัติการนำเข้า
+    /// </summary>
+    [HttpGet("batches/{id}/records")]
+    public async Task<IActionResult> GetBatchRecords(
+        long id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _importService.GetBatchRecordsAsync(id, page, pageSize, cancellationToken);
+        return Ok(ApiResponse<PagedBatchRecordResult>.Ok(result));
+    }
+
+    /// <summary>
     /// ดาวน์โหลดไฟล์แม่แบบตัวอย่าง (Template) สำหรับนำเข้าเวลา
     /// </summary>
     [HttpGet("template")]

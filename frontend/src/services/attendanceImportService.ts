@@ -6,6 +6,7 @@ import {
   AttendanceImportFilterQuery,
   PagedImportBatchResult,
   PagedImportErrorResult,
+  PagedBatchRecordResult,
   RevertBatchResult,
 } from '@/types/attendanceImport';
 
@@ -74,6 +75,16 @@ export const attendanceImportService = {
    */
   async getBatchErrors(id: number, page: number = 1, pageSize: number = 50): Promise<PagedImportErrorResult> {
     const res = await apiClient.get<ApiResponse<PagedImportErrorResult>>(`/attendance/import/batches/${id}/errors`, {
+      params: { page, pageSize },
+    });
+    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 0 };
+  },
+
+  /**
+   * ดึงรายการบันทึกเวลาที่นำเข้าสำเร็จของ Batch (ตรวจเวลา)
+   */
+  async getBatchRecords(id: number, page: number = 1, pageSize: number = 50): Promise<PagedBatchRecordResult> {
+    const res = await apiClient.get<ApiResponse<PagedBatchRecordResult>>(`/attendance/import/batches/${id}/records`, {
       params: { page, pageSize },
     });
     return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 0 };

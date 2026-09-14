@@ -744,6 +744,61 @@ public class AttendanceImportService : IAttendanceImportService
         };
     }
 
+    /// <summary>
+    /// ดึงรายการบันทึกเวลาที่นำเข้าจาก Batch ที่ระบุ (สำหรับหน้าตรวจเวลา)
+    /// </summary>
+    public async Task<PagedBatchRecordResult> GetBatchRecordsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        var q = _context.AttendanceDailies
+            .AsNoTracking()
+            .Where(a => a.ImportBatchId == batchId)
+            .Include(a => a.Employee)
+            .OrderBy(a => a.WorkDate)
+                .ThenBy(a => a.Employee!.EmployeeCode);
+
+        var total = await q.CountAsync(cancellationToken);
+        var p = page > 0 ? page : 1;
+        var ps = pageSize > 0 ? pageSize : 50;
+
+        var rawItems = await q.Skip((p - 1) * ps).Take(ps).ToListAsync(cancellationToken);
+
+        // Load current assignments for matched employees
+        var employeeIds = rawItems.Select(a => a.EmployeeId).Distinct().ToList();
+        var assignmentMap = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(ea => ea.Department)
+            .Where(ea => ea.IsCurrent && employeeIds.Contains(ea.EmployeeId))
+            .ToDictionaryAsync(ea => ea.EmployeeId, cancellationToken);
+
+        var items = rawItems.Select(a =>
+        {
+            assignmentMap.TryGetValue(a.EmployeeId, out var asg);
+            return new BatchAttendanceRecordDto
+            {
+                Id = a.Id,
+                EmployeeCode = a.Employee?.EmployeeCode ?? string.Empty,
+                EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}".Trim(),
+                DepartmentName = asg?.Department?.DepartmentName,
+                WorkDate = a.WorkDate.ToString("yyyy-MM-dd"),
+                ActualIn = a.ActualIn.HasValue ? a.ActualIn.Value.ToString("HH:mm") : null,
+                ActualOut = a.ActualOut.HasValue ? a.ActualOut.Value.ToString("HH:mm") : null,
+                WorkedMinutes = a.WorkedMinutes,
+                LateMinutes = a.LateMinutes,
+                EarlyLeaveMinutes = a.EarlyLeaveMinutes,
+                IsAbsent = a.IsAbsent,
+                Status = a.Status
+            };
+        }).ToList();
+
+        return new PagedBatchRecordResult
+        {
+            Items = items,
+            TotalCount = total,
+            Page = p,
+            PageSize = ps
+        };
+    }
+
     public async Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(string format = "xlsx", CancellationToken cancellationToken = default)
     {
         var sampleRows = new List<Dictionary<string, object?>>

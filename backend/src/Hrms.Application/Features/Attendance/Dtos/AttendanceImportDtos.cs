@@ -89,3 +89,31 @@ public class RevertBatchResultDto
     public string Message { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// DTO สำหรับแสดงรายการบันทึกเวลาที่นำเข้าจาก Batch ที่ระบุ
+/// </summary>
+public class BatchAttendanceRecordDto
+{
+    public long Id { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? DepartmentName { get; set; }
+    public string WorkDate { get; set; } = string.Empty;
+    public string? ActualIn { get; set; }
+    public string? ActualOut { get; set; }
+    public int WorkedMinutes { get; set; }
+    public int LateMinutes { get; set; }
+    public int EarlyLeaveMinutes { get; set; }
+    public bool IsAbsent { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class PagedBatchRecordResult
+{
+    public List<BatchAttendanceRecordDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+}
+

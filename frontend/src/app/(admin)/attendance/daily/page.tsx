@@ -58,6 +58,7 @@ import {
   AttendanceImportResult,
   AttendanceImportError,
   AttendanceImportFilterQuery,
+  BatchAttendanceRecord,
 } from '@/types/attendanceImport';
 import { Department } from '@/types/organization';
 import { Shift } from '@/types/shift';
@@ -187,6 +188,14 @@ function DailyAttendanceContent() {
   const [revertModalOpen, setRevertModalOpen] = useState<boolean>(false);
   const [batchToRevert, setBatchToRevert] = useState<AttendanceImportBatch | null>(null);
   const [isRevertingBatch, setIsRevertingBatch] = useState<boolean>(false);
+
+  // Time Review Modal State (ตรวจเวลา)
+  const [selectedBatchForReview, setSelectedBatchForReview] = useState<AttendanceImportBatch | null>(null);
+  const [batchRecords, setBatchRecords] = useState<BatchAttendanceRecord[]>([]);
+  const [isLoadingBatchRecords, setIsLoadingBatchRecords] = useState<boolean>(false);
+  const [batchRecordPage, setBatchRecordPage] = useState<number>(1);
+  const [batchRecordTotalPages, setBatchRecordTotalPages] = useState<number>(1);
+  const [batchRecordTotalCount, setBatchRecordTotalCount] = useState<number>(0);
 
   // Attendance Adjustment Requests State (Sprint 7)
   const [adjustments, setAdjustments] = useState<AttendanceAdjustment[]>([]);
@@ -593,6 +602,27 @@ function DailyAttendanceContent() {
   const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
     setBatchToRevert(batch);
     setRevertModalOpen(true);
+  };
+
+  const handleOpenTimeReview = async (batch: AttendanceImportBatch) => {
+    setSelectedBatchForReview(batch);
+    setBatchRecordPage(1);
+    await loadBatchRecords(batch.id, 1);
+  };
+
+  const loadBatchRecords = async (batchId: number, targetPage: number) => {
+    try {
+      setIsLoadingBatchRecords(true);
+      const res = await attendanceImportService.getBatchRecords(batchId, targetPage, 20);
+      setBatchRecords(res.items);
+      setBatchRecordTotalPages(res.totalPages);
+      setBatchRecordTotalCount(res.totalCount);
+    } catch (err) {
+      console.error('Failed to load batch records:', err);
+      toast.error('ไม่สามารถโหลดข้อมูลบันทึกเวลาได้');
+    } finally {
+      setIsLoadingBatchRecords(false);
+    }
   };
 
   const handleConfirmRevertBatch = async () => {
@@ -1812,21 +1842,9 @@ function DailyAttendanceContent() {
                               </button>
                             )}
                             <button
-                              onClick={() => {
-                                if (batch.dateFrom && batch.dateTo) {
-                                  setAllowedDateRange({
-                                    min: batch.dateFrom,
-                                    max: batch.dateTo,
-                                    batchName: batch.fileName || undefined,
-                                    batchId: batch.id,
-                                  });
-                                  setSelectedDate(batch.dateFrom);
-                                } else if (batch.dateFrom) {
-                                  setSelectedDate(batch.dateFrom);
-                                }
-                                handleTabChange('daily');
-                              }}
+                              onClick={() => handleOpenTimeReview(batch)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                              title="ดูข้อมูลบันทึกเวลาที่นำเข้าในชุดนี้"
                             >
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
                               ตรวจเวลา
@@ -2434,6 +2452,182 @@ function DailyAttendanceContent() {
                 </button>
                 <button
                   onClick={() => setSelectedBatchForErrors(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2"
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Time Review Modal (ตรวจเวลา) */}
+      {selectedBatchForReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-5xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    ตรวจสอบเวลาเข้า-ออกงาน
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ชุดที่ #{selectedBatchForReview.id} | ไฟล์: {selectedBatchForReview.fileName} ({batchRecordTotalCount.toLocaleString()} รายการ)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedBatchForReview(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="p-5 overflow-y-auto flex-1">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap">ชื่อพนักงาน</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap">แผนก</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap">วันที่</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap text-center">เวลาเข้า</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap text-center">เวลาออก</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap text-center">ชม.ทำงาน</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap text-center">สาย (นาที)</th>
+                      <th className="py-3 px-3.5 whitespace-nowrap text-center">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {isLoadingBatchRecords ? (
+                      <tr>
+                        <td colSpan={9} className="py-8 text-center text-slate-400">
+                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-1" />
+                          กำลังโหลดข้อมูล...
+                        </td>
+                      </tr>
+                    ) : batchRecords.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-8 text-center text-slate-400">
+                          ไม่พบข้อมูลบันทึกเวลาในชุดนี้
+                        </td>
+                      </tr>
+                    ) : (
+                      batchRecords.map((rec) => (
+                        <tr key={rec.id} className="hover:bg-blue-50/20 transition-colors">
+                          <td className="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                            {rec.employeeCode}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap">
+                            {rec.employeeName || '-'}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                            {rec.departmentName || '-'}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-700 whitespace-nowrap font-medium">
+                            {rec.workDate
+                              ? (() => {
+                                  const d = new Date(rec.workDate);
+                                  return `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+                                })()
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {rec.actualIn ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                <LogIn className="w-3 h-3" />
+                                {rec.actualIn}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {rec.actualOut ? (
+                              <span className="inline-flex items-center gap-1 text-sky-700 font-semibold">
+                                <LogOut className="w-3 h-3" />
+                                {rec.actualOut}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 text-center text-slate-700 whitespace-nowrap">
+                            {rec.isAbsent ? '-' : `${Math.floor(rec.workedMinutes / 60)}:${String(rec.workedMinutes % 60).padStart(2, '0')}`}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {rec.lateMinutes > 0 ? (
+                              <span className="font-semibold text-amber-600">{rec.lateMinutes}</span>
+                            ) : (
+                              <span className="text-slate-400">0</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {rec.isAbsent ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                ขาด
+                              </span>
+                            ) : rec.status === 'PRESENT' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                มาทำงาน
+                              </span>
+                            ) : rec.status === 'LATE' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                มาสาย
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                {rec.status}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer Pagination */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs">
+              <span className="text-slate-500">
+                แสดงหน้า {batchRecordPage} จาก {batchRecordTotalPages || 1} หน้า
+                {batchRecordTotalCount > 0 && ` (ทั้งหมด ${batchRecordTotalCount.toLocaleString()} รายการ)`}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={batchRecordPage <= 1}
+                  onClick={() => {
+                    const nextP = batchRecordPage - 1;
+                    setBatchRecordPage(nextP);
+                    loadBatchRecords(selectedBatchForReview.id, nextP);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                >
+                  ย้อนกลับ
+                </button>
+                <button
+                  disabled={batchRecordPage >= batchRecordTotalPages}
+                  onClick={() => {
+                    const nextP = batchRecordPage + 1;
+                    setBatchRecordPage(nextP);
+                    loadBatchRecords(selectedBatchForReview.id, nextP);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                >
+                  ถัดไป
+                </button>
+                <button
+                  onClick={() => setSelectedBatchForReview(null)}
                   className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2"
                 >
                   ปิด
