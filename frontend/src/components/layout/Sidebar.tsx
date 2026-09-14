@@ -49,7 +49,7 @@ const menuItems: MenuItem[] = [
     requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE'],
   },
   {
-    title: 'ลงเวลาของฉัน (ESS)',
+    title: 'บันทึกเวลาของฉัน (ESS)',
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',
     icon: Clock,

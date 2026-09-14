@@ -9,8 +9,6 @@ import { AttendanceAdjustment, CreateAttendanceAdjustmentRequest } from '@/types
 import {
   Clock,
   Calendar,
-  LogIn,
-  LogOut,
   History,
   FileEdit,
   CheckCircle2,
@@ -50,8 +48,6 @@ export default function EssAttendancePage() {
   // ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>('history');
   const [todayRecord, setTodayRecord] = useState<AttendanceDaily | null>(null);
-  const [isClockingIn, setIsClockingIn] = useState(false);
-  const [isClockingOut, setIsClockingOut] = useState(false);
   const [isLoadingToday, setIsLoadingToday] = useState(true);
 
   // Filter Month & Year for History
@@ -142,42 +138,6 @@ export default function EssAttendancePage() {
       loadAdjustments();
     }
   }, [activeTab, loadHistory, loadAdjustments]);
-
-  // ─────────────────────────────────────────────────────────────
-  // Clock In Action
-  // ─────────────────────────────────────────────────────────────
-  const handleClockIn = async () => {
-    try {
-      setIsClockingIn(true);
-      const updated = await essAttendanceService.myClockIn();
-      setTodayRecord(updated);
-      toast.success('บันทึกเวลาเข้างานเรียบร้อยแล้ว');
-      loadHistory();
-    } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'เกิดข้อผิดพลาดในการลงเวลาเข้างาน';
-      toast.error(errorMsg);
-    } finally {
-      setIsClockingIn(false);
-    }
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // Clock Out Action
-  // ─────────────────────────────────────────────────────────────
-  const handleClockOut = async () => {
-    try {
-      setIsClockingOut(true);
-      const updated = await essAttendanceService.myClockOut();
-      setTodayRecord(updated);
-      toast.success('บันทึกเวลาออกงานเรียบร้อยแล้ว');
-      loadHistory();
-    } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'เกิดข้อผิดพลาดในการลงเวลาออกงาน';
-      toast.error(errorMsg);
-    } finally {
-      setIsClockingOut(false);
-    }
-  };
 
   // ─────────────────────────────────────────────────────────────
   // Adjustment Modal Actions
@@ -483,60 +443,34 @@ export default function EssAttendancePage() {
                 ) : null}
               </div>
             </div>
+
+            <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              ข้อมูลเวลาเข้า-ออกงานประมวลผลจากระบบสแกนนิ้ว/ไฟล์ Excel ที่ฝ่ายบุคคลนำเข้าสู่ระบบ หากข้อมูลไม่ถูกต้องหรือลืมสแกน สามารถกดขอปรับเวลาได้
+            </p>
           </div>
 
-          {/* Clock In / Out Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 min-w-[320px]">
-            {/* Clock In Button */}
+          {/* Action Buttons: Refresh & Request Adjustment */}
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:self-center">
             <button
-              onClick={handleClockIn}
-              disabled={isClockingIn || Boolean(todayRecord?.actualIn)}
-              className={`flex-1 w-full py-3.5 px-5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm ${
-                todayRecord?.actualIn
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-not-allowed'
-                  : 'bg-[#0052CC] hover:bg-[#0747A6] text-white shadow-indigo-500/20 active:scale-[0.98]'
-              }`}
+              onClick={() => {
+                loadTodayAttendance();
+                toast.info('อัปเดตข้อมูลเวลาเรียบร้อยแล้ว');
+              }}
+              disabled={isLoadingToday}
+              className="w-full sm:w-auto py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+              title="รีเฟรชข้อมูลเวลาวันนี้"
             >
-              {isClockingIn ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : todayRecord?.actualIn ? (
-                <>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  บันทึกเข้าแล้ว ({formatTime(todayRecord.actualIn)})
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  บันทึกเวลาเข้างาน
-                </>
-              )}
+              <RotateCcw className={`w-3.5 h-3.5 ${isLoadingToday ? 'animate-spin text-[#0052CC]' : ''}`} />
+              รีเฟรชข้อมูล
             </button>
 
-            {/* Clock Out Button */}
             <button
-              onClick={handleClockOut}
-              disabled={isClockingOut || !todayRecord?.actualIn || Boolean(todayRecord?.actualOut)}
-              className={`flex-1 w-full py-3.5 px-5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm ${
-                todayRecord?.actualOut
-                  ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                  : !todayRecord?.actualIn
-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white shadow-rose-500/20 active:scale-[0.98]'
-              }`}
+              onClick={() => openAdjustmentModal(todayRecord || undefined)}
+              className="w-full sm:w-auto py-2.5 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 bg-[#0052CC] hover:bg-[#0747A6] text-white shadow-sm transition-all active:scale-[0.98]"
             >
-              {isClockingOut ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : todayRecord?.actualOut ? (
-                <>
-                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                  บันทึกออกแล้ว ({formatTime(todayRecord.actualOut)})
-                </>
-              ) : (
-                <>
-                  <LogOut className="w-5 h-5" />
-                  บันทึกเวลาออกงาน
-                </>
-              )}
+              <FileEdit className="w-3.5 h-3.5" />
+              แจ้งลืมสแกน / ขอปรับเวลา
             </button>
           </div>
         </div>
