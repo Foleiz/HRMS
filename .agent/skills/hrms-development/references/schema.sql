@@ -176,9 +176,6 @@ CREATE TABLE hrms.employee_level (
 	level_name varchar(100) NOT NULL,
 	level_rank int4 NULL,
 	status varchar(20) DEFAULT 'ACTIVE' NOT NULL CHECK (status IN ('ACTIVE', 'INACTIVE')),
-	min_salary numeric(15, 2) DEFAULT 0 NULL,
-	max_salary numeric(15, 2) DEFAULT 0 NULL,
-	approval_limit numeric(15, 2) DEFAULT 0 NULL,
 	default_flow_id int8 NULL
 );
 
@@ -652,6 +649,7 @@ CREATE TABLE hrms.salary_structure (
 	min_salary numeric(15, 2) DEFAULT 0 NOT NULL CHECK (min_salary >= 0),
 	max_salary numeric(15, 2) DEFAULT 0 NOT NULL,
 	default_salary numeric(15, 2) NULL,
+	approval_limit numeric(15, 2) DEFAULT 0 NULL,
 	effective_from date NOT NULL,
 	effective_to date NULL,
 	CHECK (max_salary >= min_salary),

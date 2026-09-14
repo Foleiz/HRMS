@@ -114,9 +114,6 @@ export interface EmployeeLevel {
   levelCode: string;
   levelName: string;
   levelRank?: number;
-  minSalary?: number;
-  maxSalary?: number;
-  approvalLimit?: number;
   status: 'ACTIVE' | 'INACTIVE' | string;
 }
 
@@ -124,14 +121,12 @@ export interface CreateEmployeeLevelRequest {
   levelCode: string;
   levelName: string;
   levelRank?: number;
-  approvalLimit?: number;
   status: string;
 }
 
 export interface UpdateEmployeeLevelRequest {
   levelName: string;
   levelRank?: number;
-  approvalLimit?: number;
   status: string;
 }
 

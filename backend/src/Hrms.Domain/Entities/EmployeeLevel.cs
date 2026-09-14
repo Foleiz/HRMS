@@ -12,9 +12,6 @@ public class EmployeeLevel : BaseEntity
     public string LevelName { get; set; } = string.Empty;
     public int? LevelRank { get; set; }
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
-    public decimal? MinSalary { get; set; }
-    public decimal? MaxSalary { get; set; }
-    public decimal? ApprovalLimit { get; set; }
     public long? DefaultFlowId { get; set; }
 
     // Navigation Properties

@@ -503,9 +503,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.LevelName).HasColumnName("level_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.LevelRank).HasColumnName("level_rank");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.MinSalary).HasColumnName("min_salary");
-            entity.Property(e => e.MaxSalary).HasColumnName("max_salary");
-            entity.Property(e => e.ApprovalLimit).HasColumnName("approval_limit");
             entity.Property(e => e.DefaultFlowId).HasColumnName("default_flow_id");
             entity.HasIndex(e => e.LevelCode).IsUnique();
         });

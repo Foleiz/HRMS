@@ -474,9 +474,6 @@ public class OrganizationService : IOrganizationService
                 LevelCode = l.LevelCode,
                 LevelName = l.LevelName,
                 LevelRank = l.LevelRank,
-                MinSalary = l.MinSalary,
-                MaxSalary = l.MaxSalary,
-                ApprovalLimit = l.ApprovalLimit,
                 Status = l.Status
             })
             .ToListAsync(cancellationToken);
@@ -497,9 +494,6 @@ public class OrganizationService : IOrganizationService
             LevelCode = level.LevelCode,
             LevelName = level.LevelName,
             LevelRank = level.LevelRank,
-            MinSalary = level.MinSalary,
-            MaxSalary = level.MaxSalary,
-            ApprovalLimit = level.ApprovalLimit,
             Status = level.Status
         };
     }
@@ -517,7 +511,6 @@ public class OrganizationService : IOrganizationService
             LevelCode = request.LevelCode.Trim(),
             LevelName = request.LevelName.Trim(),
             LevelRank = request.LevelRank,
-            ApprovalLimit = request.ApprovalLimit,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
         };
 
@@ -530,9 +523,6 @@ public class OrganizationService : IOrganizationService
             LevelCode = level.LevelCode,
             LevelName = level.LevelName,
             LevelRank = level.LevelRank,
-            MinSalary = level.MinSalary,
-            MaxSalary = level.MaxSalary,
-            ApprovalLimit = level.ApprovalLimit,
             Status = level.Status
         };
     }
@@ -547,7 +537,6 @@ public class OrganizationService : IOrganizationService
 
         level.LevelName = request.LevelName.Trim();
         level.LevelRank = request.LevelRank;
-        level.ApprovalLimit = request.ApprovalLimit;
         level.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -558,9 +547,6 @@ public class OrganizationService : IOrganizationService
             LevelCode = level.LevelCode,
             LevelName = level.LevelName,
             LevelRank = level.LevelRank,
-            MinSalary = level.MinSalary,
-            MaxSalary = level.MaxSalary,
-            ApprovalLimit = level.ApprovalLimit,
             Status = level.Status
         };
     }

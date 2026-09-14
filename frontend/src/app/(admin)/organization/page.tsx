@@ -181,7 +181,6 @@ export default function OrganizationPage() {
     levelCode: '',
     levelName: '',
     levelRank: undefined,
-    approvalLimit: undefined,
     status: 'ACTIVE',
   });
 
@@ -450,7 +449,6 @@ export default function OrganizationPage() {
         levelCode: lvl.levelCode,
         levelName: lvl.levelName,
         levelRank: lvl.levelRank ?? undefined,
-        approvalLimit: lvl.approvalLimit ?? undefined,
         status: lvl.status,
       });
     } else {
@@ -459,7 +457,6 @@ export default function OrganizationPage() {
         levelCode: '',
         levelName: '',
         levelRank: undefined,
-        approvalLimit: undefined,
         status: 'ACTIVE',
       });
     }
@@ -474,7 +471,6 @@ export default function OrganizationPage() {
           levelCode: levelForm.levelCode.trim().toUpperCase(),
           levelName: levelForm.levelName.trim(),
           levelRank: levelForm.levelRank,
-          approvalLimit: levelForm.approvalLimit,
           status: levelForm.status,
         });
         showSuccess('เพิ่มระดับพนักงานสำเร็จ');
@@ -482,7 +478,6 @@ export default function OrganizationPage() {
         await organizationService.updateLevel(levelForm.id, {
           levelName: levelForm.levelName.trim(),
           levelRank: levelForm.levelRank,
-          approvalLimit: levelForm.approvalLimit,
           status: levelForm.status,
         });
         showSuccess('แก้ไขระดับพนักงานสำเร็จ');
@@ -1067,7 +1062,6 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">ลำดับขั้น (Rank)</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">วงเงินอนุมัติ (Approval Limit)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
@@ -1075,14 +1069,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลระดับพนักงาน...
                       </td>
                     </tr>
                   ) : filteredLevels.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap">
                         ไม่พบข้อมูลระดับพนักงาน
                       </td>
                     </tr>
@@ -1095,9 +1089,6 @@ export default function OrganizationPage() {
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
                             {lvl.levelRank !== undefined && lvl.levelRank !== null ? `Rank ${lvl.levelRank}` : '-'}
                           </span>
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono text-slate-700 whitespace-nowrap">
-                          {lvl.approvalLimit ? `${Number(lvl.approvalLimit).toLocaleString()} ฿` : '0.00 ฿'}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
@@ -1892,31 +1883,6 @@ export default function OrganizationPage() {
                 <p className="text-[11px] text-slate-400 mt-1">ใช้กำหนดลำดับขั้นในการแสดงผลและสายการบังคับบัญชา</p>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  วงเงินอนุมัติ (Approval Limit)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={levelForm.approvalLimit ?? ''}
-                    onChange={(e) =>
-                      setLevelForm({
-                        ...levelForm,
-                        approvalLimit: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    placeholder="0"
-                    className="w-full px-3.5 py-2 pr-8 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">฿</span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  เพดานวงเงินอนุมัติงบประมาณ/เอกสาร (ระบุ 0 หรือเว้นว่างได้ หากไม่มีอำนาจอนุมัติ)
-                </p>
-              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
