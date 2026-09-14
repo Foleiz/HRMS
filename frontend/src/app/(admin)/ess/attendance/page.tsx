@@ -8,7 +8,6 @@ import { AttendanceDaily, MyAttendanceMonthlySummary } from '@/types/attendance'
 import { AttendanceAdjustment, CreateAttendanceAdjustmentRequest } from '@/types/attendanceAdjustment';
 import {
   Clock,
-  Calendar,
   History,
   FileEdit,
   CheckCircle2,
@@ -17,11 +16,6 @@ import {
   XCircle,
   RotateCcw,
   PlusCircle,
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Building,
-  Briefcase,
   X,
   Send,
   Loader2,
@@ -33,22 +27,9 @@ export default function EssAttendancePage() {
   const toast = useToast();
 
   // ─────────────────────────────────────────────────────────────
-  // State: Realtime Clock
-  // ─────────────────────────────────────────────────────────────
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // ─────────────────────────────────────────────────────────────
   // State: Data
   // ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>('history');
-  const [todayRecord, setTodayRecord] = useState<AttendanceDaily | null>(null);
-  const [isLoadingToday, setIsLoadingToday] = useState(true);
 
   // Filter Month & Year for History
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -76,21 +57,6 @@ export default function EssAttendancePage() {
     adjustedClockOut: '17:30',
     reason: '',
   });
-
-  // ─────────────────────────────────────────────────────────────
-  // Load Today's Data
-  // ─────────────────────────────────────────────────────────────
-  const loadTodayAttendance = useCallback(async () => {
-    try {
-      setIsLoadingToday(true);
-      const data = await essAttendanceService.getMyToday();
-      setTodayRecord(data);
-    } catch (err: unknown) {
-      console.error('Failed to load today attendance:', err);
-    } finally {
-      setIsLoadingToday(false);
-    }
-  }, []);
 
   // ─────────────────────────────────────────────────────────────
   // Load History & Summary
@@ -127,9 +93,6 @@ export default function EssAttendancePage() {
     }
   }, []);
 
-  useEffect(() => {
-    loadTodayAttendance();
-  }, [loadTodayAttendance]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -342,175 +305,57 @@ export default function EssAttendancePage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* ─────────────────────────────────────────────────────────────
-          1. Hero & Live Clock Card
+          Page Header
       ───────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B2046] via-[#102A56] to-[#0052CC] text-white p-6 sm:p-8 shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          {/* User Details */}
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-sky-200 backdrop-blur-md border border-white/10">
-              <User className="w-3.5 h-3.5" />
-              Employee Self-Service (ESS)
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              สวัสดี, {user?.fullName || 'พนักงาน'}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              บันทึกเวลาของฉัน (ESS)
             </h1>
-            <p className="text-sky-100 text-xs sm:text-sm flex flex-wrap items-center gap-3">
-              <span className="font-mono bg-white/10 px-2 py-0.5 rounded">
-                รหัส {user?.employeeCode || '-'}
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Building className="w-3.5 h-3.5 text-sky-300" />
-                {todayRecord?.departmentName || 'ไม่ระบุแผนก'}
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Briefcase className="w-3.5 h-3.5 text-sky-300" />
-                {todayRecord?.positionName || 'ไม่ระบุตำแหน่ง'}
-              </span>
-            </p>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              Employee Self-Service
+            </span>
           </div>
-
-          {/* Realtime Clock & Date */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/15 text-center md:text-right min-w-[220px]">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-wider font-mono text-white drop-shadow-sm">
-              {currentTime ? currentTime.toLocaleTimeString('th-TH', { hour12: false }) : '--:--:--'}
-            </div>
-            <div className="text-xs sm:text-sm text-sky-200 mt-1 font-medium">
-              {currentTime
-                ? currentTime.toLocaleDateString('th-TH', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })
-                : 'กำลังโหลดวันที่...'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          2. Today's Attendance & Action Buttons Card
-      ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-7">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          {/* Shift Info & Status */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <h2 className="text-lg font-bold text-slate-900">บันทึกเวลาทำงานวันนี้</h2>
-              <span className="text-xs text-slate-400 font-mono">({todayRecord?.workDate || 'วันนี้'})</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-              {/* Shift */}
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                <span className="text-xs text-slate-400 block mb-1">กะการทำงานวันนี้</span>
-                <span className="font-semibold text-slate-800">
-                  {todayRecord?.shiftName || 'กะปกติ'}
-                </span>
-                <span className="text-xs text-slate-500 block mt-0.5">
-                  {todayRecord?.shiftTimeWindow || '08:30 - 17:30 น.'}
-                </span>
-              </div>
-
-              {/* Actual In */}
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                <span className="text-xs text-slate-400 block mb-1">เวลาเข้างานจริง</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold font-mono text-emerald-600">
-                    {formatTime(todayRecord?.actualIn)}
-                  </span>
-                  {todayRecord?.actualIn && renderStatusBadge(todayRecord?.status, todayRecord?.isAbsent)}
-                </div>
-                {todayRecord?.lateMinutes ? (
-                  <span className="text-xs text-amber-600 block mt-0.5">สาย {todayRecord.lateMinutes} นาที</span>
-                ) : null}
-              </div>
-
-              {/* Actual Out */}
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                <span className="text-xs text-slate-400 block mb-1">เวลาออกงานจริง</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold font-mono text-blue-600">
-                    {formatTime(todayRecord?.actualOut)}
-                  </span>
-                </div>
-                {todayRecord?.earlyLeaveMinutes ? (
-                  <span className="text-xs text-orange-600 block mt-0.5">ออกก่อน {todayRecord.earlyLeaveMinutes} นาที</span>
-                ) : null}
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-              ข้อมูลเวลาเข้า-ออกงานประมวลผลจากระบบสแกนนิ้ว/ไฟล์ Excel ที่ฝ่ายบุคคลนำเข้าสู่ระบบ หากข้อมูลไม่ถูกต้องหรือลืมสแกน สามารถกดขอปรับเวลาได้
-            </p>
-          </div>
-
-          {/* Action Buttons: Refresh & Request Adjustment */}
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:self-center">
-            <button
-              onClick={() => {
-                loadTodayAttendance();
-                toast.info('อัปเดตข้อมูลเวลาเรียบร้อยแล้ว');
-              }}
-              disabled={isLoadingToday}
-              className="w-full sm:w-auto py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-              title="รีเฟรชข้อมูลเวลาวันนี้"
-            >
-              <RotateCcw className={`w-3.5 h-3.5 ${isLoadingToday ? 'animate-spin text-[#0052CC]' : ''}`} />
-              รีเฟรชข้อมูล
-            </button>
-
-            <button
-              onClick={() => openAdjustmentModal(todayRecord || undefined)}
-              className="w-full sm:w-auto py-2.5 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 bg-[#0052CC] hover:bg-[#0747A6] text-white shadow-sm transition-all active:scale-[0.98]"
-            >
-              <FileEdit className="w-3.5 h-3.5" />
-              แจ้งลืมสแกน / ขอปรับเวลา
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          3. Tab Navigation
-      ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'history'
-                ? 'bg-[#0052CC] text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            ประวัติเวลาของฉัน
-          </button>
-          <button
-            onClick={() => setActiveTab('adjustments')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'adjustments'
-                ? 'bg-[#0052CC] text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <FileEdit className="w-4 h-4" />
-            คำขอปรับปรุงเวลา ({adjustmentsList.length})
-          </button>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            {user?.fullName} {user?.employeeCode ? `(รหัส ${user.employeeCode})` : ''} • ตรวจสอบประวัติเวลาเข้า-ออกงานจากระบบสแกนนิ้ว/Excel และยื่นคำขอปรับเวลา
+          </p>
         </div>
 
         <button
           onClick={() => openAdjustmentModal()}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#0052CC] hover:bg-[#0747A6] text-white shadow-sm transition-all active:scale-[0.98] self-start sm:self-auto"
         >
           <PlusCircle className="w-4 h-4" />
           ยื่นคำขอปรับเวลาใหม่
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          Tab Navigation
+      ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'history'
+              ? 'bg-[#0052CC] text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          ประวัติเวลาของฉัน
+        </button>
+        <button
+          onClick={() => setActiveTab('adjustments')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'adjustments'
+              ? 'bg-[#0052CC] text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <FileEdit className="w-4 h-4" />
+          คำขอปรับปรุงเวลา ({adjustmentsList.length})
         </button>
       </div>
 
