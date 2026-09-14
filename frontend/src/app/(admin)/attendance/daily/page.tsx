@@ -28,7 +28,6 @@ import {
   Building2,
   UploadCloud,
   FileSpreadsheet,
-  Download,
   HardDrive,
   FileText,
   ArrowRight,
@@ -535,14 +534,6 @@ function DailyAttendanceContent() {
       setImportErrorMessage(msg);
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      await attendanceImportService.downloadTemplate('xlsx');
-    } catch (err: any) {
-      alert('ไม่สามารถดาวน์โหลดไฟล์แม่แบบได้ในขณะนี้: ' + (err.message || 'ข้อผิดพลาด'));
     }
   };
 
@@ -1198,11 +1189,26 @@ function DailyAttendanceContent() {
                 </p>
               </div>
               <button
-                onClick={handleDownloadTemplate}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                type="button"
+                disabled={!selectedFile || isUploading}
+                onClick={handleUploadSubmit}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
+                  !selectedFile || isUploading
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-[0.98] cursor-pointer'
+                }`}
               >
-                <Download className="w-3.5 h-3.5 text-slate-500" />
-                ดาวน์โหลด Template
+                {isUploading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>กำลังประมวลผล...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>เริ่มประมวลผลนำเข้าไฟล์</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -1298,32 +1304,6 @@ function DailyAttendanceContent() {
                   </div>
                 </div>
               )}
-
-              {/* Submit */}
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  disabled={!selectedFile || isUploading}
-                  onClick={handleUploadSubmit}
-                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${
-                    !selectedFile || isUploading
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-[0.98]'
-                  }`}
-                >
-                  {isUploading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      กำลังประมวลผล...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="w-4 h-4" />
-                      เริ่มประมวลผลนำเข้าไฟล์
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
           </div>
 
