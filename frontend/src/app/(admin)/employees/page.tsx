@@ -632,8 +632,9 @@ export default function EmployeesPage() {
       setSuccessMessage('ลบข้อมูลพนักงานเรียบร้อย');
       loadData();
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch {
-      setErrorMessage('ไม่สามารถลบข้อมูลพนักงานได้');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setErrorMessage(error?.message || 'ไม่สามารถลบข้อมูลพนักงานได้');
     }
   };
 

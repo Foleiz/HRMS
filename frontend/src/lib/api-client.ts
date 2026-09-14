@@ -48,11 +48,16 @@ apiClient.interceptors.response.use(
       errorMessage = error.message;
     }
 
-    console.error('API Error Details:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: errorMessage,
-    });
+    if (!error.response) {
+      errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';
+      console.warn('API Connection Refused / Network Error:', error.message);
+    } else {
+      console.error('API Error Details:', {
+        status: error.response.status,
+        data: error.response.data,
+        message: errorMessage,
+      });
+    }
 
     // จัดการกรณี 401 Unauthorized: เคลียร์ Session และพาไปหน้า Login ทันที
     if (error.response?.status === 401 && typeof window !== 'undefined') {
