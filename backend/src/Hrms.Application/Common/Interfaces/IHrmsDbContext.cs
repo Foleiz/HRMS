@@ -59,5 +59,8 @@ public interface IHrmsDbContext
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     DbSet<EmployeeAvatar> EmployeeAvatars { get; }
 
+    // Employee Transfer & Promotion Requests (Dev 2)
+    DbSet<EmployeeTransferRequest> EmployeeTransferRequests { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

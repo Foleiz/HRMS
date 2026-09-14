@@ -71,6 +71,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     public DbSet<EmployeeAvatar> EmployeeAvatars => Set<EmployeeAvatar>();
 
+    // Employee Transfer & Promotion Requests (Dev 2)
+    public DbSet<EmployeeTransferRequest> EmployeeTransferRequests => Set<EmployeeTransferRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -874,6 +877,77 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithOne(e => e.Avatar)
                 .HasForeignKey<EmployeeAvatar>(e => e.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeTransferRequest (Dev 2)
+        modelBuilder.Entity<EmployeeTransferRequest>(entity =>
+        {
+            entity.ToTable("employee_transfer_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.TransferType).HasColumnName("transfer_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FromDivisionId).HasColumnName("from_division_id");
+            entity.Property(e => e.FromDepartmentId).HasColumnName("from_department_id");
+            entity.Property(e => e.FromPositionId).HasColumnName("from_position_id");
+            entity.Property(e => e.FromManagerId).HasColumnName("from_manager_id");
+            entity.Property(e => e.ToDivisionId).HasColumnName("to_division_id");
+            entity.Property(e => e.ToDepartmentId).HasColumnName("to_department_id").IsRequired();
+            entity.Property(e => e.ToPositionId).HasColumnName("to_position_id").IsRequired();
+            entity.Property(e => e.ToManagerId).HasColumnName("to_manager_id");
+            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired().HasDefaultValue("PENDING");
+            entity.Property(e => e.OrderNo).HasColumnName("order_no").HasMaxLength(100);
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.FromDivision)
+                .WithMany()
+                .HasForeignKey(e => e.FromDivisionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromDepartment)
+                .WithMany()
+                .HasForeignKey(e => e.FromDepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromPosition)
+                .WithMany()
+                .HasForeignKey(e => e.FromPositionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromManager)
+                .WithMany()
+                .HasForeignKey(e => e.FromManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ToDivision)
+                .WithMany()
+                .HasForeignKey(e => e.ToDivisionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ToDepartment)
+                .WithMany()
+                .HasForeignKey(e => e.ToDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ToPosition)
+                .WithMany()
+                .HasForeignKey(e => e.ToPositionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ToManager)
+                .WithMany()
+                .HasForeignKey(e => e.ToManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
