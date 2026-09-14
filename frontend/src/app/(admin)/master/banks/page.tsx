@@ -11,7 +11,6 @@ export default function BanksPage() {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,16 +70,13 @@ export default function BanksPage() {
           status: formData.status,
         });
         toast.success('แก้ไขข้อมูลธนาคารเรียบร้อยแล้ว');
-        setSuccessMsg('แก้ไขข้อมูลธนาคารเรียบร้อยแล้ว');
       } else {
         await bankService.create(formData);
         toast.success('เพิ่มธนาคารใหม่สำเร็จ');
-        setSuccessMsg('เพิ่มธนาคารใหม่สำเร็จ');
       }
 
       setIsModalOpen(false);
       await fetchBanks();
-      setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
       toast.error(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
@@ -95,9 +91,7 @@ export default function BanksPage() {
       setError(null);
       await bankService.delete(id);
       toast.success('ลบข้อมูลธนาคารเรียบร้อยแล้ว');
-      setSuccessMsg('ลบข้อมูลธนาคารเรียบร้อยแล้ว');
       await fetchBanks();
-      setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
       toast.error(err.message || 'เกิดข้อผิดพลาดในการลบ');
     }
@@ -113,37 +107,29 @@ export default function BanksPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-800">จัดการข้อมูลธนาคาร (Master Data)</h1>
-            <p className="text-sm text-slate-500">
-              Reference Feature ต้นแบบการทำงานแบบ Full-Stack เชื่อมต่อ PostgreSQL สคีมา <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono text-xs">hrms.bank</code>
-            </p>
+            <p className="text-sm text-slate-500 mt-1">จัดการรายชื่อธนาคารและสถานะการใช้งานสำหรับบัญชีพนักงาน</p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
+
+        <div className="flex items-center gap-3">
           <button
             onClick={fetchBanks}
             disabled={loading}
-            className="px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            className="p-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+            title="รีเฟรชข้อมูล"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            รีเฟรช
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
+
           <button
             onClick={openCreateModal}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-1.5"
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm hover:shadow transition-all cursor-pointer text-sm"
           >
             <Plus className="w-4 h-4" />
             เพิ่มธนาคาร
           </button>
         </div>
       </div>
-
-      {/* Success Notification */}
-      {successMsg && (
-        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium">
-          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
-          <span>{successMsg}</span>
-        </div>
-      )}
 
       {/* Error Alert */}
       {error && (

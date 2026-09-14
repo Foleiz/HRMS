@@ -126,11 +126,9 @@ function DailyAttendanceContent() {
   const [selectedDepartment, setSelectedDepartment] = useState<number | 'ALL'>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
 
-  // Loading & Alert States
+  // Loading & Action States
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -217,21 +215,6 @@ function DailyAttendanceContent() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-dismiss alerts
-  useEffect(() => {
-    if (successMessage) {
-      const t = setTimeout(() => setSuccessMessage(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [successMessage]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const t = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [errorMessage]);
-
   // Load Initial Reference Data
   useEffect(() => {
     const loadMasterData = async () => {
@@ -271,7 +254,7 @@ function DailyAttendanceContent() {
       setTotalCount(pagedResult.totalCount || 0);
     } catch (err) {
       console.error('Failed to fetch attendance data:', err);
-      setErrorMessage('ไม่สามารถโหลดข้อมูลบันทึกเวลาได้ กรุณาลองใหม่อีกครั้ง');
+      toast.error('ไม่สามารถโหลดข้อมูลบันทึกเวลาได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setLoading(false);
     }
@@ -376,12 +359,10 @@ function DailyAttendanceContent() {
       setRefreshing(true);
       const res = await attendanceService.recalculateDaily(selectedDate);
       toast.success('คำนวณเวลาเข้างานและสถานะใหม่เรียบร้อยแล้ว');
-      setSuccessMessage('คำนวณเวลาเข้างานและสถานะใหม่เรียบร้อยแล้ว');
       await fetchData();
     } catch (err) {
       console.error('Failed to recalculate:', err);
       toast.error('ไม่สามารถคำนวณเวลาใหม่ได้');
-      setErrorMessage('ไม่สามารถคำนวณเวลาใหม่ได้');
     } finally {
       setRefreshing(false);
     }
@@ -434,13 +415,11 @@ function DailyAttendanceContent() {
 
       await attendanceService.updateAttendance(editingRecord.id, req);
       toast.success('แก้ไขข้อมูลบันทึกเวลาเรียบร้อยแล้ว');
-      setSuccessMessage('แก้ไขข้อมูลบันทึกเวลาเรียบร้อยแล้ว');
       setEditModalOpen(false);
       await fetchData();
     } catch (err) {
       console.error('Failed to update attendance:', err);
       toast.error('ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
-      setErrorMessage('ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
     } finally {
       setSavingEdit(false);
     }
@@ -461,7 +440,6 @@ function DailyAttendanceContent() {
     e.preventDefault();
     if (clockEmpId <= 0) {
       toast.warning('กรุณาเลือกพนักงาน');
-      setErrorMessage('กรุณาเลือกพนักงาน');
       return;
     }
 
@@ -478,7 +456,6 @@ function DailyAttendanceContent() {
           clockInTime: dt.toISOString(),
         });
         toast.success('บันทึกเวลาเข้างานเรียบร้อย');
-        setSuccessMessage('บันทึกเวลาเข้างานเรียบร้อย');
       } else {
         await attendanceService.clockOut({
           employeeId: clockEmpId,
@@ -486,7 +463,6 @@ function DailyAttendanceContent() {
           clockOutTime: dt.toISOString(),
         });
         toast.success('บันทึกเวลาออกงานเรียบร้อย');
-        setSuccessMessage('บันทึกเวลาออกงานเรียบร้อย');
       }
 
       setClockModalOpen(false);
@@ -494,7 +470,6 @@ function DailyAttendanceContent() {
     } catch (err) {
       console.error('Failed manual punch:', err);
       toast.error('ไม่สามารถบันทึกเวลาได้ กรุณาตรวจสอบข้อมูล');
-      setErrorMessage('ไม่สามารถบันทึกเวลาได้ กรุณาตรวจสอบข้อมูล');
     } finally {
       setSavingClock(false);
     }
@@ -566,7 +541,6 @@ function DailyAttendanceContent() {
           toast.warning(`พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานไม่ตรงกับในระบบ (สำเร็จ ${res.data.successRecords} รายการ)`);
         } else {
           toast.success(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
-          setSuccessMessage(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
         }
 
         if (res.data.status !== 'FAILED' && res.data.dateFrom && res.data.dateTo) {
@@ -631,7 +605,6 @@ function DailyAttendanceContent() {
           res.message ||
           `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`;
         toast.success(successMsg);
-        setSuccessMessage(successMsg);
         if (allowedDateRange.batchId === batchToRevert.id) {
           const remaining = batches.filter((b) => b.id !== batchToRevert.id && b.status !== 'FAILED');
           if (remaining.length > 0 && remaining[0].dateFrom && remaining[0].dateTo) {
@@ -654,13 +627,11 @@ function DailyAttendanceContent() {
         await fetchData();
       } else {
         toast.error(res.message || 'ไม่สามารถยกเลิกชุดข้อมูลนี้ได้');
-        setErrorMessage(res.message || 'ไม่สามารถยกเลิกชุดข้อมูลนี้ได้');
       }
     } catch (err: any) {
       console.error('Failed to revert batch:', err);
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล';
       toast.error(msg);
-      setErrorMessage(msg);
     } finally {
       setIsRevertingBatch(false);
     }
@@ -692,7 +663,7 @@ function DailyAttendanceContent() {
       setAdjustmentsTotalCount(res.totalCount || 0);
     } catch (err) {
       console.error('Failed to load adjustments:', err);
-      setErrorMessage('ไม่สามารถโหลดรายการคำขอปรับปรุงเวลาได้');
+      toast.error('ไม่สามารถโหลดรายการคำขอปรับปรุงเวลาได้');
     } finally {
       setAdjustmentsLoading(false);
     }
@@ -762,7 +733,6 @@ function DailyAttendanceContent() {
       });
 
       toast.success('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
-      setSuccessMessage('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
       setAdjustmentModalOpen(false);
       setTargetRecordForAdjustment(null);
       await loadPendingCount();
@@ -804,7 +774,6 @@ function DailyAttendanceContent() {
       } else {
         toast.info(msg);
       }
-      setSuccessMessage(msg);
       setReviewModalOpen(false);
       setSelectedAdjustmentForReview(null);
       await loadAdjustments();
@@ -825,7 +794,6 @@ function DailyAttendanceContent() {
     try {
       await attendanceAdjustmentService.cancelAdjustment(id);
       toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
-      setSuccessMessage('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
       await loadAdjustments();
       await loadPendingCount();
     } catch (err: any) {
@@ -992,33 +960,6 @@ function DailyAttendanceContent() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* ------------------------------------------------------------- */}
-      {/* Global Alerts */}
-      {/* ------------------------------------------------------------- */}
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{successMessage}</span>
-          </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-500 hover:text-emerald-700">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-700">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (Exact same style as การจัดตารางงาน) */}
       {/* ------------------------------------------------------------- */}
