@@ -306,7 +306,7 @@ export default function EssAttendancePage() {
   const pendingCount = adjustmentsList.filter((a) => a.status === 'PENDING').length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 pb-12">
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (Exact same style as เมนูตรวจบันทึกเวลา)
       ───────────────────────────────────────────────────────────── */}

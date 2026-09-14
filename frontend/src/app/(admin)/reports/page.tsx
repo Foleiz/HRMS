@@ -168,7 +168,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12">
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (Exact same style as ตรวจบันทึกเวลา)
       ───────────────────────────────────────────────────────────── */}
