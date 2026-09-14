@@ -21,6 +21,7 @@ import {
   Landmark,
   CalendarDays,
   CalendarRange,
+  UploadCloud,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -48,9 +49,15 @@ const menuItems: MenuItem[] = [
     requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE'],
   },
   {
+    title: 'ตรวจบันทึกเวลา',
+    href: '/attendance/daily',
+    matchPrefix: '/attendance/daily',
+    icon: Clock,
+  },
+  {
     title: 'การจัดตารางงาน',
     href: '/attendance/schedules',
-    matchPrefix: '/attendance',
+    matchPrefix: '/attendance/schedules',
     icon: CalendarRange,
     requiredPermissions: ['TIME_VIEW', 'TIME_MANAGE'],
   },

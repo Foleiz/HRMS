@@ -41,5 +41,12 @@ public interface IHrmsDbContext
     DbSet<EmployeeShift> EmployeeShifts { get; }
     DbSet<EmployeeType> EmployeeTypes { get; }
 
+    // Daily Attendance (Dev 1 Sprint 5)
+    DbSet<AttendanceDaily> AttendanceDailies { get; }
+
+    // Attendance Import (Dev 1 Sprint 6)
+    DbSet<AttendanceImportBatch> AttendanceImportBatches { get; }
+    DbSet<AttendanceImportError> AttendanceImportErrors { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

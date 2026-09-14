@@ -1,6 +1,7 @@
 using System.Text;
 using Hrms.Api.Middlewares;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Auth.Services;
 using Hrms.Application.Features.Employees.Services;
 using Hrms.Application.Features.MasterData.Services;
@@ -14,6 +15,12 @@ using Hrms.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+using System.Globalization;
+
+// Enforce InvariantCulture globally so dates consistently use Gregorian calendar
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +52,8 @@ builder.Services.AddScoped<IWorkCalendarService, WorkCalendarService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IWorkScheduleService, WorkScheduleService>();
 builder.Services.AddScoped<IEmployeeShiftService, EmployeeShiftService>();
+builder.Services.AddScoped<IAttendanceDailyService, AttendanceDailyService>();
+builder.Services.AddScoped<IAttendanceImportService, AttendanceImportService>();
 
 // 4. JWT Authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "HrmsSecretKeyForEnterpriseSystemSecurity2026!@#VeryLongKeyForHmacSha256";
