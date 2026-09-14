@@ -32,6 +32,7 @@ import {
   FileText,
   ArrowRight,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
@@ -170,6 +171,11 @@ export default function DailyAttendancePage() {
   const [errorPage, setErrorPage] = useState<number>(1);
   const [errorTotalPages, setErrorTotalPages] = useState<number>(1);
   const [errorTotalCount, setErrorTotalCount] = useState<number>(0);
+
+  // Revert / Delete Batch Modal State
+  const [revertModalOpen, setRevertModalOpen] = useState<boolean>(false);
+  const [batchToRevert, setBatchToRevert] = useState<AttendanceImportBatch | null>(null);
+  const [isRevertingBatch, setIsRevertingBatch] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -542,6 +548,40 @@ export default function DailyAttendancePage() {
       console.error('Failed to load error logs:', err);
     } finally {
       setIsLoadingErrors(false);
+    }
+  };
+
+  const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
+    setBatchToRevert(batch);
+    setRevertModalOpen(true);
+  };
+
+  const handleConfirmRevertBatch = async () => {
+    if (!batchToRevert) return;
+    try {
+      setIsRevertingBatch(true);
+      const res = await attendanceImportService.revertBatch(batchToRevert.id);
+      if (res.success) {
+        setSuccessMessage(
+          res.message ||
+          `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`
+        );
+        if (allowedDateRange.batchId === batchToRevert.id) {
+          setAllowedDateRange({});
+        }
+        setRevertModalOpen(false);
+        setBatchToRevert(null);
+        await loadBatches();
+        await fetchData();
+      } else {
+        setErrorMessage(res.message || 'ไม่สามารถยกเลิกชุดข้อมูลนี้ได้');
+      }
+    } catch (err: any) {
+      console.error('Failed to revert batch:', err);
+      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล';
+      setErrorMessage(msg);
+    } finally {
+      setIsRevertingBatch(false);
     }
   };
 
@@ -1577,6 +1617,14 @@ export default function DailyAttendancePage() {
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
                               ตรวจเวลา
                             </button>
+                            <button
+                              onClick={() => handleOpenRevertModal(batch)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                              title="ยกเลิกการนำเข้าและลบข้อมูลเวลานี้ออกจากระบบ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              ลบชุดข้อมูล
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1922,6 +1970,88 @@ export default function DailyAttendancePage() {
                   ปิด
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revert / Delete Batch Confirmation Modal */}
+      {revertModalOpen && batchToRevert && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">ยืนยันยกเลิกและลบชุดข้อมูลนำเข้า?</h3>
+                <p className="text-xs text-slate-500">ชุดข้อมูล #{batchToRevert.id}</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2 text-xs mb-4">
+              <div className="flex justify-between">
+                <span className="text-slate-500">ชื่อไฟล์:</span>
+                <span className="font-semibold text-slate-900 truncate max-w-[200px]" title={batchToRevert.fileName || ''}>
+                  {batchToRevert.fileName || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">ช่วงวันที่ในเอกสาร:</span>
+                <span className="font-semibold text-slate-900">
+                  {batchToRevert.dateFrom && batchToRevert.dateTo
+                    ? `${formatThaiDate(batchToRevert.dateFrom)} - ${formatThaiDate(batchToRevert.dateTo)}`
+                    : batchToRevert.dateFrom || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">รายการที่นำเข้าสำเร็จ:</span>
+                <span className="font-semibold text-emerald-600">
+                  {batchToRevert.successRecords.toLocaleString()} รายการ
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5 mb-5">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-rose-900">คำเตือนผลกระทบ (Rollback):</p>
+                <p className="text-rose-700 mt-0.5 leading-relaxed">
+                  ระบบจะทำการลบข้อมูลเวลาเข้า-ออกงานของพนักงานทั้งหมดที่เกิดจากไฟล์นี้ออกจากหน้า <strong>ตรวจบันทึกเวลา</strong> พร้อมทั้งลบประวัติและปลดล็อกไฟล์เพื่อให้สามารถนำเข้าไฟล์ใหม่ได้
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={isRevertingBatch}
+                onClick={() => {
+                  setRevertModalOpen(false);
+                  setBatchToRevert(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isRevertingBatch}
+                onClick={handleConfirmRevertBatch}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                {isRevertingBatch ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    กำลังลบและ Rollback...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    ยืนยันลบและ Rollback ข้อมูล
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

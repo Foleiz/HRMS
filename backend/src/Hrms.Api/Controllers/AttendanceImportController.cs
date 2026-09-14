@@ -133,4 +133,32 @@ public class AttendanceImportController : ControllerBase
         var (content, contentType, fileName) = await _importService.GenerateTemplateAsync(format, cancellationToken);
         return File(content, contentType, fileName);
     }
+
+    /// <summary>
+    /// ยกเลิกและลบชุดข้อมูลนำเข้า (Revert / Delete Import Batch) พร้อม Rollback ข้อมูลในหน้าตรวจบันทึกเวลา
+    /// </summary>
+    [HttpDelete("batches/{id}")]
+    public async Task<IActionResult> RevertBatch(long id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            long? userId = null;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (long.TryParse(userIdClaim, out var parsedId))
+            {
+                userId = parsedId;
+            }
+
+            var result = await _importService.RevertBatchAsync(id, userId, cancellationToken);
+            return Ok(ApiResponse<RevertBatchResultDto>.Ok(result, result.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<RevertBatchResultDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<RevertBatchResultDto>.Fail($"เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล: {ex.Message}"));
+        }
+    }
 }

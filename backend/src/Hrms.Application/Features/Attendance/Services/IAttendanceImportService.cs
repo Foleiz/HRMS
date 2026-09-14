@@ -30,4 +30,9 @@ public interface IAttendanceImportService
     Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(
         string format = "xlsx", 
         CancellationToken cancellationToken = default);
+
+    Task<RevertBatchResultDto> RevertBatchAsync(
+        long batchId, 
+        long? userId = null, 
+        CancellationToken cancellationToken = default);
 }

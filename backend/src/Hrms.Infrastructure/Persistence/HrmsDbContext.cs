@@ -495,6 +495,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.EarlyLeaveMinutes).HasColumnName("early_leave_minutes").HasDefaultValue(0);
             entity.Property(e => e.IsAbsent).HasColumnName("is_absent").HasDefaultValue(false);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30).HasDefaultValue("PRESENT");
+            entity.Property(e => e.ImportBatchId).HasColumnName("import_batch_id");
 
             entity.HasIndex(e => new { e.EmployeeId, e.WorkDate }).IsUnique();
 
@@ -511,6 +512,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.WorkSchedule)
                 .WithMany()
                 .HasForeignKey(e => e.WorkScheduleId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ImportBatch)
+                .WithMany()
+                .HasForeignKey(e => e.ImportBatchId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

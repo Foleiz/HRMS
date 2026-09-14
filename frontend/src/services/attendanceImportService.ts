@@ -6,6 +6,7 @@ import {
   AttendanceImportFilterQuery,
   PagedImportBatchResult,
   PagedImportErrorResult,
+  RevertBatchResult,
 } from '@/types/attendanceImport';
 
 export const attendanceImportService = {
@@ -99,4 +100,13 @@ export const attendanceImportService = {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(link);
   },
+
+  /**
+   * ยกเลิกและลบชุดข้อมูลนำเข้า (Revert / Delete Import Batch) พร้อม Rollback ข้อมูลในหน้าตรวจบันทึกเวลา
+   */
+  async revertBatch(batchId: number): Promise<ApiResponse<RevertBatchResult>> {
+    const res = await apiClient.delete<ApiResponse<RevertBatchResult>>(`/attendance/import/batches/${batchId}`);
+    return res.data;
+  },
 };
+

@@ -71,3 +71,12 @@ export interface PagedImportErrorResult {
   pageSize: number;
   totalPages: number;
 }
+
+export interface RevertBatchResult {
+  batchId: number;
+  fileName: string | null;
+  deletedAttendanceRecords: number;
+  deletedErrorRecords: number;
+  message: string;
+}
+

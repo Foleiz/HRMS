@@ -539,7 +539,8 @@ public class AttendanceImportService : IAttendanceImportService
                         EmployeeId = employee.Id,
                         WorkDate = workDate,
                         IsAbsent = false,
-                        Status = "PRESENT"
+                        Status = "PRESENT",
+                        ImportBatchId = batch.Id
                     };
 
                     var shift = ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
@@ -554,6 +555,8 @@ public class AttendanceImportService : IAttendanceImportService
 
                 dailyDict[key] = dailyRecord;
             }
+
+            dailyRecord.ImportBatchId = batch.Id;
 
             var activeShift = dailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
             if (activeShift != null)
@@ -1069,5 +1072,64 @@ private static string NormalizeHeader(string header)
 
         var localTime = AttendanceDailyService.ToThaiLocalTime(punchUtc);
         return localTime.Hour < 12 ? "IN" : "OUT";
+    }
+
+    public async Task<RevertBatchResultDto> RevertBatchAsync(
+        long batchId, 
+        long? userId = null, 
+        CancellationToken cancellationToken = default)
+    {
+        var batch = await _context.AttendanceImportBatches
+            .Include(b => b.Errors)
+            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
+
+        if (batch == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบข้อมูลชุดการนำเข้า ID: {batchId}");
+        }
+
+        // 1. Find AttendanceDaily records linked to this batch:
+        // Either by direct ImportBatchId OR by WorkDate between DateFrom and DateTo
+        var attendanceQuery = _context.AttendanceDailies.AsQueryable();
+        if (batch.DateFrom.HasValue && batch.DateTo.HasValue)
+        {
+            attendanceQuery = attendanceQuery.Where(a => 
+                a.ImportBatchId == batchId || 
+                (a.ImportBatchId == null && a.WorkDate >= batch.DateFrom.Value && a.WorkDate <= batch.DateTo.Value));
+        }
+        else
+        {
+            attendanceQuery = attendanceQuery.Where(a => a.ImportBatchId == batchId);
+        }
+
+        var dailyRecordsToDelete = await attendanceQuery.ToListAsync(cancellationToken);
+        int deletedDailyCount = dailyRecordsToDelete.Count;
+
+        if (dailyRecordsToDelete.Count > 0)
+        {
+            _context.AttendanceDailies.RemoveRange(dailyRecordsToDelete);
+        }
+
+        // 2. Remove errors associated with this batch
+        int deletedErrorsCount = batch.Errors?.Count ?? 0;
+        if (batch.Errors != null && batch.Errors.Count > 0)
+        {
+            _context.AttendanceImportErrors.RemoveRange(batch.Errors);
+        }
+
+        // 3. Remove the batch itself
+        var fileName = batch.FileName;
+        _context.AttendanceImportBatches.Remove(batch);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new RevertBatchResultDto
+        {
+            BatchId = batchId,
+            FileName = fileName,
+            DeletedAttendanceRecords = deletedDailyCount,
+            DeletedErrorRecords = deletedErrorsCount,
+            Message = $"ยกเลิกและลบชุดข้อมูลนำเข้า #{batchId} เรียบร้อยแล้ว (ลบข้อมูลตรวจบันทึกเวลา {deletedDailyCount} รายการ)"
+        };
     }
 }

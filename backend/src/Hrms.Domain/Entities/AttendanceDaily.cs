@@ -22,9 +22,11 @@ public class AttendanceDaily
     public int EarlyLeaveMinutes { get; set; }
     public bool IsAbsent { get; set; }
     public string Status { get; set; } = "PRESENT";
+    public long? ImportBatchId { get; set; }
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual Shift? Shift { get; set; }
     public virtual WorkSchedule? WorkSchedule { get; set; }
+    public virtual AttendanceImportBatch? ImportBatch { get; set; }
 }

@@ -79,3 +79,13 @@ public class PagedImportErrorResult
     public int PageSize { get; set; }
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
 }
+
+public class RevertBatchResultDto
+{
+    public long BatchId { get; set; }
+    public string? FileName { get; set; }
+    public int DeletedAttendanceRecords { get; set; }
+    public int DeletedErrorRecords { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
