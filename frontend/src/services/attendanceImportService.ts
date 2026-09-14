@@ -34,6 +34,9 @@ export const attendanceImportService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        // ไฟล์นำเข้าบางไฟล์มีหลายร้อย/พันแถว การประมวลผลฝั่ง Backend อาจใช้เวลานานกว่า
+        // timeout ปกติของ apiClient (15 วิ) จึงตั้ง timeout เฉพาะ request นี้ให้นานขึ้น
+        timeout: 120000,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total && onProgress) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

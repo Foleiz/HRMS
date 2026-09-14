@@ -367,6 +367,56 @@ public class AttendanceImportService : IAttendanceImportService
         // In-memory collection of AttendanceDaily for updating / creating
         var dailyDict = new Dictionary<(long EmployeeId, DateOnly WorkDate), AttendanceDaily>();
 
+        // bulkPreloaded = true เมื่อ preload ด้านล่างสำเร็จ (หาช่วงวันที่ได้แน่นอน) — กรณีนี้ dailyDict
+        // ถือเป็น "ความจริงทั้งหมด" ของช่วงวันที่นั้นแล้ว จึงไม่ต้อง query ซ้ำทีละแถวอีกใน PATH A/B ด้านล่าง
+        bool bulkPreloaded = false;
+
+        // 7.1 Preload ข้อมูล AttendanceDaily ที่มีอยู่แล้วในช่วงวันที่ของไฟล์แบบ Bulk (ครั้งเดียว)
+        // เพื่อลดปัญหา N+1 Query (เดิม query ทีละแถวทำให้ไฟล์ที่มีหลายร้อยแถว/หลายพนักงาน
+        // ใช้เวลารวมนานเกิน timeout ฝั่ง Frontend) — ถ้าหาช่วงวันที่ไม่ได้เลย จะไม่ preload
+        // และใช้วิธี query ทีละแถว (fallback เดิม) เพื่อความปลอดภัยของข้อมูล
+        {
+            DateOnly? preloadFrom = metadataDateFrom;
+            DateOnly? preloadTo = metadataDateTo;
+
+            if (preloadFrom == null || preloadTo == null)
+            {
+                // สแกนคอลัมน์วันที่แบบเบา ๆ (ไม่มีการ query ฐานข้อมูล) เพื่อหาขอบเขตวันที่จริงจากไฟล์
+                foreach (var (_, scanRow) in rawRows)
+                {
+                    var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
+                        ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+                    if (d == null) continue;
+
+                    DateOnly? parsed = ParseDate(d);
+                    if (parsed == null && ParseDateTime(d) is DateTime pdt)
+                    {
+                        var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
+                        parsed = new DateOnly(y, pdt.Month, pdt.Day);
+                    }
+                    if (parsed == null) continue;
+
+                    if (preloadFrom == null || parsed < preloadFrom) preloadFrom = parsed;
+                    if (preloadTo == null || parsed > preloadTo) preloadTo = parsed;
+                }
+            }
+
+            if (preloadFrom.HasValue && preloadTo.HasValue)
+            {
+                var existingDailies = await _context.AttendanceDailies
+                    .Include(a => a.Shift)
+                    .Where(a => a.WorkDate >= preloadFrom.Value && a.WorkDate <= preloadTo.Value)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var existing in existingDailies)
+                {
+                    dailyDict[(existing.EmployeeId, existing.WorkDate)] = existing;
+                }
+
+                bulkPreloaded = true;
+            }
+        }
+
         for (int i = 0; i < rawRows.Count; i++)
         {
             var (rowNumber, row) = rawRows[i];
@@ -509,12 +559,17 @@ public class AttendanceImportService : IAttendanceImportService
                 }
 
                 // Fetch or create AttendanceDaily record
+                // ถ้า bulkPreloaded=true แปลว่า dailyDict มีข้อมูลครบทั้งช่วงวันที่แล้วจาก Preload
+                // ด้านบน ไม่พบ = ไม่มีจริง จึงข้าม query ซ้ำทีละแถว (ลดเวลารวมของไฟล์ที่มีหลายแถว)
                 var key = (employee.Id, workDate);
                 if (!dailyDict.TryGetValue(key, out var dailyRecord))
                 {
-                    dailyRecord = await _context.AttendanceDailies
-                        .Include(a => a.Shift)
-                        .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+                    if (!bulkPreloaded)
+                    {
+                        dailyRecord = await _context.AttendanceDailies
+                            .Include(a => a.Shift)
+                            .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+                    }
 
                     if (dailyRecord == null)
                     {
@@ -644,12 +699,16 @@ public class AttendanceImportService : IAttendanceImportService
             }
 
             // Fetch or create AttendanceDaily
+            // เช่นเดียวกับ PATH A: ถ้า preload มาแล้วทั้งช่วง ไม่ต้อง query ซ้ำทีละแถว
             var punchKey = (employee.Id, workDate);
             if (!dailyDict.TryGetValue(punchKey, out var punchDailyRecord))
             {
-                punchDailyRecord = await _context.AttendanceDailies
-                    .Include(a => a.Shift)
-                    .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+                if (!bulkPreloaded)
+                {
+                    punchDailyRecord = await _context.AttendanceDailies
+                        .Include(a => a.Shift)
+                        .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+                }
 
                 if (punchDailyRecord == null)
                 {
