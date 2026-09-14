@@ -307,7 +307,6 @@ public class AttendanceImportService : IAttendanceImportService
 
         var empByCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
         var empByNumericCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
-        var empByName = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var emp in employees)
         {
@@ -325,13 +324,6 @@ public class AttendanceImportService : IAttendanceImportService
                         empByNumericCode[numVal.ToString()] = emp;
                     }
                 }
-            }
-
-            var fullName = $"{emp.FirstName} {emp.LastName}".Trim();
-            var normalizedName = NormalizeThaiName(fullName);
-            if (!string.IsNullOrEmpty(normalizedName))
-            {
-                empByName[normalizedName] = emp;
             }
         }
 
@@ -389,60 +381,75 @@ public class AttendanceImportService : IAttendanceImportService
                 batch.DeviceName = deviceRaw.Trim();
             }
 
-            // Employee Matching (Multi-level: Code -> Numeric Suffix -> Full Name)
+            // Employee Matching: Strictly match by Employee Code only
             Employee? employee = null;
             if (!string.IsNullOrWhiteSpace(empCodeRaw))
             {
                 var cleanCode = empCodeRaw.Trim();
+                // Normalize potential float string from Excel (e.g., "100002.0" -> "100002")
+                if (cleanCode.EndsWith(".0"))
+                {
+                    cleanCode = cleanCode[..^2];
+                }
+                else if (double.TryParse(cleanCode, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dVal) && dVal == Math.Floor(dVal))
+                {
+                    cleanCode = ((long)dVal).ToString();
+                }
+
                 if (empByCode.TryGetValue(cleanCode, out employee))
                 {
-                    // direct code match
+                    // Direct code match (e.g. "100002" or "EMP001")
                 }
                 else if (empByNumericCode.TryGetValue(cleanCode, out employee))
                 {
-                    // numeric code match (e.g. "001" -> EMP001)
+                    // Numeric code match (e.g. "100002" or "001")
                 }
                 else if (cleanCode.All(char.IsDigit) && int.TryParse(cleanCode, out int nId))
                 {
                     if (empByCode.TryGetValue($"EMP{cleanCode}", out employee) ||
-                        empByCode.TryGetValue($"EMP{nId:D3}", out employee))
+                        empByCode.TryGetValue($"EMP{nId:D3}", out employee) ||
+                        empByNumericCode.TryGetValue(nId.ToString(), out employee))
                     {
-                        // prefix match
+                        // Prefix or integer match
                     }
                 }
                 else
                 {
                     var digitsOnly = new string(cleanCode.Where(char.IsDigit).ToArray());
-                    if (!string.IsNullOrEmpty(digitsOnly) && empByNumericCode.TryGetValue(digitsOnly, out employee))
+                    if (!string.IsNullOrEmpty(digitsOnly))
                     {
-                        // digits only match
+                        if (empByNumericCode.TryGetValue(digitsOnly, out employee))
+                        {
+                            // Digits only match
+                        }
+                        else if (int.TryParse(digitsOnly, out int dValNum) && empByNumericCode.TryGetValue(dValNum.ToString(), out employee))
+                        {
+                            // Digits as int match
+                        }
                     }
                 }
             }
 
-            // Fallback match by Name
-            if (employee == null && !string.IsNullOrWhiteSpace(empNameRaw))
-            {
-                var cleanName = NormalizeThaiName(empNameRaw);
-                if (empByName.TryGetValue(cleanName, out employee))
-                {
-                    // name matched
-                }
-            }
-
+            // Strictly DO NOT fallback to name matching!
             if (employee == null)
             {
                 failedRecords++;
                 AddError(batch.Id, rowNumber, rawRowJson, 
-                    $"ไม่พบข้อมูลพนักงานสำหรับรหัส '{empCodeRaw}' {(string.IsNullOrWhiteSpace(empNameRaw) ? "" : $"หรือชื่อ '{empNameRaw}'")} ในระบบ", 
-                    "EMPLOYEE_NOT_FOUND", empCodeRaw, empNameRaw, deptRaw, null, stateRaw, errorsList, errorDtos);
+                    $"ไม่พบข้อมูลพนักงานสำหรับรหัส '{empCodeRaw}' ในระบบ", 
+                    "EMPLOYEE_NOT_FOUND", empCodeRaw, "-", "-", null, stateRaw, errorsList, errorDtos);
                 continue;
             }
 
-            var empName = !string.IsNullOrWhiteSpace(empNameRaw) ? empNameRaw : $"{employee.FirstName} {employee.LastName}".Trim();
-            var deptName = !string.IsNullOrWhiteSpace(deptRaw) 
-                ? deptRaw 
-                : (currentAssignments.TryGetValue(employee.Id, out var asg) ? asg.Department?.DepartmentName : null);
+            // Always take Employee Name and Department from System setup, NOT from Excel
+            var empName = $"{employee.FirstName} {employee.LastName}".Trim();
+            if (string.IsNullOrWhiteSpace(empName))
+            {
+                empName = employee.EmployeeCode;
+            }
+
+            var deptName = currentAssignments.TryGetValue(employee.Id, out var asg) 
+                ? asg.Department?.DepartmentName 
+                : "-";
 
             // Parse WorkDate
             DateOnly workDate;
@@ -856,21 +863,6 @@ public class AttendanceImportService : IAttendanceImportService
             or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
             or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
             or "name" or "department" or "date" or "time" or "status";
-    }
-
-    private static string NormalizeThaiName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
-        return name.Trim()
-            .Replace(" ", "")
-            .Replace("นาย", "")
-            .Replace("นางสาว", "")
-            .Replace("น.ส.", "")
-            .Replace("นาง", "")
-            .Replace("คุณ", "")
-            .Replace("ด.ช.", "")
-            .Replace("ด.ญ.", "")
-            .ToLowerInvariant();
     }
 
     private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
