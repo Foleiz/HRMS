@@ -1,3 +1,5 @@
+import { BenefitItem } from './benefit';
+
 export interface EmployeeType {
   id: number;
   typeCode: string;
@@ -11,6 +13,7 @@ export interface EmployeeType {
   createdAt: string;
   updatedAt: string;
   activeContractsCount: number;
+  benefits?: BenefitItem[];
 }
 
 export interface CreateEmployeeTypePayload {
@@ -22,6 +25,7 @@ export interface CreateEmployeeTypePayload {
   hasOvertime: boolean;
   hasProvidentFund: boolean;
   status: string;
+  benefitItemIds?: number[];
 }
 
 export interface UpdateEmployeeTypePayload {
@@ -32,6 +36,7 @@ export interface UpdateEmployeeTypePayload {
   hasOvertime: boolean;
   hasProvidentFund: boolean;
   status: string;
+  benefitItemIds?: number[];
 }
 
 export interface EmployeeTypeStats {

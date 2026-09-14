@@ -52,5 +52,9 @@ public interface IHrmsDbContext
     DbSet<EmploymentContract> EmploymentContracts { get; }
     DbSet<EmployeeStatusHistory> EmployeeStatusHistories { get; }
 
+    // Benefits & Welfare Management
+    DbSet<BenefitItem> BenefitItems { get; }
+    DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

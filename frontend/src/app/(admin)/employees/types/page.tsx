@@ -16,6 +16,7 @@ import {
   CreditCard,
   Layers,
   Power,
+  Gift,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeTypeService } from '@/services/employeeTypeService';
@@ -26,6 +27,7 @@ import {
   UpdateEmployeeTypePayload,
 } from '@/types/employeeType';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
+import { ManageBenefitsModal } from '@/components/employees/ManageBenefitsModal';
 
 export default function EmployeeTypesPage() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -49,6 +51,7 @@ export default function EmployeeTypesPage() {
 
   // Modals & Menu
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isManageBenefitsModalOpen, setIsManageBenefitsModalOpen] = useState(false);
   const [selectedTypeForEdit, setSelectedTypeForEdit] = useState<EmployeeType | null>(null);
   const [activeActionMenuId, setActiveActionMenuId] = useState<number | null>(null);
 
@@ -217,16 +220,26 @@ export default function EmployeeTypesPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setSelectedTypeForEdit(null);
-            setIsCreateModalOpen(true);
-          }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => setIsManageBenefitsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer"
+          >
+            <Gift className="w-4 h-4 text-[#0B2046]" />
+            <span>🎁 จัดการสวัสดิการบริษัท</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTypeForEdit(null);
+              setIsCreateModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
+          </button>
+        </div>
       </div>
 
       {/* 4. KPI Stat Cards (3 Cards matching theme) */}
@@ -356,33 +369,60 @@ export default function EmployeeTypesPage() {
 
                       {/* สิทธิประโยชน์ */}
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {item.hasSocialSecurity && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 text-[10px]">
-                              ประกันสังคม
-                            </span>
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-sm">
+                          {item.benefits && item.benefits.length > 0 ? (
+                            item.benefits.map((b) => {
+                              let badgeColor = 'bg-slate-50 text-slate-700 border-slate-200/80';
+                              if (b.category === 'STATUTORY') {
+                                badgeColor = 'bg-blue-50 text-blue-700 border-blue-200/80';
+                              } else if (b.category === 'HEALTH') {
+                                badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
+                              } else if (b.category === 'ALLOWANCE') {
+                                badgeColor = 'bg-amber-50 text-amber-700 border-amber-200/80';
+                              } else if (b.category === 'FINANCIAL') {
+                                badgeColor = 'bg-purple-50 text-purple-700 border-purple-200/80';
+                              } else if (b.category === 'WELLNESS') {
+                                badgeColor = 'bg-pink-50 text-pink-700 border-pink-200/80';
+                              }
+                              return (
+                                <span
+                                  key={b.id}
+                                  title={b.description || b.benefitName}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
+                                >
+                                  {b.benefitName}
+                                </span>
+                              );
+                            })
+                          ) : item.hasSocialSecurity ||
+                            item.hasLeaveEntitlement ||
+                            item.hasOvertime ||
+                            item.hasProvidentFund ? (
+                            <>
+                              {item.hasSocialSecurity && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px]">
+                                  ประกันสังคม
+                                </span>
+                              )}
+                              {item.hasLeaveEntitlement && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px]">
+                                  สิทธิ์วันลา
+                                </span>
+                              )}
+                              {item.hasOvertime && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px]">
+                                  คิดโอที (OT)
+                                </span>
+                              )}
+                              {item.hasProvidentFund && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 text-[10px]">
+                                  กองทุนสำรองฯ
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">- ไม่มี -</span>
                           )}
-                          {item.hasLeaveEntitlement && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px]">
-                              สิทธิ์วันลา
-                            </span>
-                          )}
-                          {item.hasOvertime && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px]">
-                              คิดโอที (OT)
-                            </span>
-                          )}
-                          {item.hasProvidentFund && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 text-[10px]">
-                              กองทุนสำรองฯ
-                            </span>
-                          )}
-                          {!item.hasSocialSecurity &&
-                            !item.hasLeaveEntitlement &&
-                            !item.hasOvertime &&
-                            !item.hasProvidentFund && (
-                              <span className="text-slate-400 text-[11px]">- ไม่มี -</span>
-                            )}
                         </div>
                       </td>
 
@@ -510,6 +550,14 @@ export default function EmployeeTypesPage() {
         }}
         onSubmit={handleCreateOrUpdate}
         initialData={selectedTypeForEdit}
+        onOpenManageBenefits={() => setIsManageBenefitsModalOpen(true)}
+      />
+
+      {/* 7. Modal จัดการสิทธิประโยชน์และสวัสดิการของบริษัท */}
+      <ManageBenefitsModal
+        isOpen={isManageBenefitsModalOpen}
+        onClose={() => setIsManageBenefitsModalOpen(false)}
+        onUpdated={loadData}
       />
     </div>
   );

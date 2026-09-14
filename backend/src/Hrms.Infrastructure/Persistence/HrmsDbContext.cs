@@ -64,6 +64,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
     public DbSet<EmployeeStatusHistory> EmployeeStatusHistories => Set<EmployeeStatusHistory>();
 
+    // Benefits & Welfare Management
+    public DbSet<BenefitItem> BenefitItems => Set<BenefitItem>();
+    public DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits => Set<EmployeeTypeBenefit>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -807,6 +811,48 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceContractId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: BenefitItem
+        modelBuilder.Entity<BenefitItem>(entity =>
+        {
+            entity.ToTable("benefit_item", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.BenefitCode).HasColumnName("benefit_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.BenefitName).HasColumnName("benefit_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Category).HasColumnName("category").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.IsStatutory).HasColumnName("is_statutory").HasDefaultValue(false);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("ACTIVE");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+            entity.HasIndex(e => e.BenefitCode).IsUnique();
+        });
+
+        // Configuration: EmployeeTypeBenefit
+        modelBuilder.Entity<EmployeeTypeBenefit>(entity =>
+        {
+            entity.ToTable("employee_type_benefit", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id").IsRequired();
+            entity.Property(e => e.BenefitItemId).HasColumnName("benefit_item_id").IsRequired();
+            entity.Property(e => e.CoverageAmount).HasColumnName("coverage_amount").HasColumnType("numeric(12,2)").HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany(t => t.EmployeeTypeBenefits)
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.BenefitItem)
+                .WithMany(b => b.EmployeeTypeBenefits)
+                .HasForeignKey(e => e.BenefitItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.EmployeeTypeId, e.BenefitItemId }).IsUnique();
         });
     }
 }

@@ -14,6 +14,7 @@ public class EmployeeTypeDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int ActiveContractsCount { get; set; }
+    public List<BenefitItemDto> Benefits { get; set; } = new();
 }
 
 public class CreateEmployeeTypeRequest
@@ -26,6 +27,7 @@ public class CreateEmployeeTypeRequest
     public bool HasOvertime { get; set; } = true;
     public bool HasProvidentFund { get; set; } = false;
     public string Status { get; set; } = "ACTIVE";
+    public List<long>? BenefitItemIds { get; set; }
 }
 
 public class UpdateEmployeeTypeRequest
@@ -37,6 +39,7 @@ public class UpdateEmployeeTypeRequest
     public bool HasOvertime { get; set; } = true;
     public bool HasProvidentFund { get; set; } = false;
     public string Status { get; set; } = "ACTIVE";
+    public List<long>? BenefitItemIds { get; set; }
 }
 
 public class EmployeeTypeStatsDto

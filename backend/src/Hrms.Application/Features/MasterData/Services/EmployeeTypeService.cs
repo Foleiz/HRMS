@@ -32,7 +32,11 @@ public class EmployeeTypeService : IEmployeeTypeService
             query = query.Where(t => t.Status == status.ToUpper());
         }
 
-        var types = await query.OrderBy(t => t.Id).ToListAsync(cancellationToken);
+        var types = await query
+            .Include(t => t.EmployeeTypeBenefits)
+                .ThenInclude(etb => etb.BenefitItem)
+            .OrderBy(t => t.Id)
+            .ToListAsync(cancellationToken);
 
         // คำนวณจำนวนสัญญาจ้างที่ใช้งานอยู่ในแต่ละประเภท
         var contractCounts = await _dbContext.EmploymentContracts
@@ -54,7 +58,21 @@ public class EmployeeTypeService : IEmployeeTypeService
             Status = t.Status,
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt,
-            ActiveContractsCount = contractCounts.GetValueOrDefault(t.Id, 0)
+            ActiveContractsCount = contractCounts.GetValueOrDefault(t.Id, 0),
+            Benefits = t.EmployeeTypeBenefits
+                .Where(etb => etb.IsActive && etb.BenefitItem != null)
+                .Select(etb => new BenefitItemDto
+                {
+                    Id = etb.BenefitItem.Id,
+                    BenefitCode = etb.BenefitItem.BenefitCode,
+                    BenefitName = etb.BenefitItem.BenefitName,
+                    Category = etb.BenefitItem.Category,
+                    Description = etb.BenefitItem.Description,
+                    IsStatutory = etb.BenefitItem.IsStatutory,
+                    Status = etb.BenefitItem.Status,
+                    CreatedAt = etb.BenefitItem.CreatedAt,
+                    UpdatedAt = etb.BenefitItem.UpdatedAt
+                }).ToList()
         }).ToList();
     }
 
@@ -73,7 +91,11 @@ public class EmployeeTypeService : IEmployeeTypeService
 
     public async Task<EmployeeTypeDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var t = await _dbContext.EmployeeTypes.FindAsync(new object[] { id }, cancellationToken);
+        var t = await _dbContext.EmployeeTypes
+            .Include(t => t.EmployeeTypeBenefits)
+                .ThenInclude(etb => etb.BenefitItem)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
         if (t == null)
         {
             throw new NotFoundException("ประเภทพนักงาน/สัญญาจ้าง", id);
@@ -95,7 +117,21 @@ public class EmployeeTypeService : IEmployeeTypeService
             Status = t.Status,
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt,
-            ActiveContractsCount = activeContracts
+            ActiveContractsCount = activeContracts,
+            Benefits = t.EmployeeTypeBenefits
+                .Where(etb => etb.IsActive && etb.BenefitItem != null)
+                .Select(etb => new BenefitItemDto
+                {
+                    Id = etb.BenefitItem.Id,
+                    BenefitCode = etb.BenefitItem.BenefitCode,
+                    BenefitName = etb.BenefitItem.BenefitName,
+                    Category = etb.BenefitItem.Category,
+                    Description = etb.BenefitItem.Description,
+                    IsStatutory = etb.BenefitItem.IsStatutory,
+                    Status = etb.BenefitItem.Status,
+                    CreatedAt = etb.BenefitItem.CreatedAt,
+                    UpdatedAt = etb.BenefitItem.UpdatedAt
+                }).ToList()
         };
     }
 
@@ -138,8 +174,36 @@ public class EmployeeTypeService : IEmployeeTypeService
             UpdatedAt = DateTime.UtcNow
         };
 
+        if (request.BenefitItemIds != null && request.BenefitItemIds.Any())
+        {
+            var selectedCodes = await _dbContext.BenefitItems
+                .Where(b => request.BenefitItemIds.Contains(b.Id))
+                .Select(b => b.BenefitCode)
+                .ToListAsync(cancellationToken);
+
+            entity.HasSocialSecurity = selectedCodes.Contains("SSO");
+            entity.HasLeaveEntitlement = selectedCodes.Contains("LEAVE");
+            entity.HasOvertime = selectedCodes.Contains("OT");
+            entity.HasProvidentFund = selectedCodes.Contains("PVD");
+        }
+
         _dbContext.EmployeeTypes.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (request.BenefitItemIds != null && request.BenefitItemIds.Any())
+        {
+            foreach (var bId in request.BenefitItemIds.Distinct())
+            {
+                _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                {
+                    EmployeeTypeId = entity.Id,
+                    BenefitItemId = bId,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return await GetByIdAsync(entity.Id, cancellationToken);
     }
@@ -170,6 +234,36 @@ public class EmployeeTypeService : IEmployeeTypeService
         entity.HasProvidentFund = request.HasProvidentFund;
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper();
         entity.UpdatedAt = DateTime.UtcNow;
+
+        if (request.BenefitItemIds != null)
+        {
+            var selectedCodes = await _dbContext.BenefitItems
+                .Where(b => request.BenefitItemIds.Contains(b.Id))
+                .Select(b => b.BenefitCode)
+                .ToListAsync(cancellationToken);
+
+            entity.HasSocialSecurity = selectedCodes.Contains("SSO");
+            entity.HasLeaveEntitlement = selectedCodes.Contains("LEAVE");
+            entity.HasOvertime = selectedCodes.Contains("OT");
+            entity.HasProvidentFund = selectedCodes.Contains("PVD");
+
+            var currentBenefits = await _dbContext.EmployeeTypeBenefits
+                .Where(etb => etb.EmployeeTypeId == id)
+                .ToListAsync(cancellationToken);
+
+            _dbContext.EmployeeTypeBenefits.RemoveRange(currentBenefits);
+
+            foreach (var bId in request.BenefitItemIds.Distinct())
+            {
+                _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                {
+                    EmployeeTypeId = id,
+                    BenefitItemId = bId,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
