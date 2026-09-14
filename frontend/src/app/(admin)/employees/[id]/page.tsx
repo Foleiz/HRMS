@@ -19,6 +19,8 @@ import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
+import { getAvatarUrl } from '@/lib/api-client';
+
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
 const mockAvatarImages = [
@@ -85,28 +87,29 @@ export default function EmployeeDetailPage() {
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
+  const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // โหลดรูปโปรไฟล์ที่เคยอัปโหลดไว้จาก localStorage
+  // เคลียร์ขยะ legacy localStorage ถ้ามี
   useEffect(() => {
     if (employeeId && !isNaN(employeeId) && typeof window !== 'undefined') {
-      const savedAvatar = localStorage.getItem(`hrms_employee_avatar_${employeeId}`);
-      if (savedAvatar) {
-        setCustomAvatar(savedAvatar);
-      }
+      localStorage.removeItem(`hrms_employee_avatar_${employeeId}`);
     }
   }, [employeeId]);
 
   const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+    if (!isUploadingAvatar) {
+      fileInputRef.current?.click();
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.warning('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      toast.warning('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP, GIF)');
       return;
     }
 
@@ -115,16 +118,26 @@ export default function EmployeeDetailPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      setCustomAvatar(base64);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`hrms_employee_avatar_${employeeId}`, base64);
-      }
+    try {
+      setIsUploadingAvatar(true);
+      const newAvatarUrl = await employeeService.uploadAvatar(employeeId, file);
+      setCustomAvatar(newAvatarUrl);
+      setPhotoFeedback('เปลี่ยนรูปโปรไฟล์เรียบร้อยและบันทึกลงฐานข้อมูลแล้ว');
+      setTimeout(() => setPhotoFeedback(null), 3500);
+
+      // โหลดข้อมูลพนักงานใหม่เพื่ออัปเดต state
+      const updated = await employeeService.getById(employeeId);
+      setEmployee(updated);
       toast.success('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
-    };
-    reader.readAsDataURL(file);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || 'เกิดข้อผิดพลาดในการอัปโหลดรูปโปรไฟล์');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const { setBreadcrumb } = useBreadcrumb();
@@ -189,7 +202,10 @@ export default function EmployeeDetailPage() {
 
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
   const primaryEducation = employee.educations?.[0];
-  const avatarUrl = customAvatar || mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
+  const rawAvatarUrl = customAvatar || employee.avatarUrl;
+  const avatarUrl = rawAvatarUrl
+    ? getAvatarUrl(rawAvatarUrl)!
+    : mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
 
   return (
     <div className="font-sans">
@@ -206,7 +222,7 @@ export default function EmployeeDetailPage() {
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept="image/png, image/jpeg, image/webp"
+              accept="image/png, image/jpeg, image/webp, image/gif"
               className="hidden"
             />
 
@@ -215,28 +231,38 @@ export default function EmployeeDetailPage() {
               <button
                 type="button"
                 onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
                 className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md bg-slate-100 flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-[#0B2046]/40 group-hover/avatar:shadow-xl focus:outline-none block"
                 title="คลิกเพื่อแก้ไขรูปโปรไฟล์"
               >
-                <img
-                  src={avatarUrl}
-                  alt={employee.fullName}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                <span className="w-full h-full absolute inset-0 flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white -z-10">
-                  {employee.firstName?.charAt(0) || 'U'}
-                </span>
+                {isUploadingAvatar ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#0B2046]/80 text-white">
+                    <Loader2 className="w-8 h-8 animate-spin mb-1 text-white" />
+                    <span className="text-[10px] font-medium">กำลังบันทึก...</span>
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={avatarUrl}
+                      alt={employee.fullName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="w-full h-full absolute inset-0 flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white -z-10">
+                      {employee.firstName?.charAt(0) || 'U'}
+                    </span>
 
-                {/* Overlay แสดงเมื่อเอา mouse ไป hold (hover) ที่รูปโปรไฟล์ */}
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
-                  <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
-                  <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
-                    แก้ไขรูปภาพ
-                  </span>
-                </div>
+                    {/* Overlay แสดงเมื่อเอา mouse ไป hold (hover) ที่รูปโปรไฟล์ */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
+                      <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
+                      <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
+                        แก้ไขรูปภาพ
+                      </span>
+                    </div>
+                  </>
+                )}
               </button>
 
               {/* ปุ่มกล้องเล็ก ๆ ที่มุมล่างขวาเพื่อความชัดเจน */}

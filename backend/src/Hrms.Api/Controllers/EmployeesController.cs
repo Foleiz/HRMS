@@ -93,4 +93,63 @@ public class EmployeesController : ControllerBase
         await _employeeService.DeleteAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบข้อมูลพนักงานสำเร็จ"));
     }
+
+    /// <summary>
+    /// ดึงรูปภาพโปรไฟล์ของพนักงานโดยตรงจากฐานข้อมูล PostgreSQL (ส่งคืนเป็น Binary Stream)
+    /// </summary>
+    [HttpGet("{id:long}/avatar")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAvatar(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var avatar = await _employeeService.GetAvatarAsync(id, cancellationToken);
+        if (avatar == null)
+        {
+            return NotFound();
+        }
+
+        return File(avatar.Value.ImageData, avatar.Value.MimeType);
+    }
+
+    /// <summary>
+    /// อัปโหลดรูปภาพโปรไฟล์พนักงานและจัดเก็บลงในฐานข้อมูล PostgreSQL
+    /// </summary>
+    [HttpPost("{id:long}/avatar")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> UploadAvatar(
+        long id,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<string>.Fail("กรุณาเลือกไฟล์รูปภาพที่ต้องการอัปโหลด"));
+        }
+
+        using var stream = file.OpenReadStream();
+        var avatarUrl = await _employeeService.UploadAvatarAsync(
+            id,
+            stream,
+            file.ContentType,
+            file.Length,
+            cancellationToken);
+
+        return Ok(ApiResponse<string>.Ok(avatarUrl, "อัปโหลดรูปโปรไฟล์สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ลบรูปภาพโปรไฟล์ของพนักงาน
+    /// </summary>
+    [HttpDelete("{id:long}/avatar")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteAvatar(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var success = await _employeeService.DeleteAvatarAsync(id, cancellationToken);
+        return Ok(ApiResponse<bool>.Ok(success, "ลบรูปโปรไฟล์สำเร็จ"));
+    }
 }

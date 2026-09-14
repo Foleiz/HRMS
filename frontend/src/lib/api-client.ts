@@ -71,3 +71,15 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(errorMessage));
   }
 );
+
+/**
+ * แปลง Relative Avatar Path จาก Backend (เช่น /api/employees/1/avatar?v=...) ให้เป็น Full URL
+ */
+export const getAvatarUrl = (avatarUrl?: string | null): string | null => {
+  if (!avatarUrl) return null;
+  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+    return avatarUrl;
+  }
+  const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api').replace(/\/api\/?$/, '');
+  return `${base}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+};

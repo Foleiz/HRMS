@@ -67,6 +67,25 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Attendance Adjustment Requests (Dev 1 Sprint 7)
     public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
 
+    // Benefits & Welfare Management
+    public DbSet<BenefitItem> BenefitItems => Set<BenefitItem>();
+    public DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits => Set<EmployeeTypeBenefit>();
+
+    // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
+    public DbSet<EmployeeAvatar> EmployeeAvatars => Set<EmployeeAvatar>();
+
+    // Employee Transfer & Promotion Requests (Dev 2)
+    public DbSet<EmployeeTransferRequest> EmployeeTransferRequests => Set<EmployeeTransferRequest>();
+
+    // Leave Management (Dev 2 Sprint 3)
+    public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+    public DbSet<LeavePolicy> LeavePolicies => Set<LeavePolicy>();
+    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions => Set<LeaveBalanceTransaction>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<LeaveRequestDocument> LeaveRequestDocuments => Set<LeaveRequestDocument>();
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -116,6 +135,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.DisabilityDeductionCount).HasColumnName("disability_deduction_count");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.AvatarUpdatedAt).HasColumnName("avatar_updated_at");
             entity.Ignore(e => e.FullName);
         });
 
@@ -652,7 +672,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.TypeCode).HasColumnName("type_code").IsRequired().HasMaxLength(50);
             entity.Property(e => e.TypeName).HasColumnName("type_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.WageType).HasColumnName("wage_type").HasMaxLength(20);
+            entity.Property(e => e.HasSocialSecurity).HasColumnName("has_social_security").HasDefaultValue(true);
+            entity.Property(e => e.HasLeaveEntitlement).HasColumnName("has_leave_entitlement").HasDefaultValue(true);
+            entity.Property(e => e.HasOvertime).HasColumnName("has_overtime").HasDefaultValue(true);
+            entity.Property(e => e.HasProvidentFund).HasColumnName("has_provident_fund").HasDefaultValue(false);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
         });
 
         // Configuration: AttendanceDaily (Dev 1 Sprint 5)
@@ -839,6 +865,291 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.ReviewedByEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: BenefitItem
+        modelBuilder.Entity<BenefitItem>(entity =>
+        {
+            entity.ToTable("benefit_item", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.BenefitCode).HasColumnName("benefit_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.BenefitName).HasColumnName("benefit_name").IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Category).HasColumnName("category").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.IsStatutory).HasColumnName("is_statutory").HasDefaultValue(false);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("ACTIVE");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+            entity.HasIndex(e => e.BenefitCode).IsUnique();
+        });
+
+        // Configuration: EmployeeTypeBenefit
+        modelBuilder.Entity<EmployeeTypeBenefit>(entity =>
+        {
+            entity.ToTable("employee_type_benefit", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id").IsRequired();
+            entity.Property(e => e.BenefitItemId).HasColumnName("benefit_item_id").IsRequired();
+            entity.Property(e => e.CoverageAmount).HasColumnName("coverage_amount").HasColumnType("numeric(12,2)").HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany(t => t.EmployeeTypeBenefits)
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.BenefitItem)
+                .WithMany(b => b.EmployeeTypeBenefits)
+                .HasForeignKey(e => e.BenefitItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.EmployeeTypeId, e.BenefitItemId }).IsUnique();
+        });
+
+        // Configuration: EmployeeAvatar (Option 3 - Binary storage in PostgreSQL)
+        modelBuilder.Entity<EmployeeAvatar>(entity =>
+        {
+            entity.ToTable("employee_avatar", "hrms");
+            entity.HasKey(e => e.EmployeeId);
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.ImageData).HasColumnName("image_data").IsRequired();
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FileSize).HasColumnName("file_size").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Employee)
+                .WithOne(e => e.Avatar)
+                .HasForeignKey<EmployeeAvatar>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeTransferRequest (Dev 2)
+        modelBuilder.Entity<EmployeeTransferRequest>(entity =>
+        {
+            entity.ToTable("employee_transfer_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.TransferType).HasColumnName("transfer_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FromDivisionId).HasColumnName("from_division_id");
+            entity.Property(e => e.FromDepartmentId).HasColumnName("from_department_id");
+            entity.Property(e => e.FromPositionId).HasColumnName("from_position_id");
+            entity.Property(e => e.FromManagerId).HasColumnName("from_manager_id");
+            entity.Property(e => e.ToDivisionId).HasColumnName("to_division_id");
+            entity.Property(e => e.ToDepartmentId).HasColumnName("to_department_id").IsRequired();
+            entity.Property(e => e.ToPositionId).HasColumnName("to_position_id").IsRequired();
+            entity.Property(e => e.ToManagerId).HasColumnName("to_manager_id");
+            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired().HasDefaultValue("PENDING");
+            entity.Property(e => e.OrderNo).HasColumnName("order_no").HasMaxLength(100);
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.FromDivision)
+                .WithMany()
+                .HasForeignKey(e => e.FromDivisionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromDepartment)
+                .WithMany()
+                .HasForeignKey(e => e.FromDepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromPosition)
+                .WithMany()
+                .HasForeignKey(e => e.FromPositionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FromManager)
+                .WithMany()
+                .HasForeignKey(e => e.FromManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ToDivision)
+                .WithMany()
+                .HasForeignKey(e => e.ToDivisionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ToDepartment)
+                .WithMany()
+                .HasForeignKey(e => e.ToDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ToPosition)
+                .WithMany()
+                .HasForeignKey(e => e.ToPositionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ToManager)
+                .WithMany()
+                .HasForeignKey(e => e.ToManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: LeaveType
+        modelBuilder.Entity<LeaveType>(entity =>
+        {
+            entity.ToTable("leave_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LeaveCode).HasColumnName("leave_code").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.LeaveName).HasColumnName("leave_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.QuotaUnit).HasColumnName("quota_unit").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.IsPaidLeave).HasColumnName("is_paid_leave").IsRequired();
+            entity.Property(e => e.DocumentDescription).HasColumnName("document_description");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+        });
+
+        // Configuration: LeavePolicy
+        modelBuilder.Entity<LeavePolicy>(entity =>
+        {
+            entity.ToTable("leave_policy", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LeaveTypeId).HasColumnName("leave_type_id").IsRequired();
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.EmployeeLevelId).HasColumnName("employee_level_id");
+            entity.Property(e => e.EntitlementDays).HasColumnName("entitlement_days").HasPrecision(8, 2).IsRequired();
+            entity.Property(e => e.MinimumServiceDays).HasColumnName("minimum_service_days").IsRequired();
+            entity.Property(e => e.AdvanceRequestDays).HasColumnName("advance_request_days").IsRequired();
+            entity.Property(e => e.IsCarryForwardAllowed).HasColumnName("is_carry_forward_allowed").IsRequired();
+            entity.Property(e => e.CarryForwardMaxMonths).HasColumnName("carry_forward_max_months");
+            entity.Property(e => e.CarryForwardExpiryMonths).HasColumnName("carry_forward_expiry_months");
+            entity.Property(e => e.IsDocumentRequired).HasColumnName("is_document_required").IsRequired();
+            entity.Property(e => e.DocumentRequiredAfterDays).HasColumnName("document_required_after_days").HasPrecision(8, 2);
+            entity.Property(e => e.IsAllowedDuringProbation).HasColumnName("is_allowed_during_probation").IsRequired();
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
+            entity.Property(e => e.MaxLifetimeOccurrences).HasColumnName("max_lifetime_occurrences");
+            entity.Property(e => e.MaxDaysPerOccurrence).HasColumnName("max_days_per_occurrence").HasPrecision(8, 2);
+            entity.Property(e => e.MaxOccurrencesPerYear).HasColumnName("max_occurrences_per_year");
+
+            entity.HasOne(e => e.LeaveType)
+                .WithMany(t => t.LeavePolicies)
+                .HasForeignKey(e => e.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.EmployeeLevel)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeLevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: LeaveBalance
+        modelBuilder.Entity<LeaveBalance>(entity =>
+        {
+            entity.ToTable("leave_balance", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.LeaveTypeId).HasColumnName("leave_type_id").IsRequired();
+            entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.Property(e => e.BroughtForwardDays).HasColumnName("brought_forward_days").HasPrecision(8, 2);
+            entity.Property(e => e.AnnualQuotaDays).HasColumnName("annual_quota_days").HasPrecision(8, 2);
+            entity.Property(e => e.ActiveCarriedForwardDays).HasColumnName("active_carried_forward_days").HasPrecision(8, 2);
+            entity.Property(e => e.UsedDays).HasColumnName("used_days").HasPrecision(8, 2);
+            entity.Property(e => e.AdjustedDays).HasColumnName("adjusted_days").HasPrecision(8, 2);
+            entity.Property(e => e.NetRemainingLeaveDays).HasColumnName("net_remaining_leave_days").HasPrecision(8, 2);
+            entity.Property(e => e.CarryForwardExpiry).HasColumnName("carry_forward_expiry");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LeaveType)
+                .WithMany(t => t.LeaveBalances)
+                .HasForeignKey(e => e.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: LeaveBalanceTransaction
+        modelBuilder.Entity<LeaveBalanceTransaction>(entity =>
+        {
+            entity.ToTable("leave_balance_transaction", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LeaveBalanceId).HasColumnName("leave_balance_id").IsRequired();
+            entity.Property(e => e.TransactionType).HasColumnName("transaction_type").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Amount).HasColumnName("amount").HasPrecision(8, 2).IsRequired();
+            entity.Property(e => e.ReferenceType).HasColumnName("reference_type").HasMaxLength(50);
+            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.CreatedByEmployeeId).HasColumnName("created_by_employee_id");
+
+            entity.HasOne(e => e.LeaveBalance)
+                .WithMany(b => b.Transactions)
+                .HasForeignKey(e => e.LeaveBalanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.CreatedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: LeaveRequest
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.ToTable("leave_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.LeaveTypeId).HasColumnName("leave_type_id").IsRequired();
+            entity.Property(e => e.StartDatetime).HasColumnName("start_datetime").IsRequired();
+            entity.Property(e => e.EndDatetime).HasColumnName("end_datetime").IsRequired();
+            entity.Property(e => e.LeaveHours).HasColumnName("leave_hours").HasPrecision(8, 2);
+            entity.Property(e => e.LeaveDays).HasColumnName("leave_days").HasPrecision(8, 2);
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
+            entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
+            entity.Property(e => e.CancelReason).HasColumnName("cancel_reason");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LeaveType)
+                .WithMany(t => t.LeaveRequests)
+                .HasForeignKey(e => e.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: LeaveRequestDocument
+        modelBuilder.Entity<LeaveRequestDocument>(entity =>
+        {
+            entity.ToTable("leave_request_document", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LeaveRequestId).HasColumnName("leave_request_id").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileData).HasColumnName("file_data");
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
+
+            entity.HasOne(e => e.LeaveRequest)
+                .WithMany(r => r.Documents)
+                .HasForeignKey(e => e.LeaveRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

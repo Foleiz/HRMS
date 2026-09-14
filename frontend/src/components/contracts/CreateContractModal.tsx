@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { X, Calendar, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { CreateContractRequest } from '@/types/contract';
+import { EmployeeType } from '@/types/employeeType';
+import { employeeTypeService } from '@/services/employeeTypeService';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { useToast } from '@/context/ToastContext';
 
@@ -23,35 +26,74 @@ export default function CreateContractModal({
   const toast = useToast();
   const [employeeId, setEmployeeId] = useState<number | ''>('');
   const [contractType, setContractType] = useState<string>('PROBATION');
+  const [employeeTypeId, setEmployeeTypeId] = useState<number | undefined>(undefined);
+  const [employeeTypes, setEmployeeTypes] = useState<EmployeeType[]>([]);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // เมื่อเปิด Modal ให้ตั้งค่าเริ่มต้น
+  // โหลดรายการประเภทสัญญา/การจ้างงานแบบไดนามิกจากระบบ
   useEffect(() => {
     if (isOpen) {
       setEmployeeId(employees.length > 0 ? employees[0].id : '');
-      setContractType('PROBATION');
       const todayStr = new Date().toISOString().split('T')[0];
       setStartDate(todayStr);
 
-      // คำนวณวันสิ้นสุดทดลองงาน 119 วันตามเกณฑ์กฎหมายแรงงาน
+      // คำนวณวันสิ้นสุดทดลองงาน 119 วันตามเกณฑ์กฎหมายแรงงานเริ่มต้น
       const d = new Date();
       d.setDate(d.getDate() + 119);
       setEndDate(d.toISOString().split('T')[0]);
+      setErrorMessage(null);
+
+      // โหลดประเภทการจ้างงาน/สัญญาจ้าง
+      employeeTypeService
+        .getAll({ status: 'ACTIVE' })
+        .then((data) => {
+          setEmployeeTypes(data);
+          // หาประเภททดลองงานเป็นค่าเริ่มต้น
+          const probType = data.find((t) => t.typeCode === 'PROB') || data[0];
+          if (probType) {
+            setEmployeeTypeId(probType.id);
+            setContractType('PROBATION');
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load employee types for modal:', err);
+        });
     }
   }, [isOpen, employees]);
 
   // คำนวณวันสิ้นสุดอัตโนมัติเมื่อเปลี่ยนวันเริ่มสัญญา หรือเปลี่ยนประเภทสัญญา
-  const handleContractTypeChange = (newType: string) => {
-    setContractType(newType);
-    if (newType === 'PROBATION' && startDate) {
+  const handleTypeSelectChange = (selectedTypeIdStr: string) => {
+    const selectedId = Number(selectedTypeIdStr);
+    setEmployeeTypeId(selectedId);
+
+    const typeObj = employeeTypes.find((t) => t.id === selectedId);
+    let mappedContractType = 'FIXED_TERM';
+
+    if (typeObj) {
+      const code = typeObj.typeCode.toUpperCase();
+      if (code.includes('PROB')) {
+        mappedContractType = 'PROBATION';
+      } else if (code.includes('PERM')) {
+        mappedContractType = 'PERMANENT';
+      } else if (code.includes('CONT') || code.includes('FIXED')) {
+        mappedContractType = 'FIXED_TERM';
+      } else {
+        mappedContractType = 'OTHER';
+      }
+    }
+
+    setContractType(mappedContractType);
+
+    if (mappedContractType === 'PROBATION' && startDate) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + 119);
       setEndDate(d.toISOString().split('T')[0]);
-    } else if (newType === 'PERMANENT') {
+    } else if (mappedContractType === 'PERMANENT') {
       setEndDate('');
-    } else if (newType === 'FIXED_TERM' && startDate) {
+    } else if (startDate) {
       // ค่าเริ่มต้นสัญญาจ้าง 1 ปี
       const d = new Date(startDate);
       d.setFullYear(d.getFullYear() + 1);
@@ -84,13 +126,16 @@ export default function CreateContractModal({
       await onSubmit({
         employeeId: Number(employeeId),
         contractType,
+        employeeTypeId,
         startDate,
         endDate: endDate || undefined,
         status: 'ACTIVE',
       });
       onClose();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'ไม่สามารถสร้างสัญญาจ้างงานได้';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = error.response?.data?.message || error.message || 'ไม่สามารถสร้างสัญญาจ้างงานได้';
+      setErrorMessage(msg);
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -100,7 +145,7 @@ export default function CreateContractModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="pt-6 pb-2 text-center relative px-6">
@@ -108,11 +153,19 @@ export default function CreateContractModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100"
+            className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="mx-6 my-2 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{errorMessage}</span>
+          </div>
+        )}
 
         {/* Form Body ตรงตาม Mockup */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
@@ -130,20 +183,41 @@ export default function CreateContractModal({
             />
           </div>
 
-          {/* 2. ประเภทสัญญา * */}
+          {/* 2. ประเภทสัญญา / การจ้างงาน * */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              ประเภทสัญญา <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-slate-700">
+                ประเภทสัญญา / การจ้างงาน <span className="text-rose-500">*</span>
+              </label>
+              <Link
+                href="/employees/types"
+                target="_blank"
+                className="text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium hover:underline"
+              >
+                <span>จัดการประเภทสัญญา</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
+
             <select
-              value={contractType}
-              onChange={(e) => handleContractTypeChange(e.target.value)}
+              value={employeeTypeId || ''}
+              onChange={(e) => handleTypeSelectChange(e.target.value)}
               required
               className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
             >
-              <option value="PROBATION">ทดลองงาน</option>
-              <option value="PERMANENT">ประจำ</option>
-              <option value="FIXED_TERM">สัญญาจ้าง</option>
+              {employeeTypes.length > 0 ? (
+                employeeTypes.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.typeName} ({t.typeCode})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="1">ทดลองงาน (PROB)</option>
+                  <option value="2">ประจำ (PERM)</option>
+                  <option value="3">สัญญาจ้าง (CONT)</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -189,14 +263,14 @@ export default function CreateContractModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-200/80 hover:bg-slate-300 transition-colors"
+              className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-200/80 hover:bg-slate-300 transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-7 py-2.5 rounded-xl text-sm font-medium text-white bg-[#0B2046] hover:bg-[#07152d] transition-colors flex items-center gap-2 shadow-xs"
+              className="px-7 py-2.5 rounded-xl text-sm font-medium text-white bg-[#0B2046] hover:bg-[#07152d] transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             >
               {isSubmitting ? (
                 <>

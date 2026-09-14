@@ -710,6 +710,126 @@ public class EmployeeService : IEmployeeService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<string> UploadAvatarAsync(
+        long id,
+        Stream stream,
+        string contentType,
+        long length,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. ตรวจสอบสิทธิ์ (EMP_MANAGE หรือพนักงานตัวเอง)
+        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        {
+            long? myEmpId = _currentUserService.EmployeeId;
+            if (!myEmpId.HasValue || myEmpId.Value != id)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์ของพนักงานท่านอื่น");
+            }
+        }
+
+        // 2. Validate content type
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+        var normalizedType = contentType.ToLower().Split(';')[0].Trim();
+        if (!allowedTypes.Contains(normalizedType))
+        {
+            throw new ValidationException("รองรับเฉพาะไฟล์รูปภาพประเภท JPG, PNG, WebP หรือ GIF เท่านั้น");
+        }
+
+        // 3. Validate size (Max 5MB)
+        if (length > 5 * 1024 * 1024)
+        {
+            throw new ValidationException("ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB");
+        }
+
+        var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee", id);
+        }
+
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, cancellationToken);
+        var bytes = ms.ToArray();
+
+        var avatar = await _dbContext.EmployeeAvatars.FindAsync(new object[] { id }, cancellationToken);
+        var now = DateTime.UtcNow;
+
+        if (avatar != null)
+        {
+            avatar.ImageData = bytes;
+            avatar.MimeType = normalizedType;
+            avatar.FileSize = (int)bytes.Length;
+            avatar.UpdatedAt = now;
+        }
+        else
+        {
+            avatar = new EmployeeAvatar
+            {
+                EmployeeId = id,
+                ImageData = bytes,
+                MimeType = normalizedType,
+                FileSize = (int)bytes.Length,
+                UpdatedAt = now
+            };
+            _dbContext.EmployeeAvatars.Add(avatar);
+        }
+
+        employee.AvatarUpdatedAt = now;
+        employee.UpdatedAt = now;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return $"/api/employees/{id}/avatar?v={now.Ticks}";
+    }
+
+    public async Task<(byte[] ImageData, string MimeType)?> GetAvatarAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var avatar = await _dbContext.EmployeeAvatars
+            .Where(a => a.EmployeeId == id)
+            .Select(a => new { a.ImageData, a.MimeType })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (avatar == null || avatar.ImageData == null || avatar.ImageData.Length == 0)
+        {
+            return null;
+        }
+
+        return (avatar.ImageData, avatar.MimeType);
+    }
+
+    public async Task<bool> DeleteAvatarAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        {
+            long? myEmpId = _currentUserService.EmployeeId;
+            if (!myEmpId.HasValue || myEmpId.Value != id)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์ของพนักงานท่านอื่น");
+            }
+        }
+
+        var avatar = await _dbContext.EmployeeAvatars.FindAsync(new object[] { id }, cancellationToken);
+        var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+
+        if (avatar != null)
+        {
+            _dbContext.EmployeeAvatars.Remove(avatar);
+        }
+
+        if (employee != null)
+        {
+            employee.AvatarUpdatedAt = null;
+            employee.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private EmployeeDto MapToDto(Employee e)
     {
         var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
@@ -748,6 +868,10 @@ public class EmployeeService : IEmployeeService
             EmployeeType = currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
+            AvatarUpdatedAt = e.AvatarUpdatedAt,
+            AvatarUrl = e.AvatarUpdatedAt.HasValue
+                ? $"/api/employees/{e.Id}/avatar?v={e.AvatarUpdatedAt.Value.Ticks}"
+                : null,
             Contact = e.Contact != null ? new EmployeeContactDto
             {
                 PersonalPhone = FormatPhoneNumber(e.Contact.PersonalPhone),

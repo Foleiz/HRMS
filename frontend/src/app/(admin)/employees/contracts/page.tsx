@@ -140,8 +140,8 @@ export default function ContractsPage() {
   // Sub-Navigation Tabs matching Mockup
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees' },
-    { title: 'ประเภทพนักงาน', href: '/organization' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/contracts' },
+    { title: 'ประเภทพนักงาน', href: '/employees/types' },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers' },
     { title: 'แผนผังองค์กร', href: '/organization' },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true },
   ];
