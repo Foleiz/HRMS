@@ -42,6 +42,63 @@ public class LeaveBalanceService : ILeaveBalanceService
             .ThenBy(b => b.LeaveTypeId)
             .ToListAsync(cancellationToken);
 
+        // Auto-complete missing active leave types for employees who have balances in this year
+        if (year.HasValue && !employeeId.HasValue && !leaveTypeId.HasValue)
+        {
+            var activeLeaveTypes = await _context.LeaveTypes
+                .AsNoTracking()
+                .Where(t => t.Status == "ACTIVE")
+                .ToListAsync(cancellationToken);
+
+            var existingPairs = balances.Select(b => (b.EmployeeId, b.LeaveTypeId)).ToHashSet();
+            var distinctEmpIds = balances.Select(b => b.EmployeeId).Distinct().ToList();
+
+            var missingBalances = new List<LeaveBalance>();
+            foreach (var empId in distinctEmpIds)
+            {
+                foreach (var lt in activeLeaveTypes)
+                {
+                    if (!existingPairs.Contains((empId, lt.Id)))
+                    {
+                        missingBalances.Add(new LeaveBalance
+                        {
+                            EmployeeId = empId,
+                            LeaveTypeId = lt.Id,
+                            Year = year.Value,
+                            BroughtForwardDays = 0,
+                            AnnualQuotaDays = 0,
+                            ActiveCarriedForwardDays = 0,
+                            UsedDays = 0,
+                            AdjustedDays = 0,
+                            NetRemainingLeaveDays = 0,
+                            Transactions = new List<LeaveBalanceTransaction>
+                            {
+                                new LeaveBalanceTransaction
+                                {
+                                    TransactionType = "OPENING",
+                                    Amount = 0,
+                                    Note = $"เพิ่มยอดวันลาอัตโนมัติสำหรับประเภทการลา '{lt.LeaveName}'",
+                                    CreatedAt = DateTime.UtcNow
+                                }
+                            }
+                        });
+                        existingPairs.Add((empId, lt.Id));
+                    }
+                }
+            }
+
+            if (missingBalances.Count > 0)
+            {
+                _context.LeaveBalances.AddRange(missingBalances);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                balances = await query
+                    .OrderBy(b => b.EmployeeId)
+                    .ThenBy(b => b.LeaveTypeId)
+                    .ToListAsync(cancellationToken);
+            }
+        }
+
         var empIds = balances.Select(b => b.EmployeeId).Distinct().ToList();
         var assignments = await _context.EmployeeAssignments
             .AsNoTracking()

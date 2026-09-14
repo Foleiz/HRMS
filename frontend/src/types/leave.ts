@@ -15,6 +15,7 @@ export interface CreateLeaveTypePayload {
   isPaidLeave: boolean;
   documentDescription?: string;
   status: string;
+  defaultAnnualQuotaDays?: number;
 }
 
 export interface UpdateLeaveTypePayload {

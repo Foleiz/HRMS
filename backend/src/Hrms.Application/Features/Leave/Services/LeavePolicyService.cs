@@ -121,6 +121,45 @@ public class LeavePolicyService : ILeavePolicyService
         _context.LeavePolicies.Add(policy);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // Auto-update zero-balances for this leave type in current year
+        if (policy.EntitlementDays > 0)
+        {
+            var targetYear = DateTime.UtcNow.Year;
+            var balancesToUpdate = await _context.LeaveBalances
+                .Where(b => b.LeaveTypeId == policy.LeaveTypeId && b.Year == targetYear && b.AnnualQuotaDays == 0 && b.UsedDays == 0)
+                .ToListAsync(cancellationToken);
+
+            if (balancesToUpdate.Count > 0)
+            {
+                if (policy.EmployeeLevelId.HasValue)
+                {
+                    var empIds = balancesToUpdate.Select(b => b.EmployeeId).ToList();
+                    var validEmpIds = await _context.EmployeeAssignments
+                        .AsNoTracking()
+                        .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent && a.EmployeeLevelId == policy.EmployeeLevelId.Value)
+                        .Select(a => a.EmployeeId)
+                        .ToListAsync(cancellationToken);
+
+                    balancesToUpdate = balancesToUpdate.Where(b => validEmpIds.Contains(b.EmployeeId)).ToList();
+                }
+
+                foreach (var b in balancesToUpdate)
+                {
+                    b.AnnualQuotaDays = policy.EntitlementDays;
+                    b.NetRemainingLeaveDays = policy.EntitlementDays + b.ActiveCarriedForwardDays + b.AdjustedDays;
+                    _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
+                    {
+                        LeaveBalanceId = b.Id,
+                        TransactionType = "ENTITLEMENT",
+                        Amount = policy.EntitlementDays,
+                        Note = $"ปรับปรุงโควตาวันลาอัตโนมัติตามนโยบาย '{leaveType.LeaveName}'",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         return (await GetByIdAsync(policy.Id, cancellationToken))!;
     }
 

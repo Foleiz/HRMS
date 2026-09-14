@@ -75,6 +75,65 @@ public class LeaveTypeService : ILeaveTypeService
         _context.LeaveTypes.Add(leaveType);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // Auto-create leave balances for all active employees if status is ACTIVE
+        if (leaveType.Status == "ACTIVE")
+        {
+            var employees = await _context.Employees
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            if (employees.Count > 0)
+            {
+                var existingYears = await _context.LeaveBalances
+                    .AsNoTracking()
+                    .Select(b => b.Year)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                var currentYear = DateTime.UtcNow.Year;
+                if (!existingYears.Contains(currentYear))
+                {
+                    existingYears.Add(currentYear);
+                }
+
+                var quota = request.DefaultAnnualQuotaDays ?? 0;
+                var balancesToAdd = new List<LeaveBalance>();
+
+                foreach (var y in existingYears)
+                {
+                    foreach (var emp in employees)
+                    {
+                        var bal = new LeaveBalance
+                        {
+                            EmployeeId = emp.Id,
+                            LeaveTypeId = leaveType.Id,
+                            Year = y,
+                            BroughtForwardDays = 0,
+                            AnnualQuotaDays = quota,
+                            ActiveCarriedForwardDays = 0,
+                            UsedDays = 0,
+                            AdjustedDays = 0,
+                            NetRemainingLeaveDays = quota,
+                            Transactions = new List<LeaveBalanceTransaction>
+                            {
+                                new LeaveBalanceTransaction
+                                {
+                                    TransactionType = "ENTITLEMENT",
+                                    Amount = quota,
+                                    Note = $"เพิ่มยอดวันลาอัตโนมัติจากการเพิ่มประเภทการลา '{leaveType.LeaveName}'",
+                                    CreatedAt = DateTime.UtcNow
+                                }
+                            }
+                        };
+                        balancesToAdd.Add(bal);
+                    }
+                }
+
+                _context.LeaveBalances.AddRange(balancesToAdd);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         return new LeaveTypeDto
         {
             Id = leaveType.Id,

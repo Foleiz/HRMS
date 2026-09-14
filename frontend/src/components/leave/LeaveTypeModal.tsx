@@ -29,6 +29,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
   const [documentDescription, setDocumentDescription] = useState('');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
   const [isActive, setIsActive] = useState(true);
+  const [defaultAnnualQuotaDays, setDefaultAnnualQuotaDays] = useState<number | string>(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setDocumentDescription(leaveTypeToEdit.documentDescription || '');
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
+      setDefaultAnnualQuotaDays(0);
     } else {
       setLeaveCode('');
       setLeaveName('');
@@ -51,6 +53,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setDocumentDescription('');
       setIsPaidLeave(true);
       setIsActive(true);
+      setDefaultAnnualQuotaDays(0);
     }
     setError(null);
   }, [leaveTypeToEdit, isOpen]);
@@ -88,6 +91,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           isPaidLeave,
           documentDescription: documentDescription.trim() || undefined,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
+          defaultAnnualQuotaDays: Number(defaultAnnualQuotaDays) || 0,
         });
       }
       onSuccess();
@@ -211,6 +215,32 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
+
+          {/* โควตาวันลาเริ่มต้นต่อปี (Auto-allocate to employees) */}
+          {!isEditing && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                  โควตาสิทธิ์เริ่มต้นต่อปี ({quotaUnit === 'HOUR' ? 'ชั่วโมง' : quotaUnit === 'MONTH' ? 'เดือน' : 'วัน'})
+                </label>
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">
+                  เพิ่มให้พนักงานทุกคนแบบ Auto
+                </span>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder="0"
+                value={defaultAnnualQuotaDays}
+                onChange={(e) => setDefaultAnnualQuotaDays(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                ระบบจะสร้างยอดวันลาประเภทนี้ให้กับพนักงานทุกคนในปีปัจจุบันทันที (สามารถปรับเปลี่ยนหรือตั้งนโยบายสิทธิ์ตามระดับพนักงานได้ภายหลัง)
+              </p>
+            </div>
+          )}
 
           {/* Toggles Card */}
           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">

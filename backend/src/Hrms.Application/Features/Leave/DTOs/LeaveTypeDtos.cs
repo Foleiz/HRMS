@@ -19,6 +19,7 @@ public record CreateLeaveTypeRequest
     public bool IsPaidLeave { get; init; } = true;
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
+    public decimal? DefaultAnnualQuotaDays { get; init; } = 0;
 }
 
 public record UpdateLeaveTypeRequest

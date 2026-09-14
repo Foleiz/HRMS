@@ -178,13 +178,15 @@ export default function LeaveManagementPage() {
     await leaveService.createLeaveType(payload);
     const updated = await leaveService.getLeaveTypes();
     setLeaveTypes(updated);
-    showToast('สร้างประเภทการลาสำเร็จ');
+    await fetchBalances(selectedYear);
+    showToast('สร้างประเภทการลาสำเร็จ และเพิ่มยอดวันลาให้กับพนักงานทุกคนเรียบร้อยแล้ว');
   };
 
   const handleSubmitUpdateType = async (id: number, payload: UpdateLeaveTypePayload) => {
     await leaveService.updateLeaveType(id, payload);
     const updated = await leaveService.getLeaveTypes();
     setLeaveTypes(updated);
+    await fetchBalances(selectedYear);
     showToast('อัพเดตประเภทการลาสำเร็จ');
   };
 
@@ -199,11 +201,12 @@ export default function LeaveManagementPage() {
           await leaveService.deleteLeaveType(type.id);
           const updated = await leaveService.getLeaveTypes();
           setLeaveTypes(updated);
+          await fetchBalances(selectedYear);
           closeConfirm();
-          showToast('ลบประเภทการลาเรียบร้อยแล้ว');
+          showToast('ลบประเภทการลาสำเร็จ');
         } catch (err: any) {
           closeConfirm();
-          showAlert('ไม่สามารถลบได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
+          showAlert('ไม่สามารถลบได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการลบประเภทการลา', 'danger');
         }
       },
     });
@@ -224,6 +227,7 @@ export default function LeaveManagementPage() {
     await leaveService.createLeavePolicy(payload);
     const updated = await leaveService.getLeavePolicies();
     setLeavePolicies(updated);
+    await fetchBalances(selectedYear);
     showToast('เพิ่มสิทธิ์การลาสำเร็จ');
   };
 
@@ -231,6 +235,7 @@ export default function LeaveManagementPage() {
     await leaveService.updateLeavePolicy(id, payload);
     const updated = await leaveService.getLeavePolicies();
     setLeavePolicies(updated);
+    await fetchBalances(selectedYear);
     showToast('อัพเดตสิทธิ์การลาสำเร็จ');
   };
 
