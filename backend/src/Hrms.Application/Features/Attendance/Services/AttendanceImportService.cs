@@ -64,7 +64,7 @@ public class AttendanceImportService : IAttendanceImportService
                     new AttendanceImportErrorDto
                     {
                         RowNumber = 0,
-                        ErrorMessage = $"ไฟล์นี้เคยถูกนำเข้าแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id}) หากต้องการนำเข้าใหม่ กรุณาเลือก 'อนุญาตให้อัปโหลดซ้ำ'",
+                        ErrorMessage = $"ไฟล์นี้เคยถูกนำเข้าแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id}) หากต้องการนำเข้าใหม่ กรุณากด 'ลบชุดข้อมูล' ในตารางประวัติด้านล่างก่อน",
                         ErrorCode = "DUPLICATE_FILE"
                     }
                 }
