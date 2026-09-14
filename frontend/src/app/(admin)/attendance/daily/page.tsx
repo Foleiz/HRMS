@@ -549,7 +549,16 @@ function DailyAttendanceContent() {
         setUploadResult(res.data);
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
-        if (res.data.dateFrom && res.data.dateTo) {
+
+        if (res.data.failedRecords > 0) {
+          setImportErrorMessage(
+            `แจ้งเตือนข้อผิดพลาด: พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ (นำเข้าสำเร็จ ${res.data.successRecords} รายการ)`
+          );
+        } else {
+          setSuccessMessage(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
+        }
+
+        if (res.data.status !== 'FAILED' && res.data.dateFrom && res.data.dateTo) {
           setHasAnyBatch(true);
           setAllowedDateRange({
             min: res.data.dateFrom,
@@ -561,8 +570,10 @@ function DailyAttendanceContent() {
         }
         loadBatches();
       } else {
-        setImportErrorMessage(res.message || 'เกิดข้อผิดพลาดในการประมวลผลไฟล์');
+        const errorMsg = res.message || 'เกิดข้อผิดพลาด: รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ';
+        setImportErrorMessage(errorMsg);
         if (res.data) setUploadResult(res.data);
+        loadBatches();
       }
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
@@ -1501,12 +1512,42 @@ function DailyAttendanceContent() {
 
               {/* Error Alert */}
               {importErrorMessage && (
-                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-rose-900">แจ้งเตือนข้อผิดพลาด</p>
-                    <p className="text-xs text-rose-700 mt-0.5">{importErrorMessage}</p>
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start justify-between gap-3 animate-in fade-in duration-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-rose-900">แจ้งเตือนข้อผิดพลาดในการนำเข้าไฟล์</p>
+                      <p className="text-xs text-rose-700 mt-0.5 leading-relaxed">{importErrorMessage}</p>
+                    </div>
                   </div>
+                  {uploadResult && uploadResult.failedRecords > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mockBatch: AttendanceImportBatch = {
+                          id: uploadResult.batchId,
+                          fileName: uploadResult.fileName,
+                          fileHash: uploadResult.fileHash,
+                          source: uploadResult.source,
+                          deviceName: null,
+                          unitName: null,
+                          dateFrom: uploadResult.dateFrom,
+                          dateTo: uploadResult.dateTo,
+                          importedByUserId: null,
+                          importedByUserName: null,
+                          importedAt: new Date().toISOString(),
+                          totalRecords: uploadResult.totalRecords,
+                          successRecords: uploadResult.successRecords,
+                          failedRecords: uploadResult.failedRecords,
+                          status: uploadResult.status,
+                        };
+                        handleOpenErrors(mockBatch);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 border border-rose-300 transition-colors shrink-0 cursor-pointer"
+                    >
+                      ดูรายการข้อผิดพลาด ({uploadResult.failedRecords})
+                    </button>
+                  )}
                 </div>
               )}
 

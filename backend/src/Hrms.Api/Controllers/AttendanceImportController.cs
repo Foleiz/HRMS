@@ -75,9 +75,20 @@ public class AttendanceImportController : ControllerBase
         {
             "IMPORTED" => $"นำเข้าข้อมูลสำเร็จครบถ้วน ({result.SuccessRecords} รายการ)",
             "PARTIAL" => $"นำเข้าข้อมูลสำเร็จบางส่วน (สำเร็จ {result.SuccessRecords} รายการ, ข้อผิดพลาด {result.FailedRecords} รายการ)",
-            "FAILED" => $"การนำเข้าล้มเหลว ไม่พบรายการที่ถูกต้อง (ข้อผิดพลาด {result.FailedRecords} รายการ)",
+            "FAILED" => $"การนำเข้าล้มเหลว: รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลพนักงานในระบบ (พบข้อผิดพลาด {result.FailedRecords} รายการ)",
             _ => "ประมวลผลการนำเข้าเรียบร้อย"
         };
+
+        if (result.Status == "FAILED")
+        {
+            return Ok(new ApiResponse<AttendanceImportResultDto>
+            {
+                Success = false,
+                Message = message,
+                Data = result,
+                Errors = result.Errors.Select(e => e.ErrorMessage).ToList()
+            });
+        }
 
         return Ok(ApiResponse<AttendanceImportResultDto>.Ok(result, message));
     }

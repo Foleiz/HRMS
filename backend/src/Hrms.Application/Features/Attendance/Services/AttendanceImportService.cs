@@ -306,7 +306,6 @@ public class AttendanceImportService : IAttendanceImportService
             .ToListAsync(cancellationToken);
 
         var empByCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
-        var empByNumericCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var emp in employees)
         {
@@ -314,16 +313,6 @@ public class AttendanceImportService : IAttendanceImportService
             {
                 var c = emp.EmployeeCode.Trim();
                 empByCode[c] = emp;
-
-                var digits = new string(c.Where(char.IsDigit).ToArray());
-                if (!string.IsNullOrEmpty(digits))
-                {
-                    empByNumericCode[digits] = emp;
-                    if (int.TryParse(digits, out int numVal))
-                    {
-                        empByNumericCode[numVal.ToString()] = emp;
-                    }
-                }
             }
         }
 
@@ -381,7 +370,7 @@ public class AttendanceImportService : IAttendanceImportService
                 batch.DeviceName = deviceRaw.Trim();
             }
 
-            // Employee Matching: Strictly match by Employee Code only
+            // Employee Matching: Strictly match by Employee Code exactly (No fuzzy matching, no coercion, no alterations)
             Employee? employee = null;
             if (!string.IsNullOrWhiteSpace(empCodeRaw))
             {
@@ -396,47 +385,17 @@ public class AttendanceImportService : IAttendanceImportService
                     cleanCode = ((long)dVal).ToString();
                 }
 
-                if (empByCode.TryGetValue(cleanCode, out employee))
-                {
-                    // Direct code match (e.g. "100002" or "EMP001")
-                }
-                else if (empByNumericCode.TryGetValue(cleanCode, out employee))
-                {
-                    // Numeric code match (e.g. "100002" or "001")
-                }
-                else if (cleanCode.All(char.IsDigit) && int.TryParse(cleanCode, out int nId))
-                {
-                    if (empByCode.TryGetValue($"EMP{cleanCode}", out employee) ||
-                        empByCode.TryGetValue($"EMP{nId:D3}", out employee) ||
-                        empByNumericCode.TryGetValue(nId.ToString(), out employee))
-                    {
-                        // Prefix or integer match
-                    }
-                }
-                else
-                {
-                    var digitsOnly = new string(cleanCode.Where(char.IsDigit).ToArray());
-                    if (!string.IsNullOrEmpty(digitsOnly))
-                    {
-                        if (empByNumericCode.TryGetValue(digitsOnly, out employee))
-                        {
-                            // Digits only match
-                        }
-                        else if (int.TryParse(digitsOnly, out int dValNum) && empByNumericCode.TryGetValue(dValNum.ToString(), out employee))
-                        {
-                            // Digits as int match
-                        }
-                    }
-                }
+                // Strict exact match with system EmployeeCode only
+                empByCode.TryGetValue(cleanCode, out employee);
             }
 
-            // Strictly DO NOT fallback to name matching!
+            // If employee code does not match in the system, do NOT coerce or guess; report an error immediately!
             if (employee == null)
             {
                 failedRecords++;
                 AddError(batch.Id, rowNumber, rawRowJson, 
-                    $"ไม่พบข้อมูลพนักงานสำหรับรหัส '{empCodeRaw}' ในระบบ", 
-                    "EMPLOYEE_NOT_FOUND", empCodeRaw, "-", "-", null, stateRaw, errorsList, errorDtos);
+                    $"รหัสพนักงาน '{empCodeRaw}' ในไฟล์ไม่ตรงกับข้อมูลพนักงานคนใดในระบบ", 
+                    "EMPLOYEE_NOT_FOUND", empCodeRaw, empNameRaw ?? "-", deptRaw ?? "-", null, stateRaw, errorsList, errorDtos);
                 continue;
             }
 
