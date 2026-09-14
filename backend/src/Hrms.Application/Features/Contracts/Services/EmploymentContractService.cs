@@ -132,6 +132,65 @@ public class EmploymentContractService : IEmploymentContractService
         return contracts.Select(MapToDto).ToList();
     }
 
+    public async Task<List<EmployeeCareerTimelineDto>> GetTimelineByEmployeeIdAsync(
+        long employeeId,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _context.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+        if (employee == null)
+        {
+            throw new NotFoundException("พนักงาน", employeeId);
+        }
+
+        var assignments = await _context.EmployeeAssignments
+            .Include(a => a.Position)
+            .Include(a => a.Department)
+            .Include(a => a.Division)
+            .Include(a => a.ManagerEmployee)
+            .Where(a => a.EmployeeId == employeeId)
+            .OrderBy(a => a.EffectiveFrom)
+            .ThenBy(a => a.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var empName = $"{employee.FirstName} {employee.LastName}".Trim();
+
+        return assignments.Select(a =>
+        {
+            var startStr = FormatBuddhistDate(a.EffectiveFrom);
+            var endStr = a.EffectiveTo.HasValue ? FormatBuddhistDate(a.EffectiveTo.Value) : "ปัจจุบัน";
+            var dateRangeDisplay = $"{startStr} – {endStr}";
+
+            var divName = a.Division?.DivisionName ?? "-";
+            var deptName = a.Department?.DepartmentName ?? "-";
+            var mgrName = a.ManagerEmployee != null 
+                ? $"{a.ManagerEmployee.FirstName} {a.ManagerEmployee.LastName}".Trim()
+                : "-";
+
+            var hierarchyDisplay = $"{divName} / {deptName} · หัวหน้างาน: {mgrName}";
+
+            return new EmployeeCareerTimelineDto
+            {
+                Id = a.Id,
+                EmployeeId = a.EmployeeId,
+                EmployeeName = empName,
+                EmployeeCode = employee.EmployeeCode,
+                PositionName = a.Position?.PositionName ?? "-",
+                DivisionName = divName,
+                DepartmentName = deptName,
+                ManagerName = mgrName,
+                EffectiveFrom = a.EffectiveFrom,
+                EffectiveTo = a.EffectiveTo,
+                IsCurrent = a.IsCurrent,
+                DateRangeDisplay = dateRangeDisplay,
+                HierarchyDisplay = hierarchyDisplay
+            };
+        }).ToList();
+    }
+
     public async Task<EmploymentContractDto> CreateAsync(
         CreateEmploymentContractRequest request,
         CancellationToken cancellationToken = default)

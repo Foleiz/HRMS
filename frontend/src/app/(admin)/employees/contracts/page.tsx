@@ -28,6 +28,7 @@ import { EmploymentContract, ContractSummaryStats, CreateContractRequest } from 
 import { Employee } from '@/types/employee';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
+import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 
 export default function ContractsPage() {
   const router = useRouter();
@@ -48,12 +49,18 @@ export default function ContractsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContractType, setSelectedContractType] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [activeSubTab, setActiveSubTab] = useState<'requests' | 'history'>('requests');
+  const [activeSubTab, setActiveSubTab] = useState<'requests'>('requests');
 
   // Modals & Actions
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<EmploymentContract | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [selectedTimelineEmployee, setSelectedTimelineEmployee] = useState<{
+    id: number;
+    name: string;
+    code: string;
+  } | null>(null);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
@@ -241,24 +248,9 @@ export default function ContractsPage() {
         <div className="border-b border-slate-200 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex space-x-8 text-sm font-medium">
             <button
-              onClick={() => setActiveSubTab('requests')}
-              className={`pb-3 transition-colors border-b-2 font-medium ${
-                activeSubTab === 'requests'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className="pb-3 border-b-2 border-[#0B2046] text-[#0B2046] font-bold"
             >
               คำขอย้าย/เลื่อนตำแหน่ง
-            </button>
-            <button
-              onClick={() => setActiveSubTab('history')}
-              className={`pb-3 transition-colors border-b-2 font-medium ${
-                activeSubTab === 'history'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              ประวัติรายบุคคล
             </button>
           </div>
 
@@ -394,8 +386,23 @@ export default function ContractsPage() {
                         {actionMenuOpenId === contract.id && (
                           <div
                             ref={actionMenuRef}
-                            className="absolute right-6 mt-1 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
+                            className="absolute right-6 mt-1 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
                           >
+                            <button
+                              onClick={() => {
+                                setSelectedTimelineEmployee({
+                                  id: contract.employeeId,
+                                  name: contract.employeeName,
+                                  code: contract.employeeCode,
+                                });
+                                setIsTimelineModalOpen(true);
+                                setActionMenuOpenId(null);
+                              }}
+                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>ประวัติรายบุคคล</span>
+                            </button>
                             <button
                               onClick={() => {
                                 setSelectedContract(contract);
@@ -485,6 +492,17 @@ export default function ContractsPage() {
           setSelectedContract(null);
         }}
         onTerminate={handleTerminateContract}
+      />
+
+      <EmployeeTimelineModal
+        isOpen={isTimelineModalOpen}
+        onClose={() => {
+          setIsTimelineModalOpen(false);
+          setSelectedTimelineEmployee(null);
+        }}
+        employeeId={selectedTimelineEmployee?.id ?? null}
+        employeeName={selectedTimelineEmployee?.name ?? ''}
+        employeeCode={selectedTimelineEmployee?.code ?? ''}
       />
     </div>
   );

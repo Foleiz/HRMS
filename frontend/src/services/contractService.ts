@@ -5,6 +5,7 @@ import {
   ContractSummaryStats,
   CreateContractRequest,
   UpdateContractRequest,
+  EmployeeCareerTimeline,
 } from '@/types/contract';
 
 /**
@@ -32,6 +33,12 @@ export const contractService = {
   // ดึงประวัติสัญญาจ้างงานของพนักงานตาม Employee ID
   async getByEmployeeId(employeeId: number): Promise<EmploymentContract[]> {
     const res = await apiClient.get<ApiResponse<EmploymentContract[]>>(`/employees/${employeeId}/contracts`);
+    return res.data.data;
+  },
+
+  // ดึงไทม์ไลน์ตำแหน่งงานและประวัติการย้ายสาขา/เลื่อนขั้น (Career & Assignment Timeline)
+  async getCareerTimeline(employeeId: number): Promise<EmployeeCareerTimeline[]> {
+    const res = await apiClient.get<ApiResponse<EmployeeCareerTimeline[]>>(`/employees/${employeeId}/career-timeline`);
     return res.data.data;
   },
 

@@ -75,6 +75,19 @@ public class EmploymentContractsController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงไทม์ไลน์ตำแหน่งงานและประวัติการโอนย้าย/เลื่อนขั้นรายบุคคลตาม Employee ID
+    /// </summary>
+    [HttpGet("/api/employees/{employeeId:long}/career-timeline")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeCareerTimelineDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeCareerTimelineDto>>>> GetCareerTimeline(
+        long employeeId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _contractService.GetTimelineByEmployeeIdAsync(employeeId, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeCareerTimelineDto>>.Ok(result, "ดึงไทม์ไลน์ตำแหน่งงานสำเร็จ"));
+    }
+
+    /// <summary>
     /// สร้างสัญญาจ้างงานใหม่
     /// </summary>
     [HttpPost]

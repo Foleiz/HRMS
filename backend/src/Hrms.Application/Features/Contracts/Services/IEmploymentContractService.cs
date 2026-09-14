@@ -11,6 +11,7 @@ public interface IEmploymentContractService
     Task<ContractSummaryStatsDto> GetStatsAsync(CancellationToken cancellationToken = default);
     Task<EmploymentContractDto> GetByIdAsync(long id, CancellationToken cancellationToken = default);
     Task<List<EmploymentContractDto>> GetByEmployeeIdAsync(long employeeId, CancellationToken cancellationToken = default);
+    Task<List<EmployeeCareerTimelineDto>> GetTimelineByEmployeeIdAsync(long employeeId, CancellationToken cancellationToken = default);
     Task<EmploymentContractDto> CreateAsync(CreateEmploymentContractRequest request, CancellationToken cancellationToken = default);
     Task<EmploymentContractDto> UpdateAsync(long id, UpdateEmploymentContractRequest request, CancellationToken cancellationToken = default);
     Task<bool> TerminateAsync(long id, string? reason, DateOnly? terminationDate, CancellationToken cancellationToken = default);

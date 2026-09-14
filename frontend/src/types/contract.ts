@@ -51,3 +51,19 @@ export interface UpdateContractRequest {
   terminationReason?: string;
   status?: string;
 }
+
+export interface EmployeeCareerTimeline {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  employeeCode: string;
+  positionName: string;
+  divisionName: string;
+  departmentName: string;
+  managerName?: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  isCurrent: boolean;
+  dateRangeDisplay: string;
+  hierarchyDisplay: string;
+}

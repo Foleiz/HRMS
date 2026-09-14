@@ -626,6 +626,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeTypeId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ManagerEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ManagerEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: EmployeeType
