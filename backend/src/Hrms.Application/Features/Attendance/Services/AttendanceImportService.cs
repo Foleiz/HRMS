@@ -780,8 +780,13 @@ public class AttendanceImportService : IAttendanceImportService
                 EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}".Trim(),
                 DepartmentName = asg?.Department?.DepartmentName,
                 WorkDate = a.WorkDate.ToString("yyyy-MM-dd"),
-                ActualIn = a.ActualIn.HasValue ? a.ActualIn.Value.ToString("HH:mm") : null,
-                ActualOut = a.ActualOut.HasValue ? a.ActualOut.Value.ToString("HH:mm") : null,
+                // แปลง UTC → Thailand Standard Time (ICT, UTC+7) ก่อน format
+                ActualIn = a.ActualIn.HasValue
+                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualIn.Value).ToString("HH:mm")
+                    : null,
+                ActualOut = a.ActualOut.HasValue
+                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualOut.Value).ToString("HH:mm")
+                    : null,
                 WorkedMinutes = a.WorkedMinutes,
                 LateMinutes = a.LateMinutes,
                 EarlyLeaveMinutes = a.EarlyLeaveMinutes,
