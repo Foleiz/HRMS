@@ -711,21 +711,22 @@ export default function EmployeesPage() {
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', active: true },
     { title: 'ประเภทพนักงาน', href: '/organization' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees' },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/contracts' },
     { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees' },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts' },
   ];
 
   return (
     <div className="space-y-4 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma) */}
+      {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma & Mockup) */}
       <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => {
             const isActive = tab.title === activeTab;
             return (
-              <button
+              <Link
                 key={tab.title}
+                href={tab.href}
                 onClick={() => setActiveTab(tab.title)}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
@@ -734,7 +735,7 @@ export default function EmployeesPage() {
                 }`}
               >
                 {tab.title}
-              </button>
+              </Link>
             );
           })}
         </nav>

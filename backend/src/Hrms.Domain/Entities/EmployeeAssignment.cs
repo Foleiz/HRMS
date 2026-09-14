@@ -29,4 +29,5 @@ public class EmployeeAssignment : BaseEntity
     public virtual EmployeeLevel? EmployeeLevel { get; set; }
     public virtual EmployeeType? EmployeeType { get; set; }
     public virtual WorkSchedule? WorkSchedule { get; set; }
+    public virtual Employee? ManagerEmployee { get; set; }
 }

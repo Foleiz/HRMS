@@ -60,6 +60,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<AttendanceImportBatch> AttendanceImportBatches => Set<AttendanceImportBatch>();
     public DbSet<AttendanceImportError> AttendanceImportErrors => Set<AttendanceImportError>();
 
+    // Contracts & Lifecycle (Dev 2 Sprint 2)
+    public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
+    public DbSet<EmployeeStatusHistory> EmployeeStatusHistories => Set<EmployeeStatusHistory>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -629,6 +633,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeTypeId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ManagerEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ManagerEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: EmployeeType
@@ -737,6 +746,61 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.RawPunchTimestamp).HasColumnName("raw_punch_timestamp").HasMaxLength(50);
             entity.Property(e => e.DevicePunchState).HasColumnName("device_punch_state").HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+        });
+
+        // Configuration: EmploymentContract (Dev 2 Sprint 2)
+        modelBuilder.Entity<EmploymentContract>(entity =>
+        {
+            entity.ToTable("employment_contract", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.ContractType).HasColumnName("contract_type").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.WageType).HasColumnName("wage_type").HasMaxLength(20);
+            entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
+            entity.Property(e => e.ProbationEndDate).HasColumnName("probation_end_date");
+            entity.Property(e => e.ProbationPassedDate).HasColumnName("probation_passed_date");
+            entity.Property(e => e.ContractEndDate).HasColumnName("contract_end_date");
+            entity.Property(e => e.TerminationDate).HasColumnName("termination_date");
+            entity.Property(e => e.TerminationReason).HasColumnName("termination_reason");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Contracts)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeStatusHistory (Dev 2 Sprint 2)
+        modelBuilder.Entity<EmployeeStatusHistory>(entity =>
+        {
+            entity.ToTable("employee_status_history", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.SourceContractId).HasColumnName("source_contract_id");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.StatusHistories)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.SourceContract)
+                .WithMany()
+                .HasForeignKey(e => e.SourceContractId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

@@ -375,6 +375,23 @@ public class EmployeeService : IEmployeeService
 
         // 2. อัปเดตข้อมูลทั่วไป
         var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
+
+        // ตรวจสอบและอัปเดตรหัสพนักงาน (หากมีการแก้ไขและไม่ซ้ำกับพนักงานคนอื่น)
+        if (!string.IsNullOrWhiteSpace(request.EmployeeCode))
+        {
+            var newCode = request.EmployeeCode.Trim();
+            if (!string.Equals(employee.EmployeeCode, newCode, StringComparison.OrdinalIgnoreCase))
+            {
+                bool codeExists = await _dbContext.Employees
+                    .AnyAsync(e => e.EmployeeCode == newCode && e.Id != employee.Id, cancellationToken);
+                if (codeExists)
+                {
+                    throw new ValidationException($"รหัสพนักงาน '{newCode}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
+                }
+                employee.EmployeeCode = newCode;
+            }
+        }
+
         employee.Prefix = request.Prefix?.Trim();
         employee.FirstName = request.FirstName.Trim();
         employee.LastName = request.LastName.Trim();
@@ -486,18 +503,31 @@ public class EmployeeService : IEmployeeService
         // 6.1 บัญชีธนาคาร (Bank Accounts)
         if (request.BankAccounts != null && request.BankAccounts.Any())
         {
-            employee.BankAccounts.Clear();
             foreach (var acc in request.BankAccounts)
             {
-                employee.BankAccounts.Add(new EmployeeBankAccount
+                var existing = employee.BankAccounts.FirstOrDefault(b => b.AccountNumber == acc.AccountNumber.Trim())
+                               ?? employee.BankAccounts.FirstOrDefault(b => b.IsPrimary);
+                if (existing != null)
                 {
-                    BankId = acc.BankId,
-                    AccountNumber = acc.AccountNumber.Trim(),
-                    AccountType = acc.AccountType ?? "SAVINGS",
-                    AccountName = acc.AccountName ?? employee.FullName,
-                    IsPrimary = acc.IsPrimary,
-                    Status = acc.Status ?? "ACTIVE"
-                });
+                    if (acc.BankId > 0) existing.BankId = acc.BankId;
+                    existing.AccountNumber = acc.AccountNumber.Trim();
+                    existing.AccountType = acc.AccountType ?? existing.AccountType;
+                    existing.AccountName = acc.AccountName ?? employee.FullName;
+                    existing.IsPrimary = acc.IsPrimary;
+                    existing.Status = acc.Status ?? existing.Status;
+                }
+                else
+                {
+                    employee.BankAccounts.Add(new EmployeeBankAccount
+                    {
+                        BankId = acc.BankId > 0 ? acc.BankId : 1,
+                        AccountNumber = acc.AccountNumber.Trim(),
+                        AccountType = acc.AccountType ?? "SAVINGS",
+                        AccountName = acc.AccountName ?? employee.FullName,
+                        IsPrimary = acc.IsPrimary,
+                        Status = acc.Status ?? "ACTIVE"
+                    });
+                }
             }
         }
         else if (!string.IsNullOrWhiteSpace(request.AccountNumber))
