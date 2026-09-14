@@ -48,5 +48,8 @@ public interface IHrmsDbContext
     DbSet<AttendanceImportBatch> AttendanceImportBatches { get; }
     DbSet<AttendanceImportError> AttendanceImportErrors { get; }
 
+    // Attendance Adjustment Requests (Dev 1 Sprint 7)
+    DbSet<AttendanceAdjustment> AttendanceAdjustments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

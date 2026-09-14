@@ -29,4 +29,5 @@ public class AttendanceDaily
     public virtual Shift? Shift { get; set; }
     public virtual WorkSchedule? WorkSchedule { get; set; }
     public virtual AttendanceImportBatch? ImportBatch { get; set; }
+    public virtual ICollection<AttendanceAdjustment> Adjustments { get; set; } = new List<AttendanceAdjustment>();
 }

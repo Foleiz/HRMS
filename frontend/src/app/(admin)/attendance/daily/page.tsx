@@ -33,9 +33,13 @@ import {
   ArrowRight,
   Eye,
   Trash2,
+  ClipboardCheck,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
+import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
 import {
@@ -43,6 +47,12 @@ import {
   DailyAttendanceSummary,
   UpdateAttendanceRequest,
 } from '@/types/attendance';
+import {
+  AttendanceAdjustment,
+  CreateAttendanceAdjustmentRequest,
+  ReviewAttendanceAdjustmentRequest,
+  AdjustmentStatus,
+} from '@/types/attendanceAdjustment';
 import {
   AttendanceImportBatch,
   AttendanceImportResult,
@@ -62,13 +72,13 @@ function DailyAttendanceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Active Tab: 'daily' | 'import'
-  const initialTab = (searchParams.get('tab') as 'daily' | 'import') || 'daily';
-  const [activeTab, setActiveTab] = useState<'daily' | 'import'>(
-    initialTab === 'import' ? 'import' : 'daily'
+  // Active Tab: 'daily' | 'import' | 'adjustments'
+  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments') || 'daily';
+  const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments'>(
+    initialTab === 'import' || initialTab === 'adjustments' ? initialTab : 'daily'
   );
 
-  const handleTabChange = (tab: 'daily' | 'import') => {
+  const handleTabChange = (tab: 'daily' | 'import' | 'adjustments') => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
@@ -82,8 +92,8 @@ function DailyAttendanceContent() {
   // Sync state if URL searchParams change externally
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'import' || tabParam === 'daily') {
-      setActiveTab(tabParam);
+    if (tabParam === 'import' || tabParam === 'daily' || tabParam === 'adjustments') {
+      setActiveTab(tabParam as 'daily' | 'import' | 'adjustments');
     }
     const dateParam = searchParams.get('date');
     if (dateParam) {
@@ -177,6 +187,31 @@ function DailyAttendanceContent() {
   const [revertModalOpen, setRevertModalOpen] = useState<boolean>(false);
   const [batchToRevert, setBatchToRevert] = useState<AttendanceImportBatch | null>(null);
   const [isRevertingBatch, setIsRevertingBatch] = useState<boolean>(false);
+
+  // Attendance Adjustment Requests State (Sprint 7)
+  const [adjustments, setAdjustments] = useState<AttendanceAdjustment[]>([]);
+  const [adjustmentsTotalCount, setAdjustmentsTotalCount] = useState(0);
+  const [adjustmentsTotalPages, setAdjustmentsTotalPages] = useState(1);
+  const [adjustmentsPage, setAdjustmentsPage] = useState(1);
+  const [adjustmentsLoading, setAdjustmentsLoading] = useState(false);
+  const [pendingAdjustmentsCount, setPendingAdjustmentsCount] = useState(0);
+  const [filterAdjustmentStatus, setFilterAdjustmentStatus] = useState<string>('ALL');
+  const [adjustmentSearch, setAdjustmentSearch] = useState('');
+
+  // Adjustment Create Modal
+  const [adjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
+  const [targetRecordForAdjustment, setTargetRecordForAdjustment] = useState<AttendanceDaily | null>(null);
+  const [adjustmentInTime, setAdjustmentInTime] = useState('');
+  const [adjustmentOutTime, setAdjustmentOutTime] = useState('');
+  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [isSubmittingAdjustment, setIsSubmittingAdjustment] = useState(false);
+
+  // Adjustment Review Modal
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedAdjustmentForReview, setSelectedAdjustmentForReview] = useState<AttendanceAdjustment | null>(null);
+  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
+  const [reviewNote, setReviewNote] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -604,6 +639,167 @@ function DailyAttendanceContent() {
     }
   };
 
+  // -------------------------------------------------------------
+  // Attendance Adjustments Handlers (Sprint 7)
+  // -------------------------------------------------------------
+  const loadPendingCount = useCallback(async () => {
+    try {
+      const count = await attendanceAdjustmentService.getPendingCount();
+      setPendingAdjustmentsCount(count);
+    } catch (err) {
+      console.error('Failed to load pending adjustment count:', err);
+    }
+  }, []);
+
+  const loadAdjustments = useCallback(async () => {
+    try {
+      setAdjustmentsLoading(true);
+      const res = await attendanceAdjustmentService.getAdjustments({
+        status: filterAdjustmentStatus === 'ALL' ? undefined : filterAdjustmentStatus,
+        search: adjustmentSearch.trim() || undefined,
+        page: adjustmentsPage,
+        pageSize: 20,
+      });
+      setAdjustments(res.items || []);
+      setAdjustmentsTotalPages(res.totalPages || 1);
+      setAdjustmentsTotalCount(res.totalCount || 0);
+    } catch (err) {
+      console.error('Failed to load adjustments:', err);
+      setErrorMessage('ไม่สามารถโหลดรายการคำขอปรับปรุงเวลาได้');
+    } finally {
+      setAdjustmentsLoading(false);
+    }
+  }, [filterAdjustmentStatus, adjustmentSearch, adjustmentsPage]);
+
+  // Trigger loads on tab change or filter
+  useEffect(() => {
+    loadPendingCount();
+  }, [loadPendingCount]);
+
+  useEffect(() => {
+    if (activeTab === 'adjustments') {
+      loadAdjustments();
+    }
+  }, [activeTab, loadAdjustments]);
+
+  // Open Create Adjustment Modal
+  const handleOpenAdjustmentModal = (rec: AttendanceDaily) => {
+    setTargetRecordForAdjustment(rec);
+    const parseTime = (iso?: string | null) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const h = String(d.getHours()).padStart(2, '0');
+      const m = String(d.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    };
+    setAdjustmentInTime(parseTime(rec.actualIn));
+    setAdjustmentOutTime(parseTime(rec.actualOut));
+    setAdjustmentReason('');
+    setAdjustmentModalOpen(true);
+  };
+
+  // Submit Create Adjustment
+  const handleCreateAdjustmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetRecordForAdjustment) return;
+    if (!adjustmentReason.trim()) {
+      alert('กรุณาระบุเหตุผลในการขอปรับปรุงเวลา');
+      return;
+    }
+
+    try {
+      setIsSubmittingAdjustment(true);
+      const workDate = targetRecordForAdjustment.workDate;
+
+      let adjInUtc: string | null = null;
+      if (adjustmentInTime) {
+        const [h, m] = adjustmentInTime.split(':').map(Number);
+        const d = new Date(`${workDate}T00:00:00`);
+        d.setHours(h, m, 0, 0);
+        adjInUtc = d.toISOString();
+      }
+
+      let adjOutUtc: string | null = null;
+      if (adjustmentOutTime) {
+        const [h, m] = adjustmentOutTime.split(':').map(Number);
+        const d = new Date(`${workDate}T00:00:00`);
+        d.setHours(h, m, 0, 0);
+        adjOutUtc = d.toISOString();
+      }
+
+      await attendanceAdjustmentService.createAdjustment({
+        attendanceId: targetRecordForAdjustment.id,
+        adjustedClockIn: adjInUtc,
+        adjustedClockOut: adjOutUtc,
+        reason: adjustmentReason.trim(),
+      });
+
+      setSuccessMessage('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
+      setAdjustmentModalOpen(false);
+      setTargetRecordForAdjustment(null);
+      await loadPendingCount();
+      if (activeTab === 'adjustments') {
+        await loadAdjustments();
+      }
+    } catch (err: any) {
+      console.error('Failed to submit adjustment:', err);
+      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยื่นคำขอ';
+      alert(msg);
+    } finally {
+      setIsSubmittingAdjustment(false);
+    }
+  };
+
+  // Open Review Modal
+  const handleOpenReviewModal = (adj: AttendanceAdjustment, action: 'APPROVED' | 'REJECTED') => {
+    setSelectedAdjustmentForReview(adj);
+    setReviewAction(action);
+    setReviewNote('');
+    setReviewModalOpen(true);
+  };
+
+  // Submit Review (Approve / Reject)
+  const handleReviewSubmit = async () => {
+    if (!selectedAdjustmentForReview) return;
+    try {
+      setIsSubmittingReview(true);
+      await attendanceAdjustmentService.reviewAdjustment(selectedAdjustmentForReview.id, {
+        status: reviewAction,
+        reviewNote: reviewNote.trim() || undefined,
+      });
+      setSuccessMessage(
+        reviewAction === 'APPROVED'
+          ? 'อนุมัติคำขอปรับปรุงเวลาและคำนวณเวลาใหม่อัตโนมัติเรียบร้อยแล้ว'
+          : 'ปฏิเสธคำขอปรับปรุงเวลาเรียบร้อยแล้ว'
+      );
+      setReviewModalOpen(false);
+      setSelectedAdjustmentForReview(null);
+      await loadAdjustments();
+      await loadPendingCount();
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to review adjustment:', err);
+      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการดำเนินการ';
+      alert(msg);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  // Cancel Adjustment
+  const handleCancelAdjustment = async (id: number) => {
+    if (!confirm('คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?')) return;
+    try {
+      await attendanceAdjustmentService.cancelAdjustment(id);
+      setSuccessMessage('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
+      await loadAdjustments();
+      await loadPendingCount();
+    } catch (err: any) {
+      console.error('Failed to cancel adjustment:', err);
+      alert(err.response?.data?.message || err.message || 'ไม่สามารถยกเลิกได้');
+    }
+  };
+
   // Helper formatters
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -818,6 +1014,24 @@ function DailyAttendanceContent() {
           >
             <UploadCloud className="w-4 h-4" />
             <span>นำเข้าไฟล์บันทึกเวลา</span>
+          </button>
+
+          {/* Tab 3: คำขอปรับปรุงเวลา (Sprint 7) */}
+          <button
+            onClick={() => handleTabChange('adjustments')}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'adjustments'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            <span>คำขอปรับปรุงเวลา</span>
+            {pendingAdjustmentsCount > 0 && (
+              <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
+                {pendingAdjustmentsCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -1126,13 +1340,23 @@ function DailyAttendanceContent() {
                           {renderStatusBadge(rec.status, rec.isAbsent)}
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => handleOpenEditModal(rec)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                            <span>แก้ไข</span>
-                          </button>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenAdjustmentModal(rec)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                              title="ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5" />
+                              <span>ขอปรับเวลา</span>
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditModal(rec)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              <span>แก้ไข</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1646,6 +1870,261 @@ function DailyAttendanceContent() {
         </div>
       )}
 
+      {/* ========================================================= */}
+      {/* TAB 3: คำขอปรับปรุงเวลาเข้า-ออกงาน (ATTENDANCE ADJUSTMENTS) */}
+      {/* ========================================================= */}
+      {activeTab === 'adjustments' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Toolbar & Filters */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            {/* Left: Search & Status Filter */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+              {/* Search */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ, รหัส หรือเหตุผล..."
+                  value={adjustmentSearch}
+                  onChange={(e) => {
+                    setAdjustmentSearch(e.target.value);
+                    setAdjustmentsPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={filterAdjustmentStatus}
+                onChange={(e) => {
+                  setFilterAdjustmentStatus(e.target.value);
+                  setAdjustmentsPage(1);
+                }}
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">สถานะทั้งหมด</option>
+                <option value="PENDING">รอพิจารณา (Pending)</option>
+                <option value="APPROVED">อนุมัติแล้ว (Approved)</option>
+                <option value="REJECTED">ไม่อนุมัติ (Rejected)</option>
+                <option value="CANCELLED">ยกเลิกแล้ว (Cancelled)</option>
+              </select>
+
+              {/* Refresh Button */}
+              <button
+                onClick={() => {
+                  loadAdjustments();
+                  loadPendingCount();
+                }}
+                disabled={adjustmentsLoading}
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer"
+                title="รีเฟรชข้อมูล"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${adjustmentsLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
+              </button>
+            </div>
+
+            {/* Right: Quick Stats */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 self-end md:self-auto">
+              <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>รอพิจารณา: {pendingAdjustmentsCount} รายการ</span>
+              </span>
+              <span className="text-slate-400">|</span>
+              <span>ทั้งหมด {adjustmentsTotalCount} รายการ</span>
+            </div>
+          </div>
+
+          {/* Adjustments Table Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs">
+                    <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
+                    <th className="py-3 px-4">พนักงาน</th>
+                    <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
+                    <th className="py-3 px-4">เวลาเดิม (เข้า - ออก)</th>
+                    <th className="py-3 px-4">เวลาที่ขอปรับ (เข้า - ออก)</th>
+                    <th className="py-3 px-4">เหตุผลในการขอปรับ</th>
+                    <th className="py-3 px-4">สถานะ</th>
+                    <th className="py-3 px-4">การพิจารณา</th>
+                    <th className="py-3 px-4 text-right">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {adjustmentsLoading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <RefreshCw className="w-6 h-6 animate-spin text-[#0B2046]" />
+                          <span>กำลังโหลดรายการคำขอ...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : adjustments.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <ClipboardCheck className="w-8 h-8 text-slate-300" />
+                          <p className="font-semibold text-slate-700">ไม่พบคำขอปรับปรุงเวลา</p>
+                          <p className="text-2xs text-slate-400">ยังไม่มีคำขอปรับปรุงเวลาที่ตรงตามเงื่อนไขค้นหา</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    adjustments.map((adj) => (
+                      <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
+                        {/* ID & Submitted At */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-bold text-slate-900">REQ-{adj.id.toString().padStart(5, '0')}</div>
+                          <div className="text-2xs text-slate-400 mt-0.5">{formatDateTimeThai(adj.createdAt)}</div>
+                        </td>
+
+                        {/* Employee */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-bold text-slate-800">{adj.employeeName}</div>
+                          <div className="text-2xs text-slate-400">
+                            {adj.employeeCode} {adj.departmentName ? `• ${adj.departmentName}` : ''}
+                          </div>
+                        </td>
+
+                        {/* Work Date & Shift */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-800">{formatThaiDate(adj.workDate)}</div>
+                          <div className="text-2xs text-slate-400">{adj.shiftName || 'ไม่ระบุกะ'}</div>
+                        </td>
+
+                        {/* Original Times */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 text-2xs text-slate-600">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
+                              เข้า: {adj.originalClockIn ? formatTimeStr(adj.originalClockIn) : '-'}
+                            </span>
+                            <span className="text-slate-300">→</span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
+                              ออก: {adj.originalClockOut ? formatTimeStr(adj.originalClockOut) : '-'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Adjusted Times */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 text-2xs font-bold">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              เข้า: {adj.adjustedClockIn ? formatTimeStr(adj.adjustedClockIn) : '-'}
+                            </span>
+                            <span className="text-slate-300">→</span>
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">
+                              ออก: {adj.adjustedClockOut ? formatTimeStr(adj.adjustedClockOut) : '-'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Reason */}
+                        <td className="py-3.5 px-4 max-w-xs">
+                          <p className="text-xs text-slate-700 truncate" title={adj.reason}>
+                            {adj.reason}
+                          </p>
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {adj.status === 'PENDING' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span>รอพิจารณา</span>
+                            </span>
+                          )}
+                          {adj.status === 'APPROVED' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>อนุมัติแล้ว</span>
+                            </span>
+                          )}
+                          {adj.status === 'REJECTED' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <X className="w-3 h-3 text-rose-600" />
+                              <span>ไม่อนุมัติ</span>
+                            </span>
+                          )}
+                          {adj.status === 'CANCELLED' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                              <span>ยกเลิกแล้ว</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Reviewer / Review Note */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-2xs text-slate-500">
+                          {adj.reviewedAt ? (
+                            <div>
+                              <div className="font-semibold text-slate-700">{adj.reviewedByEmployeeName || 'ผู้ดูแลระบบ'}</div>
+                              <div className="text-slate-400 mt-0.5">{formatDateTimeThai(adj.reviewedAt)}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          {adj.status === 'PENDING' ? (
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenReviewModal(adj, 'APPROVED')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-xs cursor-pointer"
+                                title="อนุมัติคำขอ"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>อนุมัติ</span>
+                              </button>
+                              <button
+                                onClick={() => handleOpenReviewModal(adj, 'REJECTED')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                                title="ปฏิเสธคำขอ"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>ปฏิเสธ</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-2xs text-slate-400 font-medium">สิ้นสุดแล้ว</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <div>
+                แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ (หน้า {adjustmentsPage} / {adjustmentsTotalPages})
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={adjustmentsPage <= 1}
+                  onClick={() => setAdjustmentsPage((p) => Math.max(1, p - 1))}
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  disabled={adjustmentsPage >= adjustmentsTotalPages}
+                  onClick={() => setAdjustmentsPage((p) => Math.min(adjustmentsTotalPages, p + 1))}
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Record Modal */}
       {editModalOpen && editingRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -2033,6 +2512,303 @@ function DailyAttendanceContent() {
                   <>
                     <Trash2 className="w-4 h-4" />
                     ยืนยันลบและ Rollback ข้อมูล
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* Modal: ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน (Attendance Adjustment) */}
+      {/* ------------------------------------------------------------- */}
+      {adjustmentModalOpen && targetRecordForAdjustment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                  <ClipboardCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {targetRecordForAdjustment.employeeCode} - {targetRecordForAdjustment.employeeName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setAdjustmentModalOpen(false);
+                  setTargetRecordForAdjustment(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Context Info Box */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">วันที่ปฏิบัติงาน:</span>
+                <span className="font-bold text-slate-900">
+                  {formatThaiDate(targetRecordForAdjustment.workDate)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">แผนก / กะการทำงาน:</span>
+                <span className="font-semibold text-slate-800">
+                  {targetRecordForAdjustment.departmentName || '-'} ({targetRecordForAdjustment.shiftName || 'ไม่ระบุกะ'})
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500">เวลาเดิมในระบบ:</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
+                    เข้า: {targetRecordForAdjustment.actualIn ? formatTimeStr(targetRecordForAdjustment.actualIn) : 'ไม่มี'}
+                  </span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
+                    ออก: {targetRecordForAdjustment.actualOut ? formatTimeStr(targetRecordForAdjustment.actualOut) : 'ไม่มี'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateAdjustmentSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <ThaiTimePicker
+                  label="เวลาเข้าที่ต้องการปรับ"
+                  value={adjustmentInTime}
+                  onChange={setAdjustmentInTime}
+                />
+                <ThaiTimePicker
+                  label="เวลาออกที่ต้องการปรับ"
+                  value={adjustmentOutTime}
+                  onChange={setAdjustmentOutTime}
+                  align="right"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  เหตุผลในการขอปรับปรุงเวลา <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={adjustmentReason}
+                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  placeholder="ระบุเหตุผล เช่น ลืมสแกนนิ้วมือ, เครื่องสแกนขัดข้อง, ไปปฏิบัติงานนอกสถานที่ ฯลฯ"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  คำขอนี้จะถูกส่งไปยังหัวหน้างานหรือฝ่ายทรัพยากรบุคคลเพื่อตรวจสอบและอนุมัติ เมื่อได้รับการอนุมัติแล้ว ระบบจะคำนวณเวลาทำงาน สาย ออกก่อน และสถานะใหม่อัตโนมัติ
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isSubmittingAdjustment}
+                  onClick={() => {
+                    setAdjustmentModalOpen(false);
+                    setTargetRecordForAdjustment(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAdjustment || !adjustmentReason.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#0B2046] hover:bg-[#15336C] rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmittingAdjustment ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังส่งคำขอ...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      ส่งคำขอปรับปรุงเวลา
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* Modal: พิจารณาคำขอปรับปรุงเวลา (Approve / Reject)             */}
+      {/* ------------------------------------------------------------- */}
+      {reviewModalOpen && selectedAdjustmentForReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`p-2.5 rounded-xl border ${
+                    reviewAction === 'APPROVED'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      : 'bg-rose-50 text-rose-600 border-rose-100'
+                  }`}
+                >
+                  {reviewAction === 'APPROVED' ? (
+                    <ThumbsUp className="w-5 h-5" />
+                  ) : (
+                    <ThumbsDown className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {reviewAction === 'APPROVED'
+                      ? 'ยืนยันอนุมัติคำขอปรับปรุงเวลา'
+                      : 'ยืนยันปฏิเสธคำขอปรับปรุงเวลา'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    คำขอ REQ-{selectedAdjustmentForReview.id.toString().padStart(5, '0')} • {selectedAdjustmentForReview.employeeName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setReviewModalOpen(false);
+                  setSelectedAdjustmentForReview(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Request Summary Box */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">พนักงาน:</span>
+                <span className="font-bold text-slate-900">
+                  {selectedAdjustmentForReview.employeeCode} - {selectedAdjustmentForReview.employeeName}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">วันที่ทำงาน:</span>
+                <span className="font-semibold text-slate-800">
+                  {formatThaiDate(selectedAdjustmentForReview.workDate)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">เวลาเดิม:</span>
+                <span className="text-slate-600 font-medium">
+                  {selectedAdjustmentForReview.originalClockIn
+                    ? formatTimeStr(selectedAdjustmentForReview.originalClockIn)
+                    : '-'}{' '}
+                  -{' '}
+                  {selectedAdjustmentForReview.originalClockOut
+                    ? formatTimeStr(selectedAdjustmentForReview.originalClockOut)
+                    : '-'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">เวลาใหม่ที่ขอปรับ:</span>
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                  {selectedAdjustmentForReview.adjustedClockIn
+                    ? formatTimeStr(selectedAdjustmentForReview.adjustedClockIn)
+                    : '-'}{' '}
+                  -{' '}
+                  {selectedAdjustmentForReview.adjustedClockOut
+                    ? formatTimeStr(selectedAdjustmentForReview.adjustedClockOut)
+                    : '-'}
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500 block mb-1">เหตุผลที่ยื่น:</span>
+                <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 text-xs italic">
+                  &ldquo;{selectedAdjustmentForReview.reason}&rdquo;
+                </p>
+              </div>
+            </div>
+
+            {/* Review Note */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                หมายเหตุ / คำชี้แจงจากผู้อนุมัติ (Optional)
+              </label>
+              <textarea
+                rows={2}
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                placeholder="ระบุข้อความหรือบันทึกเพิ่มเติมประกอบการพิจารณา..."
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Warning / Notice Box */}
+            {reviewAction === 'APPROVED' ? (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  เมื่ออนุมัติแล้ว ระบบจะบันทึกเวลาใหม่ลงในตารางบันทึกเวลาประจำวัน และคำนวณชั่วโมงทำงาน นาทีสาย ออกก่อนเวลา และสถานะการเข้างานใหม่อัตโนมัติทันที
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  คำขอนี้จะถูกปฏิเสธ และเวลาทำงานเดิมของพนักงานในระบบจะไม่ถูกเปลี่ยนแปลง
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isSubmittingReview}
+                onClick={() => {
+                  setReviewModalOpen(false);
+                  setSelectedAdjustmentForReview(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingReview}
+                onClick={handleReviewSubmit}
+                className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer ${
+                  reviewAction === 'APPROVED'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-rose-600 hover:bg-rose-700'
+                }`}
+              >
+                {isSubmittingReview ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : reviewAction === 'APPROVED' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    ยืนยันอนุมัติคำขอ
+                  </>
+                ) : (
+                  <>
+                    <X className="w-4 h-4" />
+                    ยืนยันปฏิเสธคำขอ
                   </>
                 )}
               </button>
