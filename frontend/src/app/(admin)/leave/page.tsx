@@ -31,6 +31,7 @@ import { LeaveTypeModal } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
+import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -67,6 +68,55 @@ export default function LeaveManagementPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Custom Confirm & Alert Dialog State
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: ConfirmType;
+    singleButton?: boolean;
+    isLoading?: boolean;
+    onConfirm?: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+
+  const showConfirm = (options: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: ConfirmType;
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmConfig({
+      isOpen: true,
+      singleButton: false,
+      isLoading: false,
+      ...options,
+    });
+  };
+
+  const showAlert = (title: string, message: string, type: ConfirmType = 'info') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      singleButton: true,
+      confirmText: 'รับทราบ',
+      onConfirm: () => setConfirmConfig((prev) => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
   // Initial load
@@ -134,19 +184,25 @@ export default function LeaveManagementPage() {
     showToast('อัพเดตประเภทการลาสำเร็จ');
   };
 
-  const handleDeleteType = async (type: LeaveType) => {
-    if (!window.confirm(`คุณต้องการลบหรือระงับประเภทการลา "${type.leaveName}" หรือไม่?`)) {
-      return;
-    }
-
-    try {
-      await leaveService.deleteLeaveType(type.id);
-      const updated = await leaveService.getLeaveTypes();
-      setLeaveTypes(updated);
-      showToast('ลบประเภทการลาเรียบร้อยแล้ว');
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'ไม่สามารถลบได้');
-    }
+  const handleDeleteType = (type: LeaveType) => {
+    showConfirm({
+      title: 'ยืนยันการลบประเภทการลา?',
+      message: `คุณต้องการลบหรือระงับประเภทการลา "${type.leaveName}" (${type.leaveCode}) หรือไม่?\nข้อมูลหรือสิทธิ์ที่เกี่ยวข้องจะถูกปรับเป็นไม่ใช้งาน`,
+      type: 'danger',
+      confirmText: 'ลบประเภทการลา',
+      onConfirm: async () => {
+        try {
+          await leaveService.deleteLeaveType(type.id);
+          const updated = await leaveService.getLeaveTypes();
+          setLeaveTypes(updated);
+          closeConfirm();
+          showToast('ลบประเภทการลาเรียบร้อยแล้ว');
+        } catch (err: any) {
+          closeConfirm();
+          showAlert('ไม่สามารถลบได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
+        }
+      },
+    });
   };
 
   // === Handlers: Leave Policies ===
@@ -174,19 +230,25 @@ export default function LeaveManagementPage() {
     showToast('อัพเดตสิทธิ์การลาสำเร็จ');
   };
 
-  const handleDeletePolicy = async (policy: LeavePolicy) => {
-    if (!window.confirm(`คุณต้องการลบนโยบายสิทธิ์การลาสำหรับ "${policy.leaveTypeName}" (${policy.employeeLevelName || 'ทุกระดับ'}) หรือไม่?`)) {
-      return;
-    }
-
-    try {
-      await leaveService.deleteLeavePolicy(policy.id);
-      const updated = await leaveService.getLeavePolicies();
-      setLeavePolicies(updated);
-      showToast('ลบสิทธิ์การลาเรียบร้อยแล้ว');
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'ไม่สามารถลบได้');
-    }
+  const handleDeletePolicy = (policy: LeavePolicy) => {
+    showConfirm({
+      title: 'ยืนยันการลบสิทธิ์การลา?',
+      message: `คุณต้องการลบนโยบายสิทธิ์การลาสำหรับ "${policy.leaveTypeName}" (${policy.employeeLevelName || 'ทุกระดับ'}) หรือไม่?`,
+      type: 'danger',
+      confirmText: 'ลบนโยบาย',
+      onConfirm: async () => {
+        try {
+          await leaveService.deleteLeavePolicy(policy.id);
+          const updated = await leaveService.getLeavePolicies();
+          setLeavePolicies(updated);
+          closeConfirm();
+          showToast('ลบสิทธิ์การลาเรียบร้อยแล้ว');
+        } catch (err: any) {
+          closeConfirm();
+          showAlert('ไม่สามารถลบได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
+        }
+      },
+    });
   };
 
   // === Handlers: Leave Balances ===
@@ -206,19 +268,25 @@ export default function LeaveManagementPage() {
     showToast('ปรับยอดวันลาสำเร็จ');
   };
 
-  const handleInitializeYearBalance = async () => {
+  const handleInitializeYearBalance = () => {
     const thaiYear = selectedYear + 543;
-    if (!window.confirm(`คุณต้องการจัดสรรโควตาวันลาประจำปี ${thaiYear} (${selectedYear}) หรือไม่?\n\nระบบจะคำนวณสิทธิ์ตามนโยบายให้พนักงานทุกคนที่ยังไม่มียอดของปีนี้ พร้อมคำนวณยอดยกมาจากปีก่อนหน้าตามเงื่อนไข`)) {
-      return;
-    }
-
-    try {
-      const result = await leaveService.initializeYearBalance({ targetYear: selectedYear });
-      await fetchBalances(selectedYear);
-      showToast(result.message);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'ไม่สามารถจัดสรรยอดได้');
-    }
+    showConfirm({
+      title: `จัดสรรโควตาวันลาประจำปี ${thaiYear} (${selectedYear})?`,
+      message: `ระบบจะคำนวณสิทธิ์ตามนโยบายให้พนักงานทุกคนที่ยังไม่มียอดของปีนี้\nพร้อมคำนวณยอดยกมาจากปีก่อนหน้าตามเงื่อนไขที่ระบุไว้ในนโยบาย`,
+      type: 'question',
+      confirmText: 'เริ่มจัดสรรโควตา',
+      onConfirm: async () => {
+        try {
+          const result = await leaveService.initializeYearBalance({ targetYear: selectedYear });
+          await fetchBalances(selectedYear);
+          closeConfirm();
+          showToast(result.message);
+        } catch (err: any) {
+          closeConfirm();
+          showAlert('ไม่สามารถจัดสรรได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการจัดสรรยอด', 'danger');
+        }
+      },
+    });
   };
 
   // Filtered balances
@@ -712,6 +780,20 @@ export default function LeaveManagementPage() {
         isOpen={isTransactionsModalOpen}
         onClose={() => setIsTransactionsModalOpen(false)}
         balance={balanceForTransactions}
+      />
+
+      {/* Modern Custom Confirm & Alert Modal */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        cancelText={confirmConfig.cancelText}
+        type={confirmConfig.type}
+        singleButton={confirmConfig.singleButton}
+        isLoading={confirmConfig.isLoading}
       />
     </div>
   );
