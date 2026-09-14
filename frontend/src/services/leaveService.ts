@@ -14,6 +14,7 @@ import {
   InitializeYearBalanceResult,
   LeaveRequest,
   LeaveStats,
+  CreateLeaveRequestPayload,
 } from '@/types/leave';
 
 /**
@@ -97,6 +98,26 @@ export const leaveService = {
   async getLeaveStats(): Promise<LeaveStats> {
     const res = await apiClient.get<ApiResponse<LeaveStats>>('/leave-requests/stats');
     return res.data.data;
+  },
+
+  async createLeaveRequest(data: CreateLeaveRequestPayload): Promise<LeaveRequest> {
+    const res = await apiClient.post<ApiResponse<LeaveRequest>>('/leave-requests', data);
+    return res.data.data;
+  },
+
+  async downloadDocument(requestId: number, documentId: number, fileName?: string | null): Promise<void> {
+    const res = await apiClient.get(`/leave-requests/${requestId}/documents/${documentId}`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([res.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName || `attachment-${documentId}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   async approveLeaveRequest(id: number): Promise<LeaveRequest> {

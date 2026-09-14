@@ -332,4 +332,11 @@ public class LeaveRequestService : ILeaveRequestService
 
         return (await GetByIdAsync(id, cancellationToken))!;
     }
+
+    public async Task<LeaveRequestDocument?> GetDocumentAsync(long requestId, long documentId, CancellationToken cancellationToken = default)
+    {
+        return await _context.LeaveRequestDocuments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == documentId && d.LeaveRequestId == requestId, cancellationToken);
+    }
 }

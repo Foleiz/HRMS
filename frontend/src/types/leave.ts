@@ -166,6 +166,18 @@ export interface LeaveRequest {
   }[];
 }
 
+export interface CreateLeaveRequestPayload {
+  employeeId: number;
+  leaveTypeId: number;
+  startDatetime: string;
+  endDatetime: string;
+  leaveHours: number;
+  leaveDays: number;
+  reason?: string;
+  attachmentFileName?: string;
+  attachmentData?: string; // เนื้อหาไฟล์แนบแบบ Base64
+}
+
 export interface LeaveStats {
   pendingRequestsCount: number;
   approvedThisMonthCount: number;
