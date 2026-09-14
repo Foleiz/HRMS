@@ -73,6 +73,8 @@ public interface IHrmsDbContext
     DbSet<LeaveRequest> LeaveRequests { get; }
     DbSet<LeaveRequestDocument> LeaveRequestDocuments { get; }
 
+    // Audit Trail (PDPA Compliance)
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

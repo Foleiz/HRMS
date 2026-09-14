@@ -1,0 +1,73 @@
+namespace Hrms.Application.Features.Settings.Dtos;
+
+/// <summary>
+/// ข้อมูลสรุปบทบาทผู้ใช้งาน
+/// </summary>
+public class RoleSummaryDto
+{
+    public long Id { get; set; }
+    public string RoleCode { get; set; } = string.Empty;
+    public string RoleName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public int UserCount { get; set; }
+    public bool IsSystemDefault { get; set; }
+    public DateTime? LastModifiedAt { get; set; }
+}
+
+/// <summary>
+/// รายละเอียดบทบาทพร้อมตาราง Permission & Data Scope Matrix
+/// </summary>
+public class RoleDetailDto
+{
+    public long Id { get; set; }
+    public string RoleCode { get; set; } = string.Empty;
+    public string RoleName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public bool IsSystemDefault { get; set; }
+    public DateTime? LastModifiedAt { get; set; }
+    public List<ModulePermissionScopeDto> Modules { get; set; } = new();
+}
+
+/// <summary>
+/// การกำหนดสิทธิ์ระดับโมดูล (Scope + Actions: View, Create, Edit, Approve)
+/// </summary>
+public class ModulePermissionScopeDto
+{
+    public string ModuleCode { get; set; } = string.Empty; // EMPLOYEE, ATTENDANCE, LEAVE, PAYROLL, ORGANIZATION, SETTINGS, REPORT
+    public string ModuleName { get; set; } = string.Empty;
+    public string DataScope { get; set; } = "SELF"; // SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION
+    public bool CanView { get; set; }
+    public bool CanCreate { get; set; }
+    public bool CanEdit { get; set; }
+    public bool CanApprove { get; set; }
+}
+
+/// <summary>
+/// คำขอสร้างบทบาทใหม่
+/// </summary>
+public class CreateRoleRequestDto
+{
+    public string RoleCode { get; set; } = string.Empty;
+    public string RoleName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// คำขอแก้ไขข้อมูลพื้นฐานของบทบาท
+/// </summary>
+public class UpdateRoleRequestDto
+{
+    public string RoleName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
+
+/// <summary>
+/// คำขอบันทึกสิทธิ์การใช้งาน (Batch Update Matrix)
+/// </summary>
+public class UpdateRoleMatrixRequestDto
+{
+    public List<ModulePermissionScopeDto> Modules { get; set; } = new();
+}

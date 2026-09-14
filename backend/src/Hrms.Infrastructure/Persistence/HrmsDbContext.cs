@@ -84,7 +84,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions => Set<LeaveBalanceTransaction>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveRequestDocument> LeaveRequestDocuments => Set<LeaveRequestDocument>();
-
+    // Audit Trail (PDPA Compliance)
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1150,6 +1151,33 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany(r => r.Documents)
                 .HasForeignKey(e => e.LeaveRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: AuditLog (PDPA Compliance)
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("audit_log", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Action).HasColumnName("audit_action").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.EntityType).HasColumnName("target_table_name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EntityId).HasColumnName("target_record_id");
+            entity.Property(e => e.FieldName).HasColumnName("changed_column_name").HasMaxLength(100);
+            entity.Property(e => e.OldValue).HasColumnName("old_value").HasColumnType("jsonb");
+            entity.Property(e => e.NewValue).HasColumnName("new_value").HasColumnType("jsonb");
+            entity.Property(e => e.IpAddress)
+                .HasColumnName("ip_address")
+                .HasConversion(
+                    v => string.IsNullOrEmpty(v) ? null : System.Net.IPAddress.Parse(v),
+                    v => v == null ? null : v.ToString());
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
