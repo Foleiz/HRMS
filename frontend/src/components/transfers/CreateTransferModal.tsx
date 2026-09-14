@@ -7,6 +7,7 @@ import { organizationService } from '@/services/organizationService';
 import { transferService } from '@/services/transferService';
 import { Employee } from '@/types/employee';
 import { Department, Position } from '@/types/organization';
+import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
 interface CreateTransferModalProps {
   isOpen: boolean;
@@ -168,25 +169,19 @@ export default function CreateTransferModal({
             </div>
           )}
 
-          {/* 1. พนักงาน * */}
+          {/* 1. พนักงาน * (Searchable Combobox) */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-700 block">
               พนักงาน <span className="text-rose-500">*</span>
             </label>
-            <select
-              value={selectedEmployeeId}
-              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+            <EmployeeSelect
+              employees={employees}
+              value={selectedEmployeeId ? Number(selectedEmployeeId) : ''}
+              onChange={(empId) => setSelectedEmployeeId(empId ? String(empId) : '')}
+              placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
               disabled={loadingData}
-              className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
               required
-            >
-              <option value="">เลือกพนักงาน...</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.firstName} {emp.lastName} · {emp.employeeCode}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* 2. ประเภทคำขอ * */}
@@ -282,20 +277,14 @@ export default function CreateTransferModal({
             <label className="text-xs font-medium text-slate-700 block">
               หัวหน้างานสายตรงใหม่ (ถ้ามี)
             </label>
-            <select
-              value={toManagerId}
-              onChange={(e) => setToManagerId(e.target.value)}
-              className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-            >
-              <option value="">ไม่ระบุ / คงเดิม</option>
-              {employees
-                .filter((emp) => emp.id !== Number(selectedEmployeeId))
-                .map((mgr) => (
-                  <option key={mgr.id} value={mgr.id}>
-                    {mgr.firstName} {mgr.lastName} ({mgr.positionName || 'พนักงาน'})
-                  </option>
-                ))}
-            </select>
+            <EmployeeSelect
+              employees={employees.filter((emp) => emp.id !== Number(selectedEmployeeId))}
+              value={toManagerId ? Number(toManagerId) : ''}
+              onChange={(empId) => setToManagerId(empId ? String(empId) : '')}
+              placeholder="ไม่ระบุ / คงเดิม (พิมพ์ค้นหา...)"
+              disabled={loadingData}
+              required={false}
+            />
           </div>
 
           {/* 7. ตัวเลือกมีผลทันที */}

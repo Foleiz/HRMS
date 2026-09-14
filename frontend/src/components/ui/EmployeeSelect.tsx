@@ -7,7 +7,7 @@ import { Employee } from '@/types/employee';
 interface EmployeeSelectProps {
   employees: Employee[];
   value: number | '';
-  onChange: (employeeId: number) => void;
+  onChange: (employeeId: number | '') => void;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
@@ -74,7 +74,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     });
   }, [employees, searchQuery]);
 
-  const handleSelect = (empId: number) => {
+  const handleSelect = (empId: number | '') => {
     onChange(empId);
     setIsOpen(false);
     setSearchQuery('');
@@ -157,6 +157,15 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
 
           {/* รายการพนักงาน (Scrollable List) */}
           <ul className="max-h-56 overflow-y-auto py-1 text-sm divide-y divide-slate-50 no-scrollbar">
+            {!required && !searchQuery && (
+              <li
+                onClick={() => handleSelect('')}
+                className="px-3.5 py-2.5 text-xs text-slate-500 hover:bg-slate-50 cursor-pointer italic flex items-center gap-2"
+              >
+                <X className="w-3.5 h-3.5 text-slate-400" />
+                <span>ไม่ระบุ / คงเดิม</span>
+              </li>
+            )}
             {filteredEmployees.length === 0 ? (
               <li className="px-4 py-8 text-center text-xs text-slate-400">
                 ไม่พบข้อมูลพนักงานที่ตรงกับ "{searchQuery}"
