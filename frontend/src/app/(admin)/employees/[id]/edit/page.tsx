@@ -72,9 +72,9 @@ export default function EmployeeEditPage() {
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', active: true },
     { title: 'ประเภทพนักงาน', href: '/organization' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees' },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/contracts' },
     { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees' },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts' },
   ];
 
   // Form State
