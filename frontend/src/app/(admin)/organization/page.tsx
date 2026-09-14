@@ -15,8 +15,15 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  Gift,
+  HeartPulse,
+  Coins,
+  Smile,
+  HelpCircle,
+  Shield,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
+import { benefitService } from '@/services/benefitService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import {
   Division,
@@ -32,8 +39,18 @@ import {
   UpdatePositionRequest,
   UpdateCompanyRequest,
 } from '@/types/organization';
+import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 
-type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'company';
+type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company';
+
+const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> = {
+  STATUTORY: { label: 'กฎหมายแรงงาน', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Shield },
+  HEALTH: { label: 'สุขภาพ & ประกัน', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: HeartPulse },
+  ALLOWANCE: { label: 'เบี้ยเลี้ยง & ช่วยเหลือ', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Coins },
+  WELLNESS: { label: 'กิจกรรม & สันทนาการ', color: 'bg-pink-50 text-pink-700 border-pink-200', icon: Smile },
+  FINANCIAL: { label: 'การเงิน & กองทุน', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Coins },
+  OTHER: { label: 'ทั่วไป / อื่นๆ', color: 'bg-slate-50 text-slate-700 border-slate-200', icon: HelpCircle },
+};
 
 export default function OrganizationPage() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -42,14 +59,25 @@ export default function OrganizationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDivisionId, setFilterDivisionId] = useState<string>('ALL');
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
+  const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
 
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย',
     departments: 'จัดการแผนก',
     positions: 'จัดการตำแหน่ง',
     levels: 'ระดับพนักงาน',
+    benefits: 'สวัสดิการและสิทธิประโยชน์',
     company: 'ข้อมูลบริษัท',
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
+      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     setBreadcrumb({
@@ -65,6 +93,7 @@ export default function OrganizationPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
+  const [benefits, setBenefits] = useState<BenefitItem[]>([]);
 
   // Alert states
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -97,6 +126,15 @@ export default function OrganizationPage() {
     status: 'ACTIVE',
   });
 
+  const [benefitForm, setBenefitForm] = useState<CreateBenefitPayload & { id?: number }>({
+    benefitCode: '',
+    benefitName: '',
+    category: 'HEALTH',
+    description: '',
+    isStatutory: false,
+    status: 'ACTIVE',
+  });
+
   const [companyForm, setCompanyForm] = useState<UpdateCompanyRequest>({
     companyName: '',
     address: '',
@@ -109,18 +147,20 @@ export default function OrganizationPage() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const [divs, depts, pos, lvls, comp] = await Promise.all([
+      const [divs, depts, pos, lvls, comp, ben] = await Promise.all([
         organizationService.getDivisions(),
         organizationService.getDepartments(),
         organizationService.getPositions(),
         organizationService.getLevels(),
         organizationService.getCompany(),
+        benefitService.getAll(),
       ]);
       setDivisions(divs);
       setDepartments(depts);
       setPositions(pos);
       setLevels(lvls);
       setCompany(comp);
+      setBenefits(ben);
       if (comp) {
         setCompanyForm({
           companyName: comp.companyName,
@@ -287,6 +327,65 @@ export default function OrganizationPage() {
     }
   };
 
+  // Benefit Handlers
+  const handleOpenBenefitModal = (item?: BenefitItem) => {
+    if (item) {
+      setModalMode('edit');
+      setBenefitForm({
+        id: item.id,
+        benefitCode: item.benefitCode,
+        benefitName: item.benefitName,
+        category: item.category || 'HEALTH',
+        description: item.description || '',
+        isStatutory: item.isStatutory,
+        status: item.status,
+      });
+    } else {
+      setModalMode('create');
+      setBenefitForm({
+        benefitCode: '',
+        benefitName: '',
+        category: 'HEALTH',
+        description: '',
+        isStatutory: false,
+        status: 'ACTIVE',
+      });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSaveBenefit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    try {
+      if (modalMode === 'create') {
+        await benefitService.create({
+          benefitCode: benefitForm.benefitCode.trim().toUpperCase(),
+          benefitName: benefitForm.benefitName.trim(),
+          category: benefitForm.category,
+          description: benefitForm.description?.trim() || undefined,
+          isStatutory: benefitForm.isStatutory,
+          status: benefitForm.status,
+        });
+        showSuccess('เพิ่มสวัสดิการของบริษัทสำเร็จ');
+      } else if (benefitForm.id) {
+        await benefitService.update(benefitForm.id, {
+          benefitName: benefitForm.benefitName.trim(),
+          category: benefitForm.category,
+          description: benefitForm.description?.trim() || undefined,
+          isStatutory: benefitForm.isStatutory,
+          status: benefitForm.status,
+        });
+        showSuccess('แก้ไขสวัสดิการสำเร็จ');
+      }
+      setModalOpen(false);
+      loadData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setErrorMessage(error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการบันทึกสวัสดิการ');
+    }
+  };
+
   // Handler for Company Profile Save
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,12 +418,16 @@ export default function OrganizationPage() {
       } else if (itemToDelete.type === 'position') {
         await organizationService.deletePosition(itemToDelete.id);
         showSuccess(`ลบตำแหน่ง ${itemToDelete.name} สำเร็จ`);
+      } else if (itemToDelete.type === 'benefit') {
+        await benefitService.delete(itemToDelete.id);
+        showSuccess(`ลบสิทธิประโยชน์ ${itemToDelete.name} สำเร็จ`);
       }
       setDeleteModalOpen(false);
       setItemToDelete(null);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setErrorMessage(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ'));
       setDeleteModalOpen(false);
     }
   };
@@ -347,6 +450,14 @@ export default function OrganizationPage() {
     .filter((p) =>
       p.positionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.positionCode.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+  const filteredBenefits = benefits
+    .filter((b) => (filterBenefitCategory === 'ALL' ? true : b.category === filterBenefitCategory))
+    .filter((b) =>
+      b.benefitName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.benefitCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
   return (
@@ -425,6 +536,18 @@ export default function OrganizationPage() {
           >
             <Layers className="w-4 h-4" />
             ระดับพนักงาน
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'benefits'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Gift className="w-4 h-4" />
+            สวัสดิการและสิทธิประโยชน์
           </button>
 
           <button
@@ -826,7 +949,159 @@ export default function OrganizationPage() {
           </div>
         )}
 
-        {/* TAB 5: COMPANY PROFILE */}
+        {/* TAB 5: BENEFITS */}
+        {activeTab === 'benefits' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+
+                <div className="w-full sm:w-48">
+                  <select
+                    value={filterBenefitCategory}
+                    onChange={(e) => setFilterBenefitCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  >
+                    <option value="ALL">ทุกหมวดหมู่สวัสดิการ</option>
+                    {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
+                      <option key={key} value={key}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleOpenBenefitModal()}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                เพิ่มสวัสดิการใหม่
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              จัดการรายการสิทธิประโยชน์และสวัสดิการกลางขององค์กร สวัสดิการเหล่านี้จะถูกนำไปผูกกับประเภทสัญญาจ้างพนักงาน (Employee Types) ในหน้าจัดการประเภทพนักงาน
+            </p>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-[#0B2046] text-white font-semibold">
+                  <tr>
+                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">รายละเอียด</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ประเภทสิทธิ์</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        กำลังโหลดข้อมูลสวัสดิการ...
+                      </td>
+                    </tr>
+                  ) : filteredBenefits.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                        ไม่พบข้อมูลสวัสดิการ
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredBenefits.map((ben) => {
+                      const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
+                      const CatIcon = catInfo.icon;
+                      return (
+                        <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                            {ben.benefitCode}
+                          </td>
+                          <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                                <CatIcon className="w-3.5 h-3.5" />
+                              </span>
+                              <span>{ben.benefitName}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border ${catInfo.color}`}>
+                              {catInfo.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-500 max-w-xs truncate">
+                            {ben.description || '-'}
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {ben.isStatutory ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                ⚖️ สิทธิตามกฎหมาย
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                ⭐ สวัสดิการบริษัท
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
+                                ben.status === 'ACTIVE'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  ben.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                                }`}
+                              ></span>
+                              {ben.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleOpenBenefitModal(ben)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: COMPANY PROFILE */}
         {activeTab === 'company' && (
           <form onSubmit={handleSaveCompany} className="max-w-2xl space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1128,6 +1403,121 @@ export default function OrganizationPage() {
                 >
                   <option value="ACTIVE">ทำงานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ทำงาน</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
+                >
+                  บันทึกข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Create / Edit Modal (Benefit) */}
+      {modalOpen && activeTab === 'benefits' && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#0B2046]" />
+                {modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
+              </h3>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBenefit} className="space-y-4 pt-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  รหัสสวัสดิการ (เช่น DENTAL, MEAL_ALLOWANCE) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={modalMode === 'edit'}
+                  value={benefitForm.benefitCode}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, benefitCode: e.target.value })}
+                  placeholder="เช่น SHUTTLE_BUS"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ชื่อสวัสดิการ / สิทธิประโยชน์ *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={benefitForm.benefitName}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
+                  placeholder="เช่น รถรับส่งพนักงาน"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่สวัสดิการ *</label>
+                <select
+                  value={benefitForm.category}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
+                    <option key={key} value={key}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดเพิ่มเติม</label>
+                <textarea
+                  rows={3}
+                  value={benefitForm.description || ''}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
+                  placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <input
+                  type="checkbox"
+                  id="isStatutory"
+                  checked={benefitForm.isStatutory}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
+                  className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                />
+                <label htmlFor="isStatutory" className="text-xs text-slate-700 cursor-pointer select-none">
+                  เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <select
+                  value={benefitForm.status}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ปิดใช้งาน</option>
                 </select>
               </div>
 

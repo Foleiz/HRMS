@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { X, AlertCircle, Loader2, ShieldCheck, Sparkles, Gift } from 'lucide-react';
 import {
   EmployeeType,
@@ -282,16 +283,16 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 </span>
               </label>
 
-              {onOpenManageBenefits && (
-                <button
-                  type="button"
-                  onClick={onOpenManageBenefits}
-                  className="text-[11px] text-[#0B2046] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <Gift className="w-3.5 h-3.5 text-[#0B2046]" />
-                  จัดการสวัสดิการ
-                </button>
-              )}
+              <Link
+                href="/organization?tab=benefits"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-[#0B2046] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                title="เปิดหน้าจัดการสวัสดิการในโครงสร้างองค์กร (แท็บใหม่)"
+              >
+                <Gift className="w-3.5 h-3.5 text-[#0B2046]" />
+                ตั้งค่าสวัสดิการกลาง ↗
+              </Link>
             </div>
 
             {loadingBenefits ? (

@@ -16,7 +16,6 @@ import {
   CreditCard,
   Layers,
   Power,
-  Gift,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeTypeService } from '@/services/employeeTypeService';
@@ -27,7 +26,6 @@ import {
   UpdateEmployeeTypePayload,
 } from '@/types/employeeType';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
-import { ManageBenefitsModal } from '@/components/employees/ManageBenefitsModal';
 
 export default function EmployeeTypesPage() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -51,7 +49,6 @@ export default function EmployeeTypesPage() {
 
   // Modals & Menu
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isManageBenefitsModalOpen, setIsManageBenefitsModalOpen] = useState(false);
   const [selectedTypeForEdit, setSelectedTypeForEdit] = useState<EmployeeType | null>(null);
   const [activeActionMenuId, setActiveActionMenuId] = useState<number | null>(null);
 
@@ -221,14 +218,6 @@ export default function EmployeeTypesPage() {
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <button
-            onClick={() => setIsManageBenefitsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer"
-          >
-            <Gift className="w-4 h-4 text-[#0B2046]" />
-            <span>🎁 จัดการสวัสดิการบริษัท</span>
-          </button>
-
           <button
             onClick={() => {
               setSelectedTypeForEdit(null);
@@ -550,14 +539,6 @@ export default function EmployeeTypesPage() {
         }}
         onSubmit={handleCreateOrUpdate}
         initialData={selectedTypeForEdit}
-        onOpenManageBenefits={() => setIsManageBenefitsModalOpen(true)}
-      />
-
-      {/* 7. Modal จัดการสิทธิประโยชน์และสวัสดิการของบริษัท */}
-      <ManageBenefitsModal
-        isOpen={isManageBenefitsModalOpen}
-        onClose={() => setIsManageBenefitsModalOpen(false)}
-        onUpdated={loadData}
       />
     </div>
   );
