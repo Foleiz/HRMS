@@ -757,48 +757,7 @@ export default function DailyAttendancePage() {
                 ))}
               </select>
 
-              {/* Status Filter */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">สถานะทั้งหมด</option>
-                <option value="PRESENT">ตรงเวลา</option>
-                <option value="LATE">มาสาย</option>
-                <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
-                <option value="LATE_AND_EARLY">สายและออกก่อน</option>
-                <option value="ABSENT">ขาดงาน</option>
-                <option value="HOLIDAY">วันหยุดประเพณี</option>
-                <option value="OFF">วันหยุดสัปดาห์</option>
-                <option value="PENDING">รอดำเนินการ</option>
-              </select>
-
-              {/* Quick Date Stepper */}
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-                <button
-                  onClick={() => adjustDate(-1)}
-                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-md transition cursor-pointer"
-                  title="วันก่อนหน้า"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <div className="px-2.5 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
-                  <span>{formatThaiDate(selectedDate)}</span>
-                </div>
-                <button
-                  onClick={() => adjustDate(1)}
-                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-md transition cursor-pointer"
-                  title="วันถัดไป"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
+              {/* Date Picker */}
               <input
                 type="date"
                 value={selectedDate}
@@ -808,17 +767,6 @@ export default function DailyAttendancePage() {
                 }}
                 className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer"
               />
-
-              <button
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setSelectedDate(today);
-                  setCurrentPage(1);
-                }}
-                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
-              >
-                วันนี้
-              </button>
 
               {/* Recalculate Button */}
               <button
@@ -833,13 +781,6 @@ export default function DailyAttendancePage() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => openQuickClockModal('in')}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition shadow-xs cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5 text-slate-600" />
-                <span>ลงเวลาด้วยตนเอง</span>
-              </button>
               <button
                 onClick={() => handleTabChange('import')}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
