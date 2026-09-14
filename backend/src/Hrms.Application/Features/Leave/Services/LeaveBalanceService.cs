@@ -181,22 +181,35 @@ public class LeaveBalanceService : ILeaveBalanceService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var createdCount = 0;
+        // Batch pre-load data into memory (0 repeated network calls)
+        var existingBalances = await _context.LeaveBalances
+            .AsNoTracking()
+            .Where(b => b.Year == targetYear)
+            .Select(b => new { b.EmployeeId, b.LeaveTypeId })
+            .ToListAsync(cancellationToken);
+        var existingSet = new HashSet<(long, long)>(existingBalances.Select(b => (b.EmployeeId, b.LeaveTypeId)));
+
+        var prevBalances = await _context.LeaveBalances
+            .AsNoTracking()
+            .Where(b => b.Year == targetYear - 1)
+            .ToDictionaryAsync(b => (b.EmployeeId, b.LeaveTypeId), cancellationToken);
+
+        var currentAssignments = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Where(a => a.IsCurrent)
+            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+
+        var newBalances = new List<LeaveBalance>();
 
         foreach (var emp in employees)
         {
-            var assign = await _context.EmployeeAssignments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.EmployeeId == emp.Id && a.IsCurrent, cancellationToken);
-
+            currentAssignments.TryGetValue(emp.Id, out var assign);
             var empLevelId = assign?.EmployeeLevelId;
             var empTypeId = assign?.EmployeeTypeId;
 
             foreach (var lt in leaveTypes)
             {
-                var existing = await _context.LeaveBalances
-                    .AnyAsync(b => b.EmployeeId == emp.Id && b.LeaveTypeId == lt.Id && b.Year == targetYear, cancellationToken);
-                if (existing) continue;
+                if (existingSet.Contains((emp.Id, lt.Id))) continue;
 
                 var policy = policies
                     .Where(p => p.LeaveTypeId == lt.Id && (p.EmployeeTypeId == null || p.EmployeeTypeId == empTypeId))
@@ -209,15 +222,10 @@ public class LeaveBalanceService : ILeaveBalanceService
 
                 if (policy != null && policy.IsCarryForwardAllowed)
                 {
-                    var prevBalance = await _context.LeaveBalances
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(b => b.EmployeeId == emp.Id && b.LeaveTypeId == lt.Id && b.Year == targetYear - 1, cancellationToken);
-
-                    if (prevBalance != null && prevBalance.NetRemainingLeaveDays > 0)
+                    if (prevBalances.TryGetValue((emp.Id, lt.Id), out var prevBalance) && prevBalance.NetRemainingLeaveDays > 0)
                     {
                         var maxCarried = policy.EntitlementDays;
                         carriedDays = Math.Min(prevBalance.NetRemainingLeaveDays, maxCarried);
-                        
                         var expiryMonths = policy.CarryForwardExpiryMonths ?? policy.CarryForwardMaxMonths ?? 3;
                         carryExpiry = new DateOnly(targetYear, 1, 1).AddMonths(expiryMonths);
                     }
@@ -234,27 +242,24 @@ public class LeaveBalanceService : ILeaveBalanceService
                     UsedDays = 0,
                     AdjustedDays = 0,
                     NetRemainingLeaveDays = entitlement + carriedDays,
-                    CarryForwardExpiry = carryExpiry
+                    CarryForwardExpiry = carryExpiry,
+                    Transactions = new List<LeaveBalanceTransaction>
+                    {
+                        new LeaveBalanceTransaction
+                        {
+                            TransactionType = "ENTITLEMENT",
+                            Amount = entitlement,
+                            Note = $"จัดสรรโควตาวันลาประจำปี {targetYear}",
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedByEmployeeId = currentEmployeeId
+                        }
+                    }
                 };
-
-                _context.LeaveBalances.Add(balance);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
-                {
-                    LeaveBalanceId = balance.Id,
-                    TransactionType = "ENTITLEMENT",
-                    Amount = entitlement,
-                    Note = $"จัดสรรโควตาวันลาประจำปี {targetYear}",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByEmployeeId = currentEmployeeId
-                });
 
                 if (carriedDays > 0)
                 {
-                    _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
+                    balance.Transactions.Add(new LeaveBalanceTransaction
                     {
-                        LeaveBalanceId = balance.Id,
                         TransactionType = "CARRY_FORWARD",
                         Amount = carriedDays,
                         Note = $"ยอดยกมาจากปี {targetYear - 1}",
@@ -263,17 +268,23 @@ public class LeaveBalanceService : ILeaveBalanceService
                     });
                 }
 
-                await _context.SaveChangesAsync(cancellationToken);
-                createdCount++;
+                newBalances.Add(balance);
+                existingSet.Add((emp.Id, lt.Id));
             }
+        }
+
+        if (newBalances.Count > 0)
+        {
+            _context.LeaveBalances.AddRange(newBalances);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return new InitializeYearBalanceResultDto
         {
             TargetYear = targetYear,
             ProcessedEmployeesCount = employees.Count,
-            CreatedBalancesCount = createdCount,
-            Message = $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({createdCount} รายการ สำหรับพนักงาน {employees.Count} คน)"
+            CreatedBalancesCount = newBalances.Count,
+            Message = $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({newBalances.Count} รายการ สำหรับพนักงาน {employees.Count} คน)"
         };
     }
 }
