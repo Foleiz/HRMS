@@ -41,5 +41,9 @@ public interface IHrmsDbContext
     DbSet<EmployeeShift> EmployeeShifts { get; }
     DbSet<EmployeeType> EmployeeTypes { get; }
 
+    // Contracts & Lifecycle (Dev 2 Sprint 2)
+    DbSet<EmploymentContract> EmploymentContracts { get; }
+    DbSet<EmployeeStatusHistory> EmployeeStatusHistories { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
