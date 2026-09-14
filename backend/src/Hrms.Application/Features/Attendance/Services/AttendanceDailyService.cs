@@ -114,12 +114,16 @@ public class AttendanceDailyService : IAttendanceDailyService
 
         // Fetch department and position for displayed employees
         var empIds = items.Select(i => i.EmployeeId).Distinct().ToList();
-        var assignments = await _context.EmployeeAssignments
+        var assignmentsList = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(ea => ea.Department)
             .Include(ea => ea.Position)
             .Where(ea => empIds.Contains(ea.EmployeeId) && ea.IsCurrent)
-            .ToDictionaryAsync(ea => ea.EmployeeId, cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        var assignments = assignmentsList
+            .GroupBy(ea => ea.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var dtos = items.Select(item =>
         {
@@ -341,132 +345,160 @@ public class AttendanceDailyService : IAttendanceDailyService
         return await EnsureAttendanceRecordsForDateAsync(date, cancellationToken);
     }
 
+    private static readonly SemaphoreSlim _ensureLock = new(1, 1);
+
     private async Task<int> EnsureAttendanceRecordsForDateAsync(DateOnly date, CancellationToken cancellationToken)
     {
-        var employees = await _context.Employees
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var existingMap = await _context.AttendanceDailies
-            .Where(a => a.WorkDate == date)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
-
-        var holiday = await _context.Holidays
-            .AsNoTracking()
-            .FirstOrDefaultAsync(h => h.HolidayDate == date, cancellationToken);
-
-        var activeShifts = await _context.EmployeeShifts
-            .AsNoTracking()
-            .Include(es => es.Shift)
-            .Where(es => es.EffectiveFrom <= date && (es.EffectiveTo == null || es.EffectiveTo >= date))
-            .ToListAsync(cancellationToken);
-
-        var shiftByEmp = activeShifts
-            .GroupBy(es => es.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.First());
-
-        int countNew = 0;
-        int dayOfWeekInt = (int)date.DayOfWeek; // 0=Sun, 1=Mon, ..., 6=Sat
-
-        foreach (var emp in employees)
+        await _ensureLock.WaitAsync(cancellationToken);
+        try
         {
-            if (existingMap.TryGetValue(emp.Id, out var existingRecord))
+            var employees = await _context.Employees
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var existingList = await _context.AttendanceDailies
+                .Where(a => a.WorkDate == date)
+                .ToListAsync(cancellationToken);
+
+            var existingMap = existingList
+                .GroupBy(a => a.EmployeeId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var holiday = await _context.Holidays
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.HolidayDate == date, cancellationToken);
+
+            var activeShifts = await _context.EmployeeShifts
+                .AsNoTracking()
+                .Include(es => es.Shift)
+                .Where(es => es.EffectiveFrom <= date && (es.EffectiveTo == null || es.EffectiveTo >= date))
+                .ToListAsync(cancellationToken);
+
+            var shiftByEmp = activeShifts
+                .GroupBy(es => es.EmployeeId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            int countNew = 0;
+            int dayOfWeekInt = (int)date.DayOfWeek; // 0=Sun, 1=Mon, ..., 6=Sat
+
+            foreach (var emp in employees)
             {
-                // If existing record has no shift or needs scheduled times refreshed
-                if (shiftByEmp.TryGetValue(emp.Id, out var esMatch) && esMatch.Shift != null)
+                if (existingMap.TryGetValue(emp.Id, out var existingRecord))
                 {
-                    if (existingRecord.ShiftId == null || existingRecord.ShiftId == esMatch.ShiftId)
+                    // If existing record has no shift or needs scheduled times refreshed
+                    if (shiftByEmp.TryGetValue(emp.Id, out var esMatch) && esMatch.Shift != null)
                     {
-                        existingRecord.ShiftId = esMatch.ShiftId;
-                        PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
-                        if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
+                        if (existingRecord.ShiftId == null || existingRecord.ShiftId == esMatch.ShiftId)
                         {
-                            RecalculateAttendance(existingRecord, esMatch.Shift);
+                            existingRecord.ShiftId = esMatch.ShiftId;
+                            PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
+                            if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
+                            {
+                                RecalculateAttendance(existingRecord, esMatch.Shift);
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                var newRecord = new AttendanceDaily
+                {
+                    EmployeeId = emp.Id,
+                    WorkDate = date,
+                };
+
+                // 1. Holiday Check
+                if (holiday != null)
+                {
+                    newRecord.Status = "HOLIDAY";
+                    newRecord.IsAbsent = false;
+                }
+                // 2. Shift & Work Days Check
+                else if (shiftByEmp.TryGetValue(emp.Id, out var es))
+                {
+                    var workDays = es.WorkDays ?? new int[] { 1, 2, 3, 4, 5 };
+                    bool isWorkDay = workDays.Contains(dayOfWeekInt);
+
+                    if (!isWorkDay)
+                    {
+                        newRecord.Status = "OFF";
+                        newRecord.IsAbsent = false;
+                    }
+                    else
+                    {
+                        newRecord.ShiftId = es.ShiftId;
+                        if (es.Shift != null)
+                        {
+                            PopulateScheduledTimes(newRecord, es.Shift, date);
+                        }
+
+                        // Check if date is in the past
+                        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
+                        var today = DateOnly.FromDateTime(nowThai);
+                        if (date < today)
+                        {
+                            newRecord.IsAbsent = true;
+                            newRecord.Status = "ABSENT";
+                        }
+                        else
+                        {
+                            newRecord.Status = "PENDING";
                         }
                     }
                 }
-                continue;
-            }
-
-            var newRecord = new AttendanceDaily
-            {
-                EmployeeId = emp.Id,
-                WorkDate = date,
-            };
-
-            // 1. Holiday Check
-            if (holiday != null)
-            {
-                newRecord.Status = "HOLIDAY";
-                newRecord.IsAbsent = false;
-            }
-            // 2. Shift & Work Days Check
-            else if (shiftByEmp.TryGetValue(emp.Id, out var es))
-            {
-                var workDays = es.WorkDays ?? new int[] { 1, 2, 3, 4, 5 };
-                bool isWorkDay = workDays.Contains(dayOfWeekInt);
-
-                if (!isWorkDay)
-                {
-                    newRecord.Status = "OFF";
-                    newRecord.IsAbsent = false;
-                }
                 else
                 {
-                    newRecord.ShiftId = es.ShiftId;
-                    if (es.Shift != null)
+                    // Standard default Monday-Friday check
+                    if (dayOfWeekInt == 0 || dayOfWeekInt == 6)
                     {
-                        PopulateScheduledTimes(newRecord, es.Shift, date);
-                    }
-
-                    // Check if date is in the past
-                    var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
-                    var today = DateOnly.FromDateTime(nowThai);
-                    if (date < today)
-                    {
-                        newRecord.IsAbsent = true;
-                        newRecord.Status = "ABSENT";
+                        newRecord.Status = "OFF";
+                        newRecord.IsAbsent = false;
                     }
                     else
                     {
-                        newRecord.Status = "PENDING";
+                        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
+                        var today = DateOnly.FromDateTime(nowThai);
+                        if (date < today)
+                        {
+                            newRecord.IsAbsent = true;
+                            newRecord.Status = "ABSENT";
+                        }
+                        else
+                        {
+                            newRecord.Status = "PENDING";
+                        }
                     }
                 }
+
+                _context.AttendanceDailies.Add(newRecord);
+                countNew++;
             }
-            else
+
+            if (countNew > 0)
             {
-                // Standard default Monday-Friday check
-                if (dayOfWeekInt == 0 || dayOfWeekInt == 6)
+                try
                 {
-                    newRecord.Status = "OFF";
-                    newRecord.IsAbsent = false;
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
-                else
+                catch (DbUpdateException)
                 {
-                    var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
-                    var today = DateOnly.FromDateTime(nowThai);
-                    if (date < today)
+                    // Detach tracked entries to keep DbContext clean if another request already inserted
+                    if (_context is DbContext db)
                     {
-                        newRecord.IsAbsent = true;
-                        newRecord.Status = "ABSENT";
-                    }
-                    else
-                    {
-                        newRecord.Status = "PENDING";
+                        foreach (var entry in db.ChangeTracker.Entries<AttendanceDaily>().ToList())
+                        {
+                            entry.State = EntityState.Detached;
+                        }
                     }
                 }
             }
 
-            _context.AttendanceDailies.Add(newRecord);
-            countNew++;
+            return countNew;
         }
-
-        if (countNew > 0)
+        finally
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            _ensureLock.Release();
         }
-
-        return countNew;
     }
 
     public static void PopulateScheduledTimes(AttendanceDaily record, ShiftEntity shift, DateOnly workDate)

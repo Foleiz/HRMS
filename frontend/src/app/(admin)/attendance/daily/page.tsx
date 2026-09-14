@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Clock,
   Calendar,
@@ -58,35 +59,38 @@ const THAI_MONTHS = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
 
-export default function DailyAttendancePage() {
+function DailyAttendanceContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Active Tab: 'daily' | 'import'
-  const [activeTab, setActiveTab] = useState<'daily' | 'import'>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('tab') === 'import') return 'import';
-    }
-    return 'daily';
-  });
+  const initialTab = (searchParams.get('tab') as 'daily' | 'import') || 'daily';
+  const [activeTab, setActiveTab] = useState<'daily' | 'import'>(
+    initialTab === 'import' ? 'import' : 'daily'
+  );
 
   const handleTabChange = (tab: 'daily' | 'import') => {
     setActiveTab(tab);
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      params.set('tab', tab);
-      window.history.replaceState(null, '', `?${params.toString()}`);
-    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`/attendance/daily?${params.toString()}`, { scroll: false });
   };
 
-  // State: Date selection (Default to today in YYYY-MM-DD)
-  const [selectedDate, setSelectedDate] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const dateParam = params.get('date');
-      if (dateParam) return dateParam;
+  // State: Date selection (Default to date param or today in YYYY-MM-DD)
+  const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
+
+  // Sync state if URL searchParams change externally
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'import' || tabParam === 'daily') {
+      setActiveTab(tabParam);
     }
-    const d = new Date();
-    return d.toISOString().split('T')[0];
-  });
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      setSelectedDate(dateParam);
+    }
+  }, [searchParams]);
 
   // Allowed date range based on imported document (min/max locking)
   const [allowedDateRange, setAllowedDateRange] = useState<{
@@ -2057,5 +2061,20 @@ export default function DailyAttendancePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DailyAttendancePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+          <p className="text-sm">กำลังโหลดข้อมูลบันทึกเวลา...</p>
+        </div>
+      }
+    >
+      <DailyAttendanceContent />
+    </Suspense>
   );
 }
