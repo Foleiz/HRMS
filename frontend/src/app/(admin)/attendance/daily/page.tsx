@@ -87,6 +87,14 @@ export default function DailyAttendancePage() {
     return d.toISOString().split('T')[0];
   });
 
+  // Allowed date range based on imported document (min/max locking)
+  const [allowedDateRange, setAllowedDateRange] = useState<{
+    min?: string | null;
+    max?: string | null;
+    batchName?: string | null;
+    batchId?: number | null;
+  }>({});
+
   // Data States (Daily Records)
   const [summary, setSummary] = useState<DailyAttendanceSummary | null>(null);
   const [records, setRecords] = useState<AttendanceDaily[]>([]);
@@ -257,6 +265,37 @@ export default function DailyAttendancePage() {
       loadBatches();
     }
   }, [activeTab, batchPage, filterSource, filterBatchStatus]);
+
+  // Fetch initial batch info on mount to restrict calendar to document date range
+  useEffect(() => {
+    const fetchLatestBatchRange = async () => {
+      try {
+        const res = await attendanceImportService.getBatches({ page: 1, pageSize: 10 });
+        if (res.items && res.items.length > 0) {
+          const validBatch = res.items.find((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED');
+          if (validBatch && validBatch.dateFrom && validBatch.dateTo) {
+            setAllowedDateRange({
+              min: validBatch.dateFrom,
+              max: validBatch.dateTo,
+              batchName: validBatch.fileName || undefined,
+              batchId: validBatch.id,
+            });
+
+            setSelectedDate((curr) => {
+              if (curr < validBatch.dateFrom! || curr > validBatch.dateTo!) {
+                return validBatch.dateFrom!;
+              }
+              return curr;
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch batch date range:', err);
+      }
+    };
+
+    fetchLatestBatchRange();
+  }, []);
 
   // Date Navigation
   const adjustDate = (days: number) => {
@@ -456,6 +495,15 @@ export default function DailyAttendancePage() {
         setUploadResult(res.data);
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        if (res.data.dateFrom && res.data.dateTo) {
+          setAllowedDateRange({
+            min: res.data.dateFrom,
+            max: res.data.dateTo,
+            batchName: res.data.fileName,
+            batchId: res.data.batchId,
+          });
+          setSelectedDate(res.data.dateFrom);
+        }
         loadBatches();
       } else {
         setImportErrorMessage(res.message || 'เกิดข้อผิดพลาดในการประมวลผลไฟล์');
@@ -757,16 +805,35 @@ export default function DailyAttendancePage() {
                 ))}
               </select>
 
-              {/* Date Picker */}
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer"
-              />
+              {/* Date Picker with Min/Max Locking */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  min={allowedDateRange.min ?? undefined}
+                  max={allowedDateRange.max ?? undefined}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    if (allowedDateRange.min && newDate < allowedDateRange.min) return;
+                    if (allowedDateRange.max && newDate > allowedDateRange.max) return;
+                    setSelectedDate(newDate);
+                    setCurrentPage(1);
+                  }}
+                  className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer"
+                  title={
+                    allowedDateRange.min && allowedDateRange.max
+                      ? `เลือกได้เฉพาะช่วง ${formatThaiDate(allowedDateRange.min)} ถึง ${formatThaiDate(allowedDateRange.max)} ตามเอกสารที่นำเข้า`
+                      : 'เลือกวันที่ต้องการตรวจบันทึกเวลา'
+                  }
+                />
+
+                {allowedDateRange.min && allowedDateRange.max && (
+                  <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 font-medium">
+                    <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
+                    <span>ช่วงข้อมูลในไฟล์: {formatThaiDate(allowedDateRange.min)} - {formatThaiDate(allowedDateRange.max)}</span>
+                  </span>
+                )}
+              </div>
 
               {/* Recalculate Button */}
               <button
@@ -1278,7 +1345,15 @@ export default function DailyAttendancePage() {
 
                   <button
                     onClick={() => {
-                      if (uploadResult.dateFrom) {
+                      if (uploadResult.dateFrom && uploadResult.dateTo) {
+                        setAllowedDateRange({
+                          min: uploadResult.dateFrom,
+                          max: uploadResult.dateTo,
+                          batchName: uploadResult.fileName,
+                          batchId: uploadResult.batchId,
+                        });
+                        setSelectedDate(uploadResult.dateFrom);
+                      } else if (uploadResult.dateFrom) {
                         setSelectedDate(uploadResult.dateFrom);
                       }
                       handleTabChange('daily');
@@ -1484,7 +1559,15 @@ export default function DailyAttendancePage() {
                             )}
                             <button
                               onClick={() => {
-                                if (batch.dateFrom) {
+                                if (batch.dateFrom && batch.dateTo) {
+                                  setAllowedDateRange({
+                                    min: batch.dateFrom,
+                                    max: batch.dateTo,
+                                    batchName: batch.fileName || undefined,
+                                    batchId: batch.id,
+                                  });
+                                  setSelectedDate(batch.dateFrom);
+                                } else if (batch.dateFrom) {
                                   setSelectedDate(batch.dateFrom);
                                 }
                                 handleTabChange('daily');
