@@ -52,5 +52,8 @@ public interface IHrmsDbContext
     DbSet<EmploymentContract> EmploymentContracts { get; }
     DbSet<EmployeeStatusHistory> EmployeeStatusHistories { get; }
 
+    // Attendance Adjustment Requests (Dev 1 Sprint 7)
+    DbSet<AttendanceAdjustment> AttendanceAdjustments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

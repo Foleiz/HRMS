@@ -64,6 +64,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
     public DbSet<EmployeeStatusHistory> EmployeeStatusHistories => Set<EmployeeStatusHistory>();
 
+    // Attendance Adjustment Requests (Dev 1 Sprint 7)
+    public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -800,6 +803,41 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.SourceContract)
                 .WithMany()
                 .HasForeignKey(e => e.SourceContractId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: AttendanceAdjustment (Dev 1 Sprint 7)
+        modelBuilder.Entity<AttendanceAdjustment>(entity =>
+        {
+            entity.ToTable("attendance_adjustment", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.AttendanceId).HasColumnName("attendance_id").IsRequired();
+            entity.Property(e => e.RequestedByEmployeeId).HasColumnName("requested_by_employee_id").IsRequired();
+            entity.Property(e => e.OriginalClockIn).HasColumnName("original_clock_in");
+            entity.Property(e => e.OriginalClockOut).HasColumnName("original_clock_out");
+            entity.Property(e => e.AdjustedClockIn).HasColumnName("adjusted_clock_in");
+            entity.Property(e => e.AdjustedClockOut).HasColumnName("adjusted_clock_out");
+            entity.Property(e => e.Reason).HasColumnName("reason").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30).HasDefaultValue("PENDING");
+            entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.ReviewedByEmployeeId).HasColumnName("reviewed_by_employee_id");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.AttendanceDaily)
+                .WithMany(a => a.Adjustments)
+                .HasForeignKey(e => e.AttendanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.RequestedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.RequestedByEmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ReviewedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ReviewedByEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
