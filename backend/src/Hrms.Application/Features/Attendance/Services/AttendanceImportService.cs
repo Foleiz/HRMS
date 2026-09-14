@@ -223,6 +223,30 @@ public class AttendanceImportService : IAttendanceImportService
             }
         }
 
+        // บางไฟล์ Daily Summary (Syaco deliy) มีหัวตารางแยก 2 ชั้น: แถวรหัสภาษาอังกฤษ
+        // (Shichu2/Cdshi/Ztshi) กับแถวป้ายภาษาไทย (ชั่วโมง/นาที.) คนละแถวกัน — ถ้าแถวหัวตาราง
+        // หลักที่เลือกไว้ (headerRowIndex) ไม่มีชื่อคอลัมน์สถิติเหล่านี้ ให้ย้อนไปหาแถวรหัส
+        // ภาษาอังกฤษในบริเวณหัวไฟล์มาเสริมเฉพาะคอลัมน์ที่ยังไม่ถูกตั้งชื่อ (ไม่กระทบคอลัมน์อื่น)
+        var statColumnAliases = new[] { "shichu2", "cdshi", "ztshi" };
+        bool missingStatColumns = statColumnAliases.Any(alias => !colKeyToHeaderName.Values.Any(v => NormalizeHeader(v) == alias));
+        if (missingStatColumns)
+        {
+            for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
+            {
+                if (r == headerRowIndex) continue;
+                foreach (var kvp in allRawRows[r])
+                {
+                    if (kvp.Value == null) continue;
+                    var s = kvp.Value.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(s)) continue;
+                    if (statColumnAliases.Contains(NormalizeHeader(s)) && !colKeyToHeaderName.ContainsKey(kvp.Key))
+                    {
+                        colKeyToHeaderName[kvp.Key] = s;
+                    }
+                }
+            }
+        }
+
         // Build data rows
         var rawRows = new List<(int RowNumber, IDictionary<string, object?> Data)>();
         for (int r = headerRowIndex + 1; r < allRawRows.Count; r++)
@@ -337,6 +361,9 @@ public class AttendanceImportService : IAttendanceImportService
         var errorsList = new List<AttendanceImportError>();
         var errorDtos = new List<AttendanceImportErrorDto>();
 
+        // ตรวจสอบว่าเป็นไฟล์ Daily Summary (Syaco deliy) หรือ Punch Log (Syaco record)
+        bool isDailySummary = IsDailySummaryFormat(allRawRows);
+
         // In-memory collection of AttendanceDaily for updating / creating
         var dailyDict = new Dictionary<(long EmployeeId, DateOnly WorkDate), AttendanceDaily>();
 
@@ -345,20 +372,33 @@ public class AttendanceImportService : IAttendanceImportService
             var (rowNumber, row) = rawRows[i];
             string rawRowJson = JsonSerializer.Serialize(row);
 
-            // Extract fields using flexible keys
+            // Extract fields using flexible keys (รองรับทั้ง Punch Log และ Daily Summary)
             var empCodeRaw = GetStringValue(row, "employeecode", "empcode", "badgeno", "userid", "employeeid", "empid", "รหัสพนักงาน", "รหัส", "เลขประจำตัว");
             var empNameRaw = GetStringValue(row, "employeename", "name", "empname", "ชื่อพนักงาน", "ชื่อ", "ชื่อสกุล", "ชื่อนามสกุล", "ชื่อ-สกุล");
             var deptRaw = GetStringValue(row, "department", "dept", "แผนก", "ฝ่าย", "แผนก-ฝ่าย.", "แผนกฝ่าย.", "แผนกฝ่าย", "แผนก-ฝ่าย");
-            var dateRaw = GetValue(row, "workdate", "date", "วันที่", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+            // วันที่: Punch Log ใช้ "วันที่-เวลา", Daily Summary ใช้ "dkrq"/"วันที่"
+            var dateRaw = GetValue(row, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
             var timeRaw = GetValue(row, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
-            var stateRaw = GetStringValue(row, "punchstate", "state", "type", "inout", "status", "สถานะ", "ประเภท", "ประเภทการสแกน", "การเข้าออก");
+            var stateRaw = GetStringValue(row, "punchstate", "state", "type", "inout", "status", "สถานะ", "ประเภท", "ประเภทการสแกน", "การเข้าออก",
+                "Sj1", "เข้า-ออก", "เขาออก", "Yfh", "สัญลักษณ์");
             var timeInRaw = GetValue(row, "timein", "checkin", "in", "เวลาเข้า", "เวลาเข้างาน", "เข้างาน");
             var timeOutRaw = GetValue(row, "timeout", "checkout", "out", "เวลาออก", "เวลาเลิกงาน", "ออกงาน");
             var deviceRaw = GetStringValue(row, "เครื่อง", "ชื่อเครื่อง", "อุปกรณ์", "เครื่องสแกน", "device", "devicename", "machine");
             var remarkRaw = GetStringValue(row, "ประมวลผล", "การประมวลผล", "หมายเหตุ", "remark", "processed");
 
-            // Skip sub-headers / empty separator rows (e.g. unit subheadings where code & time are null)
-            if (string.IsNullOrWhiteSpace(empCodeRaw) && string.IsNullOrWhiteSpace(empNameRaw) && dateRaw == null && timeRaw == null)
+            // Daily Summary specific fields — สถิติสรุปรายวัน
+            var workedHoursRaw = GetDoubleValue(row, "Shichu2", "workedhours", "ชั่วโมงทำงาน", "ชม");        // ชั่วโมงทำงานจริง
+            var lateMinutesRaw = GetDoubleValue(row, "Cdshi", "lateminutes", "นาทีมาสาย", "นาที");          // นาทีมาสาย
+            var earlyLeaveMinRaw = GetDoubleValue(row, "Ztshi", "earlyleaveminutes", "นาทีออกก่อน");        // นาทีออกก่อนเวลา
+            var symbolRaw = GetStringValue(row, "Yfh", "สัญลักษณ์", "symbol");                              // สัญลักษณ์ เช่น W, H, DV
+
+            // Skip sub-headers / empty separator / summary rows (เช่น แถว "Total" ท้ายไฟล์ Daily Summary
+            // ที่มีชื่อ "Total" อยู่ในช่องชื่อพนักงานแต่ไม่มีรหัสพนักงานและไม่มีวันที่/เวลา)
+            // แถวที่ไม่มีทั้งรหัสพนักงานและวันที่/เวลา ไม่สามารถประมวลผลเป็นข้อมูลจริงได้อยู่แล้ว จึงข้ามอย่างเงียบ ๆ
+            // (เช็คทั้งค่า null และ string ว่าง เพราะ ExcelDataReader อาจคืนค่าเป็น "" แทน null สำหรับเซลล์ว่าง)
+            bool dateBlank = dateRaw == null || string.IsNullOrWhiteSpace(dateRaw.ToString());
+            bool timeBlank = timeRaw == null || string.IsNullOrWhiteSpace(timeRaw.ToString());
+            if (string.IsNullOrWhiteSpace(empCodeRaw) && dateBlank && timeBlank)
             {
                 totalRecords--;
                 continue;
@@ -452,6 +492,119 @@ public class AttendanceImportService : IAttendanceImportService
             if (!minDate.HasValue || workDate < minDate.Value) minDate = workDate;
             if (!maxDate.HasValue || workDate > maxDate.Value) maxDate = workDate;
 
+            // =============================================================
+            // PATH A: Daily Summary (Syaco deliy format)
+            // ข้อมูลเป็นสรุปรายวัน ไม่มีเวลาสแกนจริง
+            // ใช้ข้อมูลสถิติจากคอลัมน์ Shichu2, Cdshi, Ztshi, Yfh แทน
+            // =============================================================
+            if (isDailySummary)
+            {
+                // ตรวจสอบสัญลักษณ์สถานะวัน
+                // W = Weekend (วันหยุดสัปดาห์), H = Holiday (วันหยุดพิเศษ) → ข้ามแถวนี้ ไม่นับเป็น error
+                var sym = symbolRaw?.Trim().ToUpperInvariant() ?? "";
+                if (sym == "W" || sym == "H")
+                {
+                    totalRecords--;
+                    continue;
+                }
+
+                // Fetch or create AttendanceDaily record
+                var key = (employee.Id, workDate);
+                if (!dailyDict.TryGetValue(key, out var dailyRecord))
+                {
+                    dailyRecord = await _context.AttendanceDailies
+                        .Include(a => a.Shift)
+                        .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+
+                    if (dailyRecord == null)
+                    {
+                        dailyRecord = new AttendanceDaily
+                        {
+                            EmployeeId = employee.Id,
+                            WorkDate = workDate,
+                            ImportBatchId = batch.Id
+                        };
+
+                        var shift = ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
+                        if (shift != null)
+                        {
+                            dailyRecord.ShiftId = shift.Id;
+                            AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
+                        }
+
+                        _context.AttendanceDailies.Add(dailyRecord);
+                    }
+
+                    dailyDict[key] = dailyRecord;
+                }
+
+                dailyRecord.ImportBatchId = batch.Id;
+
+                // ตั้งค่าสถานะจากสัญลักษณ์/stateRaw
+                // stateRaw อาจเป็น "N-N", "DV" (ทำงาน) หรือว่าง/0 (ขาดงาน)
+                var stateNorm = stateRaw?.Trim().ToUpperInvariant() ?? "";
+                bool hasWorked = !string.IsNullOrWhiteSpace(sym) && sym != "W" && sym != "H"
+                    || !string.IsNullOrWhiteSpace(stateNorm) && stateNorm != "0";
+
+                if (!hasWorked && workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
+                    hasWorked = true;
+
+                dailyRecord.IsAbsent = !hasWorked;
+                dailyRecord.Status = hasWorked ? "PRESENT" : "ABSENT";
+
+                // ActualIn/ActualOut: ปกติ Daily Summary ไม่มีข้อมูลเวลาสแกนจริง (คงเป็น null)
+                // ยกเว้นบางแถวที่มีคอลัมน์ "เข้า-ออก" เป็นช่วงเวลาจริง เช่น "09:53-18:13"
+                // ซึ่งจะถูกแยกเป็น ActualIn/ActualOut ด้านล่าง (หลัง sym/hasWorked ตรวจสอบแล้ว)
+
+                // บันทึก WorkedMinutes จาก Shichu2 (ชั่วโมงทำงานจริง → แปลงเป็นนาที)
+                if (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
+                {
+                    dailyRecord.WorkedMinutes = (int)Math.Round(workedHoursRaw.Value * 60);
+                }
+
+                // บันทึก LateMinutes จาก Cdshi
+                if (lateMinutesRaw.HasValue)
+                {
+                    dailyRecord.LateMinutes = (int)Math.Round(lateMinutesRaw.Value);
+                }
+
+                // บันทึก EarlyLeaveMinutes จาก Ztshi
+                if (earlyLeaveMinRaw.HasValue)
+                {
+                    dailyRecord.EarlyLeaveMinutes = (int)Math.Round(earlyLeaveMinRaw.Value);
+                }
+
+                // พยายามดึงเวลาเข้า-ออกจริงจากคอลัมน์ "เข้า-ออก" (Sj1) รูปแบบ "HH:MM-HH:MM"
+                // เช่น "09:53-18:13" (บางแถวมีตัวอักษรต่อท้าย เช่น "09:59-15:58E" ให้ตัดทิ้งเฉพาะส่วนตัวเลข)
+                // เก็บไว้เพื่อแสดงผลเวลาเข้าออกจริงในหน้าตรวจเวลา โดยไม่กระทบสถิติ Worked/Late/EarlyLeave
+                // ที่ดึงจากคอลัมน์ของอุปกรณ์ (Shichu2/Cdshi/Ztshi) ด้านบนซึ่งถือเป็นค่าหลัก
+                if (hasWorked && !string.IsNullOrWhiteSpace(stateRaw))
+                {
+                    var timeRangeMatch = Regex.Match(stateRaw, @"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})");
+                    if (timeRangeMatch.Success)
+                    {
+                        var actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
+                        var actualOutUtc = ParseTimeToUtc(timeRangeMatch.Groups[2].Value, workDate);
+                        if (actualInUtc.HasValue)
+                        {
+                            dailyRecord.ActualIn = actualInUtc.Value;
+                        }
+                        if (actualOutUtc.HasValue)
+                        {
+                            dailyRecord.ActualOut = actualOutUtc.Value;
+                        }
+                    }
+                }
+
+                successRecords++;
+                continue;
+            }
+
+            // =============================================================
+            // PATH B: Punch Log (Syaco record format หรือทั่วไป)
+            // ข้อมูลเป็นบันทึกสแกนทีละครั้ง มีเวลาจริง
+            // =============================================================
+
             // Determine In/Out times
             DateTime? punchInUtc = null;
             DateTime? punchOutUtc = null;
@@ -491,16 +644,16 @@ public class AttendanceImportService : IAttendanceImportService
             }
 
             // Fetch or create AttendanceDaily
-            var key = (employee.Id, workDate);
-            if (!dailyDict.TryGetValue(key, out var dailyRecord))
+            var punchKey = (employee.Id, workDate);
+            if (!dailyDict.TryGetValue(punchKey, out var punchDailyRecord))
             {
-                dailyRecord = await _context.AttendanceDailies
+                punchDailyRecord = await _context.AttendanceDailies
                     .Include(a => a.Shift)
                     .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
 
-                if (dailyRecord == null)
+                if (punchDailyRecord == null)
                 {
-                    dailyRecord = new AttendanceDaily
+                    punchDailyRecord = new AttendanceDaily
                     {
                         EmployeeId = employee.Id,
                         WorkDate = workDate,
@@ -512,65 +665,66 @@ public class AttendanceImportService : IAttendanceImportService
                     var shift = ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
                     if (shift != null)
                     {
-                        dailyRecord.ShiftId = shift.Id;
-                        AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
+                        punchDailyRecord.ShiftId = shift.Id;
+                        AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, shift, workDate);
                     }
 
-                    _context.AttendanceDailies.Add(dailyRecord);
+                    _context.AttendanceDailies.Add(punchDailyRecord);
                 }
 
-                dailyDict[key] = dailyRecord;
+                dailyDict[punchKey] = punchDailyRecord;
             }
 
-            dailyRecord.ImportBatchId = batch.Id;
+            punchDailyRecord.ImportBatchId = batch.Id;
 
-            var activeShift = dailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
+            var activeShift = punchDailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
             if (activeShift != null)
             {
-                dailyRecord.ShiftId = activeShift.Id;
-                dailyRecord.Shift = activeShift;
-                AttendanceDailyService.PopulateScheduledTimes(dailyRecord, activeShift, workDate);
+                punchDailyRecord.ShiftId = activeShift.Id;
+                punchDailyRecord.Shift = activeShift;
+                AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, activeShift, workDate);
             }
 
             // Merge punch times (Smart Earliest = In, Latest = Out)
             var currentPunchUtc = punchInUtc ?? punchOutUtc;
             if (currentPunchUtc.HasValue)
             {
-                if (!dailyRecord.ActualIn.HasValue)
+                if (!punchDailyRecord.ActualIn.HasValue)
                 {
-                    dailyRecord.ActualIn = currentPunchUtc.Value;
+                    punchDailyRecord.ActualIn = currentPunchUtc.Value;
                 }
-                else if (currentPunchUtc.Value < dailyRecord.ActualIn.Value)
+                else if (currentPunchUtc.Value < punchDailyRecord.ActualIn.Value)
                 {
-                    if (!dailyRecord.ActualOut.HasValue)
+                    if (!punchDailyRecord.ActualOut.HasValue)
                     {
-                        dailyRecord.ActualOut = dailyRecord.ActualIn.Value;
+                        punchDailyRecord.ActualOut = punchDailyRecord.ActualIn.Value;
                     }
-                    dailyRecord.ActualIn = currentPunchUtc.Value;
+                    punchDailyRecord.ActualIn = currentPunchUtc.Value;
                 }
-                else if (currentPunchUtc.Value > dailyRecord.ActualIn.Value)
+                else if (currentPunchUtc.Value > punchDailyRecord.ActualIn.Value)
                 {
-                    if (!dailyRecord.ActualOut.HasValue || currentPunchUtc.Value > dailyRecord.ActualOut.Value)
+                    if (!punchDailyRecord.ActualOut.HasValue || currentPunchUtc.Value > punchDailyRecord.ActualOut.Value)
                     {
-                        dailyRecord.ActualOut = currentPunchUtc.Value;
+                        punchDailyRecord.ActualOut = currentPunchUtc.Value;
                     }
                 }
             }
 
-            if (dailyRecord.ActualIn.HasValue && dailyRecord.ActualOut.HasValue && dailyRecord.ActualIn.Value > dailyRecord.ActualOut.Value)
+            if (punchDailyRecord.ActualIn.HasValue && punchDailyRecord.ActualOut.HasValue && punchDailyRecord.ActualIn.Value > punchDailyRecord.ActualOut.Value)
             {
-                var temp = dailyRecord.ActualIn.Value;
-                dailyRecord.ActualIn = dailyRecord.ActualOut.Value;
-                dailyRecord.ActualOut = temp;
+                var temp = punchDailyRecord.ActualIn.Value;
+                punchDailyRecord.ActualIn = punchDailyRecord.ActualOut.Value;
+                punchDailyRecord.ActualOut = temp;
             }
 
-            dailyRecord.IsAbsent = false;
+            punchDailyRecord.IsAbsent = false;
 
             // Recalculate late, early, worked hours, and status
-            AttendanceDailyService.RecalculateAttendance(dailyRecord, activeShift);
+            AttendanceDailyService.RecalculateAttendance(punchDailyRecord, activeShift);
 
             successRecords++;
         }
+
 
         // 8. Save errors and batch updates
         if (errorsList.Count > 0)
@@ -881,7 +1035,12 @@ public class AttendanceImportService : IAttendanceImportService
         return norm is "ชื่อ" or "ชื่อสกุล" or "ชื่อนามสกุล" or "ชื่อพนักงาน" or "ชื่อสกุล"
             or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
             or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
-            or "name" or "department" or "date" or "time" or "status";
+            or "name" or "department" or "date" or "time" or "status"
+            // Daily Summary (Syaco deliy) format columns
+            or "dkrq" or "sj1" or "yingchu1" or "yingchu2" or "shichu1" or "shichu2"
+            or "yfh" or "qjfh" or "kugong" or "cdci" or "cdshi" or "ztci" or "ztshi"
+            or "wqd" or "wqt" or "xxr" or "jjr" or "qjcs" or "qjsj" or "shenhe"
+            or "เขาออก" or "กะการทำงาน" or "วันทำงาน" or "สาย" or "ออกก่อน" or "ไมลงเวลา" or "วันหยุด" or "การลา" or "สัญลักษณ์";
     }
 
     private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
@@ -891,6 +1050,43 @@ public class AttendanceImportService : IAttendanceImportService
             .OrderByDescending(es => es.EffectiveFrom)
             .Select(es => es.Shift)
             .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// ตรวจสอบว่าเป็นไฟล์ Daily Summary แบบ Syaco "deliy" หรือไม่
+    /// (แบบสรุปรายวัน 1 แถวต่อพนักงานต่อวัน — ต่างจาก Punch Log ที่บันทึกทีละสแกน)
+    /// </summary>
+    private static bool IsDailySummaryFormat(List<IDictionary<string, object?>> allRawRows)
+    {
+        for (int r = 0; r < Math.Min(5, allRawRows.Count); r++)
+        {
+            var text = string.Join(" ", allRawRows[r].Values
+                .Where(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()))
+                .Select(v => v!.ToString()!.Trim()))
+                .Trim().ToLowerInvariant();
+
+            // ไฟล์ Daily Summary มี keyword "deliy" ใน Row 0 หรือ Row 1
+            if (text.Contains("deliy")) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// ดึงค่า double จาก cell (รองรับ double, string ที่แปลงได้)
+    /// คืนค่า null ถ้าว่างหรือแปลงไม่ได้
+    /// </summary>
+    private static double? GetDoubleValue(IDictionary<string, object?> row, params string[] candidates)
+    {
+        var val = GetValue(row, candidates);
+        if (val == null) return null;
+        if (val is double d) return d;
+        if (val is float f) return f;
+        if (val is int i) return i;
+        var str = val.ToString()?.Trim();
+        if (string.IsNullOrWhiteSpace(str)) return null;
+        if (double.TryParse(str, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var result))
+            return result;
+        return null;
     }
 
     private static void AddError(
