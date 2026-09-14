@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/context/ToastContext';
 import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
@@ -27,6 +27,8 @@ import {
 
 export default function ReportsPage() {
   const toast = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'headcount' | 'lateness'>('headcount');
@@ -79,17 +81,18 @@ export default function ReportsPage() {
   const loadDailyHeadcount = useCallback(async () => {
     try {
       setIsLoadingHeadcount(true);
-      const divId = selectedDivision === 'ALL' ? undefined : selectedDivision;
-      const deptId = selectedDepartment === 'ALL' ? undefined : selectedDepartment;
+      const divId = selectedDivision === 'ALL' ? undefined : Number(selectedDivision);
+      const deptId = selectedDepartment === 'ALL' ? undefined : Number(selectedDepartment);
       const data = await reportService.getDailyHeadcount(selectedDate, divId, deptId);
       setHeadcountData(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load daily headcount:', err);
-      toast.error('ไม่สามารถโหลดรายงานอัตรากำลังคนประจำวันได้');
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถโหลดรายงานอัตรากำลังคนประจำวันได้';
+      toastRef.current.error(msg);
     } finally {
       setIsLoadingHeadcount(false);
     }
-  }, [selectedDate, selectedDivision, selectedDepartment, toast]);
+  }, [selectedDate, selectedDivision, selectedDepartment]);
 
   // -------------------------------------------------------------
   // Load Monthly Lateness Report
@@ -97,7 +100,7 @@ export default function ReportsPage() {
   const loadMonthlyLateness = useCallback(async () => {
     try {
       setIsLoadingLateness(true);
-      const deptId = latenessDepartment === 'ALL' ? undefined : latenessDepartment;
+      const deptId = latenessDepartment === 'ALL' ? undefined : Number(latenessDepartment);
       const data = await reportService.getMonthlyLateness(
         selectedYear,
         selectedMonth,
@@ -105,13 +108,14 @@ export default function ReportsPage() {
         latenessSearch.trim() || undefined
       );
       setLatenessData(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load monthly lateness report:', err);
-      toast.error('ไม่สามารถโหลดรายงานบันทึกเวลาและการมาสายได้');
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถโหลดรายงานบันทึกเวลาและการมาสายได้';
+      toastRef.current.error(msg);
     } finally {
       setIsLoadingLateness(false);
     }
-  }, [selectedYear, selectedMonth, latenessDepartment, latenessSearch, toast]);
+  }, [selectedYear, selectedMonth, latenessDepartment, latenessSearch]);
 
   useEffect(() => {
     if (activeTab === 'headcount') {
