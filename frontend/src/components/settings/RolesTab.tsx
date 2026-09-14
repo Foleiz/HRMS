@@ -1,15 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Plus,
-  Shield,
-  HelpCircle,
   Check,
   AlertCircle,
   Clock,
-  Sparkles,
   Edit2,
   Trash2,
 } from 'lucide-react';
@@ -40,6 +37,36 @@ const SCOPES = [
   { key: 'ORGANIZATION', label: 'องค์กร', tip: 'มองเห็นข้อมูลของพนักงานทุกคนในทั้งองค์กร/บริษัท' },
 ];
 
+interface ActionSwitchProps {
+  checked: boolean;
+  onChange: () => void;
+  ariaLabel?: string;
+}
+
+const ActionSwitch: React.FC<ActionSwitchProps> = ({ checked, onChange, ariaLabel }) => {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange();
+      }}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 mx-auto ${
+        checked ? 'bg-[#0B2046]' : 'bg-slate-200 hover:bg-slate-300'
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+          checked ? 'translate-x-4' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  );
+};
+
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
   selectedRoleMatrix,
@@ -55,15 +82,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const [localModules, setLocalModules] = useState<ModulePermissionScope[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
+  const lastRoleIdRef = useRef<number | null>(null);
 
-  // Sync local matrix state when selected role changes
+  // Sync local matrix state when selected role changes or after save refetch
   useEffect(() => {
     if (selectedRoleMatrix) {
-      setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
-      setIsDirty(false);
-      setSaveSuccessMsg(false);
+      if (lastRoleIdRef.current !== selectedRoleMatrix.id) {
+        setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
+        setIsDirty(false);
+        setSaveSuccessMsg(false);
+        lastRoleIdRef.current = selectedRoleMatrix.id;
+      } else if (!isDirty) {
+        setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
+      }
     }
-  }, [selectedRoleMatrix]);
+  }, [selectedRoleMatrix, isDirty]);
 
   const filteredRoles = roles.filter(
     (r) =>
@@ -108,7 +141,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-        return { ...mod, dataScope: scopeKey };
+        return { ...mod, dataScope: scopeKey, canView: true };
       })
     );
     setIsDirty(true);
@@ -309,9 +342,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {localModules.map((mod) => {
-                      const isViewDisabled = false;
-                      const areChildActionsDisabled = !mod.canView;
-
                       return (
                         <tr key={mod.moduleCode} className="hover:bg-slate-50/40 transition-colors">
                           {/* Module Name & Quick Toggle */}
@@ -352,78 +382,38 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                           {/* Action: ดู (View) */}
                           <td className="py-3.5 px-3 text-center">
-                            <div
-                              onClick={() => handleToggleAction(mod.moduleCode, 'canView')}
-                              className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer mx-auto ${
-                                mod.canView ? 'bg-[#0B2046]' : 'bg-slate-200'
-                              }`}
-                            >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
-                                  mod.canView ? 'left-4.5' : 'left-1'
-                                }`}
-                              />
-                            </div>
+                            <ActionSwitch
+                              checked={mod.canView}
+                              onChange={() => handleToggleAction(mod.moduleCode, 'canView')}
+                              ariaLabel={`สิทธิ์ดูข้อมูล ${mod.moduleName}`}
+                            />
                           </td>
 
                           {/* Action: สร้าง (Create) */}
                           <td className="py-3.5 px-3 text-center">
-                            <div
-                              onClick={() => !areChildActionsDisabled && handleToggleAction(mod.moduleCode, 'canCreate')}
-                              className={`w-9 h-5 rounded-full transition-colors relative mx-auto ${
-                                areChildActionsDisabled
-                                  ? 'bg-slate-200 opacity-40 cursor-not-allowed'
-                                  : mod.canCreate
-                                  ? 'bg-[#0B2046] cursor-pointer'
-                                  : 'bg-slate-200 cursor-pointer'
-                              }`}
-                            >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
-                                  mod.canCreate ? 'left-4.5' : 'left-1'
-                                }`}
-                              />
-                            </div>
+                            <ActionSwitch
+                              checked={mod.canCreate}
+                              onChange={() => handleToggleAction(mod.moduleCode, 'canCreate')}
+                              ariaLabel={`สิทธิ์สร้างข้อมูล ${mod.moduleName}`}
+                            />
                           </td>
 
                           {/* Action: แก้ไข (Edit) */}
                           <td className="py-3.5 px-3 text-center">
-                            <div
-                              onClick={() => !areChildActionsDisabled && handleToggleAction(mod.moduleCode, 'canEdit')}
-                              className={`w-9 h-5 rounded-full transition-colors relative mx-auto ${
-                                areChildActionsDisabled
-                                  ? 'bg-slate-200 opacity-40 cursor-not-allowed'
-                                  : mod.canEdit
-                                  ? 'bg-[#0B2046] cursor-pointer'
-                                  : 'bg-slate-200 cursor-pointer'
-                              }`}
-                            >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
-                                  mod.canEdit ? 'left-4.5' : 'left-1'
-                                }`}
-                              />
-                            </div>
+                            <ActionSwitch
+                              checked={mod.canEdit}
+                              onChange={() => handleToggleAction(mod.moduleCode, 'canEdit')}
+                              ariaLabel={`สิทธิ์แก้ไขข้อมูล ${mod.moduleName}`}
+                            />
                           </td>
 
                           {/* Action: อนุมัติ (Approve) */}
                           <td className="py-3.5 px-3 text-center">
-                            <div
-                              onClick={() => !areChildActionsDisabled && handleToggleAction(mod.moduleCode, 'canApprove')}
-                              className={`w-9 h-5 rounded-full transition-colors relative mx-auto ${
-                                areChildActionsDisabled
-                                  ? 'bg-slate-200 opacity-40 cursor-not-allowed'
-                                  : mod.canApprove
-                                  ? 'bg-[#0B2046] cursor-pointer'
-                                  : 'bg-slate-200 cursor-pointer'
-                              }`}
-                            >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
-                                  mod.canApprove ? 'left-4.5' : 'left-1'
-                                }`}
-                              />
-                            </div>
+                            <ActionSwitch
+                              checked={mod.canApprove}
+                              onChange={() => handleToggleAction(mod.moduleCode, 'canApprove')}
+                              ariaLabel={`สิทธิ์อนุมัติข้อมูล ${mod.moduleName}`}
+                            />
                           </td>
                         </tr>
                       );

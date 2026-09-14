@@ -113,38 +113,37 @@ export default function SettingsPage() {
     }
   }, [userPage, userPageSize, userSearch, userRoleFilter, userStatusFilter, error]);
 
-  const loadRoles = useCallback(async () => {
-    setIsRolesLoading(true);
-    try {
-      const rolesData = await settingsService.getAllRoles();
-      setRoles(rolesData);
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
 
-      // If matrix not loaded yet or current selection invalid, pick first role
-      if (rolesData.length > 0) {
-        const targetId = selectedRoleMatrix ? selectedRoleMatrix.id : rolesData[0].id;
-        try {
-          const matrixData = await settingsService.getRoleMatrix(targetId);
-          setSelectedRoleMatrix(matrixData);
-        } catch {
-          const firstMatrix = await settingsService.getRoleMatrix(rolesData[0].id);
-          setSelectedRoleMatrix(firstMatrix);
-        }
-      }
-    } catch (err: any) {
-      error(err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้');
-    } finally {
-      setIsRolesLoading(false);
-    }
-  }, [selectedRoleMatrix, error]);
-
-  const loadRoleMatrix = async (roleId: number) => {
+  const loadRoleMatrix = useCallback(async (roleId: number) => {
     try {
       const matrix = await settingsService.getRoleMatrix(roleId);
       setSelectedRoleMatrix(matrix);
     } catch (err: any) {
       error(err.message || 'ไม่สามารถโหลดสิทธิ์ของบทบาทนี้ได้');
     }
-  };
+  }, [error]);
+
+  const loadRoles = useCallback(async () => {
+    setIsRolesLoading(true);
+    try {
+      const rolesData = await settingsService.getAllRoles();
+      setRoles(rolesData);
+
+      if (rolesData.length > 0) {
+        setSelectedRoleId((prevId) => {
+          const currentExists = prevId && rolesData.some((r) => r.id === prevId);
+          const activeId = currentExists ? prevId : rolesData[0].id;
+          loadRoleMatrix(activeId);
+          return activeId;
+        });
+      }
+    } catch (err: any) {
+      error(err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้');
+    } finally {
+      setIsRolesLoading(false);
+    }
+  }, [error, loadRoleMatrix]);
 
   const loadAuditLogs = useCallback(async () => {
     setIsAuditLogsLoading(true);
