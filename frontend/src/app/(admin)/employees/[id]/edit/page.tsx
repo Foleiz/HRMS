@@ -18,6 +18,7 @@ import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee'
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
+import { useToast } from '@/context/ToastContext';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -49,6 +50,7 @@ const autoFormatPhone = (val: string): string => {
 export default function EmployeeEditPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const employeeId = Number(params.id);
 
   const { setBreadcrumb } = useBreadcrumb();
@@ -61,8 +63,6 @@ export default function EmployeeEditPage() {
   // Loading & Feedback states
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Active Tab: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว
   const [activeTab, setActiveTab] = useState<'personal' | 'family'>('personal');
@@ -131,7 +131,7 @@ export default function EmployeeEditPage() {
   // โหลดข้อมูลพนักงานเดิม
   useEffect(() => {
     if (!employeeId || isNaN(employeeId)) {
-      setErrorMessage('รหัสพนักงานไม่ถูกต้อง');
+      toast.error('รหัสพนักงานไม่ถูกต้อง');
       setLoading(false);
       return;
     }
@@ -139,7 +139,6 @@ export default function EmployeeEditPage() {
     const fetchEmployee = async () => {
       try {
         setLoading(true);
-        setErrorMessage(null);
         const emp = await employeeService.getById(employeeId);
 
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
@@ -221,7 +220,7 @@ export default function EmployeeEditPage() {
       } catch (err: unknown) {
         console.error('Failed to load employee for editing:', err);
         const error = err as { message?: string };
-        setErrorMessage(error?.message || 'ไม่สามารถโหลดข้อมูลพนักงานได้');
+        toast.error(error?.message || 'ไม่สามารถโหลดข้อมูลพนักงานได้');
       } finally {
         setLoading(false);
       }
@@ -263,8 +262,6 @@ export default function EmployeeEditPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       // ตรวจสอบ CitizenId ว่าถูก Mask หรือไม่สมบูรณ์หรือไม่ หากเป็น Masked ไม่ต้องส่งไปอัปเดตทับ
@@ -321,7 +318,7 @@ export default function EmployeeEditPage() {
       };
 
       await employeeService.update(employeeId, payload);
-      setSuccessMessage('บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ');
+      toast.success('บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ');
 
       // รอ 800ms แล้วนำทางกลับไปยังหน้ารายละเอียดพนักงาน
       setTimeout(() => {
@@ -330,7 +327,7 @@ export default function EmployeeEditPage() {
     } catch (err: unknown) {
       console.error('Failed to update employee:', err);
       const error = err as { message?: string };
-      setErrorMessage(error?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+      toast.error(error?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
     }
@@ -369,21 +366,6 @@ export default function EmployeeEditPage() {
           })}
         </nav>
       </div>
-
-      {/* Message Notifications */}
-      {errorMessage && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2.5 animate-in fade-in">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center gap-2.5 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{successMessage} (กำลังนำทางกลับ...)</span>
-        </div>
-      )}
 
       {/* 2. Main Edit Card Container */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-6 lg:p-8 shadow-xs min-h-[calc(100vh-210px)] flex flex-col justify-between">

@@ -22,6 +22,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useToast } from '@/context/ToastContext';
 import { contractService } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
 import { EmploymentContract, ContractSummaryStats, CreateContractRequest } from '@/types/contract';
@@ -33,6 +34,7 @@ import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal'
 export default function ContractsPage() {
   const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
+  const toast = useToast();
 
   // Data States
   const [contracts, setContracts] = useState<EmploymentContract[]>([]);
@@ -63,10 +65,6 @@ export default function ContractsPage() {
   } | null>(null);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
-
-  // Notifications
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -111,7 +109,7 @@ export default function ContractsPage() {
       setEmployees(employeesData);
     } catch (err: any) {
       console.error('Failed to load contracts data:', err);
-      setErrorMessage(err.message || 'ไม่สามารถโหลดข้อมูลสัญญาจ้างได้');
+      toast.error(err.message || 'ไม่สามารถโหลดข้อมูลสัญญาจ้างได้');
     } finally {
       setLoading(false);
     }
@@ -124,16 +122,14 @@ export default function ContractsPage() {
   // Handle Create Contract
   const handleCreateContract = async (payload: CreateContractRequest) => {
     await contractService.create(payload);
-    setSuccessMessage('สร้างสัญญาจ้างงานใหม่สำเร็จเรียบร้อย');
-    setTimeout(() => setSuccessMessage(null), 4000);
+    toast.success('สร้างสัญญาจ้างงานใหม่สำเร็จเรียบร้อย');
     await fetchData();
   };
 
   // Handle Terminate Contract
   const handleTerminateContract = async (id: number, reason: string) => {
     await contractService.terminate(id, reason);
-    setSuccessMessage('บันทึกสิ้นสุดสัญญาจ้างงานสำเร็จ');
-    setTimeout(() => setSuccessMessage(null), 4000);
+    toast.success('บันทึกสิ้นสุดสัญญาจ้างงานสำเร็จ');
     await fetchData();
   };
 
@@ -171,27 +167,7 @@ export default function ContractsPage() {
         </nav>
       </div>
 
-      {/* 2. Notifications */}
-      {successMessage && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-emerald-800 text-xs shadow-xs animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{successMessage}</span>
-          <button onClick={() => setSuccessMessage(null)} className="ml-auto text-emerald-600 hover:text-emerald-800">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-      {errorMessage && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs shadow-xs animate-in fade-in">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="ml-auto text-rose-400 hover:text-rose-600">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* 3. Header Action Bar */}
+      {/* 2. Header Action Bar */}
       <div className="flex items-center justify-end">
         <button
           onClick={() => setIsCreateModalOpen(true)}

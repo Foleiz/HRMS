@@ -30,7 +30,7 @@ export default function BanksPage() {
       const data = await bankService.getAll();
       setBanks(data);
     } catch (err: any) {
-      setError(err.message || 'ไม่สามารถโหลดข้อมูลธนาคารได้ กรุณาตรวจสอบว่า Backend API เปิดอยู่');
+      toast.error(err.message || 'ไม่สามารถโหลดข้อมูลธนาคารได้ กรุณาตรวจสอบว่า Backend API เปิดอยู่');
     } finally {
       setLoading(false);
     }
@@ -130,17 +130,6 @@ export default function BanksPage() {
           </button>
         </div>
       </div>
-
-      {/* Error Alert */}
-      {error && (
-        <div className="flex items-start gap-3 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm font-medium">
-          <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
-          <div>
-            <p className="font-semibold">เกิดข้อผิดพลาด</p>
-            <p className="text-rose-600 text-xs mt-0.5">{error}</p>
-          </div>
-        </div>
-      )}
 
       {/* Data Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

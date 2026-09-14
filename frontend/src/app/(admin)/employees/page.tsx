@@ -8,6 +8,7 @@ import { apiClient } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload } from '@/types/employee';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
+import { useToast } from '@/context/ToastContext';
 import {
   Search,
   Plus,
@@ -105,6 +106,7 @@ export const getRequiredBankDigits = (bankName?: string): number => {
 
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
+  const toast = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<DepartmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,8 +123,6 @@ export default function EmployeesPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -531,7 +531,6 @@ export default function EmployeesPage() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     const errors = validateCreateForm(formData);
     if (Object.keys(errors).length > 0) {
@@ -612,14 +611,13 @@ export default function EmployeesPage() {
       };
 
       await employeeService.create(payload);
-      setSuccessMessage('บันทึกข้อมูลพนักงานเรียบร้อย');
+      toast.success('บันทึกข้อมูลพนักงานเรียบร้อย');
       handleCloseCreateModal();
       setFormData(initialFormData);
       loadData();
-      setTimeout(() => setSuccessMessage(null), 3500);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMessage(error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      toast.error(error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSubmitting(false);
     }
@@ -629,12 +627,11 @@ export default function EmployeesPage() {
     if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลพนักงาน "${name}"?`)) return;
     try {
       await employeeService.delete(id);
-      setSuccessMessage('ลบข้อมูลพนักงานเรียบร้อย');
+      toast.success('ลบข้อมูลพนักงานเรียบร้อย');
       loadData();
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      setErrorMessage(error?.message || 'ไม่สามารถลบข้อมูลพนักงานได้');
+      toast.error(error?.message || 'ไม่สามารถลบข้อมูลพนักงานได้');
     }
   };
 
@@ -741,24 +738,7 @@ export default function EmployeesPage() {
         </nav>
       </div>
 
-      {/* 2. Notifications */}
-      {successMessage && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-emerald-800 text-xs shadow-xs animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{successMessage}</span>
-        </div>
-      )}
-      {errorMessage && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs shadow-xs">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="ml-auto text-rose-400 hover:text-rose-600">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* 3. Search Bar, Department Filter & Action Buttons */}
+      {/* 2. Search Bar, Department Filter & Action Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           {/* Search Input */}

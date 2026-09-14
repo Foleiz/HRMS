@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useToast } from '@/context/ToastContext';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import {
   WorkWeekDay,
@@ -64,6 +65,7 @@ function formatThaiDate(dateStr: string): string {
 
 export default function WorkCalendarPage() {
   const { setBreadcrumb } = useBreadcrumb();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('work-week');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,10 +83,6 @@ export default function WorkCalendarPage() {
   // Bulk working hours states
   const [bulkStartTime, setBulkStartTime] = useState('08:30');
   const [bulkEndTime, setBulkEndTime] = useState('17:30');
-
-  // Alert states
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Modal states (Holiday)
   const [modalOpen, setModalOpen] = useState(false);
@@ -120,7 +118,7 @@ export default function WorkCalendarPage() {
       if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime.substring(0, 5));
       if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime.substring(0, 5));
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
+      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
     } finally {
       setLoading(false);
     }
@@ -129,21 +127,6 @@ export default function WorkCalendarPage() {
   useEffect(() => {
     loadData();
   }, [selectedYear]);
-
-  // Auto-dismiss alerts
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
 
   // Handle Work Week toggle
   const handleToggleDay = (dayOfWeek: number) => {
@@ -175,9 +158,9 @@ export default function WorkCalendarPage() {
         })),
       });
       setWorkWeek(updated);
-      setSuccessMessage('บันทึกการตั้งค่าวันทำงานและเวลาเข้า-ออกงานสำเร็จ');
+      toast.success('บันทึกการตั้งค่าวันทำงานและเวลาเข้า-ออกงานสำเร็จ');
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'ไม่สามารถบันทึกการตั้งค่าวันทำงานได้');
+      toast.error(err.response?.data?.message || 'ไม่สามารถบันทึกการตั้งค่าวันทำงานได้');
     } finally {
       setSaving(false);
     }
@@ -216,7 +199,7 @@ export default function WorkCalendarPage() {
           holidayType: holidayForm.holidayType,
         });
         setHolidays((prev) => [...prev, created].sort((a, b) => a.holidayDate.localeCompare(b.holidayDate)));
-        setSuccessMessage('เพิ่มวันหยุดประจำปีสำเร็จ');
+        toast.success('เพิ่มวันหยุดประจำปีสำเร็จ');
       } else if (holidayForm.id) {
         const updated = await workCalendarService.updateHoliday(holidayForm.id, {
           holidayDate: holidayForm.holidayDate,
@@ -226,11 +209,11 @@ export default function WorkCalendarPage() {
         setHolidays((prev) =>
           prev.map((h) => (h.id === updated.id ? updated : h)).sort((a, b) => a.holidayDate.localeCompare(b.holidayDate))
         );
-        setSuccessMessage('แก้ไขข้อมูลวันหยุดสำเร็จ');
+        toast.success('แก้ไขข้อมูลวันหยุดสำเร็จ');
       }
       setModalOpen(false);
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'ไม่สามารถบันทึกข้อมูลวันหยุดได้');
+      toast.error(err.response?.data?.message || 'ไม่สามารถบันทึกข้อมูลวันหยุดได้');
     }
   };
 
@@ -244,11 +227,11 @@ export default function WorkCalendarPage() {
     try {
       await workCalendarService.deleteHoliday(itemToDelete.id);
       setHolidays((prev) => prev.filter((h) => h.id !== itemToDelete.id));
-      setSuccessMessage(`ลบวันหยุด "${itemToDelete.name}" สำเร็จ`);
+      toast.success(`ลบวันหยุด "${itemToDelete.name}" สำเร็จ`);
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'ไม่สามารถลบข้อมูลวันหยุดได้');
+      toast.error(err.response?.data?.message || 'ไม่สามารถลบข้อมูลวันหยุดได้');
     }
   };
 
@@ -266,27 +249,7 @@ export default function WorkCalendarPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Alerts */}
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="font-medium">{successMessage}</span>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2.5 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span className="font-medium">{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-rose-600">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* 2. Sub-navigation Tabs */}
+      {/* 1. Sub-navigation Tabs */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           <button

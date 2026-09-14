@@ -83,9 +83,8 @@ export default function EmployeeDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'user'>('personal');
 
-  // Custom Avatar & Photo Feedback
+  // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
-  const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // โหลดรูปโปรไฟล์ที่เคยอัปโหลดไว้จาก localStorage
@@ -124,8 +123,6 @@ export default function EmployeeDetailPage() {
         localStorage.setItem(`hrms_employee_avatar_${employeeId}`, base64);
       }
       toast.success('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
-      setPhotoFeedback('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
-      setTimeout(() => setPhotoFeedback(null), 3000);
     };
     reader.readAsDataURL(file);
   };
@@ -252,14 +249,6 @@ export default function EmployeeDetailPage() {
                 <Camera className="w-3.5 h-3.5" />
               </button>
             </div>
-
-            {/* Notification ข้อความแจ้งเตือนเมื่อเปลี่ยนรูปเสร็จ */}
-            {photoFeedback && (
-              <div className="mb-2 px-3 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-medium rounded-full border border-emerald-200 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{photoFeedback}</span>
-              </div>
-            )}
 
             {/* Badges: Employee Code & Active Status */}
             <div className="flex items-center gap-2 mb-2">

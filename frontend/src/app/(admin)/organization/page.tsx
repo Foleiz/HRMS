@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useToast } from '@/context/ToastContext';
 import {
   Division,
   Department,
@@ -37,21 +38,21 @@ type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'company';
 
 export default function OrganizationPage() {
   const { setBreadcrumb } = useBreadcrumb();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('divisions');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDivisionId, setFilterDivisionId] = useState<string>('ALL');
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
 
-  const tabTitles: Record<TabType, string> = {
-    divisions: 'จัดการฝ่าย',
-    departments: 'จัดการแผนก',
-    positions: 'จัดการตำแหน่ง',
-    levels: 'ระดับพนักงาน',
-    company: 'ข้อมูลบริษัท',
-  };
-
   useEffect(() => {
+    const tabTitles: Record<TabType, string> = {
+      divisions: 'จัดการฝ่าย (Division)',
+      departments: 'จัดการแผนก (Department)',
+      positions: 'จัดการตำแหน่งงาน (Position)',
+      levels: 'ระดับพนักงาน (Level)',
+      company: 'ข้อมูลบริษัท (Company Profile)',
+    };
     setBreadcrumb({
       section: 'โครงสร้างองค์กร',
       page: tabTitles[activeTab] || 'จัดการฝ่าย',
@@ -65,10 +66,6 @@ export default function OrganizationPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
-
-  // Alert states
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -107,7 +104,6 @@ export default function OrganizationPage() {
 
   const loadData = async () => {
     setLoading(true);
-    setErrorMessage(null);
     try {
       const [divs, depts, pos, lvls, comp] = await Promise.all([
         organizationService.getDivisions(),
@@ -132,9 +128,9 @@ export default function OrganizationPage() {
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setErrorMessage(err.message);
+        toast.error(err.message);
       } else {
-        setErrorMessage('ไม่สามารถโหลดข้อมูลโครงสร้างองค์กรได้');
+        toast.error('ไม่สามารถโหลดข้อมูลโครงสร้างองค์กรได้');
       }
     } finally {
       setLoading(false);
@@ -146,8 +142,7 @@ export default function OrganizationPage() {
   }, []);
 
   const showSuccess = (msg: string) => {
-    setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(null), 4000);
+    toast.success(msg);
   };
 
   // Handlers for Division
@@ -173,7 +168,6 @@ export default function OrganizationPage() {
 
   const handleSaveDivision = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
     try {
       if (modalMode === 'create') {
         await organizationService.createDivision(divisionForm);
@@ -188,7 +182,7 @@ export default function OrganizationPage() {
       setModalOpen(false);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
     }
   };
 
@@ -218,7 +212,6 @@ export default function OrganizationPage() {
 
   const handleSaveDept = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
     try {
       if (modalMode === 'create') {
         await organizationService.createDepartment(deptForm);
@@ -235,7 +228,7 @@ export default function OrganizationPage() {
       setModalOpen(false);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
     }
   };
 
@@ -266,7 +259,6 @@ export default function OrganizationPage() {
 
   const handleSavePos = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
     try {
       if (modalMode === 'create') {
         await organizationService.createPosition(posForm);
@@ -283,20 +275,19 @@ export default function OrganizationPage() {
       setModalOpen(false);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
     }
   };
 
   // Handler for Company Profile Save
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
     try {
       await organizationService.updateCompany(companyForm);
       showSuccess('บันทึกข้อมูลบริษัทเรียบร้อยแล้ว');
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
     }
   };
 
@@ -308,7 +299,6 @@ export default function OrganizationPage() {
 
   const executeDelete = async () => {
     if (!itemToDelete) return;
-    setErrorMessage(null);
     try {
       if (itemToDelete.type === 'division') {
         await organizationService.deleteDivision(itemToDelete.id);
@@ -324,7 +314,7 @@ export default function OrganizationPage() {
       setItemToDelete(null);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
       setDeleteModalOpen(false);
     }
   };
@@ -351,32 +341,7 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Success / Error Banners */}
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-2.5 font-medium">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{successMessage}</span>
-          </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-500 hover:text-emerald-800">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-2.5 font-medium">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-800">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* 2. Sub-navigation Tabs */}
+      {/* 1. Sub-navigation Tabs */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           <button

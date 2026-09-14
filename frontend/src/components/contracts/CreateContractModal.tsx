@@ -5,6 +5,7 @@ import { X, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { CreateContractRequest } from '@/types/contract';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
+import { useToast } from '@/context/ToastContext';
 
 interface CreateContractModalProps {
   isOpen: boolean;
@@ -19,12 +20,12 @@ export default function CreateContractModal({
   onSubmit,
   employees,
 }: CreateContractModalProps) {
+  const toast = useToast();
   const [employeeId, setEmployeeId] = useState<number | ''>('');
   const [contractType, setContractType] = useState<string>('PROBATION');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // เมื่อเปิด Modal ให้ตั้งค่าเริ่มต้น
   useEffect(() => {
@@ -38,7 +39,6 @@ export default function CreateContractModal({
       const d = new Date();
       d.setDate(d.getDate() + 119);
       setEndDate(d.toISOString().split('T')[0]);
-      setErrorMessage(null);
     }
   }, [isOpen, employees]);
 
@@ -71,17 +71,16 @@ export default function CreateContractModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employeeId) {
-      setErrorMessage('กรุณาเลือกพนักงาน');
+      toast.warning('กรุณาเลือกพนักงาน');
       return;
     }
     if (!startDate) {
-      setErrorMessage('กรุณาระบุวันที่เริ่มสัญญา');
+      toast.warning('กรุณาระบุวันที่เริ่มสัญญา');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      setErrorMessage(null);
       await onSubmit({
         employeeId: Number(employeeId),
         contractType,
@@ -92,7 +91,7 @@ export default function CreateContractModal({
       onClose();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'ไม่สามารถสร้างสัญญาจ้างงานได้';
-      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -115,15 +114,7 @@ export default function CreateContractModal({
           </button>
         </div>
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div className="mx-6 my-2 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Form Form Body ตรงตาม Mockup */}
+        {/* Form Body ตรงตาม Mockup */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           {/* 1. พนักงาน * */}
           <div>

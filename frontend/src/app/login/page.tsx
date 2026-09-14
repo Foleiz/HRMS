@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { ShieldCheck, Lock, User, Eye, EyeOff, Loader2, KeyRound } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const toast = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +17,9 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
-      setError('กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน');
+      const msg = 'กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -23,12 +27,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login({ username, password });
+      toast.success('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับเข้าสู่ระบบ HRMS');
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง');
-      }
+      const msg = err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

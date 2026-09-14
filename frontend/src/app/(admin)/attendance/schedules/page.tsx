@@ -33,6 +33,7 @@ import { employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
 import { organizationService } from '@/services/organizationService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useToast } from '@/context/ToastContext';
 import {
   EmployeeShift,
   AssignEmployeeShiftRequest,
@@ -171,6 +172,7 @@ function SchedulesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
+  const toast = useToast();
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
@@ -208,25 +210,6 @@ function SchedulesContent() {
   const [rosterData, setRosterData] = useState<MonthlyRosterResponse | null>(null);
   const [rosterYear, setRosterYear] = useState<number>(new Date().getFullYear());
   const [rosterMonth, setRosterMonth] = useState<number>(new Date().getMonth() + 1);
-
-  // Global Alerts
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Auto-dismiss alerts
-  useEffect(() => {
-    if (successMessage) {
-      const t = setTimeout(() => setSuccessMessage(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [successMessage]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const t = setTimeout(() => setErrorMessage(null), 6000);
-      return () => clearTimeout(t);
-    }
-  }, [errorMessage]);
 
   // -------------------------------------------------------------
   // 3. Tab 1 States: มอบหมายกะให้พนักงาน (Shift Roster)
@@ -595,7 +578,7 @@ function SchedulesContent() {
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
           workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
         });
-        setSuccessMessage('มอบหมายกะให้พนักงานสำเร็จเรียบร้อย');
+        toast.success('มอบหมายกะให้พนักงานสำเร็จเรียบร้อย');
       } else if (assignForm.id) {
         await employeeShiftService.updateAssignment(assignForm.id, {
           shiftId: Number(assignForm.shiftId),
@@ -603,7 +586,7 @@ function SchedulesContent() {
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
           workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
         });
-        setSuccessMessage('อัปเดตการมอบหมายกะสำเร็จ');
+        toast.success('อัปเดตการมอบหมายกะสำเร็จ');
       }
       setAssignModalOpen(false);
       loadAssignments();
@@ -612,7 +595,7 @@ function SchedulesContent() {
         loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
       }
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลกะพนักงาน');
+      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลกะพนักงาน');
     } finally {
       setSubmitting(false);
     }
@@ -620,15 +603,15 @@ function SchedulesContent() {
 
   const handleRunBatchAssign = async () => {
     if (batchShiftId === 0) {
-      setErrorMessage('กรุณาเลือกกะการทำงานที่ต้องการมอบหมาย');
+      toast.warning('กรุณาเลือกกะการทำงานที่ต้องการมอบหมาย');
       return;
     }
     if (batchTargetType === 'department' && !batchSelectedDept) {
-      setErrorMessage('กรุณาเลือกแผนกเป้าหมาย');
+      toast.warning('กรุณาเลือกแผนกเป้าหมาย');
       return;
     }
     if (batchTargetType === 'selected' && batchSelectedEmpIds.length === 0) {
-      setErrorMessage('กรุณาเลือกพนักงานอย่างน้อย 1 รายการ');
+      toast.warning('กรุณาเลือกพนักงานอย่างน้อย 1 รายการ');
       return;
     }
 
@@ -644,14 +627,14 @@ function SchedulesContent() {
       };
       const res = await employeeShiftService.batchAssignShift(req);
       setBatchResult(res);
-      setSuccessMessage(`จัดกะสำเร็จ ${res.successCount} คน, ข้อผิดพลาด ${res.failedCount} คน`);
+      toast.success(`จัดกะสำเร็จ ${res.successCount} คน, ข้อผิดพลาด ${res.failedCount} คน`);
       loadAssignments();
       if (assignmentViewMode === 'calendar') {
         const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
         loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
       }
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'เกิดข้อผิดพลาดในการมอบหมายกะแบบกลุ่ม');
+      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการมอบหมายกะแบบกลุ่ม');
     } finally {
       setSubmitting(false);
     }
@@ -756,7 +739,7 @@ function SchedulesContent() {
       setSubmitting(true);
       if (shiftModalMode === 'create') {
         await shiftService.createShift(shiftForm);
-        setSuccessMessage('สร้างกะการทำงานใหม่เรียบร้อยแล้ว');
+        toast.success('สร้างกะการทำงานใหม่เรียบร้อยแล้ว');
       } else if (shiftForm.id) {
         await shiftService.updateShift(shiftForm.id, {
           shiftName: shiftForm.shiftName,
@@ -768,14 +751,14 @@ function SchedulesContent() {
           lateGraceMinutes: shiftForm.lateGraceMinutes,
           earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
         });
-        setSuccessMessage('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
+        toast.success('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
       }
       setShiftModalOpen(false);
       loadShifts();
     } catch (err: any) {
       const msg = err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกกะการทำงาน';
       setShiftModalError(msg);
-      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -790,7 +773,7 @@ function SchedulesContent() {
       setSubmitting(true);
       if (itemToDelete.type === 'assignment') {
         await employeeShiftService.deleteAssignment(itemToDelete.id);
-        setSuccessMessage('ยกเลิกการมอบหมายกะเรียบร้อยแล้ว');
+        toast.success('ยกเลิกการมอบหมายกะเรียบร้อยแล้ว');
         loadAssignments();
         if (assignmentViewMode === 'calendar') {
           const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
@@ -798,13 +781,13 @@ function SchedulesContent() {
         }
       } else if (itemToDelete.type === 'shift') {
         await shiftService.deleteShift(itemToDelete.id);
-        setSuccessMessage('ลบข้อมูลกะการทำงานเรียบร้อยแล้ว');
+        toast.success('ลบข้อมูลกะการทำงานเรียบร้อยแล้ว');
         loadShifts();
       }
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'ไม่สามารถลบรายการได้เนื่องจากมีข้อมูลผูกพันในระบบ');
+      toast.error(err.response?.data?.message || 'ไม่สามารถลบรายการได้เนื่องจากมีข้อมูลผูกพันในระบบ');
     } finally {
       setSubmitting(false);
     }
@@ -812,33 +795,6 @@ function SchedulesContent() {
 
   return (
     <div className="space-y-6">
-      {/* ------------------------------------------------------------- */}
-      {/* Global Alert Banners */}
-      {/* ------------------------------------------------------------- */}
-      {successMessage && (
-        <div className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span className="text-sm font-medium">{successMessage}</span>
-          </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-500 hover:text-emerald-700">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="flex items-center justify-between p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-            <span className="text-sm font-medium">{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-700">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs */}
       {/* ------------------------------------------------------------- */}
