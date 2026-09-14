@@ -64,14 +64,11 @@ public class AttendanceDailyService : IAttendanceDailyService
             queryDate = DateOnly.FromDateTime(nowThai);
         }
 
-        // Auto-generate records for the date if not exists yet
-        await EnsureAttendanceRecordsForDateAsync(queryDate, cancellationToken);
-
         var query = _context.AttendanceDailies
             .AsNoTracking()
             .Include(a => a.Employee)
             .Include(a => a.Shift)
-            .Where(a => a.WorkDate == queryDate);
+            .Where(a => a.WorkDate == queryDate && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")));
 
         // Filter Department
         if (filter.DepartmentId.HasValue && filter.DepartmentId.Value > 0)
@@ -142,12 +139,25 @@ public class AttendanceDailyService : IAttendanceDailyService
 
     public async Task<DailyAttendanceSummaryDto> GetDailySummaryAsync(DateOnly date, CancellationToken cancellationToken = default)
     {
-        await EnsureAttendanceRecordsForDateAsync(date, cancellationToken);
-
         var records = await _context.AttendanceDailies
             .AsNoTracking()
-            .Where(a => a.WorkDate == date)
+            .Where(a => a.WorkDate == date && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")))
             .ToListAsync(cancellationToken);
+
+        if (records.Count == 0)
+        {
+            return new DailyAttendanceSummaryDto
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                TotalEmployees = 0,
+                PresentCount = 0,
+                LateCount = 0,
+                EarlyLeaveCount = 0,
+                AbsentCount = 0,
+                HolidayOrOffCount = 0,
+                AttendanceRate = 0
+            };
+        }
 
         var total = records.Count;
         var present = records.Count(r => r.Status == "PRESENT");

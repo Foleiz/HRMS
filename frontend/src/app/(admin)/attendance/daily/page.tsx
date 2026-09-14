@@ -99,6 +99,7 @@ function DailyAttendanceContent() {
     batchName?: string | null;
     batchId?: number | null;
   }>({});
+  const [hasAnyBatch, setHasAnyBatch] = useState<boolean | null>(null);
 
   // Data States (Daily Records)
   const [summary, setSummary] = useState<DailyAttendanceSummary | null>(null);
@@ -263,6 +264,12 @@ function DailyAttendanceContent() {
       setBatches(res.items);
       setBatchTotalPages(res.totalPages);
       setBatchTotalCount(res.totalCount);
+      const valid = res.items.filter((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED');
+      if (valid.length > 0) {
+        setHasAnyBatch(true);
+      } else if (res.totalCount === 0) {
+        setHasAnyBatch(false);
+      }
     } catch (err) {
       console.error('Failed to load batches:', err);
     } finally {
@@ -284,6 +291,7 @@ function DailyAttendanceContent() {
         if (res.items && res.items.length > 0) {
           const validBatch = res.items.find((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED');
           if (validBatch && validBatch.dateFrom && validBatch.dateTo) {
+            setHasAnyBatch(true);
             setAllowedDateRange({
               min: validBatch.dateFrom,
               max: validBatch.dateTo,
@@ -297,10 +305,14 @@ function DailyAttendanceContent() {
               }
               return curr;
             });
+            return;
           }
         }
+        setHasAnyBatch(false);
+        setAllowedDateRange({});
       } catch (err) {
         console.error('Failed to fetch batch date range:', err);
+        setHasAnyBatch(false);
       }
     };
 
@@ -506,6 +518,7 @@ function DailyAttendanceContent() {
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         if (res.data.dateFrom && res.data.dateTo) {
+          setHasAnyBatch(true);
           setAllowedDateRange({
             min: res.data.dateFrom,
             max: res.data.dateTo,
@@ -571,7 +584,20 @@ function DailyAttendanceContent() {
           `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`
         );
         if (allowedDateRange.batchId === batchToRevert.id) {
-          setAllowedDateRange({});
+          const remaining = batches.filter((b) => b.id !== batchToRevert.id && b.status !== 'FAILED');
+          if (remaining.length > 0 && remaining[0].dateFrom && remaining[0].dateTo) {
+            setHasAnyBatch(true);
+            setAllowedDateRange({
+              min: remaining[0].dateFrom,
+              max: remaining[0].dateTo,
+              batchName: remaining[0].fileName || undefined,
+              batchId: remaining[0].id,
+            });
+            setSelectedDate(remaining[0].dateFrom);
+          } else {
+            setHasAnyBatch(false);
+            setAllowedDateRange({});
+          }
         }
         setRevertModalOpen(false);
         setBatchToRevert(null);
@@ -812,7 +838,27 @@ function DailyAttendanceContent() {
       {/* ========================================================= */}
       {activeTab === 'daily' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Filter & Toolbar Bar */}
+          {hasAnyBatch === false ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0B2046] flex items-center justify-center mb-4">
+                <FileSpreadsheet className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-800 mb-1">ยังไม่มีข้อมูลบันทึกเวลาในระบบ</h3>
+              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+                ระบบยังไม่มีข้อมูลการนำเข้าไฟล์บันทึกเวลา กรุณาอัปโหลดไฟล์ Excel หรือไฟล์จากเครื่องสแกนเพื่อเริ่มตรวจบันทึกเวลา
+              </p>
+              <button
+                type="button"
+                onClick={() => handleTabChange('import')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold rounded-xl shadow-sm transition cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>ไปที่หน้านำเข้าไฟล์บันทึกเวลา</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Filter & Toolbar Bar */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
             {/* Left: Search, Filters & Date Stepper */}
             <div className="flex items-center gap-2.5 shrink-0">
@@ -1131,6 +1177,8 @@ function DailyAttendanceContent() {
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 
