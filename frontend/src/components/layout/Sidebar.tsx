@@ -49,10 +49,16 @@ const menuItems: MenuItem[] = [
     requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE'],
   },
   {
+    title: 'ลงเวลาของฉัน (ESS)',
+    href: '/ess/attendance',
+    matchPrefix: '/ess/attendance',
+    icon: Clock,
+  },
+  {
     title: 'ตรวจบันทึกเวลา',
     href: '/attendance/daily',
     matchPrefix: '/attendance/daily',
-    icon: Clock,
+    icon: CalendarDays,
   },
   {
     title: 'การจัดตารางงาน',

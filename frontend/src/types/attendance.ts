@@ -70,3 +70,18 @@ export interface PagedAttendanceResult {
   pageSize: number;
   totalPages: number;
 }
+
+export interface MyAttendanceMonthlySummary {
+  year: number;
+  month: number;
+  totalWorkDays: number;
+  presentCount: number;
+  lateCount: number;
+  totalLateMinutes: number;
+  earlyLeaveCount: number;
+  totalEarlyLeaveMinutes: number;
+  absentCount: number;
+  holidayCount: number;
+  offCount: number;
+}
+

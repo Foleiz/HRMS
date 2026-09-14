@@ -13,4 +13,9 @@ public interface IAttendanceDailyService
     Task<AttendanceDailyDto> ClockOutAsync(ClockOutRequest request, CancellationToken cancellationToken = default);
     Task<AttendanceDailyDto> UpdateAttendanceAsync(long id, UpdateAttendanceRequest request, CancellationToken cancellationToken = default);
     Task<int> CalculateDailyAttendanceForDateAsync(DateOnly date, CancellationToken cancellationToken = default);
+
+    // ESS Methods for Employee Self-Service
+    Task<AttendanceDailyDto?> GetMyTodayAttendanceAsync(long employeeId, CancellationToken cancellationToken = default);
+    Task<List<AttendanceDailyDto>> GetMyAttendanceHistoryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default);
+    Task<MyAttendanceMonthlySummaryDto> GetMyMonthlySummaryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default);
 }

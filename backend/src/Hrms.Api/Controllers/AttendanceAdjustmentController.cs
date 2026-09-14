@@ -29,6 +29,29 @@ public class AttendanceAdjustmentController : ControllerBase
         return Ok(ApiResponse<PagedAdjustmentResult>.Ok(result, "ดึงรายการคำขอปรับปรุงเวลาสำเร็จ"));
     }
 
+    /// <summary>
+    /// [ESS] ดึงรายการคำขอปรับปรุงเวลาของตนเอง
+    /// </summary>
+    [HttpGet("my")]
+    public async Task<ActionResult<ApiResponse<PagedAdjustmentResult>>> GetMyAdjustments(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        long currentUserId = GetCurrentEmployeeId();
+        if (currentUserId <= 0)
+            return Unauthorized(ApiResponse<PagedAdjustmentResult>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var filter = new AdjustmentFilterDto
+        {
+            EmployeeId = currentUserId,
+            Page = page,
+            PageSize = pageSize
+        };
+        var result = await _adjustmentService.GetAdjustmentsAsync(filter, cancellationToken);
+        return Ok(ApiResponse<PagedAdjustmentResult>.Ok(result, "ดึงรายการคำขอปรับปรุงเวลาของตนเองสำเร็จ"));
+    }
+
     [HttpGet("pending-count")]
     public async Task<ActionResult<ApiResponse<int>>> GetPendingCount(CancellationToken cancellationToken)
     {

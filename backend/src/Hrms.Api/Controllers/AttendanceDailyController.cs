@@ -129,4 +129,107 @@ public class AttendanceDailyController : ControllerBase
             return NotFound(ApiResponse<AttendanceDailyDto>.Fail(ex.Message));
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // ESS (Employee Self-Service) Endpoints
+    // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// [ESS] ดูบันทึกเวลาและกะของวันนี้ของตนเอง
+    /// </summary>
+    [HttpGet("my/today")]
+    public async Task<IActionResult> GetMyTodayAttendance(CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<AttendanceDailyDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var result = await _service.GetMyTodayAttendanceAsync(employeeId, cancellationToken);
+        return Ok(ApiResponse<AttendanceDailyDto?>.Ok(result, "ดึงข้อมูลบันทึกเวลาวันนี้สำเร็จ"));
+    }
+
+    /// <summary>
+    /// [ESS] ดูประวัติบันทึกเวลารายเดือนของตนเอง
+    /// </summary>
+    [HttpGet("my/history")]
+    public async Task<IActionResult> GetMyAttendanceHistory(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<List<AttendanceDailyDto>>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var result = await _service.GetMyAttendanceHistoryAsync(employeeId, targetYear, targetMonth, cancellationToken);
+        return Ok(ApiResponse<List<AttendanceDailyDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// [ESS] ดูสถิติสรุปการเข้างานประจำเดือนของตนเอง
+    /// </summary>
+    [HttpGet("my/summary")]
+    public async Task<IActionResult> GetMyMonthlySummary(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<MyAttendanceMonthlySummaryDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var result = await _service.GetMyMonthlySummaryAsync(employeeId, targetYear, targetMonth, cancellationToken);
+        return Ok(ApiResponse<MyAttendanceMonthlySummaryDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// [ESS] บันทึกเวลาเข้างานของตนเอง (ใช้เวลาปัจจุบัน)
+    /// </summary>
+    [HttpPost("my/clock-in")]
+    public async Task<IActionResult> MyClockIn(CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<AttendanceDailyDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var request = new ClockInRequest { EmployeeId = employeeId };
+        var result = await _service.ClockInAsync(request, cancellationToken);
+        return Ok(ApiResponse<AttendanceDailyDto>.Ok(result, "บันทึกเวลาเข้างานเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>
+    /// [ESS] บันทึกเวลาออกงานของตนเอง (ใช้เวลาปัจจุบัน)
+    /// </summary>
+    [HttpPost("my/clock-out")]
+    public async Task<IActionResult> MyClockOut(CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<AttendanceDailyDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var request = new ClockOutRequest { EmployeeId = employeeId };
+        var result = await _service.ClockOutAsync(request, cancellationToken);
+        return Ok(ApiResponse<AttendanceDailyDto>.Ok(result, "บันทึกเวลาออกงานเรียบร้อยแล้ว"));
+    }
+
+    // ─── Helper: ดึง EmployeeId จาก JWT Claims ─────────────────
+    private long GetCurrentEmployeeId()
+    {
+        var claim = User.FindFirst("EmployeeId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (claim != null && long.TryParse(claim.Value, out var id))
+            return id;
+        return 0;
+    }
 }
+

@@ -103,3 +103,22 @@ public class PagedAttendanceResult
     public int PageSize { get; set; }
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
 }
+
+/// <summary>
+/// DTO สรุปสถิติเวลาส่วนบุคคลประจำเดือนสำหรับพนักงาน (ESS)
+/// </summary>
+public class MyAttendanceMonthlySummaryDto
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public int TotalWorkDays { get; set; }
+    public int PresentCount { get; set; }
+    public int LateCount { get; set; }
+    public int TotalLateMinutes { get; set; }
+    public int EarlyLeaveCount { get; set; }
+    public int TotalEarlyLeaveMinutes { get; set; }
+    public int AbsentCount { get; set; }
+    public int HolidayCount { get; set; }
+    public int OffCount { get; set; }
+}
+

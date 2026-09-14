@@ -663,4 +663,101 @@ public class AttendanceDailyService : IAttendanceDailyService
             StatusText = statusText
         };
     }
+
+    public async Task<AttendanceDailyDto?> GetMyTodayAttendanceAsync(long employeeId, CancellationToken cancellationToken = default)
+    {
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ThaiZone);
+        var today = DateOnly.FromDateTime(nowThai);
+
+        var record = await _context.AttendanceDailies
+            .AsNoTracking()
+            .Include(a => a.Employee)
+            .Include(a => a.Shift)
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.WorkDate == today, cancellationToken);
+
+        var assign = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(ea => ea.Department)
+            .Include(ea => ea.Position)
+            .FirstOrDefaultAsync(ea => ea.EmployeeId == employeeId && ea.IsCurrent, cancellationToken);
+
+        if (record == null)
+        {
+            // If no record exists yet, check if employee has an assigned shift today
+            var shift = await ResolveShiftForEmployeeAsync(employeeId, today, cancellationToken);
+            var emp = await _context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+            
+            if (emp == null) return null;
+
+            return new AttendanceDailyDto
+            {
+                Id = 0,
+                EmployeeId = employeeId,
+                EmployeeCode = emp.EmployeeCode,
+                EmployeeName = $"{emp.FirstName} {emp.LastName}".Trim(),
+                DepartmentId = assign?.DepartmentId,
+                DepartmentName = assign?.Department?.DepartmentName,
+                PositionName = assign?.Position?.PositionName,
+                WorkDate = today.ToString("yyyy-MM-dd"),
+                ShiftId = shift?.Id,
+                ShiftName = shift?.ShiftName,
+                ShiftCode = shift?.ShiftCode,
+                ShiftTimeWindow = shift != null ? $"{shift.StartTime:HH\\:mm} - {shift.EndTime:HH\\:mm} น." : null,
+                Status = "PENDING",
+                StatusText = "ยังไม่ลงเวลา"
+            };
+        }
+
+        return MapToDto(record, assign);
+    }
+
+    public async Task<List<AttendanceDailyDto>> GetMyAttendanceHistoryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
+    {
+        var startDate = new DateOnly(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var records = await _context.AttendanceDailies
+            .AsNoTracking()
+            .Include(a => a.Employee)
+            .Include(a => a.Shift)
+            .Where(a => a.EmployeeId == employeeId && a.WorkDate >= startDate && a.WorkDate <= endDate)
+            .OrderByDescending(a => a.WorkDate)
+            .ToListAsync(cancellationToken);
+
+        var assign = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(ea => ea.Department)
+            .Include(ea => ea.Position)
+            .FirstOrDefaultAsync(ea => ea.EmployeeId == employeeId && ea.IsCurrent, cancellationToken);
+
+        return records.Select(r => MapToDto(r, assign)).ToList();
+    }
+
+    public async Task<MyAttendanceMonthlySummaryDto> GetMyMonthlySummaryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
+    {
+        var startDate = new DateOnly(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var records = await _context.AttendanceDailies
+            .AsNoTracking()
+            .Where(a => a.EmployeeId == employeeId && a.WorkDate >= startDate && a.WorkDate <= endDate)
+            .ToListAsync(cancellationToken);
+
+        var summary = new MyAttendanceMonthlySummaryDto
+        {
+            Year = year,
+            Month = month,
+            TotalWorkDays = records.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY"),
+            PresentCount = records.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT")),
+            LateCount = records.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY"),
+            TotalLateMinutes = records.Sum(r => r.LateMinutes),
+            EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY"),
+            TotalEarlyLeaveMinutes = records.Sum(r => r.EarlyLeaveMinutes),
+            AbsentCount = records.Count(r => r.IsAbsent || r.Status == "ABSENT"),
+            HolidayCount = records.Count(r => r.Status == "HOLIDAY"),
+            OffCount = records.Count(r => r.Status == "OFF")
+        };
+
+        return summary;
+    }
 }
