@@ -35,4 +35,21 @@ export const employeeService = {
   async delete(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<null>>(`/employees/${id}`);
   },
+
+  // อัปโหลดรูปโปรไฟล์พนักงาน (เก็บลง PostgreSQL Binary โดยตรง)
+  async uploadAvatar(id: number, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<ApiResponse<string>>(`/employees/${id}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data.data;
+  },
+
+  // ลบรูปโปรไฟล์พนักงาน
+  async deleteAvatar(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<boolean>>(`/employees/${id}/avatar`);
+  },
 };

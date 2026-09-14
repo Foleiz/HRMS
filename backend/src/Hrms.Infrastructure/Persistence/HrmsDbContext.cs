@@ -68,6 +68,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<BenefitItem> BenefitItems => Set<BenefitItem>();
     public DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits => Set<EmployeeTypeBenefit>();
 
+    // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
+    public DbSet<EmployeeAvatar> EmployeeAvatars => Set<EmployeeAvatar>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -117,6 +120,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.DisabilityDeductionCount).HasColumnName("disability_deduction_count");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.AvatarUpdatedAt).HasColumnName("avatar_updated_at");
             entity.Ignore(e => e.FullName);
         });
 
@@ -853,6 +857,23 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(e => new { e.EmployeeTypeId, e.BenefitItemId }).IsUnique();
+        });
+
+        // Configuration: EmployeeAvatar (Option 3 - Binary storage in PostgreSQL)
+        modelBuilder.Entity<EmployeeAvatar>(entity =>
+        {
+            entity.ToTable("employee_avatar", "hrms");
+            entity.HasKey(e => e.EmployeeId);
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.ImageData).HasColumnName("image_data").IsRequired();
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FileSize).HasColumnName("file_size").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Employee)
+                .WithOne(e => e.Avatar)
+                .HasForeignKey<EmployeeAvatar>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

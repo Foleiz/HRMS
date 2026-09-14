@@ -56,5 +56,8 @@ public interface IHrmsDbContext
     DbSet<BenefitItem> BenefitItems { get; }
     DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits { get; }
 
+    // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
+    DbSet<EmployeeAvatar> EmployeeAvatars { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

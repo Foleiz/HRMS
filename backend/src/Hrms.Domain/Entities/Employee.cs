@@ -42,11 +42,13 @@ public class Employee : BaseEntity
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? AvatarUpdatedAt { get; set; }
 
     // Helper property สำหรับแสดงชื่อ-นามสกุลเต็ม
     public string FullName => $"{Prefix} {FirstName} {LastName}".Trim();
 
     // Navigation Properties
+    public virtual EmployeeAvatar? Avatar { get; set; }
     public virtual UserAccount? UserAccount { get; set; }
     public virtual EmployeeContact? Contact { get; set; }
     public virtual EmployeeSocialSecurity? SocialSecurity { get; set; }

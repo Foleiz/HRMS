@@ -58,6 +58,8 @@ export interface Employee {
   disabilityDeductionCount: number;
   createdAt?: string;
   updatedAt: string;
+  avatarUpdatedAt?: string | null;
+  avatarUrl?: string | null;
   positionId?: number;
   positionName?: string;
   departmentName?: string;
