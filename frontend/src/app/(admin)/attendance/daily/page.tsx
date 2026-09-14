@@ -62,6 +62,7 @@ import {
 import { Department } from '@/types/organization';
 import { Shift } from '@/types/shift';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
+import { useToast } from '@/context/ToastContext';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -71,6 +72,7 @@ const THAI_MONTHS = [
 function DailyAttendanceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
 
   // Active Tab: 'daily' | 'import' | 'adjustments'
   const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments') || 'daily';
@@ -373,10 +375,12 @@ function DailyAttendanceContent() {
     try {
       setRefreshing(true);
       const res = await attendanceService.recalculateDaily(selectedDate);
+      toast.success('คำนวณเวลาเข้างานและสถานะใหม่เรียบร้อยแล้ว');
       setSuccessMessage('คำนวณเวลาเข้างานและสถานะใหม่เรียบร้อยแล้ว');
       await fetchData();
     } catch (err) {
       console.error('Failed to recalculate:', err);
+      toast.error('ไม่สามารถคำนวณเวลาใหม่ได้');
       setErrorMessage('ไม่สามารถคำนวณเวลาใหม่ได้');
     } finally {
       setRefreshing(false);
@@ -429,11 +433,13 @@ function DailyAttendanceContent() {
       };
 
       await attendanceService.updateAttendance(editingRecord.id, req);
+      toast.success('แก้ไขข้อมูลบันทึกเวลาเรียบร้อยแล้ว');
       setSuccessMessage('แก้ไขข้อมูลบันทึกเวลาเรียบร้อยแล้ว');
       setEditModalOpen(false);
       await fetchData();
     } catch (err) {
       console.error('Failed to update attendance:', err);
+      toast.error('ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
       setErrorMessage('ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
     } finally {
       setSavingEdit(false);
@@ -454,6 +460,7 @@ function DailyAttendanceContent() {
   const handleSaveQuickClock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (clockEmpId <= 0) {
+      toast.warning('กรุณาเลือกพนักงาน');
       setErrorMessage('กรุณาเลือกพนักงาน');
       return;
     }
@@ -470,6 +477,7 @@ function DailyAttendanceContent() {
           workDate: selectedDate,
           clockInTime: dt.toISOString(),
         });
+        toast.success('บันทึกเวลาเข้างานเรียบร้อย');
         setSuccessMessage('บันทึกเวลาเข้างานเรียบร้อย');
       } else {
         await attendanceService.clockOut({
@@ -477,6 +485,7 @@ function DailyAttendanceContent() {
           workDate: selectedDate,
           clockOutTime: dt.toISOString(),
         });
+        toast.success('บันทึกเวลาออกงานเรียบร้อย');
         setSuccessMessage('บันทึกเวลาออกงานเรียบร้อย');
       }
 
@@ -484,6 +493,7 @@ function DailyAttendanceContent() {
       await fetchData();
     } catch (err) {
       console.error('Failed manual punch:', err);
+      toast.error('ไม่สามารถบันทึกเวลาได้ กรุณาตรวจสอบข้อมูล');
       setErrorMessage('ไม่สามารถบันทึกเวลาได้ กรุณาตรวจสอบข้อมูล');
     } finally {
       setSavingClock(false);
@@ -551,10 +561,11 @@ function DailyAttendanceContent() {
         if (fileInputRef.current) fileInputRef.current.value = '';
 
         if (res.data.failedRecords > 0) {
-          setImportErrorMessage(
-            `แจ้งเตือนข้อผิดพลาด: พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ (นำเข้าสำเร็จ ${res.data.successRecords} รายการ)`
-          );
+          const errMsg = `แจ้งเตือนข้อผิดพลาด: พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ (นำเข้าสำเร็จ ${res.data.successRecords} รายการ)`;
+          setImportErrorMessage(errMsg);
+          toast.warning(`พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานไม่ตรงกับในระบบ (สำเร็จ ${res.data.successRecords} รายการ)`);
         } else {
+          toast.success(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
           setSuccessMessage(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
         }
 
@@ -572,12 +583,14 @@ function DailyAttendanceContent() {
       } else {
         const errorMsg = res.message || 'เกิดข้อผิดพลาด: รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ';
         setImportErrorMessage(errorMsg);
+        toast.error(errorMsg);
         if (res.data) setUploadResult(res.data);
         loadBatches();
       }
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
       setImportErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsUploading(false);
     }
@@ -614,10 +627,11 @@ function DailyAttendanceContent() {
       setIsRevertingBatch(true);
       const res = await attendanceImportService.revertBatch(batchToRevert.id);
       if (res.success) {
-        setSuccessMessage(
+        const successMsg =
           res.message ||
-          `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`
-        );
+          `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`;
+        toast.success(successMsg);
+        setSuccessMessage(successMsg);
         if (allowedDateRange.batchId === batchToRevert.id) {
           const remaining = batches.filter((b) => b.id !== batchToRevert.id && b.status !== 'FAILED');
           if (remaining.length > 0 && remaining[0].dateFrom && remaining[0].dateTo) {
@@ -639,11 +653,13 @@ function DailyAttendanceContent() {
         await loadBatches();
         await fetchData();
       } else {
+        toast.error(res.message || 'ไม่สามารถยกเลิกชุดข้อมูลนี้ได้');
         setErrorMessage(res.message || 'ไม่สามารถยกเลิกชุดข้อมูลนี้ได้');
       }
     } catch (err: any) {
       console.error('Failed to revert batch:', err);
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล';
+      toast.error(msg);
       setErrorMessage(msg);
     } finally {
       setIsRevertingBatch(false);
@@ -714,7 +730,7 @@ function DailyAttendanceContent() {
     e.preventDefault();
     if (!targetRecordForAdjustment) return;
     if (!adjustmentReason.trim()) {
-      alert('กรุณาระบุเหตุผลในการขอปรับปรุงเวลา');
+      toast.warning('กรุณาระบุเหตุผลในการขอปรับปรุงเวลา');
       return;
     }
 
@@ -745,6 +761,7 @@ function DailyAttendanceContent() {
         reason: adjustmentReason.trim(),
       });
 
+      toast.success('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
       setSuccessMessage('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
       setAdjustmentModalOpen(false);
       setTargetRecordForAdjustment(null);
@@ -755,7 +772,7 @@ function DailyAttendanceContent() {
     } catch (err: any) {
       console.error('Failed to submit adjustment:', err);
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยื่นคำขอ';
-      alert(msg);
+      toast.error(msg);
     } finally {
       setIsSubmittingAdjustment(false);
     }
@@ -778,11 +795,16 @@ function DailyAttendanceContent() {
         status: reviewAction,
         reviewNote: reviewNote.trim() || undefined,
       });
-      setSuccessMessage(
+      const msg =
         reviewAction === 'APPROVED'
           ? 'อนุมัติคำขอปรับปรุงเวลาและคำนวณเวลาใหม่อัตโนมัติเรียบร้อยแล้ว'
-          : 'ปฏิเสธคำขอปรับปรุงเวลาเรียบร้อยแล้ว'
-      );
+          : 'ปฏิเสธคำขอปรับปรุงเวลาเรียบร้อยแล้ว';
+      if (reviewAction === 'APPROVED') {
+        toast.success(msg);
+      } else {
+        toast.info(msg);
+      }
+      setSuccessMessage(msg);
       setReviewModalOpen(false);
       setSelectedAdjustmentForReview(null);
       await loadAdjustments();
@@ -791,7 +813,7 @@ function DailyAttendanceContent() {
     } catch (err: any) {
       console.error('Failed to review adjustment:', err);
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการดำเนินการ';
-      alert(msg);
+      toast.error(msg);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -802,12 +824,14 @@ function DailyAttendanceContent() {
     if (!confirm('คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?')) return;
     try {
       await attendanceAdjustmentService.cancelAdjustment(id);
+      toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
       setSuccessMessage('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
       await loadAdjustments();
       await loadPendingCount();
     } catch (err: any) {
       console.error('Failed to cancel adjustment:', err);
-      alert(err.response?.data?.message || err.message || 'ไม่สามารถยกเลิกได้');
+      const msg = err.response?.data?.message || err.message || 'ไม่สามารถยกเลิกได้';
+      toast.error(msg);
     }
   };
 

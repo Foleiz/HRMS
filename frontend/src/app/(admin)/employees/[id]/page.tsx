@@ -18,6 +18,7 @@ import {
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useToast } from '@/context/ToastContext';
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
 const mockAvatarImages = [
@@ -72,6 +73,7 @@ const formatPhoneNumber = (val?: string | null): string => {
 };
 
 export default function EmployeeDetailPage() {
+  const toast = useToast();
   const params = useParams();
   const router = useRouter();
   const employeeId = Number(params.id);
@@ -105,12 +107,12 @@ export default function EmployeeDetailPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      toast.warning('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB');
+      toast.warning('ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB');
       return;
     }
 
@@ -121,6 +123,7 @@ export default function EmployeeDetailPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(`hrms_employee_avatar_${employeeId}`, base64);
       }
+      toast.success('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
       setPhotoFeedback('เปลี่ยนรูปโปรไฟล์เรียบร้อย');
       setTimeout(() => setPhotoFeedback(null), 3000);
     };

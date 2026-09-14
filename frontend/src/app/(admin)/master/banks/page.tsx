@@ -4,8 +4,10 @@ import React, { useEffect, useState, useTransition } from 'react';
 import { bankService } from '@/services/bankService';
 import { Bank, CreateBankInput } from '@/types/api';
 import { Landmark, Plus, RefreshCw, Trash2, Edit, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function BanksPage() {
+  const toast = useToast();
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +70,11 @@ export default function BanksPage() {
           bankName: formData.bankName,
           status: formData.status,
         });
+        toast.success('แก้ไขข้อมูลธนาคารเรียบร้อยแล้ว');
         setSuccessMsg('แก้ไขข้อมูลธนาคารเรียบร้อยแล้ว');
       } else {
         await bankService.create(formData);
+        toast.success('เพิ่มธนาคารใหม่สำเร็จ');
         setSuccessMsg('เพิ่มธนาคารใหม่สำเร็จ');
       }
 
@@ -78,7 +82,7 @@ export default function BanksPage() {
       await fetchBanks();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      toast.error(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setSubmitting(false);
     }
@@ -90,11 +94,12 @@ export default function BanksPage() {
     try {
       setError(null);
       await bankService.delete(id);
+      toast.success('ลบข้อมูลธนาคารเรียบร้อยแล้ว');
       setSuccessMsg('ลบข้อมูลธนาคารเรียบร้อยแล้ว');
       await fetchBanks();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการลบ');
+      toast.error(err.message || 'เกิดข้อผิดพลาดในการลบ');
     }
   };
 
