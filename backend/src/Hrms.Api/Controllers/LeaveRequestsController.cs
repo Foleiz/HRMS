@@ -139,6 +139,36 @@ public class LeaveRequestsController : ControllerBase
             return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
     }
+
+    /// <summary>
+    /// ดาวน์โหลดไฟล์เอกสารแนบของคำร้องขอลา (เช่น ใบรับรองแพทย์)
+    /// </summary>
+    [HttpGet("{id:long}/documents/{docId:long}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadDocument(long id, long docId, CancellationToken cancellationToken)
+    {
+        var document = await _requestService.GetDocumentAsync(id, docId, cancellationToken);
+        if (document == null || document.FileData == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("ไม่พบไฟล์เอกสารแนบที่ระบุ"));
+        }
+
+        var contentType = GetContentType(document.FileName);
+        return File(document.FileData, contentType, document.FileName ?? "attachment");
+    }
+
+    private static string GetContentType(string? fileName)
+    {
+        var ext = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
+        return ext switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
+    }
 }
 
 public class RejectLeaveRequestModel
