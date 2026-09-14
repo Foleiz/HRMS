@@ -150,8 +150,6 @@ function DailyAttendanceContent() {
   // Import Tab States
   // -------------------------------------------------------------
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [source, setSource] = useState<string>('FINGERPRINT');
-  const [deviceName, setDeviceName] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
@@ -504,10 +502,11 @@ function DailyAttendanceContent() {
       setUploadProgress(0);
       setImportErrorMessage(null);
 
+      const fileExt = selectedFile.name.toLowerCase().endsWith('.csv') ? 'CSV' : 'EXCEL';
       const res = await attendanceImportService.uploadFile(
         selectedFile,
-        source,
-        deviceName || undefined,
+        fileExt,
+        undefined,
         false,
         (percent) => setUploadProgress(percent)
       );
@@ -1269,38 +1268,6 @@ function DailyAttendanceContent() {
                 )}
               </div>
 
-              {/* Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    แหล่งที่มาของข้อมูล (Source)
-                  </label>
-                  <select
-                    value={source}
-                    onChange={(e) => setSource(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="FINGERPRINT">เครื่องสแกนลายนิ้วมือ</option>
-                    <option value="FACE_SCAN">เครื่องสแกนใบหน้า</option>
-                    <option value="EXCEL">ไฟล์ Excel บันทึกเวลา</option>
-                    <option value="CSV">ไฟล์ CSV ข้อมูลเวลา</option>
-                    <option value="EXTERNAL">ระบบภายนอก</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    ชื่อเครื่องสแกน / จุดบันทึก (ระบุหรือไม่ก็ได้)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="เช่น เครื่องสแกนประตูหน้า ชั้น 1"
-                    value={deviceName}
-                    onChange={(e) => setDeviceName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
-              </div>
 
               {/* Error Alert */}
               {importErrorMessage && (
