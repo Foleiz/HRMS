@@ -67,6 +67,15 @@ export default function DailyAttendancePage() {
     return 'daily';
   });
 
+  const handleTabChange = (tab: 'daily' | 'import') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('tab', tab);
+      window.history.replaceState(null, '', `?${params.toString()}`);
+    }
+  };
+
   // State: Date selection (Default to today in YYYY-MM-DD)
   const [selectedDate, setSelectedDate] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -645,146 +654,9 @@ export default function DailyAttendancePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600 border border-blue-100">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">ตรวจบันทึกเวลาและนำเข้าข้อมูลเวลา</h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                นำเข้าข้อมูลเวลาจากไฟล์เครื่องสแกนนิ้ว/Excel ตรวจสอบเวลาเข้า-ออกงาน และคำนวณการมาสาย ออกก่อน อัตโนมัติ
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Global Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {activeTab === 'daily' ? (
-            <>
-              {/* Quick Date Stepper */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button
-                  onClick={() => adjustDate(-1)}
-                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-lg transition"
-                  title="วันก่อนหน้า"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <div className="px-3 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                  <span>{formatThaiDate(selectedDate)}</span>
-                </div>
-                <button
-                  onClick={() => adjustDate(1)}
-                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-lg transition"
-                  title="วันถัดไป"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium text-slate-700"
-              />
-
-              <button
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setSelectedDate(today);
-                  setCurrentPage(1);
-                }}
-                className="px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
-              >
-                วันนี้
-              </button>
-
-              <button
-                onClick={handleRecalculate}
-                disabled={refreshing}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs disabled:opacity-50"
-                title="ประมวลผลเวลาใหม่"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
-                <span>คำนวณใหม่</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('import')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs"
-              >
-                <UploadCloud className="w-4 h-4" />
-                <span>นำเข้าไฟล์เวลา</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleDownloadTemplate}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm"
-              >
-                <Download className="w-4 h-4 text-slate-500" />
-                ดาวน์โหลดไฟล์ตัวอย่าง (Template)
-              </button>
-              <button
-                onClick={() => setActiveTab('daily')}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm"
-              >
-                <Clock className="w-4 h-4" />
-                ดูตารางบันทึกเวลาประจำวัน
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Navigation Tabs */}
-      <div className="flex items-center gap-4 border-b border-slate-200 px-2">
-        <button
-          onClick={() => setActiveTab('daily')}
-          className={`pb-3.5 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-            activeTab === 'daily'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          <span>ตรวจบันทึกเวลาประจำวัน</span>
-          {records.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-blue-50 text-blue-700">
-              {totalCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('import')}
-          className={`pb-3.5 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-            activeTab === 'import'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <UploadCloud className="w-4 h-4" />
-          <span>นำเข้าไฟล์บันทึกเวลา (Excel / CSV)</span>
-          {batchTotalCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-slate-100 text-slate-700">
-              {batchTotalCount}
-            </span>
-          )}
-        </button>
-      </div>
-
+      {/* ------------------------------------------------------------- */}
       {/* Global Alerts */}
+      {/* ------------------------------------------------------------- */}
       {successMessage && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -809,11 +681,175 @@ export default function DailyAttendancePage() {
         </div>
       )}
 
+      {/* ------------------------------------------------------------- */}
+      {/* Sub-menu Tabs (Exact same style as การจัดตารางงาน) */}
+      {/* ------------------------------------------------------------- */}
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
+        {/* Tabs on Left */}
+        <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
+          {/* Tab 1: ตรวจบันทึกเวลาประจำวัน */}
+          <button
+            onClick={() => handleTabChange('daily')}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'daily'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>ตรวจบันทึกเวลาประจำวัน</span>
+          </button>
+
+          {/* Tab 2: นำเข้าไฟล์บันทึกเวลา */}
+          <button
+            onClick={() => handleTabChange('import')}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'import'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>นำเข้าไฟล์บันทึกเวลา</span>
+          </button>
+        </div>
+      </div>
+
       {/* ========================================================= */}
       {/* TAB 1: ตรวจบันทึกเวลาประจำวัน (DAILY ATTENDANCE) */}
       {/* ========================================================= */}
       {activeTab === 'daily' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Filter & Toolbar Bar */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
+            {/* Left: Search, Filters & Date Stepper */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Search */}
+              <div className="relative w-56 sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
+                  value={searchKeyword}
+                  onChange={(e) => {
+                    setSearchKeyword(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Department Filter */}
+              <select
+                value={selectedDepartment}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedDepartment(val === 'ALL' ? 'ALL' : Number(val));
+                  setCurrentPage(1);
+                }}
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">ทุกแผนก / สังกัด</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.departmentName}
+                  </option>
+                ))}
+              </select>
+
+              {/* Status Filter */}
+              <select
+                value={selectedStatus}
+                onChange={(e) => {
+                  setSelectedStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">สถานะทั้งหมด</option>
+                <option value="PRESENT">ตรงเวลา</option>
+                <option value="LATE">มาสาย</option>
+                <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
+                <option value="LATE_AND_EARLY">สายและออกก่อน</option>
+                <option value="ABSENT">ขาดงาน</option>
+                <option value="HOLIDAY">วันหยุดประเพณี</option>
+                <option value="OFF">วันหยุดสัปดาห์</option>
+                <option value="PENDING">รอดำเนินการ</option>
+              </select>
+
+              {/* Quick Date Stepper */}
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button
+                  onClick={() => adjustDate(-1)}
+                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-md transition cursor-pointer"
+                  title="วันก่อนหน้า"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <div className="px-2.5 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
+                  <span>{formatThaiDate(selectedDate)}</span>
+                </div>
+                <button
+                  onClick={() => adjustDate(1)}
+                  className="p-1.5 hover:bg-white text-slate-600 hover:text-slate-900 rounded-md transition cursor-pointer"
+                  title="วันถัดไป"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer"
+              />
+
+              <button
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  setSelectedDate(today);
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+              >
+                วันนี้
+              </button>
+
+              {/* Recalculate Button */}
+              <button
+                onClick={handleRecalculate}
+                disabled={refreshing}
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer"
+                title="ประมวลผลคำนวณเวลาใหม่"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#0B2046]' : ''}`} />
+              </button>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => openQuickClockModal('in')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition shadow-xs cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-slate-600" />
+                <span>ลงเวลาด้วยตนเอง</span>
+              </button>
+              <button
+                onClick={() => handleTabChange('import')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>นำเข้าไฟล์เวลา</span>
+              </button>
+            </div>
+          </div>
+
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Total Employees */}
@@ -889,80 +925,6 @@ export default function DailyAttendancePage() {
             </div>
           </div>
 
-          {/* Filters & Actions Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2.5 flex-1">
-              {/* Search */}
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัสพนักงาน, ชื่อ-นามสกุล..."
-                  value={searchKeyword}
-                  onChange={(e) => {
-                    setSearchKeyword(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400"
-                />
-              </div>
-
-              {/* Department Filter */}
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-                <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedDepartment(val === 'ALL' ? 'ALL' : Number(val));
-                    setCurrentPage(1);
-                  }}
-                  className="bg-transparent text-xs text-slate-700 font-medium focus:outline-none cursor-pointer"
-                >
-                  <option value="ALL">ทุกแผนก</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => {
-                    setSelectedStatus(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="bg-transparent text-xs text-slate-700 font-medium focus:outline-none cursor-pointer"
-                >
-                  <option value="ALL">สถานะทั้งหมด</option>
-                  <option value="PRESENT">ตรงเวลา</option>
-                  <option value="LATE">มาสาย</option>
-                  <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
-                  <option value="LATE_AND_EARLY">สายและออกก่อน</option>
-                  <option value="ABSENT">ขาดงาน</option>
-                  <option value="HOLIDAY">วันหยุดประเพณี</option>
-                  <option value="OFF">วันหยุดสัปดาห์</option>
-                  <option value="PENDING">รอดำเนินการ</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => openQuickClockModal('in')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
-              >
-                <LogIn className="w-3.5 h-3.5 text-slate-600" />
-                <span>ลงเวลาด้วยตนเอง</span>
-              </button>
-            </div>
-          </div>
-
           {/* Daily Table with whitespace-nowrap */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -998,7 +960,7 @@ export default function DailyAttendancePage() {
                         ไม่พบข้อมูลบันทึกเวลาสำหรับวันที่เลือก ({formatThaiDate(selectedDate)})
                         <div className="mt-3">
                           <button
-                            onClick={() => setActiveTab('import')}
+                            onClick={() => handleTabChange('import')}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition border border-blue-200"
                           >
                             <UploadCloud className="w-3.5 h-3.5" />
@@ -1125,6 +1087,35 @@ export default function DailyAttendancePage() {
       {/* ========================================================= */}
       {activeTab === 'import' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Action Toolbar */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-blue-50 text-[#0B2046] shrink-0">
+                <HardDrive className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-800">นำเข้าไฟล์บันทึกเวลาจากเครื่องสแกน</span>
+                <span className="text-xs text-slate-500 ml-2 hidden sm:inline">รองรับไฟล์ Excel (.xlsx, .xls) และ CSV เพื่อคำนวณเวลาเข้า-ออกงานอัตโนมัติ</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleDownloadTemplate}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition shadow-xs cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>ดาวน์โหลด Template</span>
+              </button>
+              <button
+                onClick={() => handleTabChange('daily')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+              >
+                <Clock className="w-4 h-4" />
+                <span>ดูตารางบันทึกเวลาประจำวัน</span>
+              </button>
+            </div>
+          </div>
+
           {/* Upload Card */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -1378,7 +1369,7 @@ export default function DailyAttendancePage() {
                       if (uploadResult.dateFrom) {
                         setSelectedDate(uploadResult.dateFrom);
                       }
-                      setActiveTab('daily');
+                      handleTabChange('daily');
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 border border-blue-300 transition-colors cursor-pointer"
                   >
@@ -1584,7 +1575,7 @@ export default function DailyAttendancePage() {
                                 if (batch.dateFrom) {
                                   setSelectedDate(batch.dateFrom);
                                 }
-                                setActiveTab('daily');
+                                handleTabChange('daily');
                               }}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
                             >
