@@ -253,6 +253,18 @@ public class EmploymentContractService : IEmploymentContractService
         };
 
         _context.EmploymentContracts.Add(contract);
+
+        var statusHistory = new EmployeeStatusHistory
+        {
+            EmployeeId = request.EmployeeId,
+            SourceContractId = contract.Id,
+            Status = request.ContractType,
+            EffectiveFrom = request.StartDate,
+            Reason = $"ออกสัญญาจ้างงานใหม่ ({GetContractTypeDisplay(request.ContractType)})",
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.EmployeeStatusHistories.Add(statusHistory);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(contract.Id, cancellationToken);
