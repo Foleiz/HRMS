@@ -12,6 +12,7 @@ interface EmployeeSelectProps {
   required?: boolean;
   disabled?: boolean;
   hasError?: boolean;
+  emptyLabel?: string;
 }
 
 export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -22,6 +23,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   required = false,
   disabled = false,
   hasError = false,
+  emptyLabel = 'ไม่ระบุ / คงเดิม',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,7 +101,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           {selectedEmployee ? (
             <>
               <span>
-                {selectedEmployee.firstName} {selectedEmployee.lastName}
+                {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
               </span>
               {selectedEmployee.employeeCode && (
                 <span className="text-xs text-slate-500 font-normal">
@@ -163,7 +165,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 className="px-3.5 py-2.5 text-xs text-slate-500 hover:bg-slate-50 cursor-pointer italic flex items-center gap-2"
               >
                 <X className="w-3.5 h-3.5 text-slate-400" />
-                <span>ไม่ระบุ / คงเดิม</span>
+                <span>{emptyLabel}</span>
               </li>
             )}
             {filteredEmployees.length === 0 ? (
@@ -190,7 +192,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                         <User className="w-3.5 h-3.5" />
                       </div>
                       <span className="truncate">
-                        {emp.firstName} {emp.lastName}
+                        {emp.fullName || `${emp.firstName} ${emp.lastName}`}
                       </span>
                       {emp.employeeCode && (
                         <span className="text-xs text-slate-400 font-normal shrink-0">

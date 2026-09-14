@@ -46,6 +46,7 @@ import {
 } from '@/types/organization';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { Employee } from '@/types/employee';
+import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
 type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company';
 
@@ -1341,23 +1342,19 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าฝ่าย</label>
-                <select
+                <EmployeeSelect
+                  employees={employees}
                   value={divisionForm.headEmployeeId || ''}
-                  onChange={(e) =>
+                  onChange={(empId) =>
                     setDivisionForm({
                       ...divisionForm,
-                      headEmployeeId: e.target.value ? Number(e.target.value) : undefined,
+                      headEmployeeId: empId === '' ? undefined : Number(empId),
                     })
                   }
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                >
-                  <option value="">-- ไม่ระบุหัวหน้าฝ่าย --</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.employeeCode} - {emp.fullName || `${emp.firstName} ${emp.lastName}`}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                  emptyLabel="ไม่ระบุหัวหน้าฝ่าย"
+                  required={false}
+                />
               </div>
 
               <div>
@@ -1447,23 +1444,19 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าแผนก</label>
-                <select
+                <EmployeeSelect
+                  employees={employees}
                   value={deptForm.headEmployeeId || ''}
-                  onChange={(e) =>
+                  onChange={(empId) =>
                     setDeptForm({
                       ...deptForm,
-                      headEmployeeId: e.target.value ? Number(e.target.value) : undefined,
+                      headEmployeeId: empId === '' ? undefined : Number(empId),
                     })
                   }
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                >
-                  <option value="">-- ไม่ระบุหัวหน้าแผนก --</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.employeeCode} - {emp.fullName || `${emp.firstName} ${emp.lastName}`}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                  emptyLabel="ไม่ระบุหัวหน้าแผนก"
+                  required={false}
+                />
               </div>
 
               <div>
