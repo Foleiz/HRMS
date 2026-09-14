@@ -1,0 +1,116 @@
+import { apiClient } from '@/lib/api-client';
+import { ApiResponse } from '@/types/api';
+import {
+  LeaveType,
+  CreateLeaveTypePayload,
+  UpdateLeaveTypePayload,
+  LeavePolicy,
+  CreateLeavePolicyPayload,
+  UpdateLeavePolicyPayload,
+  LeaveBalance,
+  LeaveBalanceAdjustmentPayload,
+  LeaveBalanceTransaction,
+  InitializeYearBalancePayload,
+  InitializeYearBalanceResult,
+  LeaveRequest,
+  LeaveStats,
+} from '@/types/leave';
+
+/**
+ * Service สำหรับเรียก API จัดการการลา (Leave Management)
+ */
+export const leaveService = {
+  // === 1. Leave Types (ประเภทการลา) ===
+  async getLeaveTypes(): Promise<LeaveType[]> {
+    const res = await apiClient.get<ApiResponse<LeaveType[]>>('/leave-types');
+    return res.data.data;
+  },
+
+  async getLeaveTypeById(id: number): Promise<LeaveType> {
+    const res = await apiClient.get<ApiResponse<LeaveType>>(`/leave-types/${id}`);
+    return res.data.data;
+  },
+
+  async createLeaveType(data: CreateLeaveTypePayload): Promise<LeaveType> {
+    const res = await apiClient.post<ApiResponse<LeaveType>>('/leave-types', data);
+    return res.data.data;
+  },
+
+  async updateLeaveType(id: number, data: UpdateLeaveTypePayload): Promise<LeaveType> {
+    const res = await apiClient.put<ApiResponse<LeaveType>>(`/leave-types/${id}`, data);
+    return res.data.data;
+  },
+
+  async deleteLeaveType(id: number): Promise<boolean> {
+    const res = await apiClient.delete<ApiResponse<boolean>>(`/leave-types/${id}`);
+    return res.data.data;
+  },
+
+  // === 2. Leave Policies (สิทธิ์การลา) ===
+  async getLeavePolicies(): Promise<LeavePolicy[]> {
+    const res = await apiClient.get<ApiResponse<LeavePolicy[]>>('/leave-policies');
+    return res.data.data;
+  },
+
+  async createLeavePolicy(data: CreateLeavePolicyPayload): Promise<LeavePolicy> {
+    const res = await apiClient.post<ApiResponse<LeavePolicy>>('/leave-policies', data);
+    return res.data.data;
+  },
+
+  async updateLeavePolicy(id: number, data: UpdateLeavePolicyPayload): Promise<LeavePolicy> {
+    const res = await apiClient.put<ApiResponse<LeavePolicy>>(`/leave-policies/${id}`, data);
+    return res.data.data;
+  },
+
+  async deleteLeavePolicy(id: number): Promise<boolean> {
+    const res = await apiClient.delete<ApiResponse<boolean>>(`/leave-policies/${id}`);
+    return res.data.data;
+  },
+
+  // === 3. Leave Balances & Transactions (ยอดวันลาพนักงาน) ===
+  async getLeaveBalances(params?: { employeeId?: number; year?: number; leaveTypeId?: number }): Promise<LeaveBalance[]> {
+    const res = await apiClient.get<ApiResponse<LeaveBalance[]>>('/leave-balances', { params });
+    return res.data.data;
+  },
+
+  async getLeaveBalanceTransactions(balanceId: number): Promise<LeaveBalanceTransaction[]> {
+    const res = await apiClient.get<ApiResponse<LeaveBalanceTransaction[]>>(`/leave-balances/${balanceId}/transactions`);
+    return res.data.data;
+  },
+
+  async adjustLeaveBalance(data: LeaveBalanceAdjustmentPayload): Promise<LeaveBalance> {
+    const res = await apiClient.post<ApiResponse<LeaveBalance>>('/leave-balances/adjust', data);
+    return res.data.data;
+  },
+
+  async initializeYearBalance(data: InitializeYearBalancePayload): Promise<InitializeYearBalanceResult> {
+    const res = await apiClient.post<ApiResponse<InitializeYearBalanceResult>>('/leave-balances/initialize-year', data);
+    return res.data.data;
+  },
+
+  // === 4. Leave Requests (คำร้องขอลาหยุดงาน) ===
+  async getLeaveRequests(params?: { employeeId?: number; status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
+    const res = await apiClient.get<ApiResponse<LeaveRequest[]>>('/leave-requests', { params });
+    return res.data.data;
+  },
+
+  async getLeaveStats(): Promise<LeaveStats> {
+    const res = await apiClient.get<ApiResponse<LeaveStats>>('/leave-requests/stats');
+    return res.data.data;
+  },
+
+  async approveLeaveRequest(id: number): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/approve`);
+    return res.data.data;
+  },
+
+  async rejectLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/reject`, { reason });
+    return res.data.data;
+  },
+
+  async cancelLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/cancel`, { reason });
+    return res.data.data;
+  },
+};

@@ -9,6 +9,7 @@ using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Organization.Services;
 using Hrms.Application.Features.Schedule.Services;
 using Hrms.Application.Features.Shift.Services;
+using Hrms.Application.Features.Leave.Services;
 using Hrms.Application.Features.Transfers.Services;
 using Hrms.Application.Features.WorkCalendar.Services;
 using Hrms.Infrastructure.Persistence;
@@ -60,6 +61,10 @@ builder.Services.AddScoped<IEmploymentContractService, EmploymentContractService
 builder.Services.AddScoped<IEmployeeTypeService, EmployeeTypeService>();
 builder.Services.AddScoped<IBenefitService, BenefitService>();
 builder.Services.AddScoped<IEmployeeTransferService, EmployeeTransferService>();
+builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
+builder.Services.AddScoped<ILeavePolicyService, LeavePolicyService>();
+builder.Services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
+builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 
 // 4. JWT Authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "HrmsSecretKeyForEnterpriseSystemSecurity2026!@#VeryLongKeyForHmacSha256";

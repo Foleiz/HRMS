@@ -62,5 +62,13 @@ public interface IHrmsDbContext
     // Employee Transfer & Promotion Requests (Dev 2)
     DbSet<EmployeeTransferRequest> EmployeeTransferRequests { get; }
 
+    // Leave Management (Dev 2 Sprint 3)
+    DbSet<LeaveType> LeaveTypes { get; }
+    DbSet<LeavePolicy> LeavePolicies { get; }
+    DbSet<LeaveBalance> LeaveBalances { get; }
+    DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions { get; }
+    DbSet<LeaveRequest> LeaveRequests { get; }
+    DbSet<LeaveRequestDocument> LeaveRequestDocuments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
