@@ -6,6 +6,8 @@ export interface Company {
   phone?: string;
   email?: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  logoData?: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -15,6 +17,7 @@ export interface UpdateCompanyRequest {
   phone?: string;
   email?: string;
   status: string;
+  logoData?: string | null;
 }
 
 export interface Division {
@@ -26,6 +29,7 @@ export interface Division {
   headEmployeeName?: string;
   departmentCount: number;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -54,6 +58,7 @@ export interface Department {
   headEmployeeName?: string;
   positionCount: number;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -85,6 +90,7 @@ export interface Position {
   positionCode: string;
   positionName: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  createdAt: string;
   updatedAt: string;
 }
 

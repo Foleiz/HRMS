@@ -34,6 +34,8 @@ public class OrganizationService : IOrganizationService
             Phone = company.Phone,
             Email = company.Email,
             Status = company.Status,
+            LogoData = company.LogoData,
+            CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt
         };
     }
@@ -51,6 +53,10 @@ public class OrganizationService : IOrganizationService
         company.Phone = request.Phone?.Trim();
         company.Email = request.Email?.Trim();
         company.Status = request.Status;
+        if (request.LogoData != null)
+        {
+            company.LogoData = request.LogoData;
+        }
         company.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -64,6 +70,8 @@ public class OrganizationService : IOrganizationService
             Phone = company.Phone,
             Email = company.Email,
             Status = company.Status,
+            LogoData = company.LogoData,
+            CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt
         };
     }
@@ -87,6 +95,7 @@ public class OrganizationService : IOrganizationService
                 HeadEmployeeName = d.HeadEmployee != null ? d.HeadEmployee.FullName : null,
                 DepartmentCount = d.Departments.Count,
                 Status = d.Status,
+                CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             })
             .ToListAsync(cancellationToken);
@@ -112,6 +121,7 @@ public class OrganizationService : IOrganizationService
             HeadEmployeeName = d.HeadEmployee != null ? d.HeadEmployee.FullName : null,
             DepartmentCount = d.Departments.Count,
             Status = d.Status,
+            CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt
         };
     }
@@ -218,6 +228,7 @@ public class OrganizationService : IOrganizationService
                 HeadEmployeeName = d.HeadEmployee != null ? d.HeadEmployee.FullName : null,
                 PositionCount = d.Positions.Count,
                 Status = d.Status,
+                CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             })
             .ToListAsync(cancellationToken);
@@ -248,6 +259,7 @@ public class OrganizationService : IOrganizationService
             HeadEmployeeName = d.HeadEmployee != null ? d.HeadEmployee.FullName : null,
             PositionCount = d.Positions.Count,
             Status = d.Status,
+            CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt
         };
     }
@@ -357,6 +369,7 @@ public class OrganizationService : IOrganizationService
                 PositionCode = p.PositionCode,
                 PositionName = p.PositionName,
                 Status = p.Status,
+                CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             })
             .ToListAsync(cancellationToken);
@@ -385,6 +398,7 @@ public class OrganizationService : IOrganizationService
             PositionCode = p.PositionCode,
             PositionName = p.PositionName,
             Status = p.Status,
+            CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt
         };
     }

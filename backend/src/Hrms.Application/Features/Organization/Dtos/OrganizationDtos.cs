@@ -10,6 +10,8 @@ public class CompanyDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public byte[]? LogoData { get; set; }
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
@@ -20,6 +22,7 @@ public class UpdateCompanyDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public byte[]? LogoData { get; set; }
 }
 #endregion
 
@@ -34,6 +37,7 @@ public class DivisionDto
     public string? HeadEmployeeName { get; set; }
     public int DepartmentCount { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
@@ -67,6 +71,7 @@ public class DepartmentDto
     public string? HeadEmployeeName { get; set; }
     public int PositionCount { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
@@ -103,6 +108,7 @@ public class PositionDto
     public string PositionCode { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 

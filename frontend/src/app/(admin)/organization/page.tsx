@@ -21,9 +21,13 @@ import {
   Smile,
   HelpCircle,
   Shield,
+  Upload,
+  User,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
+import { employeeService } from '@/services/employeeService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -41,6 +45,7 @@ import {
   UpdateCompanyRequest,
 } from '@/types/organization';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
+import { Employee } from '@/types/employee';
 
 type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company';
 
@@ -89,6 +94,37 @@ export default function OrganizationPage() {
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
 
+  // Helper แปลงวันที่รูปแบบไทย (พ.ศ.) เช่น 2 มกราคม 2569
+  const formatThaiDate = (dateString?: string | Date | null): string => {
+    if (!dateString) return '-';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '-';
+
+    const thaiMonths = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+    ];
+
+    const day = d.getDate();
+    const month = thaiMonths[d.getMonth()];
+    const year = d.getFullYear() + 543;
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Helper แสดง Avatar และชื่อพนักงาน
+  const renderEmployeeCell = (name?: string | null) => {
+    if (!name) return <span className="text-slate-400">-</span>;
+    const initial = name.trim().charAt(0);
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-full bg-blue-100 text-[#0B2046] flex items-center justify-center text-[10px] font-bold ring-1 ring-blue-200 shrink-0">
+          {initial}
+        </div>
+        <span className="font-medium text-slate-800 whitespace-nowrap">{name}</span>
+      </div>
+    );
+  };
 
   // Data states
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -97,6 +133,7 @@ export default function OrganizationPage() {
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [benefits, setBenefits] = useState<BenefitItem[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -108,13 +145,16 @@ export default function OrganizationPage() {
   const [divisionForm, setDivisionForm] = useState<CreateDivisionRequest & { id?: number }>({
     divisionCode: '',
     divisionName: '',
+    headEmployeeId: undefined,
     status: 'ACTIVE',
   });
 
   const [deptForm, setDeptForm] = useState<CreateDepartmentRequest & { id?: number }>({
     divisionId: 0,
+    parentDepartmentId: undefined,
     departmentCode: '',
     departmentName: '',
+    headEmployeeId: undefined,
     status: 'ACTIVE',
   });
 
@@ -140,25 +180,28 @@ export default function OrganizationPage() {
     phone: '',
     email: '',
     status: 'ACTIVE',
+    logoData: null,
   });
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [divs, depts, pos, lvls, comp, ben] = await Promise.all([
+      const [divs, depts, pos, lvls, comp, ben, emps] = await Promise.all([
         organizationService.getDivisions(),
         organizationService.getDepartments(),
         organizationService.getPositions(),
         organizationService.getLevels(),
         organizationService.getCompany(),
-        benefitService.getAll(),
+        benefitService.getAll().catch(() => []),
+        employeeService.getAll().catch(() => []),
       ]);
       setDivisions(divs);
       setDepartments(depts);
       setPositions(pos);
       setLevels(lvls);
       setCompany(comp);
-      setBenefits(ben);
+      setBenefits(ben || []);
+      setEmployees(emps || []);
       if (comp) {
         setCompanyForm({
           companyName: comp.companyName,
@@ -166,6 +209,7 @@ export default function OrganizationPage() {
           phone: comp.phone || '',
           email: comp.email || '',
           status: comp.status,
+          logoData: comp.logoData || null,
         });
       }
     } catch (err: unknown) {
@@ -195,6 +239,7 @@ export default function OrganizationPage() {
         id: div.id,
         divisionCode: div.divisionCode,
         divisionName: div.divisionName,
+        headEmployeeId: div.headEmployeeId,
         status: div.status,
       });
     } else {
@@ -202,6 +247,7 @@ export default function OrganizationPage() {
       setDivisionForm({
         divisionCode: '',
         divisionName: '',
+        headEmployeeId: undefined,
         status: 'ACTIVE',
       });
     }
@@ -217,6 +263,7 @@ export default function OrganizationPage() {
       } else if (divisionForm.id) {
         await organizationService.updateDivision(divisionForm.id, {
           divisionName: divisionForm.divisionName,
+          headEmployeeId: divisionForm.headEmployeeId,
           status: divisionForm.status,
         });
         showSuccess('แก้ไขข้อมูลฝ่ายสำเร็จ');
@@ -238,14 +285,17 @@ export default function OrganizationPage() {
         parentDepartmentId: dept.parentDepartmentId,
         departmentCode: dept.departmentCode,
         departmentName: dept.departmentName,
+        headEmployeeId: dept.headEmployeeId,
         status: dept.status,
       });
     } else {
       setModalMode('create');
       setDeptForm({
         divisionId: divisions[0]?.id || 0,
+        parentDepartmentId: undefined,
         departmentCode: '',
         departmentName: '',
+        headEmployeeId: undefined,
         status: 'ACTIVE',
       });
     }
@@ -263,6 +313,7 @@ export default function OrganizationPage() {
           divisionId: deptForm.divisionId,
           parentDepartmentId: deptForm.parentDepartmentId,
           departmentName: deptForm.departmentName,
+          headEmployeeId: deptForm.headEmployeeId,
           status: deptForm.status,
         });
         showSuccess('แก้ไขข้อมูลแผนกสำเร็จ');
@@ -377,6 +428,22 @@ export default function OrganizationPage() {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       toast.error(error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการบันทึกสวัสดิการ');
     }
+  };
+
+  // Handler for Company Logo Upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('ขนาดไฟล์ภาพต้องไม่เกิน 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setCompanyForm((prev) => ({ ...prev, logoData: base64String }));
+    };
+    reader.readAsDataURL(file);
   };
 
   // Handler for Company Profile Save
@@ -562,7 +629,10 @@ export default function OrganizationPage() {
                   <tr>
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อฝ่าย / สายงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าฝ่าย</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">จำนวนแผนกในสังกัด</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขวันที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
@@ -570,14 +640,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={8} className="py-12 text-center text-slate-400 whitespace-nowrap">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลฝ่าย...
                       </td>
                     </tr>
                   ) : filteredDivisions.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={8} className="py-8 text-center text-slate-400 whitespace-nowrap">
                         ไม่พบข้อมูลฝ่าย
                       </td>
                     </tr>
@@ -586,11 +656,14 @@ export default function OrganizationPage() {
                       <tr key={div.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{div.divisionCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{div.divisionName}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{renderEmployeeCell(div.headEmployeeName)}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 whitespace-nowrap">
                             {div.departmentCount} แผนก
                           </span>
                         </td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(div.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(div.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -604,7 +677,7 @@ export default function OrganizationPage() {
                                 div.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
                               }`}
                             ></span>
-                            {div.status === 'ACTIVE' ? 'ทำงานอยู่' : 'ไม่ได้ทำงาน'}
+                            {div.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -679,8 +752,11 @@ export default function OrganizationPage() {
                   <tr>
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อแผนก</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดฝ่าย</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">จำนวนตำแหน่ง</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขวันที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
@@ -688,14 +764,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลแผนก...
                       </td>
                     </tr>
                   ) : filteredDepartments.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap">
                         ไม่พบข้อมูลแผนก
                       </td>
                     </tr>
@@ -704,12 +780,15 @@ export default function OrganizationPage() {
                       <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{dept.departmentCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{dept.departmentName}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{renderEmployeeCell(dept.headEmployeeName)}</td>
                         <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{dept.divisionName}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 whitespace-nowrap">
                             {dept.positionCount} ตำแหน่ง
                           </span>
                         </td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(dept.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(dept.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -723,7 +802,7 @@ export default function OrganizationPage() {
                                 dept.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
                               }`}
                             ></span>
-                            {dept.status === 'ACTIVE' ? 'ทำงานอยู่' : 'ไม่ได้ทำงาน'}
+                            {dept.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -799,7 +878,10 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">สังกัดฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ระดับพนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขวันที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
@@ -807,14 +889,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลตำแหน่ง...
                       </td>
                     </tr>
                   ) : filteredPositions.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap">
                         ไม่พบข้อมูลตำแหน่ง
                       </td>
                     </tr>
@@ -824,11 +906,14 @@ export default function OrganizationPage() {
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{pos.positionCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{pos.positionName}</td>
                         <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{pos.departmentName}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{pos.divisionName || '-'}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 whitespace-nowrap">
                             {pos.levelCode ? `${pos.levelCode} - ${pos.levelName}` : 'ไม่ระบุ'}
                           </span>
                         </td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(pos.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(pos.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -842,7 +927,7 @@ export default function OrganizationPage() {
                                 pos.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
                               }`}
                             ></span>
-                            {pos.status === 'ACTIVE' ? 'ทำงานอยู่' : 'ไม่ได้ทำงาน'}
+                            {pos.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -876,7 +961,7 @@ export default function OrganizationPage() {
         {activeTab === 'levels' && (
           <div className="space-y-4">
             <p className="text-xs text-slate-500">
-              ระดับขั้นพนักงาน ใช้สำหรับกำหนดสายบังคับบัญชา ฐานเงินเดือนขั้นต่ำ-สูงสุด และสิทธิ์การอนุมัติ
+              ระดับขั้นพนักงาน ใช้สำหรับกำหนดสายบังคับบัญชาและสิทธิ์วงเงินอนุมัติเอกสารในระบบ
             </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -885,30 +970,50 @@ export default function OrganizationPage() {
                   <tr>
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">เงินเดือนขั้นต่ำ</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">เงินเดือนขั้นสูง</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ลำดับขั้น (Rank)</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">วงเงินอนุมัติ (Approval Limit)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {levels.map((lvl) => (
-                    <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{lvl.levelCode}</td>
-                      <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{lvl.levelName}</td>
-                      <td className="py-3 px-4 text-right font-mono text-slate-600 whitespace-nowrap">
-                        {lvl.minSalary ? lvl.minSalary.toLocaleString() : '0.00'} ฿
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-slate-600 whitespace-nowrap">
-                        {lvl.maxSalary ? lvl.maxSalary.toLocaleString() : '0.00'} ฿
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          ทำงานอยู่
-                        </span>
+                  {levels.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                        ไม่พบข้อมูลระดับพนักงาน
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    levels.map((lvl) => (
+                      <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{lvl.levelCode}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{lvl.levelName}</td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
+                            {lvl.levelRank !== undefined && lvl.levelRank !== null ? `Rank ${lvl.levelRank}` : '-'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-700 whitespace-nowrap">
+                          {lvl.approvalLimit ? `${Number(lvl.approvalLimit).toLocaleString()} ฿` : '0.00 ฿'}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
+                              lvl.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                lvl.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            ></span>
+                            {lvl.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1069,10 +1174,46 @@ export default function OrganizationPage() {
 
         {/* TAB 6: COMPANY PROFILE */}
         {activeTab === 'company' && (
-          <form onSubmit={handleSaveCompany} className="max-w-2xl space-y-4">
+          <form onSubmit={handleSaveCompany} className="max-w-2xl space-y-5">
+            {/* Logo Upload Section */}
+            <div className="flex items-center gap-5 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                {companyForm.logoData ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={companyForm.logoData.startsWith('data:') ? companyForm.logoData : `data:image/png;base64,${companyForm.logoData}`}
+                    alt="Company Logo"
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <Building className="w-8 h-8 text-slate-400" />
+                )}
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <label className="block text-xs font-semibold text-slate-800">ตราสัญลักษณ์ / โลโก้บริษัท (Logo)</label>
+                <p className="text-[11px] text-slate-500">รองรับไฟล์ PNG, JPG หรือ SVG ขนาดไม่เกิน 2MB</p>
+                <div className="flex items-center gap-2 pt-1">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                    อัปโหลดโลโก้
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                  </label>
+                  {companyForm.logoData && (
+                    <button
+                      type="button"
+                      onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
+                      className="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    >
+                      นำรูปออก
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสบริษัท</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสบริษัท (Company Code)</label>
                 <input
                   type="text"
                   disabled
@@ -1082,7 +1223,7 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริษัท *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริษัท (Company Name) *</label>
                 <input
                   type="text"
                   required
@@ -1093,8 +1234,42 @@ export default function OrganizationPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะบริษัท</label>
+                <select
+                  value={companyForm.status}
+                  onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
+                  <option value="INACTIVE">ปิดใช้งาน (INACTIVE)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ (Phone)</label>
+                <input
+                  type="text"
+                  value={companyForm.phone}
+                  onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">ที่อยู่สำนักงานใหญ่</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ (Email)</label>
+              <input
+                type="email"
+                value={companyForm.email}
+                onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">ที่อยู่สำนักงานใหญ่ (Address)</label>
               <textarea
                 rows={3}
                 value={companyForm.address}
@@ -1103,25 +1278,15 @@ export default function OrganizationPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Timestamps Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์</label>
-                <input
-                  type="text"
-                  value={companyForm.phone}
-                  onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
+                <span className="text-slate-500">วันที่สร้างระบบ: </span>
+                <span className="font-semibold text-slate-800">{formatThaiDate(company?.createdAt)}</span>
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ</label>
-                <input
-                  type="email"
-                  value={companyForm.email}
-                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
+                <span className="text-slate-500">แก้ไขล่าสุดเมื่อ: </span>
+                <span className="font-semibold text-slate-800">{formatThaiDate(company?.updatedAt)}</span>
               </div>
             </div>
 
@@ -1152,7 +1317,7 @@ export default function OrganizationPage() {
 
             <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสฝ่าย (เช่น DIV_MKT) *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสฝ่าย (เช่น DIV_HR) *</label>
                 <input
                   type="text"
                   required
@@ -1175,14 +1340,35 @@ export default function OrganizationPage() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าฝ่าย</label>
+                <select
+                  value={divisionForm.headEmployeeId || ''}
+                  onChange={(e) =>
+                    setDivisionForm({
+                      ...divisionForm,
+                      headEmployeeId: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  <option value="">-- ไม่ระบุหัวหน้าฝ่าย --</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.employeeCode} - {emp.fullName || `${emp.firstName} ${emp.lastName}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
                 <select
                   value={divisionForm.status}
                   onChange={(e) => setDivisionForm({ ...divisionForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 >
-                  <option value="ACTIVE">ทำงานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ทำงาน</option>
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                 </select>
               </div>
 
@@ -1260,14 +1446,35 @@ export default function OrganizationPage() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าแผนก</label>
+                <select
+                  value={deptForm.headEmployeeId || ''}
+                  onChange={(e) =>
+                    setDeptForm({
+                      ...deptForm,
+                      headEmployeeId: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  <option value="">-- ไม่ระบุหัวหน้าแผนก --</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.employeeCode} - {emp.fullName || `${emp.firstName} ${emp.lastName}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
                 <select
                   value={deptForm.status}
                   onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 >
-                  <option value="ACTIVE">ทำงานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ทำงาน</option>
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                 </select>
               </div>
 
