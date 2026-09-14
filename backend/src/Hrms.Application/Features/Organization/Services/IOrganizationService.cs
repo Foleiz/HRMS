@@ -35,6 +35,10 @@ public interface IOrganizationService
 
     // Employee Levels
     Task<List<EmployeeLevelDto>> GetAllEmployeeLevelsAsync(CancellationToken cancellationToken = default);
+    Task<EmployeeLevelDto> GetEmployeeLevelByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<EmployeeLevelDto> CreateEmployeeLevelAsync(CreateEmployeeLevelDto request, CancellationToken cancellationToken = default);
+    Task<EmployeeLevelDto> UpdateEmployeeLevelAsync(long id, UpdateEmployeeLevelDto request, CancellationToken cancellationToken = default);
+    Task DeleteEmployeeLevelAsync(long id, CancellationToken cancellationToken = default);
 
     // Dashboard Summary
     Task<OrganizationSummaryDto> GetSummaryAsync(CancellationToken cancellationToken = default);

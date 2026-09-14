@@ -142,6 +142,23 @@ public class EmployeeLevelDto
     public decimal? ApprovalLimit { get; set; }
     public string Status { get; set; } = "ACTIVE";
 }
+
+public class CreateEmployeeLevelDto
+{
+    public string LevelCode { get; set; } = string.Empty;
+    public string LevelName { get; set; } = string.Empty;
+    public int? LevelRank { get; set; }
+    public decimal? ApprovalLimit { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
+
+public class UpdateEmployeeLevelDto
+{
+    public string LevelName { get; set; } = string.Empty;
+    public int? LevelRank { get; set; }
+    public decimal? ApprovalLimit { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
 #endregion
 
 #region Summary DTO

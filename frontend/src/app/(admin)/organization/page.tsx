@@ -43,6 +43,8 @@ import {
   CreatePositionRequest,
   UpdatePositionRequest,
   UpdateCompanyRequest,
+  CreateEmployeeLevelRequest,
+  UpdateEmployeeLevelRequest,
 } from '@/types/organization';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { Employee } from '@/types/employee';
@@ -172,6 +174,14 @@ export default function OrganizationPage() {
     category: 'HEALTH',
     description: '',
     isStatutory: false,
+    status: 'ACTIVE',
+  });
+
+  const [levelForm, setLevelForm] = useState<CreateEmployeeLevelRequest & { id?: number }>({
+    levelCode: '',
+    levelName: '',
+    levelRank: undefined,
+    approvalLimit: undefined,
     status: 'ACTIVE',
   });
 
@@ -431,6 +441,60 @@ export default function OrganizationPage() {
     }
   };
 
+  // Employee Level Handlers
+  const handleOpenLevelModal = (lvl?: EmployeeLevel) => {
+    if (lvl) {
+      setModalMode('edit');
+      setLevelForm({
+        id: lvl.id,
+        levelCode: lvl.levelCode,
+        levelName: lvl.levelName,
+        levelRank: lvl.levelRank ?? undefined,
+        approvalLimit: lvl.approvalLimit ?? undefined,
+        status: lvl.status,
+      });
+    } else {
+      setModalMode('create');
+      setLevelForm({
+        levelCode: '',
+        levelName: '',
+        levelRank: undefined,
+        approvalLimit: undefined,
+        status: 'ACTIVE',
+      });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSaveLevel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (modalMode === 'create') {
+        await organizationService.createLevel({
+          levelCode: levelForm.levelCode.trim().toUpperCase(),
+          levelName: levelForm.levelName.trim(),
+          levelRank: levelForm.levelRank,
+          approvalLimit: levelForm.approvalLimit,
+          status: levelForm.status,
+        });
+        showSuccess('เพิ่มระดับพนักงานสำเร็จ');
+      } else if (levelForm.id) {
+        await organizationService.updateLevel(levelForm.id, {
+          levelName: levelForm.levelName.trim(),
+          levelRank: levelForm.levelRank,
+          approvalLimit: levelForm.approvalLimit,
+          status: levelForm.status,
+        });
+        showSuccess('แก้ไขระดับพนักงานสำเร็จ');
+      }
+      setModalOpen(false);
+      loadData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก'));
+    }
+  };
+
   // Handler for Company Logo Upload
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -480,6 +544,9 @@ export default function OrganizationPage() {
       } else if (itemToDelete.type === 'benefit') {
         await benefitService.delete(itemToDelete.id);
         showSuccess(`ลบสิทธิประโยชน์ ${itemToDelete.name} สำเร็จ`);
+      } else if (itemToDelete.type === 'level') {
+        await organizationService.deleteLevel(itemToDelete.id);
+        showSuccess(`ลบระดับพนักงาน ${itemToDelete.name} สำเร็จ`);
       }
       setDeleteModalOpen(false);
       setItemToDelete(null);
@@ -518,6 +585,11 @@ export default function OrganizationPage() {
       b.benefitCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+  const filteredLevels = levels.filter((lvl) =>
+    lvl.levelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lvl.levelCode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -961,6 +1033,29 @@ export default function OrganizationPage() {
         {/* TAB 4: EMPLOYEE LEVELS */}
         {activeTab === 'levels' && (
           <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleOpenLevelModal()}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                เพิ่มระดับพนักงาน
+              </button>
+            </div>
+
             <p className="text-xs text-slate-500">
               ระดับขั้นพนักงาน ใช้สำหรับกำหนดสายบังคับบัญชาและสิทธิ์วงเงินอนุมัติเอกสารในระบบ
             </p>
@@ -974,17 +1069,25 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">ลำดับขั้น (Rank)</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">วงเงินอนุมัติ (Approval Limit)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {levels.length === 0 ? (
+                  {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        กำลังโหลดข้อมูลระดับพนักงาน...
+                      </td>
+                    </tr>
+                  ) : filteredLevels.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap">
                         ไม่พบข้อมูลระดับพนักงาน
                       </td>
                     </tr>
                   ) : (
-                    levels.map((lvl) => (
+                    filteredLevels.map((lvl) => (
                       <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{lvl.levelCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{lvl.levelName}</td>
@@ -1011,6 +1114,24 @@ export default function OrganizationPage() {
                             ></span>
                             {lvl.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenLevelModal(lvl)}
+                              title="แก้ไข"
+                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')}
+                              title="ลบ"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1707,7 +1828,129 @@ export default function OrganizationPage() {
         </div>
       )}
 
-      {/* 8. Delete Confirmation Modal */}
+      {/* 8. Create / Edit Modal (Employee Level) */}
+      {modalOpen && activeTab === 'levels' && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">
+                {modalMode === 'create' ? 'เพิ่มระดับพนักงานใหม่' : 'แก้ไขข้อมูลระดับพนักงาน'}
+              </h3>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  รหัสระดับพนักงาน (เช่น L1, L2, EXEC_1) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={modalMode === 'edit'}
+                  value={levelForm.levelCode}
+                  onChange={(e) => setLevelForm({ ...levelForm, levelCode: e.target.value.toUpperCase() })}
+                  placeholder="เช่น L1, L2"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ชื่อระดับพนักงาน *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={levelForm.levelName}
+                  onChange={(e) => setLevelForm({ ...levelForm, levelName: e.target.value })}
+                  placeholder="เช่น พนักงานปฏิบัติการ, ผู้จัดการฝ่าย"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ลำดับขั้น (Rank)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={levelForm.levelRank ?? ''}
+                  onChange={(e) =>
+                    setLevelForm({
+                      ...levelForm,
+                      levelRank: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  placeholder="เช่น 1 (ระดับเริ่มต้น) ถึง 10 (ระดับผู้บริหาร)"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">ใช้กำหนดลำดับขั้นในการแสดงผลและสายการบังคับบัญชา</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  วงเงินอนุมัติ (Approval Limit)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={levelForm.approvalLimit ?? ''}
+                    onChange={(e) =>
+                      setLevelForm({
+                        ...levelForm,
+                        approvalLimit: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                    placeholder="0"
+                    className="w-full px-3.5 py-2 pr-8 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">฿</span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  เพดานวงเงินอนุมัติงบประมาณ/เอกสาร (ระบุ 0 หรือเว้นว่างได้ หากไม่มีอำนาจอนุมัติ)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <select
+                  value={levelForm.status}
+                  onChange={(e) => setLevelForm({ ...levelForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                >
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
+                >
+                  บันทึกข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Delete Confirmation Modal */}
       {deleteModalOpen && itemToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">

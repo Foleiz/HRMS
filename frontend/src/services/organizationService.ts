@@ -13,6 +13,8 @@ import {
   CreatePositionRequest,
   UpdatePositionRequest,
   EmployeeLevel,
+  CreateEmployeeLevelRequest,
+  UpdateEmployeeLevelRequest,
   OrganizationSummary,
 } from '@/types/organization';
 
@@ -115,5 +117,19 @@ export const organizationService = {
   async getLevels(): Promise<EmployeeLevel[]> {
     const res = await apiClient.get<ApiResponse<EmployeeLevel[]>>('/organization/levels');
     return res.data.data || [];
+  },
+
+  async createLevel(data: CreateEmployeeLevelRequest): Promise<EmployeeLevel> {
+    const res = await apiClient.post<ApiResponse<EmployeeLevel>>('/organization/levels', data);
+    return res.data.data!;
+  },
+
+  async updateLevel(id: number, data: UpdateEmployeeLevelRequest): Promise<EmployeeLevel> {
+    const res = await apiClient.put<ApiResponse<EmployeeLevel>>(`/organization/levels/${id}`, data);
+    return res.data.data!;
+  },
+
+  async deleteLevel(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<object>>(`/organization/levels/${id}`);
   },
 };

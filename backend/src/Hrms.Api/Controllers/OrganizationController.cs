@@ -78,7 +78,7 @@ public class OrganizationController : ControllerBase
     public async Task<IActionResult> DeleteDivision(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDivisionAsync(id, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(null, "ลบข้อมูลฝ่ายสำเร็จ"));
+        return Ok(ApiResponse<object?>.Ok(null, "ลบข้อมูลฝ่ายสำเร็จ"));
     }
     #endregion
 
@@ -115,7 +115,7 @@ public class OrganizationController : ControllerBase
     public async Task<IActionResult> DeleteDepartment(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDepartmentAsync(id, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(null, "ลบข้อมูลแผนกสำเร็จ"));
+        return Ok(ApiResponse<object?>.Ok(null, "ลบข้อมูลแผนกสำเร็จ"));
     }
     #endregion
 
@@ -152,7 +152,7 @@ public class OrganizationController : ControllerBase
     public async Task<IActionResult> DeletePosition(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeletePositionAsync(id, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(null, "ลบข้อมูลตำแหน่งสำเร็จ"));
+        return Ok(ApiResponse<object?>.Ok(null, "ลบข้อมูลตำแหน่งสำเร็จ"));
     }
     #endregion
 
@@ -162,6 +162,34 @@ public class OrganizationController : ControllerBase
     {
         var list = await _orgService.GetAllEmployeeLevelsAsync(cancellationToken);
         return Ok(ApiResponse<List<EmployeeLevelDto>>.Ok(list));
+    }
+
+    [HttpGet("levels/{id}")]
+    public async Task<IActionResult> GetLevel(long id, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.GetEmployeeLevelByIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<EmployeeLevelDto>.Ok(result));
+    }
+
+    [HttpPost("levels")]
+    public async Task<IActionResult> CreateLevel([FromBody] CreateEmployeeLevelDto request, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.CreateEmployeeLevelAsync(request, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, ApiResponse<EmployeeLevelDto>.Ok(result, "เพิ่มระดับพนักงานสำเร็จ"));
+    }
+
+    [HttpPut("levels/{id}")]
+    public async Task<IActionResult> UpdateLevel(long id, [FromBody] UpdateEmployeeLevelDto request, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.UpdateEmployeeLevelAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<EmployeeLevelDto>.Ok(result, "แก้ไขระดับพนักงานสำเร็จ"));
+    }
+
+    [HttpDelete("levels/{id}")]
+    public async Task<IActionResult> DeleteLevel(long id, CancellationToken cancellationToken)
+    {
+        await _orgService.DeleteEmployeeLevelAsync(id, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "ลบระดับพนักงานสำเร็จ"));
     }
     #endregion
 }

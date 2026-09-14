@@ -466,7 +466,8 @@ public class OrganizationService : IOrganizationService
     {
         return await _dbContext.EmployeeLevels
             .AsNoTracking()
-            .OrderBy(l => l.LevelCode)
+            .OrderBy(l => l.LevelRank ?? 999)
+            .ThenBy(l => l.LevelCode)
             .Select(l => new EmployeeLevelDto
             {
                 Id = l.Id,
@@ -479,6 +480,105 @@ public class OrganizationService : IOrganizationService
                 Status = l.Status
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<EmployeeLevelDto> GetEmployeeLevelByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var level = await _dbContext.EmployeeLevels
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+
+        if (level == null)
+            throw new KeyNotFoundException($"ไม่พบระดับพนักงานรหัส {id}");
+
+        return new EmployeeLevelDto
+        {
+            Id = level.Id,
+            LevelCode = level.LevelCode,
+            LevelName = level.LevelName,
+            LevelRank = level.LevelRank,
+            MinSalary = level.MinSalary,
+            MaxSalary = level.MaxSalary,
+            ApprovalLimit = level.ApprovalLimit,
+            Status = level.Status
+        };
+    }
+
+    public async Task<EmployeeLevelDto> CreateEmployeeLevelAsync(CreateEmployeeLevelDto request, CancellationToken cancellationToken = default)
+    {
+        bool exists = await _dbContext.EmployeeLevels
+            .AnyAsync(l => l.LevelCode.ToLower() == request.LevelCode.ToLower(), cancellationToken);
+
+        if (exists)
+            throw new InvalidOperationException($"รหัสระดับพนักงาน '{request.LevelCode}' มีอยู่ในระบบแล้ว");
+
+        var level = new EmployeeLevel
+        {
+            LevelCode = request.LevelCode.Trim(),
+            LevelName = request.LevelName.Trim(),
+            LevelRank = request.LevelRank,
+            ApprovalLimit = request.ApprovalLimit,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
+        };
+
+        _dbContext.EmployeeLevels.Add(level);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new EmployeeLevelDto
+        {
+            Id = level.Id,
+            LevelCode = level.LevelCode,
+            LevelName = level.LevelName,
+            LevelRank = level.LevelRank,
+            MinSalary = level.MinSalary,
+            MaxSalary = level.MaxSalary,
+            ApprovalLimit = level.ApprovalLimit,
+            Status = level.Status
+        };
+    }
+
+    public async Task<EmployeeLevelDto> UpdateEmployeeLevelAsync(long id, UpdateEmployeeLevelDto request, CancellationToken cancellationToken = default)
+    {
+        var level = await _dbContext.EmployeeLevels
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+
+        if (level == null)
+            throw new KeyNotFoundException($"ไม่พบระดับพนักงานรหัส {id}");
+
+        level.LevelName = request.LevelName.Trim();
+        level.LevelRank = request.LevelRank;
+        level.ApprovalLimit = request.ApprovalLimit;
+        level.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new EmployeeLevelDto
+        {
+            Id = level.Id,
+            LevelCode = level.LevelCode,
+            LevelName = level.LevelName,
+            LevelRank = level.LevelRank,
+            MinSalary = level.MinSalary,
+            MaxSalary = level.MaxSalary,
+            ApprovalLimit = level.ApprovalLimit,
+            Status = level.Status
+        };
+    }
+
+    public async Task DeleteEmployeeLevelAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var level = await _dbContext.EmployeeLevels
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+
+        if (level == null)
+            throw new KeyNotFoundException($"ไม่พบระดับพนักงานรหัส {id}");
+
+        bool inUse = await _dbContext.Positions.AnyAsync(p => p.EmployeeLevelId == id, cancellationToken);
+        if (inUse)
+            throw new InvalidOperationException($"ไม่สามารถลบระดับพนักงาน '{level.LevelName}' ได้ เนื่องจากมีตำแหน่งงานที่เชื่อมโยงอยู่");
+
+        _dbContext.EmployeeLevels.Remove(level);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
     #endregion
 
