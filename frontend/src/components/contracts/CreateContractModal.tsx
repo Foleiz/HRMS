@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { CreateContractRequest } from '@/types/contract';
+import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
 interface CreateContractModalProps {
   isOpen: boolean;
@@ -129,19 +130,13 @@ export default function CreateContractModal({
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               พนักงาน <span className="text-rose-500">*</span>
             </label>
-            <select
+            <EmployeeSelect
+              employees={employees}
               value={employeeId}
-              onChange={(e) => setEmployeeId(Number(e.target.value))}
+              onChange={(newEmpId) => setEmployeeId(newEmpId)}
+              placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
               required
-              className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
-            >
-              <option value="" disabled>เลือกพนักงาน</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.firstName} {emp.lastName} {emp.employeeCode ? `(${emp.employeeCode})` : ''}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* 2. ประเภทสัญญา * */}
