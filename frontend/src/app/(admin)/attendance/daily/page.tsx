@@ -1028,35 +1028,6 @@ export default function DailyAttendancePage() {
       {/* ========================================================= */}
       {activeTab === 'import' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Action Toolbar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-blue-50 text-[#0B2046] shrink-0">
-                <HardDrive className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-800">นำเข้าไฟล์บันทึกเวลาจากเครื่องสแกน</span>
-                <span className="text-xs text-slate-500 ml-2 hidden sm:inline">รองรับไฟล์ Excel (.xlsx, .xls) และ CSV เพื่อคำนวณเวลาเข้า-ออกงานอัตโนมัติ</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleDownloadTemplate}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition shadow-xs cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>ดาวน์โหลด Template</span>
-              </button>
-              <button
-                onClick={() => handleTabChange('daily')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
-              >
-                <Clock className="w-4 h-4" />
-                <span>ดูตารางบันทึกเวลาประจำวัน</span>
-              </button>
-            </div>
-          </div>
-
           {/* Upload Card */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
