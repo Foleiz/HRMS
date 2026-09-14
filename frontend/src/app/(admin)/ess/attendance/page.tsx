@@ -311,51 +311,37 @@ export default function EssAttendancePage() {
           Sub-menu Tabs (Exact same style as เมนูตรวจบันทึกเวลา)
       ───────────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
-        <div className="flex items-center justify-between min-w-max">
-          {/* Tabs on Left */}
-          <div className="flex gap-2 text-sm font-medium whitespace-nowrap">
-            {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'history'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Clock className="w-4 h-4" />
-              <span>ตรวจบันทึกเวลาของฉัน</span>
-            </button>
+        <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
+          {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'history'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>ตรวจบันทึกเวลาของฉัน</span>
+          </button>
 
-            {/* Tab 2: คำขอปรับปรุงเวลา */}
-            <button
-              onClick={() => setActiveTab('adjustments')}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'adjustments'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <ClipboardCheck className="w-4 h-4" />
-              <span>คำขอปรับปรุงเวลา</span>
-              {pendingCount > 0 && (
-                <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Right Action: ยื่นคำขอปรับเวลาใหม่ */}
-          <div className="pb-2">
-            <button
-              onClick={() => openAdjustmentModal()}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs bg-[#0B2046] hover:bg-[#102A56] text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              ยื่นคำขอปรับเวลาใหม่
-            </button>
-          </div>
+          {/* Tab 2: คำขอปรับปรุงเวลา */}
+          <button
+            onClick={() => setActiveTab('adjustments')}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'adjustments'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            <span>คำขอปรับปรุงเวลา</span>
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
+                {pendingCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
