@@ -11,16 +11,19 @@ public class RoleService : IRoleService
     private readonly IHrmsDbContext _dbContext;
     private readonly IAuditLogService _auditLogService;
 
-    // ระบบงาน 7 โมดูลมาตรฐานตาม Mockup
-    private static readonly List<(string Code, string Name, string Prefix)> StandardModules = new()
+    // ระบบงานมาตรฐานและโมดูลย่อยตาม Mockup
+    private static readonly List<(string Code, string Name, string Prefix, string? GroupName)> StandardModules = new()
     {
-        ("EMPLOYEE", "พนักงาน / จัดการประวัติพนักงาน", "EMP"),
-        ("ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
-        ("LEAVE", "การจัดการวันลา", "LEAVE"),
-        ("PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
-        ("ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
-        ("SETTINGS", "ตั้งค่า", "SETTINGS"),
-        ("REPORT", "รายงาน", "REPORT")
+        ("EMPLOYEE", "พนักงาน / จัดการประวัติพนักงาน", "EMP", null),
+        ("ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME", null),
+        ("LEAVE", "การจัดการวันลา", "LEAVE", null),
+        ("PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL", null),
+        ("ORGANIZATION", "โครงสร้างองค์กร", "ORG", null),
+        ("REPORT", "รายงาน", "REPORT", null),
+        // โมดูลย่อยหมวดการตั้งค่าระบบ (Settings Sub-Modules)
+        ("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "การตั้งค่าระบบ"),
+        ("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "การตั้งค่าระบบ"),
+        ("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "การตั้งค่าระบบ")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)
@@ -74,7 +77,7 @@ public class RoleService : IRoleService
 
         var moduleDtos = new List<ModulePermissionScopeDto>();
 
-        foreach (var (modCode, modName, prefix) in StandardModules)
+        foreach (var (modCode, modName, prefix, groupName) in StandardModules)
         {
             var viewCode = $"{prefix}_VIEW";
             var createCode = $"{prefix}_CREATE";
@@ -100,6 +103,7 @@ public class RoleService : IRoleService
             {
                 ModuleCode = modCode,
                 ModuleName = modName,
+                GroupName = groupName,
                 DataScope = dataScope,
                 CanView = canView,
                 CanCreate = canCreate,
@@ -221,8 +225,9 @@ public class RoleService : IRoleService
 
         // Delete existing role_permission and role_data_scope for standard modules
         var prefixList = StandardModules.Select(m => m.Prefix).ToList();
+        prefixList.Add("SETTINGS"); // ครอบคลุมสิทธิ์ SETTINGS_* เดิมในการล้างข้อมูลก่อนเขียนใหม่
         var relevantPermIds = allPermissions
-            .Where(p => prefixList.Any(pref => p.PermissionCode.StartsWith(pref + "_")))
+            .Where(p => prefixList.Any(pref => p.PermissionCode.StartsWith(pref + "_") || p.PermissionCode == pref))
             .Select(p => p.Id)
             .ToHashSet();
 
@@ -239,6 +244,15 @@ public class RoleService : IRoleService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var addedPermIds = new HashSet<long>();
+        void AddPerm(string code)
+        {
+            if (permMap.TryGetValue(code, out var pId) && addedPermIds.Add(pId))
+            {
+                _dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = pId });
+            }
+        }
 
         // Re-add based on request
         foreach (var mod in request.Modules)
@@ -257,14 +271,6 @@ public class RoleService : IRoleService
             bool canCreate = canView && mod.CanCreate;
             bool canEdit = canView && mod.CanEdit;
             bool canApprove = canView && mod.CanApprove;
-
-            void AddPerm(string code)
-            {
-                if (permMap.TryGetValue(code, out var pId))
-                {
-                    _dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = pId });
-                }
-            }
 
             if (canView) AddPerm(viewCode);
             if (canCreate) AddPerm(createCode);
@@ -285,6 +291,12 @@ public class RoleService : IRoleService
                     DataVisibilityScope = validScope
                 });
             }
+        }
+
+        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยของการตั้งค่า ให้ผูกสิทธิ์ SETTINGS_VIEW ไว้อัตโนมัติเพื่อความเข้ากันได้
+        if (request.Modules.Any(m => m.ModuleCode.StartsWith("SETTINGS_") && m.CanView))
+        {
+            AddPerm("SETTINGS_VIEW");
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

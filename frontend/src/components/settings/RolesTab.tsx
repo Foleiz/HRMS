@@ -341,20 +341,46 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   </thead>
 
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {localModules.map((mod) => {
+                    {localModules.map((mod, idx) => {
+                      const prevMod = idx > 0 ? localModules[idx - 1] : null;
+                      const isNewGroup = mod.groupName && (!prevMod || prevMod.groupName !== mod.groupName);
+
                       return (
-                        <tr key={mod.moduleCode} className="hover:bg-slate-50/40 transition-colors">
-                          {/* Module Name & Quick Toggle */}
-                          <td className="py-3.5 px-4">
-                            <div className="font-semibold text-slate-800">{mod.moduleName}</div>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleAllRow(mod.moduleCode)}
-                              className="text-[10px] text-blue-600 hover:text-blue-800 font-medium mt-0.5 cursor-pointer"
-                            >
-                              สลับเลือกทั้งหมด
-                            </button>
-                          </td>
+                        <React.Fragment key={mod.moduleCode}>
+                          {isNewGroup && (
+                            <tr className="bg-slate-100/80 border-y border-slate-200/80">
+                              <td colSpan={6} className="py-2.5 px-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-[#0B2046]" />
+                                  <span className="text-[11px] font-bold text-slate-800 tracking-wide">
+                                    หมวดหมู่: {mod.groupName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 font-medium">
+                                    (กำหนดสิทธิ์การเข้าถึงแต่ละเมนูย่อย)
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          <tr className={`hover:bg-slate-50/40 transition-colors ${mod.groupName ? 'bg-slate-50/20' : ''}`}>
+                            {/* Module Name & Quick Toggle */}
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-start gap-2">
+                                {mod.groupName && (
+                                  <span className="text-slate-400 font-mono text-xs select-none pl-1 mt-0.5">↳</span>
+                                )}
+                                <div>
+                                  <div className="font-semibold text-slate-800">{mod.moduleName}</div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAllRow(mod.moduleCode)}
+                                    className="text-[10px] text-blue-600 hover:text-blue-800 font-medium mt-0.5 cursor-pointer"
+                                  >
+                                    สลับเลือกทั้งหมด
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
 
                           {/* Data Scope Pills */}
                           <td className="py-3.5 px-4 text-center">
@@ -416,6 +442,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             />
                           </td>
                         </tr>
+                        </React.Fragment>
                       );
                     })}
                   </tbody>

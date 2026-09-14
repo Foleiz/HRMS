@@ -35,8 +35,9 @@ public class RoleDetailDto
 /// </summary>
 public class ModulePermissionScopeDto
 {
-    public string ModuleCode { get; set; } = string.Empty; // EMPLOYEE, ATTENDANCE, LEAVE, PAYROLL, ORGANIZATION, SETTINGS, REPORT
+    public string ModuleCode { get; set; } = string.Empty; // EMPLOYEE, ATTENDANCE, LEAVE, PAYROLL, ORGANIZATION, SETTINGS_USERS, SETTINGS_ROLES, SETTINGS_AUDIT, REPORT
     public string ModuleName { get; set; } = string.Empty;
+    public string? GroupName { get; set; }
     public string DataScope { get; set; } = "SELF"; // SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION
     public bool CanView { get; set; }
     public bool CanCreate { get; set; }

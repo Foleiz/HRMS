@@ -62,8 +62,9 @@ export interface RoleSummary {
 }
 
 export interface ModulePermissionScope {
-  moduleCode: string; // EMPLOYEE, ATTENDANCE, LEAVE, PAYROLL, ORGANIZATION, SETTINGS, REPORT
+  moduleCode: string; // EMPLOYEE, ATTENDANCE, LEAVE, PAYROLL, ORGANIZATION, SETTINGS_USERS, SETTINGS_ROLES, SETTINGS_AUDIT, REPORT
   moduleName: string;
+  groupName?: string;
   dataScope: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
   canView: boolean;
   canCreate: boolean;

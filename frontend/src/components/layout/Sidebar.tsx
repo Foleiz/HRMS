@@ -118,7 +118,7 @@ const menuItems: MenuItem[] = [
     href: '/settings',
     matchPrefix: '/settings',
     icon: Settings,
-    requiredPermissions: ['SYS_ADMIN'],
+    requiredPermissions: ['SYS_ADMIN', 'SETTINGS_VIEW', 'SETTINGS_USERS_VIEW', 'SETTINGS_ROLES_VIEW', 'SETTINGS_AUDIT_VIEW'],
   },
 ];
 

@@ -18,6 +18,7 @@ import {
   UpdateRoleRequest,
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
+import { useAuth } from '@/context/AuthContext';
 import { UsersTab } from '@/components/settings/UsersTab';
 import { UserDrawer } from '@/components/settings/UserDrawer';
 import { RolesTab } from '@/components/settings/RolesTab';
@@ -31,7 +32,37 @@ type TabType = 'users' | 'roles' | 'audit-log';
 
 export default function SettingsPage() {
   const { success, error, info } = useToast();
+  const { user, hasPermission, hasRole } = useAuth();
+
+  // Permission flags for each sub-tab
+  const canViewUsersTab =
+    hasPermission('SETTINGS_USERS_VIEW') ||
+    hasPermission('SETTINGS_VIEW') ||
+    hasRole('ADMIN');
+
+  const canViewRolesTab =
+    hasPermission('SETTINGS_ROLES_VIEW') ||
+    hasRole('ADMIN');
+
+  const canViewAuditLogTab =
+    hasPermission('SETTINGS_AUDIT_VIEW') ||
+    hasRole('ADMIN');
+
   const [activeTab, setActiveTab] = useState<TabType>('users');
+
+  // Auto switch tab if current active tab is not permitted
+  useEffect(() => {
+    if (activeTab === 'users' && !canViewUsersTab) {
+      if (canViewRolesTab) setActiveTab('roles');
+      else if (canViewAuditLogTab) setActiveTab('audit-log');
+    } else if (activeTab === 'roles' && !canViewRolesTab) {
+      if (canViewUsersTab) setActiveTab('users');
+      else if (canViewAuditLogTab) setActiveTab('audit-log');
+    } else if (activeTab === 'audit-log' && !canViewAuditLogTab) {
+      if (canViewUsersTab) setActiveTab('users');
+      else if (canViewRolesTab) setActiveTab('roles');
+    }
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab]);
 
   // === 1. Data States ===
   // Users
@@ -173,21 +204,25 @@ export default function SettingsPage() {
 
   // Initial Load
   useEffect(() => {
-    loadUsers();
-    loadRoles();
-    loadEmployees();
-  }, []);
+    if (canViewUsersTab) {
+      loadUsers();
+      loadEmployees();
+    }
+    if (canViewRolesTab) {
+      loadRoles();
+    }
+  }, [canViewUsersTab, canViewRolesTab]);
 
   // Fetch when tab changes or specific page filters change
   useEffect(() => {
-    if (activeTab === 'users') {
+    if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
-    } else if (activeTab === 'roles') {
+    } else if (activeTab === 'roles' && canViewRolesTab) {
       loadRoles();
-    } else if (activeTab === 'audit-log') {
+    } else if (activeTab === 'audit-log' && canViewAuditLogTab) {
       loadAuditLogs();
     }
-  }, [activeTab, loadUsers, loadRoles, loadAuditLogs]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, loadUsers, loadRoles, loadAuditLogs]);
 
   // === 4. User Actions ===
   const handleCreateUser = async (data: CreateUserRequest) => {
@@ -336,118 +371,132 @@ export default function SettingsPage() {
       {/* 2. Main Tab Buttons Bar (Matching Mockup Design) */}
       <div className="border-b border-slate-200/80 flex items-center gap-8">
         {/* Tab 1: ผู้ใช้งาน */}
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === 'users'
-              ? 'text-slate-900 border-b-2 border-[#0B2046]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <span>ผู้ใช้งาน</span>
-        </button>
+        {canViewUsersTab && (
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'users'
+                ? 'text-slate-900 border-b-2 border-[#0B2046]'
+                : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <span>ผู้ใช้งาน</span>
+          </button>
+        )}
 
         {/* Tab 2: บทบาทและสิทธิ์ */}
-        <button
-          onClick={() => setActiveTab('roles')}
-          className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === 'roles'
-              ? 'text-slate-900 border-b-2 border-[#0B2046]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <span>บทบาทและสิทธิ์</span>
-        </button>
+        {canViewRolesTab && (
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'roles'
+                ? 'text-slate-900 border-b-2 border-[#0B2046]'
+                : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <span>บทบาทและสิทธิ์</span>
+          </button>
+        )}
 
         {/* Tab 3: บันทึกการใช้งานระบบ (Audit Log) */}
-        <button
-          onClick={() => setActiveTab('audit-log')}
-          className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === 'audit-log'
-              ? 'text-slate-900 border-b-2 border-[#0B2046]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <span>บันทึกการใช้งานระบบ (Audit Log)</span>
-        </button>
+        {canViewAuditLogTab && (
+          <button
+            onClick={() => setActiveTab('audit-log')}
+            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'audit-log'
+                ? 'text-slate-900 border-b-2 border-[#0B2046]'
+                : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <span>บันทึกการใช้งานระบบ (Audit Log)</span>
+          </button>
+        )}
       </div>
 
       {/* 3. Tab Content */}
-      {activeTab === 'users' && (
-        <UsersTab
-          users={users}
-          totalCount={userTotalCount}
-          currentPage={userPage}
-          pageSize={userPageSize}
-          roles={roles}
-          onPageChange={setUserPage}
-          onSearchChange={(s) => {
-            setUserSearch(s);
-            setUserPage(1);
-          }}
-          onRoleFilterChange={(rId) => {
-            setUserRoleFilter(rId);
-            setUserPage(1);
-          }}
-          onStatusFilterChange={(st) => {
-            setUserStatusFilter(st);
-            setUserPage(1);
-          }}
-          onAddUserClick={() => {
-            setUserToEdit(null);
-            setIsUserDrawerOpen(true);
-          }}
-          onEditUserClick={(user) => {
-            setUserToEdit(user);
-            setIsUserDrawerOpen(true);
-          }}
-          onResetPasswordClick={(user) => {
-            setUserToResetPassword(user);
-            setIsResetPasswordModalOpen(true);
-          }}
-          onToggleStatusClick={handleToggleUserStatus}
-          onDeleteUserClick={handleDeleteUser}
-          onViewAuditLogForUser={handleViewAuditLogForUser}
-          isLoading={isUsersLoading}
-        />
-      )}
+      {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab ? (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 font-medium">
+          ขออภัย คุณไม่มีสิทธิ์เข้าถึงเมนูการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน
+        </div>
+      ) : (
+        <>
+          {activeTab === 'users' && canViewUsersTab && (
+            <UsersTab
+              users={users}
+              totalCount={userTotalCount}
+              currentPage={userPage}
+              pageSize={userPageSize}
+              roles={roles}
+              onPageChange={setUserPage}
+              onSearchChange={(s) => {
+                setUserSearch(s);
+                setUserPage(1);
+              }}
+              onRoleFilterChange={(rId) => {
+                setUserRoleFilter(rId);
+                setUserPage(1);
+              }}
+              onStatusFilterChange={(st) => {
+                setUserStatusFilter(st);
+                setUserPage(1);
+              }}
+              onAddUserClick={() => {
+                setUserToEdit(null);
+                setIsUserDrawerOpen(true);
+              }}
+              onEditUserClick={(user) => {
+                setUserToEdit(user);
+                setIsUserDrawerOpen(true);
+              }}
+              onResetPasswordClick={(user) => {
+                setUserToResetPassword(user);
+                setIsResetPasswordModalOpen(true);
+              }}
+              onToggleStatusClick={handleToggleUserStatus}
+              onDeleteUserClick={handleDeleteUser}
+              onViewAuditLogForUser={handleViewAuditLogForUser}
+              isLoading={isUsersLoading}
+            />
+          )}
 
-      {activeTab === 'roles' && (
-        <RolesTab
-          roles={roles}
-          selectedRoleMatrix={selectedRoleMatrix}
-          onSelectRole={loadRoleMatrix}
-          onSaveMatrix={handleSaveRoleMatrix}
-          onAddRoleClick={() => {
-            setRoleToEdit(null);
-            setIsRoleModalOpen(true);
-          }}
-          onEditRoleClick={(role) => {
-            setRoleToEdit(role);
-            setIsRoleModalOpen(true);
-          }}
-          onDeleteRoleClick={handleDeleteRole}
-          isLoading={isRolesLoading}
-          isSavingMatrix={isSavingMatrix}
-        />
-      )}
+          {activeTab === 'roles' && canViewRolesTab && (
+            <RolesTab
+              roles={roles}
+              selectedRoleMatrix={selectedRoleMatrix}
+              onSelectRole={loadRoleMatrix}
+              onSaveMatrix={handleSaveRoleMatrix}
+              onAddRoleClick={() => {
+                setRoleToEdit(null);
+                setIsRoleModalOpen(true);
+              }}
+              onEditRoleClick={(role) => {
+                setRoleToEdit(role);
+                setIsRoleModalOpen(true);
+              }}
+              onDeleteRoleClick={handleDeleteRole}
+              isLoading={isRolesLoading}
+              isSavingMatrix={isSavingMatrix}
+            />
+          )}
 
-      {activeTab === 'audit-log' && (
-        <AuditLogTab
-          logs={auditLogs}
-          totalCount={auditLogTotalCount}
-          currentPage={auditLogPage}
-          pageSize={auditLogPageSize}
-          users={users}
-          onPageChange={setAuditLogPage}
-          onFilterChange={(f) => {
-            setAuditLogFilters(f);
-            setAuditLogPage(1);
-          }}
-          onExport={handleExportAuditLogs}
-          onViewDetail={(log) => setSelectedAuditLog(log)}
-          isLoading={isAuditLogsLoading}
-        />
+          {activeTab === 'audit-log' && canViewAuditLogTab && (
+            <AuditLogTab
+              logs={auditLogs}
+              totalCount={auditLogTotalCount}
+              currentPage={auditLogPage}
+              pageSize={auditLogPageSize}
+              users={users}
+              onPageChange={setAuditLogPage}
+              onFilterChange={(f) => {
+                setAuditLogFilters(f);
+                setAuditLogPage(1);
+              }}
+              onExport={handleExportAuditLogs}
+              onViewDetail={(log) => setSelectedAuditLog(log)}
+              isLoading={isAuditLogsLoading}
+            />
+          )}
+        </>
       )}
 
       {/* 4. Modals and Slide-over Drawer */}
