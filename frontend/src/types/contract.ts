@@ -35,6 +35,7 @@ export interface ContractSummaryStats {
 export interface CreateContractRequest {
   employeeId: number;
   contractType: string;
+  employeeTypeId?: number;
   wageType?: string;
   startDate: string;
   endDate?: string;

@@ -649,7 +649,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.TypeCode).HasColumnName("type_code").IsRequired().HasMaxLength(50);
             entity.Property(e => e.TypeName).HasColumnName("type_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.WageType).HasColumnName("wage_type").HasMaxLength(20);
+            entity.Property(e => e.HasSocialSecurity).HasColumnName("has_social_security").HasDefaultValue(true);
+            entity.Property(e => e.HasLeaveEntitlement).HasColumnName("has_leave_entitlement").HasDefaultValue(true);
+            entity.Property(e => e.HasOvertime).HasColumnName("has_overtime").HasDefaultValue(true);
+            entity.Property(e => e.HasProvidentFund).HasColumnName("has_provident_fund").HasDefaultValue(false);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
         });
 
         // Configuration: AttendanceDaily (Dev 1 Sprint 5)
