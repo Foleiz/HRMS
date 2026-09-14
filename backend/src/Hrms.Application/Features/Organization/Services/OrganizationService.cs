@@ -22,8 +22,17 @@ public class OrganizationService : IOrganizationService
     #region Company
     public async Task<CompanyDto?> GetCompanyProfileAsync(CancellationToken cancellationToken = default)
     {
-        var company = await _dbContext.Companies.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        var company = await _dbContext.Companies
+            .AsNoTracking()
+            .Include(c => c.CeoEmployee)
+            .FirstOrDefaultAsync(cancellationToken);
         if (company == null) return null;
+
+        string? logoBase64 = null;
+        if (company.LogoData != null && company.LogoData.Length > 0)
+        {
+            logoBase64 = $"data:image/png;base64,{Convert.ToBase64String(company.LogoData)}";
+        }
 
         return new CompanyDto
         {
@@ -34,7 +43,12 @@ public class OrganizationService : IOrganizationService
             Phone = company.Phone,
             Email = company.Email,
             Status = company.Status,
-            LogoData = company.LogoData,
+            LogoData = logoBase64,
+            CeoEmployeeId = company.CeoEmployeeId,
+            CeoEmployeeCode = company.CeoEmployee?.EmployeeCode,
+            CeoEmployeeName = company.CeoEmployee != null
+                ? $"{company.CeoEmployee.FirstName} {company.CeoEmployee.LastName}".Trim()
+                : null,
             CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt
         };
@@ -42,7 +56,9 @@ public class OrganizationService : IOrganizationService
 
     public async Task<CompanyDto> UpdateCompanyProfileAsync(UpdateCompanyDto request, CancellationToken cancellationToken = default)
     {
-        var company = await _dbContext.Companies.FirstOrDefaultAsync(cancellationToken);
+        var company = await _dbContext.Companies
+            .Include(c => c.CeoEmployee)
+            .FirstOrDefaultAsync(cancellationToken);
         if (company == null)
         {
             throw new NotFoundException("Company", 1);
@@ -53,13 +69,53 @@ public class OrganizationService : IOrganizationService
         company.Phone = request.Phone?.Trim();
         company.Email = request.Email?.Trim();
         company.Status = request.Status;
-        if (request.LogoData != null)
+        company.CeoEmployeeId = request.CeoEmployeeId;
+
+        if (string.IsNullOrWhiteSpace(request.LogoData))
         {
-            company.LogoData = request.LogoData;
+            company.LogoData = null;
         }
+        else
+        {
+            string raw = request.LogoData;
+            int commaIdx = raw.IndexOf(',');
+            if (commaIdx >= 0 && raw.StartsWith("data:"))
+            {
+                raw = raw.Substring(commaIdx + 1);
+            }
+            try
+            {
+                company.LogoData = Convert.FromBase64String(raw);
+            }
+            catch
+            {
+                // In case base64 parsing fails, preserve existing
+            }
+        }
+
         company.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        string? ceoCode = null;
+        string? ceoName = null;
+        if (company.CeoEmployeeId.HasValue)
+        {
+            var ceo = await _dbContext.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == company.CeoEmployeeId.Value, cancellationToken);
+            if (ceo != null)
+            {
+                ceoCode = ceo.EmployeeCode;
+                ceoName = $"{ceo.FirstName} {ceo.LastName}".Trim();
+            }
+        }
+
+        string? logoBase64 = null;
+        if (company.LogoData != null && company.LogoData.Length > 0)
+        {
+            logoBase64 = $"data:image/png;base64,{Convert.ToBase64String(company.LogoData)}";
+        }
 
         return new CompanyDto
         {
@@ -70,7 +126,10 @@ public class OrganizationService : IOrganizationService
             Phone = company.Phone,
             Email = company.Email,
             Status = company.Status,
-            LogoData = company.LogoData,
+            LogoData = logoBase64,
+            CeoEmployeeId = company.CeoEmployeeId,
+            CeoEmployeeCode = ceoCode,
+            CeoEmployeeName = ceoName,
             CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt
         };

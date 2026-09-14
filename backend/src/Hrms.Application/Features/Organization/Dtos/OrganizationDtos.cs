@@ -10,7 +10,10 @@ public class CompanyDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
-    public byte[]? LogoData { get; set; }
+    public string? LogoData { get; set; }
+    public long? CeoEmployeeId { get; set; }
+    public string? CeoEmployeeName { get; set; }
+    public string? CeoEmployeeCode { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -22,7 +25,8 @@ public class UpdateCompanyDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
-    public byte[]? LogoData { get; set; }
+    public string? LogoData { get; set; }
+    public long? CeoEmployeeId { get; set; }
 }
 #endregion
 

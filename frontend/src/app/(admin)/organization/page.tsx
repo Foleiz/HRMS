@@ -191,6 +191,7 @@ export default function OrganizationPage() {
     email: '',
     status: 'ACTIVE',
     logoData: null,
+    ceoEmployeeId: null,
   });
 
   const loadData = async () => {
@@ -220,6 +221,7 @@ export default function OrganizationPage() {
           email: comp.email || '',
           status: comp.status,
           logoData: comp.logoData || null,
+          ceoEmployeeId: comp.ceoEmployeeId || null,
         });
       }
     } catch (err: unknown) {
@@ -504,6 +506,7 @@ export default function OrganizationPage() {
       setCompanyForm((prev) => ({ ...prev, logoData: base64String }));
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // Handler for Company Profile Save
@@ -514,7 +517,8 @@ export default function OrganizationPage() {
       showSuccess('บันทึกข้อมูลบริษัทเรียบร้อยแล้ว');
       loadData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก'));
     }
   };
 
@@ -1349,6 +1353,25 @@ export default function OrganizationPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO)
+                </label>
+                <EmployeeSelect
+                  employees={employees}
+                  value={companyForm.ceoEmployeeId || ''}
+                  onChange={(empId) =>
+                    setCompanyForm({
+                      ...companyForm,
+                      ceoEmployeeId: empId === '' ? null : Number(empId),
+                    })
+                  }
+                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                  emptyLabel="ไม่ระบุ CEO / ผู้บริหารสูงสุด"
+                  required={false}
+                />
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะบริษัท</label>
                 <select
                   value={companyForm.status}
@@ -1359,7 +1382,9 @@ export default function OrganizationPage() {
                   <option value="INACTIVE">ปิดใช้งาน (INACTIVE)</option>
                 </select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ (Phone)</label>
                 <input
@@ -1369,16 +1394,16 @@ export default function OrganizationPage() {
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ (Email)</label>
-              <input
-                type="email"
-                value={companyForm.email}
-                onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ (Email)</label>
+                <input
+                  type="email"
+                  value={companyForm.email}
+                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
             </div>
 
             <div>

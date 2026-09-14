@@ -7,6 +7,9 @@ export interface Company {
   email?: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
   logoData?: string | null;
+  ceoEmployeeId?: number | null;
+  ceoEmployeeCode?: string | null;
+  ceoEmployeeName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +21,7 @@ export interface UpdateCompanyRequest {
   email?: string;
   status: string;
   logoData?: string | null;
+  ceoEmployeeId?: number | null;
 }
 
 export interface Division {
