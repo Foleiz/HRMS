@@ -123,6 +123,10 @@ const menuItems: MenuItem[] = [
       'EMP_APPROVE',
       'PAYROLL_APPROVE',
       'TIME_MANAGE',
+      'LEAVE_BALANCE_APPROVE',
+      'TIME_DAILY_APPROVE',
+      'EMP_PROFILE_APPROVE',
+      'PAYROLL_CALC_APPROVE',
     ],
   },
   {

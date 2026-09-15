@@ -18,6 +18,9 @@ import {
   Settings,
   BarChart3,
   Layers,
+  CheckSquare,
+  Eye,
+  X,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -276,6 +279,67 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
+  // Global Quick Action: Select All Permissions (View, Create, Edit, Approve) across all 22 modules
+  const handleSelectAll = () => {
+    setLocalModules((prev) =>
+      prev.map((mod) => ({
+        ...mod,
+        canView: true,
+        canCreate: true,
+        canEdit: true,
+        canApprove: true,
+      }))
+    );
+    setIsDirty(true);
+  };
+
+  // Global Quick Action: Select All "View" Only across all 22 modules
+  const handleSelectAllView = () => {
+    setLocalModules((prev) =>
+      prev.map((mod) => ({
+        ...mod,
+        canView: true,
+      }))
+    );
+    setIsDirty(true);
+  };
+
+  // Global Quick Action: Deselect All Permissions across all 22 modules
+  const handleDeselectAll = () => {
+    setLocalModules((prev) =>
+      prev.map((mod) => ({
+        ...mod,
+        canView: false,
+        canCreate: false,
+        canEdit: false,
+        canApprove: false,
+      }))
+    );
+    setIsDirty(true);
+  };
+
+  // Global Column Toggle (View, Create, Edit, Approve)
+  const handleToggleColumn = (action: 'canView' | 'canCreate' | 'canEdit' | 'canApprove') => {
+    setLocalModules((prev) => {
+      const allOn = prev.every((m) => m[action]);
+      const nextVal = !allOn;
+
+      return prev.map((mod) => {
+        const updated = { ...mod, [action]: nextVal };
+        if (action === 'canView' && !nextVal) {
+          updated.canCreate = false;
+          updated.canEdit = false;
+          updated.canApprove = false;
+        }
+        if (action !== 'canView' && nextVal) {
+          updated.canView = true;
+        }
+        return updated;
+      });
+    });
+    setIsDirty(true);
+  };
+
   const handleReset = () => {
     if (selectedRoleMatrix) {
       setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
@@ -437,8 +501,40 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   )}
                 </div>
 
-                {/* Accordion Expand/Collapse Toolbar */}
-                <div className="flex items-center gap-1.5">
+                {/* Accordion Expand/Collapse & Quick Bulk Select Toolbar */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                    title="เลือกเปิดสิทธิ์ทั้งหมด (ดู, สร้าง, แก้ไข, อนุมัติ) ทุกเมนูย่อย"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>เลือกทั้งหมด</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSelectAllView}
+                    className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                    title="เลือกเปิดเฉพาะสิทธิ์การดู (View Only) ทุกเมนูย่อย"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-blue-600" />
+                    <span>เลือกเฉพาะดู</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeselectAll}
+                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                    title="ยกเลิก/ปิดสิทธิ์ทั้งหมดทุกเมนูย่อย"
+                  >
+                    <X className="w-3.5 h-3.5 text-slate-500" />
+                    <span>ยกเลิกทั้งหมด</span>
+                  </button>
+
+                  <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
                   <button
                     type="button"
                     onClick={expandAll}
@@ -462,10 +558,34 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
                       <th className="py-3 px-4 min-w-[210px]">ชื่อโมดูล / เมนูย่อย</th>
                       <th className="py-3 px-4 min-w-[280px] text-center">ระดับขอบเขตข้อมูล</th>
-                      <th className="py-3 px-3 w-14 text-center">ดู</th>
-                      <th className="py-3 px-3 w-14 text-center">สร้าง</th>
-                      <th className="py-3 px-3 w-14 text-center">แก้ไข</th>
-                      <th className="py-3 px-3 w-14 text-center">อนุมัติ</th>
+                      <th
+                        onClick={() => handleToggleColumn('canView')}
+                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'ดู' ทั้งหมด"
+                      >
+                        ดู
+                      </th>
+                      <th
+                        onClick={() => handleToggleColumn('canCreate')}
+                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'สร้าง' ทั้งหมด"
+                      >
+                        สร้าง
+                      </th>
+                      <th
+                        onClick={() => handleToggleColumn('canEdit')}
+                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'แก้ไข' ทั้งหมด"
+                      >
+                        แก้ไข
+                      </th>
+                      <th
+                        onClick={() => handleToggleColumn('canApprove')}
+                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'อนุมัติ' ทั้งหมด"
+                      >
+                        อนุมัติ
+                      </th>
                     </tr>
                   </thead>
 
