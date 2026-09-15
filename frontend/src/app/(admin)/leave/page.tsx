@@ -13,14 +13,12 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  XCircle,
-  Ban,
-  Download,
-  Clock,
-  ChevronRight,
-  ChevronDown,
   Users,
   ChevronsUpDown,
+  ChevronRight,
+  ClipboardList,
+  ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { organizationService } from '@/services/organizationService';
@@ -34,19 +32,15 @@ import {
   UpdateLeavePolicyPayload,
   LeaveBalance,
   LeaveBalanceAdjustmentPayload,
-  LeaveRequest,
-  LeaveStats,
-  CreateLeaveRequestPayload,
 } from '@/types/leave';
 import { Employee } from '@/types/employee';
 import { LeaveTypeModal } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
-import { LeaveRequestModal } from '@/components/leave/LeaveRequestModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 
-type ActiveTab = 'types' | 'policies' | 'balances' | 'requests';
+type ActiveTab = 'types' | 'policies' | 'balances';
 
 export default function LeaveManagementPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('types');
@@ -56,14 +50,9 @@ export default function LeaveManagementPage() {
   const [leavePolicies, setLeavePolicies] = useState<LeavePolicy[]>([]);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
   const [employeeLevels, setEmployeeLevels] = useState<{ id: number; levelName: string }[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [leaveStats, setLeaveStats] = useState<LeaveStats | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
-
-  // Modal ยื่นคำขอลา
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   // Filters for Balances Tab
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -164,7 +153,6 @@ export default function LeaveManagementPage() {
       setEmployeeLevels(levelsData);
       setEmployees(employeesData);
       await fetchBalances(selectedYear);
-      await fetchLeaveRequests();
     } catch (err) {
       console.error('Failed to load leave data', err);
     } finally {
@@ -178,19 +166,6 @@ export default function LeaveManagementPage() {
       setLeaveBalances(balancesData);
     } catch (err) {
       console.error('Failed to load balances', err);
-    }
-  };
-
-  const fetchLeaveRequests = async () => {
-    try {
-      const [requestsData, statsData] = await Promise.all([
-        leaveService.getLeaveRequests({ pageSize: 100 }),
-        leaveService.getLeaveStats(),
-      ]);
-      setLeaveRequests(requestsData);
-      setLeaveStats(statsData);
-    } catch (err) {
-      console.error('Failed to load leave requests', err);
     }
   };
 
@@ -329,104 +304,6 @@ export default function LeaveManagementPage() {
     });
   };
 
-  // === Handlers: Leave Requests ===
-  const handleOpenRequestModal = () => {
-    setIsRequestModalOpen(true);
-  };
-
-  const handleSubmitLeaveRequest = async (payload: CreateLeaveRequestPayload) => {
-    await leaveService.createLeaveRequest(payload);
-    await fetchLeaveRequests();
-    await fetchBalances(selectedYear);
-    showToast('ยื่นคำขอลาสำเร็จ รอการอนุมัติ');
-  };
-
-  const handleApproveRequest = (request: LeaveRequest) => {
-    showConfirm({
-      title: 'ยืนยันการอนุมัติคำขอลา?',
-      message: `อนุมัติคำขอลาเลขที่ ${request.requestNo} ของ ${request.employeeName} (${request.leaveDays} วัน) หรือไม่?`,
-      type: 'success',
-      confirmText: 'อนุมัติ',
-      onConfirm: async () => {
-        try {
-          await leaveService.approveLeaveRequest(request.id);
-          await fetchLeaveRequests();
-          await fetchBalances(selectedYear);
-          closeConfirm();
-          showToast('อนุมัติคำขอลาสำเร็จ');
-        } catch (err: any) {
-          closeConfirm();
-          showAlert('ไม่สามารถอนุมัติได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
-        }
-      },
-    });
-  };
-
-  const handleRejectRequest = (request: LeaveRequest) => {
-    showConfirm({
-      title: 'ยืนยันการปฏิเสธคำขอลา?',
-      message: `ปฏิเสธคำขอลาเลขที่ ${request.requestNo} ของ ${request.employeeName} หรือไม่?`,
-      type: 'danger',
-      confirmText: 'ปฏิเสธคำขอ',
-      onConfirm: async () => {
-        try {
-          await leaveService.rejectLeaveRequest(request.id);
-          await fetchLeaveRequests();
-          closeConfirm();
-          showToast('ปฏิเสธคำขอลาเรียบร้อยแล้ว');
-        } catch (err: any) {
-          closeConfirm();
-          showAlert('ไม่สามารถปฏิเสธได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
-        }
-      },
-    });
-  };
-
-  const handleCancelRequest = (request: LeaveRequest) => {
-    showConfirm({
-      title: 'ยืนยันการยกเลิกคำขอลา?',
-      message: `ยกเลิกคำขอลาเลขที่ ${request.requestNo} หรือไม่?${
-        request.status === 'APPROVED' ? '\nระบบจะคืนวันลาที่ถูกหักไปให้อัตโนมัติ' : ''
-      }`,
-      type: 'warning',
-      confirmText: 'ยกเลิกคำขอ',
-      onConfirm: async () => {
-        try {
-          await leaveService.cancelLeaveRequest(request.id);
-          await fetchLeaveRequests();
-          await fetchBalances(selectedYear);
-          closeConfirm();
-          showToast('ยกเลิกคำขอลาเรียบร้อยแล้ว');
-        } catch (err: any) {
-          closeConfirm();
-          showAlert('ไม่สามารถยกเลิกได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
-        }
-      },
-    });
-  };
-
-  const handleDownloadDocument = async (request: LeaveRequest, docId: number, fileName?: string | null) => {
-    try {
-      await leaveService.downloadDocument(request.id, docId, fileName);
-    } catch (err: any) {
-      showAlert('ไม่สามารถดาวน์โหลดได้', err?.message || 'เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์แนบ', 'danger');
-    }
-  };
-
-  const leaveStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return { label: 'รออนุมัติ', className: 'bg-amber-50 text-amber-700 border-amber-200' };
-      case 'APPROVED':
-        return { label: 'อนุมัติแล้ว', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-      case 'REJECTED':
-        return { label: 'ปฏิเสธ', className: 'bg-rose-50 text-rose-700 border-rose-200' };
-      case 'CANCELLED':
-        return { label: 'ยกเลิกแล้ว', className: 'bg-gray-100 text-gray-500 border-gray-200' };
-      default:
-        return { label: status, className: 'bg-gray-50 text-gray-600 border-gray-200' };
-    }
-  };
 
   // Filtered balances
   const filteredBalances = useMemo(() => {
@@ -521,81 +398,42 @@ export default function LeaveManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-            <span>การลา</span>
-            <span>/</span>
-            <span className="text-gray-900 font-medium">
-              {activeTab === 'types'
-                ? 'ประเภทการลา'
-                : activeTab === 'policies'
-                ? 'สิทธิ์การลา'
-                : activeTab === 'balances'
-                ? 'ยอดวันลาพนักงาน'
-                : 'คำขอลา'}
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">การจัดการวันลาและสิทธิ์</h1>
-        </div>
-      </div>
-
       {/* Main Card with Tabs */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-100 px-6 pt-4 gap-8">
+        {/* Navigation Tabs (รูปแบบเดียวกับเมนู บันทึกเวลาของฉัน) */}
+        <div className="flex border-b border-gray-100 px-4 pt-2 gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('types')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'types'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            ประเภทการลา
-            {activeTab === 'types' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
+            <ClipboardList className="w-4 h-4" />
+            <span>ประเภทการลา</span>
           </button>
           <button
             onClick={() => setActiveTab('policies')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'policies'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            สิทธิ์การลา
-            {activeTab === 'policies' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
+            <ShieldCheck className="w-4 h-4" />
+            <span>สิทธิ์การลา</span>
           </button>
           <button
             onClick={() => setActiveTab('balances')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
+            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'balances'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            ยอดวันลาพนักงาน
-            {activeTab === 'balances' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
-              activeTab === 'requests'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            คำขอลา
-            {activeTab === 'requests' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
+            <Wallet className="w-4 h-4" />
+            <span>ยอดวันลาพนักงาน</span>
           </button>
         </div>
 
@@ -1063,154 +901,6 @@ export default function LeaveManagementPage() {
             )}
           </div>
         )}
-        {/* Tab 4: คำขอลา (Leave Requests) */}
-        {activeTab === 'requests' && (
-          <div className="p-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                <p className="text-xs text-amber-700 font-medium mb-1">รออนุมัติ</p>
-                <p className="text-2xl font-bold text-amber-800">{leaveStats?.pendingRequestsCount ?? 0}</p>
-              </div>
-              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <p className="text-xs text-emerald-700 font-medium mb-1">อนุมัติเดือนนี้</p>
-                <p className="text-2xl font-bold text-emerald-800">{leaveStats?.approvedThisMonthCount ?? 0}</p>
-              </div>
-              <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl">
-                <p className="text-xs text-rose-700 font-medium mb-1">ปฏิเสธเดือนนี้</p>
-                <p className="text-2xl font-bold text-rose-800">{leaveStats?.rejectedThisMonthCount ?? 0}</p>
-              </div>
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs text-blue-700 font-medium mb-1">รวมวันลาเดือนนี้</p>
-                <p className="text-2xl font-bold text-blue-800">{leaveStats?.totalLeaveDaysThisMonth ?? 0} วัน</p>
-              </div>
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">รายการคำขอลา</h2>
-              <button
-                onClick={handleOpenRequestModal}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
-              >
-                <Plus className="w-4 h-4" /> ยื่นคำขอลา
-              </button>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
-                    <th className="py-3 px-3 whitespace-nowrap">เลขที่คำขอ</th>
-                    <th className="py-3 px-3 whitespace-nowrap">พนักงาน</th>
-                    <th className="py-3 px-3 whitespace-nowrap">แผนก</th>
-                    <th className="py-3 px-3 whitespace-nowrap">ประเภทการลา</th>
-                    <th className="py-3 px-3 whitespace-nowrap">ช่วงวันที่</th>
-                    <th className="py-3 px-3 text-center whitespace-nowrap">จำนวนวัน</th>
-                    <th className="py-3 px-3 text-center whitespace-nowrap">เอกสารแนบ</th>
-                    <th className="py-3 px-3 text-center whitespace-nowrap">สถานะ</th>
-                    <th className="py-3 px-3 text-center whitespace-nowrap">การดำเนินการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                  {leaveRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-10 text-center text-gray-400">
-                        ยังไม่มีคำขอลาในระบบ
-                      </td>
-                    </tr>
-                  ) : (
-                    leaveRequests.map((r) => {
-                      const statusInfo = leaveStatusDisplay(r.status);
-                      return (
-                        <tr key={r.id} className="hover:bg-gray-50/60 transition-colors">
-                          <td className="py-3 px-3 whitespace-nowrap font-medium text-gray-800">{r.requestNo}</td>
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <div className="text-gray-800">{r.employeeName}</div>
-                            <div className="text-xs text-gray-400">{r.employeeCode}</div>
-                          </td>
-                          <td className="py-3 px-3 whitespace-nowrap text-gray-500">{r.departmentName}</td>
-                          <td className="py-3 px-3 whitespace-nowrap text-gray-700">{r.leaveTypeName}</td>
-                          <td className="py-3 px-3 whitespace-nowrap text-gray-500">
-                            {new Date(r.startDatetime).toLocaleDateString('th-TH', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: '2-digit',
-                            })}
-                            {' - '}
-                            {new Date(r.endDatetime).toLocaleDateString('th-TH', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: '2-digit',
-                            })}
-                          </td>
-                          <td className="py-3 px-3 text-center whitespace-nowrap text-gray-700">{r.leaveDays}</td>
-                          <td className="py-3 px-3 text-center whitespace-nowrap">
-                            {r.documents && r.documents.length > 0 ? (
-                              <div className="flex flex-col items-center gap-1">
-                                {r.documents.map((d) => (
-                                  <button
-                                    key={d.id}
-                                    onClick={() => handleDownloadDocument(r, d.id, d.fileName)}
-                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
-                                    title={d.fileName || 'ดาวน์โหลดไฟล์แนบ'}
-                                  >
-                                    <Download className="w-3.5 h-3.5" /> ไฟล์แนบ
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-gray-300">-</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-3 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${statusInfo.className}`}
-                            >
-                              {statusInfo.label}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-center whitespace-nowrap">
-                            <div className="inline-flex items-center gap-1">
-                              {r.status === 'PENDING' && (
-                                <>
-                                  <button
-                                    onClick={() => handleApproveRequest(r)}
-                                    className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                    title="อนุมัติ"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleRejectRequest(r)}
-                                    className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                    title="ปฏิเสธ"
-                                  >
-                                    <XCircle className="w-3.5 h-3.5" />
-                                  </button>
-                                </>
-                              )}
-                              {(r.status === 'PENDING' || r.status === 'APPROVED') && (
-                                <button
-                                  onClick={() => handleCancelRequest(r)}
-                                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                  title="ยกเลิกคำขอ"
-                                >
-                                  <Ban className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Modals */}
@@ -1248,14 +938,6 @@ export default function LeaveManagementPage() {
         balance={balanceForTransactions}
       />
 
-      <LeaveRequestModal
-        isOpen={isRequestModalOpen}
-        onClose={() => setIsRequestModalOpen(false)}
-        employees={employees}
-        leaveTypes={leaveTypes.filter((t) => t.status === 'ACTIVE')}
-        leavePolicies={leavePolicies}
-        onSubmit={handleSubmitLeaveRequest}
-      />
 
       {/* Modern Custom Confirm & Alert Modal */}
       <ConfirmModal

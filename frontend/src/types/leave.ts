@@ -151,13 +151,24 @@ export interface LeaveRequest {
   leaveTypeName: string;
   startDatetime: string;
   endDatetime: string;
+  /** alias ที่ backend บางเวอร์ชันส่งมา */
+  startDate?: string | null;
+  endDate?: string | null;
   leaveHours: number;
   leaveDays: number;
+  /** alias ที่ backend บางเวอร์ชันส่งมา */
+  totalDays?: number | null;
   reason?: string | null;
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | string;
   submittedAt?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  rejectReason?: string | null;
+  approvedById?: number | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
   documents?: {
     id: number;
     leaveRequestId: number;
@@ -183,4 +194,9 @@ export interface LeaveStats {
   approvedThisMonthCount: number;
   rejectedThisMonthCount: number;
   totalLeaveDaysThisMonth: number;
+  /** aliases สำหรับ approvals pages */
+  pendingCount?: number;
+  approvedCount?: number;
+  rejectedCount?: number;
+  cancelledCount?: number;
 }

@@ -125,6 +125,14 @@ export const leaveService = {
     return res.data.data;
   },
 
+  /** ดาวน์โหลดเอกสารแนบ → คืน Blob สำหรับ create Object URL */
+  async downloadLeaveDocument(requestId: number, documentId: number): Promise<Blob> {
+    const res = await apiClient.get(`/leave-requests/${requestId}/documents/${documentId}`, {
+      responseType: 'blob',
+    });
+    return new Blob([res.data]);
+  },
+
   async rejectLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/reject`, { reason });
     return res.data.data;

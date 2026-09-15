@@ -21,7 +21,6 @@ import {
   Landmark,
   CalendarDays,
   CalendarRange,
-  UploadCloud,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -88,7 +87,7 @@ const menuItems: MenuItem[] = [
   },
   {
     title: 'การอนุมัติ',
-    href: '/approvals',
+    href: '/approvals/leave-requests',
     matchPrefix: '/approvals',
     icon: CheckCircle2,
     requiredPermissions: ['LEAVE_APPROVE', 'TIME_MANAGE'],
