@@ -59,6 +59,12 @@ const menuItems: MenuItem[] = [
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',
     icon: Clock,
+    requiredPermissions: [
+      'TIME_VIEW',
+      'TIME_DAILY_VIEW',
+      'TIME_SCHEDULE_VIEW',
+      'TIME_IMPORT_VIEW',
+    ],
   },
   {
     title: 'ตรวจบันทึกเวลา',
@@ -80,12 +86,6 @@ const menuItems: MenuItem[] = [
       'TIME_VIEW',
       'TIME_SCHEDULE_VIEW',
     ],
-  },
-  {
-    title: 'ยื่นเอกสาร',
-    href: '/documents',
-    matchPrefix: '/documents',
-    icon: FileText,
   },
   {
     title: 'การลา',
