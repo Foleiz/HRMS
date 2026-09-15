@@ -28,6 +28,7 @@ import {
   ModulePermissionScope,
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
+import { useToast } from '@/context/ToastContext';
 
 interface RolesTabProps {
   roles: RoleSummary[];
@@ -100,6 +101,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   isLoading,
   isSavingMatrix,
 }) => {
+  const toast = useToast();
   const [searchRole, setSearchRole] = useState('');
   const [localModules, setLocalModules] = useState<ModulePermissionScope[]>([]);
   const [isDirty, setIsDirty] = useState(false);
@@ -306,6 +308,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   // Global Quick Action: Deselect All Permissions across all 22 modules
   const handleDeselectAll = () => {
+    if (selectedRoleMatrix?.roleCode === 'ADMIN' || selectedRoleMatrix?.roleCode === 'SYSTEM_SUPER') {
+      toast.warning('บทบาทผู้ดูแลระบบสูงสุดจำเป็นต้องมีสิทธิ์เข้าถึงระบบอย่างน้อย 1 สิทธิ์ (Lockout Protection)');
+    }
+
     setLocalModules((prev) =>
       prev.map((mod) => ({
         ...mod,
@@ -349,6 +355,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   const handleSave = async () => {
     if (!selectedRoleMatrix) return;
+
+    // Lockout Protection: Cannot revoke all view access for super admins
+    if (
+      (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
+      localModules.every((m) => !m.canView)
+    ) {
+      toast.error('ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection) หากต้องการทดสอบการปิดสิทธิ์ทั้งหมด กรุณาเลือกบทบาททั่วไป เช่น General Staff (STAFF)');
+      return;
+    }
+
     try {
       await onSaveMatrix(selectedRoleMatrix.id, { modules: localModules });
       setIsDirty(false);
