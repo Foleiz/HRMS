@@ -1,7 +1,11 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
+import { useAuth } from '@/context/AuthContext';
+import AccessDenied from '@/components/common/AccessDenied';
 import {
   Landmark,
   Building2,
@@ -14,6 +18,30 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const { user, hasRole, logout } = useAuth();
+  const hasAnyPermission = Boolean(
+    (user?.permissions && user.permissions.length > 0) || hasRole('ADMIN')
+  );
+
+  if (user && !hasAnyPermission) {
+    return (
+      <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <Navbar />
+          <main className="flex-1 overflow-y-auto p-8 max-w-2xl w-full mx-auto flex items-center justify-center">
+            <AccessDenied
+              title="คุณยังไม่ได้รับสิทธิ์การใช้งานในระบบ"
+              message="ขออภัย บัญชีของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงเมนูหรือโมดูลใดๆ ในระบบ กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอสิทธิ์การใช้งาน"
+              backText="ออกจากระบบ (Logout)"
+              onBackAction={logout}
+            />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
       <Sidebar />

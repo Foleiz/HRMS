@@ -9,6 +9,7 @@ interface AccessDeniedProps {
   message?: string;
   backHref?: string;
   backText?: string;
+  onBackAction?: () => void;
 }
 
 export const AccessDenied: React.FC<AccessDeniedProps> = ({
@@ -16,6 +17,7 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
   message = 'ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์การใช้งาน',
   backHref = '/',
   backText = 'กลับไปยังหน้าหลัก',
+  onBackAction,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[420px] p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
@@ -26,13 +28,24 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
       <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
         {message}
       </p>
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        <span>{backText}</span>
-      </Link>
+      {onBackAction ? (
+        <button
+          type="button"
+          onClick={onBackAction}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl transition-all shadow-xs cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{backText}</span>
+        </button>
+      ) : (
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{backText}</span>
+        </Link>
+      )}
     </div>
   );
 };

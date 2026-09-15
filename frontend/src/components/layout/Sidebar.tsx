@@ -194,6 +194,12 @@ export const Sidebar: React.FC = () => {
     if (!user) return true;
     if (hasRole('ADMIN')) return true;
 
+    // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป (ถ้าไม่มีสิทธิ์ใดๆ เลย จะไม่แสดงแดชบอร์ด)
+    if (item.href === '/') {
+      const hasAnyPerm = Boolean(user.permissions && user.permissions.length > 0);
+      if (!hasAnyPerm) return false;
+    }
+
     // 2. ตรวจสอบ Role ถ้ามีการกำหนด
     if (item.requiredRoles && item.requiredRoles.length > 0) {
       const hasAnyRole = item.requiredRoles.some((role) => hasRole(role));
