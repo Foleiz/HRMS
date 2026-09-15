@@ -54,7 +54,7 @@ public class LeaveBalancesController : ControllerBase
     {
         try
         {
-            var empIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             long.TryParse(empIdStr, out var empId);
 
             var result = await _balanceService.AdjustBalanceAsync(request, empId > 0 ? empId : null, cancellationToken);
@@ -79,7 +79,7 @@ public class LeaveBalancesController : ControllerBase
     {
         try
         {
-            var empIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             long.TryParse(empIdStr, out var empId);
 
             var result = await _balanceService.InitializeYearBalanceAsync(request.TargetYear, empId > 0 ? empId : null, cancellationToken);

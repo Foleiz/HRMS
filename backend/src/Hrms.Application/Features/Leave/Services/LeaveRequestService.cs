@@ -181,11 +181,11 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบพนักงานรหัส ID {request.EmployeeId}");
         }
 
-        // Validate Leave Balance
+        // Validate Leave Balance — ข้ามการตรวจสอบถ้าเป็นการบันทึกแบบร่าง (ยังไม่ได้ยื่นจริง)
         var balance = await _context.LeaveBalances
             .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
 
-        if (balance != null && balance.NetRemainingLeaveDays < request.LeaveDays)
+        if (!request.IsDraft && balance != null && balance.NetRemainingLeaveDays < request.LeaveDays)
         {
             throw new InvalidOperationException($"วันลาคงเหลือไม่เพียงพอ (คงเหลือ {balance.NetRemainingLeaveDays} วัน, ขอลา {request.LeaveDays} วัน)");
         }
@@ -207,8 +207,8 @@ public class LeaveRequestService : ILeaveRequestService
             LeaveDays = request.LeaveDays,
             Reason = request.Reason,
             ContactDuringLeave = request.ContactDuringLeave,
-            Status = "PENDING",
-            SubmittedAt = DateTime.UtcNow
+            Status = request.IsDraft ? "DRAFT" : "PENDING",
+            SubmittedAt = request.IsDraft ? null : DateTime.UtcNow
         };
 
         if (request.AttachmentData != null && request.AttachmentData.Length > 0)
@@ -222,6 +222,69 @@ public class LeaveRequestService : ILeaveRequestService
         }
 
         _context.LeaveRequests.Add(leaveRequest);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return (await GetByIdAsync(leaveRequest.Id, cancellationToken))!;
+    }
+
+    public async Task<LeaveRequestDto> UpdateDraftAsync(long id, CreateLeaveRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var leaveRequest = await _context.LeaveRequests
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (leaveRequest == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอลารหัส ID {id}");
+        }
+
+        if (leaveRequest.Status != "DRAFT")
+        {
+            throw new InvalidOperationException("แก้ไขได้เฉพาะคำขอลาที่ยังเป็นแบบร่างเท่านั้น");
+        }
+
+        var leaveType = await _context.LeaveTypes.FindAsync([request.LeaveTypeId], cancellationToken);
+        if (leaveType == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบประเภทการลารหัส ID {request.LeaveTypeId}");
+        }
+
+        // ถ้ากำลังจะยื่นจริงจากแบบร่างเดิม (IsDraft = false) ต้องตรวจสอบโควตาเหมือนตอนสร้างคำขอใหม่
+        if (!request.IsDraft)
+        {
+            var year = request.StartDatetime.Year;
+            var balance = await _context.LeaveBalances
+                .FirstOrDefaultAsync(b => b.EmployeeId == leaveRequest.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+
+            if (balance != null && balance.NetRemainingLeaveDays < request.LeaveDays)
+            {
+                throw new InvalidOperationException($"วันลาคงเหลือไม่เพียงพอ (คงเหลือ {balance.NetRemainingLeaveDays} วัน, ขอลา {request.LeaveDays} วัน)");
+            }
+        }
+
+        leaveRequest.LeaveTypeId = request.LeaveTypeId;
+        leaveRequest.StartDatetime = request.StartDatetime;
+        leaveRequest.EndDatetime = request.EndDatetime;
+        leaveRequest.LeaveHours = request.LeaveHours;
+        leaveRequest.LeaveDays = request.LeaveDays;
+        leaveRequest.Reason = request.Reason;
+        leaveRequest.ContactDuringLeave = request.ContactDuringLeave;
+
+        if (!request.IsDraft)
+        {
+            leaveRequest.Status = "PENDING";
+            leaveRequest.SubmittedAt = DateTime.UtcNow;
+        }
+
+        if (request.AttachmentData != null && request.AttachmentData.Length > 0)
+        {
+            leaveRequest.Documents.Add(new LeaveRequestDocument
+            {
+                FileName = request.AttachmentFileName ?? "attachment.pdf",
+                FileData = request.AttachmentData,
+                UploadedAt = DateTime.UtcNow
+            });
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return (await GetByIdAsync(leaveRequest.Id, cancellationToken))!;
@@ -290,12 +353,23 @@ public class LeaveRequestService : ILeaveRequestService
         return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, CancellationToken cancellationToken = default)
+    public async Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, bool revertToDraftIfPending = false, CancellationToken cancellationToken = default)
     {
         var request = await _context.LeaveRequests.FindAsync([id], cancellationToken);
         if (request == null)
         {
             throw new KeyNotFoundException($"ไม่พบคำร้องขอลาหยุดงานรหัส ID {id}");
+        }
+
+        // พนักงานถอนคำขอที่ยังรออนุมัติ (ยังไม่มีผลจริงกับโควตา) กลับไปเป็นแบบร่างแทนการยกเลิกถาวร
+        // เพื่อให้แก้ไขและยื่นใหม่ได้เองในภายหลัง โดยไม่ต้องกรอกข้อมูลใหม่ทั้งหมด
+        if (revertToDraftIfPending && request.Status == "PENDING")
+        {
+            request.Status = "DRAFT";
+            request.SubmittedAt = null;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return (await GetByIdAsync(id, cancellationToken))!;
         }
 
         // If previously approved, reverse the deducted balance
@@ -341,5 +415,23 @@ public class LeaveRequestService : ILeaveRequestService
         return await _context.LeaveRequestDocuments
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.Id == documentId && d.LeaveRequestId == requestId, cancellationToken);
+    }
+
+    public async Task DeleteDraftAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var request = await _context.LeaveRequests.FindAsync([id], cancellationToken);
+        if (request == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอลารหัส ID {id}");
+        }
+
+        if (request.Status != "DRAFT")
+        {
+            throw new InvalidOperationException("ลบได้เฉพาะคำขอลาที่ยังเป็นแบบร่างเท่านั้น");
+        }
+
+        // Cascade Delete ที่ตั้งค่าไว้ใน DbContext จะลบเอกสารแนบ (LeaveRequestDocument) ที่ผูกอยู่ให้อัตโนมัติ
+        _context.LeaveRequests.Remove(request);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Paperclip, Sun, Clock3, Phone, RotateCcw } from 'lucide-react';
+import React, { useImperativeHandle, useMemo, useState } from 'react';
+import { Loader2, Paperclip, Sun, Clock3, Phone, Save } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
+import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -16,7 +17,17 @@ interface MyLeaveRequestFormProps {
   balances: LeaveBalance[];
   requests: LeaveRequest[];
   profile: EmployeeProfileSummary;
-  onSubmit: (payload: CreateMyLeaveRequestPayload) => Promise<void>;
+  /** ถ้ามาจากหน้า "ประวัติเอกสาร" เพื่อแก้ไขแบบร่างเดิมต่อ จะถูกโหลดข้อมูลมาเติมในฟอร์มให้อัตโนมัติ */
+  initialDraft?: LeaveRequest;
+  /** ยื่นคำขอลาจริง — draftId ถ้ามีคือกำลังยื่นจากแบบร่างเดิม (จะอัปเดตใบเดิมแทนสร้างใหม่) */
+  onSubmit: (payload: CreateMyLeaveRequestPayload, draftId?: number) => Promise<void>;
+  /** บันทึกแบบร่าง — คืนค่าใบที่บันทึกกลับมา เพื่อให้ฟอร์มจำ id ไว้ใช้บันทึกซ้ำ/ยื่นจริงในภายหลัง */
+  onSaveDraft: (payload: CreateMyLeaveRequestPayload, draftId?: number) => Promise<LeaveRequest>;
+}
+
+/** เมธอดที่หน้าแม่ (page) เรียกใช้งานฟอร์มนี้ได้ผ่าน ref เช่น ปุ่ม "ล้างฟอร์ม" ที่ย้ายไปไว้บน header */
+export interface MyLeaveRequestFormHandle {
+  reset: () => void;
 }
 
 type LeaveFormat = 'FULL_DAY' | 'HALF_DAY';
@@ -48,41 +59,62 @@ const emptyState = {
   attachment: null as File | null,
 };
 
+// แปลง LeaveRequest (แบบร่างที่เคยบันทึกไว้) ให้เป็นค่าตั้งต้นของฟอร์ม สำหรับกรณีกลับมาแก้ไขต่อ
+const draftToFormState = (draft: LeaveRequest) => {
+  const startDate = draft.startDatetime ? draft.startDatetime.slice(0, 10) : '';
+  const endDate = draft.endDatetime ? draft.endDatetime.slice(0, 10) : '';
+  return {
+    leaveTypeId: draft.leaveTypeId ?? ('' as number | ''),
+    startDate,
+    endDate,
+    leaveFormat: (draft.leaveDays === 0.5 ? 'HALF_DAY' : 'FULL_DAY') as LeaveFormat,
+    reason: draft.reason ?? '',
+    contactDuringLeave: draft.contactDuringLeave ?? '',
+    attachment: null as File | null,
+  };
+};
+
 /**
  * [ESS] ฟอร์มยื่นคำขอลาแบบเต็มหน้าจอ (ปรับตามดีไซน์อ้างอิงจาก Figma)
  * แสดงข้อมูลพนักงาน, ประสงค์ขอลา, สถิติโควตาแบบ Real-time และช่องติดต่อระหว่างลา
  */
-export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
+export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyLeaveRequestFormProps>(({
   leaveTypes,
   leavePolicies,
   balances,
   requests,
   profile,
+  initialDraft,
   onSubmit,
-}) => {
-  const [form, setForm] = useState(emptyState);
+  onSaveDraft,
+}, ref) => {
+  const [form, setForm] = useState(() => (initialDraft ? draftToFormState(initialDraft) : emptyState));
+  const [draftId, setDraftId] = useState<number | undefined>(initialDraft?.id);
   const [loading, setLoading] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { leaveTypeId, startDate, endDate, leaveFormat, reason, contactDuringLeave, attachment } = form;
 
-  const isSingleDay = !!startDate && !!endDate && startDate === endDate;
-
-  // รูปแบบ "ครึ่งวัน" ใช้ได้เฉพาะกรณีลาวันเดียวเท่านั้น — ถ้าเลือกช่วงหลายวันให้กลับเป็น "เต็มวัน" อัตโนมัติ
-  useEffect(() => {
-    if (!isSingleDay && leaveFormat === 'HALF_DAY') {
-      setForm((f) => ({ ...f, leaveFormat: 'FULL_DAY' }));
-    }
-  }, [isSingleDay, leaveFormat]);
+  // สลับรูปแบบการลา: "เต็มวัน" ใช้ตัวเลือกช่วงวันที่ (Date range), "ครึ่งวัน" ใช้เลือกวันเดียว (Date picker)
+  const setLeaveFormat = (next: LeaveFormat) => {
+    setForm((f) => {
+      if (next === 'HALF_DAY') {
+        // บังคับให้เหลือวันเดียว (ใช้วันที่เริ่มต้นเป็นวันลาครึ่งวัน)
+        return { ...f, leaveFormat: next, endDate: f.startDate };
+      }
+      return { ...f, leaveFormat: next };
+    });
+  };
 
   const leaveDays = useMemo(() => {
     if (!startDate || !endDate) return 0;
-    if (leaveFormat === 'HALF_DAY' && isSingleDay) return 0.5;
+    if (leaveFormat === 'HALF_DAY') return 0.5;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     return diff > 0 ? diff : 0;
-  }, [startDate, endDate, leaveFormat, isSingleDay]);
+  }, [startDate, endDate, leaveFormat]);
 
   const leaveHours = leaveDays * 8;
 
@@ -112,8 +144,13 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
 
   const resetForm = () => {
     setForm(emptyState);
+    setDraftId(undefined);
     setError(null);
   };
+
+  useImperativeHandle(ref, () => ({
+    reset: resetForm,
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,22 +178,69 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
         attachmentFileName = attachment.name;
       }
 
-      await onSubmit({
-        leaveTypeId: Number(leaveTypeId),
-        startDatetime: new Date(`${startDate}T00:00:00`).toISOString(),
-        endDatetime: new Date(`${endDate}T23:59:59`).toISOString(),
-        leaveHours,
-        leaveDays,
-        reason: reason.trim() || undefined,
-        contactDuringLeave: contactDuringLeave.trim() || undefined,
-        attachmentData,
-        attachmentFileName,
-      });
+      await onSubmit(
+        {
+          leaveTypeId: Number(leaveTypeId),
+          startDatetime: new Date(`${startDate}T00:00:00`).toISOString(),
+          endDatetime: new Date(`${endDate}T23:59:59`).toISOString(),
+          leaveHours,
+          leaveDays,
+          reason: reason.trim() || undefined,
+          contactDuringLeave: contactDuringLeave.trim() || undefined,
+          attachmentData,
+          attachmentFileName,
+        },
+        draftId
+      );
       resetForm();
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการยื่นคำขอลา');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // บันทึกแบบร่าง — ต้องเลือกประเภทการลาและวันที่ลาก่อน แต่ไม่บังคับเหตุผล/ช่องติดต่อ และไม่ตรวจสอบโควตา
+  const handleSaveDraft = async () => {
+    setError(null);
+
+    if (!leaveTypeId) {
+      setError('กรุณาเลือกประเภทการลาก่อนบันทึกแบบร่าง');
+      return;
+    }
+    if (!startDate || !endDate) {
+      setError('กรุณาระบุวันที่ลาก่อนบันทึกแบบร่าง');
+      return;
+    }
+
+    setSavingDraft(true);
+    try {
+      let attachmentData: string | undefined;
+      let attachmentFileName: string | undefined;
+      if (attachment) {
+        attachmentData = await fileToBase64(attachment);
+        attachmentFileName = attachment.name;
+      }
+
+      const saved = await onSaveDraft(
+        {
+          leaveTypeId: Number(leaveTypeId),
+          startDatetime: new Date(`${startDate}T00:00:00`).toISOString(),
+          endDatetime: new Date(`${endDate}T23:59:59`).toISOString(),
+          leaveHours,
+          leaveDays,
+          reason: reason.trim() || undefined,
+          contactDuringLeave: contactDuringLeave.trim() || undefined,
+          attachmentData,
+          attachmentFileName,
+        },
+        draftId
+      );
+      setDraftId(saved.id);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการบันทึกแบบร่าง');
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -212,33 +296,31 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">ประสงค์ขอลา *</label>
-            <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอลา *</label>
+            <select
+              value={leaveTypeId}
+              onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              required
+            >
+              <option value="">-- เลือกประเภทการลา --</option>
               {leaveTypes.map((t) => {
+                // ดึงจำนวนสิทธิ์ต่อปีจากยอดวันลาคงเหลือของพนักงานคนนี้ก่อน (ถูกต้องตรงตัวที่สุด)
+                // ถ้ายังไม่มีข้อมูลยอดวันลาของปีนี้ ค่อย fallback ไปที่เกณฑ์สิทธิ์การลา (policy) ทั่วไปของประเภทนั้น
+                const balanceForType = balances.find((b) => b.leaveTypeId === t.id);
                 const policy = leavePolicies.find((p) => p.leaveTypeId === t.id);
+                const quotaDays = balanceForType?.annualQuotaDays ?? policy?.entitlementDays;
                 return (
-                  <label
-                    key={t.id}
-                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-sm cursor-pointer transition-colors ${
-                      leaveTypeId === t.id ? 'border-[#0B2046] bg-[#0B2046]/5' : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="leaveTypeId"
-                      className="accent-[#0B2046]"
-                      checked={leaveTypeId === t.id}
-                      onChange={() => setForm((f) => ({ ...f, leaveTypeId: t.id }))}
-                    />
-                    <span className="text-gray-700">
-                      {t.leaveName}
-                      {policy && <span className="text-gray-400"> (สิทธิ์ {policy.entitlementDays} วัน/ปี)</span>}
-                    </span>
-                  </label>
+                  <option key={t.id} value={t.id}>
+                    {t.leaveName}
+                    {quotaDays != null ? ` (สิทธิ์ ${quotaDays} วัน/ปี)` : ''}
+                  </option>
                 );
               })}
-              {leaveTypes.length === 0 && <p className="text-xs text-gray-400">ไม่พบประเภทการลาที่เปิดใช้งาน</p>}
-            </div>
+            </select>
+            {leaveTypes.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
+            )}
           </div>
 
           <div>
@@ -259,50 +341,49 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
 
         {/* ─── Right column ─────────────────────────────── */}
         <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ลา *</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-              />
-              <span className="text-gray-300 shrink-0">–</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-              />
+          {/* flex-wrap แทน grid 50/50 เพราะกล่องปฏิทินมีความกว้างคงที่ (320px) เพื่อให้พอดีกับป็อปอัพปฏิทิน
+              ถ้าใช้ grid แบ่งครึ่งจะทำให้ล้นทับตัวเลือก "รูปแบบการลา" เมื่อพื้นที่ไม่พอ — flex-wrap จะดันตัวเลือกไปขึ้นบรรทัดใหม่แทนการซ้อนทับ */}
+          <div className="flex flex-wrap items-start gap-3">
+            <div className="shrink-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ลา *</label>
+              {leaveFormat === 'FULL_DAY' ? (
+                <LeaveDateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
+                />
+              ) : (
+                <LeaveDateRangePicker
+                  mode="single"
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
+                />
+              )}
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบการลา</label>
-            <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50">
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, leaveFormat: 'FULL_DAY' }))}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  leaveFormat === 'FULL_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
-                }`}
-              >
-                <Sun className="w-3.5 h-3.5" /> เต็มวัน
-              </button>
-              <button
-                type="button"
-                disabled={!isSingleDay}
-                onClick={() => setForm((f) => ({ ...f, leaveFormat: 'HALF_DAY' }))}
-                title={!isSingleDay ? 'เลือกได้เฉพาะกรณีลาวันเดียว' : undefined}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  leaveFormat === 'HALF_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
-                } ${!isSingleDay ? 'opacity-40 cursor-not-allowed' : ''}`}
-              >
-                <Clock3 className="w-3.5 h-3.5" /> ครึ่งวัน
-              </button>
+            <div className="shrink-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบการลา</label>
+              <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setLeaveFormat('FULL_DAY')}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    leaveFormat === 'FULL_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
+                  }`}
+                >
+                  <Sun className="w-3.5 h-3.5" /> เต็มวัน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLeaveFormat('HALF_DAY')}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    leaveFormat === 'HALF_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
+                  }`}
+                >
+                  <Clock3 className="w-3.5 h-3.5" /> ครึ่งวัน
+                </button>
+              </div>
             </div>
           </div>
 
@@ -380,15 +461,16 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
       <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
         <button
           type="button"
-          onClick={resetForm}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+          onClick={handleSaveDraft}
+          disabled={loading || savingDraft}
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
         >
-          <RotateCcw className="w-3.5 h-3.5" /> ล้างฟอร์ม
+          {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          บันทึกแบบร่าง
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || savingDraft}
           className="px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors flex items-center gap-2 shadow-sm"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -397,4 +479,6 @@ export const MyLeaveRequestForm: React.FC<MyLeaveRequestFormProps> = ({
       </div>
     </form>
   );
-};
+});
+
+MyLeaveRequestForm.displayName = 'MyLeaveRequestForm';

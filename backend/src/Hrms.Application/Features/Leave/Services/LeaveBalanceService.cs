@@ -238,13 +238,15 @@ public class LeaveBalanceService : ILeaveBalanceService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        // Batch pre-load data into memory (0 repeated network calls)
-        var existingBalances = await _context.LeaveBalances
-            .AsNoTracking()
+        // โหลดยอดวันลาที่มีอยู่แล้วของปีนี้แบบ tracked (ไม่ใช้ AsNoTracking) เพื่อให้สามารถ "อัปเกรด"
+        // รายการที่ยังไม่เคยถูกจัดสรรโควตาจริงได้ — เช่นรายการที่ถูกสร้างเป็น stub (AnnualQuotaDays = 0)
+        // อัตโนมัติตอนเรียกดูหน้ายอดวันลาทั้งหมด (GetAllAsync) ก่อนที่จะมีการกดจัดสรรโควตาประจำปีจริง
+        // ถ้าไม่ทำแบบนี้ รายการ stub เหล่านั้นจะถูกนับว่า "มีอยู่แล้ว" และถูกข้ามไปตลอด ทำให้พนักงาน
+        // มีโควตาคงเหลือ 0 วันตลอดกาล และยื่นคำขอลาไม่ได้เลยแม้แต่ครั้งเดียว
+        var existingBalancesList = await _context.LeaveBalances
             .Where(b => b.Year == targetYear)
-            .Select(b => new { b.EmployeeId, b.LeaveTypeId })
             .ToListAsync(cancellationToken);
-        var existingSet = new HashSet<(long, long)>(existingBalances.Select(b => (b.EmployeeId, b.LeaveTypeId)));
+        var existingByKey = existingBalancesList.ToDictionary(b => (b.EmployeeId, b.LeaveTypeId));
 
         var prevBalances = await _context.LeaveBalances
             .AsNoTracking()
@@ -257,6 +259,7 @@ public class LeaveBalanceService : ILeaveBalanceService
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
         var newBalances = new List<LeaveBalance>();
+        var upgradedCount = 0;
 
         foreach (var emp in employees)
         {
@@ -266,8 +269,6 @@ public class LeaveBalanceService : ILeaveBalanceService
 
             foreach (var lt in leaveTypes)
             {
-                if (existingSet.Contains((emp.Id, lt.Id))) continue;
-
                 var policy = policies
                     .Where(p => p.LeaveTypeId == lt.Id && (p.EmployeeTypeId == null || p.EmployeeTypeId == empTypeId))
                     .OrderByDescending(p => p.EmployeeLevelId == empLevelId)
@@ -286,6 +287,47 @@ public class LeaveBalanceService : ILeaveBalanceService
                         var expiryMonths = policy.CarryForwardExpiryMonths ?? policy.CarryForwardMaxMonths ?? 3;
                         carryExpiry = new DateOnly(targetYear, 1, 1).AddMonths(expiryMonths);
                     }
+                }
+
+                if (existingByKey.TryGetValue((emp.Id, lt.Id), out var existing))
+                {
+                    // มีรายการอยู่แล้ว — ถ้ายังไม่เคยได้รับโควตาจริง (AnnualQuotaDays <= 0 คือ stub) ให้อัปเกรดเป็นยอดจริง
+                    if (existing.AnnualQuotaDays <= 0 && entitlement > 0)
+                    {
+                        existing.AnnualQuotaDays = entitlement;
+                        existing.ActiveCarriedForwardDays = carriedDays;
+                        existing.CarryForwardExpiry = carryExpiry;
+                        existing.NetRemainingLeaveDays = existing.BroughtForwardDays
+                                                        + entitlement
+                                                        + carriedDays
+                                                        - existing.UsedDays
+                                                        + existing.AdjustedDays;
+
+                        existing.Transactions.Add(new LeaveBalanceTransaction
+                        {
+                            TransactionType = "ENTITLEMENT",
+                            Amount = entitlement,
+                            Note = $"จัดสรรโควตาวันลาประจำปี {targetYear}",
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedByEmployeeId = currentEmployeeId
+                        });
+
+                        if (carriedDays > 0)
+                        {
+                            existing.Transactions.Add(new LeaveBalanceTransaction
+                            {
+                                TransactionType = "CARRY_FORWARD",
+                                Amount = carriedDays,
+                                Note = $"ยอดยกมาจากปี {targetYear - 1}",
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedByEmployeeId = currentEmployeeId
+                            });
+                        }
+
+                        upgradedCount++;
+                    }
+                    // ถ้ามีโควตาจริงอยู่แล้ว (AnnualQuotaDays > 0) ถือว่าจัดสรรไปแล้ว ไม่แตะต้องซ้ำ
+                    continue;
                 }
 
                 var balance = new LeaveBalance
@@ -326,13 +368,17 @@ public class LeaveBalanceService : ILeaveBalanceService
                 }
 
                 newBalances.Add(balance);
-                existingSet.Add((emp.Id, lt.Id));
+                existingByKey[(emp.Id, lt.Id)] = balance;
             }
         }
 
         if (newBalances.Count > 0)
         {
             _context.LeaveBalances.AddRange(newBalances);
+        }
+
+        if (newBalances.Count > 0 || upgradedCount > 0)
+        {
             await _context.SaveChangesAsync(cancellationToken);
         }
 
@@ -341,7 +387,9 @@ public class LeaveBalanceService : ILeaveBalanceService
             TargetYear = targetYear,
             ProcessedEmployeesCount = employees.Count,
             CreatedBalancesCount = newBalances.Count,
-            Message = $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({newBalances.Count} รายการ สำหรับพนักงาน {employees.Count} คน)"
+            Message = upgradedCount > 0
+                ? $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ (สร้างใหม่ {newBalances.Count} รายการ, อัปเดตยอดที่ยังไม่จัดสรร {upgradedCount} รายการ สำหรับพนักงาน {employees.Count} คน)"
+                : $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({newBalances.Count} รายการ สำหรับพนักงาน {employees.Count} คน)"
         };
     }
 }

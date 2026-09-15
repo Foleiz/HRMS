@@ -189,6 +189,8 @@ export interface CreateLeaveRequestPayload {
   contactDuringLeave?: string;
   attachmentFileName?: string;
   attachmentData?: string; // เนื้อหาไฟล์แนบแบบ Base64
+  /** true = บันทึกเป็นแบบร่าง (ยังไม่ยื่นจริง ไม่ตรวจสอบโควตา), false/ไม่ระบุ = ยื่นจริง */
+  saveAsDraft?: boolean;
 }
 
 /** Payload สำหรับพนักงานยื่นคำขอลาด้วยตนเอง (ESS) — ไม่ต้องระบุ employeeId เพราะ backend อ่านจาก JWT Token */

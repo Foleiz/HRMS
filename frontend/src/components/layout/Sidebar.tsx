@@ -21,6 +21,7 @@ import {
   Landmark,
   CalendarDays,
   CalendarRange,
+  History,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -64,6 +65,20 @@ const menuItems: MenuItem[] = [
       'TIME_SCHEDULE_VIEW',
       'TIME_IMPORT_VIEW',
     ],
+  },
+  {
+    title: 'ยื่นเอกสาร',
+    href: '/documents',
+    matchPrefix: '/documents',
+    icon: FileText,
+    // เมนู ESS ยื่นเอกสาร (คำขอลา ฯลฯ) — พนักงานทุกคนที่ล็อกอินสามารถยื่นคำขอของตนเองได้ ไม่ต้องมีสิทธิ์เฉพาะ
+  },
+  {
+    title: 'ประวัติเอกสาร',
+    href: '/documents/history',
+    matchPrefix: '/documents/history',
+    icon: History,
+    // เมนู ESS รวมประวัติเอกสารทุกประเภทที่พนักงานยื่นไป — ไม่ต้องมีสิทธิ์เฉพาะ เช่นเดียวกับ "ยื่นเอกสาร"
   },
   {
     title: 'ตรวจบันทึกเวลา',
@@ -220,8 +235,13 @@ export const Sidebar: React.FC = () => {
 
   const isActive = (item: MenuItem) => {
     if (item.href === '/' && pathname === '/') return true;
-    if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return true;
-    return false;
+    if (!item.matchPrefix || !pathname.startsWith(item.matchPrefix)) return false;
+
+    // ป้องกันกรณี matchPrefix ซ้อนกัน (เช่น "/documents" กับ "/documents/history")
+    // ให้ยึดเมนูที่ prefix ตรงกับ pathname มากที่สุด (ยาวที่สุด) เป็นตัวไฮไลต์เพียงอันเดียว
+    const matches = accessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
+    const longestMatch = matches.reduce((a, b) => ((b.matchPrefix?.length ?? 0) > (a.matchPrefix?.length ?? 0) ? b : a));
+    return longestMatch.href === item.href;
   };
 
   return (
