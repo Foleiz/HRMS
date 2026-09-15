@@ -89,6 +89,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<TaxBracket> TaxBrackets => Set<TaxBracket>();
     public DbSet<SocialSecurityRate> SocialSecurityRates => Set<SocialSecurityRate>();
     public DbSet<EmployeeSalary> EmployeeSalaries => Set<EmployeeSalary>();
+    public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
 
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -1270,6 +1271,21 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.ApprovedByEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: PayrollItem
+        modelBuilder.Entity<PayrollItem>(entity =>
+        {
+            entity.ToTable("payroll_item", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ItemCode).HasColumnName("item_code").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ItemName).HasColumnName("item_name").HasMaxLength(150).IsRequired();
+            entity.Property(e => e.ItemType).HasColumnName("item_type").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.CalculationType).HasColumnName("calculation_type").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.IsTaxable).HasColumnName("is_taxable").IsRequired();
+            entity.Property(e => e.IsSocialSecurityCalculated).HasColumnName("is_social_security_calculated").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
         });
     }
 }

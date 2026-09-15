@@ -11,6 +11,8 @@ import {
   EmployeeSalaryOverview,
   EmployeeSalary,
   AdjustEmployeeSalaryPayload,
+  PayrollOverview,
+  PayrollItem,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -82,6 +84,20 @@ export const salaryService = {
 
   async adjustEmployeeSalary(employeeId: number, payload: AdjustEmployeeSalaryPayload): Promise<EmployeeSalary> {
     const res = await apiClient.post<ApiResponse<EmployeeSalary>>(`/salary/employees/${employeeId}/adjust`, payload);
+    return res.data.data;
+  },
+
+  // === 5. ภาพรวมแดชบอร์ด & รายการรายได้/รายหัก ===
+  async getOverview(): Promise<PayrollOverview> {
+    const res = await apiClient.get<ApiResponse<PayrollOverview>>('/salary/overview');
+    return res.data.data;
+  },
+
+  async getPayrollItems(itemType?: string): Promise<PayrollItem[]> {
+    const params: Record<string, any> = {};
+    if (itemType) params.itemType = itemType;
+
+    const res = await apiClient.get<ApiResponse<PayrollItem[]>>('/salary/items', { params });
     return res.data.data;
   },
 };

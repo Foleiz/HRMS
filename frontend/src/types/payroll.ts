@@ -116,3 +116,34 @@ export interface AdjustEmployeeSalaryPayload {
   reason?: string | null;
   approvedByEmployeeId?: number | null;
 }
+
+export interface RecentPayrollPeriod {
+  periodName: string;
+  totalAmount: number;
+  status: string;
+  statusText: string;
+}
+
+export interface PayrollOverview {
+  currentMonthTotal: number;
+  currentMonthPeriod: string;
+  calculatedEmployeesCount: number;
+  totalEmployeesCount: number;
+  calculatedPercentage: number;
+  pendingApprovalCount: number;
+  nextClosingDate: string;
+  remainingDays: number;
+  recentPeriods: RecentPayrollPeriod[];
+}
+
+export interface PayrollItem {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  itemType: 'EARNING' | 'DEDUCTION';
+  calculationType: 'FIXED' | 'FORMULA' | 'MANUAL';
+  isTaxable: boolean;
+  isSocialSecurityCalculated: boolean;
+  status: string;
+}
+

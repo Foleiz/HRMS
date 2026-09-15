@@ -203,4 +203,32 @@ public class SalaryController : ControllerBase
     }
 
     #endregion
+
+    #region Overview & Payroll Items
+
+    /// <summary>
+    /// ดึงข้อมูลภาพรวมแดชบอร์ดระบบเงินเดือน
+    /// </summary>
+    [HttpGet("overview")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollOverviewDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollOverviewDto>>> GetOverview(CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollOverviewAsync(cancellationToken);
+        return Ok(ApiResponse<PayrollOverviewDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// ดึงรายการประเภทรายได้และรายหักสำหรับคำนวณเงินเดือน
+    /// </summary>
+    [HttpGet("items")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollItemDto>>>> GetPayrollItems(
+        [FromQuery] string? itemType,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollItemsAsync(itemType, cancellationToken);
+        return Ok(ApiResponse<List<PayrollItemDto>>.Ok(result));
+    }
+
+    #endregion
 }

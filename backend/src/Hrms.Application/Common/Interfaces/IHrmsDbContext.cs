@@ -78,6 +78,7 @@ public interface IHrmsDbContext
     DbSet<TaxBracket> TaxBrackets { get; }
     DbSet<SocialSecurityRate> SocialSecurityRates { get; }
     DbSet<EmployeeSalary> EmployeeSalaries { get; }
+    DbSet<PayrollItem> PayrollItems { get; }
 
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }
