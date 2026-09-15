@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
@@ -183,11 +183,20 @@ export const PayrollItemModal: React.FC<Props> = ({
               <label className="block text-xs font-medium text-slate-700 mb-1.5">ค่า / สูตร</label>
               <input
                 type="text"
-                placeholder="เช่น ตามสัญญาจ้าง หรือ 500 บาท"
+                placeholder={
+                  calculationType === 'FIXED'
+                    ? 'เช่น 500 บาท หรือ ตามสัญญาจ้าง'
+                    : calculationType === 'FORMULA'
+                    ? 'เช่น 5% สูงสุด 750 หรือ ตามเวลา OT'
+                    : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริง'
+                }
                 value={formulaValue}
                 onChange={(e) => setFormulaValue(e.target.value)}
                 className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
               />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                ระบุเกณฑ์หรือตัวเลขสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน
+              </span>
             </div>
           </div>
 
