@@ -1,0 +1,118 @@
+export interface SalaryStructure {
+  id: number;
+  positionId?: number | null;
+  positionName?: string | null;
+  employeeLevelId?: number | null;
+  levelName?: string | null;
+  minSalary: number;
+  maxSalary: number;
+  defaultSalary?: number | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  approvalLimit?: number | null;
+}
+
+export interface CreateSalaryStructurePayload {
+  positionId?: number | null;
+  employeeLevelId?: number | null;
+  minSalary: number;
+  maxSalary: number;
+  defaultSalary?: number | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  approvalLimit?: number | null;
+}
+
+export interface UpdateSalaryStructurePayload {
+  positionId?: number | null;
+  employeeLevelId?: number | null;
+  minSalary: number;
+  maxSalary: number;
+  defaultSalary?: number | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  approvalLimit?: number | null;
+}
+
+export interface TaxBracket {
+  id: number;
+  bracketName: string;
+  incomeFrom: number;
+  incomeTo?: number | null;
+  taxRate: number;
+  baseTaxAmount: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  status: string;
+}
+
+export interface UpdateTaxBracketPayload {
+  bracketName: string;
+  incomeFrom: number;
+  incomeTo?: number | null;
+  taxRate: number;
+  baseTaxAmount: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  status: string;
+}
+
+export interface SocialSecurityRate {
+  id: number;
+  rateName: string;
+  employeeContributionPercent: number;
+  employerContributionPercent: number;
+  minWageBaseAmount: number;
+  maxWageBaseAmount: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  status: string;
+}
+
+export interface UpdateSocialSecurityRatePayload {
+  rateName: string;
+  employeeContributionPercent: number;
+  employerContributionPercent: number;
+  minWageBaseAmount: number;
+  maxWageBaseAmount: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  status: string;
+}
+
+export interface EmployeeSalaryOverview {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  levelName?: string | null;
+  currentSalary?: number | null;
+  currentEffectiveFrom?: string | null;
+  salaryStructureMin?: number | null;
+  salaryStructureMax?: number | null;
+  salaryRecordCount: number;
+}
+
+export interface EmployeeSalary {
+  id: number;
+  employeeId: number;
+  employeeCode?: string | null;
+  employeeName?: string | null;
+  departmentName?: string | null;
+  positionName?: string | null;
+  baseSalary: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  reason?: string | null;
+  approvedByEmployeeId?: number | null;
+  approvedByName?: string | null;
+  createdAt: string;
+}
+
+export interface AdjustEmployeeSalaryPayload {
+  baseSalary: number;
+  effectiveFrom: string;
+  reason?: string | null;
+  approvedByEmployeeId?: number | null;
+}

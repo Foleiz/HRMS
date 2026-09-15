@@ -73,6 +73,12 @@ public interface IHrmsDbContext
     DbSet<LeaveRequest> LeaveRequests { get; }
     DbSet<LeaveRequestDocument> LeaveRequestDocuments { get; }
 
+    // Payroll & Compensation (Dev 2 Sprint 5.1)
+    DbSet<SalaryStructure> SalaryStructures { get; }
+    DbSet<TaxBracket> TaxBrackets { get; }
+    DbSet<SocialSecurityRate> SocialSecurityRates { get; }
+    DbSet<EmployeeSalary> EmployeeSalaries { get; }
+
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }
 

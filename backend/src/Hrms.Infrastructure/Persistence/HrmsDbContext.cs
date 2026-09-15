@@ -84,6 +84,12 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions => Set<LeaveBalanceTransaction>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveRequestDocument> LeaveRequestDocuments => Set<LeaveRequestDocument>();
+    // Payroll & Compensation (Dev 2 Sprint 5.1)
+    public DbSet<SalaryStructure> SalaryStructures => Set<SalaryStructure>();
+    public DbSet<TaxBracket> TaxBrackets => Set<TaxBracket>();
+    public DbSet<SocialSecurityRate> SocialSecurityRates => Set<SocialSecurityRate>();
+    public DbSet<EmployeeSalary> EmployeeSalaries => Set<EmployeeSalary>();
+
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
@@ -1180,6 +1186,89 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: SalaryStructure
+        modelBuilder.Entity<SalaryStructure>(entity =>
+        {
+            entity.ToTable("salary_structure", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PositionId).HasColumnName("position_id");
+            entity.Property(e => e.EmployeeLevelId).HasColumnName("employee_level_id");
+            entity.Property(e => e.MinSalary).HasColumnName("min_salary").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.MaxSalary).HasColumnName("max_salary").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.DefaultSalary).HasColumnName("default_salary").HasPrecision(12, 2);
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").HasColumnType("date").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to").HasColumnType("date");
+            entity.Property(e => e.ApprovalLimit).HasColumnName("approval_limit").HasPrecision(12, 2);
+
+            entity.HasOne(e => e.Position)
+                .WithMany()
+                .HasForeignKey(e => e.PositionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.EmployeeLevel)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeLevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: TaxBracket
+        modelBuilder.Entity<TaxBracket>(entity =>
+        {
+            entity.ToTable("tax_bracket", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BracketName).HasColumnName("bracket_name").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.IncomeFrom).HasColumnName("income_from").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.IncomeTo).HasColumnName("income_to").HasPrecision(12, 2);
+            entity.Property(e => e.TaxRate).HasColumnName("tax_rate").HasPrecision(5, 4).IsRequired();
+            entity.Property(e => e.BaseTaxAmount).HasColumnName("base_tax_amount").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").HasColumnType("date").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to").HasColumnType("date");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+        });
+
+        // Configuration: SocialSecurityRate
+        modelBuilder.Entity<SocialSecurityRate>(entity =>
+        {
+            entity.ToTable("social_security_rate", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RateName).HasColumnName("rate_name").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.EmployeeContributionPercent).HasColumnName("employee_contribution_percent").HasPrecision(5, 4).IsRequired();
+            entity.Property(e => e.EmployerContributionPercent).HasColumnName("employer_contribution_percent").HasPrecision(5, 4).IsRequired();
+            entity.Property(e => e.MinWageBaseAmount).HasColumnName("min_wage_base_amount").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.MaxWageBaseAmount).HasColumnName("max_wage_base_amount").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").HasColumnType("date").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to").HasColumnType("date");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+        });
+
+        // Configuration: EmployeeSalary
+        modelBuilder.Entity<EmployeeSalary>(entity =>
+        {
+            entity.ToTable("employee_salary", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.BaseSalary).HasColumnName("base_salary").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").HasColumnType("date").IsRequired();
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to").HasColumnType("date");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ApprovedByEmployeeId).HasColumnName("approved_by_employee_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ApprovedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedByEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
