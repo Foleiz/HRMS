@@ -41,6 +41,7 @@ public class AuthService : IAuthService
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RoleDataScopes)
+                        .ThenInclude(rds => rds.Permission)
             .FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.Trim().ToLower(), cancellationToken);
 
         if (user == null)
@@ -107,6 +108,7 @@ public class AuthService : IAuthService
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RoleDataScopes)
+                        .ThenInclude(rds => rds.Permission)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (user == null)
@@ -142,22 +144,31 @@ public class AuthService : IAuthService
 
     private static UserInfoDto BuildUserInfoDto(Domain.Entities.UserAccount user)
     {
-        var roles = user.UserRoles.Select(ur => ur.Role.RoleCode).Distinct().ToList();
+        var roles = user.UserRoles
+            .Where(ur => ur.Role != null)
+            .Select(ur => ur.Role.RoleCode)
+            .Distinct()
+            .ToList();
 
         var permissions = user.UserRoles
-            .SelectMany(ur => ur.Role.RolePermissions)
+            .Where(ur => ur.Role != null)
+            .SelectMany(ur => ur.Role.RolePermissions ?? Enumerable.Empty<Domain.Entities.RolePermission>())
+            .Where(rp => rp.Permission != null && !string.IsNullOrEmpty(rp.Permission.PermissionCode))
             .Select(rp => rp.Permission.PermissionCode)
             .Distinct()
             .ToList();
 
         var dataScopes = user.UserRoles
-            .SelectMany(ur => ur.Role.RoleDataScopes)
+            .Where(ur => ur.Role != null)
+            .SelectMany(ur => ur.Role.RoleDataScopes ?? Enumerable.Empty<Domain.Entities.RoleDataScope>())
+            .Where(rds => rds != null)
             .Select(rds => new RoleScopeDto
             {
-                RoleCode = rds.Role.RoleCode,
-                PermissionCode = rds.Permission.PermissionCode,
-                DataVisibilityScope = rds.DataVisibilityScope
+                RoleCode = rds.Role?.RoleCode ?? user.UserRoles.FirstOrDefault(ur => ur.RoleId == rds.RoleId)?.Role?.RoleCode ?? string.Empty,
+                PermissionCode = rds.Permission?.PermissionCode ?? string.Empty,
+                DataVisibilityScope = rds.DataVisibilityScope ?? "SELF"
             })
+            .Where(s => !string.IsNullOrEmpty(s.PermissionCode))
             .DistinctBy(s => new { s.RoleCode, s.PermissionCode })
             .ToList();
 
