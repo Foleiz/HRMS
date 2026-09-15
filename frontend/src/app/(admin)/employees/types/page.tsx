@@ -27,7 +27,11 @@ import {
 } from '@/types/employeeType';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
+
 export default function EmployeeTypesPage() {
+  const { hasPermission } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const [, startTransition] = useTransition();
 
@@ -56,14 +60,29 @@ export default function EmployeeTypesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
+  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+
   // Sub-Navigation Tabs matching Design System
   const subNavTabs = [
-    { title: 'จัดการพนักงาน', href: '/employees' },
-    { title: 'ประเภทพนักงาน', href: '/employees/types', active: true },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers' },
-    { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees/contracts' },
-  ];
+    { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },
+    { title: 'ประเภทพนักงาน', href: '/employees/types', active: true, show: canViewTypes },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
+    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
+  ].filter((t) => t.show);
+
+  if (!canViewTypes) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูประเภทพนักงาน"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลประเภทพนักงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   useEffect(() => {
     setBreadcrumb({ section: 'พนักงาน', page: 'ประเภทพนักงาน / สัญญาจ้าง' });

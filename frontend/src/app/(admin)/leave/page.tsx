@@ -45,11 +45,27 @@ import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { LeaveRequestModal } from '@/components/leave/LeaveRequestModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 type ActiveTab = 'types' | 'policies' | 'balances' | 'requests';
 
 export default function LeaveManagementPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('types');
+  const { hasPermission, hasRole } = useAuth();
+  const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewAnyLeave = canViewTypes || canViewPolicies || canViewBalances;
+
+  const defaultTab: ActiveTab = canViewTypes
+    ? 'types'
+    : canViewPolicies
+    ? 'policies'
+    : canViewBalances
+    ? 'balances'
+    : 'requests';
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(defaultTab);
 
   // Master Data
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
@@ -519,6 +535,15 @@ export default function LeaveManagementPage() {
     }
   };
 
+  if (!canViewAnyLeave) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์เข้าถึงการจัดการวันลา"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการจัดการวันลาและสิทธิ์ กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Breadcrumb & Title */}
@@ -545,58 +570,66 @@ export default function LeaveManagementPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Navigation Tabs */}
         <div className="flex border-b border-gray-100 px-6 pt-4 gap-8">
-          <button
-            onClick={() => setActiveTab('types')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
-              activeTab === 'types'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            ประเภทการลา
-            {activeTab === 'types' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('policies')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
-              activeTab === 'policies'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            สิทธิ์การลา
-            {activeTab === 'policies' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('balances')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
-              activeTab === 'balances'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            ยอดวันลาพนักงาน
-            {activeTab === 'balances' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`pb-4 text-sm font-medium transition-all relative ${
-              activeTab === 'requests'
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            คำขอลา
-            {activeTab === 'requests' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-            )}
-          </button>
+          {canViewTypes && (
+            <button
+              onClick={() => setActiveTab('types')}
+              className={`pb-4 text-sm font-medium transition-all relative ${
+                activeTab === 'types'
+                  ? 'text-blue-600 font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              ประเภทการลา
+              {activeTab === 'types' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          )}
+          {canViewPolicies && (
+            <button
+              onClick={() => setActiveTab('policies')}
+              className={`pb-4 text-sm font-medium transition-all relative ${
+                activeTab === 'policies'
+                  ? 'text-blue-600 font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              สิทธิ์การลา
+              {activeTab === 'policies' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          )}
+          {canViewBalances && (
+            <button
+              onClick={() => setActiveTab('balances')}
+              className={`pb-4 text-sm font-medium transition-all relative ${
+                activeTab === 'balances'
+                  ? 'text-blue-600 font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              ยอดวันลาพนักงาน
+              {activeTab === 'balances' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          )}
+          {canViewBalances && (
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`pb-4 text-sm font-medium transition-all relative ${
+                activeTab === 'requests'
+                  ? 'text-blue-600 font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              คำขอลา
+              {activeTab === 'requests' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Toast Notification Banner */}

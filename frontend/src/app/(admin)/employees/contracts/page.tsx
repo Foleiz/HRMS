@@ -31,8 +31,12 @@ import CreateContractModal from '@/components/contracts/CreateContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
+
 export default function ContractsPage() {
   const router = useRouter();
+  const { hasPermission } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 
@@ -137,14 +141,29 @@ export default function ContractsPage() {
   const totalPages = Math.ceil(contracts.length / pageSize) || 1;
   const paginatedContracts = contracts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
+  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+
   // Sub-Navigation Tabs matching Mockup
   const subNavTabs = [
-    { title: 'จัดการพนักงาน', href: '/employees' },
-    { title: 'ประเภทพนักงาน', href: '/employees/types' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers' },
-    { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true },
-  ];
+    { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },
+    { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
+    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true, show: canViewContracts },
+  ].filter((t) => t.show);
+
+  if (!canViewContracts) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูข้อมูลสัญญาจ้าง"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลสัญญาจ้างงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   return (
     <div className="space-y-5 font-sans pb-12">

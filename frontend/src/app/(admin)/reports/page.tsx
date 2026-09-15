@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import AccessDenied from '@/components/common/AccessDenied';
 import { useToast } from '@/context/ToastContext';
 import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
@@ -26,12 +28,34 @@ import {
 } from 'lucide-react';
 
 export default function ReportsPage() {
+  const { hasPermission, hasRole } = useAuth();
   const toast = useToast();
   const toastRef = useRef(toast);
   toastRef.current = toast;
 
+  // Permissions
+  const canViewHeadcount = hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+  const canExportHeadcount = hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
+
+  const canViewLateness = hasPermission('REPORT_ATT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+  const canExportLateness = hasPermission('REPORT_ATT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
+
+  const canViewAnyReport = canViewHeadcount || canViewLateness;
+
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'headcount' | 'lateness'>('headcount');
+  const [activeTab, setActiveTab] = useState<'headcount' | 'lateness'>(() => {
+    if (canViewHeadcount) return 'headcount';
+    if (canViewLateness) return 'lateness';
+    return 'headcount';
+  });
+
+  useEffect(() => {
+    if (!canViewHeadcount && canViewLateness) {
+      setActiveTab('lateness');
+    } else if (canViewHeadcount && !canViewLateness) {
+      setActiveTab('headcount');
+    }
+  }, [canViewHeadcount, canViewLateness]);
 
   // Master Data Filters
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -167,6 +191,10 @@ export default function ReportsPage() {
     'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
   ];
 
+  if (!canViewAnyReport) {
+    return <AccessDenied message="คุณไม่มีสิทธิ์เข้าถึงรายงานสรุปและสถิติ" />;
+  }
+
   return (
     <div className="space-y-6 pb-12">
       {/* ─────────────────────────────────────────────────────────────
@@ -174,36 +202,40 @@ export default function ReportsPage() {
       ───────────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
-          <button
-            onClick={() => setActiveTab('headcount')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'headcount'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>อัตรากำลังคนประจำวัน (Daily Headcount)</span>
-          </button>
+          {canViewHeadcount && (
+            <button
+              onClick={() => setActiveTab('headcount')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'headcount'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>อัตรากำลังคนประจำวัน (Daily Headcount)</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('lateness')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'lateness'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>รายงานการมาสายประจำเดือน (Monthly Lateness)</span>
-          </button>
+          {canViewLateness && (
+            <button
+              onClick={() => setActiveTab('lateness')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'lateness'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>รายงานการมาสายประจำเดือน (Monthly Lateness)</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* ============================================================= */}
       {/* TAB 1: อัตรากำลังคนประจำวัน (Daily Headcount) */}
       {/* ============================================================= */}
-      {activeTab === 'headcount' && (
+      {activeTab === 'headcount' && canViewHeadcount && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -273,18 +305,20 @@ export default function ReportsPage() {
             </div>
 
             {/* Export Button */}
-            <button
-              onClick={handleExportDailyHeadcount}
-              disabled={isExportingHeadcount || !headcountData}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {isExportingHeadcount ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              ส่งออก CSV (Excel)
-            </button>
+            {canExportHeadcount && (
+              <button
+                onClick={handleExportDailyHeadcount}
+                disabled={isExportingHeadcount || !headcountData}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {isExportingHeadcount ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                ส่งออก CSV (Excel)
+              </button>
+            )}
           </div>
 
           {/* 4 Summary KPI Cards */}
@@ -413,7 +447,7 @@ export default function ReportsPage() {
       {/* ============================================================= */}
       {/* TAB 2: รายงานการมาสายประจำเดือน (Monthly Lateness) */}
       {/* ============================================================= */}
-      {activeTab === 'lateness' && (
+      {activeTab === 'lateness' && canViewLateness && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -492,18 +526,20 @@ export default function ReportsPage() {
             </div>
 
             {/* Export Button */}
-            <button
-              onClick={handleExportMonthlyLateness}
-              disabled={isExportingLateness || !latenessData}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {isExportingLateness ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              ส่งออก CSV (Excel)
-            </button>
+            {canExportLateness && (
+              <button
+                onClick={handleExportMonthlyLateness}
+                disabled={isExportingLateness || !latenessData}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {isExportingLateness ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                ส่งออก CSV (Excel)
+              </button>
+            )}
           </div>
 
           {/* 4 Summary KPI Cards */}

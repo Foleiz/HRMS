@@ -23,7 +23,11 @@ import { Employee } from '@/types/employee';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
+
 export default function TransfersPage() {
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<'transfers' | 'timeline'>('transfers');
 
   // Stats & List State
@@ -148,14 +152,29 @@ export default function TransfersPage() {
     }
   };
 
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
+  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+
   // Sub-Navigation Tabs
   const subNavTabs = [
-    { title: 'จัดการพนักงาน', href: '/employees' },
-    { title: 'ประเภทพนักงาน', href: '/employees/types' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', active: true },
-    { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees/contracts' },
-  ];
+    { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },
+    { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', active: true, show: canViewTransfers },
+    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
+  ].filter((t) => t.show);
+
+  if (!canViewTransfers) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูการโอนย้าย/ปรับตำแหน่ง"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการโอนย้ายและปรับตำแหน่ง กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   return (
     <div className="space-y-5 font-sans pb-12">
