@@ -1123,6 +1123,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.LeaveHours).HasColumnName("leave_hours").HasPrecision(8, 2);
             entity.Property(e => e.LeaveDays).HasColumnName("leave_days").HasPrecision(8, 2);
             entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ContactDuringLeave).HasColumnName("contact_during_leave");
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
             entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");

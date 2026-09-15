@@ -75,6 +75,7 @@ public class LeaveRequestService : ILeaveRequestService
                 LeaveHours = r.LeaveHours,
                 LeaveDays = r.LeaveDays,
                 Reason = r.Reason,
+                ContactDuringLeave = r.ContactDuringLeave,
                 Status = r.Status,
                 SubmittedAt = r.SubmittedAt,
                 CancelledAt = r.CancelledAt,
@@ -150,6 +151,7 @@ public class LeaveRequestService : ILeaveRequestService
             LeaveHours = r.LeaveHours,
             LeaveDays = r.LeaveDays,
             Reason = r.Reason,
+            ContactDuringLeave = r.ContactDuringLeave,
             Status = r.Status,
             SubmittedAt = r.SubmittedAt,
             CancelledAt = r.CancelledAt,
@@ -204,6 +206,7 @@ public class LeaveRequestService : ILeaveRequestService
             LeaveHours = request.LeaveHours,
             LeaveDays = request.LeaveDays,
             Reason = request.Reason,
+            ContactDuringLeave = request.ContactDuringLeave,
             Status = "PENDING",
             SubmittedAt = DateTime.UtcNow
         };

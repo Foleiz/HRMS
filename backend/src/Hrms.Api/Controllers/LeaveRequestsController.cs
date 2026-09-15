@@ -169,6 +169,117 @@ public class LeaveRequestsController : ControllerBase
             _ => "application/octet-stream"
         };
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // ESS (Employee Self-Service) Endpoints
+    // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ — พนักงานยื่น/ดู/ยกเลิก
+    // คำขอลาของตัวเองเท่านั้น ไม่สามารถระบุ employeeId ของคนอื่นได้
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// [ESS] ดึงรายการคำขอลาของตนเอง
+    /// </summary>
+    [HttpGet("my")]
+    [ProducesResponseType(typeof(ApiResponse<List<LeaveRequestDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyRequests(
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<List<LeaveRequestDto>>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, cancellationToken);
+        return Ok(ApiResponse<List<LeaveRequestDto>>.Ok(items, $"ดึงรายการคำขอลาของตนเองสำเร็จ (ทั้งหมด {totalCount} รายการ)"));
+    }
+
+    /// <summary>
+    /// [ESS] ยื่นคำขอลาใหม่ด้วยตนเอง (แนบไฟล์หลักฐาน/ใบรับรองแพทย์ได้)
+    /// </summary>
+    [HttpPost("my")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateMyRequest(
+        [FromBody] CreateMyLeaveRequestModel model,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<LeaveRequestDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        try
+        {
+            var dto = new CreateLeaveRequestDto
+            {
+                EmployeeId = employeeId,
+                LeaveTypeId = model.LeaveTypeId,
+                StartDatetime = model.StartDatetime,
+                EndDatetime = model.EndDatetime,
+                LeaveHours = model.LeaveHours,
+                LeaveDays = model.LeaveDays,
+                Reason = model.Reason,
+                ContactDuringLeave = model.ContactDuringLeave,
+                AttachmentFileName = model.AttachmentFileName,
+                AttachmentData = model.AttachmentData
+            };
+
+            var result = await _requestService.CreateAsync(dto, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, ApiResponse<LeaveRequestDto>.Ok(result, "ยื่นคำขอลาสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// [ESS] ยกเลิกคำขอลาของตนเอง (เฉพาะคำขอที่เป็นเจ้าของเท่านั้น)
+    /// </summary>
+    [HttpPut("my/{id:long}/cancel")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelMyRequest(
+        long id,
+        [FromBody] CancelLeaveRequestModel? model,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<LeaveRequestDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var existing = await _requestService.GetByIdAsync(id, cancellationToken);
+        if (existing == null)
+            return NotFound(ApiResponse<LeaveRequestDto>.Fail($"ไม่พบคำขอลารหัส ID {id}"));
+
+        if (existing.EmployeeId != employeeId)
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<LeaveRequestDto>.Fail("คุณไม่มีสิทธิ์ยกเลิกคำขอลานี้"));
+
+        try
+        {
+            var result = await _requestService.CancelAsync(id, model?.Reason, employeeId, cancellationToken);
+            return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "ยกเลิกคำขอลาสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    // ─── Helper: ดึง EmployeeId จาก JWT Claims ─────────────────
+    private long GetCurrentEmployeeId()
+    {
+        var claim = User.FindFirst("EmployeeId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim != null && long.TryParse(claim.Value, out var id))
+            return id;
+        return 0;
+    }
 }
 
 public class RejectLeaveRequestModel
@@ -179,4 +290,21 @@ public class RejectLeaveRequestModel
 public class CancelLeaveRequestModel
 {
     public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Model รับข้อมูลยื่นคำขอลาด้วยตนเอง (ESS) — ไม่มี EmployeeId เพราะอ่านจาก JWT Token เท่านั้น
+/// ป้องกันไม่ให้พนักงานยื่นคำขอแทนคนอื่นได้
+/// </summary>
+public class CreateMyLeaveRequestModel
+{
+    public long LeaveTypeId { get; set; }
+    public DateTime StartDatetime { get; set; }
+    public DateTime EndDatetime { get; set; }
+    public decimal LeaveHours { get; set; }
+    public decimal LeaveDays { get; set; }
+    public string? Reason { get; set; }
+    public string? ContactDuringLeave { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public byte[]? AttachmentData { get; set; }
 }

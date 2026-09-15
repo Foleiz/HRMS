@@ -16,6 +16,7 @@ public class LeaveRequest : BaseEntity
     public decimal LeaveHours { get; set; } = 0;
     public decimal LeaveDays { get; set; } = 0;
     public string? Reason { get; set; }
+    public string? ContactDuringLeave { get; set; }
     public string Status { get; set; } = "PENDING"; // DRAFT, PENDING, APPROVED, REJECTED, CANCELLED
     public DateTime? SubmittedAt { get; set; }
     public DateTime? CancelledAt { get; set; }

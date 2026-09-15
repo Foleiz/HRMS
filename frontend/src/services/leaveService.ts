@@ -15,6 +15,7 @@ import {
   LeaveRequest,
   LeaveStats,
   CreateLeaveRequestPayload,
+  CreateMyLeaveRequestPayload,
 } from '@/types/leave';
 
 /**
@@ -140,6 +141,27 @@ export const leaveService = {
 
   async cancelLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/cancel`, { reason });
+    return res.data.data;
+  },
+
+  // === 5. ESS (Employee Self-Service) — ยื่นคำขอลาด้วยตนเอง ===
+  // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ ไม่ต้องส่ง employeeId มาเอง
+
+  /** [ESS] ดึงรายการคำขอลาของตนเอง */
+  async getMyLeaveRequests(params?: { status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
+    const res = await apiClient.get<ApiResponse<LeaveRequest[]>>('/leave-requests/my', { params });
+    return res.data.data;
+  },
+
+  /** [ESS] ยื่นคำขอลาใหม่ด้วยตนเอง */
+  async createMyLeaveRequest(data: CreateMyLeaveRequestPayload): Promise<LeaveRequest> {
+    const res = await apiClient.post<ApiResponse<LeaveRequest>>('/leave-requests/my', data);
+    return res.data.data;
+  },
+
+  /** [ESS] ยกเลิกคำขอลาของตนเอง (เฉพาะที่เป็นเจ้าของคำขอ) */
+  async cancelMyLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}/cancel`, { reason });
     return res.data.data;
   },
 };
