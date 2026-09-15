@@ -983,8 +983,42 @@ export default function PayrollPage() {
                         item.calculationType === 'FIXED'
                           ? 'จำนวนคงที่'
                           : item.calculationType === 'FORMULA'
-                          ? 'สูตรคำนวณ (ตามกฎหมาย)'
-                          : 'เปอร์เซ็นต์ของฐานเงินเดือน';
+                          ? 'สูตรคำนวณ'
+                          : 'กำหนดเอง';
+
+                      const getTemplateBadge = (tplCode?: string | null) => {
+                        switch (tplCode) {
+                          case 'BASE_SALARY':
+                            return { label: 'ฐานเงินเดือนสัญญาจ้าง', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+                          case 'POSITION_ALLOWANCE':
+                            return { label: 'เงินประจำตำแหน่ง', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                          case 'OT_STANDARD':
+                            return { label: 'OT 1.5x / 3x กฎหมายแรงงาน', color: 'bg-amber-50 text-amber-800 border-amber-200' };
+                          case 'PERCENT_SALES':
+                            return { label: 'คอมมิชชั่น % ยอดขาย', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+                          case 'DILIGENT_ALLOWANCE':
+                            return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
+                          case 'PRORATED_DAYS':
+                            return { label: 'สัดส่วนวันทำงานจริง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
+                          case 'MANUAL_BONUS':
+                            return { label: 'โบนัสพิเศษ / Incentive', color: 'bg-pink-50 text-pink-800 border-pink-200' };
+                          case 'SSO_STANDARD':
+                            return { label: 'ประกันสังคม 5% (สูงสุด 750)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+                          case 'TAX_STANDARD':
+                            return { label: 'ภ.ง.ด. 91 ขั้นบันได 8 ขั้น', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+                          case 'LATE_ABSENT':
+                            return { label: 'หักตามเวลาสาย/ขาดจริง', color: 'bg-orange-50 text-orange-800 border-orange-200' };
+                          case 'PERCENT_SALARY':
+                            return { label: 'PVD / % เงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                          case 'STAFF_LOAN':
+                            return { label: 'หักเงินกู้ยืมสวัสดิการ', color: 'bg-slate-50 text-slate-700 border-slate-200' };
+                          case 'CUSTOM_FORMULA':
+                            return { label: 'สูตรกำหนดเอง', color: 'bg-slate-50 text-slate-700 border-slate-200' };
+                          default:
+                            return null;
+                        }
+                      };
+                      const templateBadge = item.calculationType === 'FORMULA' ? getTemplateBadge(item.formulaTemplate) : null;
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
@@ -995,9 +1029,22 @@ export default function PayrollPage() {
                             )}
                           </td>
                           <td className="py-3.5 px-5">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
-                              {calcTypeLabel}
-                            </span>
+                            <div className="flex flex-col items-start gap-1">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                                item.calculationType === 'FORMULA'
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : item.calculationType === 'FIXED'
+                                  ? 'bg-slate-100 text-slate-700'
+                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
+                              }`}>
+                                {calcTypeLabel}
+                              </span>
+                              {templateBadge && (
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
+                                  {templateBadge.label}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 px-5 text-xs text-slate-700 font-medium">
                             {item.formulaValue || '-'}

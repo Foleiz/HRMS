@@ -149,6 +149,7 @@ export interface PayrollItem {
   description?: string | null;
   itemType: 'EARNING' | 'DEDUCTION';
   calculationType: 'FIXED' | 'FORMULA' | 'MANUAL';
+  formulaTemplate?: string | null;
   formulaValue?: string | null;
   isTaxable: boolean;
   isSocialSecurityCalculated: boolean;

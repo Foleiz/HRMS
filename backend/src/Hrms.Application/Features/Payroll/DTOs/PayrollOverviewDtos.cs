@@ -29,6 +29,7 @@ public class PayrollItemDto
     public string? Description { get; set; }
     public string ItemType { get; set; } = "EARNING";
     public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaTemplate { get; set; }
     public string? FormulaValue { get; set; }
     public bool IsTaxable { get; set; }
     public bool IsSocialSecurityCalculated { get; set; }
@@ -42,6 +43,7 @@ public class CreatePayrollItemRequest
     public string? Description { get; set; }
     public string ItemType { get; set; } = "EARNING";
     public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaTemplate { get; set; }
     public string? FormulaValue { get; set; }
     public bool IsTaxable { get; set; } = true;
     public bool IsSocialSecurityCalculated { get; set; } = true;
@@ -53,6 +55,7 @@ public class UpdatePayrollItemRequest
     public string ItemName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaTemplate { get; set; }
     public string? FormulaValue { get; set; }
     public bool IsTaxable { get; set; }
     public bool IsSocialSecurityCalculated { get; set; }

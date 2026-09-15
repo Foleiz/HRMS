@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle } from 'lucide-react';
+import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
 import { PayrollItem } from '@/types/payroll';
 
 interface Props {
@@ -11,6 +11,167 @@ interface Props {
   defaultType: 'EARNING' | 'DEDUCTION';
   onSubmit: (payload: Partial<PayrollItem>, id?: number) => Promise<void>;
 }
+
+export interface FormulaTemplateOption {
+  code: string;
+  name: string;
+  category: 'EARNING' | 'DEDUCTION' | 'BOTH';
+  defaultValue: string;
+  defaultTaxable: boolean;
+  defaultSocialSecurity: boolean;
+  parameterLabel: string;
+  parameterPlaceholder: string;
+  hint: string;
+}
+
+export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
+  // Earnings
+  {
+    code: 'BASE_SALARY',
+    name: 'เงินเดือนพื้นฐาน (Base Salary)',
+    category: 'EARNING',
+    defaultValue: 'ตามสัญญาจ้างพนักงาน',
+    defaultTaxable: true,
+    defaultSocialSecurity: true,
+    parameterLabel: 'เกณฑ์อ้างอิงฐานเงินเดือน',
+    parameterPlaceholder: 'เช่น ตามสัญญาจ้าง หรือ อัตราโครงสร้างเงินเดือน',
+    hint: 'ระบบดึงฐานเงินเดือนประจำของพนักงานแต่ละคนจากข้อมูลสัญญาจ้าง',
+  },
+  {
+    code: 'POSITION_ALLOWANCE',
+    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ (Position Allowance)',
+    category: 'EARNING',
+    defaultValue: 'ตามโครงสร้างเงินเดือนตำแหน่ง',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เกณฑ์อ้างอิงตำแหน่ง',
+    parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
+    hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
+  },
+  {
+    code: 'OT_STANDARD',
+    name: 'ค่าล่วงเวลา (Overtime - OT 1.5x / 3x)',
+    category: 'EARNING',
+    defaultValue: 'ตาม พ.ร.บ. คุ้มครองแรงงาน (1.5x วันทำงาน / 3x วันหยุด)',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เรทตัวคูณ / เกณฑ์ OT',
+    parameterPlaceholder: 'เช่น วันทำงาน 1.5 เท่า, วันหยุด 3 เท่า',
+    hint: 'ระบบคำนวณอัตโนมัติจากชั่วโมง OT ในระบบ Time Tracking: (เงินเดือน/30/8) x ชม. x ตัวคูณ',
+  },
+  {
+    code: 'PERCENT_SALES',
+    name: 'ค่าคอมมิชชั่นตามยอดขาย (Commission %)',
+    category: 'EARNING',
+    defaultValue: '3% จากยอดขายสุทธิ',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
+    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
+    hint: 'ระบบคำนวณตามเปอร์เซ็นต์ของยอดขายที่พนักงานทำได้ในรอบเดือน',
+  },
+  {
+    code: 'DILIGENT_ALLOWANCE',
+    name: 'เบี้ยขยัน (Diligent Allowance)',
+    category: 'EARNING',
+    defaultValue: '1,000 บาท (เงื่อนไข: ขาด=0, สาย<=1 ครั้ง)',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'จำนวนเงินและเงื่อนไข',
+    parameterPlaceholder: 'เช่น 1,000 บาท เมื่อไม่ขาด ไม่สายเกิน 1 ครั้ง',
+    hint: 'ระบบตรวจสอบข้อมูลการลงเวลาทำงาน หากไม่ขาดงานและไม่สายเกินเกณฑ์จะได้รับยอดนี้',
+  },
+  {
+    code: 'PRORATED_DAYS',
+    name: 'คิดตามสัดส่วนวันทำงานจริง (Prorated Days)',
+    category: 'EARNING',
+    defaultValue: '(เงินเดือน / 30) x จำนวนวันทำงานจริง',
+    defaultTaxable: true,
+    defaultSocialSecurity: true,
+    parameterLabel: 'สูตรสัดส่วนวัน',
+    parameterPlaceholder: 'เช่น (เงินเดือน / วันในเดือน) x วันทำงานจริง',
+    hint: 'ระบบคำนวณเฉลี่ยตามวันทำงานจริง สำหรับพนักงานเริ่มงานใหม่หรือลาออกระหว่างรอบ',
+  },
+  {
+    code: 'MANUAL_BONUS',
+    name: 'โบนัสพิเศษ / เงินรางวัลผลงาน (Bonus & Incentive)',
+    category: 'EARNING',
+    defaultValue: 'ตามการอนุมัติรายบุคคล',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'จำนวนเงินหรือตัวคูณเดือน',
+    parameterPlaceholder: 'เช่น 1.5 เดือน หรือ ระบุเป็นรายคน',
+    hint: 'กำหนดตามผลการประเมินงานหรือนโยบายโบนัสประจำปีของบริษัท',
+  },
+
+  // Deductions
+  {
+    code: 'SSO_STANDARD',
+    name: 'เงินสมทบประกันสังคม (Social Security Fund)',
+    category: 'DEDUCTION',
+    defaultValue: '5% สูงสุดไม่เกิน 750 บาท/เดือน',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราสมทบและเพดาน',
+    parameterPlaceholder: 'เช่น 5% ฐานค่าจ้าง 1,650 - 15,000 บาท',
+    hint: 'คำนวณ 5% จากฐานค่าจ้างตามกฎหมายแรงงาน (ขั้นต่ำ 1,650 สูงสุด 15,000 บ.) หักสูงสุด 750 บ./เดือน',
+  },
+  {
+    code: 'TAX_STANDARD',
+    name: 'ภาษีเงินได้บุคคลธรรมดา (ภ.ง.ด. 91 ขั้นบันได 8 ขั้น)',
+    category: 'DEDUCTION',
+    defaultValue: 'ภ.ง.ด. 91 ขั้นบันได 8 ขั้น (0% - 35%)',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เกณฑ์ภาษีเงินได้',
+    parameterPlaceholder: 'คำนวณสะสมต่อปีตามประมวลรัษฎากร',
+    hint: 'ระบบคำนวณภาษีหัก ณ ที่จ่ายสะสมแบบขั้นบันได 8 ขั้น โดยหักค่าใช้จ่ายและค่าลดหย่อนอัตโนมัติ',
+  },
+  {
+    code: 'LATE_ABSENT',
+    name: 'หักมาสาย / ขาดงาน (Late & Absent Deduction)',
+    category: 'DEDUCTION',
+    defaultValue: 'หักตามจริง (ฐานเงินเดือน / 30 / 8 x ชม.สาย)',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เกณฑ์การหักเงินมาสาย/ขาดงาน',
+    parameterPlaceholder: 'เช่น หักนาทีละ 2 บาท หรือ หักรายชั่วโมงตามฐานเงินเดือน',
+    hint: 'ระบบดึงเวลานาที/ชั่วโมงที่สายจาก Time Tracking มาคำนวณหักตามอัตราค่าจ้างต่อชั่วโมง',
+  },
+  {
+    code: 'PERCENT_SALARY',
+    name: 'กองทุนสำรองเลี้ยงชีพ (PVD) / % เงินเดือน',
+    category: 'BOTH',
+    defaultValue: '5% ของฐานเงินเดือน',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราเปอร์เซ็นต์ (%)',
+    parameterPlaceholder: 'เช่น 3%, 5%, หรือ 7%',
+    hint: 'หักเงินสะสมเข้ากองทุนสำรองเลี้ยงชีพ (PVD) หรือรายการหักคำนวณเป็น % จากฐานเงินเดือน',
+  },
+  {
+    code: 'STAFF_LOAN',
+    name: 'หักชำระเงินกู้ยืมพนักงาน (Staff Loan / Advance)',
+    category: 'DEDUCTION',
+    defaultValue: 'หักตามงวดสัญญาเงินกู้ยืม',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'งวดชำระ / เงื่อนไข',
+    parameterPlaceholder: 'เช่น หักงวดละ 2,000 บาท จนครบสัญญา',
+    hint: 'ระบบหักตามยอดงวดที่กำหนดไว้ในสัญญาเงินกู้สวัสดิการพนักงานจนกว่าจะครบยอด',
+  },
+  {
+    code: 'CUSTOM_FORMULA',
+    name: 'สูตรหรือเกณฑ์กำหนดเอง (Custom Formula)',
+    category: 'BOTH',
+    defaultValue: '',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'ระบุสูตรหรือเงื่อนไข',
+    parameterPlaceholder: 'เช่น 2% ของยอดกำไร หรือ 500 บาท/โครงการ',
+    hint: 'ระบุเงื่อนไขหรือตัวแปรคำนวณเฉพาะกิจตามนโยบายองค์กร',
+  },
+];
 
 export const PayrollItemModal: React.FC<Props> = ({
   isOpen,
@@ -24,6 +185,7 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [description, setDescription] = useState('');
   const [itemType, setItemType] = useState<'EARNING' | 'DEDUCTION'>(defaultType);
   const [calculationType, setCalculationType] = useState<'FIXED' | 'FORMULA' | 'MANUAL'>('FIXED');
+  const [formulaTemplate, setFormulaTemplate] = useState<string>('');
   const [formulaValue, setFormulaValue] = useState('');
   const [isTaxable, setIsTaxable] = useState(true);
   const [isSocialSecurityCalculated, setIsSocialSecurityCalculated] = useState(true);
@@ -36,8 +198,11 @@ export const PayrollItemModal: React.FC<Props> = ({
       setItemCode(item.itemCode || '');
       setItemName(item.itemName || '');
       setDescription(item.description || '');
-      setItemType(item.itemType || defaultType);
-      setCalculationType(item.calculationType || 'FIXED');
+      const t = item.itemType || defaultType;
+      setItemType(t);
+      const calcType = item.calculationType || 'FIXED';
+      setCalculationType(calcType);
+      setFormulaTemplate(item.formulaTemplate || '');
       setFormulaValue(item.formulaValue || '');
       setIsTaxable(item.isTaxable);
       setIsSocialSecurityCalculated(item.isSocialSecurityCalculated);
@@ -48,6 +213,7 @@ export const PayrollItemModal: React.FC<Props> = ({
       setDescription('');
       setItemType(defaultType);
       setCalculationType('FIXED');
+      setFormulaTemplate('');
       setFormulaValue('');
       setIsTaxable(true);
       setIsSocialSecurityCalculated(defaultType === 'EARNING');
@@ -57,6 +223,39 @@ export const PayrollItemModal: React.FC<Props> = ({
   }, [item, defaultType, isOpen]);
 
   if (!isOpen) return null;
+
+  // Filter templates for current item type
+  const availableTemplates = FORMULA_TEMPLATES.filter(
+    (tpl) => tpl.category === itemType || tpl.category === 'BOTH'
+  );
+
+  const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate);
+
+  const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
+    setCalculationType(newType);
+    if (newType === 'FORMULA') {
+      if (!formulaTemplate) {
+        const defaultTpl = itemType === 'EARNING' ? 'OT_STANDARD' : 'SSO_STANDARD';
+        setFormulaTemplate(defaultTpl);
+        const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
+        if (tplObj) {
+          if (!formulaValue) setFormulaValue(tplObj.defaultValue);
+          setIsTaxable(tplObj.defaultTaxable);
+          setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
+        }
+      }
+    }
+  };
+
+  const handleTemplateChange = (newTplCode: string) => {
+    setFormulaTemplate(newTplCode);
+    const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
+    if (tplObj) {
+      setFormulaValue(tplObj.defaultValue);
+      setIsTaxable(tplObj.defaultTaxable);
+      setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +278,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         description: description.trim() || null,
         itemType,
         calculationType,
+        formulaTemplate: calculationType === 'FORMULA' ? (formulaTemplate || 'CUSTOM_FORMULA') : null,
         formulaValue: formulaValue.trim() || null,
         isTaxable,
         isSocialSecurityCalculated,
@@ -98,7 +298,7 @@ export const PayrollItemModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 text-center">
           <h3 className="text-lg font-bold text-slate-900">
@@ -164,31 +364,88 @@ export const PayrollItemModal: React.FC<Props> = ({
             />
           </div>
 
-          {/* Calculation Type & Formula */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">ประเภทการคำนวณ</label>
-              <select
-                value={calculationType}
-                onChange={(e) => setCalculationType(e.target.value as any)}
-                className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
-              >
-                <option value="FIXED">จำนวนคงที่</option>
-                <option value="FORMULA">สูตรคำนวณ</option>
-                <option value="MANUAL">กำหนดเอง</option>
-              </select>
+          {/* Calculation Type */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              ประเภทการคำนวณ
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'FIXED', label: 'จำนวนคงที่' },
+                { id: 'FORMULA', label: 'สูตรคำนวณ' },
+                { id: 'MANUAL', label: 'กำหนดเอง' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleCalculationTypeChange(opt.id as any)}
+                  className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
+                    calculationType === opt.id
+                      ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
+          </div>
 
+          {/* If FORMULA is chosen: Show Formula Template selector and Hint */}
+          {calculationType === 'FORMULA' ? (
+            <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <div>
+                <label className="block text-xs font-semibold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                  <Calculator className="w-3.5 h-3.5 text-blue-700" />
+                  <span>รูปแบบสูตรมาตรฐานของระบบ (Formula Template)</span>
+                </label>
+                <select
+                  value={formulaTemplate}
+                  onChange={(e) => handleTemplateChange(e.target.value)}
+                  className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 font-medium"
+                >
+                  {availableTemplates.map((tpl) => (
+                    <option key={tpl.code} value={tpl.code}>
+                      {tpl.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedTemplate && (
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200/70 rounded-xl text-[11px] text-blue-900 flex items-start gap-2">
+                  <Info className="w-3.5 h-3.5 text-blue-700 mt-0.5 shrink-0" />
+                  <span>{selectedTemplate.hint}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  {selectedTemplate?.parameterLabel || 'ค่าตัวแปร / ตัวคูณ / อัตรา'}
+                </label>
+                <input
+                  type="text"
+                  placeholder={selectedTemplate?.parameterPlaceholder || 'เช่น 5% หรือ 1,000 บาท'}
+                  value={formulaValue}
+                  onChange={(e) => setFormulaValue(e.target.value)}
+                  className="w-full text-xs px-3.5 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  HR สามารถระบุค่าตัวแปร/เกณฑ์อ้างอิง ระบบจะคำนวณตามตรรกะของสูตรที่เลือกอัตโนมัติ
+                </span>
+              </div>
+            </div>
+          ) : (
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">ค่า / สูตร</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                {calculationType === 'FIXED' ? 'จำนวนเงินคงที่ (บาท)' : 'เกณฑ์การคิด / บันทึกช่วยจำ'}
+              </label>
               <input
                 type="text"
                 placeholder={
                   calculationType === 'FIXED'
-                    ? 'เช่น 500 บาท หรือ ตามสัญญาจ้าง'
-                    : calculationType === 'FORMULA'
-                    ? 'เช่น 5% สูงสุด 750 หรือ ตามเวลา OT'
-                    : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริง'
+                    ? 'เช่น 500 หรือ ตามสัญญาจ้าง'
+                    : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริงที่เกิดขึ้น'
                 }
                 value={formulaValue}
                 onChange={(e) => setFormulaValue(e.target.value)}
@@ -198,7 +455,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 ระบุเกณฑ์หรือตัวเลขสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน
               </span>
             </div>
-          </div>
+          )}
 
           {/* Checkboxes: คิดภาษี & คิดประกันสังคม */}
           <div className="flex items-center gap-6 pt-1">

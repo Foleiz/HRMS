@@ -13,6 +13,7 @@ public class PayrollItem : BaseEntity
     public string? Description { get; set; }
     public string ItemType { get; set; } = "EARNING"; // EARNING, DEDUCTION
     public string CalculationType { get; set; } = "FIXED"; // FIXED, FORMULA, MANUAL
+    public string? FormulaTemplate { get; set; }
     public string? FormulaValue { get; set; }
     public bool IsTaxable { get; set; } = true;
     public bool IsSocialSecurityCalculated { get; set; } = true;

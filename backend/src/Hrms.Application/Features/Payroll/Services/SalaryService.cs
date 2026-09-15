@@ -588,6 +588,7 @@ public class SalaryService : ISalaryService
             Description = i.Description,
             ItemType = i.ItemType,
             CalculationType = i.CalculationType,
+            FormulaTemplate = i.FormulaTemplate,
             FormulaValue = i.FormulaValue,
             IsTaxable = i.IsTaxable,
             IsSocialSecurityCalculated = i.IsSocialSecurityCalculated,
@@ -615,6 +616,7 @@ public class SalaryService : ISalaryService
             Description = request.Description,
             ItemType = request.ItemType.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING",
             CalculationType = request.CalculationType.ToUpper(),
+            FormulaTemplate = request.FormulaTemplate,
             FormulaValue = request.FormulaValue,
             IsTaxable = request.IsTaxable,
             IsSocialSecurityCalculated = request.IsSocialSecurityCalculated,
@@ -632,6 +634,7 @@ public class SalaryService : ISalaryService
             Description = entity.Description,
             ItemType = entity.ItemType,
             CalculationType = entity.CalculationType,
+            FormulaTemplate = entity.FormulaTemplate,
             FormulaValue = entity.FormulaValue,
             IsTaxable = entity.IsTaxable,
             IsSocialSecurityCalculated = entity.IsSocialSecurityCalculated,
@@ -651,6 +654,7 @@ public class SalaryService : ISalaryService
         entity.ItemName = request.ItemName.Trim();
         entity.Description = request.Description;
         entity.CalculationType = request.CalculationType.ToUpper();
+        entity.FormulaTemplate = request.FormulaTemplate;
         entity.FormulaValue = request.FormulaValue;
         entity.IsTaxable = request.IsTaxable;
         entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
@@ -666,6 +670,7 @@ public class SalaryService : ISalaryService
             Description = entity.Description,
             ItemType = entity.ItemType,
             CalculationType = entity.CalculationType,
+            FormulaTemplate = entity.FormulaTemplate,
             FormulaValue = entity.FormulaValue,
             IsTaxable = entity.IsTaxable,
             IsSocialSecurityCalculated = entity.IsSocialSecurityCalculated,
