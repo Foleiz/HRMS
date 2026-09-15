@@ -100,4 +100,18 @@ export const salaryService = {
     const res = await apiClient.get<ApiResponse<PayrollItem[]>>('/salary/items', { params });
     return res.data.data;
   },
+
+  async createPayrollItem(payload: Partial<PayrollItem>): Promise<PayrollItem> {
+    const res = await apiClient.post<ApiResponse<PayrollItem>>('/salary/items', payload);
+    return res.data.data;
+  },
+
+  async updatePayrollItem(id: number, payload: Partial<PayrollItem>): Promise<PayrollItem> {
+    const res = await apiClient.put<ApiResponse<PayrollItem>>(`/salary/items/${id}`, payload);
+    return res.data.data;
+  },
+
+  async deletePayrollItem(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<object>>(`/salary/items/${id}`);
+  },
 };

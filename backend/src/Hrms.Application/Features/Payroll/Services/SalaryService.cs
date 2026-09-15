@@ -84,7 +84,9 @@ public class SalaryService : ISalaryService
             DefaultSalary = request.DefaultSalary,
             EffectiveFrom = request.EffectiveFrom,
             EffectiveTo = request.EffectiveTo,
-            ApprovalLimit = request.ApprovalLimit
+            ApprovalLimit = request.ApprovalLimit,
+            PositionAllowance = request.PositionAllowance,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
         };
 
         _context.SalaryStructures.Add(entity);
@@ -123,6 +125,8 @@ public class SalaryService : ISalaryService
         entity.EffectiveFrom = request.EffectiveFrom;
         entity.EffectiveTo = request.EffectiveTo;
         entity.ApprovalLimit = request.ApprovalLimit;
+        entity.PositionAllowance = request.PositionAllowance;
+        entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -175,7 +179,9 @@ public class SalaryService : ISalaryService
             DefaultSalary = s.DefaultSalary,
             EffectiveFrom = s.EffectiveFrom,
             EffectiveTo = s.EffectiveTo,
-            ApprovalLimit = s.ApprovalLimit
+            ApprovalLimit = s.ApprovalLimit,
+            PositionAllowance = s.PositionAllowance,
+            Status = s.Status
         };
     }
 
@@ -579,12 +585,102 @@ public class SalaryService : ISalaryService
             Id = i.Id,
             ItemCode = i.ItemCode,
             ItemName = i.ItemName,
+            Description = i.Description,
             ItemType = i.ItemType,
             CalculationType = i.CalculationType,
+            FormulaValue = i.FormulaValue,
             IsTaxable = i.IsTaxable,
             IsSocialSecurityCalculated = i.IsSocialSecurityCalculated,
             Status = i.Status
         }).ToList();
+    }
+
+    public async Task<PayrollItemDto> CreatePayrollItemAsync(CreatePayrollItemRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.ItemCode))
+            throw new BusinessRuleException("รหัสรายการต้องไม่เป็นค่าว่าง");
+
+        if (string.IsNullOrWhiteSpace(request.ItemName))
+            throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
+
+        var codeUpper = request.ItemCode.Trim().ToUpper();
+        var exists = await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken);
+        if (exists)
+            throw new BusinessRuleException($"รหัสรายการ '{codeUpper}' มีอยู่ในระบบแล้ว");
+
+        var entity = new PayrollItem
+        {
+            ItemCode = codeUpper,
+            ItemName = request.ItemName.Trim(),
+            Description = request.Description,
+            ItemType = request.ItemType.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING",
+            CalculationType = request.CalculationType.ToUpper(),
+            FormulaValue = request.FormulaValue,
+            IsTaxable = request.IsTaxable,
+            IsSocialSecurityCalculated = request.IsSocialSecurityCalculated,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
+        };
+
+        _context.PayrollItems.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PayrollItemDto
+        {
+            Id = entity.Id,
+            ItemCode = entity.ItemCode,
+            ItemName = entity.ItemName,
+            Description = entity.Description,
+            ItemType = entity.ItemType,
+            CalculationType = entity.CalculationType,
+            FormulaValue = entity.FormulaValue,
+            IsTaxable = entity.IsTaxable,
+            IsSocialSecurityCalculated = entity.IsSocialSecurityCalculated,
+            Status = entity.Status
+        };
+    }
+
+    public async Task<PayrollItemDto> UpdatePayrollItemAsync(long id, UpdatePayrollItemRequest request, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.PayrollItems.FindAsync(new object[] { id }, cancellationToken);
+        if (entity == null)
+            throw new NotFoundException("PayrollItem", id);
+
+        if (string.IsNullOrWhiteSpace(request.ItemName))
+            throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
+
+        entity.ItemName = request.ItemName.Trim();
+        entity.Description = request.Description;
+        entity.CalculationType = request.CalculationType.ToUpper();
+        entity.FormulaValue = request.FormulaValue;
+        entity.IsTaxable = request.IsTaxable;
+        entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
+        entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PayrollItemDto
+        {
+            Id = entity.Id,
+            ItemCode = entity.ItemCode,
+            ItemName = entity.ItemName,
+            Description = entity.Description,
+            ItemType = entity.ItemType,
+            CalculationType = entity.CalculationType,
+            FormulaValue = entity.FormulaValue,
+            IsTaxable = entity.IsTaxable,
+            IsSocialSecurityCalculated = entity.IsSocialSecurityCalculated,
+            Status = entity.Status
+        };
+    }
+
+    public async Task DeletePayrollItemAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.PayrollItems.FindAsync(new object[] { id }, cancellationToken);
+        if (entity == null)
+            throw new NotFoundException("PayrollItem", id);
+
+        _context.PayrollItems.Remove(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     #endregion

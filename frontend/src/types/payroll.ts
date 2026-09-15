@@ -10,6 +10,8 @@ export interface SalaryStructure {
   effectiveFrom: string;
   effectiveTo?: string | null;
   approvalLimit?: number | null;
+  positionAllowance?: number | null;
+  status?: string;
 }
 
 export interface CreateSalaryStructurePayload {
@@ -21,6 +23,8 @@ export interface CreateSalaryStructurePayload {
   effectiveFrom: string;
   effectiveTo?: string | null;
   approvalLimit?: number | null;
+  positionAllowance?: number | null;
+  status?: string;
 }
 
 export interface UpdateSalaryStructurePayload {
@@ -32,6 +36,8 @@ export interface UpdateSalaryStructurePayload {
   effectiveFrom: string;
   effectiveTo?: string | null;
   approvalLimit?: number | null;
+  positionAllowance?: number | null;
+  status?: string;
 }
 
 export interface TaxBracket {
@@ -140,8 +146,10 @@ export interface PayrollItem {
   id: number;
   itemCode: string;
   itemName: string;
+  description?: string | null;
   itemType: 'EARNING' | 'DEDUCTION';
   calculationType: 'FIXED' | 'FORMULA' | 'MANUAL';
+  formulaValue?: string | null;
   isTaxable: boolean;
   isSocialSecurityCalculated: boolean;
   status: string;

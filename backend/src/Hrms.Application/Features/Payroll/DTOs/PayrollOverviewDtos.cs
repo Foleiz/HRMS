@@ -26,8 +26,34 @@ public class PayrollItemDto
     public long Id { get; set; }
     public string ItemCode { get; set; } = string.Empty;
     public string ItemName { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public string ItemType { get; set; } = "EARNING";
     public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaValue { get; set; }
+    public bool IsTaxable { get; set; }
+    public bool IsSocialSecurityCalculated { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
+
+public class CreatePayrollItemRequest
+{
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string ItemType { get; set; } = "EARNING";
+    public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaValue { get; set; }
+    public bool IsTaxable { get; set; } = true;
+    public bool IsSocialSecurityCalculated { get; set; } = true;
+    public string Status { get; set; } = "ACTIVE";
+}
+
+public class UpdatePayrollItemRequest
+{
+    public string ItemName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string CalculationType { get; set; } = "FIXED";
+    public string? FormulaValue { get; set; }
     public bool IsTaxable { get; set; }
     public bool IsSocialSecurityCalculated { get; set; }
     public string Status { get; set; } = "ACTIVE";

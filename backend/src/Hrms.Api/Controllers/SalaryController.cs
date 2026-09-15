@@ -230,5 +230,45 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<List<PayrollItemDto>>.Ok(result));
     }
 
+    /// <summary>
+    /// สร้างรายการประเภทรายได้หรือรายหักใหม่
+    /// </summary>
+    [HttpPost("items")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollItemDto>), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ApiResponse<PayrollItemDto>>> CreatePayrollItem(
+        [FromBody] CreatePayrollItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.CreatePayrollItemAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetPayrollItems), new { itemType = result.ItemType }, ApiResponse<PayrollItemDto>.Ok(result, "เพิ่มรายการสำเร็จ"));
+    }
+
+    /// <summary>
+    /// แก้ไขข้อมูลรายการประเภทรายได้หรือรายหัก
+    /// </summary>
+    [HttpPut("items/{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollItemDto>>> UpdatePayrollItem(
+        long id,
+        [FromBody] UpdatePayrollItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.UpdatePayrollItemAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<PayrollItemDto>.Ok(result, "แก้ไขรายการสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ลบรายการประเภทรายได้หรือรายหัก
+    /// </summary>
+    [HttpDelete("items/{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<object>>> DeletePayrollItem(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        await _salaryService.DeletePayrollItemAsync(id, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(null!, "ลบรายการสำเร็จ"));
+    }
+
     #endregion
 }

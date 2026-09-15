@@ -1204,6 +1204,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").HasColumnType("date").IsRequired();
             entity.Property(e => e.EffectiveTo).HasColumnName("effective_to").HasColumnType("date");
             entity.Property(e => e.ApprovalLimit).HasColumnName("approval_limit").HasPrecision(12, 2);
+            entity.Property(e => e.PositionAllowance).HasColumnName("position_allowance").HasPrecision(12, 2).HasDefaultValue(0);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("ACTIVE");
 
             entity.HasOne(e => e.Position)
                 .WithMany()
@@ -1281,8 +1283,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ItemCode).HasColumnName("item_code").HasMaxLength(50).IsRequired();
             entity.Property(e => e.ItemName).HasColumnName("item_name").HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ItemType).HasColumnName("item_type").HasMaxLength(20).IsRequired();
             entity.Property(e => e.CalculationType).HasColumnName("calculation_type").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FormulaValue).HasColumnName("formula_value").HasMaxLength(255);
             entity.Property(e => e.IsTaxable).HasColumnName("is_taxable").IsRequired();
             entity.Property(e => e.IsSocialSecurityCalculated).HasColumnName("is_social_security_calculated").IsRequired();
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();

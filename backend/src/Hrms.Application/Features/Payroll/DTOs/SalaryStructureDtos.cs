@@ -13,6 +13,8 @@ public class SalaryStructureDto
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public decimal? ApprovalLimit { get; set; }
+    public decimal PositionAllowance { get; set; } = 0;
+    public string Status { get; set; } = "ACTIVE";
 }
 
 public class CreateSalaryStructureRequest
@@ -25,6 +27,8 @@ public class CreateSalaryStructureRequest
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public decimal? ApprovalLimit { get; set; }
+    public decimal PositionAllowance { get; set; } = 0;
+    public string Status { get; set; } = "ACTIVE";
 }
 
 public class UpdateSalaryStructureRequest
@@ -37,4 +41,6 @@ public class UpdateSalaryStructureRequest
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public decimal? ApprovalLimit { get; set; }
+    public decimal PositionAllowance { get; set; } = 0;
+    public string Status { get; set; } = "ACTIVE";
 }

@@ -27,4 +27,7 @@ public interface ISalaryService
     // Overview & Items (Dashboard and Earnings/Deductions)
     Task<PayrollOverviewDto> GetPayrollOverviewAsync(CancellationToken cancellationToken = default);
     Task<List<PayrollItemDto>> GetPayrollItemsAsync(string? itemType, CancellationToken cancellationToken = default);
+    Task<PayrollItemDto> CreatePayrollItemAsync(CreatePayrollItemRequest request, CancellationToken cancellationToken = default);
+    Task<PayrollItemDto> UpdatePayrollItemAsync(long id, UpdatePayrollItemRequest request, CancellationToken cancellationToken = default);
+    Task DeletePayrollItemAsync(long id, CancellationToken cancellationToken = default);
 }

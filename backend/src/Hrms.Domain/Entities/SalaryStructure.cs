@@ -16,6 +16,8 @@ public class SalaryStructure : BaseEntity
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public decimal? ApprovalLimit { get; set; } = 0;
+    public decimal PositionAllowance { get; set; } = 0;
+    public string Status { get; set; } = "ACTIVE";
 
     // Navigation Properties
     public virtual Position? Position { get; set; }

@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
+  ChevronRight,
   Wallet,
   MoreHorizontal,
+  MoreVertical,
   ArrowRight,
   Plus,
   Edit2,
@@ -26,6 +28,7 @@ import {
   ShieldCheck,
   Calendar,
   Clock,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -44,6 +47,7 @@ import {
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
+import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -84,9 +88,11 @@ export default function PayrollPage() {
 
   // Sub-tab in Structure view: 'positions' vs 'employees'
   const [structureSubTab, setStructureSubTab] = useState<'positions' | 'employees'>('positions');
+  const [openActionMenuId, setOpenActionMenuId] = useState<number | null>(null);
+  const [structurePage, setStructurePage] = useState<number>(1);
 
-  // Filter for payroll items: 'ALL' | 'EARNING' | 'DEDUCTION'
-  const [itemTypeFilter, setItemTypeFilter] = useState<'ALL' | 'EARNING' | 'DEDUCTION'>('ALL');
+  // Sub-tab in Payroll items view: 'EARNING' vs 'DEDUCTION'
+  const [itemsSubTab, setItemsSubTab] = useState<'EARNING' | 'DEDUCTION'>('EARNING');
 
   // Filters for Employee Salaries
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -95,6 +101,12 @@ export default function PayrollPage() {
   // Modals
   const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState<SalaryStructure | null>(null);
+
+  const [isPayrollItemModalOpen, setIsPayrollItemModalOpen] = useState(false);
+  const [selectedPayrollItem, setSelectedPayrollItem] = useState<PayrollItem | null>(null);
+  const [deleteItemConfirmOpen, setDeleteItemConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<PayrollItem | null>(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [selectedEmployeeForAdjust, setSelectedEmployeeForAdjust] = useState<EmployeeSalaryOverview | null>(null);
@@ -201,6 +213,46 @@ export default function PayrollPage() {
     }
   };
 
+  // Payroll Item Handlers
+  const handleOpenCreateItem = () => {
+    setSelectedPayrollItem(null);
+    setIsPayrollItemModalOpen(true);
+  };
+
+  const handleOpenEditItem = (item: PayrollItem) => {
+    setSelectedPayrollItem(item);
+    setIsPayrollItemModalOpen(true);
+  };
+
+  const handleSaveItem = async (payload: Partial<PayrollItem>, id?: number) => {
+    if (id) {
+      await salaryService.updatePayrollItem(id, payload);
+      showToast('แก้ไขรายการสำเร็จ');
+    } else {
+      await salaryService.createPayrollItem(payload);
+      showToast('เพิ่มรายการใหม่สำเร็จ');
+    }
+    const updated = await salaryService.getPayrollItems();
+    setPayrollItems(updated);
+  };
+
+  const handleConfirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeletingItem(true);
+      await salaryService.deletePayrollItem(itemToDelete.id);
+      showToast(`ลบรายการ "${itemToDelete.itemName}" สำเร็จ`);
+      const updated = await salaryService.getPayrollItems();
+      setPayrollItems(updated);
+      setDeleteItemConfirmOpen(false);
+    } catch (err: any) {
+      console.error('Failed to delete item:', err);
+    } finally {
+      setIsDeletingItem(false);
+      setItemToDelete(null);
+    }
+  };
+
   // Employee Salary Handlers
   const handleOpenAdjustSalary = (emp: EmployeeSalaryOverview) => {
     setSelectedEmployeeForAdjust(emp);
@@ -264,10 +316,7 @@ export default function PayrollPage() {
   };
 
   // Filtered Payroll Items
-  const filteredPayrollItems = payrollItems.filter((i) => {
-    if (itemTypeFilter === 'ALL') return true;
-    return i.itemType === itemTypeFilter;
-  });
+  const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -530,131 +579,197 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) === */}
+      {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) - Matches media_1789453480755.png === */}
       {activeTab === 'structures' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-          {/* Sub-Tabs Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl w-fit">
-              <button
-                onClick={() => setStructureSubTab('positions')}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  structureSubTab === 'positions'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                กรอบอัตราเงินเดือนตามตำแหน่ง ({structures.length})
-              </button>
-              <button
-                onClick={() => setStructureSubTab('employees')}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  structureSubTab === 'employees'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                ข้อมูลฐานเงินเดือนพนักงาน ({employees.length})
-              </button>
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-4">
+          {/* Header matching mockup: Title on left, "+ เพิ่ม" button on right */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-base font-bold text-slate-900">โครงสร้างเงินเดือน</h2>
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+                <button
+                  onClick={() => setStructureSubTab('positions')}
+                  className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    structureSubTab === 'positions'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  กรอบโครงสร้าง ({structures.length})
+                </button>
+                <button
+                  onClick={() => setStructureSubTab('employees')}
+                  className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    structureSubTab === 'employees'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  ฐานเงินเดือนพนักงาน ({employees.length})
+                </button>
+              </div>
             </div>
 
             {structureSubTab === 'positions' && (
               <button
                 onClick={handleOpenCreateStructure}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>เพิ่มโครงสร้างเงินเดือน</span>
+                <span>เพิ่ม</span>
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             )}
           </div>
 
-          {/* Sub-view 1: กรอบเงินเดือนตามตำแหน่ง */}
+          {/* Sub-view 1: Salary Structure Table matching Image 1 */}
           {structureSubTab === 'positions' && (
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                    <th className="py-3.5 px-4">ตำแหน่งงาน / ระดับ</th>
-                    <th className="py-3.5 px-4 text-right">เงินเดือนขั้นต่ำ (Min)</th>
-                    <th className="py-3.5 px-4 text-right">ค่าเริ่มต้น (Mid)</th>
-                    <th className="py-3.5 px-4 text-right">เพดานสูงสุด (Max)</th>
-                    <th className="py-3.5 px-4 text-right">เพดานอำนาจอนุมัติ</th>
-                    <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                    <th className="py-3.5 px-4 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        <div className="inline-flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
-                        </div>
-                      </td>
+            <div className="space-y-4">
+              <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                      <th className="py-3.5 px-5">ระดับพนักงาน</th>
+                      <th className="py-3.5 px-5">เงินเดือนขั้นต่ำ</th>
+                      <th className="py-3.5 px-5">เงินเดือนขั้นสูง</th>
+                      <th className="py-3.5 px-5">ค่าตำแหน่ง</th>
+                      <th className="py-3.5 px-5">สถานะ</th>
+                      <th className="py-3.5 px-5 text-right">จัดการ</th>
                     </tr>
-                  ) : structures.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
-                      </td>
-                    </tr>
-                  ) : (
-                    structures.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-900">
-                            {s.positionName || 'ทุกตำแหน่งในระบบ'}
-                          </div>
-                          <div className="text-xs text-slate-400 mt-0.5">
-                            {s.levelName || 'ทุกระดับตำแหน่ง'}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-medium text-slate-700 font-mono text-xs">
-                          ฿{s.minSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-medium text-blue-700 font-mono text-xs">
-                          {s.defaultSalary != null
-                            ? `฿${s.defaultSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                            : '-'}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-semibold text-slate-900 font-mono text-xs">
-                          ฿{s.maxSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3.5 px-4 text-right text-xs text-slate-600 font-mono">
-                          {s.approvalLimit != null
-                            ? `฿${s.approvalLimit.toLocaleString()}`
-                            : '-'}
-                        </td>
-                        <td className="py-3.5 px-4 text-center text-xs text-slate-500 font-mono">
-                          {s.effectiveFrom} {s.effectiveTo ? `ถึง ${s.effectiveTo}` : 'เป็นต้นไป'}
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditStructure(s)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setStructureToDelete(s);
-                                setDeleteConfirmOpen(true);
-                              }}
-                              title="ลบ"
-                              className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400">
+                          <div className="inline-flex items-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : structures.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400">
+                          ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
+                        </td>
+                      </tr>
+                    ) : (
+                      structures.map((s) => {
+                        const isStructureActive = s.status ? s.status.toUpperCase() === 'ACTIVE' : true;
+                        return (
+                          <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-4 px-5 font-medium text-slate-800">
+                              {s.levelName || s.positionName || 'ระดับปฏิบัติการ'}
+                            </td>
+                            <td className="py-4 px-5 font-medium text-slate-700">
+                              ฿{s.minSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-5 font-medium text-slate-700">
+                              ฿{s.maxSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-5 font-medium text-slate-700">
+                              ฿{(s.positionAllowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-5">
+                              {isStructureActive ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 font-medium">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                  <span>ใช้งาน</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                  <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                                  <span>ไม่ได้ใช้งาน</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-5 text-right relative">
+                              <div className="inline-block text-left">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenActionMenuId(openActionMenuId === s.id ? null : s.id);
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+
+                                {openActionMenuId === s.id && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-20"
+                                      onClick={() => setOpenActionMenuId(null)}
+                                    />
+                                    <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-100 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenActionMenuId(null);
+                                          handleOpenEditStructure(s);
+                                        }}
+                                        className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5 text-amber-500" />
+                                        <span>แก้ไข</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenActionMenuId(null);
+                                          setStructureToDelete(s);
+                                          setDeleteConfirmOpen(true);
+                                        }}
+                                        className="w-full px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                        <span>ลบ</span>
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination matching Image 1: ← 1 2 3 4 → */}
+              <div className="flex items-center justify-end gap-1.5 pt-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setStructurePage(Math.max(1, structurePage - 1))}
+                  disabled={structurePage === 1}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {[1, 2, 3, 4].map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setStructurePage(page)}
+                    className={`w-7 h-7 rounded-lg font-medium transition-all cursor-pointer flex items-center justify-center ${
+                      structurePage === page
+                        ? 'bg-[#0B2046] text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setStructurePage(Math.min(4, structurePage + 1))}
+                  disabled={structurePage === 4}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -783,91 +898,168 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* === TAB 3: รายได้และรายหัก (Earnings & Deductions) === */}
+      {/* === TAB 3: รายได้และรายหัก (Earnings & Deductions) - Matches media_1789453524860.png === */}
       {activeTab === 'items' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">รายการประเภทรายได้และรายหัก</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                กำหนดรายการได้และหักที่นำไปใช้ในการคำนวณเงินเดือน ภาษี และประกันสังคม
-              </p>
-            </div>
+        <div className="space-y-4">
+          {/* Top Pill Switcher: รายการรายได้ / รายการรายหัก */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setItemsSubTab('EARNING')}
+              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                itemsSubTab === 'EARNING'
+                  ? 'bg-[#0B2046] text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              รายการรายได้
+            </button>
+            <button
+              onClick={() => setItemsSubTab('DEDUCTION')}
+              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                itemsSubTab === 'DEDUCTION'
+                  ? 'bg-[#0B2046] text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              รายการรายหัก
+            </button>
+          </div>
 
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-              {(['ALL', 'EARNING', 'DEDUCTION'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setItemTypeFilter(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    itemTypeFilter === t
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {t === 'ALL' ? 'ทั้งหมด' : t === 'EARNING' ? 'รายได้ (Earnings)' : 'รายหัก (Deductions)'}
-                </button>
-              ))}
+          {/* 2 Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+              <span className="text-xs text-slate-500 font-medium">รายการทั้งหมด</span>
+              <div className="text-2xl font-bold text-slate-900 mt-1">
+                {payrollItems.filter((i) => i.itemType === itemsSubTab).length} รายการ
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+              <span className="text-xs text-slate-500 font-medium">เปิดใช้งานอยู่</span>
+              <div className="text-2xl font-bold text-slate-900 mt-1">
+                {
+                  payrollItems.filter(
+                    (i) =>
+                      i.itemType === itemsSubTab &&
+                      (i.status ? i.status.toUpperCase() === 'ACTIVE' : true)
+                  ).length
+                }{' '}
+                รายการ
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-100 rounded-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                  <th className="py-3.5 px-4">รหัสรายการ</th>
-                  <th className="py-3.5 px-4">ชื่อรายการ</th>
-                  <th className="py-3.5 px-4 text-center">ประเภท</th>
-                  <th className="py-3.5 px-4 text-center">วิธีคำนวณ</th>
-                  <th className="py-3.5 px-4 text-center">คิดภาษี</th>
-                  <th className="py-3.5 px-4 text-center">คิดประกันสังคม</th>
-                  <th className="py-3.5 px-4 text-center">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredPayrollItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-4 font-mono text-xs font-semibold text-slate-700">
-                      {item.itemCode}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-900">{item.itemName}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          item.itemType === 'EARNING'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {item.itemType === 'EARNING' ? 'รายได้ (+)' : 'รายหัก (-)'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center text-xs text-slate-600 font-mono">
-                      {item.calculationType}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {item.isTaxable ? (
-                        <span className="text-xs text-emerald-600 font-semibold">✓ ใช่</span>
-                      ) : (
-                        <span className="text-xs text-slate-400">ยกเว้น</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {item.isSocialSecurityCalculated ? (
-                        <span className="text-xs text-emerald-600 font-semibold">✓ ใช่</span>
-                      ) : (
-                        <span className="text-xs text-slate-400">ไม่คำนวณ</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                        {item.status}
-                      </span>
-                    </td>
+          {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleOpenCreateItem}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
+            </button>
+          </div>
+
+          {/* Table Container */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                    <th className="py-3.5 px-5">รายการ</th>
+                    <th className="py-3.5 px-5">ประเภทการคำนวณ</th>
+                    <th className="py-3.5 px-5">ค่า / สูตร</th>
+                    <th className="py-3.5 px-5 text-center">คิดภาษี</th>
+                    <th className="py-3.5 px-5 text-center">คิดประกันสังคม</th>
+                    <th className="py-3.5 px-5">สถานะ</th>
+                    <th className="py-3.5 px-5 text-center">จัดการ</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {payrollItems
+                    .filter((i) => i.itemType === itemsSubTab)
+                    .map((item) => {
+                      const isItemActive = item.status ? item.status.toUpperCase() === 'ACTIVE' : true;
+                      const calcTypeLabel =
+                        item.calculationType === 'FIXED'
+                          ? 'จำนวนคงที่'
+                          : item.calculationType === 'FORMULA'
+                          ? 'สูตรคำนวณ (ตามกฎหมาย)'
+                          : 'เปอร์เซ็นต์ของฐานเงินเดือน';
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-5">
+                            <div className="font-bold text-slate-900 text-xs">{item.itemName}</div>
+                            {item.description && (
+                              <div className="text-[11px] text-slate-400 mt-0.5">{item.description}</div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                              {calcTypeLabel}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-5 text-xs text-slate-700 font-medium">
+                            {item.formulaValue || '-'}
+                          </td>
+                          <td className="py-3.5 px-5 text-center">
+                            {item.isTaxable ? (
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5 text-center">
+                            {item.isSocialSecurityCalculated ? (
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5">
+                            {isItemActive ? (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span>ใช้งาน</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                                <span>ไม่ได้ใช้งาน</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5 text-center">
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditItem(item)}
+                                title="แก้ไข"
+                                className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setItemToDelete(item);
+                                  setDeleteItemConfirmOpen(true);
+                                }}
+                                title="ลบ"
+                                className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1135,6 +1327,14 @@ export default function PayrollPage() {
         onSubmit={handleSaveStructure}
       />
 
+      <PayrollItemModal
+        isOpen={isPayrollItemModalOpen}
+        onClose={() => setIsPayrollItemModalOpen(false)}
+        item={selectedPayrollItem}
+        defaultType={itemsSubTab}
+        onSubmit={handleSaveItem}
+      />
+
       <AdjustSalaryModal
         isOpen={isAdjustModalOpen}
         onClose={() => setIsAdjustModalOpen(false)}
@@ -1154,12 +1354,26 @@ export default function PayrollPage() {
         onConfirm={handleConfirmDelete}
         title="ยืนยันการลบโครงสร้างเงินเดือน"
         message={`คุณแน่ใจหรือไม่ว่าต้องการลบโครงสร้างเงินเดือนของ "${
-          structureToDelete?.positionName || 'ตำแหน่งนี้'
+          structureToDelete?.levelName || structureToDelete?.positionName || 'ระดับนี้'
         }" ออกจากระบบ?`}
         confirmText="ลบโครงสร้าง"
         cancelText="ยกเลิก"
         type="danger"
         isLoading={isDeleting}
+      />
+
+      <ConfirmModal
+        isOpen={deleteItemConfirmOpen}
+        onClose={() => setDeleteItemConfirmOpen(false)}
+        onConfirm={handleConfirmDeleteItem}
+        title="ยืนยันการลบรายการ"
+        message={`คุณแน่ใจหรือไม่ว่าต้องการลบรายการ "${
+          itemToDelete?.itemName || 'รายการนี้'
+        }" ออกจากระบบ?`}
+        confirmText="ลบรายการ"
+        cancelText="ยกเลิก"
+        type="danger"
+        isLoading={isDeletingItem}
       />
     </div>
   );

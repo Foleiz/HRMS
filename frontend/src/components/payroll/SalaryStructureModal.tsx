@@ -19,40 +19,30 @@ export const SalaryStructureModal: React.FC<Props> = ({
   isOpen,
   onClose,
   structure,
-  positions,
   levels,
   onSubmit,
 }) => {
-  const [positionId, setPositionId] = useState<string>('');
   const [employeeLevelId, setEmployeeLevelId] = useState<string>('');
   const [minSalary, setMinSalary] = useState<string>('');
   const [maxSalary, setMaxSalary] = useState<string>('');
-  const [defaultSalary, setDefaultSalary] = useState<string>('');
-  const [approvalLimit, setApprovalLimit] = useState<string>('');
-  const [effectiveFrom, setEffectiveFrom] = useState<string>('');
-  const [effectiveTo, setEffectiveTo] = useState<string>('');
+  const [positionAllowance, setPositionAllowance] = useState<string>('');
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (structure) {
-      setPositionId(structure.positionId ? String(structure.positionId) : '');
       setEmployeeLevelId(structure.employeeLevelId ? String(structure.employeeLevelId) : '');
-      setMinSalary(String(structure.minSalary || ''));
-      setMaxSalary(String(structure.maxSalary || ''));
-      setDefaultSalary(structure.defaultSalary != null ? String(structure.defaultSalary) : '');
-      setApprovalLimit(structure.approvalLimit != null ? String(structure.approvalLimit) : '');
-      setEffectiveFrom(structure.effectiveFrom || '');
-      setEffectiveTo(structure.effectiveTo || '');
+      setMinSalary(structure.minSalary ? String(structure.minSalary) : '');
+      setMaxSalary(structure.maxSalary ? String(structure.maxSalary) : '');
+      setPositionAllowance(structure.positionAllowance != null ? String(structure.positionAllowance) : '0');
+      setIsActive(structure.status ? structure.status.toUpperCase() === 'ACTIVE' : true);
     } else {
-      setPositionId('');
       setEmployeeLevelId('');
       setMinSalary('');
       setMaxSalary('');
-      setDefaultSalary('');
-      setApprovalLimit('');
-      setEffectiveFrom(new Date().toISOString().split('T')[0]);
-      setEffectiveTo('');
+      setPositionAllowance('');
+      setIsActive(true);
     }
     setError(null);
   }, [structure, isOpen]);
@@ -65,37 +55,42 @@ export const SalaryStructureModal: React.FC<Props> = ({
 
     const min = parseFloat(minSalary);
     const max = parseFloat(maxSalary);
-    const def = defaultSalary ? parseFloat(defaultSalary) : undefined;
-    const limit = approvalLimit ? parseFloat(approvalLimit) : undefined;
+    const allowance = positionAllowance ? parseFloat(positionAllowance) : 0;
 
+    if (!employeeLevelId) {
+      setError('กรุณาเลือกระดับพนักงาน');
+      return;
+    }
     if (isNaN(min) || min < 0) {
       setError('กรุณาระบุเงินเดือนขั้นต่ำที่ถูกต้อง (>= 0)');
       return;
     }
     if (isNaN(max) || max < min) {
-      setError('เงินเดือนเพดานสูงสุดต้องมากกว่าหรือเท่ากับเงินเดือนขั้นต่ำ');
+      setError('เงินเดือนขั้นสูงต้องมากกว่าหรือเท่ากับเงินเดือนขั้นต่ำ');
       return;
     }
-    if (def !== undefined && (def < min || def > max)) {
-      setError(`เงินเดือนเริ่มต้นต้องอยู่ระหว่าง ${min.toLocaleString()} ถึง ${max.toLocaleString()} บาท`);
-      return;
-    }
-    if (!effectiveFrom) {
-      setError('กรุณาระบุวันที่มีผลบังคับใช้');
+    if (isNaN(allowance) || allowance < 0) {
+      setError('ค่าตำแหน่งต้องไม่น้อยกว่า 0');
       return;
     }
 
     try {
       setLoading(true);
+      // Default salary is halfway or equal to min to pass database constraint
+      const defSalary = min;
+      const today = new Date().toISOString().split('T')[0];
+
       const payload: CreateSalaryStructurePayload = {
-        positionId: positionId ? parseInt(positionId) : null,
-        employeeLevelId: employeeLevelId ? parseInt(employeeLevelId) : null,
+        employeeLevelId: parseInt(employeeLevelId),
+        positionId: structure?.positionId || null,
         minSalary: min,
         maxSalary: max,
-        defaultSalary: def,
-        approvalLimit: limit,
-        effectiveFrom,
-        effectiveTo: effectiveTo || null,
+        defaultSalary: defSalary,
+        positionAllowance: allowance,
+        status: isActive ? 'ACTIVE' : 'INACTIVE',
+        effectiveFrom: structure?.effectiveFrom || today,
+        effectiveTo: structure?.effectiveTo || null,
+        approvalLimit: structure?.approvalLimit || 0,
       };
 
       await onSubmit(payload, structure?.id);
@@ -108,193 +103,134 @@ export const SalaryStructureModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">
-              {structure ? 'แก้ไขโครงสร้างกรอบเงินเดือน' : 'กำหนดโครงสร้างกรอบเงินเดือนใหม่'}
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              กำหนดอัตราเงินเดือนขั้นต่ำ เพดานสูงสุด และค่าเริ่มต้นสำหรับตำแหน่งงาน
-            </p>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+        {/* Header - Centered title matching mockup */}
+        <div className="relative px-6 pt-6 pb-4 text-center">
+          <h3 className="text-lg font-bold text-slate-900">
+            {structure ? 'แก้ไขโครงสร้างเงินเดือน' : 'เพิ่มโครงสร้างเงินเดือน'}
+          </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            type="button"
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Position & Level Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">ตำแหน่งงาน</label>
-              <select
-                value={positionId}
-                onChange={(e) => setPositionId(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-              >
-                <option value="">-- ใช้กับทุกตำแหน่ง --</option>
-                {positions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.positionName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">ระดับตำแหน่ง (Level)</label>
-              <select
-                value={employeeLevelId}
-                onChange={(e) => setEmployeeLevelId(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-              >
-                <option value="">-- ใช้กับทุกระดับ --</option>
-                {levels.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.levelName}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* ระดับพนักงาน */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">ระดับพนักงาน</label>
+            <select
+              value={employeeLevelId}
+              onChange={(e) => setEmployeeLevelId(e.target.value)}
+              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
+              required
+            >
+              <option value="">เลือกระดับพนักงาน</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.levelCode ? `${l.levelCode} - ` : ''}{l.levelName}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Min & Max Salary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                เงินเดือนขั้นต่ำ (Min Salary) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  required
-                  placeholder="เช่น 15000"
-                  value={minSalary}
-                  onChange={(e) => setMinSalary(e.target.value)}
-                  className="w-full text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                เพดานสูงสุด (Max Salary) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  required
-                  placeholder="เช่น 35000"
-                  value={maxSalary}
-                  onChange={(e) => setMaxSalary(e.target.value)}
-                  className="w-full text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
-              </div>
-            </div>
+          {/* เงินเดือนขั้นต่ำ */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">เงินเดือนขั้นต่ำ</label>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              placeholder="0.00"
+              value={minSalary}
+              onChange={(e) => setMinSalary(e.target.value)}
+              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 placeholder-slate-400"
+              required
+            />
           </div>
 
-          {/* Default Salary & Approval Limit */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">เงินเดือนเริ่มต้น (Mid / Default)</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  placeholder="เช่น 20000"
-                  value={defaultSalary}
-                  onChange={(e) => setDefaultSalary(e.target.value)}
-                  className="w-full text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">เพดานอำนาจอนุมัติ (Approval Limit)</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="10000"
-                  placeholder="เช่น 50000"
-                  value={approvalLimit}
-                  onChange={(e) => setApprovalLimit(e.target.value)}
-                  className="w-full text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
-              </div>
-            </div>
+          {/* เงินเดือนขั้นสูง */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">เงินเดือนขั้นสูง</label>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              placeholder="0.00"
+              value={maxSalary}
+              onChange={(e) => setMaxSalary(e.target.value)}
+              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 placeholder-slate-400"
+              required
+            />
           </div>
 
-          {/* Effective Period */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                วันที่มีผลเริ่มต้น <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                required
-                value={effectiveFrom}
-                onChange={(e) => setEffectiveFrom(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+          {/* ค่าตำแหน่ง */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">ค่าตำแหน่ง</label>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              placeholder="0.00"
+              value={positionAllowance}
+              onChange={(e) => setPositionAllowance(e.target.value)}
+              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 placeholder-slate-400"
+            />
+          </div>
+
+          {/* เปิดการใช้งานตำแหน่งนี้ (Toggle Switch) */}
+          <div className="flex items-center justify-between pt-2 pb-1">
+            <span className="text-xs font-medium text-slate-800">เปิดการใช้งานตำแหน่งนี้</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isActive}
+              onClick={() => setIsActive(!isActive)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isActive ? 'bg-blue-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  isActive ? 'translate-x-5' : 'translate-x-0'
+                }`}
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">วันที่มีผลสิ้นสุด (เว้นว่างได้)</label>
-              <input
-                type="date"
-                value={effectiveTo}
-                onChange={(e) => setEffectiveTo(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-              />
-            </div>
+            </button>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          {/* Action Buttons: ยกเลิก / บันทึก */}
+          <div className="grid grid-cols-2 gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
+              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer text-center"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   กำลังบันทึก...
                 </>
               ) : (
-                'บันทึกโครงสร้างเงินเดือน'
+                'บันทึก'
               )}
             </button>
           </div>
@@ -303,3 +239,4 @@ export const SalaryStructureModal: React.FC<Props> = ({
     </div>
   );
 };
+
