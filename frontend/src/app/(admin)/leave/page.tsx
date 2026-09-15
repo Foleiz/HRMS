@@ -39,11 +39,27 @@ import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
 export default function LeaveManagementPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('types');
+  const { hasPermission, hasRole } = useAuth();
+  const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const canViewAnyLeave = canViewTypes || canViewPolicies || canViewBalances;
+
+  const defaultTab: ActiveTab = canViewTypes
+    ? 'types'
+    : canViewPolicies
+    ? 'policies'
+    : canViewBalances
+    ? 'balances'
+    : 'types';
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(defaultTab);
 
   // Master Data
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
@@ -396,45 +412,60 @@ export default function LeaveManagementPage() {
     }
   };
 
+  if (!canViewAnyLeave) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์เข้าถึงการจัดการวันลา"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการจัดการวันลาและสิทธิ์ กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Main Card with Tabs */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Navigation Tabs (รูปแบบเดียวกับเมนู บันทึกเวลาของฉัน) */}
         <div className="flex border-b border-gray-100 px-4 pt-2 gap-2 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('types')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'types'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span>ประเภทการลา</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('policies')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'policies'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>สิทธิ์การลา</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('balances')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'balances'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Wallet className="w-4 h-4" />
-            <span>ยอดวันลาพนักงาน</span>
-          </button>
+          {canViewTypes && (
+            <button
+              onClick={() => setActiveTab('types')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'types'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>ประเภทการลา</span>
+            </button>
+          )}
+          {canViewPolicies && (
+            <button
+              onClick={() => setActiveTab('policies')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'policies'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>สิทธิ์การลา</span>
+            </button>
+          )}
+          {canViewBalances && (
+            <button
+              onClick={() => setActiveTab('balances')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'balances'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Wallet className="w-4 h-4" />
+              <span>ยอดวันลาพนักงาน</span>
+            </button>
+          )}
         </div>
 
         {/* Toast Notification Banner */}

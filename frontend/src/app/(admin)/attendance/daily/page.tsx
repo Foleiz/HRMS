@@ -64,6 +64,8 @@ import { Department } from '@/types/organization';
 import { Shift } from '@/types/shift';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -74,11 +76,16 @@ function DailyAttendanceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const { hasPermission, hasRole } = useAuth();
+
+  const canViewDaily = hasPermission('TIME_DAILY_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
+  const canViewImport = hasPermission('TIME_IMPORT_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
+  const canViewAnyTime = canViewDaily || canViewImport;
 
   // Active Tab: 'daily' | 'import' | 'adjustments'
-  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments') || 'daily';
+  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments') || (canViewDaily ? 'daily' : 'import');
   const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments'>(
-    initialTab === 'import' || initialTab === 'adjustments' ? initialTab : 'daily'
+    initialTab === 'import' || initialTab === 'adjustments' ? initialTab : (canViewDaily ? 'daily' : 'import')
   );
 
   const handleTabChange = (tab: 'daily' | 'import' | 'adjustments') => {
@@ -988,6 +995,15 @@ function DailyAttendanceContent() {
     }
   };
 
+  if (!canViewAnyTime) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ตรวจบันทึกเวลา"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลตรวจบันทึกเวลาประจำวัน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12">
       {/* ------------------------------------------------------------- */}
@@ -997,48 +1013,54 @@ function DailyAttendanceContent() {
         {/* Tabs on Left */}
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
           {/* Tab 1: ตรวจบันทึกเวลาประจำวัน */}
-          <button
-            onClick={() => handleTabChange('daily')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'daily'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>ตรวจบันทึกเวลาประจำวัน</span>
-          </button>
+          {canViewDaily && (
+            <button
+              onClick={() => handleTabChange('daily')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'daily'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>ตรวจบันทึกเวลาประจำวัน</span>
+            </button>
+          )}
 
           {/* Tab 2: นำเข้าไฟล์บันทึกเวลา */}
-          <button
-            onClick={() => handleTabChange('import')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'import'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>นำเข้าไฟล์บันทึกเวลา</span>
-          </button>
+          {canViewImport && (
+            <button
+              onClick={() => handleTabChange('import')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'import'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>นำเข้าไฟล์บันทึกเวลา</span>
+            </button>
+          )}
 
           {/* Tab 3: คำขอปรับปรุงเวลา (Sprint 7) */}
-          <button
-            onClick={() => handleTabChange('adjustments')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'adjustments'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <ClipboardCheck className="w-4 h-4" />
-            <span>คำขอปรับปรุงเวลา</span>
-            {pendingAdjustmentsCount > 0 && (
-              <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
-                {pendingAdjustmentsCount}
-              </span>
-            )}
-          </button>
+          {canViewDaily && (
+            <button
+              onClick={() => handleTabChange('adjustments')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'adjustments'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <ClipboardCheck className="w-4 h-4" />
+              <span>คำขอปรับปรุงเวลา</span>
+              {pendingAdjustmentsCount > 0 && (
+                <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
+                  {pendingAdjustmentsCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

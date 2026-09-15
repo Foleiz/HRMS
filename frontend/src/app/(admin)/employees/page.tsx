@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 interface DepartmentItem {
   id: number;
@@ -692,13 +693,28 @@ export default function EmployeesPage() {
     'bg-indigo-600 text-white',
   ];
 
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
+  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+
   const subNavTabs = [
-    { title: 'จัดการพนักงาน', href: '/employees', active: true },
-    { title: 'ประเภทพนักงาน', href: '/employees/types' },
-    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers' },
-    { title: 'แผนผังองค์กร', href: '/organization' },
-    { title: 'สัญญาจ้าง', href: '/employees/contracts' },
-  ];
+    { title: 'จัดการพนักงาน', href: '/employees', active: true, show: canViewProfile },
+    { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
+    { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
+    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
+    { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
+  ].filter((tab) => tab.show);
+
+  if (!canViewProfile) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูทะเบียนประวัติพนักงาน"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลทะเบียนประวัติพนักงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   return (
     <div className="space-y-4 font-sans pb-12">

@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
       errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';
       console.warn('API Connection Refused / Network Error:', error.message);
     } else {
-      console.error('API Error Details:', {
+      console.warn('API Error Details:', {
         status: error.response.status,
         data: error.response.data,
         message: errorMessage,

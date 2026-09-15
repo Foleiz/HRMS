@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import AccessDenied from '@/components/common/AccessDenied';
 import { essAttendanceService } from '@/services/essAttendanceService';
 import { AttendanceDaily, MyAttendanceMonthlySummary } from '@/types/attendance';
 import { AttendanceAdjustment, CreateAttendanceAdjustmentRequest } from '@/types/attendanceAdjustment';
@@ -24,8 +25,15 @@ import {
 } from 'lucide-react';
 
 export default function EssAttendancePage() {
-  const { user } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const toast = useToast();
+
+  const canViewEss =
+    hasPermission('TIME_VIEW') ||
+    hasPermission('TIME_DAILY_VIEW') ||
+    hasPermission('TIME_SCHEDULE_VIEW') ||
+    hasPermission('TIME_IMPORT_VIEW') ||
+    hasRole('ADMIN');
 
   // ─────────────────────────────────────────────────────────────
   // State: Data
@@ -304,6 +312,10 @@ export default function EssAttendancePage() {
   ];
 
   const pendingCount = adjustmentsList.filter((a) => a.status === 'PENDING').length;
+
+  if (!canViewEss) {
+    return <AccessDenied message="คุณไม่มีสิทธิ์เข้าถึงหน้าบันทึกเวลาของฉัน (ESS)" />;
+  }
 
   return (
     <div className="space-y-6 pb-12">

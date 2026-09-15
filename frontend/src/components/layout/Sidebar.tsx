@@ -45,79 +45,139 @@ const menuItems: MenuItem[] = [
     href: '/employees',
     matchPrefix: '/employees',
     icon: Users,
-    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE'],
+    requiredPermissions: [
+      'EMP_VIEW',
+      'EMP_PROFILE_VIEW',
+      'EMP_CONTRACT_VIEW',
+      'EMP_TRANSFER_VIEW',
+      'EMP_TYPE_VIEW',
+    ],
   },
   {
     title: 'บันทึกเวลาของฉัน (ESS)',
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',
     icon: Clock,
+    requiredPermissions: [
+      'TIME_VIEW',
+      'TIME_DAILY_VIEW',
+      'TIME_SCHEDULE_VIEW',
+      'TIME_IMPORT_VIEW',
+    ],
   },
   {
     title: 'ตรวจบันทึกเวลา',
     href: '/attendance/daily',
     matchPrefix: '/attendance/daily',
     icon: CalendarDays,
+    requiredPermissions: [
+      'TIME_VIEW',
+      'TIME_DAILY_VIEW',
+      'TIME_IMPORT_VIEW',
+    ],
   },
   {
     title: 'การจัดตารางงาน',
     href: '/attendance/schedules',
     matchPrefix: '/attendance/schedules',
     icon: CalendarRange,
-    requiredPermissions: ['TIME_VIEW', 'TIME_MANAGE'],
-  },
-  {
-    title: 'ยื่นเอกสาร',
-    href: '/documents',
-    matchPrefix: '/documents',
-    icon: FileText,
+    requiredPermissions: [
+      'TIME_VIEW',
+      'TIME_SCHEDULE_VIEW',
+    ],
   },
   {
     title: 'การลา',
     href: '/leave',
     matchPrefix: '/leave',
     icon: CalendarCheck,
+    requiredPermissions: [
+      'LEAVE_VIEW',
+      'LEAVE_BALANCE_VIEW',
+      'LEAVE_TYPE_VIEW',
+      'LEAVE_POLICY_VIEW',
+    ],
   },
   {
     title: 'เงินเดือน',
     href: '/payroll',
     matchPrefix: '/payroll',
     icon: CreditCard,
-    requiredPermissions: ['PAYROLL_RUN'],
+    requiredPermissions: [
+      'PAYROLL_VIEW',
+      'PAYROLL_CALC_VIEW',
+      'PAYROLL_SLIP_VIEW',
+      'PAYROLL_TAX_VIEW',
+      'PAYROLL_RUN',
+    ],
   },
   {
     title: 'การอนุมัติ',
     href: '/approvals/leave-requests',
     matchPrefix: '/approvals',
     icon: CheckCircle2,
-    requiredPermissions: ['LEAVE_APPROVE', 'TIME_MANAGE'],
+    requiredPermissions: [
+      'LEAVE_APPROVE',
+      'TIME_APPROVE',
+      'EMP_APPROVE',
+      'PAYROLL_APPROVE',
+      'TIME_MANAGE',
+      'LEAVE_BALANCE_APPROVE',
+      'TIME_DAILY_APPROVE',
+      'EMP_PROFILE_APPROVE',
+      'PAYROLL_CALC_APPROVE',
+    ],
   },
   {
     title: 'โครงสร้างองค์กร',
     href: '/organization',
     matchPrefix: '/organization',
     icon: Building2,
-    requiredPermissions: ['SYS_ADMIN', 'EMP_MANAGE'],
+    requiredPermissions: [
+      'ORG_VIEW',
+      'ORG_STRUCT_VIEW',
+      'ORG_POS_VIEW',
+      'ORG_BENEFIT_VIEW',
+      'ORG_COMP_VIEW',
+      'SYS_ADMIN',
+    ],
   },
   {
     title: 'วันทำงานและวันหยุด',
     href: '/work-calendar',
     matchPrefix: '/work-calendar',
     icon: CalendarDays,
+    requiredPermissions: [
+      'TIME_VIEW',
+      'TIME_SCHEDULE_VIEW',
+      'TIME_DAILY_VIEW',
+      'HR_ADMIN',
+      'SYS_ADMIN',
+    ],
   },
   {
     title: 'รายงาน',
     href: '/reports',
     matchPrefix: '/reports',
     icon: BarChart3,
-    requiredRoles: ['ADMIN', 'HR_MGR', 'DEPT_MGR'],
+    requiredPermissions: [
+      'REPORT_VIEW',
+      'REPORT_ATT_VIEW',
+      'REPORT_HEADCOUNT_VIEW',
+    ],
   },
   {
     title: 'ตั้งค่า',
     href: '/settings',
     matchPrefix: '/settings',
     icon: Settings,
-    requiredPermissions: ['SYS_ADMIN', 'SETTINGS_VIEW', 'SETTINGS_USERS_VIEW', 'SETTINGS_ROLES_VIEW', 'SETTINGS_AUDIT_VIEW'],
+    requiredPermissions: [
+      'SETTINGS_VIEW',
+      'SETTINGS_USERS_VIEW',
+      'SETTINGS_ROLES_VIEW',
+      'SETTINGS_AUDIT_VIEW',
+      'SYS_ADMIN',
+    ],
   },
 ];
 
@@ -132,6 +192,12 @@ export const Sidebar: React.FC = () => {
     // 1. หากเป็น ADMIN หรือยังไม่ล็อกอิน ให้ bypass/default
     if (!user) return true;
     if (hasRole('ADMIN')) return true;
+
+    // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป (ถ้าไม่มีสิทธิ์ใดๆ เลย จะไม่แสดงแดชบอร์ด)
+    if (item.href === '/') {
+      const hasAnyPerm = Boolean(user.permissions && user.permissions.length > 0);
+      if (!hasAnyPerm) return false;
+    }
 
     // 2. ตรวจสอบ Role ถ้ามีการกำหนด
     if (item.requiredRoles && item.requiredRoles.length > 0) {

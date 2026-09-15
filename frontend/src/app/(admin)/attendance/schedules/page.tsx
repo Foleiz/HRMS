@@ -34,6 +34,8 @@ import { shiftService } from '@/services/shiftService';
 import { organizationService } from '@/services/organizationService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 import {
   EmployeeShift,
   AssignEmployeeShiftRequest,
@@ -173,6 +175,9 @@ function SchedulesContent() {
   const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
+  const { hasPermission, hasRole } = useAuth();
+
+  const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
@@ -181,6 +186,15 @@ function SchedulesContent() {
   const [activeTab, setActiveTab] = useState<TabKey>(
     ['roster', 'shifts'].includes(initialTab) ? initialTab : 'roster'
   );
+
+  if (!canViewSchedules) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูการจัดตารางงาน"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการจัดตารางเวลาและกะการทำงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);

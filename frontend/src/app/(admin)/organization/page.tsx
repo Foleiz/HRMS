@@ -30,6 +30,8 @@ import { benefitService } from '@/services/benefitService';
 import { employeeService } from '@/services/employeeService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 import {
   Division,
   Department,
@@ -64,7 +66,23 @@ const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon:
 export default function OrganizationPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<TabType>('divisions');
+  const { hasPermission, hasRole } = useAuth();
+
+  const canViewStruct = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
+  const canViewPos = hasPermission('ORG_POS_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
+  const canViewBenefits = hasPermission('ORG_BENEFIT_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
+  const canViewCompany = hasPermission('ORG_COMP_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
+  const canViewAnyOrg = canViewStruct || canViewPos || canViewBenefits || canViewCompany;
+
+  const defaultTab: TabType = canViewStruct
+    ? 'divisions'
+    : canViewPos
+    ? 'positions'
+    : canViewBenefits
+    ? 'benefits'
+    : 'company';
+
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDivisionId, setFilterDivisionId] = useState<string>('ALL');
@@ -590,82 +608,103 @@ export default function OrganizationPage() {
     lvl.levelCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (!canViewAnyOrg) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์เข้าถึงโครงสร้างองค์กร"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลโครงสร้างองค์กร กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. Sub-navigation Tabs */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
-          <button
-            onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'divisions'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <GitFork className="w-4 h-4" />
-            จัดการฝ่าย
-          </button>
+          {canViewStruct && (
+            <button
+              onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'divisions'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <GitFork className="w-4 h-4" />
+              จัดการฝ่าย
+            </button>
+          )}
 
-          <button
-            onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'departments'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            จัดการแผนก
-          </button>
+          {canViewStruct && (
+            <button
+              onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'departments'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              จัดการแผนก
+            </button>
+          )}
 
-          <button
-            onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'positions'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Briefcase className="w-4 h-4" />
-            จัดการตำแหน่ง
-          </button>
+          {canViewPos && (
+            <button
+              onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'positions'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Briefcase className="w-4 h-4" />
+              จัดการตำแหน่ง
+            </button>
+          )}
 
-          <button
-            onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'levels'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            ระดับพนักงาน
-          </button>
+          {canViewPos && (
+            <button
+              onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'levels'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              ระดับพนักงาน
+            </button>
+          )}
 
-          <button
-            onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'benefits'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Gift className="w-4 h-4" />
-            สวัสดิการและสิทธิประโยชน์
-          </button>
+          {canViewBenefits && (
+            <button
+              onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'benefits'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Gift className="w-4 h-4" />
+              สวัสดิการและสิทธิประโยชน์
+            </button>
+          )}
 
-          <button
-            onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'company'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Building className="w-4 h-4" />
-            ข้อมูลบริษัท
-          </button>
+          {canViewCompany && (
+            <button
+              onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+                activeTab === 'company'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Building className="w-4 h-4" />
+              ข้อมูลบริษัท
+            </button>
+          )}
         </div>
       </div>
 
