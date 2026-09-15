@@ -11,19 +11,52 @@ public class RoleService : IRoleService
     private readonly IHrmsDbContext _dbContext;
     private readonly IAuditLogService _auditLogService;
 
-    // ระบบงานมาตรฐานและโมดูลย่อยตาม Mockup
-    private static readonly List<(string Code, string Name, string Prefix, string? GroupName)> StandardModules = new()
+    private record ModuleDefinition(
+        string Code,
+        string Name,
+        string Prefix,
+        string CategoryCode,
+        string CategoryName,
+        string ParentPermissionPrefix);
+
+    // รายการระบบงานและเมนูย่อยมาตรฐาน 22 เมนูย่อย ครอบคลุม 7 หมวดหมู่หลัก
+    private static readonly List<ModuleDefinition> StandardModules = new()
     {
-        ("EMPLOYEE", "พนักงาน / จัดการประวัติพนักงาน", "EMP", null),
-        ("ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME", null),
-        ("LEAVE", "การจัดการวันลา", "LEAVE", null),
-        ("PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL", null),
-        ("ORGANIZATION", "โครงสร้างองค์กร", "ORG", null),
-        ("REPORT", "รายงาน", "REPORT", null),
-        // โมดูลย่อยหมวดการตั้งค่าระบบ (Settings Sub-Modules)
-        ("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "การตั้งค่าระบบ"),
-        ("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "การตั้งค่าระบบ"),
-        ("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "การตั้งค่าระบบ")
+        // 1. ข้อมูลพนักงาน (EMPLOYEE)
+        new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
+        new("EMP_CONTRACT", "สัญญาจ้างงาน", "EMP_CONTRACT", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
+        new("EMP_TRANSFER", "การโอนย้าย / ปรับตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
+        new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
+
+        // 2. การเข้างาน / บันทึกเวลา (ATTENDANCE)
+        new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
+        new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
+        new("TIME_IMPORT", "นำเข้าเวลาสแกนนิ้ว / ไฟล์เวลา", "TIME_IMPORT", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
+
+        // 3. การจัดการวันลา (LEAVE)
+        new("LEAVE_BALANCE", "สิทธิ์วันลาคงเหลือ & ธุรกรรมวันลา", "LEAVE_BALANCE", "LEAVE", "การจัดการวันลา", "LEAVE"),
+        new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "การจัดการวันลา", "LEAVE"),
+        new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การจัดการวันลา", "LEAVE"),
+
+        // 4. การจัดการเงินเดือน / รายได้ (PAYROLL)
+        new("PAYROLL_CALC", "ประมวลผลเงินเดือน / ปิดงวด", "PAYROLL_CALC", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
+        new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
+        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม", "PAYROLL_TAX", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
+
+        // 5. โครงสร้างองค์กร (ORGANIZATION)
+        new("ORG_STRUCT", "ฝ่ายและแผนก", "ORG_STRUCT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
+        new("ORG_POS", "ตำแหน่งและระดับงาน", "ORG_POS", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
+        new("ORG_BENEFIT", "สวัสดิการพนักงาน", "ORG_BENEFIT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
+        new("ORG_COMP", "ข้อมูลบริษัทและสาขา", "ORG_COMP", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
+
+        // 6. การตั้งค่าระบบ (SETTINGS)
+        new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
+        new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
+        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
+
+        // 7. รายงาน (REPORT)
+        new("REPORT_ATT", "รายงานการลงเวลาและวันลา", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
+        new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)
@@ -77,22 +110,31 @@ public class RoleService : IRoleService
 
         var moduleDtos = new List<ModulePermissionScopeDto>();
 
-        foreach (var (modCode, modName, prefix, groupName) in StandardModules)
+        foreach (var mod in StandardModules)
         {
-            var viewCode = $"{prefix}_VIEW";
-            var createCode = $"{prefix}_CREATE";
-            var editCode = $"{prefix}_EDIT";
-            var approveCode = $"{prefix}_APPROVE";
+            var viewCode = $"{mod.Prefix}_VIEW";
+            var createCode = $"{mod.Prefix}_CREATE";
+            var editCode = $"{mod.Prefix}_EDIT";
+            var approveCode = $"{mod.Prefix}_APPROVE";
 
-            bool canView = grantedPermCodes.Contains(viewCode);
-            bool canCreate = grantedPermCodes.Contains(createCode);
-            bool canEdit = grantedPermCodes.Contains(editCode);
-            bool canApprove = grantedPermCodes.Contains(approveCode);
+            // สิทธิ์จะเปิดหากมีสิทธิ์เมนูย่อยตรงๆ หรือเคยได้สิทธิ์ระดับโมดูลแม่มาก่อน (Legacy fallback)
+            bool canView = grantedPermCodes.Contains(viewCode) ||
+                           (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_VIEW") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
+            bool canCreate = grantedPermCodes.Contains(createCode) ||
+                             (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_CREATE") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
+            bool canEdit = grantedPermCodes.Contains(editCode) ||
+                           (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_EDIT") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
+            bool canApprove = grantedPermCodes.Contains(approveCode) ||
+                              (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_APPROVE") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
 
             string dataScope = "SELF";
             if (scopeMap.TryGetValue(viewCode, out var sc))
             {
                 dataScope = sc;
+            }
+            else if (scopeMap.TryGetValue($"{mod.ParentPermissionPrefix}_VIEW", out var parentSc))
+            {
+                dataScope = parentSc;
             }
             else if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER")
             {
@@ -101,9 +143,11 @@ public class RoleService : IRoleService
 
             moduleDtos.Add(new ModulePermissionScopeDto
             {
-                ModuleCode = modCode,
-                ModuleName = modName,
-                GroupName = groupName,
+                ModuleCode = mod.Code,
+                ModuleName = mod.Name,
+                GroupName = mod.CategoryName,
+                CategoryCode = mod.CategoryCode,
+                CategoryName = mod.CategoryName,
                 DataScope = dataScope,
                 CanView = canView,
                 CanCreate = canCreate,
@@ -223,9 +267,11 @@ public class RoleService : IRoleService
         var allPermissions = await _dbContext.Permissions.ToListAsync(cancellationToken);
         var permMap = allPermissions.ToDictionary(p => p.PermissionCode, p => p.Id);
 
-        // Delete existing role_permission and role_data_scope for standard modules
-        var prefixList = StandardModules.Select(m => m.Prefix).ToList();
-        prefixList.Add("SETTINGS"); // ครอบคลุมสิทธิ์ SETTINGS_* เดิมในการล้างข้อมูลก่อนเขียนใหม่
+        // Delete existing role_permission and role_data_scope for standard sub-modules and parent modules
+        var prefixList = StandardModules.Select(m => m.Prefix).Distinct().ToList();
+        var parentPrefixList = StandardModules.Select(m => m.ParentPermissionPrefix).Distinct().ToList();
+        prefixList.AddRange(parentPrefixList);
+
         var relevantPermIds = allPermissions
             .Where(p => prefixList.Any(pref => p.PermissionCode.StartsWith(pref + "_") || p.PermissionCode == pref))
             .Select(p => p.Id)
@@ -293,10 +339,18 @@ public class RoleService : IRoleService
             }
         }
 
-        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยของการตั้งค่า ให้ผูกสิทธิ์ SETTINGS_VIEW ไว้อัตโนมัติเพื่อความเข้ากันได้
-        if (request.Modules.Any(m => m.ModuleCode.StartsWith("SETTINGS_") && m.CanView))
+        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติเพื่อความเข้ากันได้ (Backward Compatibility)
+        foreach (var parentPref in parentPrefixList)
         {
-            AddPerm("SETTINGS_VIEW");
+            var hasAnyChildView = request.Modules.Any(m => {
+                var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);
+                return match != null && match.ParentPermissionPrefix == parentPref && m.CanView;
+            });
+
+            if (hasAnyChildView)
+            {
+                AddPerm($"{parentPref}_VIEW");
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
