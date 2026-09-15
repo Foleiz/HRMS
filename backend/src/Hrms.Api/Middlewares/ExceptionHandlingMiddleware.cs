@@ -13,11 +13,13 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IHostEnvironment _env;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -29,11 +31,11 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "เกิดข้อผิดพลาดในการประมวลผลคำขอ: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            await HandleExceptionAsync(context, ex, _env);
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception, IHostEnvironment env)
     {
         context.Response.ContentType = "application/json";
 
@@ -62,6 +64,17 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.BadRequest;
                 message = valEx.Message;
                 errors = valEx.Errors;
+                break;
+
+            default:
+                // เฉพาะโหมด Development: แนบข้อความ Exception จริง (รวม InnerException ซึ่งมักเป็นสาเหตุจริง
+                // เช่น จาก Postgres/EF Core) ต่อท้ายไปด้วย เพื่อให้เห็นสาเหตุที่แท้จริงได้ทันทีจากหน้าเว็บ
+                // แทนที่จะเห็นแค่ข้อความกำกวมนี้เฉย ๆ (โหมด Production จะไม่แสดง เพื่อความปลอดภัย)
+                if (env.IsDevelopment())
+                {
+                    var detail = exception.InnerException?.Message ?? exception.Message;
+                    message = $"{message} [Detail: {detail}]";
+                }
                 break;
         }
 

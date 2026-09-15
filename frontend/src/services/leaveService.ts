@@ -15,6 +15,7 @@ import {
   LeaveRequest,
   LeaveStats,
   CreateLeaveRequestPayload,
+  CreateMyLeaveRequestPayload,
 } from '@/types/leave';
 
 /**
@@ -141,5 +142,37 @@ export const leaveService = {
   async cancelLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/cancel`, { reason });
     return res.data.data;
+  },
+
+  // === 5. ESS (Employee Self-Service) — ยื่นคำขอลาด้วยตนเอง ===
+  // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ ไม่ต้องส่ง employeeId มาเอง
+
+  /** [ESS] ดึงรายการคำขอลาของตนเอง */
+  async getMyLeaveRequests(params?: { status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
+    const res = await apiClient.get<ApiResponse<LeaveRequest[]>>('/leave-requests/my', { params });
+    return res.data.data;
+  },
+
+  /** [ESS] ยื่นคำขอลาใหม่ด้วยตนเอง (หรือบันทึกเป็นแบบร่างถ้า data.saveAsDraft = true) */
+  async createMyLeaveRequest(data: CreateMyLeaveRequestPayload): Promise<LeaveRequest> {
+    const res = await apiClient.post<ApiResponse<LeaveRequest>>('/leave-requests/my', data);
+    return res.data.data;
+  },
+
+  /** [ESS] แก้ไขคำขอลาที่ยังเป็นแบบร่างของตนเอง (บันทึกแบบร่างซ้ำ หรือยื่นจริงจากแบบร่างเดิม) */
+  async updateMyLeaveRequest(id: number, data: CreateMyLeaveRequestPayload): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}`, data);
+    return res.data.data;
+  },
+
+  /** [ESS] ยกเลิกคำขอลาของตนเอง (เฉพาะที่เป็นเจ้าของคำขอ) */
+  async cancelMyLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}/cancel`, { reason });
+    return res.data.data;
+  },
+
+  /** [ESS] ลบคำขอลาที่ยังเป็นแบบร่างของตนเองแบบถาวร (เฉพาะที่เป็นเจ้าของและยังเป็น DRAFT เท่านั้น) */
+  async deleteMyLeaveRequest(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<object>>(`/leave-requests/my/${id}`);
   },
 };

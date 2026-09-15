@@ -159,6 +159,7 @@ export interface LeaveRequest {
   /** alias ที่ backend บางเวอร์ชันส่งมา */
   totalDays?: number | null;
   reason?: string | null;
+  contactDuringLeave?: string | null;
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | string;
   submittedAt?: string | null;
   cancelledAt?: string | null;
@@ -185,9 +186,15 @@ export interface CreateLeaveRequestPayload {
   leaveHours: number;
   leaveDays: number;
   reason?: string;
+  contactDuringLeave?: string;
   attachmentFileName?: string;
   attachmentData?: string; // เนื้อหาไฟล์แนบแบบ Base64
+  /** true = บันทึกเป็นแบบร่าง (ยังไม่ยื่นจริง ไม่ตรวจสอบโควตา), false/ไม่ระบุ = ยื่นจริง */
+  saveAsDraft?: boolean;
 }
+
+/** Payload สำหรับพนักงานยื่นคำขอลาด้วยตนเอง (ESS) — ไม่ต้องระบุ employeeId เพราะ backend อ่านจาก JWT Token */
+export type CreateMyLeaveRequestPayload = Omit<CreateLeaveRequestPayload, 'employeeId'>;
 
 export interface LeaveStats {
   pendingRequestsCount: number;

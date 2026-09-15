@@ -19,6 +19,7 @@ public record LeaveRequestDto
     public decimal LeaveHours { get; init; }
     public decimal LeaveDays { get; init; }
     public string? Reason { get; init; }
+    public string? ContactDuringLeave { get; init; }
     public string Status { get; init; } = "PENDING";
     public DateTime? SubmittedAt { get; init; }
     public DateTime? CancelledAt { get; init; }
@@ -44,8 +45,15 @@ public record CreateLeaveRequestDto
     public decimal LeaveHours { get; init; }
     public decimal LeaveDays { get; init; }
     public string? Reason { get; init; }
+    public string? ContactDuringLeave { get; init; }
     public string? AttachmentFileName { get; init; }
     public byte[]? AttachmentData { get; init; }
+
+    /// <summary>
+    /// true = บันทึกเป็นแบบร่าง (Status = DRAFT, ไม่ตรวจสอบโควตาวันลาคงเหลือ, ไม่ตั้ง SubmittedAt)
+    /// false = ยื่นจริง (Status = PENDING, ตรวจสอบโควตา, ตั้ง SubmittedAt)
+    /// </summary>
+    public bool IsDraft { get; init; } = false;
 }
 
 public record LeaveStatsDto

@@ -226,7 +226,10 @@ public class AttendanceDailyController : ControllerBase
     // ─── Helper: ดึง EmployeeId จาก JWT Claims ─────────────────
     private long GetCurrentEmployeeId()
     {
-        var claim = User.FindFirst("EmployeeId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Claim ที่ JwtTokenService ออกให้จริงคือ "employee_id" (ไม่ใช่ "EmployeeId")
+        // และตั้งแต่ .NET 8 เป็นต้นไป ASP.NET Core ไม่ map "sub" -> ClaimTypes.NameIdentifier ให้อัตโนมัติแล้ว (MapInboundClaims default = false)
+        // จึงต้องเช็ค "employee_id" เป็นหลักก่อน แล้วค่อย fallback ไปที่ค่าอื่นเผื่อ token รูปแบบเก่า
+        var claim = User.FindFirst("employee_id") ?? User.FindFirst("EmployeeId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         if (claim != null && long.TryParse(claim.Value, out var id))
             return id;
         return 0;
