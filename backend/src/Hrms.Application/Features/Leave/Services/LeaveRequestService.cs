@@ -346,6 +346,34 @@ public class LeaveRequestService : ILeaveRequestService
             });
         }
 
+        // ซิงค์สถานะวันลาไปยัง AttendanceDaily เพื่อให้หน้าตรวจบันทึกเวลาและรายงานสรุป
+        // ทราบว่าพนักงานลาในวันดังกล่าวโดยอัตโนมัติ (ไม่นับเป็นขาดงาน)
+        var startDate = DateOnly.FromDateTime(request.StartDatetime);
+        var endDate = DateOnly.FromDateTime(request.EndDatetime);
+
+        for (var d = startDate; d <= endDate; d = d.AddDays(1))
+        {
+            var daily = await _context.AttendanceDailies
+                .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.WorkDate == d, cancellationToken);
+
+            if (daily == null)
+            {
+                daily = new AttendanceDaily
+                {
+                    EmployeeId = request.EmployeeId,
+                    WorkDate = d,
+                    IsAbsent = false,
+                    Status = "LEAVE"
+                };
+                _context.AttendanceDailies.Add(daily);
+            }
+            else
+            {
+                daily.IsAbsent = false;
+                daily.Status = "LEAVE";
+            }
+        }
+
         request.Status = "APPROVED";
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -413,6 +441,26 @@ public class LeaveRequestService : ILeaveRequestService
                     CreatedAt = DateTime.UtcNow,
                     CreatedByEmployeeId = cancelledBy
                 });
+            }
+
+            // คืนสถานะใน AttendanceDaily สำหรับวันที่เคยลา
+            var startDate = DateOnly.FromDateTime(request.StartDatetime);
+            var endDate = DateOnly.FromDateTime(request.EndDatetime);
+
+            var dailies = await _context.AttendanceDailies
+                .Where(a => a.EmployeeId == request.EmployeeId && a.WorkDate >= startDate && a.WorkDate <= endDate && a.Status == "LEAVE")
+                .ToListAsync(cancellationToken);
+
+            foreach (var daily in dailies)
+            {
+                if (daily.ActualIn.HasValue || daily.ActualOut.HasValue)
+                {
+                    daily.Status = daily.ActualIn.HasValue ? "PRESENT" : "ABSENT";
+                }
+                else
+                {
+                    daily.Status = "PENDING";
+                }
             }
         }
 

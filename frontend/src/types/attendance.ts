@@ -19,7 +19,7 @@ export interface AttendanceDaily {
   lateMinutes: number;
   earlyLeaveMinutes: number;
   isAbsent: boolean;
-  status: 'PRESENT' | 'LATE' | 'EARLY_LEAVE' | 'LATE_AND_EARLY' | 'ABSENT' | 'HOLIDAY' | 'OFF' | 'PENDING' | string;
+  status: 'PRESENT' | 'LATE' | 'EARLY_LEAVE' | 'LATE_AND_EARLY' | 'LEAVE' | 'ABSENT' | 'HOLIDAY' | 'OFF' | 'PENDING' | string;
   statusText: string;
 }
 
@@ -29,6 +29,7 @@ export interface DailyAttendanceSummary {
   presentCount: number;
   lateCount: number;
   earlyLeaveCount: number;
+  leaveCount?: number;
   absentCount: number;
   holidayOrOffCount: number;
   attendanceRate: number;

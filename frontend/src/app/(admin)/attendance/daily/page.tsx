@@ -866,6 +866,15 @@ function DailyAttendanceContent() {
   };
 
   const renderStatusBadge = (status: string, isAbsent: boolean) => {
+    if (status === 'LEAVE') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+          <span>ลา</span>
+        </span>
+      );
+    }
+
     if (isAbsent || status === 'ABSENT') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">

@@ -163,7 +163,8 @@ public class AttendanceDailyService : IAttendanceDailyService
         var present = records.Count(r => r.Status == "PRESENT");
         var late = records.Count(r => r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
         var early = records.Count(r => r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
-        var absent = records.Count(r => r.Status == "ABSENT" || r.IsAbsent);
+        var leave = records.Count(r => r.Status == "LEAVE");
+        var absent = records.Count(r => (r.Status == "ABSENT" || r.IsAbsent) && r.Status != "LEAVE");
         var holidayOrOff = records.Count(r => r.Status == "HOLIDAY" || r.Status == "OFF");
 
         var workingTotal = total - holidayOrOff;
@@ -176,6 +177,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             PresentCount = present,
             LateCount = late,
             EarlyLeaveCount = early,
+            LeaveCount = leave,
             AbsentCount = absent,
             HolidayOrOffCount = holidayOrOff,
             AttendanceRate = rate
@@ -623,6 +625,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             "LATE" => "มาสาย",
             "EARLY_LEAVE" => "ออกก่อนเวลา",
             "LATE_AND_EARLY" => "สายและออกก่อน",
+            "LEAVE" => "ลา",
             "ABSENT" => "ขาดงาน",
             "HOLIDAY" => "วันหยุดประเพณี",
             "OFF" => "วันหยุดประจำสัปดาห์",
