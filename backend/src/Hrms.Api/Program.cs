@@ -15,6 +15,7 @@ using Hrms.Application.Features.Leave.Services;
 using Hrms.Application.Features.Settings.Services;
 using Hrms.Application.Features.Transfers.Services;
 using Hrms.Application.Features.WorkCalendar.Services;
+using Hrms.Application.Features.Payroll.Services;
 using Hrms.Infrastructure.Persistence;
 using Hrms.Infrastructure.Security;
 using Hrms.Infrastructure.Services;
@@ -72,9 +73,9 @@ builder.Services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IApprovalFlowService, ApprovalFlowService>();
 builder.Services.AddScoped<IApprovalDelegationService, ApprovalDelegationService>();
+builder.Services.AddScoped<ISalaryService, SalaryService>();
 
 
 // 4. JWT Authentication
