@@ -1401,6 +1401,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ClosedByEmployeeId).HasColumnName("closed_by_employee_id");
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
             entity.Property(e => e.PreApprovalStatus).HasColumnName("pre_approval_status").HasMaxLength(20);
+            // Payment Workflow Columns
+            entity.Property(e => e.PaymentMethod).HasColumnName("payment_method").HasMaxLength(20);
+            entity.Property(e => e.PaymentConfirmedAt).HasColumnName("payment_confirmed_at");
+            entity.Property(e => e.PaymentConfirmedBy).HasColumnName("payment_confirmed_by");
+            entity.Property(e => e.BankFileGeneratedAt).HasColumnName("bank_file_generated_at");
+            entity.Property(e => e.TotalTransferredCount).HasColumnName("total_transferred_count").HasDefaultValue(0);
+            entity.Property(e => e.PaymentNote).HasColumnName("payment_note");
         });
 
         // Configuration: Payroll
@@ -1419,6 +1426,14 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.SnapshotDepartmentName).HasColumnName("snapshot_department_name").HasMaxLength(255);
             entity.Property(e => e.SnapshotPositionName).HasColumnName("snapshot_position_name").HasMaxLength(255);
             entity.Property(e => e.SnapshotWageType).HasColumnName("snapshot_wage_type").HasMaxLength(50);
+            // Individual Payment Tracking Columns
+            entity.Property(e => e.PaymentStatus).HasColumnName("payment_status").HasMaxLength(20).HasDefaultValue("PENDING").IsRequired();
+            entity.Property(e => e.TransferredAt).HasColumnName("transferred_at");
+            entity.Property(e => e.TransferReference).HasColumnName("transfer_reference").HasMaxLength(100);
+            entity.Property(e => e.SlipData).HasColumnName("slip_data").HasColumnType("bytea");
+            entity.Property(e => e.SlipFileName).HasColumnName("slip_file_name").HasMaxLength(255);
+            entity.Property(e => e.SlipContentType).HasColumnName("slip_content_type").HasMaxLength(100);
+            entity.Property(e => e.SlipUploadedAt).HasColumnName("slip_uploaded_at");
 
             entity.HasOne(e => e.Period)
                 .WithMany(p => p.Payrolls)

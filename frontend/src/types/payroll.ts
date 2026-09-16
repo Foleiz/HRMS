@@ -164,10 +164,19 @@ export interface PayrollPeriod {
   startDate: string;
   endDate: string;
   paymentDate?: string | null;
-  status: 'REVIEW' | 'APPROVED' | 'PAID' | 'CLOSED' | string;
+  status: 'DRAFT' | 'REVIEW' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'CLOSED' | string;
   statusText: string;
   employeeCount: number;
   totalNetSalary: number;
+  // Payment Workflow
+  paymentMethod?: 'BANK_BATCH' | 'DIRECT_TRANSFER' | null;
+  paymentMethodText?: string | null;
+  paymentConfirmedAt?: string | null;
+  paymentConfirmedBy?: number | null;
+  bankFileGeneratedAt?: string | null;
+  totalTransferredCount: number;
+  paymentNote?: string | null;
+  canConfirmPayment: boolean;
 }
 
 export interface PayrollRecord {
@@ -182,6 +191,14 @@ export interface PayrollRecord {
   netPayableSalary?: number | null;
   status: 'CALCULATED' | 'REVIEW' | 'DRAFT' | string;
   statusText: string;
+  // Individual Payment Tracking
+  paymentStatus: 'PENDING' | 'TRANSFERRED' | 'FAILED' | string;
+  paymentStatusText: string;
+  transferredAt?: string | null;
+  transferReference?: string | null;
+  hasSlip: boolean;
+  slipFileName?: string | null;
+  slipUploadedAt?: string | null;
 }
 
 export interface PayrollDetailItem {
@@ -246,4 +263,59 @@ export interface EmployeeBonus {
   performanceScore?: number | null;
   multiplier: number;
   bonusAmount: number;
+}
+
+// ===== PAYMENT WORKFLOW TYPES =====
+
+export interface PayrollTransferItem {
+  payrollId: number;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string;
+  // Bank Account
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  accountType: string;
+  // Salary
+  netPayableSalary: number;
+  // Payment Status
+  paymentStatus: 'PENDING' | 'TRANSFERRED' | 'FAILED' | string;
+  paymentStatusText: string;
+  transferredAt?: string | null;
+  transferReference?: string | null;
+  // Slip
+  hasSlip: boolean;
+  slipFileName?: string | null;
+  slipUploadedAt?: string | null;
+}
+
+export interface PayrollTransferList {
+  periodId: number;
+  periodName: string;
+  paymentMethod?: 'BANK_BATCH' | 'DIRECT_TRANSFER' | null;
+  status: string;
+  totalEmployees: number;
+  transferredCount: number;
+  pendingCount: number;
+  totalNetSalary: number;
+  canConfirmPayment: boolean;
+  items: PayrollTransferItem[];
+}
+
+export interface SetPaymentMethodPayload {
+  paymentMethod: 'BANK_BATCH' | 'DIRECT_TRANSFER';
+}
+
+export interface MarkTransferredPayload {
+  transferReference?: string | null;
+  slipFileName: string;
+  slipContentType: string;
+  slipBase64: string;
+}
+
+export interface ConfirmPaymentPayload {
+  note?: string | null;
 }

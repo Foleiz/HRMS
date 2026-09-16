@@ -13,6 +13,15 @@ public class PayrollPeriodDto
     public string StatusText { get; set; } = "รอตรวจสอบ";
     public int EmployeeCount { get; set; }
     public decimal TotalNetSalary { get; set; }
+    // Payment Workflow
+    public string? PaymentMethod { get; set; }
+    public string? PaymentMethodText { get; set; }
+    public DateTimeOffset? PaymentConfirmedAt { get; set; }
+    public long? PaymentConfirmedBy { get; set; }
+    public DateTimeOffset? BankFileGeneratedAt { get; set; }
+    public int TotalTransferredCount { get; set; }
+    public string? PaymentNote { get; set; }
+    public bool CanConfirmPayment { get; set; } // true เมื่อทุกคนมี Slip และ Transferred
 }
 
 public class PayrollRecordDto
@@ -28,6 +37,14 @@ public class PayrollRecordDto
     public decimal? NetPayableSalary { get; set; }
     public string Status { get; set; } = "CALCULATED";
     public string StatusText { get; set; } = "คำนวณแล้ว";
+    // Individual Payment Tracking
+    public string PaymentStatus { get; set; } = "PENDING";
+    public string PaymentStatusText { get; set; } = "รอโอน";
+    public DateTimeOffset? TransferredAt { get; set; }
+    public string? TransferReference { get; set; }
+    public bool HasSlip { get; set; }
+    public string? SlipFileName { get; set; }
+    public DateTimeOffset? SlipUploadedAt { get; set; }
 }
 
 public class PayrollDetailItemDto
@@ -127,4 +144,91 @@ public class CalculateBonusRequest
     public int Year { get; set; }
     public decimal DefaultMultiplier { get; set; } = 2.0m;
 }
+
+// ===== PAYMENT WORKFLOW DTOs =====
+
+/// <summary>Request: ตั้งค่าวิธีการจ่ายเงิน</summary>
+public class SetPaymentMethodRequest
+{
+    /// <summary>BANK_BATCH หรือ DIRECT_TRANSFER</summary>
+    public string PaymentMethod { get; set; } = string.Empty;
+}
+
+/// <summary>Request: Mark พนักงานว่าโอนเงินแล้ว (พร้อม Slip)</summary>
+public class MarkTransferredRequest
+{
+    /// <summary>เลข Reference การโอน (เช่น เลขที่รายการจาก Internet Banking)</summary>
+    public string? TransferReference { get; set; }
+    /// <summary>ชื่อไฟล์ Slip เดิม</summary>
+    public string SlipFileName { get; set; } = string.Empty;
+    /// <summary>MIME type เช่น image/jpeg, image/png, application/pdf</summary>
+    public string SlipContentType { get; set; } = string.Empty;
+    /// <summary>ข้อมูล Slip เป็น Base64 string</summary>
+    public string SlipBase64 { get; set; } = string.Empty;
+}
+
+/// <summary>Request: CEO Confirm การจ่ายเงินทั้งหมด</summary>
+public class ConfirmPaymentRequest
+{
+    /// <summary>หมายเหตุการจ่ายเงิน (optional)</summary>
+    public string? Note { get; set; }
+}
+
+/// <summary>ข้อมูลพนักงานในตารางโอนเงิน (Direct Transfer)</summary>
+public class PayrollTransferItemDto
+{
+    public long PayrollId { get; set; }
+    public long EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = string.Empty;
+    // Bank Account
+    public string BankCode { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string AccountNumber { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string AccountType { get; set; } = string.Empty;
+    // Salary
+    public decimal NetPayableSalary { get; set; }
+    // Payment Status
+    public string PaymentStatus { get; set; } = "PENDING";
+    public string PaymentStatusText { get; set; } = "รอโอน";
+    public DateTimeOffset? TransferredAt { get; set; }
+    public string? TransferReference { get; set; }
+    // Slip
+    public bool HasSlip { get; set; }
+    public string? SlipFileName { get; set; }
+    public DateTimeOffset? SlipUploadedAt { get; set; }
+}
+
+/// <summary>สรุปรายการโอนเงินทั้งหมดของรอบ</summary>
+public class PayrollTransferListDto
+{
+    public long PeriodId { get; set; }
+    public string PeriodName { get; set; } = string.Empty;
+    public string? PaymentMethod { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public int TotalEmployees { get; set; }
+    public int TransferredCount { get; set; }
+    public int PendingCount { get; set; }
+    public decimal TotalNetSalary { get; set; }
+    public bool CanConfirmPayment { get; set; }
+    public List<PayrollTransferItemDto> Items { get; set; } = new();
+}
+
+/// <summary>Response: ดาวน์โหลด Slip ของพนักงาน</summary>
+public class SlipDownloadDto
+{
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public byte[] Data { get; set; } = Array.Empty<byte>();
+}
+
+/// <summary>Request: Mark ทุกคนว่าโอนแล้ว (Bulk) - ไม่มี slip (ต้องมี slip ทีละคนแยก)</summary>
+public class GenerateBankFileRequest
+{
+    /// <summary>Bank Code สำหรับกรอง (null = ทุกธนาคาร)</summary>
+    public string? BankCode { get; set; }
+}
+
 

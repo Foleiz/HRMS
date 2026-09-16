@@ -18,6 +18,7 @@ import {
   Users,
   Scale,
   Percent,
+  CheckCircle,
   CheckCircle2,
   Loader2,
   Building2,
@@ -33,6 +34,8 @@ import {
   Eye,
   Send,
   XCircle,
+  Upload,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -54,6 +57,8 @@ import {
   BankTransferSummary,
   TaxSsoSummary,
   EmployeeBonus,
+  PayrollTransferList,
+  PayrollTransferItem,
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
@@ -132,6 +137,7 @@ export default function PayrollPage() {
   const [processPage, setProcessPage] = useState<number>(1);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
+  const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [newPeriodForm, setNewPeriodForm] = useState({
     year: 2026,
@@ -162,7 +168,23 @@ export default function PayrollPage() {
   const [structureToDelete, setStructureToDelete] = useState<SalaryStructure | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Tab 5: Bank Transfer state
+  // Tab 5: Payment Workflow state
+  const [transferList, setTransferList] = useState<PayrollTransferList | null>(null);
+  const [isLoadingTransferList, setIsLoadingTransferList] = useState(false);
+  const [isSettingPaymentMethod, setIsSettingPaymentMethod] = useState(false);
+  const [isMarkingTransferred, setIsMarkingTransferred] = useState<number | null>(null); // payrollId
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [isGeneratingBankFile, setIsGeneratingBankFile] = useState(false);
+  // Upload Slip Modal
+  const [slipModalOpen, setSlipModalOpen] = useState(false);
+  const [slipModalTarget, setSlipModalTarget] = useState<PayrollTransferItem | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipTransferRef, setSlipTransferRef] = useState('');
+  const [slipDragOver, setSlipDragOver] = useState(false);
+  // Confirm Payment Modal
+  const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
+  const [confirmPaymentNote, setConfirmPaymentNote] = useState('');
+  // Legacy bank summary (for old bank-transfer-file download)
   const [bankSummary, setBankSummary] = useState<BankTransferSummary | null>(null);
   const [selectedBankFilter, setSelectedBankFilter] = useState<string>('ALL');
   const [isExportingBankFile, setIsExportingBankFile] = useState<boolean>(false);
@@ -242,13 +264,14 @@ export default function PayrollPage() {
     if (!selectedPeriod) return;
 
     if (activeTab === 'bank-transfer') {
+      loadTransferList(selectedPeriod.id);
       loadBankTransfer(selectedPeriod.id, selectedBankFilter);
     } else if (activeTab === 'tax-sso') {
       loadTaxSsoSummary(selectedPeriod.id);
     } else if (activeTab === 'bonus') {
       loadBonuses(selectedPeriod.year);
     }
-  }, [activeTab, selectedPeriod, selectedBankFilter]);
+  }, [activeTab, selectedPeriod]);
 
   const loadBankTransfer = async (periodId: number, bankCode?: string) => {
     try {
@@ -280,7 +303,178 @@ export default function PayrollPage() {
     }
   };
 
-  // Handler: Download Bank Transfer Text/CSV file
+  // ===== PAYMENT WORKFLOW HANDLERS =====
+
+  const loadTransferList = async (periodId: number) => {
+    setIsLoadingTransferList(true);
+    try {
+      const list = await salaryService.getTransferList(periodId);
+      setTransferList(list);
+    } catch (err) {
+      console.error('Failed to load transfer list:', err);
+    } finally {
+      setIsLoadingTransferList(false);
+    }
+  };
+
+  const handleSetPaymentMethod = async (method: 'BANK_BATCH' | 'DIRECT_TRANSFER') => {
+    if (!selectedPeriod) return;
+    setIsSettingPaymentMethod(true);
+    try {
+      const updated = await salaryService.setPaymentMethod(selectedPeriod.id, { paymentMethod: method });
+      setSelectedPeriod(updated);
+      setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      await loadTransferList(selectedPeriod.id);
+      showToast(`เลือกวิธีการจ่ายเงิน: ${method === 'BANK_BATCH' ? 'ส่งไฟล์ธนาคาร' : 'CEO โอนเอง'}`);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการตั้งค่าวิธีการจ่ายเงิน');
+    } finally {
+      setIsSettingPaymentMethod(false);
+    }
+  };
+
+  const handleOpenSlipModal = (item: PayrollTransferItem) => {
+    setSlipModalTarget(item);
+    setSlipFile(null);
+    setSlipTransferRef(item.transferReference || '');
+    setSlipModalOpen(true);
+  };
+
+  const handleSlipFileChange = (file: File | null) => {
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      showToast('ไฟล์ต้องเป็น JPG, PNG, WEBP หรือ PDF เท่านั้น');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('ขนาดไฟล์ต้องไม่เกิน 10 MB');
+      return;
+    }
+    setSlipFile(file);
+  };
+
+  const handleMarkTransferred = async () => {
+    if (!selectedPeriod || !slipModalTarget || !slipFile) {
+      showToast('กรุณาแนบสลิปการโอนเงิน');
+      return;
+    }
+    setIsMarkingTransferred(slipModalTarget.payrollId);
+    try {
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Remove data:xxx/xxx;base64, prefix
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(slipFile);
+      });
+
+      await salaryService.markTransferred(selectedPeriod.id, slipModalTarget.payrollId, {
+        transferReference: slipTransferRef.trim() || undefined,
+        slipFileName: slipFile.name,
+        slipContentType: slipFile.type,
+        slipBase64: base64,
+      });
+
+      setSlipModalOpen(false);
+      setSlipFile(null);
+      setSlipModalTarget(null);
+      await loadTransferList(selectedPeriod.id);
+      // Refresh period to update canConfirmPayment
+      const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
+      setSelectedPeriod(updatedPeriod);
+      showToast('✅ บันทึกการโอนเงินและสลิปสำเร็จ');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกการโอนเงิน');
+    } finally {
+      setIsMarkingTransferred(null);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedPeriod) return;
+    setIsConfirmingPayment(true);
+    try {
+      const updated = await salaryService.confirmPayment(selectedPeriod.id, {
+        note: confirmPaymentNote.trim() || undefined,
+      });
+      setSelectedPeriod(updated);
+      setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      setConfirmPaymentModalOpen(false);
+      setConfirmPaymentNote('');
+      await loadTransferList(selectedPeriod.id);
+      showToast('🎉 Confirm การจ่ายเงินสำเร็จ! รอบเงินเดือนเปลี่ยนเป็น PAID');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการ Confirm การจ่ายเงิน');
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  };
+
+  const handleGenerateAndDownloadBankFile = async () => {
+    if (!selectedPeriod) return;
+    setIsGeneratingBankFile(true);
+    try {
+      const blob = await salaryService.generateBankFile(selectedPeriod.id, selectedBankFilter !== 'ALL' ? selectedBankFilter : undefined);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BankTransfer_P${selectedPeriod.id}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      // Refresh period to show bankFileGeneratedAt
+      const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
+      setSelectedPeriod(updatedPeriod);
+      showToast('📁 ดาวน์โหลดไฟล์ธนาคารสำเร็จ สถานะเปลี่ยนเป็น PROCESSING');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างไฟล์ธนาคาร');
+    } finally {
+      setIsGeneratingBankFile(false);
+    }
+  };
+
+  const handleConfirmBankTransfer = async () => {
+    if (!selectedPeriod) return;
+    setIsConfirmingPayment(true);
+    try {
+      const updated = await salaryService.confirmBankTransfer(selectedPeriod.id, {
+        note: confirmPaymentNote.trim() || undefined,
+      });
+      setSelectedPeriod(updated);
+      setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      setConfirmPaymentModalOpen(false);
+      setConfirmPaymentNote('');
+      showToast('🏦 Confirm Bank Transfer สำเร็จ! รอบเงินเดือนเปลี่ยนเป็น PAID');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการ Confirm Bank Transfer');
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  };
+
+  const handleDownloadExistingSlip = async (payrollId: number, fileName: string) => {
+    try {
+      const blob = await salaryService.downloadSlip(payrollId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'slip.jpg';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      showToast('ไม่พบไฟล์ Slip');
+    }
+  };
+
+  // Handler: Download Bank Transfer Text/CSV file (legacy)
+
   const handleDownloadBankFile = async () => {
     if (!selectedPeriod) return;
     try {
@@ -553,7 +747,9 @@ export default function PayrollPage() {
 
   const handleCreatePeriodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCreatingPeriod) return;
     try {
+      setIsCreatingPeriod(true);
       const created = await salaryService.createPayrollPeriod(newPeriodForm);
       showToast('สร้างรอบเงินเดือนใหม่สำเร็จแล้ว');
       setIsCreatePeriodModalOpen(false);
@@ -564,7 +760,9 @@ export default function PayrollPage() {
       setPayrolls(pRows || []);
     } catch (err: any) {
       console.error('Failed to create payroll period:', err);
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน');
+      showToast(err?.message || err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน');
+    } finally {
+      setIsCreatingPeriod(false);
     }
   };
 
@@ -1687,142 +1885,534 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* === TAB 5: โอนเงินธนาคาร (Bank Transfer) === */}
+      {/* === TAB 5: โอนเงินธนาคาร (Payment Workflow) === */}
       {activeTab === 'bank-transfer' && (
-        <div className="space-y-4">
-          {/* Header Card: รอบเงินเดือน + ตัวกรองธนาคาร + ปุ่มส่งออก */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-5">
+
+          {/* ── Header ── */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-base font-bold text-slate-900">
-                    รอบโอนเงินเดือน: {selectedPeriod?.periodName || 'สิงหาคม 2569'}
-                  </h2>
-                  {selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
-                      โอนแล้ว
-                    </span>
-                  ) : selectedPeriod?.status === 'APPROVED' ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">
-                      รอบออกไฟล์แล้ว
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                      รอดำเนินการ
-                    </span>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  💳 การจ่ายเงินเดือน
+                  {selectedPeriod && (
+                    <span className="text-slate-400 font-normal">— {selectedPeriod.periodName}</span>
                   )}
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  ระบบส่งออกไฟล์โครงสร้างข้อความ/CSV Clearing สำหรับอัปโหลดระบบ Corporate iBanking (KBANK, SCB, BBL, KTB)
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  รอบ: {selectedPeriod?.startDate} ถึง {selectedPeriod?.endDate}
                 </p>
               </div>
-
               <div className="flex items-center gap-2">
-                <select
-                  value={selectedBankFilter}
-                  onChange={(e) => setSelectedBankFilter(e.target.value)}
-                  className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
-                >
-                  <option value="ALL">ธนาคารทั้งหมด</option>
-                  <option value="004">KBANK - กสิกรไทย (004)</option>
-                  <option value="014">SCB - ไทยพาณิชย์ (014)</option>
-                  <option value="002">BBL - กรุงเทพ (002)</option>
-                  <option value="006">KTB - กรุงไทย (006)</option>
-                </select>
+                {/* Status Badge */}
+                {selectedPeriod?.status === 'PAID' && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                    ✅ จ่ายเงินเดือนเสร็จสิ้น
+                  </span>
+                )}
+                {selectedPeriod?.status === 'PROCESSING' && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                    ⏳ กำลังดำเนินการจ่าย
+                  </span>
+                )}
+                {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                    🎯 อนุมัติแล้ว — รอเลือกวิธีการจ่าย
+                  </span>
+                )}
+              </div>
+            </div>
 
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div className="text-[11px] text-slate-400 font-medium">พนักงานทั้งหมด</div>
+                <div className="text-lg font-bold text-slate-900 mt-0.5">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0} คน</div>
+              </div>
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="text-[11px] text-emerald-600 font-medium">โอนแล้ว</div>
+                <div className="text-lg font-bold text-emerald-700 mt-0.5">{transferList?.transferredCount ?? 0} คน</div>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="text-[11px] text-amber-600 font-medium">รอโอน</div>
+                <div className="text-lg font-bold text-amber-700 mt-0.5">{transferList?.pendingCount ?? 0} คน</div>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="text-[11px] text-blue-600 font-medium">รวมยอดทั้งหมด</div>
+                <div className="text-base font-bold text-blue-900 mt-0.5">
+                  ฿{(transferList?.totalNetSalary ?? selectedPeriod?.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── PHASE 1: เลือกวิธีการจ่ายเงิน (เมื่อ APPROVED และยังไม่ได้เลือก) ── */}
+          {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
+            <div className="bg-gradient-to-br from-[#0B2046] to-[#1a3a7a] rounded-2xl p-6 text-white shadow-lg">
+              <h3 className="text-base font-bold mb-1">เลือกวิธีการจ่ายเงินเดือน</h3>
+              <p className="text-xs text-blue-200 mb-5">CEO อนุมัติรอบเงินเดือนแล้ว กรุณาเลือกวิธีการจ่ายเงิน</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Model 1: Bank Batch */}
                 <button
-                  onClick={handleDownloadBankFile}
-                  disabled={isExportingBankFile}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  onClick={() => handleSetPaymentMethod('BANK_BATCH')}
+                  disabled={isSettingPaymentMethod}
+                  className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
                 >
-                  {isExportingBankFile ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Banknote className="w-4 h-4" />
-                  )}
-                  <span>ส่งออกไฟล์โอนเงิน (.TXT / .CSV)</span>
+                  <div className="w-10 h-10 rounded-xl bg-blue-400/30 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">🏦 ส่งไฟล์ธนาคาร</div>
+                    <div className="text-xs text-blue-200 mt-1">ดาวน์โหลดไฟล์ .CSV ส่งให้ธนาคาร ธนาคารจะโอนเงินให้พนักงานอัตโนมัติ (สำหรับบริษัทขนาดใหญ่)</div>
+                  </div>
+                </button>
+                {/* Model 2: Direct Transfer */}
+                <button
+                  onClick={() => handleSetPaymentMethod('DIRECT_TRANSFER')}
+                  disabled={isSettingPaymentMethod}
+                  className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border-2 border-emerald-400/50 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-400/30 flex items-center justify-center">
+                    <Banknote className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">👤 CEO โอนเองทีละคน <span className="text-emerald-300 text-[11px]">(บริษัทนี้)</span></div>
+                    <div className="text-xs text-blue-200 mt-1">CEO โอนเงินผ่าน Internet Banking ทีละคน แนบสลิปยืนยัน แล้ว Confirm ทั้งหมด</div>
+                  </div>
                 </button>
               </div>
             </div>
+          )}
 
-            {/* บัญชีธนาคารบริษัท */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                  <Building2 className="w-5 h-5 text-blue-700" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-900 text-xs">ธนาคารกสิกรไทย (KBANK Main Account)</div>
-                  <div className="text-[11px] text-slate-500 font-mono mt-0.5">เลขที่: 123-4-56789-0</div>
-                </div>
+          {/* ── PHASE 2a: BANK_BATCH ── */}
+          {(selectedPeriod?.paymentMethod === 'BANK_BATCH' || (!selectedPeriod?.paymentMethod && selectedPeriod?.status === 'PROCESSING')) && selectedPeriod?.status !== 'CLOSED' && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-slate-900">วิธีการจ่าย: ส่งไฟล์ธนาคาร (Bank Batch)</h3>
               </div>
 
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-[11px] text-slate-400 font-medium">รวมยอดเงินโอนสุทธิ</span>
-                <p className="text-base font-bold text-slate-900 mt-0.5">
-                  ฿{(bankSummary?.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
+              {/* Steps */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { step: '1', title: 'ดาวน์โหลดไฟล์', desc: 'ดาวน์โหลดไฟล์ .CSV สำหรับอัปโหลดเข้า Corporate iBanking', done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' },
+                  { step: '2', title: 'ส่งให้ธนาคาร', desc: 'อัปโหลดไฟล์เข้าระบบธนาคาร ยืนยันรายการโอนเงิน', done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' },
+                  { step: '3', title: 'CEO Confirm', desc: 'หลังธนาคารยืนยัน กด Confirm เพื่อปิดรอบ', done: selectedPeriod?.status === 'PAID' },
+                ].map(({ step, title, desc, done }) => (
+                  <div key={step} className={`p-4 rounded-xl border ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-2 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                      {done ? '✓' : step}
+                    </div>
+                    <div className={`text-xs font-bold ${done ? 'text-emerald-700' : 'text-slate-800'}`}>{title}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{desc}</div>
+                  </div>
+                ))}
               </div>
 
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-[11px] text-slate-400 font-medium font-mono">จำนวนรายการ / บัญชีพนักงาน</span>
-                <p className="text-base font-bold text-slate-900 mt-0.5">
-                  {bankSummary?.totalRecords || 0} รายการ
-                </p>
-              </div>
-            </div>
-          </div>
+              {(selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING') && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
+                    <span>📁 ไฟล์โอนเงินพร้อมใช้งาน (สถานะประมวลผล)</span>
+                    <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-semibold text-[11px]">สถานะ: PROCESSING</span>
+                  </div>
 
-          {/* ตารางรายการโอนรายบุคคล */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">รายการโอนเงินรายบุคคล ({bankSummary?.items?.length || 0} บัญชี)</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                    <th className="py-3.5 px-5">รหัสพนักงาน</th>
-                    <th className="py-3.5 px-5">ชื่อพนักงาน</th>
-                    <th className="py-3.5 px-5">ธนาคารปลายทาง</th>
-                    <th className="py-3.5 px-5">เลขที่บัญชี</th>
-                    <th className="py-3.5 px-5 text-right">จำนวนเงินโอนสุทธิ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {!bankSummary || !bankSummary.items || bankSummary.items.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-400">
-                        ไม่พบรายการโอนเงินธนาคารสำหรับตัวกรองนี้
-                      </td>
-                    </tr>
-                  ) : (
-                    bankSummary.items.map((item) => (
-                      <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-5 font-mono text-slate-900 font-semibold">{item.employeeCode}</td>
-                        <td className="py-3.5 px-5 font-semibold text-slate-900">{item.employeeName}</td>
-                        <td className="py-3.5 px-5">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                            {item.bankName} ({item.bankCode})
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-5 font-mono text-slate-600 font-medium">
-                          {item.accountNumber}
-                        </td>
-                        <td className="py-3.5 px-5 text-right font-bold text-slate-900 font-mono">
-                          ฿{item.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))
+                  {selectedPeriod?.status !== 'PAID' && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-emerald-900 text-xs">
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>ขั้นตอนถัดไป (Next Process): ยืนยันการโอนเงิน</span>
+                      </div>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        1. นำไฟล์ .CSV ที่ดาวน์โหลดไปอัปโหลดเข้าระบบธนาคาร (Corporate iBanking)<br />
+                        2. เมื่อธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว ให้กดปุ่ม <strong>"CEO Confirm — ธนาคารโอนเงินเสร็จแล้ว"</strong> ด้านล่างนี้เพื่ออนุมัติปิดรอบเงินเดือนเป็น <strong>PAID (จ่ายแล้ว)</strong>
+                      </p>
+                      <div className="pt-2">
+                        <button
+                          onClick={() => setConfirmPaymentModalOpen(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-102"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>CEO Confirm — ธนาคารโอนเงินเสร็จแล้ว</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  onClick={handleGenerateAndDownloadBankFile}
+                  disabled={isGeneratingBankFile || selectedPeriod?.status === 'PAID'}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 disabled:opacity-50 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                >
+                  {isGeneratingBankFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Building2 className="w-4 h-4" />}
+                  <span>{selectedPeriod?.bankFileGeneratedAt ? 'ดาวน์โหลดไฟล์อีกครั้ง' : 'ดาวน์โหลดไฟล์ธนาคาร'}</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── PHASE 2b: DIRECT_TRANSFER ── */}
+          {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Banknote className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-sm font-bold text-slate-900">
+                    รายการโอนเงินรายบุคคล
+                    <span className="ml-2 text-slate-400 font-normal text-xs">
+                      {transferList?.transferredCount ?? 0}/{transferList?.totalEmployees ?? 0} คน โอนแล้ว
+                    </span>
+                  </h3>
+                </div>
+
+                {/* Confirm Button — only when all transferred and CEO */}
+                {isCEO && transferList?.canConfirmPayment && selectedPeriod?.status !== 'PAID' && (
+                  <button
+                    onClick={() => setConfirmPaymentModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer animate-pulse"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>CEO Confirm การจ่ายเงิน</span>
+                  </button>
+                )}
+
+                {isCEO && !transferList?.canConfirmPayment && transferList && transferList.totalEmployees > 0 && selectedPeriod?.status !== 'PAID' && (
+                  <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                    ⚠️ ยังมี {transferList.pendingCount} คนที่ยังไม่ได้โอน/แนบสลิป
+                  </div>
+                )}
+              </div>
+
+              {/* Table */}
+              {isLoadingTransferList ? (
+                <div className="py-16 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                  <span className="ml-2 text-slate-400 text-sm">กำลังโหลดรายการ...</span>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        <th className="py-3 px-4">พนักงาน</th>
+                        <th className="py-3 px-4">ธนาคาร / เลขบัญชี</th>
+                        <th className="py-3 px-4 text-right">ยอดโอน</th>
+                        <th className="py-3 px-4 text-center">Ref No.</th>
+                        <th className="py-3 px-4 text-center">สลิป</th>
+                        <th className="py-3 px-4 text-center">สถานะ</th>
+                        {selectedPeriod?.status !== 'PAID' && isCEO && (
+                          <th className="py-3 px-4 text-center">การดำเนินการ</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {!transferList || transferList.items.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-14 text-center text-slate-400">
+                            ยังไม่มีรายการเงินเดือนในรอบนี้
+                          </td>
+                        </tr>
+                      ) : (
+                        transferList.items.map((item) => (
+                          <tr key={item.payrollId} className="hover:bg-slate-50/50 transition-colors">
+                            {/* ชื่อพนักงาน */}
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-slate-900">{item.employeeName}</div>
+                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.employeeCode} · {item.departmentName}</div>
+                            </td>
+                            {/* Bank */}
+                            <td className="py-3.5 px-4">
+                              {item.bankName ? (
+                                <>
+                                  <div className="font-semibold text-slate-700">{item.bankName}</div>
+                                  <div className="font-mono text-[11px] text-slate-400 mt-0.5">{item.accountNumber}</div>
+                                  {item.accountName && <div className="text-[11px] text-slate-400">{item.accountName}</div>}
+                                </>
+                              ) : (
+                                <span className="text-red-400 font-medium">⚠️ ไม่มีบัญชีธนาคาร</span>
+                              )}
+                            </td>
+                            {/* ยอด */}
+                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
+                              ฿{item.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            {/* Ref */}
+                            <td className="py-3.5 px-4 text-center font-mono text-slate-500 text-[11px]">
+                              {item.transferReference || '—'}
+                            </td>
+                            {/* Slip */}
+                            <td className="py-3.5 px-4 text-center">
+                              {item.hasSlip ? (
+                                <button
+                                  onClick={() => handleDownloadExistingSlip(item.payrollId, item.slipFileName || 'slip.jpg')}
+                                  className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium text-[11px] cursor-pointer transition-colors"
+                                  title="ดาวน์โหลด Slip"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  <span>{item.slipFileName || 'slip'}</span>
+                                </button>
+                              ) : (
+                                <span className="text-slate-300 text-[11px]">ยังไม่มีสลิป</span>
+                              )}
+                            </td>
+                            {/* Status Badge */}
+                            <td className="py-3.5 px-4 text-center">
+                              {item.paymentStatus === 'TRANSFERRED' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                  ✓ โอนแล้ว
+                                </span>
+                              ) : item.paymentStatus === 'FAILED' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                  ✗ โอนไม่สำเร็จ
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                                  ⏳ รอโอน
+                                </span>
+                              )}
+                            </td>
+                            {/* Action */}
+                            {selectedPeriod?.status !== 'PAID' && isCEO && (
+                              <td className="py-3.5 px-4 text-center">
+                                <button
+                                  onClick={() => handleOpenSlipModal(item)}
+                                  disabled={isMarkingTransferred === item.payrollId}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer
+                                    ${item.paymentStatus === 'TRANSFERRED'
+                                      ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                      : 'bg-[#0B2046] hover:bg-[#112d5e] text-white shadow-xs'
+                                    } disabled:opacity-50`}
+                                >
+                                  {isMarkingTransferred === item.payrollId ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Upload className="w-3.5 h-3.5" />
+                                  )}
+                                  {item.paymentStatus === 'TRANSFERRED' ? 'อัปเดต Slip' : 'โอนแล้ว + แนบ Slip'}
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── PAID: แสดงสรุป ── */}
+          {selectedPeriod?.status === 'PAID' && (
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-6 text-center">
+              <div className="text-4xl mb-3">🎉</div>
+              <h3 className="text-lg font-bold text-emerald-800">จ่ายเงินเดือนเสร็จสิ้น!</h3>
+              <p className="text-sm text-emerald-600 mt-1">
+                รอบเงินเดือน {selectedPeriod?.periodName} ได้รับการจ่ายเงินและ Confirm โดย CEO เรียบร้อยแล้ว
+              </p>
+              {selectedPeriod?.paymentConfirmedAt && (
+                <p className="text-xs text-emerald-500 mt-2">
+                  ยืนยันเมื่อ: {new Date(selectedPeriod.paymentConfirmedAt).toLocaleString('th-TH')}
+                </p>
+              )}
+              {selectedPeriod?.paymentNote && (
+                <div className="mt-3 text-xs text-emerald-700 bg-emerald-100 rounded-xl px-4 py-2 inline-block">
+                  หมายเหตุ: {selectedPeriod.paymentNote}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── No Period Selected ── */}
+          {!selectedPeriod && (
+            <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
+              <div className="text-4xl mb-3">📋</div>
+              <p className="text-slate-400 text-sm">กรุณาเลือกรอบเงินเดือนก่อน</p>
+              <button
+                onClick={() => setActiveTab('process')}
+                className="mt-3 px-4 py-2 bg-[#0B2046] text-white rounded-xl text-xs font-semibold cursor-pointer"
+              >
+                ไปที่แท็บประมวลผล
+              </button>
+            </div>
+          )}
+
+          {/* ── MODAL: Upload Slip + Mark Transferred ── */}
+          {slipModalOpen && slipModalTarget && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-slate-900">📎 แนบสลิปการโอนเงิน</h3>
+                  <button onClick={() => setSlipModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer text-xl leading-none">×</button>
+                </div>
+
+                {/* Employee info */}
+                <div className="bg-slate-50 rounded-xl p-3.5 text-sm">
+                  <div className="font-bold text-slate-900">{slipModalTarget.employeeName}</div>
+                  <div className="text-slate-400 text-xs mt-0.5">{slipModalTarget.employeeCode} · {slipModalTarget.bankName} {slipModalTarget.accountNumber}</div>
+                  <div className="text-emerald-700 font-bold mt-1">
+                    ฿{slipModalTarget.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                {/* Transfer Ref */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">เลข Reference (ไม่บังคับ)</label>
+                  <input
+                    type="text"
+                    value={slipTransferRef}
+                    onChange={e => setSlipTransferRef(e.target.value)}
+                    placeholder="เช่น TH6706161234567890"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-mono"
+                  />
+                </div>
+
+                {/* Slip Upload Zone */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    สลิปการโอนเงิน <span className="text-red-500">*</span>
+                  </label>
+                  <div
+                    onDragOver={e => { e.preventDefault(); setSlipDragOver(true); }}
+                    onDragLeave={() => setSlipDragOver(false)}
+                    onDrop={e => {
+                      e.preventDefault();
+                      setSlipDragOver(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleSlipFileChange(file);
+                    }}
+                    onClick={() => document.getElementById('slip-file-input')?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all
+                      ${slipDragOver ? 'border-[#0B2046] bg-blue-50' : slipFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50'}`}
+                  >
+                    {slipFile ? (
+                      <div className="flex items-center justify-center gap-2 text-emerald-700">
+                        <div className="text-2xl">✅</div>
+                        <div className="text-left">
+                          <div className="font-semibold text-sm">{slipFile.name}</div>
+                          <div className="text-xs text-emerald-600">{(slipFile.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-slate-400">
+                        <div className="text-2xl mb-2">📎</div>
+                        <div className="text-xs font-medium">ลาก & วาง หรือคลิกเพื่อเลือกไฟล์</div>
+                        <div className="text-[11px] mt-1">JPG, PNG, WEBP, PDF · สูงสุด 10 MB</div>
+                      </div>
+                    )}
+                    <input
+                      id="slip-file-input"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      onChange={e => handleSlipFileChange(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setSlipModalOpen(false)}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={handleMarkTransferred}
+                    disabled={!slipFile || isMarkingTransferred !== null}
+                    className="flex-1 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-sm font-bold cursor-pointer transition-all inline-flex items-center justify-center gap-2"
+                  >
+                    {isMarkingTransferred !== null ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลังบันทึก...</span></>
+                    ) : (
+                      <><CheckCircle className="w-4 h-4" /><span>บันทึกการโอน</span></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── MODAL: CEO Confirm Payment ── */}
+          {confirmPaymentModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+                <div className="text-center">
+                  <div className="text-5xl mb-3">🔐</div>
+                  <h3 className="text-lg font-bold text-slate-900">Confirm การจ่ายเงินเดือน</h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {selectedPeriod?.paymentMethod === 'BANK_BATCH'
+                      ? 'ยืนยันว่าธนาคารได้โอนเงินเดือนให้พนักงานทุกคนเสร็จสิ้นแล้ว'
+                      : `ยืนยันว่าโอนเงินเดือนให้พนักงานครบ ${transferList?.totalEmployees} คน พร้อมสลิปครบถ้วนแล้ว`}
+                  </p>
+                </div>
+
+                {/* Summary */}
+                <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">รอบเงินเดือน</span>
+                    <span className="font-semibold text-slate-900">{selectedPeriod?.periodName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">วิธีการจ่าย</span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedPeriod?.paymentMethodText ?? (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? 'CEO โอนเอง' : 'ส่งไฟล์ธนาคาร (Bank Batch)')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">จำนวนพนักงาน</span>
+                    <span className="font-semibold text-slate-900">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount} คน</span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-slate-200 pt-2 mt-2">
+                    <span className="text-slate-500 font-medium">รวมเงินที่จ่าย</span>
+                    <span className="font-bold text-emerald-700 text-base">
+                      ฿{(transferList?.totalNetSalary ?? selectedPeriod?.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">หมายเหตุ (ไม่บังคับ)</label>
+                  <textarea
+                    value={confirmPaymentNote}
+                    onChange={e => setConfirmPaymentNote(e.target.value)}
+                    placeholder="เช่น โอนเงินเดือนประจำเดือนกันยายน 2569..."
+                    rows={2}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setConfirmPaymentModalOpen(false); setConfirmPaymentNote(''); }}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? handleConfirmPayment : handleConfirmBankTransfer}
+                    disabled={isConfirmingPayment}
+                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold cursor-pointer transition-all inline-flex items-center justify-center gap-2"
+                  >
+                    {isConfirmingPayment ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลัง Confirm...</span></>
+                    ) : (
+                      <><CheckCircle className="w-4 h-4" /><span>CEO Confirm</span></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
-
       {/* === TAB 6: โบนัส (Bonus) === */}
+
       {activeTab === 'bonus' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">

@@ -892,9 +892,36 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollPeriodDto> CreatePayrollPeriodAsync(CreatePayrollPeriodRequest request, CancellationToken cancellationToken = default)
     {
-        var startDate = DateOnly.Parse(request.StartDate);
-        var endDate = DateOnly.Parse(request.EndDate);
-        DateOnly? paymentDate = string.IsNullOrWhiteSpace(request.PaymentDate) ? null : DateOnly.Parse(request.PaymentDate);
+        if (request.Year < 2000 || request.Year > 2100)
+            throw new BusinessRuleException("ปี (ค.ศ.) ไม่ถูกต้อง");
+
+        if (request.Month < 1 || request.Month > 12)
+            throw new BusinessRuleException("เดือนต้องอยู่ระหว่าง 1 ถึง 12");
+
+        var exists = await _context.PayrollPeriods.AnyAsync(p => p.Year == request.Year && p.Month == request.Month, cancellationToken);
+        if (exists)
+        {
+            var thaiMonth = request.Month >= 1 && request.Month <= 12 ? ThaiMonths[request.Month] : request.Month.ToString();
+            throw new BusinessRuleException($"รอบเงินเดือนประจำเดือน {thaiMonth} {request.Year + 543} มีอยู่ในระบบแล้ว");
+        }
+
+        if (!DateOnly.TryParse(request.StartDate, out var startDate))
+            throw new BusinessRuleException("รูปแบบวันเริ่มต้นคำนวณไม่ถูกต้อง");
+
+        if (!DateOnly.TryParse(request.EndDate, out var endDate))
+            throw new BusinessRuleException("รูปแบบวันสิ้นสุดคำนวณไม่ถูกต้อง");
+
+        if (endDate < startDate)
+            throw new BusinessRuleException("วันสิ้นสุดคำนวณต้องไม่ก่อนวันเริ่มต้นคำนวณ");
+
+        DateOnly? paymentDate = null;
+        if (!string.IsNullOrWhiteSpace(request.PaymentDate))
+        {
+            if (DateOnly.TryParse(request.PaymentDate, out var parsedPaymentDate))
+                paymentDate = parsedPaymentDate;
+            else
+                throw new BusinessRuleException("รูปแบบวันกำหนดจ่ายเงินไม่ถูกต้อง");
+        }
 
         var period = new Domain.Entities.PayrollPeriod
         {
@@ -1103,11 +1130,14 @@ public class SalaryService : ISalaryService
         foreach (var item in summary.Items)
         {
             var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
-            sb.AppendLine($"{seq:D4},{item.EmployeeCode},{cleanAcc},\"{item.AccountName}\",{item.BankCode},{item.NetPayableSalary:F2},THB,20260829");
+            // Format ACCOUNT_NUMBER with ="{cleanAcc}" so Excel reads as string, not scientific E+ notation
+            sb.AppendLine($"{seq:D4},{item.EmployeeCode},=\"{cleanAcc}\",\"{item.AccountName}\",{item.BankCode},{item.NetPayableSalary:F2},THB,20260829");
             seq++;
         }
 
-        return System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        var preamble = System.Text.Encoding.UTF8.GetPreamble();
+        var contentBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        return preamble.Concat(contentBytes).ToArray();
     }
 
     public async Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default)
@@ -1248,4 +1278,333 @@ public class SalaryService : ISalaryService
     }
 
     #endregion
+
+    #region Payment Workflow
+
+    public async Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default)
+    {
+        var validMethods = new[] { "BANK_BATCH", "DIRECT_TRANSFER" };
+        if (!validMethods.Contains(request.PaymentMethod))
+            throw new BusinessRuleException($"วิธีการจ่ายเงินไม่ถูกต้อง ต้องเป็น BANK_BATCH หรือ DIRECT_TRANSFER");
+
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "APPROVED")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED เพื่อตั้งค่าวิธีการจ่ายเงิน");
+
+        period.PaymentMethod = request.PaymentMethod;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapPeriodToDto(period);
+    }
+
+    public async Task<PayrollTransferListDto> GetTransferListAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(payroll => payroll.Employee)
+                    .ThenInclude(emp => emp!.BankAccounts.Where(b => b.IsPrimary && b.Status == "ACTIVE"))
+                        .ThenInclude(ba => ba.Bank)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        var items = period.Payrolls.Select(payroll =>
+        {
+            var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+            return new PayrollTransferItemDto
+            {
+                PayrollId = payroll.Id,
+                EmployeeId = payroll.EmployeeId,
+                EmployeeCode = payroll.Employee?.EmployeeCode ?? "",
+                EmployeeName = payroll.SnapshotEmployeeName ?? $"{payroll.Employee?.FirstName} {payroll.Employee?.LastName}",
+                DepartmentName = payroll.SnapshotDepartmentName ?? "",
+                BankCode = primaryBank?.Bank?.BankCode ?? "",
+                BankName = primaryBank?.Bank?.BankName ?? "",
+                AccountNumber = primaryBank?.AccountNumber ?? "",
+                AccountName = primaryBank?.AccountName ?? "",
+                AccountType = primaryBank?.AccountType ?? "",
+                NetPayableSalary = payroll.NetPayableSalary,
+                PaymentStatus = payroll.PaymentStatus,
+                PaymentStatusText = MapPaymentStatusText(payroll.PaymentStatus),
+                TransferredAt = payroll.TransferredAt,
+                TransferReference = payroll.TransferReference,
+                HasSlip = payroll.SlipData != null,
+                SlipFileName = payroll.SlipFileName,
+                SlipUploadedAt = payroll.SlipUploadedAt,
+            };
+        }).OrderBy(i => i.EmployeeCode).ToList();
+
+        int transferredCount = items.Count(i => i.PaymentStatus == "TRANSFERRED");
+        // CanConfirm: ทุกคนต้องเป็น TRANSFERRED และมี Slip
+        bool canConfirm = items.Count > 0
+            && items.All(i => i.PaymentStatus == "TRANSFERRED" && i.HasSlip);
+
+        return new PayrollTransferListDto
+        {
+            PeriodId = period.Id,
+            PeriodName = $"{ThaiMonths[period.Month <= 12 ? period.Month : 1]} {period.Year + 543}",
+            PaymentMethod = period.PaymentMethod,
+            Status = period.Status,
+            TotalEmployees = items.Count,
+            TransferredCount = transferredCount,
+            PendingCount = items.Count - transferredCount,
+            TotalNetSalary = items.Sum(i => i.NetPayableSalary),
+            CanConfirmPayment = canConfirm,
+            Items = items
+        };
+    }
+
+    public async Task<PayrollTransferItemDto> MarkTransferredAsync(long periodId, long payrollId, MarkTransferredRequest request, CancellationToken cancellationToken = default)
+    {
+        // Validate Slip fields — Slip is REQUIRED
+        if (string.IsNullOrWhiteSpace(request.SlipBase64))
+            throw new BusinessRuleException("กรุณาแนบสลิปการโอนเงินสำหรับพนักงานทุกคน");
+        if (string.IsNullOrWhiteSpace(request.SlipFileName))
+            throw new BusinessRuleException("กรุณาระบุชื่อไฟล์ Slip");
+        if (string.IsNullOrWhiteSpace(request.SlipContentType))
+            throw new BusinessRuleException("กรุณาระบุประเภทไฟล์ Slip");
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "application/pdf" };
+        if (!allowedTypes.Contains(request.SlipContentType.ToLower()))
+            throw new BusinessRuleException("ไฟล์ Slip ต้องเป็น JPG, PNG, WEBP หรือ PDF เท่านั้น");
+
+        byte[] slipBytes;
+        try { slipBytes = Convert.FromBase64String(request.SlipBase64); }
+        catch { throw new BusinessRuleException("ข้อมูล Slip ไม่ถูกต้อง (Base64 Invalid)"); }
+
+        if (slipBytes.Length > 10 * 1024 * 1024) // 10MB limit
+            throw new BusinessRuleException("ขนาดไฟล์ Slip ต้องไม่เกิน 10 MB");
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.Employee)
+                .ThenInclude(e => e!.BankAccounts.Where(b => b.IsPrimary && b.Status == "ACTIVE"))
+                    .ThenInclude(ba => ba.Bank)
+            .FirstOrDefaultAsync(p => p.Id == payrollId && p.PeriodId == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลเงินเดือนพนักงาน");
+
+        var period = await _context.PayrollPeriods.FindAsync(new object[] { periodId }, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "APPROVED" && period.Status != "PROCESSING")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED หรือ PROCESSING");
+
+        // Mark payroll record
+        payroll.PaymentStatus = "TRANSFERRED";
+        payroll.TransferredAt = DateTimeOffset.UtcNow;
+        payroll.TransferReference = request.TransferReference?.Trim();
+        payroll.SlipData = slipBytes;
+        payroll.SlipFileName = request.SlipFileName;
+        payroll.SlipContentType = request.SlipContentType;
+        payroll.SlipUploadedAt = DateTimeOffset.UtcNow;
+
+        // Update period status to PROCESSING if first transfer
+        if (period.Status == "APPROVED")
+            period.Status = "PROCESSING";
+
+        // Update transferred count
+        var transferredCount = await _context.Payrolls
+            .CountAsync(p => p.PeriodId == periodId && p.PaymentStatus == "TRANSFERRED", cancellationToken);
+        period.TotalTransferredCount = transferredCount + 1;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+        return new PayrollTransferItemDto
+        {
+            PayrollId = payroll.Id,
+            EmployeeId = payroll.EmployeeId,
+            EmployeeCode = payroll.Employee?.EmployeeCode ?? "",
+            EmployeeName = payroll.SnapshotEmployeeName ?? "",
+            DepartmentName = payroll.SnapshotDepartmentName ?? "",
+            BankCode = primaryBank?.Bank?.BankCode ?? "",
+            BankName = primaryBank?.Bank?.BankName ?? "",
+            AccountNumber = primaryBank?.AccountNumber ?? "",
+            AccountName = primaryBank?.AccountName ?? "",
+            AccountType = primaryBank?.AccountType ?? "",
+            NetPayableSalary = payroll.NetPayableSalary,
+            PaymentStatus = payroll.PaymentStatus,
+            PaymentStatusText = MapPaymentStatusText(payroll.PaymentStatus),
+            TransferredAt = payroll.TransferredAt,
+            TransferReference = payroll.TransferReference,
+            HasSlip = payroll.SlipData != null,
+            SlipFileName = payroll.SlipFileName,
+            SlipUploadedAt = payroll.SlipUploadedAt,
+        };
+    }
+
+    public async Task<PayrollPeriodDto> ConfirmPaymentAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "PROCESSING" && period.Status != "APPROVED")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED หรือ PROCESSING เพื่อ Confirm การจ่ายเงิน");
+
+        // Business Rule: ทุกคนต้องมี Slip และ TRANSFERRED
+        var payrolls = period.Payrolls.ToList();
+        if (!payrolls.Any())
+            throw new BusinessRuleException("ไม่มีข้อมูลเงินเดือนในรอบนี้");
+
+        var notTransferred = payrolls.Where(p => p.PaymentStatus != "TRANSFERRED").ToList();
+        if (notTransferred.Any())
+            throw new BusinessRuleException($"ยังมีพนักงาน {notTransferred.Count} คนที่ยังไม่ได้โอนเงิน กรุณาโอนให้ครบก่อน Confirm");
+
+        var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
+        if (missingSlip.Any())
+            throw new BusinessRuleException($"ยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่มีสลิป กรุณาแนบสลิปให้ครบก่อน Confirm");
+
+        // Confirm payment
+        period.Status = "PAID";
+        period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+        period.PaymentConfirmedBy = confirmedByEmployeeId;
+        period.PaymentNote = request.Note?.Trim();
+        period.TotalTransferredCount = payrolls.Count;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
+    public async Task<SlipDownloadDto> GetPayrollSlipAsync(long payrollId, CancellationToken cancellationToken = default)
+    {
+        var payroll = await _context.Payrolls
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลเงินเดือนพนักงาน");
+
+        if (payroll.SlipData == null || payroll.SlipData.Length == 0)
+            throw new BusinessRuleException("ไม่พบไฟล์ Slip สำหรับพนักงานคนนี้");
+
+        return new SlipDownloadDto
+        {
+            FileName = payroll.SlipFileName ?? "slip.jpg",
+            ContentType = payroll.SlipContentType ?? "application/octet-stream",
+            Data = payroll.SlipData
+        };
+    }
+
+    public async Task<byte[]> GenerateAndMarkBankFileAsync(long periodId, string? bankCode, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods.FindAsync(new object[] { periodId }, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "APPROVED" && period.Status != "PROCESSING")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED หรือ PROCESSING");
+
+        // Generate file (reuse existing logic)
+        var bytes = await GenerateBankTransferFileAsync(periodId, bankCode ?? "ALL", cancellationToken);
+
+        // Mark as file generated
+        period.BankFileGeneratedAt = DateTimeOffset.UtcNow;
+        if (period.Status == "APPROVED")
+            period.Status = "PROCESSING";
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return bytes;
+    }
+
+    public async Task<PayrollPeriodDto> ConfirmBankTransferAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "PROCESSING" && period.Status != "APPROVED")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ PROCESSING เพื่อ Confirm Bank Transfer");
+
+        if (string.IsNullOrEmpty(period.PaymentMethod))
+        {
+            period.PaymentMethod = "BANK_BATCH";
+        }
+        else if (period.PaymentMethod != "BANK_BATCH")
+        {
+            throw new BusinessRuleException("รอบเงินเดือนนี้ไม่ได้ใช้วิธีการจ่ายผ่านธนาคาร");
+        }
+
+        if (period.BankFileGeneratedAt == null)
+        {
+            period.BankFileGeneratedAt = DateTimeOffset.UtcNow;
+        }
+
+        // Mark all individual payrolls as transferred (bank did it)
+        foreach (var payroll in period.Payrolls)
+        {
+            payroll.PaymentStatus = "TRANSFERRED";
+            payroll.TransferredAt = DateTimeOffset.UtcNow;
+        }
+
+        period.Status = "PAID";
+        period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+        period.PaymentConfirmedBy = confirmedByEmployeeId;
+        period.PaymentNote = request.Note?.Trim();
+        period.TotalTransferredCount = period.Payrolls.Count;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
+    // ===== PRIVATE HELPERS =====
+
+    private static string MapPaymentStatusText(string status) => status switch
+    {
+        "PENDING" => "รอโอน",
+        "TRANSFERRED" => "โอนแล้ว",
+        "FAILED" => "โอนไม่สำเร็จ",
+        _ => status
+    };
+
+    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period)
+    {
+        var statusText = period.Status switch
+        {
+            "DRAFT" => "ร่าง",
+            "REVIEW" => "รอตรวจสอบ",
+            "APPROVED" => "อนุมัติแล้ว",
+            "PROCESSING" => "กำลังดำเนินการจ่าย",
+            "PAID" => "จ่ายแล้ว",
+            "CLOSED" => "ปิดรอบแล้ว",
+            _ => period.Status
+        };
+        var methodText = period.PaymentMethod switch
+        {
+            "BANK_BATCH" => "ส่งไฟล์ธนาคาร",
+            "DIRECT_TRANSFER" => "CEO โอนเอง",
+            _ => null
+        };
+        var payrolls = period.Payrolls.ToList();
+        bool canConfirm = payrolls.Count > 0
+            && payrolls.All(p => p.PaymentStatus == "TRANSFERRED" && p.SlipData != null);
+
+        return new PayrollPeriodDto
+        {
+            Id = period.Id,
+            Year = period.Year,
+            Month = period.Month,
+            PeriodName = $"{ThaiMonths[period.Month <= 12 ? period.Month : 1]} {period.Year + 543}",
+            StartDate = period.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = period.EndDate.ToString("yyyy-MM-dd"),
+            PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
+            Status = period.Status,
+            StatusText = statusText,
+            EmployeeCount = payrolls.Count,
+            TotalNetSalary = payrolls.Sum(p => p.NetPayableSalary),
+            PaymentMethod = period.PaymentMethod,
+            PaymentMethodText = methodText,
+            PaymentConfirmedAt = period.PaymentConfirmedAt,
+            PaymentConfirmedBy = period.PaymentConfirmedBy,
+            BankFileGeneratedAt = period.BankFileGeneratedAt,
+            TotalTransferredCount = period.TotalTransferredCount,
+            PaymentNote = period.PaymentNote,
+            CanConfirmPayment = canConfirm,
+        };
+    }
+
+    #endregion
 }
+

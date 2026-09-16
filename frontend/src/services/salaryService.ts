@@ -16,6 +16,11 @@ import {
   PayrollPeriod,
   PayrollRecord,
   PayrollDetailItem,
+  PayrollTransferItem,
+  PayrollTransferList,
+  SetPaymentMethodPayload,
+  MarkTransferredPayload,
+  ConfirmPaymentPayload,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -184,6 +189,73 @@ export const salaryService = {
 
   async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<any[]> {
     const res = await apiClient.post<ApiResponse<any[]>>('/salary/bonuses/calculate', payload);
+    return res.data.data;
+  },
+
+  // === 7. PAYMENT WORKFLOW ===
+
+  /** ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) */
+  async setPaymentMethod(periodId: number, payload: SetPaymentMethodPayload): Promise<PayrollPeriod> {
+    const res = await apiClient.put<ApiResponse<PayrollPeriod>>(
+      `/salary/periods/${periodId}/payment-method`,
+      payload
+    );
+    return res.data.data;
+  },
+
+  /** ดึงรายการโอนเงินพนักงานพร้อมสถานะ */
+  async getTransferList(periodId: number): Promise<PayrollTransferList> {
+    const res = await apiClient.get<ApiResponse<PayrollTransferList>>(
+      `/salary/periods/${periodId}/transfer-list`
+    );
+    return res.data.data;
+  },
+
+  /** Mark พนักงานรายบุคคลว่าโอนเงินแล้ว พร้อมแนบ Slip */
+  async markTransferred(
+    periodId: number,
+    payrollId: number,
+    payload: MarkTransferredPayload
+  ): Promise<PayrollTransferItem> {
+    const res = await apiClient.post<ApiResponse<PayrollTransferItem>>(
+      `/salary/periods/${periodId}/payrolls/${payrollId}/mark-transferred`,
+      payload
+    );
+    return res.data.data;
+  },
+
+  /** CEO Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER) */
+  async confirmPayment(periodId: number, payload: ConfirmPaymentPayload): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(
+      `/salary/periods/${periodId}/confirm-payment`,
+      payload
+    );
+    return res.data.data;
+  },
+
+  /** ดาวน์โหลด Slip ของพนักงานรายบุคคล */
+  async downloadSlip(payrollId: number): Promise<Blob> {
+    const res = await apiClient.get(`/salary/payrolls/${payrollId}/slip`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
+  /** สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH) */
+  async generateBankFile(periodId: number, bankCode?: string): Promise<Blob> {
+    const res = await apiClient.post(`/salary/periods/${periodId}/generate-bank-file`, null, {
+      params: { bankCode },
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
+  /** CEO Confirm ว่าธนาคารโอนเงินแล้ว (BANK_BATCH) */
+  async confirmBankTransfer(periodId: number, payload: ConfirmPaymentPayload): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(
+      `/salary/periods/${periodId}/confirm-bank-transfer`,
+      payload
+    );
     return res.data.data;
   },
 };
