@@ -73,6 +73,7 @@ builder.Services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IApprovalFlowService, ApprovalFlowService>();
 builder.Services.AddScoped<IApprovalDelegationService, ApprovalDelegationService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
