@@ -62,7 +62,7 @@ public class ExceptionHandlingMiddleware
 
             case ValidationException valEx:
                 statusCode = HttpStatusCode.BadRequest;
-                message = valEx.Message;
+                message = valEx.Errors?.Count == 1 ? valEx.Errors[0] : valEx.Message;
                 errors = valEx.Errors;
                 break;
 

@@ -152,6 +152,11 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
                 .Include(d => d.Shift)
                 .Include(d => d.Employee)
                 .FirstOrDefaultAsync(d => d.Id == request.AttendanceId, cancellationToken);
+
+            if (daily != null && empId > 0 && daily.EmployeeId != empId)
+            {
+                daily = null;
+            }
         }
 
         if (daily == null && !string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, out var workDate))

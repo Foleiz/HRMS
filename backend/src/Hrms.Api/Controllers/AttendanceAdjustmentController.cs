@@ -1,7 +1,9 @@
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Hrms.Api.Controllers;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Attendance.Dtos;
 using Hrms.Application.Features.Attendance.Services;
@@ -14,10 +16,14 @@ namespace Hrms.Api.Controllers;
 public class AttendanceAdjustmentController : ControllerBase
 {
     private readonly IAttendanceAdjustmentService _adjustmentService;
+    private readonly IHrmsDbContext _context;
 
-    public AttendanceAdjustmentController(IAttendanceAdjustmentService adjustmentService)
+    public AttendanceAdjustmentController(
+        IAttendanceAdjustmentService adjustmentService,
+        IHrmsDbContext context)
     {
         _adjustmentService = adjustmentService;
+        _context = context;
     }
 
     [HttpGet]
@@ -74,6 +80,10 @@ public class AttendanceAdjustmentController : ControllerBase
         CancellationToken cancellationToken)
     {
         long currentUserId = GetCurrentEmployeeId();
+        if (currentUserId <= 0)
+        {
+            return Unauthorized(ApiResponse<AttendanceAdjustmentDto>.Fail("ไม่สามารถระบุตัวตนพนักงานของผู้ใช้งานได้ กรุณาเข้าสู่ระบบใหม่"));
+        }
         var result = await _adjustmentService.CreateAdjustmentAsync(request, currentUserId, cancellationToken);
         return CreatedAtAction(nameof(GetAdjustmentById), new { id = result.Id }, ApiResponse<AttendanceAdjustmentDto>.Ok(result, "ยื่นคำขอปรับปรุงเวลาสำเร็จ"));
     }
@@ -85,6 +95,10 @@ public class AttendanceAdjustmentController : ControllerBase
         CancellationToken cancellationToken)
     {
         long currentUserId = GetCurrentEmployeeId();
+        if (currentUserId <= 0)
+        {
+            return Unauthorized(ApiResponse<AttendanceAdjustmentDto>.Fail("ไม่สามารถระบุตัวตนพนักงานของผู้ใช้งานได้"));
+        }
         var result = await _adjustmentService.ReviewAdjustmentAsync(id, request, currentUserId, cancellationToken);
         var msg = request.Status == "APPROVED" ? "อนุมัติคำขอปรับปรุงเวลาเรียบร้อยแล้ว" : "ปฏิเสธคำขอปรับปรุงเวลาเรียบร้อยแล้ว";
         return Ok(ApiResponse<AttendanceAdjustmentDto>.Ok(result, msg));
@@ -96,17 +110,33 @@ public class AttendanceAdjustmentController : ControllerBase
         CancellationToken cancellationToken)
     {
         long currentUserId = GetCurrentEmployeeId();
+        if (currentUserId <= 0)
+        {
+            return Unauthorized(ApiResponse<AttendanceAdjustmentDto>.Fail("ไม่สามารถระบุตัวตนพนักงานของผู้ใช้งานได้"));
+        }
         var result = await _adjustmentService.CancelAdjustmentAsync(id, currentUserId, cancellationToken);
         return Ok(ApiResponse<AttendanceAdjustmentDto>.Ok(result, "ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว"));
     }
 
     private long GetCurrentEmployeeId()
     {
-        var claim = User.FindFirst("EmployeeId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
-        if (claim != null && long.TryParse(claim.Value, out var id))
+        // 1. Claim ที่ JwtTokenService ออกให้จริงคือ "employee_id"
+        var claim = User.FindFirst("employee_id") 
+                 ?? User.FindFirst("EmployeeId");
+
+        if (claim != null && long.TryParse(claim.Value, out var id) && id > 0)
         {
             return id;
         }
-        return 0; // Fallback
+
+        // 2. Fallback: กรณี token ไม่มี employee_id โดยตรง ให้ค้นหาจาก UserId (sub / NameIdentifier) ในตาราง UserAccount
+        var userClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (userClaim != null && long.TryParse(userClaim.Value, out var userId) && userId > 0)
+        {
+            var empId = _context.UserAccounts.Where(u => u.Id == userId).Select(u => u.EmployeeId).FirstOrDefault();
+            if (empId > 0) return empId;
+        }
+
+        return 0;
     }
 }

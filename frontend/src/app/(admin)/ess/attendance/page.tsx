@@ -191,7 +191,11 @@ export default function EssAttendancePage() {
         setActiveTab('adjustments');
       }
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'เกิดข้อผิดพลาดในการยื่นคำขอ';
+      const resData = (err as { response?: { data?: { message?: string; errors?: string[] } } })?.response?.data;
+      const errorMsg =
+        (resData?.errors && resData.errors.length > 0 ? resData.errors[0] : null) ||
+        resData?.message ||
+        'เกิดข้อผิดพลาดในการยื่นคำขอ';
       toast.error(errorMsg);
     } finally {
       setIsSubmittingAdjustment(false);
@@ -205,7 +209,11 @@ export default function EssAttendancePage() {
       toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
       loadAdjustments();
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'ไม่สามารถยกเลิกคำขอได้';
+      const resData = (err as { response?: { data?: { message?: string; errors?: string[] } } })?.response?.data;
+      const errorMsg =
+        (resData?.errors && resData.errors.length > 0 ? resData.errors[0] : null) ||
+        resData?.message ||
+        'ไม่สามารถยกเลิกคำขอได้';
       toast.error(errorMsg);
     }
   };
