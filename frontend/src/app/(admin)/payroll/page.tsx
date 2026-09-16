@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Wallet,
   MoreHorizontal,
   MoreVertical,
@@ -29,8 +30,12 @@ import {
   Calendar,
   Clock,
   Check,
+  Eye,
+  Send,
+  XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { salaryService } from '@/services/salaryService';
 import { organizationService } from '@/services/organizationService';
@@ -44,12 +49,18 @@ import {
   AdjustEmployeeSalaryPayload,
   PayrollOverview,
   PayrollItem,
+  PayrollPeriod,
+  PayrollRecord,
+  BankTransferSummary,
+  TaxSsoSummary,
+  EmployeeBonus,
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
 import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
+import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 type ActiveTab =
@@ -63,14 +74,27 @@ type ActiveTab =
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { hasPermission, hasRole } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const canViewPayroll =
     hasPermission('PAYROLL_VIEW') ||
     hasPermission('PAYROLL_CALC_VIEW') ||
     hasPermission('PAYROLL_SLIP_VIEW') ||
     hasRole('ADMIN');
 
+  const isCEO =
+    user?.roles?.includes('CEO') ||
+    user?.roles?.includes('ADMIN') ||
+    hasRole('CEO') ||
+    hasRole('ADMIN') ||
+    hasPermission('PAYROLL_CALC_APPROVE');
+
+  const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+
+  useEffect(() => {
+    setBreadcrumb({ section: 'เงินเดือน', page: getTabLabel(activeTab) });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   // Master Data & State
   const [overview, setOverview] = useState<PayrollOverview | null>(null);
@@ -98,6 +122,26 @@ export default function PayrollPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
 
+  // Tab 4: Payroll Processing (ประมวลเงินเดือน)
+  const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
+  const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
+  const [isPeriodLoading, setIsPeriodLoading] = useState(false);
+  const [selectedPayrollRecord, setSelectedPayrollRecord] = useState<PayrollRecord | null>(null);
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+  const [processPage, setProcessPage] = useState<number>(1);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [newPeriodForm, setNewPeriodForm] = useState({
+    year: 2026,
+    month: 9,
+    periodName: 'รอบเดือนกันยายน 2569',
+    startDate: '2026-09-01',
+    endDate: '2026-09-30',
+    paymentDate: '2026-09-29',
+  });
+
   // Modals
   const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState<SalaryStructure | null>(null);
@@ -118,6 +162,19 @@ export default function PayrollPage() {
   const [structureToDelete, setStructureToDelete] = useState<SalaryStructure | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Tab 5: Bank Transfer state
+  const [bankSummary, setBankSummary] = useState<BankTransferSummary | null>(null);
+  const [selectedBankFilter, setSelectedBankFilter] = useState<string>('ALL');
+  const [isExportingBankFile, setIsExportingBankFile] = useState<boolean>(false);
+
+  // Tab 6: Bonus state
+  const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
+  const [bonusMultiplierInput, setBonusMultiplierInput] = useState<number>(1.5);
+  const [isCalculatingBonus, setIsCalculatingBonus] = useState<boolean>(false);
+
+  // Tab 7: Tax & SSO state
+  const [taxSsoSummary, setTaxSsoSummary] = useState<TaxSsoSummary | null>(null);
+
   useEffect(() => {
     if (canViewPayroll) {
       loadData();
@@ -137,6 +194,7 @@ export default function PayrollPage() {
         posData,
         lvlData,
         deptData,
+        periodsData,
       ] = await Promise.all([
         salaryService.getOverview().catch(() => null),
         salaryService.getStructures().catch(() => []),
@@ -147,6 +205,7 @@ export default function PayrollPage() {
         organizationService.getPositions().catch(() => []),
         organizationService.getLevels().catch(() => []),
         organizationService.getDepartments().catch(() => []),
+        salaryService.getPayrollPeriods().catch(() => []),
       ]);
 
       setOverview(overviewData);
@@ -158,6 +217,14 @@ export default function PayrollPage() {
       setPositions(posData || []);
       setLevels(lvlData || []);
       setDepartments(deptData || []);
+      setPeriods(periodsData || []);
+
+      if (periodsData && periodsData.length > 0) {
+        const aug = periodsData.find((p) => p.year === 2026 && p.month === 8) || periodsData[0];
+        setSelectedPeriod(aug);
+        const pRows = await salaryService.getPayrollsByPeriod(aug.id).catch(() => []);
+        setPayrolls(pRows || []);
+      }
     } catch (err) {
       console.error('Failed to load payroll data:', err);
     } finally {
@@ -168,6 +235,125 @@ export default function PayrollPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Dynamic fetch when switching to Bank Transfer, Tax/SSO, or Bonus tab
+  useEffect(() => {
+    if (!selectedPeriod) return;
+
+    if (activeTab === 'bank-transfer') {
+      loadBankTransfer(selectedPeriod.id, selectedBankFilter);
+    } else if (activeTab === 'tax-sso') {
+      loadTaxSsoSummary(selectedPeriod.id);
+    } else if (activeTab === 'bonus') {
+      loadBonuses(selectedPeriod.year);
+    }
+  }, [activeTab, selectedPeriod, selectedBankFilter]);
+
+  const loadBankTransfer = async (periodId: number, bankCode?: string) => {
+    try {
+      const summary = await salaryService.getBankTransferSummary(
+        periodId,
+        bankCode !== 'ALL' ? bankCode : undefined
+      );
+      setBankSummary(summary);
+    } catch (err) {
+      console.error('Failed to load bank transfer summary:', err);
+    }
+  };
+
+  const loadTaxSsoSummary = async (periodId: number) => {
+    try {
+      const summary = await salaryService.getTaxSsoSummary(periodId);
+      setTaxSsoSummary(summary);
+    } catch (err) {
+      console.error('Failed to load tax & SSO summary:', err);
+    }
+  };
+
+  const loadBonuses = async (year?: number) => {
+    try {
+      const bonusData = await salaryService.getEmployeeBonuses(year || 2026);
+      setBonuses(bonusData || []);
+    } catch (err) {
+      console.error('Failed to load bonuses:', err);
+    }
+  };
+
+  // Handler: Download Bank Transfer Text/CSV file
+  const handleDownloadBankFile = async () => {
+    if (!selectedPeriod) return;
+    try {
+      setIsExportingBankFile(true);
+      const bankCode = selectedBankFilter !== 'ALL' ? selectedBankFilter : '004';
+      const blob = await salaryService.exportBankTransferFile(selectedPeriod.id, bankCode);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bank_transfer_p${selectedPeriod.id}_${bankCode}_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showToast(`ส่งออกไฟล์โอนเงินธนาคาร (${bankCode}) สำเร็จเรียบร้อย`);
+    } catch (err) {
+      console.error('Failed to download bank transfer file:', err);
+      showToast('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์โอนเงิน');
+    } finally {
+      setIsExportingBankFile(false);
+    }
+  };
+
+  // Handler: Export Tax (ภ.ง.ด.1) or SSO (สปส. 1-10) CSV
+  const handleExportTaxSsoCsv = (type: 'PND1' | 'SSO') => {
+    if (!taxSsoSummary || !taxSsoSummary.items || taxSsoSummary.items.length === 0) {
+      showToast('ไม่มีข้อมูลสรุปภาษี/ประกันสังคมในรอบนี้');
+      return;
+    }
+
+    let csvContent = '';
+    if (type === 'PND1') {
+      csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,รายได้รวม (บาท),ภาษีหัก ณ ที่จ่าย (บาท)\n';
+      taxSsoSummary.items.forEach((item, idx) => {
+        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${item.totalGrossIncome},${item.withholdingTax}\n`;
+      });
+    } else {
+      csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,ฐานค่าจ้าง,สมทบฝ่ายผู้ประกันตน (5%),สมทบฝ่ายนายจ้าง (5%),รวมเงินสมทบ\n';
+      taxSsoSummary.items.forEach((item, idx) => {
+        const totalSso = item.ssoEmployeeContribution + item.ssoEmployerContribution;
+        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${item.totalGrossIncome},${item.ssoEmployeeContribution},${item.ssoEmployerContribution},${totalSso}\n`;
+      });
+    }
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = type === 'PND1' ? `PND1_Tax_Report_P${taxSsoSummary.periodId}.csv` : `SSO_1_10_Report_P${taxSsoSummary.periodId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showToast(`ส่งออกไฟล์รายงาน ${type === 'PND1' ? 'ภ.ง.ด.1' : 'สปส. 1-10'} สำเร็จเรียบร้อย`);
+  };
+
+  // Handler: Calculate Employee Bonuses
+  const handleCalculateBonusesSubmit = async () => {
+    try {
+      setIsCalculatingBonus(true);
+      const targetYear = selectedPeriod?.year || 2026;
+      const res = await salaryService.calculateEmployeeBonuses({
+        year: targetYear,
+        defaultMultiplier: bonusMultiplierInput,
+      });
+      setBonuses(res || []);
+      showToast(`คำนวณและจัดสรรโบนัสประจำปี ${targetYear} (ตัวคูณ ${bonusMultiplierInput}x) สำเร็จ`);
+    } catch (err) {
+      console.error('Failed to calculate bonuses:', err);
+      showToast('เกิดข้อผิดพลาดในการคำนวณโบนัส');
+    } finally {
+      setIsCalculatingBonus(false);
+    }
   };
 
   // Structure handlers
@@ -286,6 +472,107 @@ export default function PayrollPage() {
     }
   };
 
+  // Tab 4 Handlers: Payroll Processing (ประมวลเงินเดือน)
+  const handlePeriodChange = async (periodId: number) => {
+    const p = periods.find((x) => x.id === periodId);
+    if (p) {
+      setSelectedPeriod(p);
+      try {
+        setIsPeriodLoading(true);
+        const pRows = await salaryService.getPayrollsByPeriod(p.id);
+        setPayrolls(pRows || []);
+      } catch (err) {
+        console.error('Failed to load payrolls for period:', err);
+      } finally {
+        setIsPeriodLoading(false);
+      }
+    }
+  };
+
+  const handleAdvancePeriodStatus = async () => {
+    if (!selectedPeriod) return;
+    let nextStatus = '';
+    let actionToast = '';
+    if (selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT') {
+      nextStatus = 'PENDING_APPROVAL';
+      actionToast = 'ส่งคำขออนุมัติรอบเงินเดือนไปยัง CEO เรียบร้อยแล้ว (สถานะ: รออนุมัติ)';
+    } else if (selectedPeriod.status === 'PENDING_APPROVAL') {
+      nextStatus = 'APPROVED';
+      actionToast = 'CEO อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: อนุมัติแล้ว)';
+    } else if (selectedPeriod.status === 'APPROVED') {
+      nextStatus = 'PAID';
+      actionToast = 'บันทึกว่าจ่ายเงินเดือนแล้วสำเร็จ (สถานะ: จ่ายแล้ว)';
+    } else if (selectedPeriod.status === 'PAID') {
+      nextStatus = 'CLOSED';
+      actionToast = 'ปิดรอบเงินเดือนสำเร็จ';
+    } else {
+      return;
+    }
+
+    try {
+      const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, nextStatus);
+      showToast(actionToast);
+      setSelectedPeriod(updated);
+      setPeriods((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปรับสถานะ');
+    }
+  };
+
+  const handleRejectPeriodStatus = async () => {
+    if (!selectedPeriod) return;
+    try {
+      const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, 'REVIEW');
+      showToast('ส่งคืนรอบเงินเดือนให้ HR แก้ไขเรียบร้อยแล้ว (สถานะ: รอตรวจสอบ)');
+      setSelectedPeriod(updated);
+      setPeriods((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setIsRejectModalOpen(false);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการส่งคืนรอบเงินเดือน');
+    }
+  };
+
+  const handleCalculatePayroll = async () => {
+    if (!selectedPeriod) return;
+    try {
+      setIsCalculating(true);
+      const updatedPayrolls = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
+      setPayrolls(updatedPayrolls || []);
+      const updatedPeriods = await salaryService.getPayrollPeriods();
+      setPeriods(updatedPeriods || []);
+      const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
+      if (current) setSelectedPeriod(current);
+      showToast('คำนวณเงินเดือนประจำรอบสำเร็จแล้ว');
+    } catch (err: any) {
+      console.error('Failed to calculate payroll:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณเงินเดือน');
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const handleCreatePeriodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const created = await salaryService.createPayrollPeriod(newPeriodForm);
+      showToast('สร้างรอบเงินเดือนใหม่สำเร็จแล้ว');
+      setIsCreatePeriodModalOpen(false);
+      const updatedPeriods = await salaryService.getPayrollPeriods();
+      setPeriods(updatedPeriods || []);
+      setSelectedPeriod(created);
+      const pRows = await salaryService.getPayrollsByPeriod(created.id);
+      setPayrolls(pRows || []);
+    } catch (err: any) {
+      console.error('Failed to create payroll period:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน');
+    }
+  };
+
+  const handleOpenDetailDrawer = (record: PayrollRecord) => {
+    setSelectedPayrollRecord(record);
+    setIsDetailDrawerOpen(true);
+  };
+
   if (!canViewPayroll) {
     return (
       <AccessDenied
@@ -305,7 +592,7 @@ export default function PayrollPage() {
       case 'items':
         return 'รายได้และรายหัก';
       case 'process':
-        return 'ประมวลผลเงินเดือน';
+        return 'ประมวลเงินเดือน';
       case 'bank-transfer':
         return 'โอนเงินธนาคาร';
       case 'bonus':
@@ -319,29 +606,8 @@ export default function PayrollPage() {
   const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200">
-      {/* 1. Header with Circular Back Button and Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => {
-            if (activeTab !== 'overview') {
-              setActiveTab('overview');
-            } else {
-              router.push('/');
-            }
-          }}
-          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#112d5e] text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer"
-          title="ย้อนกลับ"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-
-        <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-          <span className="text-slate-900">เงินเดือน</span>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-600 font-medium">{getTabLabel(activeTab)}</span>
-        </div>
-      </div>
+    <div className="space-y-5 animate-in fade-in duration-200" onClick={() => setOpenActionMenuId(null)}>
+      {/* Top Navigation Tabs */}
 
       {/* 2. Top Navigation Tabs */}
       <div className="border-b border-slate-200/80">
@@ -383,11 +649,11 @@ export default function PayrollPage() {
             onClick={() => setActiveTab('process')}
             className={`pb-3 transition-all cursor-pointer ${
               activeTab === 'process'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
+                ? 'border-b-2 border-[#FFE500] text-slate-900 font-bold'
                 : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            ประมวลผลเงินเดือน
+            ประมวลเงินเดือน
           </button>
 
           <button
@@ -1111,107 +1377,446 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* === TAB 4: ประมวลผลเงินเดือน (Payroll Processing) === */}
+      {/* === TAB 4: ประมวลเงินเดือน (Payroll Processing) === */}
       {activeTab === 'process' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">รอบการประมวลผลเงินเดือน</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                จัดการรอบการคำนวณเงินเดือน ตรวจสอบผล และปิดรอบการจ่ายเงิน
-              </p>
-            </div>
+        <div className="space-y-4">
+          {/* Sub-header Bar (Dropdown, Status Badge, Dates, Action Button) */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  {/* Period Selector Dropdown */}
+                  <div className="relative inline-block">
+                    <select
+                      value={selectedPeriod?.id || ''}
+                      onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                      className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                    >
+                      {periods.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.periodName}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
 
-            <button
-              onClick={() => showToast('ระบบเริ่มคำนวณเงินเดือนรอบปัจจุบัน...')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>เริ่มคำนวณเงินเดือนรอบนี้</span>
-            </button>
+                  {/* Status Badge */}
+                  {selectedPeriod && (
+                    <span
+                      className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${
+                        selectedPeriod.status === 'PENDING_APPROVAL'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
+                          : selectedPeriod.status === 'REVIEW'
+                          ? 'bg-[#FEF3C7] text-[#D97706]'
+                          : selectedPeriod.status === 'APPROVED'
+                          ? 'bg-[#E0F2FE] text-[#0284C7]'
+                          : selectedPeriod.status === 'PAID'
+                          ? 'bg-[#DCFCE7] text-[#16A34A]'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {selectedPeriod.status === 'PENDING_APPROVAL'
+                        ? 'รออนุมัติ'
+                        : selectedPeriod.statusText}
+                    </span>
+                  )}
+                </div>
+
+                {/* Sub-info: ช่วงเงินเดือน, วันจ่ายเงิน, พนักงานในรอบ */}
+                <div className="flex flex-wrap items-center gap-6 mt-2 text-xs text-slate-400">
+                  <span>
+                    ช่วงเงินเดือน:{' '}
+                    <span className="text-slate-600 font-medium">
+                      {selectedPeriod?.month === 8 && selectedPeriod?.year === 2026
+                        ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
+                        : `${selectedPeriod?.startDate} - ${selectedPeriod?.endDate}`}
+                    </span>
+                  </span>
+                  <span>
+                    วันจ่ายเงิน:{' '}
+                    <span className="text-slate-600 font-medium">
+                      {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
+                    </span>
+                  </span>
+                  <span>
+                    พนักงานในรอบ:{' '}
+                    <span className="text-slate-600 font-medium">
+                      {payrolls.length} คน
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                {!isCEO && (
+                  <>
+                    <button
+                      onClick={() => setIsCreatePeriodModalOpen(true)}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-slate-500" />
+                      <span>สร้างรอบเงินเดือน</span>
+                    </button>
+
+                    <button
+                      onClick={handleCalculatePayroll}
+                      disabled={
+                        isCalculating ||
+                        !selectedPeriod ||
+                        (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
+                      }
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isCalculating ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Scale className="w-3.5 h-3.5" />
+                      )}
+                      <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
+                    </button>
+
+                    {/* Vertical Divider */}
+                    <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block"></div>
+                  </>
+                )}
+
+                {/* Workflow Action Buttons */}
+                {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                  <button
+                    onClick={handleAdvancePeriodStatus}
+                    className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>ส่งอนุมัติ (ส่ง CEO)</span>
+                  </button>
+                )}
+
+                {selectedPeriod?.status === 'PENDING_APPROVAL' && (
+                  isCEO ? (
+                    <>
+                      <button
+                        onClick={() => setIsRejectModalOpen(true)}
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                      >
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                        <span>ไม่อนุมัติ (ส่งคืน HR)</span>
+                      </button>
+
+                      <button
+                        onClick={handleAdvancePeriodStatus}
+                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>อนุมัติรอบเงินเดือน</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      disabled
+                      className="h-9 inline-flex items-center gap-2 px-4 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl text-xs font-semibold cursor-not-allowed shadow-none"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-slate-400 animate-pulse" />
+                      <span>รอการอนุมัติจาก CEO</span>
+                    </button>
+                  )
+                )}
+
+                {selectedPeriod?.status === 'APPROVED' && (
+                  <button
+                    onClick={handleAdvancePeriodStatus}
+                    className="h-9 inline-flex items-center gap-2 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  >
+                    <Banknote className="w-3.5 h-3.5" />
+                    <span>บันทึกว่าจ่ายแล้ว</span>
+                  </button>
+                )}
+
+                {selectedPeriod?.status === 'PAID' && (
+                  <button
+                    onClick={handleAdvancePeriodStatus}
+                    className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>ปิดรอบเงินเดือน</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-100 rounded-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                  <th className="py-3.5 px-4">รอบเงินเดือน</th>
-                  <th className="py-3.5 px-4">ช่วงเวลาการคำนวณ</th>
-                  <th className="py-3.5 px-4 text-right">ยอดรวมค่าจ้างสุทธิ</th>
-                  <th className="py-3.5 px-4 text-center">สถานะ</th>
-                  <th className="py-3.5 px-4 text-center">การดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                <tr className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-4 font-semibold text-slate-900">รอบเดือนสิงหาคม 2569</td>
-                  <td className="py-3.5 px-4 text-xs text-slate-500 font-mono">01/08/2026 - 31/08/2026</td>
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono text-xs">฿1,842,300.00</td>
-                  <td className="py-3.5 px-4 text-center">
-                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-semibold bg-[#FEECE5] text-[#EA580C]">
-                      รอตรวจสอบ
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    <button
-                      onClick={() => showToast('ส่งรอบเงินเดือนเข้าสู่กระบวนการอนุมัติแล้ว')}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                    >
-                      ส่งอนุมัติ
-                    </button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-4 font-semibold text-slate-900">รอบเดือนกรกฎาคม 2569</td>
-                  <td className="py-3.5 px-4 text-xs text-slate-500 font-mono">01/07/2026 - 31/07/2026</td>
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono text-xs">฿1,798,650.00</td>
-                  <td className="py-3.5 px-4 text-center">
-                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-semibold bg-[#DCFCE7] text-[#16A34A]">
-                      คำนวณแล้ว
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-xs text-slate-400">ปิดรอบแล้ว</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* 4 Summary Stat Cards for Selected Period */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+              <span className="text-xs text-slate-500 font-medium">ยอดจ่ายเงินเดือนรวม (Gross)</span>
+              <div className="text-xl font-bold text-slate-900 mt-1">
+                ฿{payrolls.reduce((acc, p) => acc + (p.totalGrossIncome || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+              <span className="text-xs text-slate-500 font-medium">หักประกันสังคมรวม (SSO 5%)</span>
+              <div className="text-xl font-bold text-indigo-600 mt-1">
+                ฿{payrolls.reduce((acc, p) => acc + Math.min((p.totalGrossIncome || 0) * 0.05, 750), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+              <span className="text-xs text-slate-500 font-medium">หักภาษี ภ.ง.ด.1 รวม</span>
+              <div className="text-xl font-bold text-rose-600 mt-1">
+                ฿{payrolls.reduce((acc, p) => acc + Math.max(0, (p.totalDeductionAmount || 0) - Math.min((p.totalGrossIncome || 0) * 0.05, 750)), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+              <span className="text-xs text-slate-500 font-medium">ยอดเงินจ่ายสุทธิรวม (Net Pay)</span>
+              <div className="text-xl font-bold text-emerald-600 mt-1">
+                ฿{payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </div>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                    <th className="py-3.5 px-5">รหัสพนักงาน</th>
+                    <th className="py-3.5 px-5">ชื่อพนักงาน</th>
+                    <th className="py-3.5 px-5">แผนก</th>
+                    <th className="py-3.5 px-5 text-right">รายได้รวม</th>
+                    <th className="py-3.5 px-5 text-right">รายการหัก</th>
+                    <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
+                    <th className="py-3.5 px-5">สถานะ</th>
+                    <th className="py-3.5 px-5 text-center">รายละเอียด</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {payrolls.map((pr) => {
+                    const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
+                    return (
+                      <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-4 px-5 font-mono text-slate-900 font-semibold">
+                          {pr.employeeCode}
+                        </td>
+                        <td className="py-4 px-5 font-semibold text-slate-900">
+                          {pr.employeeName}
+                        </td>
+                        <td className="py-4 px-5 text-slate-600">
+                          {pr.departmentName}
+                        </td>
+                        <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                          {hasGross
+                            ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                            : '-'}
+                        </td>
+                        <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                          {hasGross && pr.totalDeductionAmount != null
+                            ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                            : '-'}
+                        </td>
+                        <td className="py-4 px-5 text-right font-mono font-bold text-[#10B981]">
+                          {hasGross && pr.netPayableSalary != null
+                            ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                            : '-'}
+                        </td>
+                        <td className="py-4 px-5">
+                          {pr.status === 'CALCULATED' ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-[#10B981] font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                              <span>คำนวณแล้ว</span>
+                            </span>
+                          ) : pr.status === 'REVIEW' ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-[#EA580C] font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>
+                              <span>รอตรวจสอบ</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                              <span>ยังไม่คำนวณ</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-5 text-center">
+                          <button
+                            onClick={() => handleOpenDetailDrawer(pr)}
+                            title="ดูรายละเอียด"
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
+              <button
+                disabled={processPage === 1}
+                onClick={() => setProcessPage(processPage - 1)}
+                className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+              >
+                ←
+              </button>
+              {[1, 2, 3, 4].map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setProcessPage(page)}
+                  className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                    processPage === page
+                      ? 'bg-[#0B2046] text-white'
+                      : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                disabled={processPage === 4}
+                onClick={() => setProcessPage(processPage + 1)}
+                className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+              >
+                →
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* === TAB 5: โอนเงินธนาคาร (Bank Transfer) === */}
       {activeTab === 'bank-transfer' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">การโอนเงินเข้าบัญชีธนาคารพนักงาน</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                สรุปยอดเงินและเตรียมไฟล์โอนเงินตามรูปแบบมาตรฐานของธนาคารพาณิชย์
-              </p>
+        <div className="space-y-4">
+          {/* Header Card: รอบเงินเดือน + ตัวกรองธนาคาร + ปุ่มส่งออก */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-base font-bold text-slate-900">
+                    รอบโอนเงินเดือน: {selectedPeriod?.periodName || 'สิงหาคม 2569'}
+                  </h2>
+                  {selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+                      โอนแล้ว
+                    </span>
+                  ) : selectedPeriod?.status === 'APPROVED' ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">
+                      รอบออกไฟล์แล้ว
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                      รอดำเนินการ
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  ระบบส่งออกไฟล์โครงสร้างข้อความ/CSV Clearing สำหรับอัปโหลดระบบ Corporate iBanking (KBANK, SCB, BBL, KTB)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedBankFilter}
+                  onChange={(e) => setSelectedBankFilter(e.target.value)}
+                  className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                >
+                  <option value="ALL">ธนาคารทั้งหมด</option>
+                  <option value="004">KBANK - กสิกรไทย (004)</option>
+                  <option value="014">SCB - ไทยพาณิชย์ (014)</option>
+                  <option value="002">BBL - กรุงเทพ (002)</option>
+                  <option value="006">KTB - กรุงไทย (006)</option>
+                </select>
+
+                <button
+                  onClick={handleDownloadBankFile}
+                  disabled={isExportingBankFile}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  {isExportingBankFile ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Banknote className="w-4 h-4" />
+                  )}
+                  <span>ส่งออกไฟล์โอนเงิน (.TXT / .CSV)</span>
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => showToast('ดาวน์โหลดไฟล์ Text File สำหรับส่งธนาคารแล้ว')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-            >
-              <Banknote className="w-4 h-4" />
-              <span>ส่งออกไฟล์ธนาคาร</span>
-            </button>
+
+            {/* บัญชีธนาคารบริษัท */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5 text-blue-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-900 text-xs">ธนาคารกสิกรไทย (KBANK Main Account)</div>
+                  <div className="text-[11px] text-slate-500 font-mono mt-0.5">เลขที่: 123-4-56789-0</div>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                <span className="text-[11px] text-slate-400 font-medium">รวมยอดเงินโอนสุทธิ</span>
+                <p className="text-base font-bold text-slate-900 mt-0.5">
+                  ฿{(bankSummary?.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                <span className="text-[11px] text-slate-400 font-medium font-mono">จำนวนรายการ / บัญชีพนักงาน</span>
+                <p className="text-base font-bold text-slate-900 mt-0.5">
+                  {bankSummary?.totalRecords || 0} รายการ
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
-              <span className="text-xs text-slate-500 font-medium">ธนาคารกสิกรไทย (KBANK)</span>
-              <p className="text-lg font-bold text-slate-900 mt-1">฿1,120,400.00</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">85 บัญชี</p>
+          {/* ตารางรายการโอนรายบุคคล */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">รายการโอนเงินรายบุคคล ({bankSummary?.items?.length || 0} บัญชี)</h3>
             </div>
-            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
-              <span className="text-xs text-slate-500 font-medium">ธนาคารไทยพาณิชย์ (SCB)</span>
-              <p className="text-lg font-bold text-slate-900 mt-1">฿520,300.00</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">42 บัญชี</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
-              <span className="text-xs text-slate-500 font-medium">ธนาคารกรุงเทพ (BBL)</span>
-              <p className="text-lg font-bold text-slate-900 mt-1">฿201,600.00</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">18 บัญชี</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                    <th className="py-3.5 px-5">รหัสพนักงาน</th>
+                    <th className="py-3.5 px-5">ชื่อพนักงาน</th>
+                    <th className="py-3.5 px-5">ธนาคารปลายทาง</th>
+                    <th className="py-3.5 px-5">เลขที่บัญชี</th>
+                    <th className="py-3.5 px-5 text-right">จำนวนเงินโอนสุทธิ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {!bankSummary || !bankSummary.items || bankSummary.items.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
+                        ไม่พบรายการโอนเงินธนาคารสำหรับตัวกรองนี้
+                      </td>
+                    </tr>
+                  ) : (
+                    bankSummary.items.map((item) => (
+                      <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-5 font-mono text-slate-900 font-semibold">{item.employeeCode}</td>
+                        <td className="py-3.5 px-5 font-semibold text-slate-900">{item.employeeName}</td>
+                        <td className="py-3.5 px-5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                            {item.bankName} ({item.bankCode})
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5 font-mono text-slate-600 font-medium">
+                          {item.accountNumber}
+                        </td>
+                        <td className="py-3.5 px-5 text-right font-bold text-slate-900 font-mono">
+                          ฿{item.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1219,27 +1824,118 @@ export default function PayrollPage() {
 
       {/* === TAB 6: โบนัส (Bonus) === */}
       {activeTab === 'bonus' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">การจัดสรรโบนัสและเงินรางวัลพิเศษ</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                กำหนดรอบและเงื่อนไขการคำนวณโบนัสประจำปีและโบนัสตามผลงาน
-              </p>
-            </div>
-            <button
-              onClick={() => showToast('เปิดฟอร์มคำนวณโบนัส')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-            >
-              <Gift className="w-4 h-4" />
-              <span>จัดสรรโบนัสใหม่</span>
-            </button>
-          </div>
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  <span>การจัดสรรโบนัสและเงินรางวัลประจำปี (Annual Bonus Management)</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  คำนวณและอนุมัติโบนัสประจำปีตามฐานเงินเดือนพนักงานและตัวคูณผลการปฏิบัติงาน
+                </p>
+              </div>
 
-          <div className="py-12 text-center text-slate-400">
-            <Gift className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-            <p className="text-sm font-medium text-slate-600">ยังไม่มีรอบการจัดสรรโบนัสที่เปิดใช้งานในขณะนี้</p>
-            <p className="text-xs text-slate-400 mt-0.5">คุณสามารถกดปุ่ม "จัดสรรโบนัสใหม่" เพื่อเริ่มรอบใหม่ได้</p>
+              <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <span>ตัวคูณโบนัสฐาน:</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={bonusMultiplierInput}
+                    onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
+                    className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                  <span>เท่า</span>
+                </div>
+
+                <button
+                  onClick={handleCalculateBonusesSubmit}
+                  disabled={isCalculatingBonus}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  {isCalculatingBonus ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Gift className="w-4 h-4" />
+                  )}
+                  <span>คำนวณและจัดสรรโบนัส</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Banner */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 rounded-xl border border-amber-100 bg-amber-50/50">
+                <span className="text-xs text-amber-800 font-semibold">ยอดรวมโบนัสที่จัดสรรทั้งหมด</span>
+                <p className="text-xl font-bold text-amber-900 mt-1 font-mono">
+                  ฿{bonuses.reduce((sum, b) => sum + b.bonusAmount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                <span className="text-xs text-slate-500 font-semibold">จำนวนพนักงานที่ได้รับโบนัส</span>
+                <p className="text-xl font-bold text-slate-900 mt-1">{bonuses.length} คน</p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                <span className="text-xs text-slate-500 font-semibold">โบนัสเฉลี่ยต่อคน</span>
+                <p className="text-xl font-bold text-slate-900 mt-1 font-mono">
+                  ฿{(bonuses.length > 0
+                    ? bonuses.reduce((sum, b) => sum + b.bonusAmount, 0) / bonuses.length
+                    : 0
+                  ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            {/* Bonus Table */}
+            <div className="overflow-x-auto border border-slate-100 rounded-xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                    <th className="py-3.5 px-4">รหัสพนักงาน</th>
+                    <th className="py-3.5 px-4">ชื่อ-นามสกุล</th>
+                    <th className="py-3.5 px-4">แผนก</th>
+                    <th className="py-3.5 px-4">ตำแหน่ง</th>
+                    <th className="py-3.5 px-4 text-right">เงินเดือนฐาน</th>
+                    <th className="py-3.5 px-4 text-center">คะแนน KPI (5.0)</th>
+                    <th className="py-3.5 px-4 text-center">ตัวคูณ (x)</th>
+                    <th className="py-3.5 px-4 text-right font-bold">จำนวนเงินโบนัส (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {bonuses.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                        กดปุ่ม "คำนวณและจัดสรรโบนัส" เพื่อประมวลผลโบนัสตามเงินเดือนฐาน
+                      </td>
+                    </tr>
+                  ) : (
+                    bonuses.map((b) => (
+                      <tr key={b.employeeId} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-900">{b.employeeCode}</td>
+                        <td className="py-3 px-4 font-semibold text-slate-900">{b.employeeName}</td>
+                        <td className="py-3 px-4 text-slate-600">{b.departmentName || '-'}</td>
+                        <td className="py-3 px-4 text-slate-600">{b.positionName || '-'}</td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-700">
+                          ฿{b.baseSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-4 text-center font-semibold text-blue-600">
+                          {b.performanceScore ? b.performanceScore.toFixed(1) : '4.0'}
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-amber-600">
+                          {b.multiplier.toFixed(2)}x
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold font-mono text-amber-900 text-sm">
+                          ฿{b.bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1247,6 +1943,66 @@ export default function PayrollPage() {
       {/* === TAB 7: ภาษี & ประกันสังคม (Tax & SSO Tab) === */}
       {activeTab === 'tax-sso' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-8">
+          {/* Header Actions for CSV Reports */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || 'กันยายน 2569'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleExportTaxSsoCsv('PND1')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
+              </button>
+
+              <button
+                onClick={() => handleExportTaxSsoCsv('SSO')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>ส่งออก สปส. 1-10 (CSV)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tax & SSO Summary KPI Cards */}
+          {taxSsoSummary && (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
+                <span className="text-[11px] text-slate-500 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
+                <p className="text-lg font-bold text-slate-900 mt-1 font-mono">
+                  ฿{taxSsoSummary.totalGrossIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40">
+                <span className="text-[11px] text-blue-700 font-semibold">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
+                <p className="text-lg font-bold text-blue-900 mt-1 font-mono">
+                  ฿{taxSsoSummary.totalWithholdingTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
+                <span className="text-[11px] text-purple-700 font-semibold">ประกันสังคม (ฝ่ายลูกจ้าง 5%)</span>
+                <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
+                  ฿{taxSsoSummary.totalSsoEmployee.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
+                <span className="text-[11px] text-purple-700 font-semibold">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
+                <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
+                  ฿{taxSsoSummary.totalSsoCombined.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          )}
           {/* Section 1: Tax Brackets */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -1421,6 +2177,130 @@ export default function PayrollPage() {
         cancelText="ยกเลิก"
         type="danger"
         isLoading={isDeletingItem}
+      />
+
+      {/* Modal: Create Payroll Period */}
+      {isCreatePeriodModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">สร้างรอบเงินเดือนใหม่</h3>
+              <button
+                onClick={() => setIsCreatePeriodModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">ชื่อรอบเงินเดือน</label>
+                <input
+                  type="text"
+                  required
+                  value={newPeriodForm.periodName}
+                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value })}
+                  placeholder="เช่น รอบเดือนกันยายน 2569"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">ปี (ค.ศ.)</label>
+                  <input
+                    type="number"
+                    required
+                    value={newPeriodForm.year}
+                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, year: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">เดือน (1-12)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    required
+                    value={newPeriodForm.month}
+                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, month: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">วันเริ่มคำนวณ</label>
+                  <input
+                    type="date"
+                    required
+                    value={newPeriodForm.startDate}
+                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, startDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">วันสิ้นสุดคำนวณ</label>
+                  <input
+                    type="date"
+                    required
+                    value={newPeriodForm.endDate}
+                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, endDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">วันกำหนดจ่ายเงิน</label>
+                <input
+                  type="date"
+                  value={newPeriodForm.paymentDate}
+                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatePeriodModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs"
+                >
+                  สร้างรอบเงินเดือน
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-Over Drawer: รายละเอียดสลิปเงินเดือนรายบุคคล (payroll_detail) */}
+      <PayrollDetailDrawer
+        isOpen={isDetailDrawerOpen}
+        onClose={() => setIsDetailDrawerOpen(false)}
+        record={selectedPayrollRecord}
+      />
+
+      {/* Confirm Modal: ไม่อนุมัติและส่งคืนรอบเงินเดือนให้ HR แก้ไข */}
+      <ConfirmModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={handleRejectPeriodStatus}
+        title="ยืนยันไม่อนุมัติและส่งคืนรอบเงินเดือน?"
+        message="รอบเงินเดือนนี้จะถูกส่งคืนให้ฝ่าย HR ทำการตรวจสอบและปรับแก้ไขข้อมูลใหม่ (สถานะจะเปลี่ยนกลับเป็น 'รอตรวจสอบ')"
+        confirmText="ส่งคืนให้ HR แก้ไข"
+        cancelText="ยกเลิก"
+        type="danger"
       />
     </div>
   );

@@ -271,4 +271,162 @@ public class SalaryController : ControllerBase
     }
 
     #endregion
+
+    #region Payroll Processing (Tab 4)
+
+    /// <summary>
+    /// ดึงรายการรอบเงินเดือนทั้งหมด
+    /// </summary>
+    [HttpGet("periods")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollPeriodDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollPeriodDto>>>> GetPayrollPeriods(CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollPeriodsAsync(cancellationToken);
+        return Ok(ApiResponse<List<PayrollPeriodDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// ดึงข้อมูลรอบเงินเดือนตาม ID
+    /// </summary>
+    [HttpGet("periods/{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> GetPayrollPeriodById(long id, CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollPeriodByIdAsync(id, cancellationToken);
+        if (result == null)
+            return NotFound(ApiResponse<object>.Fail("ไม่พบข้อมูลรอบเงินเดือน"));
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// ดึงรายการคำนวณเงินเดือนของพนักงานในรอบนั้นๆ
+    /// </summary>
+    [HttpGet("periods/{id:long}/payrolls")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollRecordDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollRecordDto>>>> GetPayrollsByPeriod(long id, CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollsByPeriodIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// ดึงรายละเอียดรายได้/รายหักของพนักงาน (payroll_detail)
+    /// </summary>
+    [HttpGet("payrolls/{id:long}/details")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> GetPayrollDetails(long id, CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetPayrollDetailsAsync(id, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// สร้างรอบเงินเดือนใหม่
+    /// </summary>
+    [HttpPost("periods")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> CreatePayrollPeriod(
+        [FromBody] CreatePayrollPeriodRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.CreatePayrollPeriodAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetPayrollPeriodById), new { id = result.Id }, ApiResponse<PayrollPeriodDto>.Ok(result, "สร้างรอบเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ประมวลผลคำนวณเงินเดือนของพนักงานทุกคนในรอบ
+    /// </summary>
+    [HttpPost("periods/{id:long}/calculate")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollRecordDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollRecordDto>>>> CalculatePayroll(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.CalculatePayrollForPeriodAsync(id, cancellationToken);
+        return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result, "ประมวลผลคำนวณเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>
+    /// อัปเดตสถานะของรอบเงินเดือน (ส่งอนุมัติ, บันทึกว่าจ่ายแล้ว, ปิดรอบ)
+    /// </summary>
+    [HttpPut("periods/{id:long}/status")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UpdatePayrollPeriodStatus(
+        long id,
+        [FromBody] UpdatePeriodStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.UpdatePayrollPeriodStatusAsync(id, request.Status, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "อัปเดตสถานะรอบเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงข้อมูลสรุปการโอนเงินธนาคารประจำรอบ
+    /// </summary>
+    [HttpGet("periods/{id:long}/bank-transfer")]
+    [ProducesResponseType(typeof(ApiResponse<BankTransferSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<BankTransferSummaryDto>>> GetBankTransferSummary(
+        long id,
+        [FromQuery] string? bankCode,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetBankTransferSummaryAsync(id, bankCode, cancellationToken);
+        return Ok(ApiResponse<BankTransferSummaryDto>.Ok(result, "ดึงข้อมูลการโอนเงินธนาคารสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดาวน์โหลดไฟล์โอนเงินธนาคาร (Text/CSV Format)
+    /// </summary>
+    [HttpGet("periods/{id:long}/bank-transfer-file")]
+    public async Task<IActionResult> GenerateBankTransferFile(
+        long id,
+        [FromQuery] string bankCode = "004",
+        CancellationToken cancellationToken = default)
+    {
+        var bytes = await _salaryService.GenerateBankTransferFileAsync(id, bankCode, cancellationToken);
+        var filename = $"BankTransfer_Period_{id}_{bankCode}_{DateTime.Now:yyyyMMdd}.csv";
+        return File(bytes, "text/csv", filename);
+    }
+
+    /// <summary>
+    /// ดึงข้อมูลสรุปภาษี ภ.ง.ด.1 และ ประกันสังคม สปส. 1-10
+    /// </summary>
+    [HttpGet("periods/{id:long}/tax-sso-summary")]
+    [ProducesResponseType(typeof(ApiResponse<TaxSsoSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<TaxSsoSummaryDto>>> GetTaxSsoSummary(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetTaxSsoSummaryAsync(id, cancellationToken);
+        return Ok(ApiResponse<TaxSsoSummaryDto>.Ok(result, "ดึงข้อมูลสรุปภาษีและประกันสังคมสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงรายการคำนวณโบนัสพนักงาน
+    /// </summary>
+    [HttpGet("bonuses")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> GetEmployeeBonuses(
+        [FromQuery] int? year,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetEmployeeBonusesAsync(year, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "ดึงข้อมูลโบนัสพนักงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// สั่งคำนวณโบนัสประจำปี
+    /// </summary>
+    [HttpPost("bonuses/calculate")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> CalculateEmployeeBonuses(
+        [FromBody] CalculateBonusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.CalculateEmployeeBonusesAsync(request, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "คำนวณโบนัสประจำปีสำเร็จ"));
+    }
+
+    #endregion
 }

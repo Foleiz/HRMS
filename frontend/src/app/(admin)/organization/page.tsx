@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   GitFork,
@@ -24,6 +24,17 @@ import {
   Upload,
   User,
   Image as ImageIcon,
+  Phone,
+  Mail,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
+  ZoomIn,
+  ZoomOut,
+  Network,
+  Users,
+  Download,
+  Share2,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
@@ -52,7 +63,7 @@ import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
-type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company';
+type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'orgchart';
 
 const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> = {
   STATUTORY: { label: 'กฎหมายแรงงาน', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Shield },
@@ -89,6 +100,21 @@ export default function OrganizationPage() {
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
   const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
 
+  // Org Chart state
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [orgZoom, setOrgZoom] = useState(1);
+  const [orgSearch, setOrgSearch] = useState('');
+  const [selectedOrgPerson, setSelectedOrgPerson] = useState<{
+    name: string;
+    role: string;
+    subtitle?: string;
+    avatarUrl?: string | null;
+    phone?: string;
+    email?: string;
+    empId?: number;
+    empCode?: string;
+  } | null>(null);
+
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย (Division)',
     departments: 'จัดการแผนก (Department)',
@@ -96,12 +122,241 @@ export default function OrganizationPage() {
     levels: 'ระดับพนักงาน (Level)',
     benefits: 'สวัสดิการและสิทธิประโยชน์ (Benefits)',
     company: 'ข้อมูลบริษัท (Company Profile)',
+    orgchart: 'แผนผังองค์กร (Org Chart)',
+  };
+
+  // Toggle expand/collapse for org chart nodes
+  const toggleNode = (key: string) => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // Level color palette
+  const LEVEL_COLORS = [
+    '#F59E0B', // amber  - CEO
+    '#06B6D4', // cyan   - Division
+    '#EC4899', // pink
+    '#EAB308', // yellow
+    '#22C55E', // green  - Dept
+    '#3B82F6', // blue
+    '#8B5CF6', // violet
+    '#14B8A6', // teal
+  ];
+
+  const getLevelColor = (level: number, index: number = 0): string => {
+    if (level === 0) return LEVEL_COLORS[0];
+    if (level === 1) return LEVEL_COLORS[1 + (index % 3)];
+    return LEVEL_COLORS[4 + (index % 4)];
+  };
+
+  // OrgRow: renders children in a horizontal row with proper tree connector lines
+  // Uses CSS border technique: each child has a border-t, first/last are half-width
+  // This works for any number of children without hardcoded pixel values
+  const OrgRow = ({ children }: { children: React.ReactNode[] }) => {
+    const count = children.length;
+    if (count === 0) return null;
+    if (count === 1) {
+      return (
+        <div className="flex flex-col items-center">
+          <div className="w-px h-5 bg-slate-300" />
+          {children[0]}
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-start">
+        {children.map((child, i) => (
+          <div key={i} className="flex flex-col items-center">
+            {/* Horizontal connector segment */}
+            <div className="w-full flex">
+              {/* Left half — invisible for first child */}
+              <div className={`flex-1 h-5 ${i === 0 ? '' : 'border-t border-slate-300'}`} />
+              {/* Vertical stem */}
+              <div className="w-px h-5 bg-slate-300 shrink-0" />
+              {/* Right half — invisible for last child */}
+              <div className={`flex-1 h-5 ${i === count - 1 ? '' : 'border-t border-slate-300'}`} />
+            </div>
+            {child}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Build avatar url or initials
+  const getAvatar = (emp: { avatarUrl?: string | null; fullName?: string; firstName?: string; lastName?: string }) => {
+    const name = emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+    const initial = name ? name.charAt(0) : '?';
+    return { url: emp.avatarUrl || null, initial };
+  };
+
+  // Org Chart Employee Card Component (inline)
+  const OrgCard = ({
+    id,
+    name,
+    role,
+    subtitle,
+    avatarUrl,
+    color,
+    phone,
+    email,
+    childCount,
+    nodeKey,
+    isExpanded,
+    onToggle,
+    highlight,
+    empId,
+    empCode,
+    onMore,
+  }: {
+    id?: number;
+    name: string;
+    role: string;
+    subtitle?: string;
+    avatarUrl?: string | null;
+    color: string;
+    phone?: string;
+    email?: string;
+    childCount?: number;
+    nodeKey: string;
+    isExpanded?: boolean;
+    onToggle?: () => void;
+    highlight?: boolean;
+    empId?: number;
+    empCode?: string;
+    onMore?: () => void;
+  }) => {
+    const initial = name ? name.charAt(0) : '?';
+    return (
+      <div className={`relative flex flex-col bg-white rounded-xl shadow-sm border ${
+        highlight ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'
+      } w-52 shrink-0 overflow-hidden transition-all duration-200 hover:shadow-md`}>
+        {/* Card Body */}
+        <div className="p-3">
+          <div className="flex items-center gap-2.5">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={name} className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 shrink-0" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0 ring-2 ring-slate-100">
+                {initial}
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="font-bold text-slate-900 text-xs truncate leading-tight">{name}</div>
+              <div className="text-[10px] text-slate-500 truncate mt-0.5">{role}</div>
+              {subtitle && <div className="text-[10px] text-slate-400 truncate">{subtitle}</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-slate-100" />
+
+        {/* Action Bar */}
+        <div className="flex items-center justify-between px-3 py-1.5">
+          <div className="flex items-center gap-0.5">
+            <button
+              title={phone ? `โทรศัพท์: ${phone}` : 'โทรศัพท์'}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (phone) {
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    navigator.clipboard.writeText(phone);
+                  }
+                  toast.success(`คัดลอกเบอร์โทร ${phone} แล้ว`, 'โทรศัพท์');
+                  setTimeout(() => {
+                    window.location.href = `tel:${phone}`;
+                  }, 300);
+                } else {
+                  toast.warning('ไม่พบข้อมูลเบอร์โทรศัพท์ของพนักงานรายนี้', 'ข้อมูลติดต่อ');
+                }
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5" />
+            </button>
+            <button
+              title={email ? `อีเมล: ${email}` : 'อีเมล'}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (email) {
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    navigator.clipboard.writeText(email);
+                  }
+                  toast.success(`คัดลอกอีเมล ${email} แล้ว`, 'อีเมล');
+                  setTimeout(() => {
+                    window.location.href = `mailto:${email}`;
+                  }, 300);
+                } else {
+                  toast.warning('ไม่พบข้อมูลอีเมลของพนักงานรายนี้', 'ข้อมูลติดต่อ');
+                }
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5" />
+            </button>
+            <button
+              title="ดูข้อมูลเพิ่มเติม"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onMore) {
+                  onMore();
+                } else {
+                  setSelectedOrgPerson({
+                    name,
+                    role,
+                    subtitle,
+                    avatarUrl,
+                    phone,
+                    email,
+                    empId,
+                    empCode,
+                  });
+                }
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {onToggle && childCount !== undefined && childCount > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggle(); }}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+            >
+              <span>{childCount}</span>
+              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+          )}
+        </div>
+
+        {/* Colored Bottom Border */}
+        <div style={{ height: 3, background: color }} />
+
+        {/* Collapse dot */}
+        {onToggle && childCount !== undefined && childCount > 0 && (
+          <div
+            style={{ background: color }}
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer z-10 flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          >
+            {isExpanded
+              ? <ChevronUp className="w-2.5 h-2.5 text-white" />
+              : <ChevronDown className="w-2.5 h-2.5 text-white" />}
+          </div>
+        )}
+      </div>
+    );
   };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
-      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company'].includes(tabParam)) {
+      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'orgchart'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
@@ -705,6 +960,18 @@ export default function OrganizationPage() {
               ข้อมูลบริษัท
             </button>
           )}
+
+          <button
+            onClick={() => { setActiveTab('orgchart'); setOrgSearch(''); }}
+            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'orgchart'
+                ? 'border-[#0B2046] text-[#0B2046]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Network className="w-4 h-4" />
+            แผนผังองค์กร
+          </button>
         </div>
       </div>
 
@@ -1980,7 +2247,450 @@ export default function OrganizationPage() {
         </div>
       )}
 
+      {/* === TAB: แผนผังองค์กร (Org Chart) === */}
+      {activeTab === 'orgchart' && (() => {
+        // ---- Build tree data from existing API state ----
+        const ceoEmployee = company?.ceoEmployeeId
+          ? employees.find((e) => e.id === company.ceoEmployeeId)
+          : null;
+
+        // Filtered employees by orgSearch
+        const searchLower = orgSearch.toLowerCase();
+        const empMatches = (emp: Employee) =>
+          !orgSearch ||
+          emp.fullName.toLowerCase().includes(searchLower) ||
+          (emp.positionName || '').toLowerCase().includes(searchLower) ||
+          (emp.departmentName || '').toLowerCase().includes(searchLower);
+
+        // Connector line style helper
+        const connectorStyle = 'relative before:absolute before:content-[\'\'] before:top-0 before:left-1/2 before:-translate-x-px before:w-px before:h-5 before:bg-slate-300';
+
+        // Render leaf employee cards (staff under a dept)
+        const renderStaffRow = (deptId: number, deptColor: string) => {
+          const dept = departments.find((d) => d.id === deptId);
+          const staffList = employees
+            .filter((e) => e.departmentName === dept?.departmentName && e.id !== dept?.headEmployeeId)
+            .filter(empMatches);
+
+          if (staffList.length === 0) {
+            return (
+              <div className="mt-4 text-center text-xs text-slate-400 py-2">
+                ไม่มีพนักงานอื่นในแผนกนี้
+              </div>
+            );
+          }
+
+          return (
+            <div className="mt-4">
+              <OrgRow>
+                {staffList.map((staff) => (
+                  <OrgCard
+                    key={staff.id}
+                    nodeKey={`staff-${staff.id}`}
+                    name={staff.fullName}
+                    role={staff.positionName || 'พนักงาน'}
+                    avatarUrl={staff.avatarUrl}
+                    color={deptColor}
+                    phone={staff.contact?.personalPhone}
+                    email={staff.contact?.organizationEmail || staff.contact?.personalEmail}
+                    highlight={!!orgSearch && empMatches(staff)}
+                    empId={staff.id}
+                    empCode={staff.employeeCode}
+                  />
+                ))}
+              </OrgRow>
+            </div>
+          );
+        };
+
+        // Render dept node + expandable staff
+        const renderDeptNode = (dept: Department, deptIdx: number) => {
+          const deptColor = getLevelColor(2, deptIdx);
+          const deptKey = `dept-${dept.id}`;
+          const isDeptExpanded = expandedNodes.has(deptKey);
+          const deptHead = dept.headEmployeeId
+            ? employees.find((e) => e.id === dept.headEmployeeId)
+            : null;
+          const staffCount = employees.filter(
+            (e) => e.departmentName === dept.departmentName && e.id !== dept.headEmployeeId
+          ).length;
+
+          const headName = deptHead?.fullName || dept.headEmployeeName || `หัวหน้า ${dept.departmentName}`;
+          const headRole = deptHead?.positionName || 'หัวหน้าแผนก';
+
+          return (
+            <div className="flex flex-col items-center">
+              <OrgCard
+                nodeKey={deptKey}
+                name={headName}
+                role={headRole}
+                subtitle={dept.departmentName}
+                avatarUrl={deptHead?.avatarUrl}
+                color={deptColor}
+                phone={deptHead?.contact?.personalPhone}
+                email={deptHead?.contact?.organizationEmail || deptHead?.contact?.personalEmail}
+                childCount={staffCount}
+                isExpanded={isDeptExpanded}
+                onToggle={() => toggleNode(deptKey)}
+                highlight={!!orgSearch && (deptHead ? empMatches(deptHead) : false)}
+                empId={deptHead?.id}
+                empCode={deptHead?.employeeCode}
+              />
+              {isDeptExpanded && renderStaffRow(dept.id, deptColor)}
+            </div>
+          );
+        };
+
+        // Render division node + expandable departments
+        const renderDivisionNode = (div: Division, divIdx: number) => {
+          const divColor = getLevelColor(1, divIdx);
+          const divKey = `div-${div.id}`;
+          const isDivExpanded = expandedNodes.has(divKey);
+          const divHead = div.headEmployeeId
+            ? employees.find((e) => e.id === div.headEmployeeId)
+            : null;
+          const divDepts = departments.filter((d) => d.divisionId === div.id && d.status === 'ACTIVE');
+
+          const headName = divHead?.fullName || div.headEmployeeName || `หัวหน้า ${div.divisionName}`;
+          const headRole = divHead?.positionName || 'หัวหน้าฝ่าย';
+
+          return (
+            <div className="flex flex-col items-center">
+              <OrgCard
+                nodeKey={divKey}
+                name={headName}
+                role={headRole}
+                subtitle={div.divisionName}
+                avatarUrl={divHead?.avatarUrl}
+                color={divColor}
+                phone={divHead?.contact?.personalPhone}
+                email={divHead?.contact?.organizationEmail || divHead?.contact?.personalEmail}
+                childCount={divDepts.length}
+                isExpanded={isDivExpanded}
+                onToggle={() => toggleNode(divKey)}
+                highlight={!!orgSearch && (divHead ? empMatches(divHead) : false)}
+                empId={divHead?.id}
+                empCode={divHead?.employeeCode}
+              />
+
+              {isDivExpanded && divDepts.length > 0 && (
+                <div className="mt-4">
+                  <OrgRow>
+                    {divDepts.map((dept, deptIdx) => renderDeptNode(dept, deptIdx))}
+                  </OrgRow>
+                </div>
+              )}
+
+              {isDivExpanded && divDepts.length === 0 && (
+                <div className="mt-4 text-xs text-slate-400">ไม่มีแผนกในสังกัด</div>
+              )}
+            </div>
+          );
+        };
+
+        const activeDivisions = divisions.filter((d) => d.status === 'ACTIVE');
+        const totalEmployees = employees.length;
+        const totalDepts = departments.filter((d) => d.status === 'ACTIVE').length;
+
+        return (
+          <div className="-mx-6 -mb-6">
+            {/* Header bar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Network className="w-5 h-5 text-[#0B2046]" />
+                  แผนผังองค์กร
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {company?.companyName || 'บริษัท'} · {activeDivisions.length} ฝ่าย · {totalDepts} แผนก · {totalEmployees} คน
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setActiveTab('divisions');
+                    toast.info('เปลี่ยนไปยังหน้าจัดการฝ่าย เพื่อแก้ไขโครงสร้างองค์กร', 'จัดการโครงสร้าง');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  แก้ไขโครงสร้าง
+                </button>
+                <button
+                  onClick={() => {
+                    toast.info('กำลังเปิดหน้าต่างพิมพ์/ดาวน์โหลดแผนผังองค์กร...', 'พิมพ์ / ดาวน์โหลด');
+                    setTimeout(() => window.print(), 300);
+                  }}
+                  title="พิมพ์ / ดาวน์โหลด PDF"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      const url = `${window.location.origin}/organization?tab=orgchart`;
+                      navigator.clipboard.writeText(url);
+                    }
+                    toast.success('คัดลอกลิงก์แผนผังองค์กรสำเร็จ', 'แชร์');
+                  }}
+                  title="แชร์ลิงก์แผนผังองค์กร"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Toolbar: Search + expand all */}
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาพนักงาน..."
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  if (expandedNodes.size > 0) {
+                    // ยุบทั้งหมด
+                    setExpandedNodes(new Set());
+                  } else {
+                    // ขยายทั้งหมด — ต้องใส่ 'ceo' ด้วยเพราะ divisions ต้องการ CEO expanded ก่อน
+                    const allKeys = new Set<string>();
+                    allKeys.add('ceo');
+                    divisions.forEach((d) => allKeys.add(`div-${d.id}`));
+                    departments.forEach((d) => allKeys.add(`dept-${d.id}`));
+                    setExpandedNodes(allKeys);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                {expandedNodes.size > 0 ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
+              </button>
+            </div>
+
+            {/* Chart Canvas */}
+            <div className="relative overflow-auto bg-slate-100/80" style={{ minHeight: 520 }}>
+              <div
+                style={{ transform: `scale(${orgZoom})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', minWidth: 'max-content' }}
+                className="py-10 px-12 flex flex-col items-center"
+              >
+                {loading ? (
+                  <div className="flex flex-col items-center gap-3 py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+                    <p className="text-sm text-slate-500">กำลังโหลดข้อมูล...</p>
+                  </div>
+                ) : !ceoEmployee && !company?.ceoEmployeeName ? (
+                  <div className="flex flex-col items-center gap-4 py-16 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center">
+                      <Users className="w-7 h-7 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-700 text-sm">ยังไม่ได้กำหนด CEO</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        ไปที่ "ข้อมูลบริษัท" เพื่อกำหนดผู้บริหารสูงสุด
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('company')}
+                      className="px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold"
+                    >
+                      ตั้งค่าข้อมูลบริษัท
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Level 0: CEO */}
+                    <OrgCard
+                      nodeKey="ceo"
+                      name={ceoEmployee?.fullName || company?.ceoEmployeeName || 'CEO'}
+                      role={ceoEmployee?.positionName || 'ประธานเจ้าหน้าที่บริหาร (CEO)'}
+                      subtitle={company?.companyName}
+                      avatarUrl={ceoEmployee?.avatarUrl}
+                      color={getLevelColor(0)}
+                      phone={ceoEmployee?.contact?.personalPhone}
+                      email={ceoEmployee?.contact?.organizationEmail || ceoEmployee?.contact?.personalEmail}
+                      childCount={activeDivisions.length}
+                      isExpanded={expandedNodes.has('ceo')}
+                      onToggle={() => toggleNode('ceo')}
+                      empId={ceoEmployee?.id}
+                      empCode={ceoEmployee?.employeeCode}
+                    />
+
+                    {/* Level 1: Divisions */}
+                    {expandedNodes.has('ceo') && activeDivisions.length > 0 && (
+                      <div className="mt-4">
+                        <OrgRow>
+                          {activeDivisions.map((div, divIdx) => renderDivisionNode(div, divIdx))}
+                        </OrgRow>
+                      </div>
+                    )}
+
+                    {activeDivisions.length === 0 && (
+                      <div className="mt-6 text-center text-xs text-slate-400">
+                        ยังไม่มีฝ่ายในระบบ
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Zoom Controls */}
+              <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 z-10">
+                <button
+                  onClick={() => setOrgZoom((z) => Math.min(z + 0.1, 1.5))}
+                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setOrgZoom((z) => Math.max(z - 0.1, 0.4))}
+                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <div className="w-8 text-center text-[10px] font-mono text-slate-400">
+                  {Math.round(orgZoom * 100)}%
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal: Employee Quick Info (from OrgChart) */}
+      {selectedOrgPerson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm overflow-hidden">
+            {/* Modal Header / Banner */}
+            <div className="relative bg-gradient-to-r from-[#0B2046] to-[#1e3a8a] p-5 text-white text-center">
+              <button
+                onClick={() => setSelectedOrgPerson(null)}
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              {/* Avatar */}
+              <div className="flex justify-center mb-2.5">
+                {selectedOrgPerson.avatarUrl ? (
+                  <img
+                    src={selectedOrgPerson.avatarUrl}
+                    alt={selectedOrgPerson.name}
+                    className="w-16 h-16 rounded-full object-cover ring-4 ring-white/20 shadow-md"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-xl font-bold text-white ring-4 ring-white/20 shadow-md">
+                    {selectedOrgPerson.name ? selectedOrgPerson.name.charAt(0) : '?'}
+                  </div>
+                )}
+              </div>
+              
+              <h3 className="text-base font-bold">{selectedOrgPerson.name}</h3>
+              <p className="text-xs text-blue-200 mt-0.5">{selectedOrgPerson.role}</p>
+              {selectedOrgPerson.subtitle && (
+                <span className="inline-block mt-2 px-3 py-0.5 bg-white/10 rounded-full text-[10px] text-blue-100 font-medium">
+                  {selectedOrgPerson.subtitle}
+                </span>
+              )}
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 space-y-3 text-xs">
+              {selectedOrgPerson.empCode && (
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">รหัสพนักงาน:</span>
+                  <span className="font-semibold text-slate-800">{selectedOrgPerson.empCode}</span>
+                </div>
+              )}
+
+              {/* Phone Action */}
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  เบอร์โทรศัพท์:
+                </span>
+                {selectedOrgPerson.phone ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-slate-800">{selectedOrgPerson.phone}</span>
+                    <button
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText(selectedOrgPerson.phone!);
+                        }
+                        toast.success(`คัดลอกเบอร์โทร ${selectedOrgPerson.phone} แล้ว`, 'โทรศัพท์');
+                      }}
+                      className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium text-[10px]"
+                    >
+                      คัดลอก
+                    </button>
+                    <a
+                      href={`tel:${selectedOrgPerson.phone}`}
+                      className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-medium text-[10px]"
+                    >
+                      โทรออก
+                    </a>
+                  </div>
+                ) : (
+                  <span className="text-slate-400 italic">ไม่มีข้อมูล</span>
+                )}
+              </div>
+
+              {/* Email Action */}
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  อีเมล:
+                </span>
+                {selectedOrgPerson.email ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-slate-800 truncate max-w-[130px]" title={selectedOrgPerson.email}>
+                      {selectedOrgPerson.email}
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText(selectedOrgPerson.email!);
+                        }
+                        toast.success(`คัดลอกอีเมล ${selectedOrgPerson.email} แล้ว`, 'อีเมล');
+                      }}
+                      className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium text-[10px]"
+                    >
+                      คัดลอก
+                    </button>
+                    <a
+                      href={`mailto:${selectedOrgPerson.email}`}
+                      className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium text-[10px]"
+                    >
+                      ส่งอีเมล
+                    </a>
+                  </div>
+                ) : (
+                  <span className="text-slate-400 italic">ไม่มีข้อมูล</span>
+                )}
+              </div>
+
+              {/* Actions Footer */}
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setSelectedOrgPerson(null)}
+                  className="w-full py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 9. Delete Confirmation Modal */}
+
       {deleteModalOpen && itemToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">

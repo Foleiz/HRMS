@@ -13,6 +13,9 @@ import {
   AdjustEmployeeSalaryPayload,
   PayrollOverview,
   PayrollItem,
+  PayrollPeriod,
+  PayrollRecord,
+  PayrollDetailItem,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -114,4 +117,74 @@ export const salaryService = {
   async deletePayrollItem(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<object>>(`/salary/items/${id}`);
   },
+
+  // === 6. ประมวลผลเงินเดือน (Payroll Processing - Tab 4) ===
+  async getPayrollPeriods(): Promise<PayrollPeriod[]> {
+    const res = await apiClient.get<ApiResponse<PayrollPeriod[]>>('/salary/periods');
+    return res.data.data;
+  },
+
+  async getPayrollPeriodById(id: number): Promise<PayrollPeriod> {
+    const res = await apiClient.get<ApiResponse<PayrollPeriod>>(`/salary/periods/${id}`);
+    return res.data.data;
+  },
+
+  async getPayrollsByPeriod(periodId: number): Promise<PayrollRecord[]> {
+    const res = await apiClient.get<ApiResponse<PayrollRecord[]>>(`/salary/periods/${periodId}/payrolls`);
+    return res.data.data;
+  },
+
+  async getPayrollDetails(payrollId: number): Promise<PayrollDetailItem[]> {
+    const res = await apiClient.get<ApiResponse<PayrollDetailItem[]>>(`/salary/payrolls/${payrollId}/details`);
+    return res.data.data;
+  },
+
+  async updatePayrollPeriodStatus(periodId: number, status: string): Promise<PayrollPeriod> {
+    const res = await apiClient.put<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/status`, { status });
+    return res.data.data;
+  },
+
+  async calculatePayrollPeriod(periodId: number): Promise<PayrollRecord[]> {
+    const res = await apiClient.post<ApiResponse<PayrollRecord[]>>(`/salary/periods/${periodId}/calculate`);
+    return res.data.data;
+  },
+
+  async createPayrollPeriod(payload: { year: number; month: number; periodName?: string; startDate: string; endDate: string; paymentDate?: string }): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>('/salary/periods', payload);
+    return res.data.data;
+  },
+
+  // Bank Transfer, Tax/SSO Summary, Bonus
+  async getBankTransferSummary(periodId: number, bankCode?: string): Promise<any> {
+    const res = await apiClient.get<ApiResponse<any>>(`/salary/periods/${periodId}/bank-transfer`, {
+      params: { bankCode },
+    });
+    return res.data.data;
+  },
+
+  async exportBankTransferFile(periodId: number, bankCode: string = '004'): Promise<Blob> {
+    const res = await apiClient.get(`/salary/periods/${periodId}/bank-transfer-file`, {
+      params: { bankCode },
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
+  async getTaxSsoSummary(periodId: number): Promise<any> {
+    const res = await apiClient.get<ApiResponse<any>>(`/salary/periods/${periodId}/tax-sso-summary`);
+    return res.data.data;
+  },
+
+  async getEmployeeBonuses(year?: number): Promise<any[]> {
+    const res = await apiClient.get<ApiResponse<any[]>>('/salary/bonuses', {
+      params: { year },
+    });
+    return res.data.data;
+  },
+
+  async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<any[]> {
+    const res = await apiClient.post<ApiResponse<any[]>>('/salary/bonuses/calculate', payload);
+    return res.data.data;
+  },
 };
+

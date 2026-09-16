@@ -689,4 +689,563 @@ public class SalaryService : ISalaryService
     }
 
     #endregion
+
+    #region Payroll Processing (Tab 4)
+
+    private static readonly string[] ThaiMonths = new[]
+    {
+        "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    };
+
+    private static string GetThaiPeriodName(int year, int month)
+    {
+        var mName = month >= 1 && month <= 12 ? ThaiMonths[month] : month.ToString();
+        var yThai = year + 543;
+        return $"รอบเงินเดือน : {mName} {yThai}";
+    }
+
+    private static string GetPeriodStatusText(string status) => status?.ToUpper() switch
+    {
+        "REVIEW" => "รอตรวจสอบ",
+        "PENDING_APPROVAL" => "รออนุมัติ",
+        "APPROVED" => "อนุมัติแล้ว",
+        "PAID" => "จ่ายแล้ว",
+        "CLOSED" => "ปิดรอบ",
+        "DRAFT" => "แบบร่าง",
+        _ => status ?? string.Empty
+    };
+
+    private static string GetPayrollStatusText(string status) => status?.ToUpper() switch
+    {
+        "CALCULATED" => "คำนวณแล้ว",
+        "REVIEW" => "รอตรวจสอบ",
+        "DRAFT" => "ยังไม่คำนวณ",
+        "NOT_CALCULATED" => "ยังไม่คำนวณ",
+        "PAID" => "จ่ายแล้ว",
+        "APPROVED" => "อนุมัติแล้ว",
+        _ => status ?? "ยังไม่คำนวณ"
+    };
+
+    public async Task<List<PayrollPeriodDto>> GetPayrollPeriodsAsync(CancellationToken cancellationToken = default)
+    {
+        var periods = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .OrderByDescending(p => p.Year)
+            .ThenByDescending(p => p.Month)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return periods.Select(p => new PayrollPeriodDto
+        {
+            Id = p.Id,
+            Year = p.Year,
+            Month = p.Month,
+            PeriodName = GetThaiPeriodName(p.Year, p.Month),
+            StartDate = p.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = p.EndDate.ToString("yyyy-MM-dd"),
+            PaymentDate = p.PaymentDate?.ToString("yyyy-MM-dd"),
+            Status = p.Status,
+            StatusText = GetPeriodStatusText(p.Status),
+            EmployeeCount = p.Payrolls.Count,
+            TotalNetSalary = p.Payrolls.Sum(x => x.NetPayableSalary)
+        }).ToList();
+    }
+
+    public async Task<PayrollPeriodDto?> GetPayrollPeriodByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var p = await _context.PayrollPeriods
+            .Include(x => x.Payrolls)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (p == null) return null;
+
+        return new PayrollPeriodDto
+        {
+            Id = p.Id,
+            Year = p.Year,
+            Month = p.Month,
+            PeriodName = GetThaiPeriodName(p.Year, p.Month),
+            StartDate = p.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = p.EndDate.ToString("yyyy-MM-dd"),
+            PaymentDate = p.PaymentDate?.ToString("yyyy-MM-dd"),
+            Status = p.Status,
+            StatusText = GetPeriodStatusText(p.Status),
+            EmployeeCount = p.Payrolls.Count,
+            TotalNetSalary = p.Payrolls.Sum(x => x.NetPayableSalary)
+        };
+    }
+
+    public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee)
+            .Where(p => p.PeriodId == periodId)
+            .OrderBy(p => p.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return payrolls.Select(p =>
+        {
+            var isCalculated = p.Status != "DRAFT" && p.TotalGrossIncome > 0;
+            return new PayrollRecordDto
+            {
+                Id = p.Id,
+                PeriodId = p.PeriodId,
+                EmployeeId = p.EmployeeId,
+                EmployeeCode = p.Employee?.EmployeeCode ?? $"EMP-{p.EmployeeId:D3}",
+                EmployeeName = p.SnapshotEmployeeName ?? (p.Employee != null ? $"{p.Employee.Prefix} {p.Employee.FirstName} {p.Employee.LastName}".Trim() : "-"),
+                DepartmentName = p.SnapshotDepartmentName ?? "-",
+                TotalGrossIncome = isCalculated ? p.TotalGrossIncome : null,
+                TotalDeductionAmount = isCalculated ? p.TotalDeductionAmount : null,
+                NetPayableSalary = isCalculated ? p.NetPayableSalary : null,
+                Status = p.Status,
+                StatusText = GetPayrollStatusText(p.Status)
+            };
+        }).ToList();
+    }
+
+    public async Task<List<PayrollDetailItemDto>> GetPayrollDetailsAsync(long payrollId, CancellationToken cancellationToken = default)
+    {
+        var details = await _context.PayrollDetails
+            .Include(d => d.PayrollItem)
+            .Where(d => d.PayrollId == payrollId)
+            .OrderBy(d => d.PayrollItem != null ? d.PayrollItem.ItemType : "")
+            .ThenBy(d => d.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return details.Select(d =>
+        {
+            string? subtext = null;
+            if (!string.IsNullOrWhiteSpace(d.CalculationSource))
+            {
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(d.CalculationSource);
+                    if (doc.RootElement.TryGetProperty("subtext", out var prop))
+                    {
+                        subtext = prop.GetString();
+                    }
+                    else if (doc.RootElement.TryGetProperty("formula", out var fProp))
+                    {
+                        subtext = fProp.GetString();
+                    }
+                }
+                catch { }
+            }
+
+            return new PayrollDetailItemDto
+            {
+                Id = d.Id,
+                PayrollId = d.PayrollId,
+                PayrollItemId = d.PayrollItemId,
+                ItemCode = d.PayrollItem?.ItemCode ?? "",
+                ItemName = d.PayrollItem?.ItemName ?? "",
+                ItemType = d.PayrollItem?.ItemType ?? "EARNING",
+                Quantity = d.Quantity,
+                Rate = d.Rate,
+                Amount = d.Amount,
+                Subtext = subtext
+            };
+        }).ToList();
+    }
+
+    public async Task<PayrollPeriodDto> UpdatePayrollPeriodStatusAsync(long periodId, string status, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+
+        if (period == null)
+            throw new NotFoundException("PayrollPeriod", periodId);
+
+        var validStatuses = new[] { "DRAFT", "REVIEW", "PENDING_APPROVAL", "APPROVED", "PAID", "CLOSED" };
+        var normalized = status.ToUpper().Trim();
+        if (!validStatuses.Contains(normalized))
+            throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");
+
+        period.Status = normalized;
+        if (normalized == "CLOSED")
+        {
+            period.ClosedAt = DateTimeOffset.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PayrollPeriodDto
+        {
+            Id = period.Id,
+            Year = period.Year,
+            Month = period.Month,
+            PeriodName = GetThaiPeriodName(period.Year, period.Month),
+            StartDate = period.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = period.EndDate.ToString("yyyy-MM-dd"),
+            PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
+            Status = period.Status,
+            StatusText = GetPeriodStatusText(period.Status),
+            EmployeeCount = period.Payrolls.Count,
+            TotalNetSalary = period.Payrolls.Sum(x => x.NetPayableSalary)
+        };
+    }
+
+    public async Task<PayrollPeriodDto> CreatePayrollPeriodAsync(CreatePayrollPeriodRequest request, CancellationToken cancellationToken = default)
+    {
+        var startDate = DateOnly.Parse(request.StartDate);
+        var endDate = DateOnly.Parse(request.EndDate);
+        DateOnly? paymentDate = string.IsNullOrWhiteSpace(request.PaymentDate) ? null : DateOnly.Parse(request.PaymentDate);
+
+        var period = new Domain.Entities.PayrollPeriod
+        {
+            Year = request.Year,
+            Month = request.Month,
+            StartDate = startDate,
+            EndDate = endDate,
+            PaymentDate = paymentDate,
+            Status = "DRAFT"
+        };
+
+        _context.PayrollPeriods.Add(period);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PayrollPeriodDto
+        {
+            Id = period.Id,
+            Year = period.Year,
+            Month = period.Month,
+            PeriodName = GetThaiPeriodName(period.Year, period.Month),
+            StartDate = period.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = period.EndDate.ToString("yyyy-MM-dd"),
+            PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
+            Status = period.Status,
+            StatusText = GetPeriodStatusText(period.Status),
+            EmployeeCount = 0,
+            TotalNetSalary = 0
+        };
+    }
+
+    public async Task<List<PayrollRecordDto>> CalculatePayrollForPeriodAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(p => p.Details)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+
+        if (period == null)
+            throw new NotFoundException("PayrollPeriod", periodId);
+
+        var activeEmployees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var allSalaries = await _context.EmployeeSalaries
+            .AsNoTracking()
+            .OrderByDescending(s => s.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        var taxBrackets = await _context.TaxBrackets
+            .Where(t => t.Status == "ACTIVE")
+            .OrderBy(t => t.IncomeFrom)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var ssoRate = await _context.SocialSecurityRates
+            .FirstOrDefaultAsync(s => s.Status == "ACTIVE", cancellationToken);
+
+        decimal ssoPercent = ssoRate?.EmployeeContributionPercent ?? 5.0m;
+        decimal ssoMinWage = ssoRate?.MinWageBaseAmount ?? 1650.0m;
+        decimal ssoMaxWage = ssoRate?.MaxWageBaseAmount ?? 15000.0m;
+
+        foreach (var emp in activeEmployees)
+        {
+            var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == emp.Id);
+            decimal baseSalary = empSalary?.BaseSalary ?? 0;
+
+            if (baseSalary <= 0) continue;
+
+            // 1. Calculate SSO
+            decimal ssoBase = Math.Min(Math.Max(baseSalary, ssoMinWage), ssoMaxWage);
+            decimal ssoAmount = Math.Round(ssoBase * (ssoPercent / 100.0m), 2);
+            ssoAmount = Math.Min(ssoAmount, 750.0m);
+
+            // 2. Calculate Progressive Tax (ภ.ง.ด.1)
+            decimal annualIncome = baseSalary * 12;
+            decimal standardExpenses = Math.Min(annualIncome * 0.50m, 100000.0m);
+            decimal personalAllowance = 60000.0m;
+            decimal ssoAllowance = ssoAmount * 12;
+            decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - personalAllowance - ssoAllowance);
+
+            decimal annualTax = 0;
+            if (taxableIncome > 0 && taxBrackets.Count > 0)
+            {
+                foreach (var bracket in taxBrackets)
+                {
+                    if (taxableIncome > bracket.IncomeFrom)
+                    {
+                        decimal upper = bracket.IncomeTo ?? taxableIncome;
+                        decimal bracketTaxable = Math.Min(taxableIncome, upper) - bracket.IncomeFrom;
+                        decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
+                        annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
+                    }
+                }
+            }
+            decimal monthlyTax = Math.Round(annualTax / 12.0m, 2);
+
+            // Gross & Net Pay
+            decimal totalGross = baseSalary;
+            decimal totalDeductions = ssoAmount + monthlyTax;
+            decimal netPay = Math.Max(0, totalGross - totalDeductions);
+
+            // Find existing payroll record or create new
+            var existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
+            if (existingPayroll == null)
+            {
+                existingPayroll = new Domain.Entities.Payroll
+                {
+                    PeriodId = period.Id,
+                    EmployeeId = emp.Id,
+                    TotalGrossIncome = totalGross,
+                    TotalDeductionAmount = totalDeductions,
+                    NetPayableSalary = netPay,
+                    Status = "CALCULATED"
+                };
+                _context.Payrolls.Add(existingPayroll);
+            }
+            else
+            {
+                existingPayroll.TotalGrossIncome = totalGross;
+                existingPayroll.TotalDeductionAmount = totalDeductions;
+                existingPayroll.NetPayableSalary = netPay;
+                existingPayroll.Status = "CALCULATED";
+            }
+        }
+
+        period.Status = "REVIEW";
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
+    }
+
+    public async Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+
+        if (period == null)
+            throw new NotFoundException("PayrollPeriod", periodId);
+
+        var employeeBankAccounts = await _context.EmployeeBankAccounts
+            .Include(b => b.Bank)
+            .Include(b => b.Employee)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var items = new List<BankTransferItemDto>();
+        decimal totalAmount = 0;
+
+        foreach (var pr in period.Payrolls)
+        {
+            var empBank = employeeBankAccounts.FirstOrDefault(b => b.EmployeeId == pr.EmployeeId && b.IsPrimary)
+                       ?? employeeBankAccounts.FirstOrDefault(b => b.EmployeeId == pr.EmployeeId);
+
+            var empCode = empBank?.Employee?.EmployeeCode ?? $"EMP{pr.EmployeeId:D3}";
+            var empName = empBank?.Employee != null ? $"{empBank.Employee.FirstName} {empBank.Employee.LastName}" : $"พนักงาน #{pr.EmployeeId}";
+            var bCode = empBank?.Bank?.BankCode ?? "004";
+            var bName = empBank?.Bank?.BankName ?? "ธนาคารกสิกรไทย (Kasikornbank - KBANK)";
+            var accNum = empBank?.AccountNumber ?? $"012-3-{pr.EmployeeId:D5}-9";
+            var accName = empBank?.AccountName ?? empName;
+
+            if (!string.IsNullOrWhiteSpace(bankCode) && bankCode.ToUpper() != "ALL" && bCode != bankCode)
+            {
+                continue;
+            }
+
+            decimal netPay = pr.NetPayableSalary;
+            totalAmount += netPay;
+
+            items.Add(new BankTransferItemDto
+            {
+                EmployeeId = pr.EmployeeId,
+                EmployeeCode = empCode,
+                EmployeeName = empName,
+                BankCode = bCode,
+                BankName = bName,
+                AccountNumber = accNum,
+                AccountName = accName,
+                NetPayableSalary = netPay,
+                Status = "READY"
+            });
+        }
+
+        return new BankTransferSummaryDto
+        {
+            PeriodId = period.Id,
+            PeriodName = GetThaiPeriodName(period.Year, period.Month),
+            SelectedBankCode = bankCode ?? "ALL",
+            TotalTransferAmount = totalAmount,
+            TotalEmployees = items.Count,
+            Items = items.OrderBy(i => i.EmployeeCode).ToList()
+        };
+    }
+
+    public async Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default)
+    {
+        var summary = await GetBankTransferSummaryAsync(periodId, bankCode, cancellationToken);
+        var sb = new System.Text.StringBuilder();
+
+        sb.AppendLine("SEQUENCE,EMPLOYEE_CODE,ACCOUNT_NUMBER,ACCOUNT_NAME,BANK_CODE,AMOUNT,CURRENCY,PAYMENT_DATE");
+        int seq = 1;
+        foreach (var item in summary.Items)
+        {
+            var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+            sb.AppendLine($"{seq:D4},{item.EmployeeCode},{cleanAcc},\"{item.AccountName}\",{item.BankCode},{item.NetPayableSalary:F2},THB,20260829");
+            seq++;
+        }
+
+        return System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    public async Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+
+        if (period == null)
+            throw new NotFoundException("PayrollPeriod", periodId);
+
+        var employees = await _context.Employees.AsNoTracking().ToListAsync(cancellationToken);
+
+        var items = new List<TaxSsoItemDto>();
+        decimal totalGross = 0;
+        decimal totalPnd1 = 0;
+        decimal totalSsoEmployee = 0;
+        decimal totalSsoEmployer = 0;
+
+        foreach (var pr in period.Payrolls)
+        {
+            var emp = employees.FirstOrDefault(e => e.Id == pr.EmployeeId);
+            decimal gross = pr.TotalGrossIncome;
+            decimal ssoEmp = Math.Min(gross * 0.05m, 750.0m);
+            decimal ssoCompany = ssoEmp; // 1:1 match
+            decimal pnd1 = Math.Max(0m, pr.TotalDeductionAmount - ssoEmp);
+
+            totalGross += gross;
+            totalPnd1 += pnd1;
+            totalSsoEmployee += ssoEmp;
+            totalSsoEmployer += ssoCompany;
+
+            items.Add(new TaxSsoItemDto
+            {
+                EmployeeId = pr.EmployeeId,
+                EmployeeCode = emp?.EmployeeCode ?? $"EMP{pr.EmployeeId:D3}",
+                EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}" : $"พนักงาน #{pr.EmployeeId}",
+                CitizenId = emp?.CitizenIdMasked ?? "1-1004-xxxxx-xx-1",
+                GrossIncome = gross,
+                Pnd1Tax = pnd1,
+                SsoEmployee = ssoEmp,
+                SsoEmployer = ssoCompany
+            });
+        }
+
+        return new TaxSsoSummaryDto
+        {
+            PeriodId = period.Id,
+            PeriodName = GetThaiPeriodName(period.Year, period.Month),
+            TotalGrossIncome = totalGross,
+            TotalPnd1Tax = totalPnd1,
+            TotalSsoEmployee = totalSsoEmployee,
+            TotalSsoEmployer = totalSsoEmployer,
+            TotalSsoCombined = totalSsoEmployee + totalSsoEmployer,
+            EmployeeCount = items.Count,
+            Items = items.OrderBy(i => i.EmployeeCode).ToList()
+        };
+    }
+
+    public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default)
+    {
+        int targetYear = year ?? 2026;
+        var employees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+
+        var result = new List<EmployeeBonusDto>();
+        long bonusId = 1;
+
+        foreach (var emp in employees)
+        {
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
+            decimal multiplier = 2.0m; // Default 2.0x months bonus
+            decimal bonusAmount = sal * multiplier;
+            var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+
+            result.Add(new EmployeeBonusDto
+            {
+                Id = bonusId++,
+                EmployeeId = emp.Id,
+                EmployeeCode = emp.EmployeeCode,
+                EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                DepartmentName = deptName,
+                Year = targetYear,
+                BaseSalary = sal,
+                Multiplier = multiplier,
+                BonusAmount = bonusAmount,
+                Status = "APPROVED",
+                StatusText = "อนุมัติแล้ว"
+            });
+        }
+
+        return result.OrderBy(r => r.EmployeeCode).ToList();
+    }
+
+    public async Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default)
+    {
+        int targetYear = request.Year <= 0 ? 2026 : request.Year;
+        decimal multiplier = request.DefaultMultiplier > 0 ? request.DefaultMultiplier : 2.0m;
+
+        var employees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+
+        var result = new List<EmployeeBonusDto>();
+        long bonusId = 1;
+
+        foreach (var emp in employees)
+        {
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
+            decimal bonusAmount = sal * multiplier;
+            var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+
+            result.Add(new EmployeeBonusDto
+            {
+                Id = bonusId++,
+                EmployeeId = emp.Id,
+                EmployeeCode = emp.EmployeeCode,
+                EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                DepartmentName = deptName,
+                Year = targetYear,
+                BaseSalary = sal,
+                Multiplier = multiplier,
+                BonusAmount = bonusAmount,
+                Status = "CALCULATED",
+                StatusText = "คำนวณแล้ว"
+            });
+        }
+
+        return result.OrderBy(r => r.EmployeeCode).ToList();
+    }
+
+    #endregion
 }

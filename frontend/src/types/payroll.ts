@@ -156,3 +156,94 @@ export interface PayrollItem {
   status: string;
 }
 
+export interface PayrollPeriod {
+  id: number;
+  year: number;
+  month: number;
+  periodName: string;
+  startDate: string;
+  endDate: string;
+  paymentDate?: string | null;
+  status: 'REVIEW' | 'APPROVED' | 'PAID' | 'CLOSED' | string;
+  statusText: string;
+  employeeCount: number;
+  totalNetSalary: number;
+}
+
+export interface PayrollRecord {
+  id: number;
+  periodId: number;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string;
+  totalGrossIncome?: number | null;
+  totalDeductionAmount?: number | null;
+  netPayableSalary?: number | null;
+  status: 'CALCULATED' | 'REVIEW' | 'DRAFT' | string;
+  statusText: string;
+}
+
+export interface PayrollDetailItem {
+  id: number;
+  payrollId: number;
+  payrollItemId: number;
+  itemCode: string;
+  itemName: string;
+  itemType: 'EARNING' | 'DEDUCTION';
+  quantity?: number | null;
+  rate?: number | null;
+  amount: number;
+  subtext?: string | null;
+}export interface BankTransferItem {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  bankName: string;
+  bankCode: string;
+  accountNumber: string;
+  netPayableSalary: number;
+}
+
+export interface BankTransferSummary {
+  periodId: number;
+  periodName: string;
+  totalAmount: number;
+  totalRecords: number;
+  items: BankTransferItem[];
+}
+
+export interface TaxSsoItem {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  citizenId?: string | null;
+  totalGrossIncome: number;
+  withholdingTax: number;
+  ssoEmployeeContribution: number;
+  ssoEmployerContribution: number;
+}
+
+export interface TaxSsoSummary {
+  periodId: number;
+  periodName: string;
+  totalGrossIncome: number;
+  totalWithholdingTax: number;
+  totalSsoEmployee: number;
+  totalSsoEmployer: number;
+  totalSsoCombined: number;
+  employeeCount: number;
+  items: TaxSsoItem[];
+}
+
+export interface EmployeeBonus {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  baseSalary: number;
+  performanceScore?: number | null;
+  multiplier: number;
+  bonusAmount: number;
+}

@@ -79,6 +79,9 @@ public interface IHrmsDbContext
     DbSet<SocialSecurityRate> SocialSecurityRates { get; }
     DbSet<EmployeeSalary> EmployeeSalaries { get; }
     DbSet<PayrollItem> PayrollItems { get; }
+    DbSet<PayrollPeriod> PayrollPeriods { get; }
+    DbSet<Payroll> Payrolls { get; }
+    DbSet<PayrollDetail> PayrollDetails { get; }
 
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }

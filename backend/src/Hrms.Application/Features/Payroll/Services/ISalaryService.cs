@@ -30,4 +30,20 @@ public interface ISalaryService
     Task<PayrollItemDto> CreatePayrollItemAsync(CreatePayrollItemRequest request, CancellationToken cancellationToken = default);
     Task<PayrollItemDto> UpdatePayrollItemAsync(long id, UpdatePayrollItemRequest request, CancellationToken cancellationToken = default);
     Task DeletePayrollItemAsync(long id, CancellationToken cancellationToken = default);
+
+    // Payroll Processing (Tab 4)
+    Task<List<PayrollPeriodDto>> GetPayrollPeriodsAsync(CancellationToken cancellationToken = default);
+    Task<PayrollPeriodDto?> GetPayrollPeriodByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<PayrollPeriodDto> CreatePayrollPeriodAsync(CreatePayrollPeriodRequest request, CancellationToken cancellationToken = default);
+    Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default);
+    Task<List<PayrollDetailItemDto>> GetPayrollDetailsAsync(long payrollId, CancellationToken cancellationToken = default);
+    Task<PayrollPeriodDto> UpdatePayrollPeriodStatusAsync(long periodId, string status, CancellationToken cancellationToken = default);
+    Task<List<PayrollRecordDto>> CalculatePayrollForPeriodAsync(long periodId, CancellationToken cancellationToken = default);
+
+    // Bank Transfer, Tax/SSO Reports, Bonus & Payslip
+    Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default);
+    Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default);
+    Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default);
+    Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default);
+    Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default);
 }

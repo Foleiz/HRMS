@@ -703,7 +703,6 @@ export default function EmployeesPage() {
     { title: 'จัดการพนักงาน', href: '/employees', active: true, show: canViewProfile },
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
-    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
   ].filter((tab) => tab.show);
 

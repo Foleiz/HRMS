@@ -90,6 +90,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<SocialSecurityRate> SocialSecurityRates => Set<SocialSecurityRate>();
     public DbSet<EmployeeSalary> EmployeeSalaries => Set<EmployeeSalary>();
     public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
+    public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
+    public DbSet<Payroll> Payrolls => Set<Payroll>();
+    public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
 
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -1286,10 +1289,81 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ItemType).HasColumnName("item_type").HasMaxLength(20).IsRequired();
             entity.Property(e => e.CalculationType).HasColumnName("calculation_type").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FormulaTemplate).HasColumnName("formula_template").HasMaxLength(50);
             entity.Property(e => e.FormulaValue).HasColumnName("formula_value").HasMaxLength(255);
             entity.Property(e => e.IsTaxable).HasColumnName("is_taxable").IsRequired();
             entity.Property(e => e.IsSocialSecurityCalculated).HasColumnName("is_social_security_calculated").IsRequired();
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+        });
+
+        // Configuration: PayrollPeriod
+        modelBuilder.Entity<PayrollPeriod>(entity =>
+        {
+            entity.ToTable("payroll_period", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Year).HasColumnName("year");
+            entity.Property(e => e.Month).HasColumnName("month");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.PaymentDate).HasColumnName("payment_date");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ClosedAt).HasColumnName("closed_at");
+            entity.Property(e => e.ClosedByEmployeeId).HasColumnName("closed_by_employee_id");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.PreApprovalStatus).HasColumnName("pre_approval_status").HasMaxLength(20);
+        });
+
+        // Configuration: Payroll
+        modelBuilder.Entity<Payroll>(entity =>
+        {
+            entity.ToTable("payroll", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PeriodId).HasColumnName("period_id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.TotalGrossIncome).HasColumnName("total_gross_income").HasPrecision(12, 2);
+            entity.Property(e => e.TotalDeductionAmount).HasColumnName("total_deduction_amount").HasPrecision(12, 2);
+            entity.Property(e => e.NetPayableSalary).HasColumnName("net_payable_salary").HasPrecision(12, 2);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.SnapshotEmployeeName).HasColumnName("snapshot_employee_name").HasMaxLength(255);
+            entity.Property(e => e.SnapshotDepartmentName).HasColumnName("snapshot_department_name").HasMaxLength(255);
+            entity.Property(e => e.SnapshotPositionName).HasColumnName("snapshot_position_name").HasMaxLength(255);
+            entity.Property(e => e.SnapshotWageType).HasColumnName("snapshot_wage_type").HasMaxLength(50);
+
+            entity.HasOne(e => e.Period)
+                .WithMany(p => p.Payrolls)
+                .HasForeignKey(e => e.PeriodId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: PayrollDetail
+        modelBuilder.Entity<PayrollDetail>(entity =>
+        {
+            entity.ToTable("payroll_detail", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PayrollId).HasColumnName("payroll_id");
+            entity.Property(e => e.PayrollItemId).HasColumnName("payroll_item_id");
+            entity.Property(e => e.Quantity).HasColumnName("quantity").HasPrecision(10, 2);
+            entity.Property(e => e.Rate).HasColumnName("rate").HasPrecision(12, 2);
+            entity.Property(e => e.Amount).HasColumnName("amount").HasPrecision(12, 2);
+            entity.Property(e => e.CalculationSource).HasColumnName("calculation_source").HasColumnType("jsonb");
+
+            entity.HasOne(e => e.Payroll)
+                .WithMany(p => p.Details)
+                .HasForeignKey(e => e.PayrollId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.PayrollItem)
+                .WithMany()
+                .HasForeignKey(e => e.PayrollItemId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
