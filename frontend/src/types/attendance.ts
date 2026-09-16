@@ -100,7 +100,6 @@ export interface MonthlyEmployeeAttendance {
   earlyLeaveMinutes: number;
   leaveDays: number;
   absentDays: number;
-  overtimeHours: number;
   attendanceRate: number;
   hasProcessedSummary: boolean;
 }

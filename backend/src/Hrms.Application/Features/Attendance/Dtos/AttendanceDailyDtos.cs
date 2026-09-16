@@ -141,7 +141,6 @@ public class MonthlyEmployeeAttendanceDto
     public int EarlyLeaveMinutes { get; set; }
     public decimal LeaveDays { get; set; }
     public int AbsentDays { get; set; }
-    public decimal OvertimeHours { get; set; }
     public double AttendanceRate { get; set; }
     public bool HasProcessedSummary { get; set; }
 }

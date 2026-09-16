@@ -801,14 +801,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
             .ToListAsync(cancellationToken);
 
-        var approvedOvertimes = await _context.OvertimeRequests
-            .AsNoTracking()
-            .Where(o => empIds.Contains(o.EmployeeId) && o.Status == "APPROVED" && o.WorkDate >= startDate && o.WorkDate <= endDate)
-            .ToListAsync(cancellationToken);
-        var otMap = approvedOvertimes
-            .GroupBy(o => o.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.Sum(o => o.OvertimeHours));
-
         DateTime? lastProcessedAt = summaries.Count > 0 ? summaries.Max(s => s.GeneratedAt) : null;
 
         var empDtos = new List<MonthlyEmployeeAttendanceDto>();
@@ -826,7 +818,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             int earlyLeaveMinutes;
             decimal leaveDays;
             int absentDays;
-            decimal otHours;
 
             if (hasSummary && summary != null)
             {
@@ -838,7 +829,6 @@ public class AttendanceDailyService : IAttendanceDailyService
                 earlyLeaveMinutes = summary.TotalEarlyLeaveMinutes;
                 leaveDays = summary.TotalLeaveDays;
                 absentDays = summary.TotalAbsentDays;
-                otHours = summary.TotalOvertimeHours;
             }
             else
             {
@@ -851,7 +841,6 @@ public class AttendanceDailyService : IAttendanceDailyService
                 earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
                 leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
                 absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
-                otMap.TryGetValue(emp.Id, out otHours);
             }
 
             double rate = totalWorkDays > 0 ? Math.Min(100.0, Math.Round((double)(actualWorkDays + (int)leaveDays) / totalWorkDays * 100.0, 1)) : 0;
@@ -871,7 +860,6 @@ public class AttendanceDailyService : IAttendanceDailyService
                 EarlyLeaveMinutes = earlyLeaveMinutes,
                 LeaveDays = leaveDays,
                 AbsentDays = absentDays,
-                OvertimeHours = otHours,
                 AttendanceRate = rate,
                 HasProcessedSummary = hasSummary
             });
@@ -910,14 +898,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
             .ToListAsync(cancellationToken);
 
-        var approvedOvertimes = await _context.OvertimeRequests
-            .AsNoTracking()
-            .Where(o => empIds.Contains(o.EmployeeId) && o.Status == "APPROVED" && o.WorkDate >= startDate && o.WorkDate <= endDate)
-            .ToListAsync(cancellationToken);
-        var otMap = approvedOvertimes
-            .GroupBy(o => o.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.Sum(o => o.OvertimeHours));
-
         var existingSummaries = await _context.AttendanceMonthlySummaries
             .Where(s => s.Year == year && s.Month == month && empIds.Contains(s.EmployeeId))
             .ToListAsync(cancellationToken);
@@ -939,7 +919,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             var earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
             var leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
             var absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
-            otMap.TryGetValue(emp.Id, out var otHours);
 
             if (summaryMap.TryGetValue(emp.Id, out var existing))
             {
@@ -952,7 +931,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                 existing.TotalEarlyLeaveMinutes = earlyLeaveMinutes;
                 existing.TotalLeaveDays = leaveDays;
                 existing.TotalAbsentDays = absentDays;
-                existing.TotalOvertimeHours = otHours;
+                existing.TotalOvertimeHours = 0;
                 existing.GeneratedAt = nowUtc;
             }
             else
@@ -971,7 +950,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                     TotalEarlyLeaveMinutes = earlyLeaveMinutes,
                     TotalLeaveDays = leaveDays,
                     TotalAbsentDays = absentDays,
-                    TotalOvertimeHours = otHours,
+                    TotalOvertimeHours = 0,
                     GeneratedAt = nowUtc
                 };
                 _context.AttendanceMonthlySummaries.Add(newSummary);
@@ -988,12 +967,12 @@ public class AttendanceDailyService : IAttendanceDailyService
         var data = await GetMonthlyAttendanceSummaryAsync(year, month, departmentId, cancellationToken);
 
         var sb = new StringBuilder();
-        sb.AppendLine("รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,วันทำงานตามแผน,วันทำงานจริง,สาย(ครั้ง),สาย(นาที),ออกก่อน(ครั้ง),ออกก่อน(นาที),ลางาน(วัน),ขาดงาน(วัน),OT(ชม.),อัตราการเข้างาน(%),สถานะ");
+        sb.AppendLine("รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,วันทำงานตามแผน,วันทำงานจริง,สาย(ครั้ง),สาย(นาที),ออกก่อน(ครั้ง),ออกก่อน(นาที),ลางาน(วัน),ขาดงาน(วัน),อัตราการเข้างาน(%),สถานะ");
 
         foreach (var emp in data.Employees)
         {
             var statusStr = emp.HasProcessedSummary ? "ประมวลผลแล้ว" : "รอดำเนินการ";
-            sb.AppendLine($"\"{emp.EmployeeCode}\",\"{emp.EmployeeName}\",\"{emp.DepartmentName ?? "-"}\",\"{emp.PositionName ?? "-"}\",{emp.TotalWorkDays},{emp.ActualWorkDays},{emp.LateDays},{emp.LateMinutes},{emp.EarlyLeaveDays},{emp.EarlyLeaveMinutes},{emp.LeaveDays},{emp.AbsentDays},{emp.OvertimeHours},{emp.AttendanceRate}%,{statusStr}");
+            sb.AppendLine($"\"{emp.EmployeeCode}\",\"{emp.EmployeeName}\",\"{emp.DepartmentName ?? "-"}\",\"{emp.PositionName ?? "-"}\",{emp.TotalWorkDays},{emp.ActualWorkDays},{emp.LateDays},{emp.LateMinutes},{emp.EarlyLeaveDays},{emp.EarlyLeaveMinutes},{emp.LeaveDays},{emp.AbsentDays},{emp.AttendanceRate}%,{statusStr}");
         }
 
         var preamble = Encoding.UTF8.GetPreamble();

@@ -44,10 +44,8 @@ import {
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
-import { overtimeService } from '@/services/overtimeService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
-import { OvertimeRequest } from '@/types/overtime';
 import {
   AttendanceDaily,
   DailyAttendanceSummary,
@@ -318,116 +316,6 @@ function DailyAttendanceContent() {
       (emp.positionName && emp.positionName.toLowerCase().includes(q))
     );
   });
-
-  // -------------------------------------------------------------
-  // Overtime Requests State & Handlers
-  // -------------------------------------------------------------
-  const [otModalOpen, setOtModalOpen] = useState(false);
-  const [otTargetEmployee, setOtTargetEmployee] = useState<MonthlyEmployeeAttendance | null>(null);
-  const [otDate, setOtDate] = useState<string>('');
-  const [otStartTime, setOtStartTime] = useState<string>('18:00');
-  const [otEndTime, setOtEndTime] = useState<string>('20:00');
-  const [otHours, setOtHours] = useState<number>(2);
-  const [otReason, setOtReason] = useState<string>('');
-  const [isSubmittingOt, setIsSubmittingOt] = useState<boolean>(false);
-
-  const [otRequestsModalOpen, setOtRequestsModalOpen] = useState<boolean>(false);
-  const [monthlyOtList, setMonthlyOtList] = useState<OvertimeRequest[]>([]);
-  const [isLoadingMonthlyOt, setIsLoadingMonthlyOt] = useState<boolean>(false);
-
-  const loadMonthlyOtList = useCallback(async () => {
-    try {
-      setIsLoadingMonthlyOt(true);
-      const list = await overtimeService.getOvertimeRequests({
-        year: monthlyYear,
-        month: monthlyMonth,
-        departmentId: monthlyDepartment === 'ALL' ? undefined : Number(monthlyDepartment),
-      });
-      setMonthlyOtList(list);
-    } catch (err) {
-      console.error('Failed to load OT list:', err);
-    } finally {
-      setIsLoadingMonthlyOt(false);
-    }
-  }, [monthlyYear, monthlyMonth, monthlyDepartment]);
-
-  const handleOpenCreateOt = (emp?: MonthlyEmployeeAttendance) => {
-    if (emp) {
-      setOtTargetEmployee(emp);
-    } else if (monthlyData?.employees && monthlyData.employees.length > 0) {
-      setOtTargetEmployee(monthlyData.employees[0]);
-    }
-    const defaultDay = '15';
-    setOtDate(`${monthlyYear}-${String(monthlyMonth).padStart(2, '0')}-${defaultDay}`);
-    setOtStartTime('18:00');
-    setOtEndTime('20:00');
-    setOtHours(2);
-    setOtReason('');
-    setOtModalOpen(true);
-  };
-
-  const handleSubmitOt = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otTargetEmployee || !otDate || !otReason.trim()) {
-      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
-      return;
-    }
-
-    try {
-      setIsSubmittingOt(true);
-      const [startH, startM] = otStartTime.split(':').map(Number);
-      const [endH, endM] = otEndTime.split(':').map(Number);
-      const startDate = new Date(`${otDate}T${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}:00Z`);
-      const endDate = new Date(`${otDate}T${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00Z`);
-
-      // 1. Create request
-      const created = await overtimeService.createOvertimeRequest({
-        employeeId: otTargetEmployee.employeeId,
-        workDate: otDate,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-        overtimeHours: Number(otHours),
-        reason: otReason.trim(),
-      });
-
-      // 2. Auto-approve since HR/Admin is submitting directly
-      await overtimeService.reviewOvertimeRequest(created.id, { action: 'APPROVED' });
-
-      toast.success('บันทึกและอนุมัติคำขอ OT สำเร็จ', `เพิ่ม OT ${otHours} ชม. ให้ ${otTargetEmployee.employeeName} เรียบร้อยแล้ว`);
-      setOtModalOpen(false);
-      loadMonthlySummary();
-      if (otRequestsModalOpen) {
-        loadMonthlyOtList();
-      }
-    } catch (err: any) {
-      console.error('Failed to submit OT:', err);
-      toast.error('เกิดข้อผิดพลาดในการบันทึกคำขอ OT', err?.response?.data?.message || err?.message);
-    } finally {
-      setIsSubmittingOt(false);
-    }
-  };
-
-  const handleApproveOt = async (id: number) => {
-    try {
-      await overtimeService.reviewOvertimeRequest(id, { action: 'APPROVED' });
-      toast.success('อนุมัติคำขอ OT สำเร็จ');
-      loadMonthlyOtList();
-      loadMonthlySummary();
-    } catch (err: any) {
-      toast.error('เกิดข้อผิดพลาด', err?.response?.data?.message || err?.message);
-    }
-  };
-
-  const handleRejectOt = async (id: number) => {
-    try {
-      await overtimeService.reviewOvertimeRequest(id, { action: 'REJECTED', rejectReason: 'ไม่อนุมัติโดยฝ่ายบุคคล' });
-      toast.success('ปฏิเสธคำขอ OT สำเร็จ');
-      loadMonthlyOtList();
-      loadMonthlySummary();
-    } catch (err: any) {
-      toast.error('เกิดข้อผิดพลาด', err?.response?.data?.message || err?.message);
-    }
-  };
 
   // Load Initial Reference Data
   useEffect(() => {
@@ -2436,29 +2324,6 @@ function DailyAttendanceContent() {
             <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
               <button
                 type="button"
-                onClick={() => {
-                  loadMonthlyOtList();
-                  setOtRequestsModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer"
-                title="ดูและพิจารณาคำขอ OT ประจำเดือนนี้"
-              >
-                <Clock className="w-3.5 h-3.5 text-[#0B2046]" />
-                <span>คำขออนุมัติ OT</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleOpenCreateOt()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer"
-                title="ยื่นคำขอทำ OT ให้พนักงาน"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>บันทึก OT</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={handleExportMonthlyCsv}
                 disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
                 className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
@@ -2617,7 +2482,6 @@ function DailyAttendanceContent() {
                     <th className="py-3 px-2 text-center">ออกก่อน</th>
                     <th className="py-3 px-2 text-center">ลางาน (วัน)</th>
                     <th className="py-3 px-2 text-center">ขาดงาน (วัน)</th>
-                    <th className="py-3 px-2 text-center">OT (ชม.)</th>
                     <th className="py-3 px-3 text-center">อัตราเข้างาน</th>
                     <th className="py-3 px-3 text-center">สถานะ</th>
                   </tr>
@@ -2625,7 +2489,7 @@ function DailyAttendanceContent() {
                 <tbody className="divide-y divide-slate-100">
                   {monthlyLoading ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={11} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                           <span className="text-xs">กำลังคำนวณและดึงข้อมูลสรุปประจำเดือน...</span>
@@ -2634,7 +2498,7 @@ function DailyAttendanceContent() {
                     </tr>
                   ) : filteredMonthlyEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={11} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Users className="w-8 h-8 text-slate-300" />
                           <span className="text-xs font-semibold text-slate-600">ไม่พบข้อมูลสรุปเวลาทำงานของพนักงาน</span>
@@ -2695,22 +2559,6 @@ function DailyAttendanceContent() {
                             </span>
                           ) : (
                             <span className="text-slate-400">0</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-2 text-center text-slate-600 font-semibold">
-                          {emp.overtimeHours > 0 ? (
-                            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold text-2xs border border-purple-200">
-                              {Number(emp.overtimeHours).toFixed(1)}
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenCreateOt(emp)}
-                              className="text-slate-400 hover:text-blue-600 hover:underline text-2xs cursor-pointer px-1 py-0.5"
-                              title="คลิกเพื่อบันทึกคำขอ OT ให้พนักงานนี้"
-                            >
-                              -
-                            </button>
                           )}
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -3608,330 +3456,6 @@ function DailyAttendanceContent() {
                     ยืนยันปฏิเสธคำขอ
                   </>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* Modal: ยื่น / บันทึกคำขอทำงานล่วงเวลา (Overtime Request)        */}
-      {/* ------------------------------------------------------------- */}
-      {otModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">บันทึกคำขอทำงานล่วงเวลา (OT)</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {otTargetEmployee ? `${otTargetEmployee.employeeCode} - ${otTargetEmployee.employeeName}` : 'เลือกพนักงาน'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setOtModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitOt} className="space-y-4">
-              {/* Employee Selection */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  พนักงาน <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={otTargetEmployee?.employeeId || ''}
-                  onChange={(e) => {
-                    const emp = monthlyData?.employees.find((x) => x.employeeId === Number(e.target.value));
-                    if (emp) setOtTargetEmployee(emp);
-                  }}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-800"
-                  required
-                >
-                  {(monthlyData?.employees || []).map((emp) => (
-                    <option key={emp.employeeId} value={emp.employeeId}>
-                      {emp.employeeCode} - {emp.employeeName} ({emp.departmentName || 'ไม่ระบุแผนก'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Work Date */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  วันที่ปฏิบัติงานล่วงเวลา <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={otDate}
-                  onChange={(e) => setOtDate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-800"
-                  required
-                />
-              </div>
-
-              {/* Time Range & Hours */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-2xs font-bold text-slate-700 mb-1">
-                    เวลาเริ่มทำ OT
-                  </label>
-                  <input
-                    type="time"
-                    value={otStartTime}
-                    onChange={(e) => setOtStartTime(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none text-slate-800"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-2xs font-bold text-slate-700 mb-1">
-                    เวลาสิ้นสุด OT
-                  </label>
-                  <input
-                    type="time"
-                    value={otEndTime}
-                    onChange={(e) => setOtEndTime(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none text-slate-800"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-2xs font-bold text-slate-700 mb-1">
-                    ชั่วโมง OT (ชม.) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="12"
-                    value={otHours}
-                    onChange={(e) => setOtHours(Number(e.target.value))}
-                    className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-purple-700"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Reason */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  เหตุผล / รายละเอียดงานที่ทำ OT <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={otReason}
-                  onChange={(e) => setOtReason(e.target.value)}
-                  placeholder="เช่น ปิดรอบบัญชีประจำเดือน, แก้ไขระบบเซิร์ฟเวอร์เร่งด่วน..."
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-800 resize-none"
-                  required
-                />
-              </div>
-
-              <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  เมื่อฝ่ายบุคคลหรือหัวหน้างานบันทึกคำขอนี้ ระบบจะทำการอนุมัติและรวมยอดชั่วโมง OT เข้าสู่ระบบสรุปสถิติเวลาทำงานและส่งต่อไปยัง Payroll ทันที
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={isSubmittingOt}
-                  onClick={() => setOtModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingOt || !otReason.trim()}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmittingOt ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      กำลังบันทึก...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      บันทึกและอนุมัติ OT
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* Modal: รายการคำขอทำงานล่วงเวลา (Overtime Requests List)         */}
-      {/* ------------------------------------------------------------- */}
-      {otRequestsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    รายการคำขอทำงานล่วงเวลา (OT) — {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    แสดงคำขอ OT ทั้งหมดที่เกิดขึ้นในรอบเดือนนี้ (อนุมัติแล้ว {monthlyOtList.filter((x) => x.status === 'APPROVED').length} รายการ)
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenCreateOt()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-purple-700 hover:bg-purple-800 rounded-xl transition cursor-pointer shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>เพิ่มคำขอ OT</span>
-                </button>
-                <button
-                  onClick={() => setOtRequestsModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content Table */}
-            <div className="overflow-y-auto flex-1 min-h-[300px]">
-              {isLoadingMonthlyOt ? (
-                <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
-                  <span className="text-xs">กำลังโหลดรายการคำขอ OT...</span>
-                </div>
-              ) : monthlyOtList.length === 0 ? (
-                <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-                  <Clock className="w-8 h-8 text-slate-300" />
-                  <span className="text-xs font-semibold text-slate-600">ยังไม่มีคำขอทำงานล่วงเวลาในรอบเดือนนี้</span>
-                  <span className="text-2xs text-slate-400">
-                    คลิกปุ่ม &quot;เพิ่มคำขอ OT&quot; ด้านบนเพื่อบันทึกคำขอให้พนักงาน
-                  </span>
-                </div>
-              ) : (
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider sticky top-0">
-                      <th className="py-2.5 px-3">เลขที่คำขอ</th>
-                      <th className="py-2.5 px-3">พนักงาน</th>
-                      <th className="py-2.5 px-3">วันที่ทำ OT</th>
-                      <th className="py-2.5 px-3">ช่วงเวลา</th>
-                      <th className="py-2.5 px-3 text-center">ชั่วโมง (ชม.)</th>
-                      <th className="py-2.5 px-3">เหตุผล</th>
-                      <th className="py-2.5 px-3 text-center">สถานะ</th>
-                      <th className="py-2.5 px-3 text-center">การจัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {monthlyOtList.map((ot) => (
-                      <tr key={ot.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                          {ot.requestNo}
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">{ot.employeeName}</div>
-                          <div className="text-3xs text-slate-400">{ot.employeeCode} • {ot.departmentName || '-'}</div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap font-medium text-slate-700">
-                          {formatThaiDate(ot.workDate)}
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap text-2xs text-slate-600">
-                          {formatTimeStr(ot.startTime)} - {formatTimeStr(ot.endTime)}
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-purple-700">
-                          {Number(ot.overtimeHours).toFixed(1)}
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-600 max-w-[180px] truncate" title={ot.reason}>
-                          {ot.reason}
-                        </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          {ot.status === 'APPROVED' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              อนุมัติแล้ว
-                            </span>
-                          ) : ot.status === 'REJECTED' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                              <XCircle className="w-3 h-3 text-rose-600" />
-                              ปฏิเสธ
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
-                              รอพิจารณา
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          {ot.status === 'PENDING' ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleApproveOt(ot.id)}
-                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-3xs font-bold transition cursor-pointer"
-                              >
-                                อนุมัติ
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleRejectOt(ot.id)}
-                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-3xs font-bold transition cursor-pointer"
-                              >
-                                ปฏิเสธ
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-3xs text-slate-400">
-                              {ot.approvedByName ? `โดย ${ot.approvedByName}` : '-'}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0">
-              <div>
-                รวมชั่วโมง OT ที่อนุมัติแล้ว:{' '}
-                <span className="font-bold text-purple-700">
-                  {monthlyOtList
-                    .filter((x) => x.status === 'APPROVED')
-                    .reduce((acc, x) => acc + Number(x.overtimeHours), 0)
-                    .toFixed(1)}{' '}
-                  ชั่วโมง
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOtRequestsModalOpen(false)}
-                className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition cursor-pointer"
-              >
-                ปิด
               </button>
             </div>
           </div>
