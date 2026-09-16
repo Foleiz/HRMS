@@ -111,6 +111,19 @@ export default function EssAttendancePage() {
     }
   }, [activeTab, loadHistory, loadAdjustments]);
 
+  // Helper to format ISO to HH:mm for <input type="time" />
+  const formatInputTime = (isoString?: string | null) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────
   // Adjustment Modal Actions
   // ─────────────────────────────────────────────────────────────
@@ -119,15 +132,18 @@ export default function EssAttendancePage() {
       setFormData({
         attendanceId: record.id > 0 ? record.id : undefined,
         workDate: record.workDate,
-        adjustedClockIn: record.actualIn ? formatTime(record.actualIn) : '08:30',
-        adjustedClockOut: record.actualOut ? formatTime(record.actualOut) : '17:30',
+        adjustedClockIn: record.actualIn ? formatInputTime(record.actualIn) : '08:30',
+        adjustedClockOut: record.actualOut ? formatInputTime(record.actualOut) : '17:30',
         reason: '',
       });
     } else {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const matched = historyList.find((h) => h.workDate === todayStr);
       setFormData({
-        workDate: new Date().toISOString().split('T')[0],
-        adjustedClockIn: '08:30',
-        adjustedClockOut: '17:30',
+        attendanceId: matched && matched.id > 0 ? matched.id : undefined,
+        workDate: todayStr,
+        adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : '08:30',
+        adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : '17:30',
         reason: '',
       });
     }
@@ -153,13 +169,14 @@ export default function EssAttendancePage() {
         }
       }
 
-      if (!targetAttendanceId) {
-        toast.warning('ไม่พบข้อมูลบันทึกเวลาของวันที่เลือกในระบบ');
+      if (!targetAttendanceId && !formData.workDate) {
+        toast.warning('กรุณาระบุวันที่ทำงานที่ต้องการปรับปรุงเวลา');
         return;
       }
 
       const req: CreateAttendanceAdjustmentRequest = {
-        attendanceId: targetAttendanceId,
+        attendanceId: targetAttendanceId || 0,
+        workDate: formData.workDate,
         adjustedClockIn: formData.adjustedClockIn ? `${formData.workDate}T${formData.adjustedClockIn}:00` : null,
         adjustedClockOut: formData.adjustedClockOut ? `${formData.workDate}T${formData.adjustedClockOut}:00` : null,
         reason: formData.reason.trim(),
@@ -618,7 +635,17 @@ export default function EssAttendancePage() {
                   type="date"
                   required
                   value={formData.workDate}
-                  onChange={(e) => setFormData({ ...formData, workDate: e.target.value })}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    const matched = historyList.find((h) => h.workDate === newDate);
+                    setFormData((prev) => ({
+                      ...prev,
+                      workDate: newDate,
+                      attendanceId: matched && matched.id > 0 ? matched.id : undefined,
+                      adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : (prev.adjustedClockIn || '08:30'),
+                      adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : (prev.adjustedClockOut || '17:30'),
+                    }));
+                  }}
                   className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

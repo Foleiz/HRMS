@@ -30,6 +30,7 @@ public class AttendanceAdjustmentDto
 public class CreateAttendanceAdjustmentRequest
 {
     public long AttendanceId { get; set; }
+    public string? WorkDate { get; set; }
     public DateTime? AdjustedClockIn { get; set; }
     public DateTime? AdjustedClockOut { get; set; }
     public string Reason { get; set; } = string.Empty;

@@ -14,10 +14,19 @@ namespace Hrms.Application.Features.Attendance.Services;
 public class AttendanceAdjustmentService : IAttendanceAdjustmentService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
-    public AttendanceAdjustmentService(IHrmsDbContext context)
+    public AttendanceAdjustmentService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
+        _attendanceDailyService = attendanceDailyService;
+    }
+
+    private static DateTime? EnsureUtc(DateTime? dt)
+    {
+        if (!dt.HasValue) return null;
+        if (dt.Value.Kind == DateTimeKind.Utc) return dt.Value;
+        return AttendanceDailyService.ToUtcTime(dt.Value);
     }
 
     public async Task<PagedAdjustmentResult> GetAdjustmentsAsync(AdjustmentFilterDto filter, CancellationToken cancellationToken = default)
@@ -134,36 +143,64 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             throw new ValidationException("กรุณาระบุเหตุผลในการขอปรับปรุงเวลา");
         }
 
-        var daily = await _context.AttendanceDailies
-            .Include(d => d.Shift)
-            .Include(d => d.Employee)
-            .FirstOrDefaultAsync(d => d.Id == request.AttendanceId, cancellationToken);
+        var empId = requestedByEmployeeId > 0 ? requestedByEmployeeId : 0;
+
+        AttendanceDaily? daily = null;
+        if (request.AttendanceId > 0)
+        {
+            daily = await _context.AttendanceDailies
+                .Include(d => d.Shift)
+                .Include(d => d.Employee)
+                .FirstOrDefaultAsync(d => d.Id == request.AttendanceId, cancellationToken);
+        }
+
+        if (daily == null && !string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, out var workDate))
+        {
+            if (empId > 0)
+            {
+                daily = await _context.AttendanceDailies
+                    .Include(d => d.Shift)
+                    .Include(d => d.Employee)
+                    .FirstOrDefaultAsync(d => d.EmployeeId == empId && d.WorkDate == workDate, cancellationToken);
+
+                if (daily == null)
+                {
+                    await _attendanceDailyService.CalculateDailyAttendanceForDateAsync(workDate, cancellationToken);
+                    daily = await _context.AttendanceDailies
+                        .Include(d => d.Shift)
+                        .Include(d => d.Employee)
+                        .FirstOrDefaultAsync(d => d.EmployeeId == empId && d.WorkDate == workDate, cancellationToken);
+                }
+            }
+        }
 
         if (daily == null)
         {
-            throw new KeyNotFoundException($"ไม่พบข้อมูลบันทึกเวลาประจำวัน ID: {request.AttendanceId}");
+            throw new KeyNotFoundException($"ไม่พบข้อมูลบันทึกเวลาประจำวันสำหรับวันที่ระบุ");
+        }
+
+        if (empId == 0)
+        {
+            empId = daily.EmployeeId;
         }
 
         // Check for existing pending request
         var hasPending = await _context.AttendanceAdjustments
-            .AnyAsync(a => a.AttendanceId == request.AttendanceId && a.Status == "PENDING", cancellationToken);
+            .AnyAsync(a => a.AttendanceId == daily.Id && a.Status == "PENDING", cancellationToken);
 
         if (hasPending)
         {
             throw new ValidationException("มีคำขอปรับปรุงเวลาสำหรับวันนี้ที่กำลังรอดำเนินการอยู่แล้ว");
         }
 
-        // Determine employee making the request: if passed as 0 or default, use daily record's employee
-        var empId = requestedByEmployeeId > 0 ? requestedByEmployeeId : daily.EmployeeId;
-
         var adjustment = new AttendanceAdjustment
         {
-            AttendanceId = request.AttendanceId,
+            AttendanceId = daily.Id,
             RequestedByEmployeeId = empId,
-            OriginalClockIn = daily.ActualIn,
-            OriginalClockOut = daily.ActualOut,
-            AdjustedClockIn = request.AdjustedClockIn,
-            AdjustedClockOut = request.AdjustedClockOut,
+            OriginalClockIn = EnsureUtc(daily.ActualIn),
+            OriginalClockOut = EnsureUtc(daily.ActualOut),
+            AdjustedClockIn = EnsureUtc(request.AdjustedClockIn),
+            AdjustedClockOut = EnsureUtc(request.AdjustedClockOut),
             Reason = request.Reason.Trim(),
             Status = "PENDING",
             CreatedAt = DateTime.UtcNow
@@ -214,11 +251,11 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             {
                 if (adjustment.AdjustedClockIn.HasValue)
                 {
-                    daily.ActualIn = adjustment.AdjustedClockIn.Value;
+                    daily.ActualIn = EnsureUtc(adjustment.AdjustedClockIn.Value);
                 }
                 if (adjustment.AdjustedClockOut.HasValue)
                 {
-                    daily.ActualOut = adjustment.AdjustedClockOut.Value;
+                    daily.ActualOut = EnsureUtc(adjustment.AdjustedClockOut.Value);
                 }
 
                 daily.IsAbsent = false;

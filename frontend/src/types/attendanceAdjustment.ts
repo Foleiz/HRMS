@@ -25,6 +25,7 @@ export interface AttendanceAdjustment {
 
 export interface CreateAttendanceAdjustmentRequest {
   attendanceId: number;
+  workDate?: string;
   adjustedClockIn: string | null;
   adjustedClockOut: string | null;
   reason: string;
