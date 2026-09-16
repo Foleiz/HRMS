@@ -46,4 +46,26 @@ public interface ISalaryService
     Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default);
+
+    // ===== PAYMENT WORKFLOW =====
+    /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) — ต้องเป็น APPROVED</summary>
+    Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>ดึงรายการโอนเงินพนักงานพร้อมข้อมูล Bank Account และสถานะการโอน</summary>
+    Task<PayrollTransferListDto> GetTransferListAsync(long periodId, CancellationToken cancellationToken = default);
+
+    /// <summary>Mark พนักงานรายบุคคลว่าโอนแล้ว พร้อม Slip (DIRECT_TRANSFER)</summary>
+    Task<PayrollTransferItemDto> MarkTransferredAsync(long periodId, long payrollId, MarkTransferredRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>CEO Confirm การจ่ายเงินทั้งหมด — ต้องทุกคนมี Slip และ TRANSFERRED</summary>
+    Task<PayrollPeriodDto> ConfirmPaymentAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>ดาวน์โหลด Slip ของพนักงานรายบุคคล</summary>
+    Task<SlipDownloadDto> GetPayrollSlipAsync(long payrollId, CancellationToken cancellationToken = default);
+
+    /// <summary>สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
+    Task<byte[]> GenerateAndMarkBankFileAsync(long periodId, string? bankCode, CancellationToken cancellationToken = default);
+
+    /// <summary>CEO Confirm ธนาคารโอนเงินเสร็จแล้ว (BANK_BATCH) → Status: PAID</summary>
+    Task<PayrollPeriodDto> ConfirmBankTransferAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default);
 }

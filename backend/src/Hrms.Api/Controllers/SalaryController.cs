@@ -3,6 +3,7 @@ using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Application.Features.Payroll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Hrms.Api.Controllers;
 
@@ -429,4 +430,112 @@ public class SalaryController : ControllerBase
     }
 
     #endregion
+
+    #region Payment Workflow
+
+    /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER)</summary>
+    [HttpPut("periods/{id:long}/payment-method")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> SetPaymentMethod(
+        long id,
+        [FromBody] SetPaymentMethodRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.SetPaymentMethodAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ตั้งค่าวิธีการจ่ายเงินสำเร็จ"));
+    }
+
+    /// <summary>ดึงรายการโอนเงินพนักงานพร้อมสถานะ</summary>
+    [HttpGet("periods/{id:long}/transfer-list")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollTransferListDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollTransferListDto>>> GetTransferList(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.GetTransferListAsync(id, cancellationToken);
+        return Ok(ApiResponse<PayrollTransferListDto>.Ok(result));
+    }
+
+    /// <summary>Mark พนักงานรายบุคคลว่าโอนเงินแล้ว พร้อมแนบ Slip (DIRECT_TRANSFER)</summary>
+    [HttpPost("periods/{periodId:long}/payrolls/{payrollId:long}/mark-transferred")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollTransferItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<PayrollTransferItemDto>>> MarkTransferred(
+        long periodId,
+        long payrollId,
+        [FromBody] MarkTransferredRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.MarkTransferredAsync(periodId, payrollId, request, cancellationToken);
+        return Ok(ApiResponse<PayrollTransferItemDto>.Ok(result, "บันทึกการโอนเงินสำเร็จ"));
+    }
+
+    /// <summary>CEO Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER) — เฉพาะ CEO เท่านั้น</summary>
+    [HttpPost("periods/{id:long}/confirm-payment")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> ConfirmPayment(
+        long id,
+        [FromBody] ConfirmPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId == null)
+            return Forbid();
+
+        var result = await _salaryService.ConfirmPaymentAsync(id, request, employeeId.Value, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "Confirm การจ่ายเงินสำเร็จ รอบเงินเดือนเปลี่ยนเป็น PAID"));
+    }
+
+    /// <summary>ดาวน์โหลด Slip ของพนักงานรายบุคคล</summary>
+    [HttpGet("payrolls/{payrollId:long}/slip")]
+    public async Task<IActionResult> DownloadSlip(
+        long payrollId,
+        CancellationToken cancellationToken)
+    {
+        var slip = await _salaryService.GetPayrollSlipAsync(payrollId, cancellationToken);
+        return File(slip.Data, slip.ContentType, slip.FileName);
+    }
+
+    /// <summary>สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
+    [HttpPost("periods/{id:long}/generate-bank-file")]
+    public async Task<IActionResult> GenerateBankFile(
+        long id,
+        [FromQuery] string? bankCode,
+        CancellationToken cancellationToken)
+    {
+        var bytes = await _salaryService.GenerateAndMarkBankFileAsync(id, bankCode, cancellationToken);
+        var filename = $"BankTransfer_Period_{id}_{bankCode ?? "ALL"}_{DateTime.Now:yyyyMMdd}.csv";
+        return File(bytes, "text/csv", filename);
+    }
+
+    /// <summary>CEO Confirm ว่าธนาคารโอนเงินแล้ว (BANK_BATCH) — เฉพาะ CEO เท่านั้น</summary>
+    [HttpPost("periods/{id:long}/confirm-bank-transfer")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> ConfirmBankTransfer(
+        long id,
+        [FromBody] ConfirmPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId == null)
+            return Forbid();
+
+        var result = await _salaryService.ConfirmBankTransferAsync(id, request, employeeId.Value, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "Confirm Bank Transfer สำเร็จ รอบเงินเดือนเปลี่ยนเป็น PAID"));
+    }
+
+    #endregion
+
+    // ===== HELPER: ดึง Employee ID ของ User ที่ Login อยู่ =====
+    private long? GetCurrentEmployeeId()
+    {
+        var claim = User.FindFirst("employee_id") ?? User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim != null && long.TryParse(claim.Value, out var id))
+            return id;
+        return null;
+    }
 }
