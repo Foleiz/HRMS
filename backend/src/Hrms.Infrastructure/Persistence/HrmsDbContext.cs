@@ -87,6 +87,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Approval Workflow Designer (Dev 1 Phase 2)
+    public DbSet<ApprovalFlow> ApprovalFlows => Set<ApprovalFlow>();
+    public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
+    public DbSet<ApprovalDelegation> ApprovalDelegations => Set<ApprovalDelegation>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1182,6 +1187,93 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: ApprovalFlow
+        // หมายเหตุ: document_type แมปกับ native PostgreSQL enum "hrms.approval_document_type_enum"
+        // ใช้ property เป็น string ธรรมดา + ระบุ HasColumnType ตรง ๆ (ไม่ได้ลงทะเบียน MapEnum ระดับ Npgsql
+        // เพื่อลดความเสี่ยงต่อการตั้งค่าการเชื่อมต่อฐานข้อมูลส่วนอื่นที่ใช้งานอยู่แล้ว) — ถ้าพบ error
+        // เกี่ยวกับ cast type ตอนบันทึกจริง ให้พิจารณาลงทะเบียน NpgsqlDataSourceBuilder.MapEnum แทน
+        modelBuilder.Entity<ApprovalFlow>(entity =>
+        {
+            entity.ToTable("approval_flow", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FlowCode).HasColumnName("flow_code").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FlowName).HasColumnName("flow_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.DocumentType)
+                .HasColumnName("document_type")
+                .HasColumnType("hrms.approval_document_type_enum")
+                .IsRequired();
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.LevelId).HasColumnName("level_id");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+
+            entity.HasOne(e => e.Department)
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Level)
+                .WithMany()
+                .HasForeignKey(e => e.LevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: ApprovalStep
+        modelBuilder.Entity<ApprovalStep>(entity =>
+        {
+            entity.ToTable("approval_step", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FlowId).HasColumnName("flow_id").IsRequired();
+            entity.Property(e => e.StepNo).HasColumnName("step_no").IsRequired();
+            entity.Property(e => e.ApproverType).HasColumnName("approver_type").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id");
+            entity.Property(e => e.ApproverRoleId).HasColumnName("approver_role_id");
+            entity.Property(e => e.IsRequired).HasColumnName("is_required").IsRequired();
+
+            entity.HasIndex(e => new { e.FlowId, e.StepNo }).IsUnique();
+
+            entity.HasOne(e => e.Flow)
+                .WithMany(f => f.Steps)
+                .HasForeignKey(e => e.FlowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ApproverEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ApproverEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ApproverRole)
+                .WithMany()
+                .HasForeignKey(e => e.ApproverRoleId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: ApprovalDelegation
+        modelBuilder.Entity<ApprovalDelegation>(entity =>
+        {
+            entity.ToTable("approval_delegation", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.DelegatorEmployeeId).HasColumnName("delegator_employee_id").IsRequired();
+            entity.Property(e => e.DelegateEmployeeId).HasColumnName("delegate_employee_id").IsRequired();
+            entity.Property(e => e.DocumentType).HasColumnName("document_type").HasMaxLength(50);
+            entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
+            entity.Property(e => e.EndDate).HasColumnName("end_date").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+
+            entity.HasOne(e => e.DelegatorEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.DelegatorEmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.DelegateEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.DelegateEmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

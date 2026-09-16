@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { CalendarCheck, LogOut, FileStack, BadgeCheck, ArrowRight, Clock } from 'lucide-react';
+import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
 interface DocumentOption {
   title: string;
@@ -56,10 +57,12 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
 export default function DocumentsHubPage() {
   return (
     <div className="space-y-6 pb-12">
+      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
+      <DocumentsSubNav />
+
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ยื่นเอกสาร</h1>
-        <p className="text-sm text-gray-500 mt-0.5">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
+        <p className="text-sm text-gray-500">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
       </div>
 
       {/* Option Cards */}

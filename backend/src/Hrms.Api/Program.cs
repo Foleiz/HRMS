@@ -1,6 +1,7 @@
 using System.Text;
 using Hrms.Api.Middlewares;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Auth.Services;
 using Hrms.Application.Features.Contracts.Services;
@@ -72,6 +73,8 @@ builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IApprovalFlowService, ApprovalFlowService>();
+builder.Services.AddScoped<IApprovalDelegationService, ApprovalDelegationService>();
 
 
 // 4. JWT Authentication

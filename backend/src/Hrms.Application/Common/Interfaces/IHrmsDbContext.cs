@@ -76,5 +76,10 @@ public interface IHrmsDbContext
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }
 
+    // Approval Workflow Designer (Dev 1 Phase 2)
+    DbSet<ApprovalFlow> ApprovalFlows { get; }
+    DbSet<ApprovalStep> ApprovalSteps { get; }
+    DbSet<ApprovalDelegation> ApprovalDelegations { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
@@ -16,10 +17,12 @@ namespace Hrms.Api.Controllers;
 public class LeaveRequestsController : ControllerBase
 {
     private readonly ILeaveRequestService _requestService;
+    private readonly ICurrentUserService _currentUser;
 
-    public LeaveRequestsController(ILeaveRequestService requestService)
+    public LeaveRequestsController(ILeaveRequestService requestService, ICurrentUserService currentUser)
     {
         _requestService = requestService;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -31,7 +34,16 @@ public class LeaveRequestsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, cancellationToken);
+        // หน้ารายการรออนุมัติ/ประวัติฝั่งแอดมินเรียก endpoint นี้โดยไม่ระบุ employeeId มา —
+        // ถ้าผู้เรียกไม่ใช่ ADMIN ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของ "ลูกทีมสายตรง" ตามสายบังคับบัญชา
+        // ของหัวหน้างานคนนั้น (ManagerEmployeeId) แทนการเห็นคำขอลาทั้งบริษัท
+        long? scopeToManagerId = null;
+        if (!employeeId.HasValue && !_currentUser.HasRole("ADMIN"))
+        {
+            scopeToManagerId = _currentUser.EmployeeId;
+        }
+
+        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, scopeToManagerId, cancellationToken);
         return Ok(ApiResponse<List<LeaveRequestDto>>.Ok(items, $"ดึงรายการคำร้องขอลาสำเร็จ (ทั้งหมด {totalCount} รายการ)"));
     }
 
@@ -192,7 +204,7 @@ public class LeaveRequestsController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<List<LeaveRequestDto>>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, cancellationToken);
+        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<LeaveRequestDto>>.Ok(items, $"ดึงรายการคำขอลาของตนเองสำเร็จ (ทั้งหมด {totalCount} รายการ)"));
     }
 

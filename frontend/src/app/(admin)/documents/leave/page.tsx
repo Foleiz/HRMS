@@ -1,13 +1,13 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronRight, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { leaveService } from '@/services/leaveService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
+import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
 // ─── Component ────────────────────────────────────────────────
 
@@ -132,14 +132,13 @@ function MyLeaveRequestPageContent() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
+      {/* คงรูปแบบเดียวกันไว้ทุกหน้าในหมวด "ยื่นเอกสาร" รวมถึงหน้าฟอร์มย่อยนี้ด้วย ไม่ใช้ breadcrumb แบบเดิมซ้อนแยกต่างหาก */}
+      <DocumentsSubNav />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
-            <Link href="/documents" className="hover:text-gray-600">ยื่นเอกสาร</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-gray-900 font-medium">เอกสารการลา</span>
-          </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารการลา</h1>
           <p className="text-sm text-gray-500 mt-0.5">กรอกแบบฟอร์มยื่นคำขอลา ติดตามสถานะได้ที่หน้าประวัติเอกสาร</p>
         </div>

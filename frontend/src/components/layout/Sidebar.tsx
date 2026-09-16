@@ -21,7 +21,6 @@ import {
   Landmark,
   CalendarDays,
   CalendarRange,
-  History,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -71,14 +70,9 @@ const menuItems: MenuItem[] = [
     href: '/documents',
     matchPrefix: '/documents',
     icon: FileText,
-    // เมนู ESS ยื่นเอกสาร (คำขอลา ฯลฯ) — พนักงานทุกคนที่ล็อกอินสามารถยื่นคำขอของตนเองได้ ไม่ต้องมีสิทธิ์เฉพาะ
-  },
-  {
-    title: 'ประวัติเอกสาร',
-    href: '/documents/history',
-    matchPrefix: '/documents/history',
-    icon: History,
-    // เมนู ESS รวมประวัติเอกสารทุกประเภทที่พนักงานยื่นไป — ไม่ต้องมีสิทธิ์เฉพาะ เช่นเดียวกับ "ยื่นเอกสาร"
+    // เมนู ESS ยื่นเอกสาร — รวม "รายการเอกสาร" และ "ประวัติเอกสาร" ไว้ในหมวดเดียวกัน
+    // สลับไปมาระหว่างสองหน้านี้ผ่านแถบเมนูย่อยในตัวหน้า (ดู DocumentsSubNav) เหมือนเมนู "พนักงาน"
+    // ไม่ได้ทำเป็นเมนูย่อยแบบขยาย/ย่อในแถบด้านข้าง — พนักงานทุกคนที่ล็อกอินยื่นคำขอ/ดูประวัติของตนเองได้ ไม่ต้องมีสิทธิ์เฉพาะ
   },
   {
     title: 'ตรวจบันทึกเวลา',
@@ -237,8 +231,7 @@ export const Sidebar: React.FC = () => {
     if (item.href === '/' && pathname === '/') return true;
     if (!item.matchPrefix || !pathname.startsWith(item.matchPrefix)) return false;
 
-    // ป้องกันกรณี matchPrefix ซ้อนกัน (เช่น "/documents" กับ "/documents/history")
-    // ให้ยึดเมนูที่ prefix ตรงกับ pathname มากที่สุด (ยาวที่สุด) เป็นตัวไฮไลต์เพียงอันเดียว
+    // ป้องกันกรณี matchPrefix ซ้อนกัน — ให้ยึดเมนูที่ prefix ตรงกับ pathname มากที่สุด (ยาวที่สุด) เป็นตัวไฮไลต์เพียงอันเดียว
     const matches = accessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
     const longestMatch = matches.reduce((a, b) => ((b.matchPrefix?.length ?? 0) > (a.matchPrefix?.length ?? 0) ? b : a));
     return longestMatch.href === item.href;

@@ -19,6 +19,7 @@ public class LeaveRequestService : ILeaveRequestService
         string? status = null,
         int page = 1,
         int pageSize = 20,
+        long? scopeToManagerEmployeeId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.LeaveRequests
@@ -31,6 +32,19 @@ public class LeaveRequestService : ILeaveRequestService
         if (employeeId.HasValue)
         {
             query = query.Where(r => r.EmployeeId == employeeId.Value);
+        }
+
+        if (scopeToManagerEmployeeId.HasValue)
+        {
+            // กรองให้หัวหน้างาน (ที่ไม่ใช่ ADMIN) เห็นเฉพาะคำขอลาของลูกทีมสายตรงของตัวเองเท่านั้น
+            // ตามสายบังคับบัญชาที่กำหนดไว้ใน EmployeeAssignment.ManagerEmployeeId (เอาเฉพาะการมอบหมายงานปัจจุบัน)
+            var teamEmployeeIds = await _context.EmployeeAssignments
+                .AsNoTracking()
+                .Where(a => a.IsCurrent && a.ManagerEmployeeId == scopeToManagerEmployeeId.Value)
+                .Select(a => a.EmployeeId)
+                .ToListAsync(cancellationToken);
+
+            query = query.Where(r => teamEmployeeIds.Contains(r.EmployeeId));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

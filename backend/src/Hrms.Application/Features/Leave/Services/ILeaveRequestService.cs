@@ -5,11 +5,17 @@ namespace Hrms.Application.Features.Leave.Services;
 
 public interface ILeaveRequestService
 {
+    /// <summary>
+    /// scopeToManagerEmployeeId: ถ้าระบุมา จะกรองให้เห็นเฉพาะคำขอลาของ "ลูกทีมสายตรง" ของหัวหน้างานคนนี้เท่านั้น
+    /// (จับคู่จาก EmployeeAssignment.ManagerEmployeeId ที่ยัง IsCurrent อยู่) ใช้สำหรับหน้ารายการรออนุมัติ/ประวัติ
+    /// ของหัวหน้างานที่ไม่ใช่ ADMIN — ถ้าเป็น null จะไม่กรอง (มองเห็นทั้งหมดตามเงื่อนไขอื่นตามปกติ)
+    /// </summary>
     Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(
         long? employeeId = null,
         string? status = null,
         int page = 1,
         int pageSize = 20,
+        long? scopeToManagerEmployeeId = null,
         CancellationToken cancellationToken = default);
 
     Task<LeaveStatsDto> GetStatsAsync(CancellationToken cancellationToken = default);

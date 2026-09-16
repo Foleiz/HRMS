@@ -19,9 +19,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -63,6 +65,14 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export default function DocumentHistoryPage() {
   const { user } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
+
+  // Navbar จะเดา breadcrumb จาก path prefix "/documents" เป็น "รายการเอกสาร" โดยอัตโนมัติ
+  // ต้อง override ให้ถูกต้องเป็น "ประวัติเอกสาร" เฉพาะหน้านี้
+  useEffect(() => {
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,15 +290,12 @@ export default function DocumentHistoryPage() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
+      <DocumentsSubNav />
+
       {/* Page Header */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
-          <Link href="/documents" className="hover:text-gray-600">ยื่นเอกสาร</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-900 font-medium">ประวัติเอกสาร</span>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ประวัติเอกสาร</h1>
-        <p className="text-sm text-gray-500 mt-0.5">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
+        <p className="text-sm text-gray-500">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
       </div>
 
       {/* Stat Cards */}
