@@ -235,21 +235,26 @@ export interface TaxSsoItem {
   employeeCode: string;
   employeeName: string;
   citizenId?: string | null;
-  totalGrossIncome: number;
-  withholdingTax: number;
-  ssoEmployeeContribution: number;
-  ssoEmployerContribution: number;
+  totalGrossIncome?: number;
+  grossIncome?: number;
+  withholdingTax?: number;
+  pnd1Tax?: number;
+  ssoEmployeeContribution?: number;
+  ssoEmployee?: number;
+  ssoEmployerContribution?: number;
+  ssoEmployer?: number;
 }
 
 export interface TaxSsoSummary {
   periodId: number;
   periodName: string;
-  totalGrossIncome: number;
-  totalWithholdingTax: number;
-  totalSsoEmployee: number;
-  totalSsoEmployer: number;
-  totalSsoCombined: number;
-  employeeCount: number;
+  totalGrossIncome?: number;
+  totalWithholdingTax?: number;
+  totalPnd1Tax?: number;
+  totalSsoEmployee?: number;
+  totalSsoEmployer?: number;
+  totalSsoCombined?: number;
+  employeeCount?: number;
   items: TaxSsoItem[];
 }
 

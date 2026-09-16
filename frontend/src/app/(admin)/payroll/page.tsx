@@ -509,13 +509,18 @@ export default function PayrollPage() {
     if (type === 'PND1') {
       csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,รายได้รวม (บาท),ภาษีหัก ณ ที่จ่าย (บาท)\n';
       taxSsoSummary.items.forEach((item, idx) => {
-        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${item.totalGrossIncome},${item.withholdingTax}\n`;
+        const gross = item.totalGrossIncome ?? item.grossIncome ?? 0;
+        const tax = item.withholdingTax ?? item.pnd1Tax ?? 0;
+        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${gross},${tax}\n`;
       });
     } else {
       csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,ฐานค่าจ้าง,สมทบฝ่ายผู้ประกันตน (5%),สมทบฝ่ายนายจ้าง (5%),รวมเงินสมทบ\n';
       taxSsoSummary.items.forEach((item, idx) => {
-        const totalSso = item.ssoEmployeeContribution + item.ssoEmployerContribution;
-        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${item.totalGrossIncome},${item.ssoEmployeeContribution},${item.ssoEmployerContribution},${totalSso}\n`;
+        const gross = item.totalGrossIncome ?? item.grossIncome ?? 0;
+        const ssoEmp = item.ssoEmployeeContribution ?? item.ssoEmployee ?? 0;
+        const ssoComp = item.ssoEmployerContribution ?? item.ssoEmployer ?? 0;
+        const totalSso = ssoEmp + ssoComp;
+        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${gross},${ssoEmp},${ssoComp},${totalSso}\n`;
       });
     }
 
@@ -2567,28 +2572,28 @@ export default function PayrollPage() {
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
                 <span className="text-[11px] text-slate-500 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
                 <p className="text-lg font-bold text-slate-900 mt-1 font-mono">
-                  ฿{taxSsoSummary.totalGrossIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿{(taxSsoSummary.totalGrossIncome ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
               <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40">
                 <span className="text-[11px] text-blue-700 font-semibold">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
                 <p className="text-lg font-bold text-blue-900 mt-1 font-mono">
-                  ฿{taxSsoSummary.totalWithholdingTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿{(taxSsoSummary.totalWithholdingTax ?? taxSsoSummary.totalPnd1Tax ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
               <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
                 <span className="text-[11px] text-purple-700 font-semibold">ประกันสังคม (ฝ่ายลูกจ้าง 5%)</span>
                 <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
-                  ฿{taxSsoSummary.totalSsoEmployee.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿{(taxSsoSummary.totalSsoEmployee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
               <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
-                <span className="text-[11px] text-purple-700 font-semibold">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
+                <span className="text-[11px] text-purple-700 font-semibold font-mono">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
                 <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
-                  ฿{taxSsoSummary.totalSsoCombined.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿{(taxSsoSummary.totalSsoCombined ?? ((taxSsoSummary.totalSsoEmployee ?? 0) + (taxSsoSummary.totalSsoEmployer ?? 0))).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
