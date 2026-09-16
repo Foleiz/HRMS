@@ -801,6 +801,14 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
             .ToListAsync(cancellationToken);
 
+        var approvedOvertimes = await _context.OvertimeRequests
+            .AsNoTracking()
+            .Where(o => empIds.Contains(o.EmployeeId) && o.Status == "APPROVED" && o.WorkDate >= startDate && o.WorkDate <= endDate)
+            .ToListAsync(cancellationToken);
+        var otMap = approvedOvertimes
+            .GroupBy(o => o.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(o => o.OvertimeHours));
+
         DateTime? lastProcessedAt = summaries.Count > 0 ? summaries.Max(s => s.GeneratedAt) : null;
 
         var empDtos = new List<MonthlyEmployeeAttendanceDto>();
@@ -843,7 +851,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                 earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
                 leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
                 absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
-                otHours = empRecords.Where(r => r.WorkedMinutes > 480).Sum(r => (decimal)Math.Round((r.WorkedMinutes - 480) / 60.0, 2));
+                otMap.TryGetValue(emp.Id, out otHours);
             }
 
             double rate = totalWorkDays > 0 ? Math.Min(100.0, Math.Round((double)(actualWorkDays + (int)leaveDays) / totalWorkDays * 100.0, 1)) : 0;
@@ -902,6 +910,14 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
             .ToListAsync(cancellationToken);
 
+        var approvedOvertimes = await _context.OvertimeRequests
+            .AsNoTracking()
+            .Where(o => empIds.Contains(o.EmployeeId) && o.Status == "APPROVED" && o.WorkDate >= startDate && o.WorkDate <= endDate)
+            .ToListAsync(cancellationToken);
+        var otMap = approvedOvertimes
+            .GroupBy(o => o.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(o => o.OvertimeHours));
+
         var existingSummaries = await _context.AttendanceMonthlySummaries
             .Where(s => s.Year == year && s.Month == month && empIds.Contains(s.EmployeeId))
             .ToListAsync(cancellationToken);
@@ -923,7 +939,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             var earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
             var leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
             var absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
-            var otHours = empRecords.Where(r => r.WorkedMinutes > 480).Sum(r => (decimal)Math.Round((r.WorkedMinutes - 480) / 60.0, 2));
+            otMap.TryGetValue(emp.Id, out var otHours);
 
             if (summaryMap.TryGetValue(emp.Id, out var existing))
             {

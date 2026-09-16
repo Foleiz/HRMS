@@ -91,8 +91,9 @@ public interface IHrmsDbContext
     DbSet<ApprovalStep> ApprovalSteps { get; }
     DbSet<ApprovalDelegation> ApprovalDelegations { get; }
 
-    // Monthly Attendance Summary (Dev 1)
+    // Monthly Attendance Summary & Overtime (Dev 1)
     DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries { get; }
+    DbSet<OvertimeRequest> OvertimeRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

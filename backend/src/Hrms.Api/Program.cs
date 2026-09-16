@@ -63,6 +63,7 @@ builder.Services.AddScoped<IAttendanceDailyService, AttendanceDailyService>();
 builder.Services.AddScoped<IAttendanceImportService, AttendanceImportService>();
 builder.Services.AddScoped<IEmploymentContractService, EmploymentContractService>();
 builder.Services.AddScoped<IAttendanceAdjustmentService, AttendanceAdjustmentService>();
+builder.Services.AddScoped<IOvertimeService, OvertimeService>();
 builder.Services.AddScoped<IOperationalReportService, OperationalReportService>();
 builder.Services.AddScoped<IEmployeeTypeService, EmployeeTypeService>();
 builder.Services.AddScoped<IBenefitService, BenefitService>();

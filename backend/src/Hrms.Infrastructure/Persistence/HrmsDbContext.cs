@@ -102,8 +102,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
     public DbSet<ApprovalDelegation> ApprovalDelegations => Set<ApprovalDelegation>();
 
-    // Monthly Attendance Summary (Dev 1)
+    // Monthly Attendance Summary & Overtime (Dev 1)
     public DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries => Set<AttendanceMonthlySummary>();
+    public DbSet<OvertimeRequest> OvertimeRequests => Set<OvertimeRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1485,6 +1486,40 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => new { e.EmployeeId, e.Year, e.Month }).IsUnique();
+        });
+
+        // Configuration: OvertimeRequest
+        modelBuilder.Entity<OvertimeRequest>(entity =>
+        {
+            entity.ToTable("overtime_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.WorkDate).HasColumnName("work_date").IsRequired();
+            entity.Property(e => e.StartTime).HasColumnName("start_time").IsRequired();
+            entity.Property(e => e.EndTime).HasColumnName("end_time").IsRequired();
+            entity.Property(e => e.OvertimeHours).HasColumnName("overtime_hours").HasPrecision(4, 2);
+            entity.Property(e => e.Reason).HasColumnName("reason").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30);
+            entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.RejectReason).HasColumnName("reject_reason");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Approver)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.RequestNo).IsUnique();
+            entity.HasIndex(e => new { e.EmployeeId, e.WorkDate });
         });
     }
 }
