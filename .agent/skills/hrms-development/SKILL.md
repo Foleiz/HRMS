@@ -13,24 +13,25 @@ This skill defines the technical standards, architectural patterns, workflow rul
 
 ---
 
-## 📜 10 Strict Development Rules (กติกาเหล็ก 10 ข้อ)
+## 📜 11 Strict Development Rules (กติกาเหล็ก 11 ข้อ)
 
-All AI agents and developers working on this codebase must strictly observe these 10 rules:
+All AI agents and developers working on this codebase must strictly observe these 11 rules:
 
 1. **ห้ามเขียนโค้ดทันที (Never Code Immediately):** Do not generate or modify production code without prior requirement and schema analysis.
 2. **วิเคราะห์ Schema & ขอบเขตก่อนเสมอ (Analyze DDL & Scope First):** Review the PostgreSQL schema, constraints, triggers, and business scope, summarizing understanding before taking action.
 3. **วางแผนไฟล์ โมดูล และลำดับก่อนเริ่ม (Plan Files & Execution Order):** Decompose the system into small, digestible vertical-slice features. Identify all files to be created/modified and their exact roles.
 4. **รอการอนุมัติก่อนลงมือ (Awaiting Explicit Approval):** The developer/user must approve the plan before execution begins for any feature.
 5. **แจ้งล่วงหน้าก่อนแก้ไฟล์ (Announce Files in Advance):** Explicitly list the exact files to be created or modified before touching the filesystem.
-6. **สรุปสิ่งที่ทำเสมือน Commit Message (Summarize Like a Commit):** After finishing a feature/round, summarize all changes with precision (Added, Modified, Fixed).
-7. **ห้ามแก้ไฟล์นอกเหนือ Scope (No Unrelated File Edits):** Strictly preserve existing code outside the active feature. Do not delete or modify unrelated modules.
-8. **เขียนโค้ดอ่านง่าย มีคอมเมนต์ (Clean Code for Beginners & Seniors):** Write maintainable, self-documenting code with meaningful Thai/English comments explaining the "why", not just the "what".
-9. **ความปลอดภัยและ Best Practices ของ HRMS (Security & HRMS Standards):**
+6. **สร้าง Branch ใหม่ก่อนทำเสมอ แล้วค่อย Merge เข้า Master (Feature Branch First):** ห้ามพัฒนาฟีเจอร์หรือแก้โค้ดลงบน `master` โดยตรงเด็ดขาด เมื่อเริ่มงานใหม่ให้สร้าง branch ใหม่เสมอ (เช่น `feat/<feature-name>` หรือ `fix/<issue-name>`) พัฒนาและทดสอบจนผ่านสมบูรณ์บน branch นั้น แล้วจึงสลับกลับมา merge เข้าสู่ `master` และทดสอบ build ซ้ำก่อน push ขึ้นรีโมต
+7. **สรุปสิ่งที่ทำเสมือน Commit Message (Summarize Like a Commit):** After finishing a feature/round, summarize all changes with precision (Added, Modified, Fixed).
+8. **ห้ามแก้ไฟล์นอกเหนือ Scope (No Unrelated File Edits):** Strictly preserve existing code outside the active feature. Do not delete or modify unrelated modules.
+9. **เขียนโค้ดอ่านง่าย มีคอมเมนต์ (Clean Code for Beginners & Seniors):** Write maintainable, self-documenting code with meaningful Thai/English comments explaining the "why", not just the "what".
+10. **ความปลอดภัยและ Best Practices ของ HRMS (Security & HRMS Standards):**
    - **PDPA / Privacy:** Encrypt sensitive fields (`citizen_id`, `social_security_no`) with AES-256 into `bytea` columns; expose `_masked` versions in standard APIs.
    - **Data Scoping:** Enforce `role_data_scope` filters (`SELF`, `TEAM`, `DEPARTMENT`, `DIVISION`, `ORGANIZATION`).
    - **Financial Privacy:** Salary and payroll records must never leak across unauthorized roles.
    - **Audit Trail:** Log all critical create/update/delete/export operations into `hrms.audit_log`.
-10. **อธิบายการทำงานหลังทำเสร็จ (Post-Feature Explanation):** Detail the responsibilities of each file, the end-to-end data flow, and any security/sensitive considerations.
+11. **อธิบายการทำงานหลังทำเสร็จ (Post-Feature Explanation):** Detail the responsibilities of each file, the end-to-end data flow, and any security/sensitive considerations.
 
 ---
 
