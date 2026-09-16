@@ -86,3 +86,36 @@ export interface MyAttendanceMonthlySummary {
   offCount: number;
 }
 
+export interface MonthlyEmployeeAttendance {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName?: string;
+  positionName?: string;
+  totalWorkDays: number;
+  actualWorkDays: number;
+  lateDays: number;
+  lateMinutes: number;
+  earlyLeaveDays: number;
+  earlyLeaveMinutes: number;
+  leaveDays: number;
+  absentDays: number;
+  overtimeHours: number;
+  attendanceRate: number;
+  hasProcessedSummary: boolean;
+}
+
+export interface MonthlyAttendanceOverview {
+  year: number;
+  month: number;
+  totalEmployees: number;
+  totalPlannedDays: number;
+  totalActualDays: number;
+  totalLateMinutes: number;
+  totalLeaveDays: number;
+  totalAbsentDays: number;
+  averageAttendanceRate: number;
+  lastProcessedAt?: string;
+  employees: MonthlyEmployeeAttendance[];
+}
+

@@ -604,8 +604,17 @@ public class AttendanceImportService : IAttendanceImportService
                 if (!hasWorked && workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
                     hasWorked = true;
 
-                dailyRecord.IsAbsent = !hasWorked;
-                dailyRecord.Status = hasWorked ? "PRESENT" : "ABSENT";
+                if (dailyRecord.Status == "LEAVE" && !hasWorked)
+                {
+                    // พนักงานมีคำขอลาที่ได้รับอนุมัติแล้วในระบบ และไม่มีบันทึกเวลาทำงาน
+                    // ให้คงสถานะวันลาไว้เสมอ ไม่เขียนทับเป็น ABSENT (ขาดงาน)
+                    dailyRecord.IsAbsent = false;
+                }
+                else
+                {
+                    dailyRecord.IsAbsent = !hasWorked;
+                    dailyRecord.Status = hasWorked ? "PRESENT" : "ABSENT";
+                }
 
                 // ActualIn/ActualOut: ปกติ Daily Summary ไม่มีข้อมูลเวลาสแกนจริง (คงเป็น null)
                 // ยกเว้นบางแถวที่มีคอลัมน์ "เข้า-ออก" เป็นช่วงเวลาจริง เช่น "09:53-18:13"

@@ -8,6 +8,8 @@ import {
   UpdateAttendanceRequest,
   DailyAttendanceFilterQuery,
   PagedAttendanceResult,
+  MonthlyAttendanceOverview,
+  MonthlyEmployeeAttendance,
 } from '@/types/attendance';
 
 export const attendanceService = {
@@ -76,5 +78,46 @@ export const attendanceService = {
     const params = date ? { date } : {};
     const res = await apiClient.post<ApiResponse<number>>('/attendance/daily/recalculate', {}, { params });
     return res.data.data ?? 0;
+  },
+
+  /**
+   * ดึงข้อมูลสรุปเวลาทำงานประจำเดือน (Monthly Summary)
+   */
+  async getMonthlyAttendanceSummary(year?: number, month?: number, departmentId?: number): Promise<MonthlyAttendanceOverview> {
+    const params: Record<string, number> = {};
+    if (year) params.year = year;
+    if (month) params.month = month;
+    if (departmentId && departmentId > 0) params.departmentId = departmentId;
+
+    const res = await apiClient.get<ApiResponse<MonthlyAttendanceOverview>>('/attendance/daily/monthly-summary', { params });
+    return res.data.data!;
+  },
+
+  /**
+   * ประมวลผลและล็อกข้อมูลสรุปเวลาทำงานประจำเดือน
+   */
+  async processMonthlyAttendanceSummary(year?: number, month?: number): Promise<MonthlyAttendanceOverview> {
+    const params: Record<string, number> = {};
+    if (year) params.year = year;
+    if (month) params.month = month;
+
+    const res = await apiClient.post<ApiResponse<MonthlyAttendanceOverview>>('/attendance/daily/monthly-summary/process', {}, { params });
+    return res.data.data!;
+  },
+
+  /**
+   * ส่งออกไฟล์ CSV สรุปเวลาทำงานประจำเดือน (UTF-8 with BOM)
+   */
+  async exportMonthlyAttendanceCsv(year?: number, month?: number, departmentId?: number): Promise<Blob> {
+    const params: Record<string, number> = {};
+    if (year) params.year = year;
+    if (month) params.month = month;
+    if (departmentId && departmentId > 0) params.departmentId = departmentId;
+
+    const res = await apiClient.get('/attendance/daily/monthly-summary/export', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data;
   },
 };

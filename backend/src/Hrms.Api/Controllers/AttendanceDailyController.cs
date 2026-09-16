@@ -223,6 +223,60 @@ public class AttendanceDailyController : ControllerBase
         return Ok(ApiResponse<AttendanceDailyDto>.Ok(result, "บันทึกเวลาออกงานเรียบร้อยแล้ว"));
     }
 
+    /// <summary>
+    /// ดึงรายงานสรุปเวลาทำงานรายเดือนของพนักงานทั้งหมด (Monthly Attendance Summary)
+    /// </summary>
+    [HttpGet("monthly-summary")]
+    public async Task<IActionResult> GetMonthlyAttendanceSummary(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, AttendanceDailyService.ThaiZone);
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var result = await _service.GetMonthlyAttendanceSummaryAsync(targetYear, targetMonth, departmentId, cancellationToken);
+        return Ok(ApiResponse<MonthlyAttendanceOverviewDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// ประมวลผลและบันทึกสรุปยอดเวลาทำงานรายเดือน (Process & Lock Monthly Summary for Payroll)
+    /// </summary>
+    [HttpPost("monthly-summary/process")]
+    public async Task<IActionResult> ProcessMonthlyAttendanceSummary(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, AttendanceDailyService.ThaiZone);
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var result = await _service.ProcessMonthlyAttendanceSummaryAsync(targetYear, targetMonth, cancellationToken);
+        return Ok(ApiResponse<MonthlyAttendanceOverviewDto>.Ok(result, "ประมวลผลสรุปสถิติเวลาทำงานรายเดือนสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานสรุปเวลาทำงานรายเดือนเป็นไฟล์ CSV (UTF-8 with BOM)
+    /// </summary>
+    [HttpGet("monthly-summary/export")]
+    public async Task<IActionResult> ExportMonthlyAttendanceCsv(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, AttendanceDailyService.ThaiZone);
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var csvBytes = await _service.ExportMonthlyAttendanceCsvAsync(targetYear, targetMonth, departmentId, cancellationToken);
+        var fileName = $"monthly_attendance_summary_{targetYear}_{targetMonth:D2}.csv";
+        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+    }
+
     // ─── Helper: ดึง EmployeeId จาก JWT Claims ─────────────────
     private long GetCurrentEmployeeId()
     {

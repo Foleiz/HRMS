@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Hrms.Application.Common.Interfaces;
@@ -762,5 +763,225 @@ public class AttendanceDailyService : IAttendanceDailyService
         };
 
         return summary;
+    }
+
+    public async Task<MonthlyAttendanceOverviewDto> GetMonthlyAttendanceSummaryAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default)
+    {
+        var startDate = new DateOnly(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var employeesQuery = _context.Employees
+            .AsNoTracking();
+
+        if (departmentId.HasValue && departmentId.Value > 0)
+        {
+            employeesQuery = employeesQuery.Where(e => _context.EmployeeAssignments
+                .Any(ea => ea.EmployeeId == e.Id && ea.IsCurrent && ea.DepartmentId == departmentId.Value));
+        }
+
+        var employees = await employeesQuery.OrderBy(e => e.EmployeeCode).ToListAsync(cancellationToken);
+        var empIds = employees.Select(e => e.Id).ToList();
+
+        var assignments = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(ea => ea.Department)
+            .Include(ea => ea.Position)
+            .Where(ea => empIds.Contains(ea.EmployeeId) && ea.IsCurrent)
+            .ToListAsync(cancellationToken);
+        var assignMap = assignments.GroupBy(ea => ea.EmployeeId).ToDictionary(g => g.Key, g => g.First());
+
+        var summaries = await _context.AttendanceMonthlySummaries
+            .AsNoTracking()
+            .Where(s => s.Year == year && s.Month == month && empIds.Contains(s.EmployeeId))
+            .ToListAsync(cancellationToken);
+        var summaryMap = summaries.ToDictionary(s => s.EmployeeId);
+
+        var dailies = await _context.AttendanceDailies
+            .AsNoTracking()
+            .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
+            .ToListAsync(cancellationToken);
+
+        DateTime? lastProcessedAt = summaries.Count > 0 ? summaries.Max(s => s.GeneratedAt) : null;
+
+        var empDtos = new List<MonthlyEmployeeAttendanceDto>();
+
+        foreach (var emp in employees)
+        {
+            assignMap.TryGetValue(emp.Id, out var assign);
+            bool hasSummary = summaryMap.TryGetValue(emp.Id, out var summary);
+
+            int totalWorkDays;
+            int actualWorkDays;
+            int lateDays;
+            int lateMinutes;
+            int earlyLeaveDays;
+            int earlyLeaveMinutes;
+            decimal leaveDays;
+            int absentDays;
+            decimal otHours;
+
+            if (hasSummary && summary != null)
+            {
+                totalWorkDays = summary.TotalWorkDays;
+                actualWorkDays = summary.TotalActualWorkDays;
+                lateDays = summary.TotalLateDays;
+                lateMinutes = summary.TotalLateMinutes;
+                earlyLeaveDays = summary.TotalEarlyLeaveDays;
+                earlyLeaveMinutes = summary.TotalEarlyLeaveMinutes;
+                leaveDays = summary.TotalLeaveDays;
+                absentDays = summary.TotalAbsentDays;
+                otHours = summary.TotalOvertimeHours;
+            }
+            else
+            {
+                var empRecords = dailies.Where(d => d.EmployeeId == emp.Id).ToList();
+                totalWorkDays = empRecords.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY");
+                actualWorkDays = empRecords.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT" && r.Status != "LEAVE"));
+                lateDays = empRecords.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
+                lateMinutes = empRecords.Sum(r => r.LateMinutes);
+                earlyLeaveDays = empRecords.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
+                earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
+                leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
+                absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
+                otHours = empRecords.Where(r => r.WorkedMinutes > 480).Sum(r => (decimal)Math.Round((r.WorkedMinutes - 480) / 60.0, 2));
+            }
+
+            double rate = totalWorkDays > 0 ? Math.Min(100.0, Math.Round((double)(actualWorkDays + (int)leaveDays) / totalWorkDays * 100.0, 1)) : 0;
+
+            empDtos.Add(new MonthlyEmployeeAttendanceDto
+            {
+                EmployeeId = emp.Id,
+                EmployeeCode = emp.EmployeeCode,
+                EmployeeName = $"{emp.FirstName} {emp.LastName}".Trim(),
+                DepartmentName = assign?.Department?.DepartmentName,
+                PositionName = assign?.Position?.PositionName,
+                TotalWorkDays = totalWorkDays,
+                ActualWorkDays = actualWorkDays,
+                LateDays = lateDays,
+                LateMinutes = lateMinutes,
+                EarlyLeaveDays = earlyLeaveDays,
+                EarlyLeaveMinutes = earlyLeaveMinutes,
+                LeaveDays = leaveDays,
+                AbsentDays = absentDays,
+                OvertimeHours = otHours,
+                AttendanceRate = rate,
+                HasProcessedSummary = hasSummary
+            });
+        }
+
+        var overview = new MonthlyAttendanceOverviewDto
+        {
+            Year = year,
+            Month = month,
+            TotalEmployees = empDtos.Count,
+            TotalPlannedDays = empDtos.Sum(e => e.TotalWorkDays),
+            TotalActualDays = empDtos.Sum(e => e.ActualWorkDays),
+            TotalLateMinutes = empDtos.Sum(e => e.LateMinutes),
+            TotalLeaveDays = empDtos.Sum(e => e.LeaveDays),
+            TotalAbsentDays = empDtos.Sum(e => e.AbsentDays),
+            AverageAttendanceRate = empDtos.Count > 0 ? Math.Round(empDtos.Average(e => e.AttendanceRate), 1) : 0,
+            LastProcessedAt = lastProcessedAt,
+            Employees = empDtos
+        };
+
+        return overview;
+    }
+
+    public async Task<MonthlyAttendanceOverviewDto> ProcessMonthlyAttendanceSummaryAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        var startDate = new DateOnly(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var employees = await _context.Employees
+            .OrderBy(e => e.EmployeeCode)
+            .ToListAsync(cancellationToken);
+
+        var empIds = employees.Select(e => e.Id).ToList();
+
+        var dailies = await _context.AttendanceDailies
+            .Where(a => empIds.Contains(a.EmployeeId) && a.WorkDate >= startDate && a.WorkDate <= endDate)
+            .ToListAsync(cancellationToken);
+
+        var existingSummaries = await _context.AttendanceMonthlySummaries
+            .Where(s => s.Year == year && s.Month == month && empIds.Contains(s.EmployeeId))
+            .ToListAsync(cancellationToken);
+
+        var summaryMap = existingSummaries.ToDictionary(s => s.EmployeeId);
+
+        var nowUtc = DateTime.UtcNow;
+
+        foreach (var emp in employees)
+        {
+            var empRecords = dailies.Where(d => d.EmployeeId == emp.Id).ToList();
+
+            var totalWorkDays = empRecords.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY");
+            var actualWorkDays = empRecords.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT" && r.Status != "LEAVE"));
+            var totalWorkedMinutes = empRecords.Sum(r => r.WorkedMinutes);
+            var lateDays = empRecords.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
+            var lateMinutes = empRecords.Sum(r => r.LateMinutes);
+            var earlyLeaveDays = empRecords.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
+            var earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
+            var leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
+            var absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
+            var otHours = empRecords.Where(r => r.WorkedMinutes > 480).Sum(r => (decimal)Math.Round((r.WorkedMinutes - 480) / 60.0, 2));
+
+            if (summaryMap.TryGetValue(emp.Id, out var existing))
+            {
+                existing.TotalWorkDays = totalWorkDays;
+                existing.TotalActualWorkDays = actualWorkDays;
+                existing.TotalWorkedMinutes = totalWorkedMinutes;
+                existing.TotalLateDays = lateDays;
+                existing.TotalLateMinutes = lateMinutes;
+                existing.TotalEarlyLeaveDays = earlyLeaveDays;
+                existing.TotalEarlyLeaveMinutes = earlyLeaveMinutes;
+                existing.TotalLeaveDays = leaveDays;
+                existing.TotalAbsentDays = absentDays;
+                existing.TotalOvertimeHours = otHours;
+                existing.GeneratedAt = nowUtc;
+            }
+            else
+            {
+                var newSummary = new AttendanceMonthlySummary
+                {
+                    EmployeeId = emp.Id,
+                    Year = year,
+                    Month = month,
+                    TotalWorkDays = totalWorkDays,
+                    TotalActualWorkDays = actualWorkDays,
+                    TotalWorkedMinutes = totalWorkedMinutes,
+                    TotalLateDays = lateDays,
+                    TotalLateMinutes = lateMinutes,
+                    TotalEarlyLeaveDays = earlyLeaveDays,
+                    TotalEarlyLeaveMinutes = earlyLeaveMinutes,
+                    TotalLeaveDays = leaveDays,
+                    TotalAbsentDays = absentDays,
+                    TotalOvertimeHours = otHours,
+                    GeneratedAt = nowUtc
+                };
+                _context.AttendanceMonthlySummaries.Add(newSummary);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetMonthlyAttendanceSummaryAsync(year, month, null, cancellationToken);
+    }
+
+    public async Task<byte[]> ExportMonthlyAttendanceCsvAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default)
+    {
+        var data = await GetMonthlyAttendanceSummaryAsync(year, month, departmentId, cancellationToken);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,วันทำงานตามแผน,วันทำงานจริง,สาย(ครั้ง),สาย(นาที),ออกก่อน(ครั้ง),ออกก่อน(นาที),ลางาน(วัน),ขาดงาน(วัน),OT(ชม.),อัตราการเข้างาน(%),สถานะ");
+
+        foreach (var emp in data.Employees)
+        {
+            var statusStr = emp.HasProcessedSummary ? "ประมวลผลแล้ว" : "รอดำเนินการ";
+            sb.AppendLine($"\"{emp.EmployeeCode}\",\"{emp.EmployeeName}\",\"{emp.DepartmentName ?? "-"}\",\"{emp.PositionName ?? "-"}\",{emp.TotalWorkDays},{emp.ActualWorkDays},{emp.LateDays},{emp.LateMinutes},{emp.EarlyLeaveDays},{emp.EarlyLeaveMinutes},{emp.LeaveDays},{emp.AbsentDays},{emp.OvertimeHours},{emp.AttendanceRate}%,{statusStr}");
+        }
+
+        var preamble = Encoding.UTF8.GetPreamble();
+        var contentBytes = Encoding.UTF8.GetBytes(sb.ToString());
+        return preamble.Concat(contentBytes).ToArray();
     }
 }

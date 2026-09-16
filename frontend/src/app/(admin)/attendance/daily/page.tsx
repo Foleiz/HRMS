@@ -36,6 +36,9 @@ import {
   ClipboardCheck,
   ThumbsUp,
   ThumbsDown,
+  BarChart3,
+  Download,
+  Zap,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
@@ -46,6 +49,8 @@ import {
   AttendanceDaily,
   DailyAttendanceSummary,
   UpdateAttendanceRequest,
+  MonthlyAttendanceOverview,
+  MonthlyEmployeeAttendance,
 } from '@/types/attendance';
 import {
   AttendanceAdjustment,
@@ -82,13 +87,13 @@ function DailyAttendanceContent() {
   const canViewImport = hasPermission('TIME_IMPORT_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
   const canViewAnyTime = canViewDaily || canViewImport;
 
-  // Active Tab: 'daily' | 'import' | 'adjustments'
-  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments') || (canViewDaily ? 'daily' : 'import');
-  const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments'>(
-    initialTab === 'import' || initialTab === 'adjustments' ? initialTab : (canViewDaily ? 'daily' : 'import')
+  // Active Tab: 'daily' | 'import' | 'adjustments' | 'monthly'
+  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments' | 'monthly') || (canViewDaily ? 'daily' : 'import');
+  const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments' | 'monthly'>(
+    initialTab === 'import' || initialTab === 'adjustments' || initialTab === 'monthly' ? initialTab : (canViewDaily ? 'daily' : 'import')
   );
 
-  const handleTabChange = (tab: 'daily' | 'import' | 'adjustments') => {
+  const handleTabChange = (tab: 'daily' | 'import' | 'adjustments' | 'monthly') => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
@@ -102,8 +107,8 @@ function DailyAttendanceContent() {
   // Sync state if URL searchParams change externally
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'import' || tabParam === 'daily' || tabParam === 'adjustments') {
-      setActiveTab(tabParam as 'daily' | 'import' | 'adjustments');
+    if (tabParam === 'import' || tabParam === 'daily' || tabParam === 'adjustments' || tabParam === 'monthly') {
+      setActiveTab(tabParam as 'daily' | 'import' | 'adjustments' | 'monthly');
     }
     const dateParam = searchParams.get('date');
     if (dateParam) {
@@ -230,6 +235,86 @@ function DailyAttendanceContent() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // -------------------------------------------------------------
+  // Monthly Attendance Summary State
+  // -------------------------------------------------------------
+  const [monthlyYear, setMonthlyYear] = useState<number>(() => new Date().getFullYear());
+  const [monthlyMonth, setMonthlyMonth] = useState<number>(() => new Date().getMonth() + 1);
+  const [monthlyDepartment, setMonthlyDepartment] = useState<number | 'ALL'>('ALL');
+  const [monthlySearch, setMonthlySearch] = useState<string>('');
+  const [monthlyData, setMonthlyData] = useState<MonthlyAttendanceOverview | null>(null);
+  const [monthlyLoading, setMonthlyLoading] = useState<boolean>(false);
+  const [monthlyProcessing, setMonthlyProcessing] = useState<boolean>(false);
+  const [monthlyExporting, setMonthlyExporting] = useState<boolean>(false);
+
+  // Fetch Monthly Attendance Summary Data
+  const loadMonthlySummary = useCallback(async () => {
+    try {
+      setMonthlyLoading(true);
+      const deptId = monthlyDepartment === 'ALL' ? undefined : Number(monthlyDepartment);
+      const data = await attendanceService.getMonthlyAttendanceSummary(monthlyYear, monthlyMonth, deptId);
+      setMonthlyData(data);
+    } catch (err: any) {
+      console.error('Failed to load monthly summary:', err);
+      toast.error('ไม่สามารถโหลดข้อมูลสรุปสถิติประจำเดือนได้', err?.response?.data?.message || err?.message);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  }, [monthlyYear, monthlyMonth, monthlyDepartment, toast]);
+
+  useEffect(() => {
+    if (activeTab === 'monthly') {
+      loadMonthlySummary();
+    }
+  }, [activeTab, loadMonthlySummary]);
+
+  const handleProcessMonthlySummary = async () => {
+    try {
+      setMonthlyProcessing(true);
+      const res = await attendanceService.processMonthlyAttendanceSummary(monthlyYear, monthlyMonth);
+      setMonthlyData(res);
+      toast.success('ประมวลผลสรุปยอดเวลาประจำเดือนสำเร็จ', `บันทึกข้อมูลสรุปสถิติเดือน ${THAI_MONTHS[monthlyMonth - 1]} เรียบร้อยแล้ว`);
+    } catch (err: any) {
+      console.error('Failed to process monthly summary:', err);
+      toast.error('เกิดข้อผิดพลาดในการประมวลผล', err?.response?.data?.message || err?.message);
+    } finally {
+      setMonthlyProcessing(false);
+    }
+  };
+
+  const handleExportMonthlyCsv = async () => {
+    try {
+      setMonthlyExporting(true);
+      const deptId = monthlyDepartment === 'ALL' ? undefined : Number(monthlyDepartment);
+      const blob = await attendanceService.exportMonthlyAttendanceCsv(monthlyYear, monthlyMonth, deptId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `monthly_attendance_summary_${monthlyYear}_${String(monthlyMonth).padStart(2, '0')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('ดาวน์โหลดไฟล์สำเร็จ', 'ระบบส่งออกไฟล์ CSV สรุปเวลาทำงานเรียบร้อยแล้ว');
+    } catch (err: any) {
+      console.error('Failed to export CSV:', err);
+      toast.error('ไม่สามารถดาวน์โหลดไฟล์ได้', err?.message);
+    } finally {
+      setMonthlyExporting(false);
+    }
+  };
+
+  const filteredMonthlyEmployees = (monthlyData?.employees || []).filter((emp) => {
+    if (!monthlySearch.trim()) return true;
+    const q = monthlySearch.trim().toLowerCase();
+    return (
+      emp.employeeCode.toLowerCase().includes(q) ||
+      emp.employeeName.toLowerCase().includes(q) ||
+      (emp.departmentName && emp.departmentName.toLowerCase().includes(q)) ||
+      (emp.positionName && emp.positionName.toLowerCase().includes(q))
+    );
+  });
 
   // Load Initial Reference Data
   useEffect(() => {
@@ -1068,6 +1153,21 @@ function DailyAttendanceContent() {
                   {pendingAdjustmentsCount}
                 </span>
               )}
+            </button>
+          )}
+
+          {/* Tab 4: สรุปสถิติประจำเดือน */}
+          {canViewDaily && (
+            <button
+              onClick={() => handleTabChange('monthly')}
+              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'monthly'
+                  ? 'border-[#0B2046] text-[#0B2046]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>สรุปสถิติประจำเดือน</span>
             </button>
           )}
         </div>
@@ -2133,6 +2233,381 @@ function DailyAttendanceContent() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 4: สรุปสถิติประจำเดือน (MONTHLY SUMMARY) */}
+      {/* ========================================================= */}
+      {activeTab === 'monthly' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Filter & Action Toolbar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Left: Month, Year, Department, Search */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Month Selector */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={monthlyMonth}
+                  onChange={(e) => setMonthlyMonth(Number(e.target.value))}
+                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold"
+                >
+                  {THAI_MONTHS.map((name, idx) => (
+                    <option key={idx + 1} value={idx + 1}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Year Selector */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+                <span>ปี</span>
+                <select
+                  value={monthlyYear}
+                  onChange={(e) => setMonthlyYear(Number(e.target.value))}
+                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold"
+                >
+                  {[2024, 2025, 2026, 2027].map((y) => (
+                    <option key={y} value={y}>
+                      {y + 543} ({y})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Department Filter */}
+              <select
+                value={monthlyDepartment}
+                onChange={(e) => {
+                  const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
+                  setMonthlyDepartment(val);
+                }}
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">ทุกแผนก</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.departmentName}
+                  </option>
+                ))}
+              </select>
+
+              {/* Search */}
+              <div className="relative w-48 sm:w-56">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                  value={monthlySearch}
+                  onChange={(e) => setMonthlySearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={loadMonthlySummary}
+                disabled={monthlyLoading}
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer"
+                title="รีเฟรชข้อมูล"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
+              </button>
+            </div>
+
+            {/* Right: Process & Export Action Buttons */}
+            <div className="flex items-center gap-2 self-end md:self-auto">
+              <button
+                type="button"
+                onClick={handleExportMonthlyCsv}
+                disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+              >
+                {monthlyExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                )}
+                <span>ดาวน์โหลด CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleProcessMonthlySummary}
+                disabled={monthlyProcessing || monthlyLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#0B2046] hover:bg-[#15336C] rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {monthlyProcessing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                    <span>กำลังประมวลผล...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    <span>ประมวลผลสรุปยอด</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Overview Metric Cards (6 Cards) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* Card 1: Total Employees */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">พนักงานทั้งหมด</span>
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-xl font-black text-slate-900">
+                {monthlyData ? monthlyData.totalEmployees.toLocaleString() : '-'}
+              </div>
+              <p className="text-3xs text-slate-400 mt-0.5">ในรอบเดือนนี้</p>
+            </div>
+
+            {/* Card 2: Total Planned Work Days */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานตามแผน</span>
+                <Calendar className="w-4 h-4 text-slate-600" />
+              </div>
+              <div className="text-xl font-black text-slate-800">
+                {monthlyData ? monthlyData.totalPlannedDays.toLocaleString() : '-'}
+              </div>
+              <p className="text-3xs text-slate-400 mt-0.5">รวมทุกพนักงาน</p>
+            </div>
+
+            {/* Card 3: Actual Work Days & Rate */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานจริง</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-xl font-black text-emerald-700 flex items-baseline gap-1.5">
+                <span>{monthlyData ? monthlyData.totalActualDays.toLocaleString() : '-'}</span>
+                {monthlyData && (
+                  <span className="text-xs font-bold text-emerald-600">
+                    ({monthlyData.averageAttendanceRate}%)
+                  </span>
+                )}
+              </div>
+              <p className="text-3xs text-slate-400 mt-0.5">อัตราเข้างานเฉลี่ย</p>
+            </div>
+
+            {/* Card 4: Late Minutes */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">มาสายสะสม</span>
+                <Clock className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="text-xl font-black text-amber-700">
+                {monthlyData ? monthlyData.totalLateMinutes.toLocaleString() : '-'}
+                <span className="text-xs font-semibold text-amber-600 ml-1">นาที</span>
+              </div>
+              <p className="text-3xs text-slate-400 mt-0.5">
+                {monthlyData ? `${monthlyData.employees.reduce((acc, e) => acc + e.lateDays, 0)} ครั้ง` : '-'}
+              </p>
+            </div>
+
+            {/* Card 5: Leave Days */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">ลางานสะสม</span>
+                <FileText className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-xl font-black text-blue-700">
+                {monthlyData ? Number(monthlyData.totalLeaveDays).toFixed(1) : '-'}
+                <span className="text-xs font-semibold text-blue-600 ml-1">วัน</span>
+              </div>
+              <p className="text-3xs text-emerald-600 font-medium mt-0.5">อนุมัติแล้ว</p>
+            </div>
+
+            {/* Card 6: Absent Days */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+                <span className="text-2xs font-bold uppercase tracking-wider">ขาดงานสะสม</span>
+                <XCircle className="w-4 h-4 text-rose-600" />
+              </div>
+              <div className="text-xl font-black text-rose-700">
+                {monthlyData ? monthlyData.totalAbsentDays.toLocaleString() : '-'}
+                <span className="text-xs font-semibold text-rose-600 ml-1">วัน</span>
+              </div>
+              <p className="text-3xs text-slate-400 mt-0.5">ไม่รวมวันลาอนุมัติ</p>
+            </div>
+          </div>
+
+          {/* Table of Employees */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            {/* Table Header / Subtitle */}
+            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-[#0B2046]" />
+                  <span>สรุปเวลาทำงานประจำเดือน {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}</span>
+                </h3>
+                <p className="text-2xs text-slate-500 mt-0.5">
+                  {monthlyData?.lastProcessedAt ? (
+                    <span className="text-emerald-700 font-semibold">
+                      ✓ ประมวลผลล่าสุดเมื่อ {new Date(monthlyData.lastProcessedAt).toLocaleString('th-TH')}
+                    </span>
+                  ) : (
+                    <span className="text-amber-700 font-semibold">
+                      * แสดงผลพรีวิวสดจากบันทึกเวลา (คลิก &quot;ประมวลผลสรุปยอด&quot; เพื่อบันทึกส่งให้ฝ่าย Payroll)
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="text-xs font-semibold text-slate-600">
+                จำนวนพนักงาน: <span className="font-bold text-[#0B2046]">{filteredMonthlyEmployees.length}</span> คน
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider">
+                    <th className="py-3 px-3.5">รหัสพนักงาน</th>
+                    <th className="py-3 px-3.5">ชื่อ-นามสกุล</th>
+                    <th className="py-3 px-3.5">แผนก / ตำแหน่ง</th>
+                    <th className="py-3 px-2 text-center">แผน (วัน)</th>
+                    <th className="py-3 px-2 text-center">จริง (วัน)</th>
+                    <th className="py-3 px-2 text-center">สาย (ครั้ง/นาที)</th>
+                    <th className="py-3 px-2 text-center">ออกก่อน</th>
+                    <th className="py-3 px-2 text-center">ลางาน (วัน)</th>
+                    <th className="py-3 px-2 text-center">ขาดงาน (วัน)</th>
+                    <th className="py-3 px-2 text-center">OT (ชม.)</th>
+                    <th className="py-3 px-3 text-center">อัตราเข้างาน</th>
+                    <th className="py-3 px-3 text-center">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {monthlyLoading ? (
+                    <tr>
+                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+                          <span className="text-xs">กำลังคำนวณและดึงข้อมูลสรุปประจำเดือน...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredMonthlyEmployees.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Users className="w-8 h-8 text-slate-300" />
+                          <span className="text-xs font-semibold text-slate-600">ไม่พบข้อมูลสรุปเวลาทำงานของพนักงาน</span>
+                          <span className="text-2xs text-slate-400">ลองเปลี่ยนเงื่อนไขการค้นหา หรือเลือกเดือน/ปีอื่น</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredMonthlyEmployees.map((emp) => (
+                      <tr key={emp.employeeId} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          {emp.employeeCode}
+                        </td>
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <div className="font-semibold text-slate-800">{emp.employeeName}</div>
+                        </td>
+                        <td className="py-3 px-3.5 whitespace-nowrap text-2xs text-slate-500">
+                          <div>{emp.departmentName || '-'}</div>
+                          <div className="text-slate-400">{emp.positionName || '-'}</div>
+                        </td>
+                        <td className="py-3 px-2 text-center font-bold text-slate-700">
+                          {emp.totalWorkDays}
+                        </td>
+                        <td className="py-3 px-2 text-center font-bold text-emerald-700">
+                          {emp.actualWorkDays}
+                        </td>
+                        <td className="py-3 px-2 text-center whitespace-nowrap">
+                          {emp.lateDays > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-semibold text-2xs border border-amber-200">
+                              {emp.lateDays} ครั้ง ({emp.lateMinutes}น.)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-center whitespace-nowrap">
+                          {emp.earlyLeaveDays > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-semibold text-2xs border border-orange-200">
+                              {emp.earlyLeaveDays} ครั้ง ({emp.earlyLeaveMinutes}น.)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          {emp.leaveDays > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-2xs border border-blue-200">
+                              {Number(emp.leaveDays).toFixed(1)} วัน
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">0</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          {emp.absentDays > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-black text-2xs border border-rose-200">
+                              {emp.absentDays} วัน
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">0</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-center text-slate-600 font-semibold">
+                          {emp.overtimeHours > 0 ? `${Number(emp.overtimeHours).toFixed(1)}` : '-'}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span
+                              className={`text-2xs font-bold ${
+                                emp.attendanceRate >= 90
+                                  ? 'text-emerald-700'
+                                  : emp.attendanceRate >= 75
+                                  ? 'text-amber-700'
+                                  : 'text-rose-700'
+                              }`}
+                            >
+                              {emp.attendanceRate}%
+                            </span>
+                            <div className="w-14 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  emp.attendanceRate >= 90
+                                    ? 'bg-emerald-500'
+                                    : emp.attendanceRate >= 75
+                                    ? 'bg-amber-500'
+                                    : 'bg-rose-500'
+                                }`}
+                                style={{ width: `${Math.min(100, emp.attendanceRate)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {emp.hasProcessedSummary ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>ประมวลผลแล้ว</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                              <span>รอดำเนินการ</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

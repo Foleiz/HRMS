@@ -123,3 +123,44 @@ public class MyAttendanceMonthlySummaryDto
     public int OffCount { get; set; }
 }
 
+/// <summary>
+/// DTO ข้อมูลสรุปเวลาทำงานรายเดือนของพนักงานรายบุคคล
+/// </summary>
+public class MonthlyEmployeeAttendanceDto
+{
+    public long EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? DepartmentName { get; set; }
+    public string? PositionName { get; set; }
+    public int TotalWorkDays { get; set; }
+    public int ActualWorkDays { get; set; }
+    public int LateDays { get; set; }
+    public int LateMinutes { get; set; }
+    public int EarlyLeaveDays { get; set; }
+    public int EarlyLeaveMinutes { get; set; }
+    public decimal LeaveDays { get; set; }
+    public int AbsentDays { get; set; }
+    public decimal OvertimeHours { get; set; }
+    public double AttendanceRate { get; set; }
+    public bool HasProcessedSummary { get; set; }
+}
+
+/// <summary>
+/// DTO ภาพรวมสถิติประจำเดือนทั้งองค์กร
+/// </summary>
+public class MonthlyAttendanceOverviewDto
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public int TotalEmployees { get; set; }
+    public int TotalPlannedDays { get; set; }
+    public int TotalActualDays { get; set; }
+    public int TotalLateMinutes { get; set; }
+    public decimal TotalLeaveDays { get; set; }
+    public int TotalAbsentDays { get; set; }
+    public double AverageAttendanceRate { get; set; }
+    public DateTime? LastProcessedAt { get; set; }
+    public List<MonthlyEmployeeAttendanceDto> Employees { get; set; } = new();
+}
+

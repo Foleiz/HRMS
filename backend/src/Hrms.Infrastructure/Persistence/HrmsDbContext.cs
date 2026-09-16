@@ -102,6 +102,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
     public DbSet<ApprovalDelegation> ApprovalDelegations => Set<ApprovalDelegation>();
 
+    // Monthly Attendance Summary (Dev 1)
+    public DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries => Set<AttendanceMonthlySummary>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1453,6 +1456,35 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.PayrollItemId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuration: AttendanceMonthlySummary
+        modelBuilder.Entity<AttendanceMonthlySummary>(entity =>
+        {
+            entity.ToTable("attendance_monthly_summary", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.Property(e => e.Month).HasColumnName("month").IsRequired();
+            entity.Property(e => e.TotalWorkDays).HasColumnName("total_work_days");
+            entity.Property(e => e.TotalActualWorkDays).HasColumnName("total_actual_work_days");
+            entity.Property(e => e.TotalWorkedMinutes).HasColumnName("total_worked_minutes");
+            entity.Property(e => e.TotalLateDays).HasColumnName("total_late_days");
+            entity.Property(e => e.TotalLateMinutes).HasColumnName("total_late_minutes");
+            entity.Property(e => e.TotalEarlyLeaveDays).HasColumnName("total_early_leave_days");
+            entity.Property(e => e.TotalEarlyLeaveMinutes).HasColumnName("total_early_leave_minutes");
+            entity.Property(e => e.TotalAbsentDays).HasColumnName("total_absent_days");
+            entity.Property(e => e.TotalLeaveDays).HasColumnName("total_leave_days").HasPrecision(5, 2);
+            entity.Property(e => e.TotalOvertimeHours).HasColumnName("total_overtime_hours").HasPrecision(6, 2);
+            entity.Property(e => e.GeneratedAt).HasColumnName("generated_at");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.EmployeeId, e.Year, e.Month }).IsUnique();
         });
     }
 }
