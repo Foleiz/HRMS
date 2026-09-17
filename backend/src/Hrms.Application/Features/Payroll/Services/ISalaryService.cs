@@ -68,4 +68,16 @@ public interface ISalaryService
 
     /// <summary>CEO Confirm ธนาคารโอนเงินเสร็จแล้ว (BANK_BATCH) → Status: PAID</summary>
     Task<PayrollPeriodDto> ConfirmBankTransferAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>HR ส่งเรื่องให้ฝ่ายการเงิน/บัญชี ตรวจสอบ</summary>
+    Task<PayrollPeriodDto> SubmitToFinanceAsync(long periodId, CancellationToken cancellationToken = default);
+
+    /// <summary>ฝ่ายการเงิน/บัญชี ตรวจสอบตัวเลขเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ</summary>
+    Task<PayrollPeriodDto> VerifyByFinanceAsync(long periodId, long employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมจากธนาคาร และเปลี่ยนสถานะเป็น PAID</summary>
+    Task<PayrollPeriodDto> UploadBankReceiptAndMarkPaidAsync(long periodId, UploadBankReceiptRequest request, long employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>ดาวน์โหลดสลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน)</summary>
+    Task<SlipDownloadDto> GetBankReceiptAsync(long periodId, CancellationToken cancellationToken = default);
 }
