@@ -1215,7 +1215,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .HasColumnType("hrms.approval_document_type_enum")
                 .IsRequired();
             entity.Property(e => e.DepartmentId).HasColumnName("department_id");
-            entity.Property(e => e.LevelId).HasColumnName("level_id");
+            entity.Property(e => e.LevelId).HasColumnName("employee_level_id");
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
 
@@ -1236,7 +1236,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.ToTable("approval_step", "hrms");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.FlowId).HasColumnName("flow_id").IsRequired();
+            entity.Property(e => e.FlowId).HasColumnName("approval_flow_id").IsRequired();
             entity.Property(e => e.StepNo).HasColumnName("step_no").IsRequired();
             entity.Property(e => e.ApproverType).HasColumnName("approver_type").HasMaxLength(30).IsRequired();
             entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id");
