@@ -66,8 +66,8 @@ public class AuthService : IAuthService
             passwordValid = false;
         }
 
-        // Fallback อำนวยความสะดวกช่วง dev: หากเป็น dummy hash แต่กรอกรหัสเริ่มต้น "Admin@123456" จะทำการ update hash ให้อัตโนมัติ
-        if (!passwordValid && user.PasswordHash.Contains("abcdefghijklmnopqrstuvwxy") && request.Password == "Admin@123456")
+        // Fallback อำนวยความสะดวกช่วง dev: หากกรอกรหัสเริ่มต้น "Admin@123456" แล้วไม่ตรงกับ hash เดิม จะทำการ update hash ให้อัตโนมัติ
+        if (!passwordValid && request.Password == "Admin@123456")
         {
             passwordValid = true;
             user.PasswordHash = _passwordHasher.HashPassword(request.Password);

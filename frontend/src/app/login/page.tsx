@@ -16,7 +16,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername || !cleanPassword) {
       const msg = 'กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน';
       setError(msg);
       toast.warning(msg);
@@ -26,7 +29,7 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login({ username, password });
+      await login({ username: cleanUsername, password: cleanPassword });
       toast.success('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับเข้าสู่ระบบ HRMS');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง';
