@@ -73,7 +73,6 @@ export default function EmployeeEditPage() {
     { title: 'จัดการพนักงาน', href: '/employees', active: true },
     { title: 'ประเภทพนักงาน', href: '/employees/types' },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers' },
-    { title: 'แผนผังองค์กร', href: '/organization' },
     { title: 'สัญญาจ้าง', href: '/employees/contracts' },
   ];
 

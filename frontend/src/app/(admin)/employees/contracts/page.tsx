@@ -152,7 +152,6 @@ export default function ContractsPage() {
     { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
-    { title: 'แผนผังองค์กร', href: '/organization', show: canViewOrg },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true, show: canViewContracts },
   ].filter((t) => t.show);
 
