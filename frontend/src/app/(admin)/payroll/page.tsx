@@ -93,8 +93,7 @@ export default function PayrollPage() {
     user?.username?.toLowerCase().includes('ceo') ||
     user?.username?.toLowerCase().includes('approver') ||
     hasRole('CEO') ||
-    hasRole('ADMIN') ||
-    hasPermission('PAYROLL_CALC_APPROVE');
+    hasRole('ADMIN');
 
   const isFinance =
     user?.roles?.some((r: string) => 
@@ -106,16 +105,15 @@ export default function PayrollPage() {
     user?.username?.toLowerCase().includes('account') ||
     user?.roles?.includes('ADMIN') ||
     hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN') ||
-    isCEO;
+    hasRole('PAYROLL_ADMIN');
 
   const isHR =
     user?.roles?.some((r: string) => r.toLowerCase().includes('hr')) ||
     user?.username?.toLowerCase().includes('hr') ||
     hasRole('HR_MGR') ||
     hasRole('HR_ADMIN') ||
-    hasPermission('PAYROLL_CALC_VIEW') ||
-    isCEO;
+    user?.roles?.includes('ADMIN') ||
+    hasRole('ADMIN');
 
   const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
