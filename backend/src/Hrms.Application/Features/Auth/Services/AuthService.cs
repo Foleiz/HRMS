@@ -31,18 +31,12 @@ public class AuthService : IAuthService
             throw new ValidationException("กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน");
         }
 
-        // ค้นหาบัญชีผู้ใช้
+        var targetUsername = request.Username.Trim().ToLower();
+
+        // 1. ค้นหาบัญชีผู้ใช้
         var user = await _dbContext.UserAccounts
             .Include(u => u.Employee)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                    .ThenInclude(r => r.RolePermissions)
-                        .ThenInclude(rp => rp.Permission)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                    .ThenInclude(r => r.RoleDataScopes)
-                        .ThenInclude(rds => rds.Permission)
-            .FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.Trim().ToLower(), cancellationToken);
+            .FirstOrDefaultAsync(u => u.Username.ToLower() == targetUsername, cancellationToken);
 
         if (user == null)
         {
@@ -54,7 +48,7 @@ public class AuthService : IAuthService
             throw new BusinessRuleException($"บัญชีนี้อยู่ในสถานะ {user.Status} ไม่สามารถเข้าสู่ระบบได้");
         }
 
-        // ตรวจสอบรหัสผ่านด้วย BCrypt
+        // 2. ตรวจสอบรหัสผ่านด้วย BCrypt
         bool passwordValid = false;
         try
         {
@@ -62,7 +56,6 @@ public class AuthService : IAuthService
         }
         catch
         {
-            // ป้องกันข้อผิดพลาดกรณี hash เดิมใน db เป็น dummy string
             passwordValid = false;
         }
 
@@ -78,15 +71,14 @@ public class AuthService : IAuthService
             throw new ValidationException("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
         }
 
-        // อัปเดตเวลาเข้าสู่ระบบล่าสุด
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // รวบรวม Roles, Permissions และ Data Scopes
-        var userInfo = BuildUserInfoDto(user);
+        // 3. โหลดสิทธิ์และโปรไฟล์แบบแยกคิวรีที่รวดเร็ว
+        var userInfo = await BuildUserInfoDtoAsync(user.Id, cancellationToken);
 
-        // ออก JWT Token
+        // 4. ออก JWT Token
         var (token, expiresAt) = _tokenService.GenerateToken(userInfo);
 
         return new LoginResponseDto
@@ -99,24 +91,7 @@ public class AuthService : IAuthService
 
     public async Task<UserInfoDto> GetCurrentUserProfileAsync(long userId, CancellationToken cancellationToken = default)
     {
-        var user = await _dbContext.UserAccounts
-            .Include(u => u.Employee)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                    .ThenInclude(r => r.RolePermissions)
-                        .ThenInclude(rp => rp.Permission)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                    .ThenInclude(r => r.RoleDataScopes)
-                        .ThenInclude(rds => rds.Permission)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-
-        if (user == null)
-        {
-            throw new NotFoundException("UserAccount", userId);
-        }
-
-        return BuildUserInfoDto(user);
+        return await BuildUserInfoDtoAsync(userId, cancellationToken);
     }
 
     public async Task<SeedPasswordsResultDto> SeedDefaultPasswordsAsync(string defaultPassword, CancellationToken cancellationToken = default)
@@ -142,35 +117,43 @@ public class AuthService : IAuthService
         };
     }
 
-    private static UserInfoDto BuildUserInfoDto(Domain.Entities.UserAccount user)
+    private async Task<UserInfoDto> BuildUserInfoDtoAsync(long userId, CancellationToken cancellationToken = default)
     {
-        var roles = user.UserRoles
-            .Where(ur => ur.Role != null)
-            .Select(ur => ur.Role.RoleCode)
-            .Distinct()
-            .ToList();
+        var user = await _dbContext.UserAccounts
+            .Include(u => u.Employee)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new NotFoundException("UserAccount", userId);
 
-        var permissions = user.UserRoles
-            .Where(ur => ur.Role != null)
-            .SelectMany(ur => ur.Role.RolePermissions ?? Enumerable.Empty<Domain.Entities.RolePermission>())
-            .Where(rp => rp.Permission != null && !string.IsNullOrEmpty(rp.Permission.PermissionCode))
-            .Select(rp => rp.Permission.PermissionCode)
-            .Distinct()
-            .ToList();
+        var userRoleIds = await _dbContext.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .Select(ur => ur.RoleId)
+            .ToListAsync(cancellationToken);
 
-        var dataScopes = user.UserRoles
-            .Where(ur => ur.Role != null)
-            .SelectMany(ur => ur.Role.RoleDataScopes ?? Enumerable.Empty<Domain.Entities.RoleDataScope>())
-            .Where(rds => rds != null)
-            .Select(rds => new RoleScopeDto
+        var roles = await _dbContext.Roles
+            .Where(r => userRoleIds.Contains(r.Id))
+            .Select(r => r.RoleCode)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var permissions = await (
+            from rp in _dbContext.RolePermissions
+            join p in _dbContext.Permissions on rp.PermissionId equals p.Id
+            where userRoleIds.Contains(rp.RoleId)
+            select p.PermissionCode
+        ).Distinct().ToListAsync(cancellationToken);
+
+        var dataScopes = await (
+            from rds in _dbContext.RoleDataScopes
+            join r in _dbContext.Roles on rds.RoleId equals r.Id
+            join p in _dbContext.Permissions on rds.PermissionId equals p.Id
+            where userRoleIds.Contains(rds.RoleId)
+            select new RoleScopeDto
             {
-                RoleCode = rds.Role?.RoleCode ?? user.UserRoles.FirstOrDefault(ur => ur.RoleId == rds.RoleId)?.Role?.RoleCode ?? string.Empty,
-                PermissionCode = rds.Permission?.PermissionCode ?? string.Empty,
+                RoleCode = r.RoleCode,
+                PermissionCode = p.PermissionCode,
                 DataVisibilityScope = rds.DataVisibilityScope ?? "SELF"
-            })
-            .Where(s => !string.IsNullOrEmpty(s.PermissionCode))
-            .DistinctBy(s => new { s.RoleCode, s.PermissionCode })
-            .ToList();
+            }
+        ).Distinct().ToListAsync(cancellationToken);
 
         return new UserInfoDto
         {
