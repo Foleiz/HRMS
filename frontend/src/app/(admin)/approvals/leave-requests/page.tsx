@@ -20,41 +20,7 @@ import {
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
-
-// ─── เมนูย่อยภายใน "การอนุมัติ" (คำขอลา | ประวัติการอนุมัติ) ──────
-// รูปแบบเดียวกับเมนู บันทึกเวลาของฉัน
-const APPROVAL_TABS = [
-  { title: 'คำขอลา', href: '/approvals/leave-requests', icon: ClipboardList },
-  { title: 'ประวัติการอนุมัติ', href: '/approvals/history', icon: History },
-];
-
-function ApprovalTabs() {
-  const pathname = usePathname();
-  return (
-    <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
-      <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
-        {APPROVAL_TABS.map((tab) => {
-          const isTabActive = pathname.startsWith(tab.href);
-          const Icon = tab.icon;
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-                isTabActive
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.title}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 
 // ─── ฟังก์ชันช่วย ─────────────────────────────────────────────
 
@@ -243,8 +209,8 @@ export default function LeaveRequestsApprovalPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Sub-menu Tabs: คำขอลา | ประวัติการอนุมัติ */}
-      <ApprovalTabs />
+      {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร | สายการอนุมัติ */}
+      <ApprovalNavTabs currentSubTitle="เอกสารรอดำเนินการ" />
 
       {/* Stats Bar */}
       {leaveStats && (

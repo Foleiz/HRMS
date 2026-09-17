@@ -26,10 +26,9 @@ import { RoleModal } from '@/components/settings/RoleModal';
 import { AuditLogTab } from '@/components/settings/AuditLogTab';
 import { AuditLogDetailModal } from '@/components/settings/AuditLogDetailModal';
 import { ResetPasswordModal } from '@/components/settings/ResetPasswordModal';
-import { ApprovalFlowsTab } from '@/components/settings/ApprovalFlowsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
-type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
+type TabType = 'users' | 'roles' | 'audit-log';
 
 export default function SettingsPage() {
   const { success, error, info } = useToast();
@@ -49,13 +48,6 @@ export default function SettingsPage() {
     hasPermission('SETTINGS_AUDIT_VIEW') ||
     hasRole('ADMIN');
 
-  // "สายการอนุมัติ" — เนื้อหาข้างในตั้งค่าเฉพาะฝ่ายบุคคล ใช้สิทธิ์เดียวกับหน้าตั้งค่าทั่วไปไปก่อน
-  // (ยังไม่มี permission code เฉพาะทางในระบบ) เพิ่ม SETTINGS_APPROVAL_FLOWS_MANAGE ในอนาคตถ้าต้องแยกสิทธิ์
-  const canViewApprovalFlowsTab =
-    hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
-    hasPermission('SETTINGS_VIEW') ||
-    hasRole('ADMIN');
-
   const [activeTab, setActiveTab] = useState<TabType>('users');
 
   // Auto switch tab if current active tab is not permitted
@@ -63,21 +55,14 @@ export default function SettingsPage() {
     if (activeTab === 'users' && !canViewUsersTab) {
       if (canViewRolesTab) setActiveTab('roles');
       else if (canViewAuditLogTab) setActiveTab('audit-log');
-      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
     } else if (activeTab === 'roles' && !canViewRolesTab) {
       if (canViewUsersTab) setActiveTab('users');
       else if (canViewAuditLogTab) setActiveTab('audit-log');
-      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
     } else if (activeTab === 'audit-log' && !canViewAuditLogTab) {
       if (canViewUsersTab) setActiveTab('users');
       else if (canViewRolesTab) setActiveTab('roles');
-      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
-    } else if (activeTab === 'approval-flows' && !canViewApprovalFlowsTab) {
-      if (canViewUsersTab) setActiveTab('users');
-      else if (canViewRolesTab) setActiveTab('roles');
-      else if (canViewAuditLogTab) setActiveTab('audit-log');
     }
-  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, canViewApprovalFlowsTab]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab]);
 
   // === 1. Data States ===
   // Users
@@ -363,8 +348,6 @@ export default function SettingsPage() {
         return 'บทบาทและสิทธิ์';
       case 'audit-log':
         return 'บันทึกการใช้งานระบบ';
-      case 'approval-flows':
-        return 'สายการอนุมัติ';
     }
   };
 
@@ -428,24 +411,10 @@ export default function SettingsPage() {
             <span>บันทึกการใช้งานระบบ (Audit Log)</span>
           </button>
         )}
-
-        {/* Tab 4: สายการอนุมัติ (Approval Workflow Designer) */}
-        {canViewApprovalFlowsTab && (
-          <button
-            onClick={() => setActiveTab('approval-flows')}
-            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === 'approval-flows'
-                ? 'text-slate-900 border-b-2 border-[#0B2046]'
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>สายการอนุมัติ</span>
-          </button>
-        )}
       </div>
 
       {/* 3. Tab Content */}
-      {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab && !canViewApprovalFlowsTab ? (
+      {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 font-medium">
           ขออภัย คุณไม่มีสิทธิ์เข้าถึงเมนูการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน
         </div>
@@ -527,8 +496,6 @@ export default function SettingsPage() {
               isLoading={isAuditLogsLoading}
             />
           )}
-
-          {activeTab === 'approval-flows' && canViewApprovalFlowsTab && <ApprovalFlowsTab />}
         </>
       )}
 
