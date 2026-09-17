@@ -55,7 +55,7 @@ export default function ReportsPage() {
   useEffect(() => {
     setBreadcrumb({
       section: 'รายงาน',
-      page: activeTab === 'headcount' ? 'อัตรากำลังคนประจำวัน (Daily Headcount)' : 'รายงานการมาสายประจำเดือน (Monthly Lateness)',
+      page: activeTab === 'headcount' ? 'อัตรากำลังคนประจำวัน' : 'รายงานการมาสายประจำเดือน',
     });
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
@@ -222,7 +222,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              อัตรากำลังคนประจำวัน (Daily Headcount)
+              อัตรากำลังคนประจำวัน
             </button>
           )}
 
@@ -235,7 +235,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              รายงานการมาสายประจำเดือน (Monthly Lateness)
+              รายงานการมาสายประจำเดือน
             </button>
           )}
         </nav>

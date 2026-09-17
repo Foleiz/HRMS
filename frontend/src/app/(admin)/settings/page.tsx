@@ -99,7 +99,7 @@ export default function SettingsPage() {
         case 'roles':
           return 'บทบาทและสิทธิ์';
         case 'audit-log':
-          return 'บันทึกการใช้งานระบบ (Audit Log)';
+          return 'บันทึกการใช้งานระบบ';
         case 'approval-flows':
           return 'สายการอนุมัติ';
       }
@@ -430,7 +430,7 @@ export default function SettingsPage() {
             </button>
           )}
 
-          {/* Tab 3: บันทึกการใช้งานระบบ (Audit Log) */}
+          {/* Tab 3: บันทึกการใช้งานระบบ */}
           {canViewAuditLogTab && (
             <button
               onClick={() => setActiveTab('audit-log')}
@@ -440,7 +440,7 @@ export default function SettingsPage() {
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              บันทึกการใช้งานระบบ (Audit Log)
+              บันทึกการใช้งานระบบ
             </button>
           )}
 

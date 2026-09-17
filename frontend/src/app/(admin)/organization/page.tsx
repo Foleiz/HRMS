@@ -116,13 +116,13 @@ export default function OrganizationPage() {
   } | null>(null);
 
   const tabTitles: Record<TabType, string> = {
-    divisions: 'จัดการฝ่าย (Division)',
-    departments: 'จัดการแผนก (Department)',
-    positions: 'จัดการตำแหน่งงาน (Position)',
-    levels: 'ระดับพนักงาน (Level)',
-    benefits: 'สวัสดิการและสิทธิประโยชน์ (Benefits)',
-    company: 'ข้อมูลบริษัท (Company Profile)',
-    orgchart: 'แผนผังองค์กร (Org Chart)',
+    divisions: 'จัดการฝ่าย',
+    departments: 'จัดการแผนก',
+    positions: 'จัดการตำแหน่งงาน',
+    levels: 'ระดับพนักงาน',
+    benefits: 'สวัสดิการและสิทธิประโยชน์',
+    company: 'ข้อมูลบริษัท',
+    orgchart: 'แผนผังองค์กร',
   };
 
   // Toggle expand/collapse for org chart nodes
