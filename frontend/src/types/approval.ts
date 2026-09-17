@@ -68,26 +68,6 @@ export interface UpdateApprovalFlowPayload {
   steps: ApprovalStepInput[];
 }
 
-export interface ApprovalDelegation {
-  id: number;
-  delegatorEmployeeId: number;
-  delegatorEmployeeName?: string | null;
-  delegateEmployeeId: number;
-  delegateEmployeeName?: string | null;
-  documentType?: string | null;
-  startDate: string;
-  endDate: string;
-  status: 'ACTIVE' | 'INACTIVE' | string;
-}
-
-export interface CreateApprovalDelegationPayload {
-  delegatorEmployeeId: number;
-  delegateEmployeeId: number;
-  documentType?: string | null;
-  startDate: string;
-  endDate: string;
-}
-
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทเอกสาร */
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   ATTENDANCE_ADJUSTMENT: 'คำขอปรับปรุงเวลาเข้า-ออกงาน',
