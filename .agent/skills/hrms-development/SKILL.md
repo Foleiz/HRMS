@@ -131,3 +131,10 @@ All controllers delegate exception handling to the global `ExceptionHandlingMidd
      - `SELF`: `query.Where(x => x.EmployeeId == currentUserId)`
      - `DEPARTMENT`: `query.Where(x => x.DepartmentId == currentDepartmentId)`
      - `ORGANIZATION`: Unrestricted.
+
+---
+
+## 🎨 UI & Workflow Specialization Skills
+
+When building or updating features involving UI sub-navigation, breadcrumbs, or approval requests, refer to:
+- **`hrms-approval-and-navigation`:** Sub-Navigation Tabs standard (`-mt-2 rounded-t-2xl`, `text-[13px]`, `#0B2046`), Zero-leak Breadcrumb Context architecture, and direct Multi-Step Approval Flow engine.
