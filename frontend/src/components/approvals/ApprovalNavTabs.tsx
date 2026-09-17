@@ -8,7 +8,6 @@ import { ChevronLeft } from 'lucide-react';
 export const APPROVAL_TABS = [
   { title: 'เอกสารรอดำเนินการ', href: '/approvals/leave-requests' },
   { title: 'ประวัติเอกสาร', href: '/approvals/history' },
-  { title: 'สายการอนุมัติ', href: '/approvals/flows' },
 ];
 
 interface ApprovalNavTabsProps {

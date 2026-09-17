@@ -26,9 +26,10 @@ import { RoleModal } from '@/components/settings/RoleModal';
 import { AuditLogTab } from '@/components/settings/AuditLogTab';
 import { AuditLogDetailModal } from '@/components/settings/AuditLogDetailModal';
 import { ResetPasswordModal } from '@/components/settings/ResetPasswordModal';
+import { ApprovalFlowsTab } from '@/components/settings/ApprovalFlowsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
-type TabType = 'users' | 'roles' | 'audit-log';
+type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 
 export default function SettingsPage() {
   const { success, error, info } = useToast();
@@ -48,21 +49,44 @@ export default function SettingsPage() {
     hasPermission('SETTINGS_AUDIT_VIEW') ||
     hasRole('ADMIN');
 
+  const canViewApprovalFlowsTab =
+    hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
+    hasPermission('SETTINGS_VIEW') ||
+    hasRole('ADMIN');
+
   const [activeTab, setActiveTab] = useState<TabType>('users');
+
+  // Support URL query param e.g. /settings?tab=approval-flows
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as TabType;
+      if (tabParam && ['users', 'roles', 'audit-log', 'approval-flows'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   // Auto switch tab if current active tab is not permitted
   useEffect(() => {
     if (activeTab === 'users' && !canViewUsersTab) {
       if (canViewRolesTab) setActiveTab('roles');
       else if (canViewAuditLogTab) setActiveTab('audit-log');
+      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
     } else if (activeTab === 'roles' && !canViewRolesTab) {
       if (canViewUsersTab) setActiveTab('users');
       else if (canViewAuditLogTab) setActiveTab('audit-log');
+      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
     } else if (activeTab === 'audit-log' && !canViewAuditLogTab) {
       if (canViewUsersTab) setActiveTab('users');
       else if (canViewRolesTab) setActiveTab('roles');
+      else if (canViewApprovalFlowsTab) setActiveTab('approval-flows');
+    } else if (activeTab === 'approval-flows' && !canViewApprovalFlowsTab) {
+      if (canViewUsersTab) setActiveTab('users');
+      else if (canViewRolesTab) setActiveTab('roles');
+      else if (canViewAuditLogTab) setActiveTab('audit-log');
     }
-  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, canViewApprovalFlowsTab]);
 
   // === 1. Data States ===
   // Users
@@ -348,6 +372,8 @@ export default function SettingsPage() {
         return 'บทบาทและสิทธิ์';
       case 'audit-log':
         return 'บันทึกการใช้งานระบบ';
+      case 'approval-flows':
+        return 'สายการอนุมัติ';
     }
   };
 
@@ -411,10 +437,24 @@ export default function SettingsPage() {
             <span>บันทึกการใช้งานระบบ (Audit Log)</span>
           </button>
         )}
+
+        {/* Tab 4: สายการอนุมัติ */}
+        {canViewApprovalFlowsTab && (
+          <button
+            onClick={() => setActiveTab('approval-flows')}
+            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'approval-flows'
+                ? 'text-slate-900 border-b-2 border-[#0B2046]'
+                : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <span>สายการอนุมัติ</span>
+          </button>
+        )}
       </div>
 
       {/* 3. Tab Content */}
-      {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab ? (
+      {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab && !canViewApprovalFlowsTab ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 font-medium">
           ขออภัย คุณไม่มีสิทธิ์เข้าถึงเมนูการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน
         </div>
@@ -496,6 +536,8 @@ export default function SettingsPage() {
               isLoading={isAuditLogsLoading}
             />
           )}
+
+          {activeTab === 'approval-flows' && canViewApprovalFlowsTab && <ApprovalFlowsTab />}
         </>
       )}
 
