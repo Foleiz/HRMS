@@ -16,10 +16,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanUsername = username.trim();
-    const cleanPassword = password.trim();
-
-    if (!cleanUsername || !cleanPassword) {
+    if (!username.trim() || !password.trim()) {
       const msg = 'กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน';
       setError(msg);
       toast.warning(msg);
@@ -29,7 +26,7 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login({ username: cleanUsername, password: cleanPassword });
+      await login({ username, password });
       toast.success('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับเข้าสู่ระบบ HRMS');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง';
@@ -80,7 +77,7 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="เช่น admin, pimjai.k"
+                  placeholder="เช่น admin, pimjai.k, finance"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-900/60 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   required
                 />
@@ -114,7 +111,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center disabled:opacity-50"
+              className="w-full mt-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -131,65 +128,95 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-slate-700">
             <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-3">
               <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
-              <span>บัญชีสำหรับทดสอบสิทธิ์ (คลิกเพื่อเลือก):</span>
+              <span>บัญชีสำหรับทดสอบสิทธิ์ (คลิกเพื่อเลือก - แต่ละบทบาทในระบบ):</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-indigo-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('admin', 'Admin#2026!Sec')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-indigo-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-indigo-400">SuperAdmin</div>
-                <div className="text-[11px] text-slate-400">admin</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-indigo-400">SuperAdmin</span>
+                  <span className="text-[10px] text-slate-500 font-mono">admin</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Admin#2026!Sec
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('pimjai.k', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-emerald-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('pimjai.k', 'Pimjai@Hr2026')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-emerald-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-emerald-400">HR Manager</div>
-                <div className="text-[11px] text-slate-400">pimjai.k</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-emerald-400">HR Manager</span>
+                  <span className="text-[10px] text-slate-500 font-mono">pimjai.k</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Pimjai@Hr2026
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('finance', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-cyan-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('finance', 'Finance@Money2026')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-cyan-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-cyan-400">Finance & Account</div>
-                <div className="text-[11px] text-slate-400">finance</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-cyan-400">Finance & Account</span>
+                  <span className="text-[10px] text-slate-500 font-mono">finance</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Finance@Money2026
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('approver', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-purple-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('approver', 'Approver@Flow2026')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-purple-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-purple-400">CEO / Approver</div>
-                <div className="text-[11px] text-slate-400">approver</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-purple-400">CEO / Approver</span>
+                  <span className="text-[10px] text-slate-500 font-mono">approver</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Approver@Flow2026
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('somchai.w', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-blue-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('somchai.w', 'Somchai@Dept2026')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-blue-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-blue-400">Dept Manager</div>
-                <div className="text-[11px] text-slate-400">somchai.w</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-blue-400">Dept Manager</span>
+                  <span className="text-[10px] text-slate-500 font-mono">somchai.w</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Somchai@Dept2026
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('worameth.r', '123456')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-amber-500 text-left transition-all hover:bg-slate-900"
+                onClick={() => handleQuickLogin('worameth.r', 'Worameth@Staff26')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-amber-500 text-left transition-colors cursor-pointer group"
               >
-                <div className="font-semibold text-amber-400">General Staff</div>
-                <div className="text-[11px] text-slate-400">worameth.r</div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-amber-400">General Staff</span>
+                  <span className="text-[10px] text-slate-500 font-mono">worameth.r</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
+                  Worameth@Staff26
+                </div>
               </button>
             </div>
             <div className="text-[11px] text-slate-400 text-center mt-3">
-              รหัสผ่านเริ่มต้นของทุกบัญชี: <code className="text-indigo-300 font-mono">123456</code> หรือ <code className="text-indigo-300 font-mono">Admin@123456</code>
+              🔒 รองรับทั้งรหัสผ่านประจำตำแหน่ง หรือรหัสผ่านทดสอบเริ่มต้น <code className="text-indigo-300 font-mono">123456</code> / <code className="text-indigo-300 font-mono">Admin@123456</code>
             </div>
           </div>
         </div>

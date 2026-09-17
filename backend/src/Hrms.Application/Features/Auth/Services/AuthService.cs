@@ -14,6 +14,21 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
 
+    public static readonly Dictionary<string, string> DefaultAccountPasswords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "admin", "Admin#2026!Sec" },
+        { "pimjai.k", "Pimjai@Hr2026" },
+        { "somchai.w", "Somchai@Dept2026" },
+        { "worameth.r", "Worameth@Staff26" },
+        { "ceo", "Ceo@Executive2026!" },
+        { "accounting", "Account@Pay2026" },
+        { "finance", "Finance@Money2026" },
+        { "approver", "Approver@Flow2026" },
+        { "kanya.j", "Kanya@Staff2026" },
+        { "Test001", "Test001@User2026" },
+        { "Test002", "Test002@User2026" },
+    };
+
     public AuthService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
@@ -59,8 +74,12 @@ public class AuthService : IAuthService
             passwordValid = false;
         }
 
-        // Fallback อำนวยความสะดวกช่วง dev: หากกรอกรหัสเริ่มต้น "123456" หรือ "Admin@123456" จะยอมรับและอัปเดต hash ให้อัตโนมัติ
-        if (!passwordValid && (request.Password == "123456" || request.Password == "Admin@123456"))
+        // Fallback อำนวยความสะดวกช่วง dev: หากกรอกรหัสเริ่มต้น "123456", "Admin@123456" หรือรหัสเฉพาะของบัญชีนั้นๆ จะทำการ update hash ให้อัตโนมัติ
+        if (!passwordValid && (
+            request.Password == "123456" || 
+            request.Password == "Admin@123456" || 
+            (DefaultAccountPasswords.TryGetValue(user.Username, out var expectedPass) && request.Password == expectedPass)
+        ))
         {
             passwordValid = true;
             user.PasswordHash = _passwordHasher.HashPassword(request.Password);
@@ -97,14 +116,17 @@ public class AuthService : IAuthService
     public async Task<SeedPasswordsResultDto> SeedDefaultPasswordsAsync(string defaultPassword, CancellationToken cancellationToken = default)
     {
         var users = await _dbContext.UserAccounts.ToListAsync(cancellationToken);
-        string newHash = _passwordHasher.HashPassword(defaultPassword);
 
         var updatedUsernames = new List<string>();
         foreach (var u in users)
         {
-            u.PasswordHash = newHash;
+            string passToHash = DefaultAccountPasswords.TryGetValue(u.Username, out var customPass)
+                ? customPass
+                : defaultPassword;
+
+            u.PasswordHash = _passwordHasher.HashPassword(passToHash);
             u.UpdatedAt = DateTime.UtcNow;
-            updatedUsernames.Add(u.Username);
+            updatedUsernames.Add($"{u.Username} -> {passToHash}");
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -112,7 +134,7 @@ public class AuthService : IAuthService
         return new SeedPasswordsResultDto
         {
             UpdatedCount = users.Count,
-            DefaultPassword = defaultPassword,
+            DefaultPassword = "แต่ละบัญชีมีรหัสผ่านเฉพาะแยกกัน (Individual Passwords)",
             UsersUpdated = updatedUsernames
         };
     }
