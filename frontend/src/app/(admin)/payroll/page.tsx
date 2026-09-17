@@ -1771,24 +1771,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          {/* Warning banner if payroll not calculated */}
-          {(selectedPeriod?.status === 'DRAFT' || selectedPeriod?.status === 'REVIEW') && 
-            !(payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0))) && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <span className="text-base shrink-0">⚠️</span>
-                <span>รอบเงินเดือนนี้ยังไม่ได้คำนวณเงินเดือน — กรุณากดปุ่ม <strong>"คำนวณเงินเดือน"</strong> ก่อนส่งขออนุมัติจาก CEO</span>
-              </div>
-              <button
-                onClick={handleCalculatePayroll}
-                disabled={isCalculating}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-2xs transition-all inline-flex items-center gap-1.5"
-              >
-                {isCalculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scale className="w-3.5 h-3.5" />}
-                <span>{isCalculating ? 'กำลังคำนวณ...' : 'กดคำนวณเงินเดือนทันที'}</span>
-              </button>
-            </div>
-          )}
+
 
           {/* 4 Summary Stat Cards for Selected Period */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
