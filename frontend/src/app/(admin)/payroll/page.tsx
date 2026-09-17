@@ -90,21 +90,30 @@ export default function PayrollPage() {
   const isCEO =
     user?.roles?.includes('CEO') ||
     user?.roles?.includes('ADMIN') ||
+    user?.username?.toLowerCase().includes('ceo') ||
+    user?.username?.toLowerCase().includes('approver') ||
     hasRole('CEO') ||
     hasRole('ADMIN') ||
     hasPermission('PAYROLL_CALC_APPROVE');
 
   const isFinance =
-    user?.roles?.some((r: string) => r.toLowerCase().includes('finance') || r.toLowerCase().includes('account')) ||
+    user?.roles?.some((r: string) => 
+      r.toLowerCase().includes('finance') || 
+      r.toLowerCase().includes('account') || 
+      r.toUpperCase() === 'PAYROLL_ADMIN'
+    ) ||
     user?.username?.toLowerCase().includes('finance') ||
     user?.username?.toLowerCase().includes('account') ||
     user?.roles?.includes('ADMIN') ||
     hasRole('ADMIN') ||
+    hasRole('PAYROLL_ADMIN') ||
     isCEO;
 
   const isHR =
     user?.roles?.some((r: string) => r.toLowerCase().includes('hr')) ||
     user?.username?.toLowerCase().includes('hr') ||
+    hasRole('HR_MGR') ||
+    hasRole('HR_ADMIN') ||
     hasPermission('PAYROLL_CALC_VIEW') ||
     isCEO;
 
