@@ -36,6 +36,7 @@ import {
   XCircle,
   Upload,
   Download,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -698,7 +699,12 @@ export default function PayrollPage() {
     } else if (selectedPeriod.status === 'PENDING_APPROVAL') {
       nextStatus = 'APPROVED';
       actionToast = 'CEO อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: อนุมัติแล้ว)';
-    } else if (selectedPeriod.status === 'APPROVED') {
+    } else if (selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING') {
+      if (selectedPeriod.paymentMethod === 'DIRECT_TRANSFER' || !selectedPeriod.paymentMethod) {
+        setActiveTab('bank-transfer');
+        showToast('กรุณาไปที่แท็บ "โอนเงินธนาคาร" เพื่อโอนเงินและแนบสลิปให้ครบทุกคนก่อนยืนยันจ่ายเงิน');
+        return;
+      }
       nextStatus = 'PAID';
       actionToast = 'บันทึกว่าจ่ายเงินเดือนแล้วสำเร็จ (สถานะ: จ่ายแล้ว)';
     } else if (selectedPeriod.status === 'PAID') {
@@ -2085,9 +2091,13 @@ export default function PayrollPage() {
                 )}
 
                 {isCEO && !transferList?.canConfirmPayment && transferList && transferList.totalEmployees > 0 && selectedPeriod?.status !== 'PAID' && (
-                  <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                    ⚠️ ยังมี {transferList.pendingCount} คนที่ยังไม่ได้โอน/แนบสลิป
-                  </div>
+                  <button
+                    disabled
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
+                  >
+                    <Lock className="w-4 h-4 text-slate-400" />
+                    <span>🔒 ไม่สามารถ Confirm ได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
+                  </button>
                 )}
               </div>
 
@@ -2391,6 +2401,13 @@ export default function PayrollPage() {
                   />
                 </div>
 
+                {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && !transferList?.canConfirmPayment && (
+                  <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2 leading-relaxed">
+                    <Lock className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span>ไม่อนุญาตให้กดโอนเงินเรียบร้อยหรือเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน (ยังขาดสลิปอีก {transferList?.pendingCount} คน)</span>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setConfirmPaymentModalOpen(false); setConfirmPaymentNote(''); }}
@@ -2400,8 +2417,8 @@ export default function PayrollPage() {
                   </button>
                   <button
                     onClick={selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? handleConfirmPayment : handleConfirmBankTransfer}
-                    disabled={isConfirmingPayment}
-                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold cursor-pointer transition-all inline-flex items-center justify-center gap-2"
+                    disabled={isConfirmingPayment || (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && !transferList?.canConfirmPayment)}
+                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all inline-flex items-center justify-center gap-2"
                   >
                     {isConfirmingPayment ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลัง Confirm...</span></>

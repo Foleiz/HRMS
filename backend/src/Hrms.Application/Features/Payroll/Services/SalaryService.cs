@@ -861,10 +861,23 @@ public class SalaryService : ISalaryService
         if (period == null)
             throw new NotFoundException("PayrollPeriod", periodId);
 
-        var validStatuses = new[] { "DRAFT", "REVIEW", "PENDING_APPROVAL", "APPROVED", "PAID", "CLOSED" };
+        var validStatuses = new[] { "DRAFT", "REVIEW", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PAID", "CLOSED" };
         var normalized = status.ToUpper().Trim();
         if (!validStatuses.Contains(normalized))
             throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");
+
+        if (normalized == "PAID" || normalized == "CLOSED")
+        {
+            if (period.PaymentMethod == "DIRECT_TRANSFER")
+            {
+                var payrolls = period.Payrolls.ToList();
+                var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
+                if (missingSlip.Any())
+                {
+                    throw new BusinessRuleException($"ไม่อนุญาตให้เปลี่ยนสถานะเป็น {normalized} เนื่องจากยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่ได้แนบสลิปการโอนเงิน ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
+                }
+            }
+        }
 
         period.Status = normalized;
         if (normalized == "CLOSED")
@@ -1472,13 +1485,13 @@ public class SalaryService : ISalaryService
         if (!payrolls.Any())
             throw new BusinessRuleException("ไม่มีข้อมูลเงินเดือนในรอบนี้");
 
-        var notTransferred = payrolls.Where(p => p.PaymentStatus != "TRANSFERRED").ToList();
-        if (notTransferred.Any())
-            throw new BusinessRuleException($"ยังมีพนักงาน {notTransferred.Count} คนที่ยังไม่ได้โอนเงิน กรุณาโอนให้ครบก่อน Confirm");
-
         var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
         if (missingSlip.Any())
-            throw new BusinessRuleException($"ยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่มีสลิป กรุณาแนบสลิปให้ครบก่อน Confirm");
+            throw new BusinessRuleException($"ยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่ได้แนบสลิปการโอนเงิน ไม่อนุญาตให้กดโอนเงินเรียบร้อย ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
+
+        var notTransferred = payrolls.Where(p => p.PaymentStatus != "TRANSFERRED").ToList();
+        if (notTransferred.Any())
+            throw new BusinessRuleException($"ยังมีพนักงาน {notTransferred.Count} คนที่ยังไม่ได้โอนเงิน ไม่อนุญาตให้กดโอนเงินเรียบร้อย ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
 
         // Confirm payment
         period.Status = "PAID";
