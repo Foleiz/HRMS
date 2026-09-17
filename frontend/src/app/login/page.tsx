@@ -136,8 +136,8 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin', 'Admin@123456')}
-                className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 hover:border-indigo-500 text-left transition-colors"
+                onClick={() => handleQuickLogin('admin', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-indigo-500 text-left transition-all hover:bg-slate-900"
               >
                 <div className="font-semibold text-indigo-400">SuperAdmin</div>
                 <div className="text-[11px] text-slate-400">admin</div>
@@ -145,8 +145,8 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('pimjai.k', 'Admin@123456')}
-                className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 hover:border-emerald-500 text-left transition-colors"
+                onClick={() => handleQuickLogin('pimjai.k', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-emerald-500 text-left transition-all hover:bg-slate-900"
               >
                 <div className="font-semibold text-emerald-400">HR Manager</div>
                 <div className="text-[11px] text-slate-400">pimjai.k</div>
@@ -154,8 +154,26 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('somchai.w', 'Admin@123456')}
-                className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 hover:border-blue-500 text-left transition-colors"
+                onClick={() => handleQuickLogin('finance', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-cyan-500 text-left transition-all hover:bg-slate-900"
+              >
+                <div className="font-semibold text-cyan-400">Finance & Account</div>
+                <div className="text-[11px] text-slate-400">finance</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('approver', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-purple-500 text-left transition-all hover:bg-slate-900"
+              >
+                <div className="font-semibold text-purple-400">CEO / Approver</div>
+                <div className="text-[11px] text-slate-400">approver</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('somchai.w', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-blue-500 text-left transition-all hover:bg-slate-900"
               >
                 <div className="font-semibold text-blue-400">Dept Manager</div>
                 <div className="text-[11px] text-slate-400">somchai.w</div>
@@ -163,15 +181,15 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('worameth.r', 'Admin@123456')}
-                className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 hover:border-amber-500 text-left transition-colors"
+                onClick={() => handleQuickLogin('worameth.r', '123456')}
+                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-amber-500 text-left transition-all hover:bg-slate-900"
               >
                 <div className="font-semibold text-amber-400">General Staff</div>
                 <div className="text-[11px] text-slate-400">worameth.r</div>
               </button>
             </div>
-            <div className="text-[11px] text-slate-500 text-center mt-2">
-              รหัสผ่านเริ่มต้นของทุกบัญชี: <code className="text-slate-300">Admin@123456</code>
+            <div className="text-[11px] text-slate-400 text-center mt-3">
+              รหัสผ่านเริ่มต้นของทุกบัญชี: <code className="text-indigo-300 font-mono">123456</code> หรือ <code className="text-indigo-300 font-mono">Admin@123456</code>
             </div>
           </div>
         </div>

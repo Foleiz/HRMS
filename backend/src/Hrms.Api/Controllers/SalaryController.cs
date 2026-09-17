@@ -528,6 +528,52 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "Confirm Bank Transfer สำเร็จ รอบเงินเดือนเปลี่ยนเป็น PAID"));
     }
 
+    /// <summary>HR ส่งเรื่องให้ฝ่ายการเงิน/บัญชี ตรวจสอบ</summary>
+    [HttpPost("periods/{id:long}/submit-to-finance")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> SubmitToFinance(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.SubmitToFinanceAsync(id, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ส่งเรื่องให้ฝ่ายการเงิน/บัญชีเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>ฝ่ายการเงิน/บัญชี ตรวจสอบตัวเลขเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ</summary>
+    [HttpPost("periods/{id:long}/verify-finance")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> VerifyByFinance(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        var result = await _salaryService.VerifyByFinanceAsync(id, employeeId ?? 1, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ฝ่ายการเงินตรวจสอบเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ"));
+    }
+
+    /// <summary>ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร และเปลี่ยนสถานะเป็น PAID</summary>
+    [HttpPost("periods/{id:long}/upload-bank-receipt")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UploadBankReceipt(
+        long id,
+        [FromBody] UploadBankReceiptRequest request,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        var result = await _salaryService.UploadBankReceiptAndMarkPaidAsync(id, request, employeeId ?? 1, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "บันทึกสลิปโอนเงินธนาคารและยืนยันรอบเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>ดาวน์โหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน)</summary>
+    [HttpGet("periods/{id:long}/bank-receipt")]
+    public async Task<IActionResult> DownloadBankReceipt(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var receipt = await _salaryService.GetBankReceiptAsync(id, cancellationToken);
+        return File(receipt.Data, receipt.ContentType, receipt.FileName);
+    }
+
     #endregion
 
     // ===== HELPER: ดึง Employee ID ของ User ที่ Login อยู่ =====

@@ -16,12 +16,24 @@ public class PayrollPeriodDto
     // Payment Workflow
     public string? PaymentMethod { get; set; }
     public string? PaymentMethodText { get; set; }
+    public DateTimeOffset? FinanceVerifiedAt { get; set; }
+    public long? FinanceVerifiedBy { get; set; }
     public DateTimeOffset? PaymentConfirmedAt { get; set; }
     public long? PaymentConfirmedBy { get; set; }
     public DateTimeOffset? BankFileGeneratedAt { get; set; }
     public int TotalTransferredCount { get; set; }
     public string? PaymentNote { get; set; }
+    public bool HasBankReceipt { get; set; }
+    public string? BankReceiptFileName { get; set; }
     public bool CanConfirmPayment { get; set; } // true เมื่อทุกคนมี Slip และ Transferred
+}
+
+public class UploadBankReceiptRequest
+{
+    public string Base64Data { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public string? Note { get; set; }
 }
 
 public class PayrollRecordDto

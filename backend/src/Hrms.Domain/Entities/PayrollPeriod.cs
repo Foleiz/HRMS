@@ -22,7 +22,11 @@ public class PayrollPeriod : BaseEntity
     // Payment Workflow Fields
     /// <summary>วิธีการจ่ายเงิน: BANK_BATCH หรือ DIRECT_TRANSFER</summary>
     public string? PaymentMethod { get; set; }
-    /// <summary>เวลาที่ CEO กด Confirm การจ่ายเงิน</summary>
+    /// <summary>เวลาที่ฝ่ายการเงิน/บัญชี ตรวจสอบความถูกต้องเรียบร้อย</summary>
+    public DateTimeOffset? FinanceVerifiedAt { get; set; }
+    /// <summary>Employee ID ของการเงินผู้ตรวจสอบ</summary>
+    public long? FinanceVerifiedBy { get; set; }
+    /// <summary>เวลาที่ CEO / Approver กด Confirm การจ่ายเงิน</summary>
     public DateTimeOffset? PaymentConfirmedAt { get; set; }
     /// <summary>Employee ID ของผู้ที่ Confirm การจ่ายเงิน</summary>
     public long? PaymentConfirmedBy { get; set; }
@@ -32,6 +36,10 @@ public class PayrollPeriod : BaseEntity
     public int TotalTransferredCount { get; set; } = 0;
     /// <summary>หมายเหตุการจ่ายเงิน</summary>
     public string? PaymentNote { get; set; }
+    /// <summary>ไฟล์สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (ฝ่ายการเงินอัปโหลด)</summary>
+    public byte[]? BankReceiptData { get; set; }
+    public string? BankReceiptFileName { get; set; }
+    public string? BankReceiptContentType { get; set; }
 
     public ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
 }

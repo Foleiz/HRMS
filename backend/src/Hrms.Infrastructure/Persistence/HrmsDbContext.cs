@@ -1406,11 +1406,16 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.PreApprovalStatus).HasColumnName("pre_approval_status").HasMaxLength(20);
             // Payment Workflow Columns
             entity.Property(e => e.PaymentMethod).HasColumnName("payment_method").HasMaxLength(20);
+            entity.Property(e => e.FinanceVerifiedAt).HasColumnName("finance_verified_at");
+            entity.Property(e => e.FinanceVerifiedBy).HasColumnName("finance_verified_by");
             entity.Property(e => e.PaymentConfirmedAt).HasColumnName("payment_confirmed_at");
             entity.Property(e => e.PaymentConfirmedBy).HasColumnName("payment_confirmed_by");
             entity.Property(e => e.BankFileGeneratedAt).HasColumnName("bank_file_generated_at");
             entity.Property(e => e.TotalTransferredCount).HasColumnName("total_transferred_count").HasDefaultValue(0);
             entity.Property(e => e.PaymentNote).HasColumnName("payment_note");
+            entity.Property(e => e.BankReceiptData).HasColumnName("bank_receipt_data");
+            entity.Property(e => e.BankReceiptFileName).HasColumnName("bank_receipt_file_name").HasMaxLength(255);
+            entity.Property(e => e.BankReceiptContentType).HasColumnName("bank_receipt_content_type").HasMaxLength(100);
         });
 
         // Configuration: Payroll

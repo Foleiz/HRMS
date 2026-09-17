@@ -861,10 +861,19 @@ public class SalaryService : ISalaryService
         if (period == null)
             throw new NotFoundException("PayrollPeriod", periodId);
 
-        var validStatuses = new[] { "DRAFT", "REVIEW", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+        var validStatuses = new[] { "DRAFT", "REVIEW", "SUBMITTED_TO_FINANCE", "FINANCE_VERIFIED", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PROCESSING_BANK", "PAID", "CLOSED" };
         var normalized = status.ToUpper().Trim();
         if (!validStatuses.Contains(normalized))
             throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");
+
+        if (normalized == "PENDING_APPROVAL")
+        {
+            var payrolls = period.Payrolls.ToList();
+            if (!payrolls.Any())
+            {
+                throw new BusinessRuleException("กรุณากดคำนวณเงินเดือนประจำรอบก่อนส่งขออนุมัติจาก CEO");
+            }
+        }
 
         if (normalized == "PAID" || normalized == "CLOSED")
         {
@@ -1583,6 +1592,86 @@ public class SalaryService : ISalaryService
         return MapPeriodToDto(period);
     }
 
+    public async Task<PayrollPeriodDto> SubmitToFinanceAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (!period.Payrolls.Any())
+            throw new BusinessRuleException("กรุณากดคำนวณเงินเดือนก่อนส่งให้ฝ่ายการเงิน/บัญชี");
+
+        period.Status = "SUBMITTED_TO_FINANCE";
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
+    public async Task<PayrollPeriodDto> VerifyByFinanceAsync(long periodId, long employeeId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        period.Status = "FINANCE_VERIFIED";
+        period.FinanceVerifiedAt = DateTimeOffset.UtcNow;
+        period.FinanceVerifiedBy = employeeId;
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
+    public async Task<PayrollPeriodDto> UploadBankReceiptAndMarkPaidAsync(long periodId, UploadBankReceiptRequest request, long employeeId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Base64Data))
+            throw new BusinessRuleException("กรุณาแนบไฟล์สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร");
+
+        byte[] receiptBytes;
+        try { receiptBytes = Convert.FromBase64String(request.Base64Data); }
+        catch { throw new BusinessRuleException("ข้อมูลสลิปธนาคารไม่ถูกต้อง (Base64 Invalid)"); }
+
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        period.BankReceiptData = receiptBytes;
+        period.BankReceiptFileName = request.FileName;
+        period.BankReceiptContentType = request.ContentType;
+        period.Status = "PAID";
+        period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+        period.PaymentConfirmedBy = employeeId;
+        period.PaymentNote = request.Note?.Trim();
+        period.TotalTransferredCount = period.Payrolls.Count;
+
+        foreach (var p in period.Payrolls)
+        {
+            p.PaymentStatus = "TRANSFERRED";
+            p.TransferredAt = DateTimeOffset.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
+    public async Task<SlipDownloadDto> GetBankReceiptAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.BankReceiptData == null || period.BankReceiptData.Length == 0)
+            throw new BusinessRuleException("ไม่พบไฟล์สลิป/ใบเสร็จการโอนเงินรวมของธนาคารในรอบนี้");
+
+        return new SlipDownloadDto
+        {
+            FileName = period.BankReceiptFileName ?? "bank_receipt.pdf",
+            ContentType = period.BankReceiptContentType ?? "application/pdf",
+            Data = period.BankReceiptData
+        };
+    }
+
     // ===== PRIVATE HELPERS =====
 
     private static string MapPaymentStatusText(string status) => status switch
@@ -1599,9 +1688,13 @@ public class SalaryService : ISalaryService
         {
             "DRAFT" => "ร่าง",
             "REVIEW" => "รอตรวจสอบ",
+            "SUBMITTED_TO_FINANCE" => "ส่งการเงินตรวจสอบ",
+            "FINANCE_VERIFIED" => "การเงินตรวจสอบแล้ว",
+            "PENDING_APPROVAL" => "รออนุมัติ",
             "APPROVED" => "อนุมัติแล้ว",
             "PROCESSING" => "กำลังดำเนินการจ่าย",
-            "PAID" => "จ่ายแล้ว",
+            "PROCESSING_BANK" => "ส่งโอนธนาคารแล้ว",
+            "PAID" => "โอนเงินสำเร็จแล้ว",
             "CLOSED" => "ปิดรอบแล้ว",
             _ => period.Status
         };
@@ -1630,11 +1723,15 @@ public class SalaryService : ISalaryService
             TotalNetSalary = payrolls.Sum(p => p.NetPayableSalary),
             PaymentMethod = period.PaymentMethod,
             PaymentMethodText = methodText,
+            FinanceVerifiedAt = period.FinanceVerifiedAt,
+            FinanceVerifiedBy = period.FinanceVerifiedBy,
             PaymentConfirmedAt = period.PaymentConfirmedAt,
             PaymentConfirmedBy = period.PaymentConfirmedBy,
             BankFileGeneratedAt = period.BankFileGeneratedAt,
             TotalTransferredCount = period.TotalTransferredCount,
             PaymentNote = period.PaymentNote,
+            HasBankReceipt = period.BankReceiptData != null && period.BankReceiptData.Length > 0,
+            BankReceiptFileName = period.BankReceiptFileName,
             CanConfirmPayment = canConfirm,
         };
     }

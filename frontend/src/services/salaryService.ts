@@ -258,5 +258,31 @@ export const salaryService = {
     );
     return res.data.data;
   },
+
+  /** HR ส่งเรื่องให้ฝ่ายการเงิน/บัญชี ตรวจสอบ */
+  async submitToFinance(periodId: number): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/submit-to-finance`);
+    return res.data.data;
+  },
+
+  /** ฝ่ายการเงิน/บัญชี ตรวจสอบตัวเลขเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ */
+  async verifyByFinance(periodId: number): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/verify-finance`);
+    return res.data.data;
+  },
+
+  /** ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร และเปลี่ยนสถานะเป็น PAID */
+  async uploadBankReceipt(periodId: number, payload: { base64Data: string; fileName: string; contentType: string; note?: string }): Promise<PayrollPeriod> {
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/upload-bank-receipt`, payload);
+    return res.data.data;
+  },
+
+  /** ดาวน์โหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร (เฉพาะฝ่ายการเงิน) */
+  async downloadBankReceipt(periodId: number): Promise<Blob> {
+    const res = await apiClient.get(`/salary/periods/${periodId}/bank-receipt`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };
 
