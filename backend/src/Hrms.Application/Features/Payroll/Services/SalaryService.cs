@@ -1296,6 +1296,20 @@ public class SalaryService : ISalaryService
             throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED เพื่อตั้งค่าวิธีการจ่ายเงิน");
 
         period.PaymentMethod = request.PaymentMethod;
+
+        if (request.PaymentMethod == "DIRECT_TRANSFER")
+        {
+            foreach (var payroll in period.Payrolls)
+            {
+                if (payroll.SlipData == null || payroll.SlipData.Length == 0)
+                {
+                    payroll.PaymentStatus = "PENDING";
+                    payroll.TransferredAt = null;
+                    payroll.TransferReference = null;
+                }
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return MapPeriodToDto(period);
@@ -1315,6 +1329,13 @@ public class SalaryService : ISalaryService
         var items = period.Payrolls.Select(payroll =>
         {
             var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+            bool hasSlip = payroll.SlipData != null && payroll.SlipData.Length > 0;
+            
+            // In Direct Transfer mode, payment status is only TRANSFERRED if a slip is actually uploaded!
+            string effectiveStatus = (period.PaymentMethod == "DIRECT_TRANSFER" || string.IsNullOrEmpty(period.PaymentMethod))
+                ? (hasSlip ? "TRANSFERRED" : "PENDING")
+                : payroll.PaymentStatus;
+
             return new PayrollTransferItemDto
             {
                 PayrollId = payroll.Id,
@@ -1328,11 +1349,11 @@ public class SalaryService : ISalaryService
                 AccountName = primaryBank?.AccountName ?? "",
                 AccountType = primaryBank?.AccountType ?? "",
                 NetPayableSalary = payroll.NetPayableSalary,
-                PaymentStatus = payroll.PaymentStatus,
-                PaymentStatusText = MapPaymentStatusText(payroll.PaymentStatus),
-                TransferredAt = payroll.TransferredAt,
-                TransferReference = payroll.TransferReference,
-                HasSlip = payroll.SlipData != null,
+                PaymentStatus = effectiveStatus,
+                PaymentStatusText = MapPaymentStatusText(effectiveStatus),
+                TransferredAt = effectiveStatus == "TRANSFERRED" ? payroll.TransferredAt : null,
+                TransferReference = effectiveStatus == "TRANSFERRED" ? payroll.TransferReference : null,
+                HasSlip = hasSlip,
                 SlipFileName = payroll.SlipFileName,
                 SlipUploadedAt = payroll.SlipUploadedAt,
             };
