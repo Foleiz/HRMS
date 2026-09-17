@@ -694,6 +694,11 @@ export default function PayrollPage() {
     let nextStatus = '';
     let actionToast = '';
     if (selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT') {
+      const isCalculated = payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0));
+      if (!isCalculated) {
+        showToast('กรุณากดคำนวณเงินเดือนประจำรอบก่อนส่งขออนุมัติจาก CEO');
+        return;
+      }
       nextStatus = 'PENDING_APPROVAL';
       actionToast = 'ส่งคำขออนุมัติรอบเงินเดือนไปยัง CEO เรียบร้อยแล้ว (สถานะ: รออนุมัติ)';
     } else if (selectedPeriod.status === 'PENDING_APPROVAL') {
@@ -1693,13 +1698,24 @@ export default function PayrollPage() {
 
                 {/* Workflow Action Buttons */}
                 {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
-                  <button
-                    onClick={handleAdvancePeriodStatus}
-                    className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>ส่งอนุมัติ (ส่ง CEO)</span>
-                  </button>
+                  payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
+                    <button
+                      onClick={handleAdvancePeriodStatus}
+                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>ส่งอนุมัติ (ส่ง CEO)</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
+                      title="กรุณากดคำนวณเงินเดือนก่อนส่งขออนุมัติ"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>🔒 ส่งอนุมัติ (ต้องคำนวณเงินเดือนก่อน)</span>
+                    </button>
+                  )
                 )}
 
                 {selectedPeriod?.status === 'PENDING_APPROVAL' && (
@@ -1754,6 +1770,25 @@ export default function PayrollPage() {
               </div>
             </div>
           </div>
+
+          {/* Warning banner if payroll not calculated */}
+          {(selectedPeriod?.status === 'DRAFT' || selectedPeriod?.status === 'REVIEW') && 
+            !(payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0))) && (
+            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-base shrink-0">⚠️</span>
+                <span>รอบเงินเดือนนี้ยังไม่ได้คำนวณเงินเดือน — กรุณากดปุ่ม <strong>"คำนวณเงินเดือน"</strong> ก่อนส่งขออนุมัติจาก CEO</span>
+              </div>
+              <button
+                onClick={handleCalculatePayroll}
+                disabled={isCalculating}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-2xs transition-all inline-flex items-center gap-1.5"
+              >
+                {isCalculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scale className="w-3.5 h-3.5" />}
+                <span>{isCalculating ? 'กำลังคำนวณ...' : 'กดคำนวณเงินเดือนทันที'}</span>
+              </button>
+            </div>
+          )}
 
           {/* 4 Summary Stat Cards for Selected Period */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

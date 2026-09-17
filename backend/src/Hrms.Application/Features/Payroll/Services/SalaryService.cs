@@ -866,6 +866,15 @@ public class SalaryService : ISalaryService
         if (!validStatuses.Contains(normalized))
             throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");
 
+        if (normalized == "PENDING_APPROVAL")
+        {
+            var payrolls = period.Payrolls.ToList();
+            if (!payrolls.Any())
+            {
+                throw new BusinessRuleException("กรุณากดคำนวณเงินเดือนประจำรอบก่อนส่งขออนุมัติจาก CEO");
+            }
+        }
+
         if (normalized == "PAID" || normalized == "CLOSED")
         {
             if (period.PaymentMethod == "DIRECT_TRANSFER")

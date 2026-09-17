@@ -1,4 +1,4 @@
-﻿# HRMS Project - Developer & Agent Working Rules
+# HRMS Project - Developer & Agent Working Rules
 
 ## 🌿 Git Branching & Merge Protocol (ข้อกำหนดเคร่งครัด)
 ทุกครั้งที่มีการเริ่มงานใหม่ ไม่ว่าจะเป็นการพัฒนาฟีเจอร์ ปรับปรุงโค้ด หรือแก้บัก:
@@ -13,7 +13,9 @@
    - Frontend TypeScript: `npx tsc --noEmit` (0 Errors)
    - Production Build: `npm run build` ใน `frontend/`
    - Automated Integration Tests ตามฟีเจอร์นั้นๆ
-4. **Merge กลับเข้าสู่ `master` เมื่อทุกอย่างเรียบร้อย**:
-   - `git checkout master`
-   - `git merge feat/<feature-name>`
-   - ตรวจสอบซ้ำบน master และ `git push origin master`
+4. **Merge กลับเข้าสู่ `master` เฉพาะเมื่อได้รับการอนุมัติหรือคำสั่งจากผู้ใช้ (USER) โดยตรงเท่านั้น**:
+   - **ห้าม Merge หรือ Push ขึ้น branch `master` โดยเด็ดขาด** จนกว่าผู้ใช้จะสั่งคำสั่งให้ Merge ชัดเจน
+   - เมื่อได้รับการยืนยันจากผู้ใช้:
+     - `git checkout master`
+     - `git merge <branch-name>`
+     - `git push origin master`
