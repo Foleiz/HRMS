@@ -861,7 +861,7 @@ public class SalaryService : ISalaryService
         if (period == null)
             throw new NotFoundException("PayrollPeriod", periodId);
 
-        var validStatuses = new[] { "DRAFT", "REVIEW", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+        var validStatuses = new[] { "DRAFT", "REVIEW", "SUBMITTED_TO_FINANCE", "FINANCE_VERIFIED", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PROCESSING_BANK", "PAID", "CLOSED" };
         var normalized = status.ToUpper().Trim();
         if (!validStatuses.Contains(normalized))
             throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");

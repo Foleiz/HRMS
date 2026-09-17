@@ -798,7 +798,7 @@ export default function PayrollPage() {
       }
       nextStatus = 'PENDING_APPROVAL';
       actionToast = 'ส่งคำขออนุมัติรอบเงินเดือนไปยัง CEO เรียบร้อยแล้ว (สถานะ: รออนุมัติ)';
-    } else if (selectedPeriod.status === 'PENDING_APPROVAL') {
+    } else if (selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED') {
       nextStatus = 'APPROVED';
       actionToast = 'CEO อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: อนุมัติแล้ว)';
     } else if (selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING') {
