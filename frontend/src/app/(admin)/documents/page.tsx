@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { CalendarCheck, LogOut, FileStack, BadgeCheck, ArrowRight, Clock } from 'lucide-react';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 interface DocumentOption {
   title: string;
@@ -55,6 +56,13 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
 ];
 
 export default function DocumentsHubPage() {
+  const { setBreadcrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
+
   return (
     <div className="space-y-6 pb-12">
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}

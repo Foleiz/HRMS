@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
 import { useToast } from '@/context/ToastContext';
 import { reportService } from '@/services/reportService';
@@ -48,6 +49,16 @@ export default function ReportsPage() {
     if (canViewLateness) return 'lateness';
     return 'headcount';
   });
+  const { setBreadcrumb } = useBreadcrumb();
+
+  // Sync breadcrumb with activeTab
+  useEffect(() => {
+    setBreadcrumb({
+      section: 'รายงาน',
+      page: activeTab === 'headcount' ? 'อัตรากำลังคนประจำวัน (Daily Headcount)' : 'รายงานการมาสายประจำเดือน (Monthly Lateness)',
+    });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   useEffect(() => {
     if (!canViewHeadcount && canViewLateness) {

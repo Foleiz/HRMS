@@ -71,6 +71,7 @@ import { Shift } from '@/types/shift';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
 const THAI_MONTHS = [
@@ -83,6 +84,7 @@ function DailyAttendanceContent() {
   const searchParams = useSearchParams();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
 
   const canViewDaily = hasPermission('TIME_DAILY_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
   const canViewImport = hasPermission('TIME_IMPORT_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
@@ -93,6 +95,24 @@ function DailyAttendanceContent() {
   const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments' | 'monthly'>(
     initialTab === 'import' || initialTab === 'adjustments' || initialTab === 'monthly' ? initialTab : (canViewDaily ? 'daily' : 'import')
   );
+
+  // Sync breadcrumb with activeTab
+  useEffect(() => {
+    const getPageTitle = () => {
+      switch (activeTab) {
+        case 'daily':
+          return 'ตรวจบันทึกเวลาประจำวัน';
+        case 'import':
+          return 'นำเข้าไฟล์บันทึกเวลา';
+        case 'adjustments':
+          return 'คำขอปรับปรุงเวลา';
+        default:
+          return 'ตรวจบันทึกเวลาประจำวัน';
+      }
+    };
+    setBreadcrumb({ section: 'ตรวจบันทึกเวลา', page: getPageTitle() });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   const handleTabChange = (tab: 'daily' | 'import' | 'adjustments' | 'monthly') => {
     setActiveTab(tab);

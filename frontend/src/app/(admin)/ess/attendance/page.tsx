@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
 import { essAttendanceService } from '@/services/essAttendanceService';
 import { AttendanceDaily, MyAttendanceMonthlySummary } from '@/types/attendance';
@@ -27,6 +28,7 @@ import {
 export default function EssAttendancePage() {
   const { user, hasPermission, hasRole } = useAuth();
   const toast = useToast();
+  const { setBreadcrumb } = useBreadcrumb();
 
   const canViewEss =
     hasPermission('TIME_VIEW') ||
@@ -39,6 +41,15 @@ export default function EssAttendancePage() {
   // State: Data
   // ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>('history');
+
+  // Sync breadcrumb with activeTab
+  useEffect(() => {
+    setBreadcrumb({
+      section: 'บันทึกเวลาของฉัน (ESS)',
+      page: activeTab === 'adjustments' ? 'คำขอปรับปรุงเวลา' : 'ตรวจบันทึกเวลาของฉัน',
+    });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   // Filter Month & Year for History
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());

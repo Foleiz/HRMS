@@ -371,15 +371,20 @@ function SchedulesContent() {
     }
   }, []);
 
+  // Sync breadcrumb with activeTab
   useEffect(() => {
     setBreadcrumb({
-      section: 'การเข้างาน',
-      page: 'การจัดตารางงาน',
+      section: 'การจัดตารางงาน',
+      page: activeTab === 'shifts' ? 'กะการทำงาน' : 'มอบหมายกะให้พนักงาน',
     });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
+
+  useEffect(() => {
     loadShifts();
     loadAssignments();
     loadLookups();
-  }, [setBreadcrumb, loadShifts, loadAssignments, loadLookups]);
+  }, [loadShifts, loadAssignments, loadLookups]);
 
   // Load roster when on Tab 1 and Calendar view
   useEffect(() => {

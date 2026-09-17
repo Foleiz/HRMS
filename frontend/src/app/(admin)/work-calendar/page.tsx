@@ -98,8 +98,8 @@ export default function WorkCalendarPage() {
   // Sync breadcrumb
   useEffect(() => {
     setBreadcrumb({
-      section: 'ตั้งค่าระบบ',
-      page: activeTab === 'work-week' ? 'วันทำงานประจำสัปดาห์' : 'จัดการวันหยุดประจำปี',
+      section: 'วันทำงานและวันหยุด',
+      page: activeTab === 'work-week' ? 'วันทำงานประจำสัปดาห์' : 'วันหยุดประจำปี',
     });
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);

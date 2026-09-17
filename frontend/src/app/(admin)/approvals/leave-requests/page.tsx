@@ -21,6 +21,7 @@ import { leaveService } from '@/services/leaveService';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // ─── ฟังก์ชันช่วย ─────────────────────────────────────────────
 
@@ -47,9 +48,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 // ─── Component ────────────────────────────────────────────────
 
 export default function LeaveRequestsApprovalPage() {
+  const { setBreadcrumb } = useBreadcrumb();
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [leaveStats, setLeaveStats] = useState<LeaveStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Sync breadcrumb
+  useEffect(() => {
+    setBreadcrumb({ section: 'การอนุมัติ', page: 'เอกสารรอดำเนินการ' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');

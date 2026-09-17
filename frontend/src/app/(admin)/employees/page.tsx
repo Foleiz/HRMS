@@ -9,6 +9,7 @@ import { Employee, CreateEmployeePayload } from '@/types/employee';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import {
   Search,
   Plus,
@@ -108,12 +109,19 @@ export const getRequiredBankDigits = (bankName?: string): number => {
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
   const toast = useToast();
+  const { setBreadcrumb } = useBreadcrumb();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<DepartmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // Sync breadcrumb
+  useEffect(() => {
+    setBreadcrumb({ section: 'พนักงาน', page: 'จัดการพนักงาน' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   // Action Menu dropdown state (by employee id)
   const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);

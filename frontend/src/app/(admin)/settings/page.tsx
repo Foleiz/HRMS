@@ -19,6 +19,7 @@ import {
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { UsersTab } from '@/components/settings/UsersTab';
 import { UserDrawer } from '@/components/settings/UserDrawer';
 import { RolesTab } from '@/components/settings/RolesTab';
@@ -34,6 +35,7 @@ type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 export default function SettingsPage() {
   const { success, error, info } = useToast();
   const { user, hasPermission, hasRole } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
 
   // Permission flags for each sub-tab
   const canViewUsersTab =
@@ -87,6 +89,24 @@ export default function SettingsPage() {
       else if (canViewAuditLogTab) setActiveTab('audit-log');
     }
   }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, canViewApprovalFlowsTab]);
+
+  // Sync breadcrumb with active sub-tab
+  useEffect(() => {
+    const getTabName = () => {
+      switch (activeTab) {
+        case 'users':
+          return 'ผู้ใช้งาน';
+        case 'roles':
+          return 'บทบาทและสิทธิ์';
+        case 'audit-log':
+          return 'บันทึกการใช้งานระบบ (Audit Log)';
+        case 'approval-flows':
+          return 'สายการอนุมัติ';
+      }
+    };
+    setBreadcrumb({ section: 'ตั้งค่า', page: getTabName() });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   // === 1. Data States ===
   // Users

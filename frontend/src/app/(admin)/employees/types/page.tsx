@@ -85,7 +85,7 @@ export default function EmployeeTypesPage() {
   }
 
   useEffect(() => {
-    setBreadcrumb({ section: 'พนักงาน', page: 'ประเภทพนักงาน / สัญญาจ้าง' });
+    setBreadcrumb({ section: 'พนักงาน', page: 'ประเภทพนักงาน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

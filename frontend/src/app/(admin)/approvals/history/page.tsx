@@ -20,6 +20,7 @@ import {
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -61,8 +62,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 // ─── Component ────────────────────────────────────────────────
 
 export default function ApprovalHistoryPage() {
+  const { setBreadcrumb } = useBreadcrumb();
   const [history, setHistory] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sync breadcrumb
+  useEffect(() => {
+    setBreadcrumb({ section: 'การอนุมัติ', page: 'ประวัติเอกสาร' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');

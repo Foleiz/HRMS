@@ -40,6 +40,7 @@ import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
@@ -60,6 +61,23 @@ export default function LeaveManagementPage() {
     : 'types';
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(defaultTab);
+  const { setBreadcrumb } = useBreadcrumb();
+
+  // Sync breadcrumb with activeTab
+  useEffect(() => {
+    const getLeaveTabTitle = () => {
+      switch (activeTab) {
+        case 'types':
+          return 'ประเภทการลา';
+        case 'policies':
+          return 'สิทธิ์การลา';
+        case 'balances':
+          return 'ยอดวันลาพนักงาน';
+      }
+    };
+    setBreadcrumb({ section: 'การลา', page: getLeaveTabTitle() });
+    return () => setBreadcrumb(null);
+  }, [activeTab, setBreadcrumb]);
 
   // Master Data
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);

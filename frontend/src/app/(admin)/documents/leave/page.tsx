@@ -8,6 +8,7 @@ import { leaveService } from '@/services/leaveService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // ─── Component ────────────────────────────────────────────────
 
@@ -31,9 +32,16 @@ export default function MyLeaveRequestPage() {
 
 function MyLeaveRequestPageContent() {
   const { user } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentYear = new Date().getFullYear();
+
+  // Sync breadcrumb
+  useEffect(() => {
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   // ถ้ามาจากหน้า "ประวัติเอกสาร" พร้อม ?draftId=... ให้โหลดแบบร่างเดิมมาเติมในฟอร์มต่อ
   const draftIdParam = searchParams.get('draftId');

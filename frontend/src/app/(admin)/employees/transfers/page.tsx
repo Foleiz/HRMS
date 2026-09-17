@@ -24,11 +24,19 @@ import CreateTransferModal from '@/components/transfers/CreateTransferModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 
 import { useAuth } from '@/context/AuthContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
 export default function TransfersPage() {
   const { hasPermission } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<'transfers' | 'timeline'>('transfers');
+
+  // Sync breadcrumb
+  useEffect(() => {
+    setBreadcrumb({ section: 'พนักงาน', page: 'การโอนย้ายพนักงาน' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
 
   // Stats & List State
   const [stats, setStats] = useState<TransferSummaryStats>({

@@ -38,20 +38,60 @@ export const Navbar: React.FC = () => {
   // Dynamic Breadcrumb based on route
   const getBreadcrumb = () => {
     if (customBreadcrumb) return customBreadcrumb;
+
+    // 1. หน้าหลัก (Dashboard)
     if (pathname === '/') return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
+
+    // 2. ข้อมูลหลัก (Master Data)
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
+
+    // 3. พนักงาน (Employees) - เรียงลำดับ sub-routes ก่อน
     if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
     if (pathname.match(/^\/employees\/\d+/)) return { section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' };
+    if (pathname.startsWith('/employees/types')) return { section: 'พนักงาน', page: 'ประเภทพนักงาน' };
+    if (pathname.startsWith('/employees/contracts')) return { section: 'พนักงาน', page: 'สัญญาจ้าง' };
+    if (pathname.startsWith('/employees/transfers')) return { section: 'พนักงาน', page: 'การโอนย้ายพนักงาน' };
     if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
-    if (pathname.startsWith('/attendance')) return { section: 'การเข้างาน', page: 'ตรวจบันทึกเวลา' };
+
+    // 4. บันทึกเวลาของฉัน (ESS)
+    if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
+
+    // 5. ยื่นเอกสาร (Documents)
+    if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
+    if (pathname.startsWith('/documents/leave')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' };
     if (pathname.startsWith('/documents')) return { section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' };
-    if (pathname.startsWith('/leave')) return { section: 'การลา', page: 'จัดการการลาและโควตา' };
-    if (pathname.startsWith('/payroll')) return { section: 'เงินเดือน', page: 'ประมวลผลเงินเดือน' };
-    if (pathname.startsWith('/approvals')) return { section: 'การอนุมัติ', page: 'รายการรออนุมัติ' };
+
+    // 6. ตรวจบันทึกเวลา & การจัดตารางงาน (Attendance)
+    if (pathname.startsWith('/attendance/daily')) return { section: 'ตรวจบันทึกเวลา', page: 'ตรวจบันทึกเวลาประจำวัน' };
+    if (pathname.startsWith('/attendance/schedules')) return { section: 'การจัดตารางงาน', page: 'มอบหมายกะให้พนักงาน' };
+    if (pathname.startsWith('/attendance/shifts')) return { section: 'การจัดตารางงาน', page: 'กะการทำงาน' };
+    if (pathname.startsWith('/attendance/import')) return { section: 'ตรวจบันทึกเวลา', page: 'นำเข้าไฟล์บันทึกเวลา' };
+    if (pathname.startsWith('/attendance')) return { section: 'ตรวจบันทึกเวลา', page: 'ตรวจบันทึกเวลาประจำวัน' };
+
+    // 7. การลา (Leave)
+    if (pathname.startsWith('/leave')) return { section: 'การลา', page: 'ประเภทการลา' };
+
+    // 8. เงินเดือน (Payroll)
+    if (pathname.startsWith('/payroll')) return { section: 'เงินเดือน', page: 'ภาพรวม' };
+
+    // 9. การอนุมัติ (Approvals)
+    if (pathname.startsWith('/approvals/leave-requests')) return { section: 'การอนุมัติ', page: 'เอกสารรอดำเนินการ' };
+    if (pathname.startsWith('/approvals/history')) return { section: 'การอนุมัติ', page: 'ประวัติเอกสาร' };
+    if (pathname.startsWith('/approvals')) return { section: 'การอนุมัติ', page: 'เอกสารรอดำเนินการ' };
+
+    // 10. โครงสร้างองค์กร (Organization)
     if (pathname.startsWith('/organization')) return { section: 'โครงสร้างองค์กร', page: 'จัดการฝ่าย' };
-    if (pathname.startsWith('/reports')) return { section: 'รายงาน', page: 'รายงานภาพรวม' };
-    if (pathname.startsWith('/settings')) return { section: 'ตั้งค่า', page: 'ตั้งค่าระบบ' };
-    return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
+
+    // 11. วันทำงานและวันหยุด (Work Calendar)
+    if (pathname.startsWith('/work-calendar')) return { section: 'วันทำงานและวันหยุด', page: 'วันทำงานประจำสัปดาห์' };
+
+    // 12. รายงานและสถิติ (Reports)
+    if (pathname.startsWith('/reports')) return { section: 'รายงาน', page: 'อัตรากำลังคนประจำวัน' };
+
+    // 13. ตั้งค่าระบบ (Settings)
+    if (pathname.startsWith('/settings')) return { section: 'ตั้งค่า', page: 'ผู้ใช้งาน' };
+
+    return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
   };
 
   const breadcrumb = getBreadcrumb();
