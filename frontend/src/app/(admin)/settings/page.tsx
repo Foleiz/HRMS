@@ -378,79 +378,66 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 1. Top Header with Breadcrumb & Back Icon */}
-      <div className="flex items-center gap-3">
-        <Link
-          href="/"
-          className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-xs"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <span className="text-slate-500 font-semibold">ตั้งค่า</span>
-          <span>/</span>
-          <span className="text-slate-800 font-semibold">{getBreadcrumbTitle()}</span>
-        </div>
-      </div>
+    <div className="space-y-4 font-sans pb-12">
+      {/* 1. Sub-Navigation Tabs (ตรงตามรูปแบบเดียวกับเมนูพนักงาน) */}
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
+          {/* Tab 1: ผู้ใช้งาน */}
+          {canViewUsersTab && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'users'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              ผู้ใช้งาน
+            </button>
+          )}
 
-      {/* 2. Main Tab Buttons Bar (Matching Mockup Design) */}
-      <div className="border-b border-slate-200/80 flex items-center gap-8">
-        {/* Tab 1: ผู้ใช้งาน */}
-        {canViewUsersTab && (
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === 'users'
-                ? 'text-slate-900 border-b-2 border-[#0B2046]'
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>ผู้ใช้งาน</span>
-          </button>
-        )}
+          {/* Tab 2: บทบาทและสิทธิ์ */}
+          {canViewRolesTab && (
+            <button
+              onClick={() => setActiveTab('roles')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'roles'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              บทบาทและสิทธิ์
+            </button>
+          )}
 
-        {/* Tab 2: บทบาทและสิทธิ์ */}
-        {canViewRolesTab && (
-          <button
-            onClick={() => setActiveTab('roles')}
-            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === 'roles'
-                ? 'text-slate-900 border-b-2 border-[#0B2046]'
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>บทบาทและสิทธิ์</span>
-          </button>
-        )}
+          {/* Tab 3: บันทึกการใช้งานระบบ (Audit Log) */}
+          {canViewAuditLogTab && (
+            <button
+              onClick={() => setActiveTab('audit-log')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'audit-log'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              บันทึกการใช้งานระบบ (Audit Log)
+            </button>
+          )}
 
-        {/* Tab 3: บันทึกการใช้งานระบบ (Audit Log) */}
-        {canViewAuditLogTab && (
-          <button
-            onClick={() => setActiveTab('audit-log')}
-            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === 'audit-log'
-                ? 'text-slate-900 border-b-2 border-[#0B2046]'
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>บันทึกการใช้งานระบบ (Audit Log)</span>
-          </button>
-        )}
-
-        {/* Tab 4: สายการอนุมัติ */}
-        {canViewApprovalFlowsTab && (
-          <button
-            onClick={() => setActiveTab('approval-flows')}
-            className={`pb-3.5 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === 'approval-flows'
-                ? 'text-slate-900 border-b-2 border-[#0B2046]'
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>สายการอนุมัติ</span>
-          </button>
-        )}
+          {/* Tab 4: สายการอนุมัติ */}
+          {canViewApprovalFlowsTab && (
+            <button
+              onClick={() => setActiveTab('approval-flows')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'approval-flows'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              สายการอนุมัติ
+            </button>
+          )}
+        </nav>
       </div>
 
       {/* 3. Tab Content */}

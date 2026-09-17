@@ -423,50 +423,50 @@ export default function LeaveManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Main Card with Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Navigation Tabs (รูปแบบเดียวกับเมนู บันทึกเวลาของฉัน) */}
-        <div className="flex border-b border-gray-100 px-4 pt-2 gap-2 overflow-x-auto">
+      {/* 1. Sub-Navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewTypes && (
             <button
               onClick={() => setActiveTab('types')}
-              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'types'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <ClipboardList className="w-4 h-4" />
-              <span>ประเภทการลา</span>
+              ประเภทการลา
             </button>
           )}
           {canViewPolicies && (
             <button
               onClick={() => setActiveTab('policies')}
-              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'policies'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>สิทธิ์การลา</span>
+              สิทธิ์การลา
             </button>
           )}
           {canViewBalances && (
             <button
               onClick={() => setActiveTab('balances')}
-              className={`pb-3 px-3.5 border-b-2 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'balances'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Wallet className="w-4 h-4" />
-              <span>ยอดวันลาพนักงาน</span>
+              ยอดวันลาพนักงาน
             </button>
           )}
-        </div>
+        </nav>
+      </div>
+
+      {/* Main Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
         {/* Toast Notification Banner */}
         {toastMessage && (

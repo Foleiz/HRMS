@@ -816,88 +816,93 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200" onClick={() => setOpenActionMenuId(null)}>
-      {/* Top Navigation Tabs */}
-
-      {/* 2. Top Navigation Tabs */}
-      <div className="border-b border-slate-200/80">
-        <div className="flex items-center gap-6 overflow-x-auto no-scrollbar text-sm font-semibold whitespace-nowrap">
+      {/* Sub Navigation Bar - Standardized to Employee Module */}
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           <button
+            type="button"
             onClick={() => setActiveTab('overview')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'overview'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             ภาพรวม
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('structures')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'structures'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             โครงสร้างเงินเดือน
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('items')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'items'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             รายได้และรายหัก
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('process')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'process'
-                ? 'border-b-2 border-[#FFE500] text-slate-900 font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             ประมวลเงินเดือน
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('bank-transfer')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'bank-transfer'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             โอนเงินธนาคาร
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('bonus')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'bonus'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             โบนัส
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('tax-sso')}
-            className={`pb-3 transition-all cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'tax-sso'
-                ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             ภาษี & ประกันสังคม
           </button>
-        </div>
+        </nav>
       </div>
 
       {/* Toast Alert */}

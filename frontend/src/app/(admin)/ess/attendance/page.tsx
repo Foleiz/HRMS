@@ -345,33 +345,31 @@ export default function EssAttendancePage() {
   return (
     <div className="space-y-6 pb-12">
       {/* ─────────────────────────────────────────────────────────────
-          Sub-menu Tabs (Exact same style as เมนูตรวจบันทึกเวลา)
+          Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
-        <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
           <button
             onClick={() => setActiveTab('history')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'history'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
-            <Clock className="w-4 h-4" />
-            <span>ตรวจบันทึกเวลาของฉัน</span>
+            ตรวจบันทึกเวลาของฉัน
           </button>
 
           {/* Tab 2: คำขอปรับปรุงเวลา */}
           <button
             onClick={() => setActiveTab('adjustments')}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'adjustments'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
-            <ClipboardCheck className="w-4 h-4" />
             <span>คำขอปรับปรุงเวลา</span>
             {pendingCount > 0 && (
               <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
@@ -379,7 +377,7 @@ export default function EssAttendancePage() {
               </span>
             )}
           </button>
-        </div>
+        </nav>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────

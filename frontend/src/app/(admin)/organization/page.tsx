@@ -874,109 +874,109 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Sub-navigation Tabs */}
-      <div className="border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 shadow-sm overflow-x-auto">
-        <div className="flex gap-2 text-sm font-medium whitespace-nowrap min-w-max">
+      {/* Sub Navigation Bar - Standardized to Employee Module */}
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewStruct && (
             <button
+              type="button"
               onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'divisions'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <GitFork className="w-4 h-4" />
               จัดการฝ่าย
             </button>
           )}
 
           {canViewStruct && (
             <button
+              type="button"
               onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'departments'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Building2 className="w-4 h-4" />
               จัดการแผนก
             </button>
           )}
 
           {canViewPos && (
             <button
+              type="button"
               onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'positions'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Briefcase className="w-4 h-4" />
               จัดการตำแหน่ง
             </button>
           )}
 
           {canViewPos && (
             <button
+              type="button"
               onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'levels'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Layers className="w-4 h-4" />
               ระดับพนักงาน
             </button>
           )}
 
           {canViewBenefits && (
             <button
+              type="button"
               onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'benefits'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Gift className="w-4 h-4" />
               สวัสดิการและสิทธิประโยชน์
             </button>
           )}
 
           {canViewCompany && (
             <button
+              type="button"
               onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
-              className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'company'
-                  ? 'border-[#0B2046] text-[#0B2046]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Building className="w-4 h-4" />
               ข้อมูลบริษัท
             </button>
           )}
 
           <button
+            type="button"
             onClick={() => { setActiveTab('orgchart'); setOrgSearch(''); }}
-            className={`pb-3 px-3.5 border-b-2 font-semibold transition-all flex items-center gap-2 ${
+            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'orgchart'
-                ? 'border-[#0B2046] text-[#0B2046]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
-            <Network className="w-4 h-4" />
             แผนผังองค์กร
           </button>
-        </div>
+        </nav>
       </div>
 
       {/* 4. Tab Content Panels */}
-      <div className="bg-white border border-slate-200 border-t-0 rounded-b-2xl p-6 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
