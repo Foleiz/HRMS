@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { SidebarProvider } from "@/context/SidebarContext";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import { ToastProvider } from "@/context/ToastContext";
 
@@ -26,9 +27,11 @@ export default function RootLayout({
     <html lang="th" className={`${prompt.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-[#F8FAFC] text-slate-800">
         <AuthProvider>
-          <BreadcrumbProvider>
-            <ToastProvider>{children}</ToastProvider>
-          </BreadcrumbProvider>
+          <SidebarProvider>
+            <BreadcrumbProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </BreadcrumbProvider>
+          </SidebarProvider>
         </AuthProvider>
       </body>
     </html>

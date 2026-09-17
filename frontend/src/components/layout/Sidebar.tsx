@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useSidebar } from '@/context/SidebarContext';
 import {
   LayoutDashboard,
   Users,
@@ -193,8 +194,13 @@ const menuItems: MenuItem[] = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user, hasPermission, hasRole } = useAuth();
+  const { isCollapsed, toggleSidebar, collapseSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleSelectMenu = () => {
+    collapseSidebar();
+    setSearchTerm('');
+  };
 
   // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
   const accessibleItems = menuItems.filter((item) => {
@@ -246,7 +252,7 @@ export const Sidebar: React.FC = () => {
       {/* 1. Header: Logo & System Name */}
       <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all ${isCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}>
         {!isCollapsed && (
-          <Link href="/" className="flex items-center gap-3 overflow-hidden">
+          <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
             {/* Logo Badge Icon (3 avatars in navy square) */}
             <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
               <Users className="w-5 h-5" />
@@ -261,7 +267,7 @@ export const Sidebar: React.FC = () => {
 
         {/* Toggle Collapse Button */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleSidebar}
           title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
           className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
         >
@@ -297,6 +303,7 @@ export const Sidebar: React.FC = () => {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleSelectMenu}
               title={isCollapsed ? item.title : undefined}
               className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 active
@@ -316,6 +323,7 @@ export const Sidebar: React.FC = () => {
         <div className="p-3 border-t border-slate-100">
           <Link
             href="/master/banks"
+            onClick={handleSelectMenu}
             className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors ${
               isCollapsed ? 'justify-center px-0' : ''
             }`}
