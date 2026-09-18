@@ -80,6 +80,144 @@ type ActiveTab =
   | 'bonus'
   | 'tax-sso';
 
+interface TablePaginationProps {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
+  unitText?: string;
+}
+
+function TablePagination({
+  currentPage,
+  pageSize,
+  totalCount,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [5, 10, 20, 50],
+  unitText = 'คน',
+}: TablePaginationProps) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const startIndex = totalCount === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(safeCurrentPage * pageSize, totalCount);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, safeCurrentPage - 2);
+    let end = Math.min(totalPages, start + 4);
+    if (end - start < 4) {
+      start = Math.max(1, end - 4);
+    }
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
+      {/* Left: Summary and Page Size Selector */}
+      <div className="flex flex-wrap items-center gap-3 text-slate-500">
+        <span>
+          แสดง <strong className="font-semibold text-slate-800">{startIndex} - {endIndex}</strong> จากทั้งหมด{' '}
+          <strong className="font-semibold text-slate-800">{totalCount}</strong> {unitText}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400">แสดงหน้าละ:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              const newSize = Number(e.target.value);
+              onPageSizeChange(newSize);
+              onPageChange(1);
+            }}
+            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs transition-colors"
+          >
+            {pageSizeOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt} {unitText}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Right: Page Navigation matching Image exactly */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled={safeCurrentPage <= 1}
+          onClick={() => onPageChange(safeCurrentPage - 1)}
+          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          title="หน้าก่อนหน้า"
+        >
+          ←
+        </button>
+
+        {pageNumbers[0] > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => onPageChange(1)}
+              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+            >
+              1
+            </button>
+            {pageNumbers[0] > 2 && <span className="px-1 text-slate-400">…</span>}
+          </>
+        )}
+
+        {pageNumbers.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onPageChange(p)}
+            className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
+              safeCurrentPage === p
+                ? 'bg-[#0B2046] text-white shadow-xs'
+                : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+
+        {pageNumbers[pageNumbers.length - 1] < totalPages && (
+          <>
+            {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-slate-400">…</span>}
+            <button
+              type="button"
+              onClick={() => onPageChange(totalPages)}
+              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+
+        <button
+          type="button"
+          disabled={safeCurrentPage >= totalPages}
+          onClick={() => onPageChange(safeCurrentPage + 1)}
+          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          title="หน้าถัดไป"
+        >
+          →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PayrollPage() {
   const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
@@ -182,6 +320,9 @@ export default function PayrollPage() {
   const [structureSubTab, setStructureSubTab] = useState<'positions' | 'employees'>('positions');
   const [openActionMenuId, setOpenActionMenuId] = useState<number | null>(null);
   const [structurePage, setStructurePage] = useState<number>(1);
+  const [structurePageSize, setStructurePageSize] = useState<number>(10);
+  const [employeeSalaryPage, setEmployeeSalaryPage] = useState<number>(1);
+  const [employeeSalaryPageSize, setEmployeeSalaryPageSize] = useState<number>(10);
 
   // Sub-tab in Payroll items view: 'EARNING' vs 'DEDUCTION'
   const [itemsSubTab, setItemsSubTab] = useState<'EARNING' | 'DEDUCTION'>('EARNING');
@@ -198,6 +339,7 @@ export default function PayrollPage() {
   const [selectedPayrollRecord, setSelectedPayrollRecord] = useState<PayrollRecord | null>(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [processPage, setProcessPage] = useState<number>(1);
+  const [processPageSize, setProcessPageSize] = useState<number>(10);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
@@ -832,6 +974,7 @@ export default function PayrollPage() {
     const p = periods.find((x) => x.id === periodId);
     if (p) {
       setSelectedPeriod(p);
+      setProcessPage(1);
       try {
         setIsPeriodLoading(true);
         const pRows = await salaryService.getPayrollsByPeriod(p.id);
@@ -1213,37 +1356,44 @@ export default function PayrollPage() {
           </div>
 
           {/* Sub-view 1: Salary Structure Table matching Image 1 */}
-          {structureSubTab === 'positions' && (
-            <div className="space-y-4">
-              <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                      <th className="py-3.5 px-5">ระดับพนักงาน</th>
-                      <th className="py-3.5 px-5">เงินเดือนขั้นต่ำ</th>
-                      <th className="py-3.5 px-5">เงินเดือนขั้นสูง</th>
-                      <th className="py-3.5 px-5">ค่าตำแหน่ง</th>
-                      <th className="py-3.5 px-5">สถานะ</th>
-                      <th className="py-3.5 px-5 text-right">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400">
-                          <div className="inline-flex items-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
-                          </div>
-                        </td>
+          {structureSubTab === 'positions' && (() => {
+            const totalStructureCount = structures.length;
+            const totalStructurePages = Math.max(1, Math.ceil(totalStructureCount / structurePageSize));
+            const safeStructurePage = Math.min(Math.max(1, structurePage), totalStructurePages);
+            const startStructureIdx = (safeStructurePage - 1) * structurePageSize;
+            const paginatedStructures = structures.slice(startStructureIdx, startStructureIdx + structurePageSize);
+
+            return (
+              <div className="space-y-4">
+                <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <th className="py-3.5 px-5">ระดับพนักงาน</th>
+                        <th className="py-3.5 px-5">เงินเดือนขั้นต่ำ</th>
+                        <th className="py-3.5 px-5">เงินเดือนขั้นสูง</th>
+                        <th className="py-3.5 px-5">ค่าตำแหน่ง</th>
+                        <th className="py-3.5 px-5">สถานะ</th>
+                        <th className="py-3.5 px-5 text-right">จัดการ</th>
                       </tr>
-                    ) : structures.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400">
-                          ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
-                        </td>
-                      </tr>
-                    ) : (
-                      structures.map((s) => {
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            <div className="inline-flex items-center gap-2">
+                              <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
+                            </div>
+                          </td>
+                        </tr>
+                      ) : structures.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedStructures.map((s) => {
                         const isStructureActive = s.status ? s.status.toUpperCase() === 'ACTIVE' : true;
                         return (
                           <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
@@ -1328,164 +1478,167 @@ export default function PayrollPage() {
                 </table>
               </div>
 
-              {/* Pagination matching Image 1: ← 1 2 3 4 → */}
-              <div className="flex items-center justify-end gap-1.5 pt-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setStructurePage(Math.max(1, structurePage - 1))}
-                  disabled={structurePage === 1}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                {[1, 2, 3, 4].map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setStructurePage(page)}
-                    className={`w-7 h-7 rounded-lg font-medium transition-all cursor-pointer flex items-center justify-center ${
-                      structurePage === page
-                        ? 'bg-[#0B2046] text-white'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setStructurePage(Math.min(4, structurePage + 1))}
-                  disabled={structurePage === 4}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                {/* Pagination */}
+                <TablePagination
+                  currentPage={safeStructurePage}
+                  pageSize={structurePageSize}
+                  totalCount={totalStructureCount}
+                  onPageChange={setStructurePage}
+                  onPageSizeChange={(newSize) => {
+                    setStructurePageSize(newSize);
+                    setStructurePage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                  unitText="รายการ"
+                />
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Sub-view 2: ข้อมูลเงินเดือนพนักงาน */}
-          {structureSubTab === 'employees' && (
-            <div className="space-y-4">
-              {/* Filter Toolbar */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
-                  <div className="relative flex-1 sm:max-w-xs">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleFilterEmployees()}
-                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                    />
+          {structureSubTab === 'employees' && (() => {
+            const totalEmployeeCount = employees.length;
+            const totalEmployeePages = Math.max(1, Math.ceil(totalEmployeeCount / employeeSalaryPageSize));
+            const safeEmployeePage = Math.min(Math.max(1, employeeSalaryPage), totalEmployeePages);
+            const startEmployeeIdx = (safeEmployeePage - 1) * employeeSalaryPageSize;
+            const paginatedEmployees = employees.slice(startEmployeeIdx, startEmployeeIdx + employeeSalaryPageSize);
+
+            return (
+              <div className="space-y-4">
+                {/* Filter Toolbar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:max-w-xs">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleFilterEmployees()}
+                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+                      />
+                    </div>
+
+                    <select
+                      value={selectedDeptId}
+                      onChange={(e) => setSelectedDeptId(e.target.value)}
+                      className="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+                    >
+                      <option value="">-- ทุกแผนก --</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.departmentName}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={handleFilterEmployees}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                    >
+                      ค้นหา
+                    </button>
                   </div>
 
-                  <select
-                    value={selectedDeptId}
-                    onChange={(e) => setSelectedDeptId(e.target.value)}
-                    className="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
-                  >
-                    <option value="">-- ทุกแผนก --</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.departmentName}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={handleFilterEmployees}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-                  >
-                    ค้นหา
-                  </button>
+                  <div className="text-xs text-slate-500">
+                    แสดง <span className="font-bold text-slate-800">{employees.length}</span> คน
+                  </div>
                 </div>
 
-                <div className="text-xs text-slate-500">
-                  แสดง <span className="font-bold text-slate-800">{employees.length}</span> คน
+                {/* Table */}
+                <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
+                        <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
+                        <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
+                        <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
+                        <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
+                        <th className="py-3.5 px-4 text-center">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {paginatedEmployees.map((emp) => {
+                        const hasSalary = (emp.currentSalary || 0) > 0;
+                        return (
+                          <tr key={emp.employeeId} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3.5 px-4">
+                              <div className="font-semibold text-slate-900">{emp.employeeName}</div>
+                              <div className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeCode}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="text-slate-800 text-xs font-medium">
+                                {emp.departmentName || 'ไม่ระบุแผนก'}
+                              </div>
+                              <div className="text-xs text-slate-400 mt-0.5">
+                                {emp.positionName || 'ไม่ระบุตำแหน่ง'}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              {hasSalary ? (
+                                <span className="font-bold text-slate-900 font-mono text-xs">
+                                  ฿{emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-medium">
+                                  ยังไม่ระบุ
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-center text-xs text-slate-500 font-mono">
+                              {emp.currentEffectiveFrom || '-'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
+                                <span className="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                  ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
+                              <div className="inline-flex items-center gap-2">
+                                <button
+                                  onClick={() => handleOpenAdjustSalary(emp)}
+                                  className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                >
+                                  {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
+                                </button>
+                                <button
+                                  onClick={() => handleOpenSalaryHistory(emp)}
+                                  title="ดูประวัติการปรับเงินเดือน"
+                                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <History className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                      <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
-                      <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
-                      <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
-                      <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                      <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
-                      <th className="py-3.5 px-4 text-center">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {employees.map((emp) => {
-                      const hasSalary = (emp.currentSalary || 0) > 0;
-                      return (
-                        <tr key={emp.employeeId} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3.5 px-4">
-                            <div className="font-semibold text-slate-900">{emp.employeeName}</div>
-                            <div className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeCode}</div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <div className="text-slate-800 text-xs font-medium">
-                              {emp.departmentName || 'ไม่ระบุแผนก'}
-                            </div>
-                            <div className="text-xs text-slate-400 mt-0.5">
-                              {emp.positionName || 'ไม่ระบุตำแหน่ง'}
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            {hasSalary ? (
-                              <span className="font-bold text-slate-900 font-mono text-xs">
-                                ฿{emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-medium">
-                                ยังไม่ระบุ
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center text-xs text-slate-500 font-mono">
-                            {emp.currentEffectiveFrom || '-'}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
-                              <span className="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <div className="inline-flex items-center gap-2">
-                              <button
-                                onClick={() => handleOpenAdjustSalary(emp)}
-                                className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                              >
-                                {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                              </button>
-                              <button
-                                onClick={() => handleOpenSalaryHistory(emp)}
-                                title="ดูประวัติการปรับเงินเดือน"
-                                className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <History className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                {/* Pagination */}
+                <TablePagination
+                  currentPage={safeEmployeePage}
+                  pageSize={employeeSalaryPageSize}
+                  totalCount={totalEmployeeCount}
+                  onPageChange={setEmployeeSalaryPage}
+                  onPageSizeChange={(newSize) => {
+                    setEmployeeSalaryPageSize(newSize);
+                    setEmployeeSalaryPage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                  unitText="คน"
+                />
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -1717,6 +1870,12 @@ export default function PayrollPage() {
         const totalNet = payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0);
         const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
         const pendingTransferCount = totalEmployees - transferredCount;
+
+        const totalProcessCount = payrolls.length;
+        const totalProcessPages = Math.max(1, Math.ceil(totalProcessCount / processPageSize));
+        const safeProcessPage = Math.min(Math.max(1, processPage), totalProcessPages);
+        const startProcessIdx = (safeProcessPage - 1) * processPageSize;
+        const paginatedPayrolls = payrolls.slice(startProcessIdx, startProcessIdx + processPageSize);
 
         const getWorkflowStep = (status?: string) => {
           if (!status || status === 'DRAFT' || status === 'REVIEW') return 1;
@@ -2090,7 +2249,7 @@ export default function PayrollPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {payrolls.map((pr) => {
+                        {paginatedPayrolls.map((pr) => {
                           return (
                             <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
                               <td className="py-4 px-5">
@@ -2146,35 +2305,18 @@ export default function PayrollPage() {
                   </div>
 
                   {/* Pagination */}
-                  <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
-                    <button
-                      disabled={processPage === 1}
-                      onClick={() => setProcessPage(processPage - 1)}
-                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                    >
-                      ←
-                    </button>
-                    {[1, 2, 3, 4].map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setProcessPage(page)}
-                        className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
-                          processPage === page
-                            ? 'bg-[#0B2046] text-white'
-                            : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    <button
-                      disabled={processPage === 4}
-                      onClick={() => setProcessPage(processPage + 1)}
-                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                    >
-                      →
-                    </button>
-                  </div>
+                  <TablePagination
+                    currentPage={safeProcessPage}
+                    pageSize={processPageSize}
+                    totalCount={totalProcessCount}
+                    onPageChange={setProcessPage}
+                    onPageSizeChange={(newSize) => {
+                      setProcessPageSize(newSize);
+                      setProcessPage(1);
+                    }}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                    unitText="คน"
+                  />
                 </div>
               </div>
             )}
@@ -2257,7 +2399,7 @@ export default function PayrollPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {payrolls.map((pr) => {
+                        {paginatedPayrolls.map((pr) => {
                           const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
                           return (
                             <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
@@ -2314,35 +2456,18 @@ export default function PayrollPage() {
                   </div>
 
                   {/* Pagination */}
-                  <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
-                    <button
-                      disabled={processPage === 1}
-                      onClick={() => setProcessPage(processPage - 1)}
-                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                    >
-                      ←
-                    </button>
-                    {[1, 2, 3, 4].map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setProcessPage(page)}
-                        className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
-                          processPage === page
-                            ? 'bg-[#0B2046] text-white'
-                            : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    <button
-                      disabled={processPage === 4}
-                      onClick={() => setProcessPage(processPage + 1)}
-                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                    >
-                      →
-                    </button>
-                  </div>
+                  <TablePagination
+                    currentPage={safeProcessPage}
+                    pageSize={processPageSize}
+                    totalCount={totalProcessCount}
+                    onPageChange={setProcessPage}
+                    onPageSizeChange={(newSize) => {
+                      setProcessPageSize(newSize);
+                      setProcessPage(1);
+                    }}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                    unitText="คน"
+                  />
                 </div>
               </div>
             )}
@@ -2426,7 +2551,7 @@ export default function PayrollPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {payrolls.map((pr) => (
+                        {paginatedPayrolls.map((pr) => (
                           <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-4 px-5 font-mono font-semibold text-slate-900">{pr.employeeCode}</td>
                             <td className="py-4 px-5 font-semibold text-slate-900">{pr.employeeName}</td>
@@ -2454,6 +2579,20 @@ export default function PayrollPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination */}
+                  <TablePagination
+                    currentPage={safeProcessPage}
+                    pageSize={processPageSize}
+                    totalCount={totalProcessCount}
+                    onPageChange={setProcessPage}
+                    onPageSizeChange={(newSize) => {
+                      setProcessPageSize(newSize);
+                      setProcessPage(1);
+                    }}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                    unitText="คน"
+                  />
                 </div>
               </div>
             )}
