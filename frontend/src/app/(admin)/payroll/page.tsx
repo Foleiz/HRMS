@@ -1918,6 +1918,40 @@ export default function PayrollPage() {
             </div>
           )}
 
+          {/* Dedicated Finance Quick Action Bar for Finance Mode */}
+          {viewMode === 'FINANCE' && selectedPeriod && (
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                <Landmark className="w-4 h-4 text-emerald-700" />
+                <span>การดำเนินการฝั่งการเงิน/บัญชี (Finance Toolbar):</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleGenerateAndDownloadBankFile}
+                  disabled={isGeneratingBankFile}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ดาวน์โหลดไฟล์โอนเงินธนาคาร (Bank Batch)</span>
+                </button>
+                <button
+                  onClick={() => handleExportTaxSsoCsv('PND1')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
+                </button>
+                <button
+                  onClick={() => handleExportTaxSsoCsv('SSO')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ส่งออก สปส. 1-10 (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 4 Summary Stat Cards for Selected Period */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
