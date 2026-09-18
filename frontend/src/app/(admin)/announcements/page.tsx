@@ -24,7 +24,6 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   CheckCheck,
   Building,
   Tag
@@ -103,17 +102,7 @@ export default function AnnouncementsPage() {
     hasPermission('SYS_ADMIN')
   );
 
-  // Active Main Tab: 'FEED' (Employee Feed) or 'MANAGE' (Admin Management)
-  const [activeTab, setActiveTab] = useState<'FEED' | 'MANAGE'>(canManage ? 'MANAGE' : 'FEED');
-
-  // ─── Feed State (สำหรับพนักงาน) ───
-  const [feedItems, setFeedItems] = useState<Announcement[]>([]);
-  const [loadingFeed, setLoadingFeed] = useState(true);
-  const [feedSearch, setFeedSearch] = useState('');
-  const [feedCategory, setFeedCategory] = useState('');
-  const [feedOnlyUnread, setFeedOnlyUnread] = useState(false);
-
-  // Reading Modal
+  // Reading Modal (Preview สำหรับผู้ดูแล)
   const [readingItem, setReadingItem] = useState<Announcement | null>(null);
 
   // ─── Admin Management State (สำหรับ HR/ผู้ดูแล) ───
@@ -179,22 +168,9 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     setBreadcrumb({
       section: 'องค์กร',
-      page: 'ข่าวสารและประกาศ',
+      page: 'จัดการประกาศ',
     });
   }, [setBreadcrumb]);
-
-  // Load Feed for Employee
-  const fetchFeed = useCallback(async () => {
-    setLoadingFeed(true);
-    try {
-      const data = await announcementService.getMyFeed();
-      setFeedItems(data || []);
-    } catch (err) {
-      console.error('Failed to fetch feed', err);
-    } finally {
-      setLoadingFeed(false);
-    }
-  }, []);
 
   // Load Announcements for Admin
   const fetchAnnouncements = useCallback(async () => {
@@ -221,30 +197,15 @@ export default function AnnouncementsPage() {
 
   // Initial loads
   useEffect(() => {
-    fetchFeed();
     if (canManage) {
       fetchAnnouncements();
       organizationService.getDepartments().then(setDepartments).catch(console.error);
     }
-  }, [fetchFeed, fetchAnnouncements, canManage]);
+  }, [fetchAnnouncements, canManage]);
 
-  // Open Reading Modal & Mark Read
-  const handleOpenReading = async (a: Announcement) => {
+  // Open Reading Modal for Preview
+  const handleOpenReading = (a: Announcement) => {
     setReadingItem(a);
-    if (!a.isReadByCurrentUser) {
-      try {
-        await announcementService.markAsRead(a.id);
-        setFeedItems((prev) =>
-          prev.map((item) =>
-            item.id === a.id
-              ? { ...item, isReadByCurrentUser: true, readCount: item.readCount + 1 }
-              : item
-          )
-        );
-      } catch (err) {
-        console.error('Failed to mark as read', err);
-      }
-    }
   };
 
   // Handle open create form
@@ -332,7 +293,6 @@ export default function AnnouncementsPage() {
 
       setIsFormOpen(false);
       fetchAnnouncements();
-      fetchFeed();
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกประกาศ');
     } finally {
@@ -346,7 +306,6 @@ export default function AnnouncementsPage() {
       const newPinned = await announcementService.togglePin(a.id);
       showToast(newPinned ? 'ปักหมุดประกาศขึ้นบนสุดเรียบร้อย' : 'ยกเลิกการปักหมุดเรียบร้อย');
       fetchAnnouncements();
-      fetchFeed();
     } catch (err) {
       showToast('ไม่สามารถเปลี่ยนสถานะการปักหมุดได้');
     }
@@ -359,7 +318,6 @@ export default function AnnouncementsPage() {
       await announcementService.setPublishStatus(a.id, !isPub);
       showToast(!isPub ? 'เผยแพร่ประกาศเรียบร้อยแล้ว' : 'เปลี่ยนสถานะเป็นฉบับร่างเรียบร้อย');
       fetchAnnouncements();
-      fetchFeed();
     } catch (err) {
       showToast('ไม่สามารถเปลี่ยนสถานะการเผยแพร่ได้');
     }
@@ -379,7 +337,6 @@ export default function AnnouncementsPage() {
           await announcementService.deleteAnnouncement(a.id);
           showToast('ลบ/จัดเก็บข่าวประกาศเรียบร้อยแล้ว');
           fetchAnnouncements();
-          fetchFeed();
         } catch (err) {
           showToast('เกิดข้อผิดพลาด ไม่สามารถลบประกาศได้');
         }
@@ -403,23 +360,6 @@ export default function AnnouncementsPage() {
     }
   };
 
-  // Filtered Feed Items
-  const filteredFeed = feedItems.filter((item) => {
-    if (feedSearch) {
-      const q = feedSearch.toLowerCase();
-      const matchTitle = item.title.toLowerCase().includes(q);
-      const matchContent = item.content.toLowerCase().includes(q);
-      if (!matchTitle && !matchContent) return false;
-    }
-    if (feedCategory && item.category !== feedCategory) {
-      return false;
-    }
-    if (feedOnlyUnread && item.isReadByCurrentUser) {
-      return false;
-    }
-    return true;
-  });
-
   // KPIs for Admin
   const publishedCount = announcements.filter((a) => a.status === 'PUBLISHED').length;
   const pinnedCount = announcements.filter((a) => a.isPinned).length;
@@ -442,9 +382,9 @@ export default function AnnouncementsPage() {
             <Megaphone className="w-5 h-5 text-[#0B2046]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">ข่าวสารและประกาศองค์กร</h1>
+            <h1 className="text-xl font-bold text-slate-900">จัดการประกาศองค์กร</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              ศูนย์รวมข่าวสารประชาสัมพันธ์ นโยบายบริษัท และกิจกรรมสำหรับพนักงานทุกคน
+              ศูนย์รวมการประชาสัมพันธ์ จัดการข่าวสาร นโยบายบริษัท และติดตามสถิติการเปิดอ่าน
             </p>
           </div>
         </div>
@@ -463,186 +403,8 @@ export default function AnnouncementsPage() {
         )}
       </div>
 
-      {/* Main Tab Navigation */}
-      {canManage && (
-        <div className="flex border-b border-slate-200">
-          <button
-            type="button"
-            onClick={() => setActiveTab('FEED')}
-            className={`flex items-center gap-2 py-3 px-6 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-              activeTab === 'FEED'
-                ? 'border-[#0B2046] text-[#0B2046] bg-blue-50/30'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>ข่าวสารสำหรับฉัน (ฟีดพนักงาน)</span>
-            {feedItems.some((i) => !i.isReadByCurrentUser) && (
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('MANAGE')}
-            className={`flex items-center gap-2 py-3 px-6 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-              activeTab === 'MANAGE'
-                ? 'border-[#0B2046] text-[#0B2046] bg-blue-50/30'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-            }`}
-          >
-            <BarChart2 className="w-4 h-4" />
-            <span>จัดการประกาศองค์กร (ผู้ดูแลระบบ)</span>
-          </button>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 1: ข่าวสารสำหรับฉัน (EMPLOYEE FEED VIEW)                              */}
-      {/* ========================================================================= */}
-      {activeTab === 'FEED' && (
-        <div className="space-y-6">
-          {/* Feed Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full md:w-80">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="ค้นหาข่าวสาร หรือเนื้อหาประกาศ..."
-                value={feedSearch}
-                onChange={(e) => setFeedSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-              <select
-                value={feedCategory}
-                onChange={(e) => setFeedCategory(e.target.value)}
-                className="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
-              >
-                <option value="">ทุกหมวดหมู่</option>
-                <option value="GENERAL">ข่าวทั่วไป</option>
-                <option value="POLICY">นโยบายองค์กร</option>
-                <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
-                <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
-                <option value="URGENT">ประกาศด่วนสำคัญ</option>
-              </select>
-
-              <button
-                type="button"
-                onClick={() => setFeedOnlyUnread(!feedOnlyUnread)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                  feedOnlyUnread
-                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>เฉพาะที่ยังไม่ได้อ่าน</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Feed Cards Grid */}
-          {loadingFeed ? (
-            <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-slate-100">
-              <Loader2 className="w-8 h-8 text-[#0B2046] animate-spin mb-2" />
-              <span className="text-xs text-slate-500">กำลังโหลดข่าวสารและประกาศของคุณ...</span>
-            </div>
-          ) : filteredFeed.length === 0 ? (
-            <div className="text-center p-16 bg-white rounded-2xl border border-slate-100">
-              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                <Megaphone className="w-6 h-6" />
-              </div>
-              <h3 className="font-semibold text-slate-800 text-sm">ไม่พบข่าวประกาศตามเงื่อนไขที่เลือก</h3>
-              <p className="text-xs text-slate-500 mt-1">ขณะนี้ยังไม่มีประกาศใหม่สำหรับสังกัดของคุณ หรือคุณได้อ่านครบทุกประกาศแล้ว</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredFeed.map((item) => {
-                const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.GENERAL;
-                const pri = PRIORITY_MAP[item.priority] || PRIORITY_MAP.NORMAL;
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleOpenReading(item)}
-                    className={`bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden relative group ${
-                      item.isPinned
-                        ? 'border-amber-200 hover:border-amber-300 ring-1 ring-amber-100'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {/* Decorative Header Bar */}
-                    <div className="w-full h-2.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-slate-700" />
-
-                    <div className="p-5 flex-1 flex flex-col justify-between">
-                      <div>
-                        {/* Badges Bar */}
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                          {item.isPinned && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-xs">
-                              <Pin className="w-3 h-3 text-amber-600 fill-amber-500" />
-                              <span>ปักหมุด</span>
-                            </span>
-                          )}
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
-                            {cat.label}
-                          </span>
-                          {item.priority !== 'NORMAL' && (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${pri.badge}`}>
-                              {pri.label}
-                            </span>
-                          )}
-                          {!item.isReadByCurrentUser ? (
-                            <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                              <span>ยังไม่อ่าน</span>
-                            </span>
-                          ) : (
-                            <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium text-emerald-600">
-                              <CheckCheck className="w-3.5 h-3.5" />
-                              <span>อ่านแล้ว</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                          {item.title}
-                        </h3>
-
-                        {/* Content snippet */}
-                        <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
-                          {item.content}
-                        </p>
-                      </div>
-
-                      {/* Footer Info */}
-                      <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{formatDate(item.publishedAt || item.createdAt)}</span>
-                        </span>
-                        <span className="text-[#0B2046] font-semibold flex items-center gap-1 group-hover:underline">
-                          <span>อ่านเพิ่มเติม</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 2: จัดการประกาศองค์กร (ADMIN MANAGEMENT VIEW)                         */}
-      {/* ========================================================================= */}
-      {activeTab === 'MANAGE' && canManage && (
-        <div className="space-y-6">
+      {/* Admin Management View */}
+      <div className="space-y-6">
           {/* Summary KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
@@ -820,12 +582,19 @@ export default function AnnouncementsPage() {
                           </td>
 
                           {/* Title */}
-                          <td className="py-3 px-4 font-medium text-slate-800 max-w-xs truncate">
+                          <td className="py-3 px-4 font-medium text-slate-800 max-w-xs">
                             <div className="flex items-center gap-2">
                               {a.isPinned && (
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                               )}
-                              <span className="font-semibold">{a.title}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReading(a)}
+                                className="font-semibold text-slate-800 hover:text-blue-600 transition-colors text-left cursor-pointer truncate max-w-xs block"
+                                title="คลิกเพื่อดูตัวอย่างประกาศฉบับเต็ม"
+                              >
+                                {a.title}
+                              </button>
                             </div>
                             <span className="text-[11px] text-slate-400 block truncate mt-0.5">
                               {a.content}
@@ -955,7 +724,6 @@ export default function AnnouncementsPage() {
             )}
           </div>
         </div>
-      )}
 
       {/* ========================================================================= */}
       {/* READING MODAL (หน้าต่างอ่านประกาศฉบับเต็ม สำหรับพนักงาน)                    */}
