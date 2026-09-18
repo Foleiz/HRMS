@@ -2265,11 +2265,32 @@ export default function OrganizationPage() {
         // Connector line style helper
         const connectorStyle = 'relative before:absolute before:content-[\'\'] before:top-0 before:left-1/2 before:-translate-x-px before:w-px before:h-5 before:bg-slate-300';
 
+        // Collect all employee IDs & names that serve as CEO, Division Heads, or Department Heads
+        const headEmployeeIds = new Set<number>();
+        const headEmployeeNames = new Set<string>();
+
+        if (company?.ceoEmployeeId) headEmployeeIds.add(company.ceoEmployeeId);
+        if (ceoEmployee?.id) headEmployeeIds.add(ceoEmployee.id);
+        if (company?.ceoEmployeeName) headEmployeeNames.add(company.ceoEmployeeName.trim());
+
+        divisions.forEach((div) => {
+          if (div.headEmployeeId) headEmployeeIds.add(div.headEmployeeId);
+          if (div.headEmployeeName) headEmployeeNames.add(div.headEmployeeName.trim());
+        });
+
+        departments.forEach((d) => {
+          if (d.headEmployeeId) headEmployeeIds.add(d.headEmployeeId);
+          if (d.headEmployeeName) headEmployeeNames.add(d.headEmployeeName.trim());
+        });
+
+        const isHeadEmployee = (e: Employee) =>
+          headEmployeeIds.has(e.id) || headEmployeeNames.has(e.fullName.trim());
+
         // Render leaf employee cards (staff under a dept)
         const renderStaffRow = (deptId: number, deptColor: string) => {
           const dept = departments.find((d) => d.id === deptId);
           const staffList = employees
-            .filter((e) => e.departmentName === dept?.departmentName && e.id !== dept?.headEmployeeId)
+            .filter((e) => e.departmentName === dept?.departmentName && !isHeadEmployee(e))
             .filter(empMatches);
 
           if (staffList.length === 0) {
@@ -2310,9 +2331,10 @@ export default function OrganizationPage() {
           const isDeptExpanded = expandedNodes.has(deptKey);
           const deptHead = dept.headEmployeeId
             ? employees.find((e) => e.id === dept.headEmployeeId)
-            : null;
+            : employees.find((e) => e.fullName.trim() === dept.headEmployeeName?.trim());
+
           const staffCount = employees.filter(
-            (e) => e.departmentName === dept.departmentName && e.id !== dept.headEmployeeId
+            (e) => e.departmentName === dept.departmentName && !isHeadEmployee(e)
           ).length;
 
           const headName = deptHead?.fullName || dept.headEmployeeName || `หัวหน้า ${dept.departmentName}`;
@@ -2348,7 +2370,8 @@ export default function OrganizationPage() {
           const isDivExpanded = expandedNodes.has(divKey);
           const divHead = div.headEmployeeId
             ? employees.find((e) => e.id === div.headEmployeeId)
-            : null;
+            : employees.find((e) => e.fullName.trim() === div.headEmployeeName?.trim());
+
           const divDepts = departments.filter((d) => d.divisionId === div.id && d.status === 'ACTIVE');
 
           const headName = divHead?.fullName || div.headEmployeeName || `หัวหน้า ${div.divisionName}`;
