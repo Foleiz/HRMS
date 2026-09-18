@@ -174,6 +174,8 @@ export interface PayrollPeriod {
   paymentConfirmedAt?: string | null;
   paymentConfirmedBy?: number | null;
   bankFileGeneratedAt?: string | null;
+  hasBankReceipt?: boolean;
+  bankReceiptFileName?: string | null;
   totalTransferredCount: number;
   paymentNote?: string | null;
   canConfirmPayment: boolean;
