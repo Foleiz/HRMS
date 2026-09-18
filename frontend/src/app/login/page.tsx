@@ -147,15 +147,15 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('pimjai.k', 'Pimjai@Hr2026')}
+                onClick={() => handleQuickLogin('hr', 'Hr@2026!Pass')}
                 className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-emerald-500 text-left transition-colors cursor-pointer group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-emerald-400">HR Manager</span>
-                  <span className="text-[10px] text-slate-500 font-mono">pimjai.k</span>
+                  <span className="font-semibold text-emerald-400">HR Only (สายธาร)</span>
+                  <span className="text-[10px] text-slate-500 font-mono">hr</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Pimjai@Hr2026
+                  Hr@2026!Pass / 123456
                 </div>
               </button>
 
@@ -165,11 +165,11 @@ export default function LoginPage() {
                 className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-cyan-500 text-left transition-colors cursor-pointer group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyan-400">Finance & Account</span>
+                  <span className="font-semibold text-cyan-400">Finance Only (สมการ)</span>
                   <span className="text-[10px] text-slate-500 font-mono">finance</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Finance@Money2026
+                  Finance@Money2026 / 123456
                 </div>
               </button>
 

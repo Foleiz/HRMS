@@ -17,6 +17,7 @@ public class AuthService : IAuthService
     public static readonly Dictionary<string, string> DefaultAccountPasswords = new(StringComparer.OrdinalIgnoreCase)
     {
         { "admin", "Admin#2026!Sec" },
+        { "hr", "Hr@2026!Pass" },
         { "pimjai.k", "Pimjai@Hr2026" },
         { "somchai.w", "Somchai@Dept2026" },
         { "worameth.r", "Worameth@Staff26" },
