@@ -305,10 +305,16 @@ export default function PayrollPage() {
       setPeriods(periodsData || []);
 
       if (periodsData && periodsData.length > 0) {
-        const aug = periodsData.find((p) => p.year === 2026 && p.month === 8) || periodsData[0];
-        setSelectedPeriod(aug);
-        const pRows = await salaryService.getPayrollsByPeriod(aug.id).catch(() => []);
+        const targetPeriod = periodsData.find((p) => p.year === 2026 && p.month === 9) || periodsData[0];
+        setSelectedPeriod(targetPeriod);
+        const pRows = await salaryService.getPayrollsByPeriod(targetPeriod.id).catch(() => []);
         setPayrolls(pRows || []);
+      } else {
+        setSelectedPeriod(null);
+        setPayrolls([]);
+        setTransferList(null);
+        setBankSummary(null);
+        setTaxSsoSummary(null);
       }
     } catch (err) {
       console.error('Failed to load payroll data:', err);
@@ -324,7 +330,12 @@ export default function PayrollPage() {
 
   // Dynamic fetch when switching to Bank Transfer, Tax/SSO, or Bonus tab
   useEffect(() => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod) {
+      setTransferList(null);
+      setBankSummary(null);
+      setTaxSsoSummary(null);
+      return;
+    }
 
     if (activeTab === 'bank-transfer') {
       loadTransferList(selectedPeriod.id);
@@ -337,6 +348,7 @@ export default function PayrollPage() {
   }, [activeTab, selectedPeriod]);
 
   const loadBankTransfer = async (periodId: number, bankCode?: string) => {
+    if (!periodId) return;
     try {
       const summary = await salaryService.getBankTransferSummary(
         periodId,
@@ -345,15 +357,18 @@ export default function PayrollPage() {
       setBankSummary(summary);
     } catch (err) {
       console.error('Failed to load bank transfer summary:', err);
+      setBankSummary(null);
     }
   };
 
   const loadTaxSsoSummary = async (periodId: number) => {
+    if (!periodId) return;
     try {
       const summary = await salaryService.getTaxSsoSummary(periodId);
       setTaxSsoSummary(summary);
     } catch (err) {
       console.error('Failed to load tax & SSO summary:', err);
+      setTaxSsoSummary(null);
     }
   };
 
@@ -445,12 +460,14 @@ export default function PayrollPage() {
   // ===== PAYMENT WORKFLOW HANDLERS =====
 
   const loadTransferList = async (periodId: number) => {
+    if (!periodId) return;
     setIsLoadingTransferList(true);
     try {
       const list = await salaryService.getTransferList(periodId);
       setTransferList(list);
     } catch (err) {
       console.error('Failed to load transfer list:', err);
+      setTransferList(null);
     } finally {
       setIsLoadingTransferList(false);
     }
