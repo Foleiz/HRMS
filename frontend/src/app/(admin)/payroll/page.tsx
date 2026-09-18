@@ -1732,27 +1732,7 @@ export default function PayrollPage() {
                   </p>
                 </div>
 
-                {/* Role Badge Indicator (Auto-detected from Login) */}
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  {processSubTab === 'HR' && (
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      มุมมองฝ่ายบุคคล (HR)
-                    </span>
-                  )}
-                  {processSubTab === 'FINANCE' && (
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      มุมมองฝ่ายการเงิน (Finance)
-                    </span>
-                  )}
-                  {processSubTab === 'APPROVER' && (
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                      มุมมองผู้อนุมัติ (CEO)
-                    </span>
-                  )}
-                </div>
+
               </div>
 
               {/* 4-Step Workflow Stepper (White Card Theme) */}
