@@ -152,6 +152,8 @@ export default function AnnouncementsPage() {
   const [statsModalOpen, setStatsModalOpen] = useState(false);
   const [readStats, setReadStats] = useState<AnnouncementReadStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [statsPage, setStatsPage] = useState(1);
+  const STATS_PAGE_SIZE = 10;
 
   // Confirm Modal
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -390,6 +392,7 @@ export default function AnnouncementsPage() {
     setStatsModalOpen(true);
     setLoadingStats(true);
     setReadStats(null);
+    setStatsPage(1);
     try {
       const data = await announcementService.getReadStats(a.id);
       setReadStats(data);
@@ -1030,7 +1033,7 @@ export default function AnnouncementsPage() {
       {/* ========================================================================= */}
       {statsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -1084,38 +1087,126 @@ export default function AnnouncementsPage() {
                     />
                   </div>
 
-                  {/* Readers Table */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-700">รายชื่อพนักงานที่เปิดอ่านแล้ว ({readStats.receipts.length} คน)</h4>
-                    {readStats.receipts.length === 0 ? (
-                      <div className="p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-400">
-                        ยังไม่มีพนักงานเปิดอ่านประกาศนี้
+                  {/* Readers Table with 10 items pagination */}
+                  {(() => {
+                    const totalReceipts = readStats.receipts.length;
+                    const totalStatsPages = Math.max(1, Math.ceil(totalReceipts / STATS_PAGE_SIZE));
+                    const paginatedReceipts = readStats.receipts.slice(
+                      (statsPage - 1) * STATS_PAGE_SIZE,
+                      statsPage * STATS_PAGE_SIZE
+                    );
+
+                    const getStatsPageNumbers = () => {
+                      if (totalStatsPages <= 7) {
+                        return Array.from({ length: totalStatsPages }, (_, i) => i + 1);
+                      }
+                      if (statsPage <= 4) {
+                        return [1, 2, 3, 4, 5, '...', totalStatsPages];
+                      }
+                      if (statsPage >= totalStatsPages - 3) {
+                        return [1, '...', totalStatsPages - 4, totalStatsPages - 3, totalStatsPages - 2, totalStatsPages - 1, totalStatsPages];
+                      }
+                      return [1, '...', statsPage - 1, statsPage, statsPage + 1, '...', totalStatsPages];
+                    };
+
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-700">
+                            รายชื่อพนักงานที่เปิดอ่านแล้ว ({totalReceipts} คน)
+                          </h4>
+                          {totalStatsPages > 1 && (
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              หน้า {statsPage} จาก {totalStatsPages}
+                            </span>
+                          )}
+                        </div>
+
+                        {totalReceipts === 0 ? (
+                          <div className="p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-400">
+                            ยังไม่มีพนักงานเปิดอ่านประกาศนี้
+                          </div>
+                        ) : (
+                          <>
+                            <div className="border border-slate-100 rounded-xl overflow-hidden shadow-2xs">
+                              <table className="w-full text-left text-xs whitespace-nowrap">
+                                <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase sticky top-0 border-b border-slate-100">
+                                  <tr>
+                                    <th className="py-2.5 px-3.5">รหัสพนักงาน</th>
+                                    <th className="py-2.5 px-3.5">ชื่อ-นามสกุล</th>
+                                    <th className="py-2.5 px-3.5">แผนก</th>
+                                    <th className="py-2.5 px-3.5">เวลาที่เปิดอ่าน</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {paginatedReceipts.map((r) => (
+                                    <tr key={r.employeeId} className="hover:bg-slate-50 transition-colors">
+                                      <td className="py-2.5 px-3.5 font-mono text-slate-600">{r.employeeCode}</td>
+                                      <td className="py-2.5 px-3.5 font-medium text-slate-800">{r.employeeName}</td>
+                                      <td className="py-2.5 px-3.5 text-slate-500">{r.departmentName || '-'}</td>
+                                      <td className="py-2.5 px-3.5 text-slate-400 text-[11px]">{formatDateTime(r.readAt)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {totalStatsPages > 1 && (
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-xs text-slate-500">
+                                <span className="text-[11px]">
+                                  แสดง {(statsPage - 1) * STATS_PAGE_SIZE + 1} - {Math.min(statsPage * STATS_PAGE_SIZE, totalReceipts)} จากทั้งหมด {totalReceipts} คน
+                                </span>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setStatsPage((p) => Math.max(1, p - 1))}
+                                    disabled={statsPage === 1}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                                    title="หน้าก่อนหน้า"
+                                  >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {getStatsPageNumbers().map((p, idx) =>
+                                    typeof p === 'number' ? (
+                                      <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setStatsPage(p)}
+                                        className={`min-w-7 h-7 px-1.5 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                                          statsPage === p
+                                            ? 'bg-[#0B2046] text-white shadow-xs'
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                      >
+                                        {p}
+                                      </button>
+                                    ) : (
+                                      <span key={`ellipsis-${idx}`} className="px-1 text-xs text-slate-400">
+                                        {p}
+                                      </span>
+                                    )
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setStatsPage((p) => Math.min(totalStatsPages, p + 1))}
+                                    disabled={statsPage === totalStatsPages}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                                    title="หน้าถัดไป"
+                                  >
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
-                    ) : (
-                      <div className="border border-slate-100 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
-                        <table className="w-full text-left text-xs whitespace-nowrap">
-                          <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase sticky top-0">
-                            <tr>
-                              <th className="py-2 px-3">รหัสพนักงาน</th>
-                              <th className="py-2 px-3">ชื่อ-นามสกุล</th>
-                              <th className="py-2 px-3">แผนก</th>
-                              <th className="py-2 px-3">เวลาที่เปิดอ่าน</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {readStats.receipts.map((r) => (
-                              <tr key={r.employeeId} className="hover:bg-slate-50">
-                                <td className="py-2 px-3 font-mono text-slate-600">{r.employeeCode}</td>
-                                <td className="py-2 px-3 font-medium text-slate-800">{r.employeeName}</td>
-                                <td className="py-2 px-3 text-slate-500">{r.departmentName || '-'}</td>
-                                <td className="py-2 px-3 text-slate-400 text-[11px]">{formatDateTime(r.readAt)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </>
               )}
             </div>
