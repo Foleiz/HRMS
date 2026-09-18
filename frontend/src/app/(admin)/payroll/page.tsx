@@ -2432,7 +2432,64 @@ export default function PayrollPage() {
                         <CheckCircle2 className="w-4 h-4" />
                         <span>อนุมัติรอบเงินเดือน</span>
                       </button>
-      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Table: Approver Overview */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900">สรุปภาพรวมรายบุคคล</h3>
+                    <span className="text-xs text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                          <th className="py-3.5 px-5">รหัสพนักงาน</th>
+                          <th className="py-3.5 px-5">ชื่อพนักงาน</th>
+                          <th className="py-3.5 px-5">แผนก</th>
+                          <th className="py-3.5 px-5 text-right">รายได้รวม</th>
+                          <th className="py-3.5 px-5 text-right">รายการหัก</th>
+                          <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
+                          <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {payrolls.map((pr) => (
+                          <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-4 px-5 font-mono font-semibold text-slate-900">{pr.employeeCode}</td>
+                            <td className="py-4 px-5 font-semibold text-slate-900">{pr.employeeName}</td>
+                            <td className="py-4 px-5 text-slate-600">{pr.departmentName}</td>
+                            <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                              ฿{(pr.totalGrossIncome || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                            </td>
+                            <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                              -฿{(pr.totalDeductionAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                            </td>
+                            <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600">
+                              ฿{(pr.netPayableSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-5 text-center">
+                              <button
+                                onClick={() => handleOpenDetailDrawer(pr)}
+                                title="ดูรายละเอียด"
+                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* === TAB 5: โอนเงินธนาคาร (Payment Workflow) === */}
       {activeTab === 'bank-transfer' && (
