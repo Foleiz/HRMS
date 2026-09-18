@@ -568,22 +568,6 @@ export default function MyNewsCalendarPage() {
 
             {/* Modal Body Content */}
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
-              {/* Badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                {readingItem.isPinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                    <Pin className="w-3.5 h-3.5 fill-amber-500" />
-                    <span>ปักหมุด</span>
-                  </span>
-                )}
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${CATEGORY_STYLES[readingItem.category]?.badgeBg || 'bg-slate-100 text-slate-700'}`}>
-                  {CATEGORY_STYLES[readingItem.category]?.label || readingItem.category}
-                </span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-600">
-                  {readingItem.priority === 'URGENT' ? 'ด่วนที่สุด' : readingItem.priority === 'HIGH' ? 'สำคัญ' : 'ปกติ'}
-                </span>
-              </div>
-
               {/* Title */}
               <h2 className="text-xl font-bold text-slate-900 leading-snug">
                 {readingItem.title}
