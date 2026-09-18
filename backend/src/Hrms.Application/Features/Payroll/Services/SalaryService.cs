@@ -1008,6 +1008,16 @@ public class SalaryService : ISalaryService
         decimal ssoMinWage = ssoRate?.MinWageBaseAmount ?? 1650.0m;
         decimal ssoMaxWage = ssoRate?.MaxWageBaseAmount ?? 15000.0m;
 
+        var payrollItems = await _context.PayrollItems
+            .Where(i => i.Status == "ACTIVE")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var baseItem = payrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE") 
+                    ?? payrollItems.FirstOrDefault(i => i.ItemType == "EARNING");
+        var ssoItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_SSO");
+        var taxItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_TAX");
+
         foreach (var emp in activeEmployees)
         {
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == emp.Id);
@@ -1069,6 +1079,42 @@ public class SalaryService : ISalaryService
                 existingPayroll.TotalDeductionAmount = totalDeductions;
                 existingPayroll.NetPayableSalary = netPay;
                 existingPayroll.Status = "CALCULATED";
+
+                if (existingPayroll.Details.Any())
+                {
+                    _context.PayrollDetails.RemoveRange(existingPayroll.Details);
+                    existingPayroll.Details.Clear();
+                }
+            }
+
+            if (baseItem != null && baseSalary > 0)
+            {
+                existingPayroll.Details.Add(new PayrollDetail
+                {
+                    PayrollItemId = baseItem.Id,
+                    Amount = baseSalary,
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = "เงินเดือนประจำ" })
+                });
+            }
+
+            if (ssoItem != null && ssoAmount > 0)
+            {
+                existingPayroll.Details.Add(new PayrollDetail
+                {
+                    PayrollItemId = ssoItem.Id,
+                    Amount = ssoAmount,
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"คำนวณ {ssoPercent}% ของฐานเงินเดือน" })
+                });
+            }
+
+            if (taxItem != null && monthlyTax > 0)
+            {
+                existingPayroll.Details.Add(new PayrollDetail
+                {
+                    PayrollItemId = taxItem.Id,
+                    Amount = monthlyTax,
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)" })
+                });
             }
         }
 
