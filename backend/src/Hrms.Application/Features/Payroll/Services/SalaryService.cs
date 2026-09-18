@@ -793,16 +793,22 @@ public class SalaryService : ISalaryService
 
         var employeeIds = payrolls.Select(p => p.EmployeeId).Distinct().ToList();
 
-        var employeeBankAccounts = await _context.EmployeeBankAccounts
-            .Include(b => b.Bank)
-            .Where(b => employeeIds.Contains(b.EmployeeId))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var employeeBankAccounts = employeeIds.Any()
+            ? await _context.EmployeeBankAccounts
+                .Include(b => b.Bank)
+                .Where(b => employeeIds.Contains(b.EmployeeId))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken)
+            : new List<Domain.Entities.EmployeeBankAccount>();
 
-        var periodStartDt = period != null ? period.StartDate.ToDateTime(TimeOnly.MinValue) : DateTime.MinValue;
-        var periodEndDt = period != null ? period.EndDate.ToDateTime(TimeOnly.MaxValue) : DateTime.MaxValue;
+        var periodStartDt = period != null 
+            ? DateTime.SpecifyKind(period.StartDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc) 
+            : DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+        var periodEndDt = period != null 
+            ? DateTime.SpecifyKind(period.EndDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc) 
+            : DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
 
-        var leaveRequests = period != null
+        var leaveRequests = (period != null && employeeIds.Any())
             ? await _context.LeaveRequests
                 .Include(r => r.LeaveType)
                 .Where(r => employeeIds.Contains(r.EmployeeId) && (r.Status == "APPROVED" || r.Status == "PENDING") && r.StartDatetime <= periodEndDt && r.EndDatetime >= periodStartDt)
