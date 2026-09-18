@@ -16,6 +16,7 @@ import {
   LeaveStats,
   CreateLeaveRequestPayload,
   CreateMyLeaveRequestPayload,
+  ApprovalTimeline,
 } from '@/types/leave';
 
 /**
@@ -121,8 +122,13 @@ export const leaveService = {
     window.URL.revokeObjectURL(url);
   },
 
-  async approveLeaveRequest(id: number): Promise<LeaveRequest> {
-    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/approve`);
+  async approveLeaveRequest(id: number, comment?: string): Promise<LeaveRequest> {
+    const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/approve`, { comment });
+    return res.data.data;
+  },
+
+  async getApprovalTimeline(id: number): Promise<ApprovalTimeline> {
+    const res = await apiClient.get<ApiResponse<ApprovalTimeline>>(`/leave-requests/${id}/approval-timeline`);
     return res.data.data;
   },
 
