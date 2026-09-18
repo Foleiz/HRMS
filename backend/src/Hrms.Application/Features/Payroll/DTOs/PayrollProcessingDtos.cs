@@ -57,6 +57,19 @@ public class PayrollRecordDto
     public bool HasSlip { get; set; }
     public string? SlipFileName { get; set; }
     public DateTimeOffset? SlipUploadedAt { get; set; }
+
+    // HR Pre-Payroll Verification Fields
+    public decimal LeaveDays { get; set; }
+    public string? LeaveSummary { get; set; }
+    public decimal OvertimeHours { get; set; }
+    public string? AdjustmentsSummary { get; set; }
+    public string InputStatus { get; set; } = "COMPLETE";
+    public string InputStatusText { get; set; } = "ครบแล้ว";
+
+    // Finance & Banking Fields
+    public string? BankCode { get; set; }
+    public string? BankName { get; set; }
+    public string? AccountNumber { get; set; }
 }
 
 public class PayrollDetailItemDto

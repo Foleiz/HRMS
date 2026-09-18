@@ -120,19 +120,24 @@ export default function PayrollPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
-  const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE'>('HR');
+  const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE' | 'APPROVER'>('HR');
 
   useEffect(() => {
     if (isHR && isFinance) {
       setViewMode('ALL');
     } else if (isFinance && !isHR) {
       setViewMode('FINANCE');
+      setProcessSubTab('FINANCE');
     } else if (isHR && !isFinance) {
       setViewMode('HR');
+      setProcessSubTab('HR');
+    } else if (isCEO) {
+      setProcessSubTab('APPROVER');
+      setViewMode('ALL');
     } else {
       setViewMode('ALL');
     }
-  }, [isHR, isFinance]);
+  }, [isHR, isFinance, isCEO]);
 
   useEffect(() => {
     setBreadcrumb({ section: 'เงินเดือน', page: getTabLabel(activeTab) });
@@ -1661,345 +1666,772 @@ export default function PayrollPage() {
       )}
 
       {/* === TAB 4: ประมวลเงินเดือน (Payroll Processing) === */}
-      {activeTab === 'process' && (
-        <div className="space-y-4">
-          {/* Sub-header Bar (Dropdown, Status Badge, Dates, Action Button) */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  {/* Period Selector Dropdown */}
-                  <div className="relative inline-block">
-                    <select
-                      value={selectedPeriod?.id || ''}
-                      onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                      className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
-                    >
-                      {periods.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.periodName}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
+      {activeTab === 'process' && (() => {
+        const totalEmployees = payrolls.length;
+        const pendingCheckCount = payrolls.filter(p => p.inputStatus === 'PENDING_CHECK').length;
+        const totalLeaveDays = payrolls.reduce((sum, p) => sum + (p.leaveDays || 0), 0);
+        const totalOtHours = payrolls.reduce((sum, p) => sum + (p.overtimeHours || 0), 0);
+        const otCount = payrolls.filter(p => (p.overtimeHours || 0) > 0).length;
 
-                  {/* Status Badge */}
-                  {selectedPeriod && (
-                    <span
-                      className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${
-                        selectedPeriod.status === 'PENDING_APPROVAL'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
-                          : selectedPeriod.status === 'REVIEW'
-                          ? 'bg-[#FEF3C7] text-[#D97706]'
-                          : selectedPeriod.status === 'APPROVED'
-                          ? 'bg-[#E0F2FE] text-[#0284C7]'
-                          : selectedPeriod.status === 'PAID'
-                          ? 'bg-[#DCFCE7] text-[#16A34A]'
-                          : 'bg-slate-200 text-slate-700'
+        const totalGross = payrolls.reduce((acc, p) => acc + (p.totalGrossIncome || 0), 0);
+        const totalSso = payrolls.reduce((acc, p) => acc + Math.min((p.totalGrossIncome || 0) * 0.05, 750), 0);
+        const totalTax = payrolls.reduce((acc, p) => acc + Math.max(0, (p.totalDeductionAmount || 0) - Math.min((p.totalGrossIncome || 0) * 0.05, 750)), 0);
+        const taxAndSso = totalSso + totalTax;
+        const totalNet = payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0);
+        const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
+        const pendingTransferCount = totalEmployees - transferredCount;
+
+        const getWorkflowStep = (status?: string) => {
+          if (!status || status === 'DRAFT' || status === 'REVIEW') return 1;
+          if (status === 'SUBMITTED_TO_FINANCE') return 2;
+          if (status === 'FINANCE_VERIFIED' || status === 'PENDING_APPROVAL') return 3;
+          return 4;
+        };
+        const currentStep = getWorkflowStep(selectedPeriod?.status);
+
+        return (
+          <div className="space-y-4">
+            {/* ── TOP ROLE BANNER & VIEW SWITCHER ── */}
+            <div className="bg-[#0B2046] text-white rounded-2xl p-5 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-slate-300">เงินเดือน / ประมวลเงินเดือน</span>
+                    <span className="text-xs text-slate-400">—</span>
+                    <span className="text-xs font-bold text-emerald-400">{selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
+                  </div>
+                  <h1 className="text-lg font-bold mt-1 text-white flex items-center gap-2">
+                    มุมมองเดียวกัน แสดงข้อมูลต่างกันตามบทบาทผู้ใช้
+                  </h1>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลา OT และรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
+                    {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
+                    {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
+                  </p>
+                </div>
+
+                {/* Role Switcher Pills */}
+                <div className="flex items-center bg-[#152e5d] p-1.5 rounded-xl border border-white/10 self-start lg:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setProcessSubTab('HR')}
+                    className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                      processSubTab === 'HR'
+                        ? 'bg-emerald-500 text-white font-bold shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${processSubTab === 'HR' ? 'bg-white' : 'bg-emerald-400'}`}></span>
+                    มุมมอง HR
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setProcessSubTab('FINANCE')}
+                    className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                      processSubTab === 'FINANCE'
+                        ? 'bg-amber-500 text-white font-bold shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${processSubTab === 'FINANCE' ? 'bg-white' : 'bg-amber-400'}`}></span>
+                    มุมมองฝ่ายการเงิน
+                  </button>
+
+                  {(isCEO || user?.roles?.includes('ADMIN')) && (
+                    <button
+                      type="button"
+                      onClick={() => setProcessSubTab('APPROVER')}
+                      className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                        processSubTab === 'APPROVER'
+                          ? 'bg-indigo-500 text-white font-bold shadow-sm'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
                       }`}
                     >
-                      {selectedPeriod.status === 'PENDING_APPROVAL'
-                        ? 'รออนุมัติ'
-                        : selectedPeriod.statusText}
-                    </span>
+                      <span className={`w-2 h-2 rounded-full ${processSubTab === 'APPROVER' ? 'bg-white' : 'bg-indigo-300'}`}></span>
+                      มุมมองผู้อนุมัติ (CEO)
+                    </button>
                   )}
                 </div>
-
-                {/* Sub-info: ช่วงเงินเดือน, วันจ่ายเงิน, พนักงานในรอบ */}
-                <div className="flex flex-wrap items-center gap-6 mt-2 text-xs text-slate-400">
-                  <span>
-                    ช่วงเงินเดือน:{' '}
-                    <span className="text-slate-600 font-medium">
-                      {selectedPeriod?.month === 8 && selectedPeriod?.year === 2026
-                        ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
-                        : `${selectedPeriod?.startDate} - ${selectedPeriod?.endDate}`}
-                    </span>
-                  </span>
-                  <span>
-                    วันจ่ายเงิน:{' '}
-                    <span className="text-slate-600 font-medium">
-                      {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
-                    </span>
-                  </span>
-                  <span>
-                    พนักงานในรอบ:{' '}
-                    <span className="text-slate-600 font-medium">
-                      {payrolls.length} คน
-                    </span>
-                  </span>
-                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                {!isCEO && (
-                  <>
-                    <button
-                      onClick={() => setIsCreatePeriodModalOpen(true)}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
+              {/* 4-Step Workflow Stepper */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4 mt-4 border-t border-white/10">
+                {[
+                  { step: 1, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลา/OT แล้วกดคำนวณ' },
+                  { step: 2, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
+                  { step: 3, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
+                  { step: 4, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
+                ].map((s) => {
+                  const isDone = currentStep > s.step;
+                  const isCurrent = currentStep === s.step;
+                  return (
+                    <div
+                      key={s.step}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        isCurrent
+                          ? 'bg-white/15 border-white/40 ring-1 ring-white/30'
+                          : isDone
+                          ? 'bg-emerald-950/40 border-emerald-500/40'
+                          : 'bg-white/5 border-white/5 opacity-60'
+                      }`}
                     >
-                      <Plus className="w-3.5 h-3.5 text-slate-500" />
-                      <span>สร้างรอบเงินเดือน</span>
-                    </button>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            isDone
+                              ? 'bg-emerald-400 text-emerald-950'
+                              : isCurrent
+                              ? 'bg-amber-400 text-amber-950 animate-pulse'
+                              : 'bg-white/20 text-slate-300'
+                          }`}
+                        >
+                          {isDone ? '✓' : s.step}
+                        </span>
+                        <span className={`text-xs font-semibold ${isCurrent ? 'text-white' : isDone ? 'text-emerald-300' : 'text-slate-300'}`}>
+                          {s.title}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 mt-1 pl-7">{s.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                    <button
-                      onClick={handleCalculatePayroll}
-                      disabled={
-                        isCalculating ||
-                        !selectedPeriod ||
-                        (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
-                      }
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {isCalculating ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Scale className="w-3.5 h-3.5" />
-                      )}
-                      <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
-                    </button>
+            {/* ── SUB-HEADER BAR (Dropdown & Actions) ── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative inline-block">
+                      <select
+                        value={selectedPeriod?.id || ''}
+                        onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                        className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                      >
+                        {periods.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.periodName}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
 
-                    {/* Vertical Divider */}
-                    <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block"></div>
-                  </>
-                )}
+                    {selectedPeriod && (
+                      <span
+                        className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${
+                          selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
+                            : selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : selectedPeriod.status === 'APPROVED'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : selectedPeriod.status === 'PAID'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {selectedPeriod.status === 'PENDING_APPROVAL'
+                          ? 'รอ CEO อนุมัติ'
+                          : selectedPeriod.status === 'FINANCE_VERIFIED'
+                          ? 'การเงินตรวจแล้ว (รออนุมัติ)'
+                          : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
+                          ? 'ส่งการเงินตรวจทานแล้ว'
+                          : selectedPeriod.statusText}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Workflow Action Buttons */}
-                {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
-                  payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
-                    <button
-                      onClick={handleSubmitToFinance}
-                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>ส่งให้ฝ่ายการเงิน/บัญชีตรวจสอบ</span>
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
-                      title="กรุณากดคำนวณเงินเดือนก่อนส่งการเงิน"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>🔒 ส่งให้การเงิน (ต้องคำนวณเงินเดือนก่อน)</span>
-                    </button>
-                  )
-                )}
-
-                {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
-                  isFinance ? (
-                    <button
-                      onClick={handleVerifyByFinance}
-                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>การเงินยืนยันความถูกต้อง (ส่งให้ผู้อนุมัติ)</span>
-                    </button>
-                  ) : (
-                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 font-medium flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                      <span>ส่งเรื่องให้ฝ่ายการเงิน/บัญชีตรวจสอบแล้ว</span>
+                  <div className="flex flex-wrap items-center gap-6 mt-2 text-xs text-slate-400">
+                    <span>
+                      ช่วงเงินเดือน:{' '}
+                      <span className="text-slate-600 font-medium">
+                        {selectedPeriod?.month === 8 && selectedPeriod?.year === 2026
+                          ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
+                          : `${selectedPeriod?.startDate} - ${selectedPeriod?.endDate}`}
+                      </span>
                     </span>
-                  )
-                )}
+                    <span>
+                      วันจ่ายเงิน:{' '}
+                      <span className="text-slate-600 font-medium">
+                        {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
+                      </span>
+                    </span>
+                    <span>
+                      พนักงานในรอบ:{' '}
+                      <span className="text-slate-600 font-medium">{payrolls.length} คน</span>
+                    </span>
+                  </div>
+                </div>
 
-                {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') && (
-                  isCEO ? (
+                {/* Top Action Buttons contextualized by View */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {processSubTab === 'HR' && (
                     <>
                       <button
-                        onClick={() => setIsRejectModalOpen(true)}
-                        className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                        onClick={() => setIsCreatePeriodModalOpen(true)}
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
                       >
-                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                        <span>ไม่อนุมัติ (ส่งคืน HR)</span>
+                        <Plus className="w-3.5 h-3.5 text-slate-500" />
+                        <span>สร้างรอบเงินเดือน</span>
                       </button>
 
                       <button
-                        onClick={handleAdvancePeriodStatus}
-                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        onClick={handleCalculatePayroll}
+                        disabled={
+                          isCalculating ||
+                          !selectedPeriod ||
+                          (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
+                        }
+                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {isCalculating ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Scale className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
+                      </button>
+
+                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                        payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
+                          <button
+                            onClick={handleSubmitToFinance}
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>ส่งให้ฝ่ายการเงินตรวจสอบ</span>
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
+                            title="กรุณากดคำนวณเงินเดือนก่อนส่งการเงิน"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>🔒 ส่งให้การเงิน (ต้องคำนวณก่อน)</span>
+                          </button>
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {processSubTab === 'FINANCE' && (
+                    <>
+                      {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
+                        <button
+                          onClick={handleVerifyByFinance}
+                          className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
+                        </button>
+                      )}
+
+                      {selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' ? (
+                        <>
+                          <button
+                            onClick={handleDownloadBankFile}
+                            disabled={isExportingBankFile}
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5 text-slate-600" />
+                            <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
+                          </button>
+
+                          {selectedPeriod?.status === 'APPROVED' && (
+                            <button
+                              onClick={handleAdvancePeriodStatus}
+                              className="h-9 inline-flex items-center gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                            >
+                              <Banknote className="w-3.5 h-3.5" />
+                              <span>บันทึกว่าจ่ายแล้ว</span>
+                            </button>
+                          )}
+
+                          {selectedPeriod?.status === 'PAID' && (
+                            <button
+                              onClick={handleAdvancePeriodStatus}
+                              className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>ปิดรอบเงินเดือน</span>
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <button
+                          disabled
+                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
+                          title="รอ CEO อนุมัติรอบเงินเดือนก่อนดาวน์โหลดไฟล์จ่ายเงิน"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>🔒 ไฟล์โอนเงินธนาคาร (รอ CEO อนุมัติ)</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {processSubTab === 'APPROVER' && (
+                    <>
+                      {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') ? (
+                        <>
+                          <button
+                            onClick={() => setIsRejectModalOpen(true)}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>ไม่อนุมัติ (ส่งคืน HR)</span>
+                          </button>
+
+                          <button
+                            onClick={handleAdvancePeriodStatus}
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>อนุมัติรอบเงินเดือน</span>
+                          </button>
+                        </>
+                      ) : selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>CEO อนุมัติรอบนี้เรียบร้อยแล้ว</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                          <Clock className="w-4 h-4 text-slate-400" />
+                          <span>ยังไม่ถึงขั้นตอนการอนุมัติ (รอ HR และการเงิน)</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🟢 VIEW 1: HR VIEW (Pre-Payroll Verification)                  */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {processSubTab === 'HR' && (
+              <div className="space-y-4">
+                {/* Title and Scope Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                      สำหรับ HR
+                    </div>
+                    <h2 className="text-base font-bold text-slate-900">เตรียมข้อมูลก่อนคำนวณเงินเดือน</h2>
+                    <p className="text-xs text-slate-500">
+                      ตรวจสอบวันลา OT และรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 Stat Cards for HR */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">พนักงานในรอบ</span>
+                    <div className="text-2xl font-bold text-emerald-700 mt-1">
+                      {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">ทุกแผนก</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ข้อมูลยังไม่ครบ</span>
+                    <div className={`text-2xl font-bold mt-1 ${pendingCheckCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                      {pendingCheckCount} <span className="text-sm font-normal text-slate-500">คน</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      {pendingCheckCount > 0 ? 'รอ HR ตรวจสอบวันลา' : 'ข้อมูลพนักงานครบถ้วน'}
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">วันลารวมในรอบ</span>
+                    <div className="text-2xl font-bold text-emerald-700 mt-1">
+                      {totalLeaveDays} <span className="text-sm font-normal text-slate-500">วัน</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">จากคำร้องลาที่ได้รับอนุมัติ</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ชั่วโมง OT รวม</span>
+                    <div className="text-2xl font-bold text-emerald-700 mt-1">
+                      {totalOtHours.toFixed(1)} <span className="text-sm font-normal text-slate-500">ชม.</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      {otCount} คนมี OT ในรอบนี้
+                    </span>
+                  </div>
+                </div>
+
+                {/* Table: HR Data Input Verification */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900">รายการพนักงานและข้อมูลนำเข้า</h3>
+                    <span className="text-xs text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                          <th className="py-3.5 px-5">พนักงาน</th>
+                          <th className="py-3.5 px-5">แผนก</th>
+                          <th className="py-3.5 px-5">วันลา</th>
+                          <th className="py-3.5 px-5 text-center">OT (ชม.)</th>
+                          <th className="py-3.5 px-5">รายการปรับ/สวัสดิการ</th>
+                          <th className="py-3.5 px-5">สถานะข้อมูล</th>
+                          <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {payrolls.map((pr) => {
+                          return (
+                            <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="py-4 px-5">
+                                <div className="font-semibold text-slate-900">{pr.employeeName}</div>
+                                <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
+                              </td>
+                              <td className="py-4 px-5 text-slate-600">{pr.departmentName}</td>
+                              <td className="py-4 px-5">
+                                {pr.leaveDays && pr.leaveDays > 0 ? (
+                                  <div>
+                                    <span className="font-semibold text-slate-900">{pr.leaveDays} วัน</span>
+                                    {pr.leaveSummary && (
+                                      <div className="text-[11px] text-slate-400">{pr.leaveSummary}</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-4 px-5 text-center font-mono font-medium text-slate-700">
+                                {pr.overtimeHours && pr.overtimeHours > 0 ? `${pr.overtimeHours.toFixed(1)}` : '-'}
+                              </td>
+                              <td className="py-4 px-5 text-slate-600">
+                                {pr.adjustmentsSummary || '-'}
+                              </td>
+                              <td className="py-4 px-5">
+                                {pr.inputStatus === 'COMPLETE' ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>ครบแล้ว</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span>รอ HR ตรวจสอบ</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-5 text-center">
+                                <button
+                                  onClick={() => handleOpenDetailDrawer(pr)}
+                                  title="ดูรายละเอียดการคำนวณ"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
+                    <button
+                      disabled={processPage === 1}
+                      onClick={() => setProcessPage(processPage - 1)}
+                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      ←
+                    </button>
+                    {[1, 2, 3, 4].map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setProcessPage(page)}
+                        className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                          processPage === page
+                            ? 'bg-[#0B2046] text-white'
+                            : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      disabled={processPage === 4}
+                      onClick={() => setProcessPage(processPage + 1)}
+                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🟠 VIEW 2: FINANCE VIEW (Disbursement & Banking)              */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {processSubTab === 'FINANCE' && (
+              <div className="space-y-4">
+                {/* Title and Scope Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                      สำหรับฝ่ายการเงิน
+                    </div>
+                    <h2 className="text-base font-bold text-slate-900">ตรวจสอบยอดและจ่ายเงินเดือน</h2>
+                    <p className="text-xs text-slate-500">
+                      ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 Stat Cards for Finance */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ยอดจ่ายรวม (Gross)</span>
+                    <div className="text-2xl font-bold text-amber-700 mt-1">
+                      ฿{totalGross.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">{totalEmployees} คน</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
+                    <div className="text-2xl font-bold text-rose-600 mt-1">
+                      ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">กำหนดนำส่ง 7 ก.ย. 2569</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ยอดโอนสุทธิ (Net Pay)</span>
+                    <div className="text-2xl font-bold text-emerald-600 mt-1">
+                      ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      โอนวันที่ {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">สถานะการโอน</span>
+                    <div className="text-2xl font-bold text-slate-900 mt-1">
+                      {transferredCount} / {totalEmployees}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      {transferredCount === totalEmployees ? 'สำเร็จครบทั้งหมด' : `${pendingTransferCount} รายการรอโอน`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Table: Finance Disbursement & Banking */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900">รายการจ่ายเงินเดือน</h3>
+                    <span className="text-xs text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                          <th className="py-3.5 px-5">พนักงาน</th>
+                          <th className="py-3.5 px-5">บัญชีธนาคาร</th>
+                          <th className="py-3.5 px-5 text-right">รายได้รวม</th>
+                          <th className="py-3.5 px-5 text-right">รายการหัก</th>
+                          <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
+                          <th className="py-3.5 px-5">สถานะโอน</th>
+                          <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {payrolls.map((pr) => {
+                          const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
+                          return (
+                            <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="py-4 px-5">
+                                <div className="font-semibold text-slate-900">{pr.employeeName}</div>
+                                <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
+                              </td>
+                              <td className="py-4 px-5">
+                                <div className="font-medium text-slate-800">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
+                                <div className="text-[11px] font-mono text-slate-400">
+                                  {pr.accountNumber ? `xxx-x-x${pr.accountNumber.slice(-4)}-x` : 'xxx-x-x4821-x'}
+                                </div>
+                              </td>
+                              <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                                {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
+                              </td>
+                              <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                                {hasGross && pr.totalDeductionAmount != null
+                                  ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                                  : '-'}
+                              </td>
+                              <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600 text-sm">
+                                {hasGross && pr.netPayableSalary != null
+                                  ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                  : '-'}
+                              </td>
+                              <td className="py-4 px-5">
+                                {pr.paymentStatus === 'TRANSFERRED' ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>โอนแล้ว</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span>รอโอน</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-5 text-center">
+                                <button
+                                  onClick={() => handleOpenDetailDrawer(pr)}
+                                  title="ดูรายละเอียดการคำนวณ"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
+                    <button
+                      disabled={processPage === 1}
+                      onClick={() => setProcessPage(processPage - 1)}
+                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      ←
+                    </button>
+                    {[1, 2, 3, 4].map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setProcessPage(page)}
+                        className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                          processPage === page
+                            ? 'bg-[#0B2046] text-white'
+                            : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      disabled={processPage === 4}
+                      onClick={() => setProcessPage(processPage + 1)}
+                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🔵 VIEW 3: APPROVER VIEW (Executive Decision & Budget Summary) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {processSubTab === 'APPROVER' && (
+              <div className="space-y-4">
+                {/* Title and Scope Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                      สำหรับผู้อนุมัติ (CEO / Executive)
+                    </div>
+                    <h2 className="text-base font-bold text-slate-900">สรุปภาพรวมและอนุมัติรอบเงินเดือน</h2>
+                    <p className="text-xs text-slate-500">
+                      ตรวจสอบภาพรวมงบประมาณเงินเดือนและภาระผูกพัน ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 Stat Cards for Approver */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">งบประมาณเงินเดือนสุทธิรวม</span>
+                    <div className="text-2xl font-bold text-emerald-600 mt-1">
+                      ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">ยอดที่ต้องจ่ายจริง</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">ภาระภาษีและประกันสังคม</span>
+                    <div className="text-2xl font-bold text-rose-600 mt-1">
+                      ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">ภ.ง.ด.1 + SSO รวม</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">จำนวนพนักงานทั้งหมด</span>
+                    <div className="text-2xl font-bold text-slate-900 mt-1">
+                      {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">ได้รับการคำนวณครบถ้วน</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                    <span className="text-xs text-slate-500 font-medium">สถานะการตรวจทาน</span>
+                    <div className="text-base font-bold text-indigo-700 mt-2">
+                      {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
+                        ? 'รอ CEO อนุมัติ ⏳'
+                        : selectedPeriod?.status === 'APPROVED'
+                        ? 'อนุมัติเรียบร้อยแล้ว ✅'
+                        : selectedPeriod?.statusText}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 block">ผ่านการตรวจจากฝ่ายการเงินแล้ว</span>
+                  </div>
+                </div>
+
+                {/* Approver Decision Card if Pending Approval */}
+                {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') && (
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-amber-600" />
+                        <span>รอบเงินเดือนนี้พร้อมสำหรับการอนุมัติ (Pending Approval)</span>
+                      </div>
+                      <p className="text-xs text-amber-700 mt-1">
+                        ฝ่ายการเงินได้ตรวจสอบยอดเงินเดือนเรียบร้อยแล้ว กรุณาตรวจสอบและตัดสินใจอนุมัติเพื่อให้การเงินนำเงินจ่ายออก
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setIsRejectModalOpen(true)}
+                        className="h-10 px-4 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                      >
+                        ไม่อนุมัติ (ส่งคืนแก้ไข)
+                      </button>
+                      <button
+                        onClick={handleAdvancePeriodStatus}
+                        className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
                         <span>อนุมัติรอบเงินเดือน</span>
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      disabled
-                      className="h-9 inline-flex items-center gap-2 px-4 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl text-xs font-semibold cursor-not-allowed shadow-none"
-                    >
-                      <Clock className="w-3.5 h-3.5 text-slate-400 animate-pulse" />
-                      <span>รอการอนุมัติจากผู้อนุมัติ (CEO)</span>
-                    </button>
-                  )
-                )}
-
-                {selectedPeriod?.status === 'APPROVED' && (
-                  <button
-                    onClick={handleAdvancePeriodStatus}
-                    className="h-9 inline-flex items-center gap-2 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                  >
-                    <Banknote className="w-3.5 h-3.5" />
-                    <span>บันทึกว่าจ่ายแล้ว</span>
-                  </button>
-                )}
-
-                {selectedPeriod?.status === 'PAID' && (
-                  <button
-                    onClick={handleAdvancePeriodStatus}
-                    className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>ปิดรอบเงินเดือน</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-
-
-
-
-          {/* 4 Summary Stat Cards for Selected Period */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
-              <span className="text-xs text-slate-500 font-medium">ยอดจ่ายเงินเดือนรวม (Gross)</span>
-              <div className="text-xl font-bold text-slate-900 mt-1">
-                ฿{payrolls.reduce((acc, p) => acc + (p.totalGrossIncome || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
-              <span className="text-xs text-slate-500 font-medium">หักประกันสังคมรวม (SSO 5%)</span>
-              <div className="text-xl font-bold text-indigo-600 mt-1">
-                ฿{payrolls.reduce((acc, p) => acc + Math.min((p.totalGrossIncome || 0) * 0.05, 750), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
-              <span className="text-xs text-slate-500 font-medium">หักภาษี ภ.ง.ด.1 รวม</span>
-              <div className="text-xl font-bold text-rose-600 mt-1">
-                ฿{payrolls.reduce((acc, p) => acc + Math.max(0, (p.totalDeductionAmount || 0) - Math.min((p.totalGrossIncome || 0) * 0.05, 750)), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
-              <span className="text-xs text-slate-500 font-medium">ยอดเงินจ่ายสุทธิรวม (Net Pay)</span>
-              <div className="text-xl font-bold text-emerald-600 mt-1">
-                ฿{payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </div>
-            </div>
-          </div>
-
-          {/* Table Container */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                    <th className="py-3.5 px-5">รหัสพนักงาน</th>
-                    <th className="py-3.5 px-5">ชื่อพนักงาน</th>
-                    <th className="py-3.5 px-5">แผนก</th>
-                    <th className="py-3.5 px-5 text-right">รายได้รวม</th>
-                    <th className="py-3.5 px-5 text-right">รายการหัก</th>
-                    <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
-                    <th className="py-3.5 px-5">สถานะ</th>
-                    <th className="py-3.5 px-5 text-center">รายละเอียด</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {payrolls.map((pr) => {
-                    const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
-                    return (
-                      <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-4 px-5 font-mono text-slate-900 font-semibold">
-                          {pr.employeeCode}
-                        </td>
-                        <td className="py-4 px-5 font-semibold text-slate-900">
-                          {pr.employeeName}
-                        </td>
-                        <td className="py-4 px-5 text-slate-600">
-                          {pr.departmentName}
-                        </td>
-                        <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
-                          {hasGross
-                            ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
-                          {hasGross && pr.totalDeductionAmount != null
-                            ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-5 text-right font-mono font-bold text-[#10B981]">
-                          {hasGross && pr.netPayableSalary != null
-                            ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-5">
-                          {pr.status === 'CALCULATED' ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-[#10B981] font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
-                              <span>คำนวณแล้ว</span>
-                            </span>
-                          ) : pr.status === 'REVIEW' ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-[#EA580C] font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>
-                              <span>รอตรวจสอบ</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                              <span>ยังไม่คำนวณ</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-4 px-5 text-center">
-                          <button
-                            onClick={() => handleOpenDetailDrawer(pr)}
-                            title="ดูรายละเอียด"
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-1 text-xs">
-              <button
-                disabled={processPage === 1}
-                onClick={() => setProcessPage(processPage - 1)}
-                className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-              >
-                ←
-              </button>
-              {[1, 2, 3, 4].map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setProcessPage(page)}
-                  className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
-                    processPage === page
-                      ? 'bg-[#0B2046] text-white'
-                      : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                disabled={processPage === 4}
-                onClick={() => setProcessPage(processPage + 1)}
-                className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-              >
-                →
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* === TAB 5: โอนเงินธนาคาร (Payment Workflow) === */}

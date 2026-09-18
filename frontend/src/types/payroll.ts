@@ -201,6 +201,17 @@ export interface PayrollRecord {
   hasSlip: boolean;
   slipFileName?: string | null;
   slipUploadedAt?: string | null;
+  // HR Pre-Payroll Verification Fields
+  leaveDays?: number;
+  leaveSummary?: string | null;
+  overtimeHours?: number;
+  adjustmentsSummary?: string | null;
+  inputStatus?: 'COMPLETE' | 'PENDING_CHECK' | string;
+  inputStatusText?: string;
+  // Finance & Banking Fields
+  bankCode?: string | null;
+  bankName?: string | null;
+  accountNumber?: string | null;
 }
 
 export interface PayrollDetailItem {
