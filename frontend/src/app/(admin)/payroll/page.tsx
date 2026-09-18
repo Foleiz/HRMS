@@ -122,22 +122,42 @@ export default function PayrollPage() {
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
   const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE' | 'APPROVER'>('HR');
 
+  // Auto-detect role strictly from logged-in user profile
+  const usernameLower = user?.username?.toLowerCase() || '';
+  const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
+  const isStrictFinanceUser =
+    usernameLower.includes('finance') ||
+    usernameLower.includes('account') ||
+    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT'));
+  const isStrictCeoUser =
+    usernameLower.includes('ceo') ||
+    usernameLower.includes('approver') ||
+    (userRolesList.includes('CEO') && !userRolesList.includes('ADMIN'));
+  const isStrictHrUser =
+    usernameLower.includes('hr') ||
+    userRolesList.some(r => r.includes('HR'));
+
   useEffect(() => {
-    if (isHR && isFinance) {
-      setViewMode('ALL');
-    } else if (isFinance && !isHR) {
-      setViewMode('FINANCE');
+    if (isStrictFinanceUser && !isStrictHrUser) {
       setProcessSubTab('FINANCE');
-    } else if (isHR && !isFinance) {
-      setViewMode('HR');
+      setViewMode('FINANCE');
+    } else if (isStrictCeoUser && !isStrictHrUser) {
+      setProcessSubTab('APPROVER');
+      setViewMode('ALL');
+    } else if (isStrictHrUser && !isStrictFinanceUser) {
       setProcessSubTab('HR');
-    } else if (isCEO) {
+      setViewMode('HR');
+    } else if (isStrictFinanceUser) {
+      setProcessSubTab('FINANCE');
+      setViewMode('FINANCE');
+    } else if (isStrictCeoUser) {
       setProcessSubTab('APPROVER');
       setViewMode('ALL');
     } else {
+      setProcessSubTab('HR');
       setViewMode('ALL');
     }
-  }, [isHR, isFinance, isCEO]);
+  }, [user?.username, isStrictHrUser, isStrictFinanceUser, isStrictCeoUser]);
 
   useEffect(() => {
     setBreadcrumb({ section: 'เงินเดือน', page: getTabLabel(activeTab) });
@@ -1691,72 +1711,52 @@ export default function PayrollPage() {
 
         return (
           <div className="space-y-4">
-            {/* ── TOP ROLE BANNER & VIEW SWITCHER ── */}
-            <div className="bg-[#0B2046] text-white rounded-2xl p-5 shadow-sm">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* ── TOP ROLE BANNER (Clean White Style - Auto by Logged-in User) ── */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-300">เงินเดือน / ประมวลเงินเดือน</span>
-                    <span className="text-xs text-slate-400">—</span>
-                    <span className="text-xs font-bold text-emerald-400">{selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
+                    <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
+                    <span className="text-xs text-slate-300">•</span>
+                    <span className="text-xs font-bold text-slate-700">รอบเงินเดือน : {selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
                   </div>
-                  <h1 className="text-lg font-bold mt-1 text-white flex items-center gap-2">
-                    มุมมองเดียวกัน แสดงข้อมูลต่างกันตามบทบาทผู้ใช้
+                  <h1 className="text-lg font-bold mt-1 text-slate-900 flex items-center gap-2">
+                    {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
+                    {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
+                    {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
                   </h1>
-                  <p className="text-xs text-slate-300 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลา OT และรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
                     {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
                     {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
                   </p>
                 </div>
 
-                {/* Role Switcher Pills */}
-                <div className="flex items-center bg-[#152e5d] p-1.5 rounded-xl border border-white/10 self-start lg:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setProcessSubTab('HR')}
-                    className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
-                      processSubTab === 'HR'
-                        ? 'bg-emerald-500 text-white font-bold shadow-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${processSubTab === 'HR' ? 'bg-white' : 'bg-emerald-400'}`}></span>
-                    มุมมอง HR
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setProcessSubTab('FINANCE')}
-                    className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
-                      processSubTab === 'FINANCE'
-                        ? 'bg-amber-500 text-white font-bold shadow-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${processSubTab === 'FINANCE' ? 'bg-white' : 'bg-amber-400'}`}></span>
-                    มุมมองฝ่ายการเงิน
-                  </button>
-
-                  {(isCEO || user?.roles?.includes('ADMIN')) && (
-                    <button
-                      type="button"
-                      onClick={() => setProcessSubTab('APPROVER')}
-                      className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
-                        processSubTab === 'APPROVER'
-                          ? 'bg-indigo-500 text-white font-bold shadow-sm'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${processSubTab === 'APPROVER' ? 'bg-white' : 'bg-indigo-300'}`}></span>
+                {/* Role Badge Indicator (Auto-detected from Login) */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {processSubTab === 'HR' && (
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      มุมมองฝ่ายบุคคล (HR)
+                    </span>
+                  )}
+                  {processSubTab === 'FINANCE' && (
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      มุมมองฝ่ายการเงิน (Finance)
+                    </span>
+                  )}
+                  {processSubTab === 'APPROVER' && (
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                       มุมมองผู้อนุมัติ (CEO)
-                    </button>
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* 4-Step Workflow Stepper */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4 mt-4 border-t border-white/10">
+              {/* 4-Step Workflow Stepper (White Card Theme) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100">
                 {[
                   { step: 1, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลา/OT แล้วกดคำนวณ' },
                   { step: 2, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
@@ -1768,31 +1768,33 @@ export default function PayrollPage() {
                   return (
                     <div
                       key={s.step}
-                      className={`p-2.5 rounded-xl border transition-all ${
+                      className={`p-3 rounded-xl border transition-all ${
                         isCurrent
-                          ? 'bg-white/15 border-white/40 ring-1 ring-white/30'
+                          ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/60 shadow-2xs'
                           : isDone
-                          ? 'bg-emerald-950/40 border-emerald-500/40'
-                          : 'bg-white/5 border-white/5 opacity-60'
+                          ? 'bg-emerald-50/70 border-emerald-200'
+                          : 'bg-slate-50/60 border-slate-200/70 opacity-60'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                             isDone
-                              ? 'bg-emerald-400 text-emerald-950'
+                              ? 'bg-emerald-500 text-white'
                               : isCurrent
-                              ? 'bg-amber-400 text-amber-950 animate-pulse'
-                              : 'bg-white/20 text-slate-300'
+                              ? 'bg-amber-500 text-white animate-pulse'
+                              : 'bg-slate-200 text-slate-500'
                           }`}
                         >
                           {isDone ? '✓' : s.step}
                         </span>
-                        <span className={`text-xs font-semibold ${isCurrent ? 'text-white' : isDone ? 'text-emerald-300' : 'text-slate-300'}`}>
+                        <span className={`text-xs font-bold ${isCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
                           {s.title}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-300 mt-1 pl-7">{s.desc}</p>
+                      <p className={`text-[10px] mt-1 pl-7 ${isCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {s.desc}
+                      </p>
                     </div>
                   );
                 })}
