@@ -539,9 +539,9 @@ export default function PayrollPage() {
       setSlipFile(null);
       setSlipModalTarget(null);
       await loadTransferList(selectedPeriod.id);
-      // Refresh period to update canConfirmPayment
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
+      setPeriods(prev => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
       showToast('✅ บันทึกการโอนเงินและสลิปสำเร็จ');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกการโอนเงิน');
@@ -2507,11 +2507,11 @@ export default function PayrollPage() {
               </div>
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
                 <div className="text-[11px] text-emerald-600 font-medium">โอนแล้ว</div>
-                <div className="text-lg font-bold text-emerald-700 mt-0.5">{transferList?.transferredCount ?? 0} คน</div>
+                <div className="text-lg font-bold text-emerald-700 mt-0.5">{transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0} คน</div>
               </div>
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
                 <div className="text-[11px] text-amber-600 font-medium">รอโอน</div>
-                <div className="text-lg font-bold text-amber-700 mt-0.5">{transferList?.pendingCount ?? 0} คน</div>
+                <div className="text-lg font-bold text-amber-700 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (selectedPeriod?.employeeCount ?? 0) - (selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
               </div>
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
                 <div className="text-[11px] text-blue-600 font-medium">รวมยอดทั้งหมด</div>
@@ -2561,7 +2561,7 @@ export default function PayrollPage() {
           )}
 
           {/* ── PHASE 2a: BANK_BATCH ── */}
-          {(selectedPeriod?.paymentMethod === 'BANK_BATCH' || (!selectedPeriod?.paymentMethod && selectedPeriod?.status === 'PROCESSING')) && selectedPeriod?.status !== 'CLOSED' && (
+          {selectedPeriod?.paymentMethod === 'BANK_BATCH' && selectedPeriod?.status !== 'CLOSED' && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Building2 className="w-5 h-5 text-blue-600" />

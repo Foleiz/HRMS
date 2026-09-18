@@ -736,20 +736,7 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return periods.Select(p => new PayrollPeriodDto
-        {
-            Id = p.Id,
-            Year = p.Year,
-            Month = p.Month,
-            PeriodName = GetThaiPeriodName(p.Year, p.Month),
-            StartDate = p.StartDate.ToString("yyyy-MM-dd"),
-            EndDate = p.EndDate.ToString("yyyy-MM-dd"),
-            PaymentDate = p.PaymentDate?.ToString("yyyy-MM-dd"),
-            Status = p.Status,
-            StatusText = GetPeriodStatusText(p.Status),
-            EmployeeCount = p.Payrolls.Count,
-            TotalNetSalary = p.Payrolls.Sum(x => x.NetPayableSalary)
-        }).ToList();
+        return periods.Select(MapPeriodToDto).ToList();
     }
 
     public async Task<PayrollPeriodDto?> GetPayrollPeriodByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -761,20 +748,7 @@ public class SalaryService : ISalaryService
 
         if (p == null) return null;
 
-        return new PayrollPeriodDto
-        {
-            Id = p.Id,
-            Year = p.Year,
-            Month = p.Month,
-            PeriodName = GetThaiPeriodName(p.Year, p.Month),
-            StartDate = p.StartDate.ToString("yyyy-MM-dd"),
-            EndDate = p.EndDate.ToString("yyyy-MM-dd"),
-            PaymentDate = p.PaymentDate?.ToString("yyyy-MM-dd"),
-            Status = p.Status,
-            StatusText = GetPeriodStatusText(p.Status),
-            EmployeeCount = p.Payrolls.Count,
-            TotalNetSalary = p.Payrolls.Sum(x => x.NetPayableSalary)
-        };
+        return MapPeriodToDto(p);
     }
 
     public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
@@ -984,20 +958,7 @@ public class SalaryService : ISalaryService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new PayrollPeriodDto
-        {
-            Id = period.Id,
-            Year = period.Year,
-            Month = period.Month,
-            PeriodName = GetThaiPeriodName(period.Year, period.Month),
-            StartDate = period.StartDate.ToString("yyyy-MM-dd"),
-            EndDate = period.EndDate.ToString("yyyy-MM-dd"),
-            PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
-            Status = period.Status,
-            StatusText = GetPeriodStatusText(period.Status),
-            EmployeeCount = period.Payrolls.Count,
-            TotalNetSalary = period.Payrolls.Sum(x => x.NetPayableSalary)
-        };
+        return MapPeriodToDto(period);
     }
 
     public async Task<PayrollPeriodDto> CreatePayrollPeriodAsync(CreatePayrollPeriodRequest request, CancellationToken cancellationToken = default)
@@ -1046,20 +1007,7 @@ public class SalaryService : ISalaryService
         _context.PayrollPeriods.Add(period);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new PayrollPeriodDto
-        {
-            Id = period.Id,
-            Year = period.Year,
-            Month = period.Month,
-            PeriodName = GetThaiPeriodName(period.Year, period.Month),
-            StartDate = period.StartDate.ToString("yyyy-MM-dd"),
-            EndDate = period.EndDate.ToString("yyyy-MM-dd"),
-            PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
-            Status = period.Status,
-            StatusText = GetPeriodStatusText(period.Status),
-            EmployeeCount = 0,
-            TotalNetSalary = 0
-        };
+        return MapPeriodToDto(period);
     }
 
     public async Task<List<PayrollRecordDto>> CalculatePayrollForPeriodAsync(long periodId, CancellationToken cancellationToken = default)
@@ -1582,10 +1530,11 @@ public class SalaryService : ISalaryService
         if (period.Status == "APPROVED")
             period.Status = "PROCESSING";
 
+        await _context.SaveChangesAsync(cancellationToken);
+
         // Update transferred count
-        var transferredCount = await _context.Payrolls
+        period.TotalTransferredCount = await _context.Payrolls
             .CountAsync(p => p.PeriodId == periodId && p.PaymentStatus == "TRANSFERRED", cancellationToken);
-        period.TotalTransferredCount = transferredCount + 1;
 
         await _context.SaveChangesAsync(cancellationToken);
 
