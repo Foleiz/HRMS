@@ -16,10 +16,12 @@ import {
   ChevronDown,
   Filter,
   Calendar,
+  GitPullRequest,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
+import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -75,6 +77,10 @@ export default function ApprovalHistoryPage() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Timeline Modal State
+  const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
 
   // ─── Fetch ────────────────────────────────────────────────
 
@@ -187,7 +193,8 @@ export default function ApprovalHistoryPage() {
                   <th className="text-center px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">จำนวนวัน</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สถานะ</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ผู้ดำเนินการ</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ดำเนินการ</th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ดำเนินการ</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สายอนุมัติ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -247,8 +254,24 @@ export default function ApprovalHistoryPage() {
                       </td>
 
                       {/* วันที่ดำเนินการ */}
-                      <td className="px-5 py-4 text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-4 py-4 text-gray-500 text-xs whitespace-nowrap">
                         {formatDateTime(req.updatedAt ?? req.createdAt)}
+                      </td>
+
+                      {/* สายอนุมัติ */}
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedForTimeline(req);
+                            setIsTimelineOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-blue-700 bg-blue-50/80 hover:bg-blue-100 hover:text-blue-800 transition-colors border border-blue-200/60 shadow-2xs"
+                          title="ดูผังขั้นตอนและประวัติการพิจารณา"
+                        >
+                          <GitPullRequest className="w-3.5 h-3.5" />
+                          <span>ผังอนุมัติ</span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -258,6 +281,16 @@ export default function ApprovalHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Timeline Modal */}
+      <ApprovalTimelineModal
+        isOpen={isTimelineOpen}
+        onClose={() => {
+          setIsTimelineOpen(false);
+          setSelectedForTimeline(null);
+        }}
+        leaveRequest={selectedForTimeline}
+      />
     </div>
   );
 }

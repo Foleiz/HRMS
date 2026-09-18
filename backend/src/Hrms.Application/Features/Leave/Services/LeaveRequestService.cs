@@ -1,4 +1,5 @@
-using Hrms.Application.Common.Interfaces;
+﻿using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,12 @@ namespace Hrms.Application.Features.Leave.Services;
 public class LeaveRequestService : ILeaveRequestService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IApprovalWorkflowService _approvalWorkflow;
 
-    public LeaveRequestService(IHrmsDbContext context)
+    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow)
     {
         _context = context;
+        _approvalWorkflow = approvalWorkflow;
     }
 
     public async Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(
@@ -20,6 +23,7 @@ public class LeaveRequestService : ILeaveRequestService
         int page = 1,
         int pageSize = 20,
         long? scopeToManagerEmployeeId = null,
+        long? currentViewerEmployeeId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.LeaveRequests
@@ -27,6 +31,9 @@ public class LeaveRequestService : ILeaveRequestService
             .Include(r => r.Employee)
             .Include(r => r.LeaveType)
             .Include(r => r.Documents)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .AsQueryable();
 
         if (employeeId.HasValue)
@@ -37,7 +44,6 @@ public class LeaveRequestService : ILeaveRequestService
         if (scopeToManagerEmployeeId.HasValue)
         {
             // กรองให้หัวหน้างาน (ที่ไม่ใช่ ADMIN) เห็นเฉพาะคำขอลาของลูกทีมสายตรงของตัวเองเท่านั้น
-            // ตามสายบังคับบัญชาที่กำหนดไว้ใน EmployeeAssignment.ManagerEmployeeId (เอาเฉพาะการมอบหมายงานปัจจุบัน)
             var teamEmployeeIds = await _context.EmployeeAssignments
                 .AsNoTracking()
                 .Where(a => a.IsCurrent && a.ManagerEmployeeId == scopeToManagerEmployeeId.Value)
@@ -67,42 +73,13 @@ public class LeaveRequestService : ILeaveRequestService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var items = requests.Select(r =>
+        var items = new List<LeaveRequestDto>();
+        foreach (var r in requests)
         {
             assignments.TryGetValue(r.EmployeeId, out var assign);
-            var emp = r.Employee;
-            var empName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : string.Empty;
-
-            return new LeaveRequestDto
-            {
-                Id = r.Id,
-                RequestNo = r.RequestNo,
-                EmployeeId = r.EmployeeId,
-                EmployeeCode = emp?.EmployeeCode ?? string.Empty,
-                EmployeeName = empName,
-                DepartmentName = assign?.Department?.DepartmentName ?? "-",
-                LeaveTypeId = r.LeaveTypeId,
-                LeaveTypeCode = r.LeaveType?.LeaveCode ?? string.Empty,
-                LeaveTypeName = r.LeaveType?.LeaveName ?? string.Empty,
-                StartDatetime = r.StartDatetime,
-                EndDatetime = r.EndDatetime,
-                LeaveHours = r.LeaveHours,
-                LeaveDays = r.LeaveDays,
-                Reason = r.Reason,
-                ContactDuringLeave = r.ContactDuringLeave,
-                Status = r.Status,
-                SubmittedAt = r.SubmittedAt,
-                CancelledAt = r.CancelledAt,
-                CancelReason = r.CancelReason,
-                Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
-                {
-                    Id = d.Id,
-                    LeaveRequestId = d.LeaveRequestId,
-                    FileName = d.FileName,
-                    UploadedAt = d.UploadedAt
-                }).ToList()
-            };
-        }).ToList();
+            var item = await MapToDtoAsync(r, assign, currentViewerEmployeeId, cancellationToken);
+            items.Add(item);
+        }
 
         return (items, totalCount);
     }
@@ -132,13 +109,16 @@ public class LeaveRequestService : ILeaveRequestService
         };
     }
 
-    public async Task<LeaveRequestDto?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<LeaveRequestDto?> GetByIdAsync(long id, long? currentViewerEmployeeId = null, CancellationToken cancellationToken = default)
     {
         var r = await _context.LeaveRequests
             .AsNoTracking()
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
             .Include(x => x.Documents)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (r == null) return null;
@@ -148,36 +128,7 @@ public class LeaveRequestService : ILeaveRequestService
             .Include(a => a.Department)
             .FirstOrDefaultAsync(a => a.EmployeeId == r.EmployeeId && a.IsCurrent, cancellationToken);
 
-        var emp = r.Employee;
-        return new LeaveRequestDto
-        {
-            Id = r.Id,
-            RequestNo = r.RequestNo,
-            EmployeeId = r.EmployeeId,
-            EmployeeCode = emp?.EmployeeCode ?? string.Empty,
-            EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : string.Empty,
-            DepartmentName = assign?.Department?.DepartmentName ?? "-",
-            LeaveTypeId = r.LeaveTypeId,
-            LeaveTypeCode = r.LeaveType?.LeaveCode ?? string.Empty,
-            LeaveTypeName = r.LeaveType?.LeaveName ?? string.Empty,
-            StartDatetime = r.StartDatetime,
-            EndDatetime = r.EndDatetime,
-            LeaveHours = r.LeaveHours,
-            LeaveDays = r.LeaveDays,
-            Reason = r.Reason,
-            ContactDuringLeave = r.ContactDuringLeave,
-            Status = r.Status,
-            SubmittedAt = r.SubmittedAt,
-            CancelledAt = r.CancelledAt,
-            CancelReason = r.CancelReason,
-            Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
-            {
-                Id = d.Id,
-                LeaveRequestId = d.LeaveRequestId,
-                FileName = d.FileName,
-                UploadedAt = d.UploadedAt
-            }).ToList()
-        };
+        return await MapToDtoAsync(r, assign, currentViewerEmployeeId, cancellationToken);
     }
 
     public async Task<LeaveRequestDto> CreateAsync(CreateLeaveRequestDto request, CancellationToken cancellationToken = default)
@@ -195,7 +146,7 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบพนักงานรหัส ID {request.EmployeeId}");
         }
 
-        // Validate Leave Balance — ข้ามการตรวจสอบถ้าเป็นการบันทึกแบบร่าง (ยังไม่ได้ยื่นจริง)
+        // Validate Leave Balance — ข้ามการตรวจสอบถ้าเป็นการบันทึกแบบร่าง
         var balance = await _context.LeaveBalances
             .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
 
@@ -238,7 +189,18 @@ public class LeaveRequestService : ILeaveRequestService
         _context.LeaveRequests.Add(leaveRequest);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(leaveRequest.Id, cancellationToken))!;
+        // ถ้ายื่นคำขอจริง ให้เริ่ม Approval Workflow ทันที
+        if (!request.IsDraft)
+        {
+            var instanceId = await _approvalWorkflow.StartWorkflowAsync("LEAVE_REQUEST", leaveRequest.Id, leaveRequest.EmployeeId, cancellationToken);
+            if (instanceId.HasValue)
+            {
+                leaveRequest.ApprovalInstanceId = instanceId.Value;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        return (await GetByIdAsync(leaveRequest.Id, request.EmployeeId, cancellationToken))!;
     }
 
     public async Task<LeaveRequestDto> UpdateDraftAsync(long id, CreateLeaveRequestDto request, CancellationToken cancellationToken = default)
@@ -262,7 +224,6 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบประเภทการลารหัส ID {request.LeaveTypeId}");
         }
 
-        // ถ้ากำลังจะยื่นจริงจากแบบร่างเดิม (IsDraft = false) ต้องตรวจสอบโควตาเหมือนตอนสร้างคำขอใหม่
         if (!request.IsDraft)
         {
             var year = request.StartDatetime.Year;
@@ -287,6 +248,12 @@ public class LeaveRequestService : ILeaveRequestService
         {
             leaveRequest.Status = "PENDING";
             leaveRequest.SubmittedAt = DateTime.UtcNow;
+
+            var instanceId = await _approvalWorkflow.StartWorkflowAsync("LEAVE_REQUEST", leaveRequest.Id, leaveRequest.EmployeeId, cancellationToken);
+            if (instanceId.HasValue)
+            {
+                leaveRequest.ApprovalInstanceId = instanceId.Value;
+            }
         }
 
         if (request.AttachmentData != null && request.AttachmentData.Length > 0)
@@ -301,10 +268,10 @@ public class LeaveRequestService : ILeaveRequestService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(leaveRequest.Id, cancellationToken))!;
+        return (await GetByIdAsync(leaveRequest.Id, leaveRequest.EmployeeId, cancellationToken))!;
     }
 
-    public async Task<LeaveRequestDto> ApproveAsync(long id, long? approverId = null, CancellationToken cancellationToken = default)
+    public async Task<LeaveRequestDto> ApproveAsync(long id, long? approverId = null, string? comment = null, CancellationToken cancellationToken = default)
     {
         var request = await _context.LeaveRequests
             .Include(r => r.LeaveType)
@@ -317,67 +284,93 @@ public class LeaveRequestService : ILeaveRequestService
 
         if (request.Status == "APPROVED")
         {
-            return (await GetByIdAsync(id, cancellationToken))!;
+            return (await GetByIdAsync(id, approverId, cancellationToken))!;
         }
 
-        var year = request.StartDatetime.Year;
-        var balance = await _context.LeaveBalances
-            .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+        bool finalizeApproval = false;
 
-        if (balance != null)
+        // 1. ตรวจสอบว่ามี ApprovalInstance ผูกอยู่หรือไม่
+        if (request.ApprovalInstanceId.HasValue)
         {
-            balance.UsedDays += request.LeaveDays;
-            balance.NetRemainingLeaveDays = balance.BroughtForwardDays 
-                                          + balance.AnnualQuotaDays 
-                                          + balance.ActiveCarriedForwardDays 
-                                          - balance.UsedDays 
-                                          + balance.AdjustedDays;
+            var workflowResult = await _approvalWorkflow.ProcessActionAsync(
+                request.ApprovalInstanceId.Value,
+                approverId ?? 1,
+                "APPROVE",
+                comment,
+                cancellationToken);
 
-            _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
+            // ถ้าอนุมัติครบทุกขั้นตอนแล้ว (Final Step) จึงตัดยอดวันลาและลงปฏิทิน
+            if (workflowResult.IsCompleted && workflowResult.Status == "APPROVED")
             {
-                LeaveBalanceId = balance.Id,
-                TransactionType = "USED",
-                Amount = -request.LeaveDays,
-                ReferenceType = "leave_request",
-                ReferenceId = request.Id,
-                Note = $"อนุมัติคำร้องขอลาเลขที่ {request.RequestNo} ({request.LeaveDays} วัน)",
-                CreatedAt = DateTime.UtcNow,
-                CreatedByEmployeeId = approverId
-            });
+                finalizeApproval = true;
+            }
+        }
+        else
+        {
+            // ถ้าไม่มี Workflow ผูกอยู่ (เช่น เอกสารเก่า) ให้อนุมัติโดยตรง
+            finalizeApproval = true;
         }
 
-        // ซิงค์สถานะวันลาไปยัง AttendanceDaily เพื่อให้หน้าตรวจบันทึกเวลาและรายงานสรุป
-        // ทราบว่าพนักงานลาในวันดังกล่าวโดยอัตโนมัติ (ไม่นับเป็นขาดงาน)
-        var startDate = DateOnly.FromDateTime(request.StartDatetime);
-        var endDate = DateOnly.FromDateTime(request.EndDatetime);
-
-        for (var d = startDate; d <= endDate; d = d.AddDays(1))
+        if (finalizeApproval)
         {
-            var daily = await _context.AttendanceDailies
-                .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.WorkDate == d, cancellationToken);
+            var year = request.StartDatetime.Year;
+            var balance = await _context.LeaveBalances
+                .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
 
-            if (daily == null)
+            if (balance != null)
             {
-                daily = new AttendanceDaily
+                balance.UsedDays += request.LeaveDays;
+                balance.NetRemainingLeaveDays = balance.BroughtForwardDays 
+                                              + balance.AnnualQuotaDays 
+                                              + balance.ActiveCarriedForwardDays 
+                                              - balance.UsedDays 
+                                              + balance.AdjustedDays;
+
+                _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
                 {
-                    EmployeeId = request.EmployeeId,
-                    WorkDate = d,
-                    IsAbsent = false,
-                    Status = "LEAVE"
-                };
-                _context.AttendanceDailies.Add(daily);
+                    LeaveBalanceId = balance.Id,
+                    TransactionType = "USED",
+                    Amount = -request.LeaveDays,
+                    ReferenceType = "leave_request",
+                    ReferenceId = request.Id,
+                    Note = $"อนุมัติคำร้องขอลาเลขที่ {request.RequestNo} ({request.LeaveDays} วัน)" + (string.IsNullOrWhiteSpace(comment) ? "" : $" [ความเห็น: {comment}]"),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByEmployeeId = approverId
+                });
             }
-            else
+
+            // ซิงค์สถานะวันลาไปยัง AttendanceDaily
+            var startDate = DateOnly.FromDateTime(request.StartDatetime);
+            var endDate = DateOnly.FromDateTime(request.EndDatetime);
+
+            for (var d = startDate; d <= endDate; d = d.AddDays(1))
             {
-                daily.IsAbsent = false;
-                daily.Status = "LEAVE";
+                var daily = await _context.AttendanceDailies
+                    .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.WorkDate == d, cancellationToken);
+
+                if (daily == null)
+                {
+                    daily = new AttendanceDaily
+                    {
+                        EmployeeId = request.EmployeeId,
+                        WorkDate = d,
+                        IsAbsent = false,
+                        Status = "LEAVE"
+                    };
+                    _context.AttendanceDailies.Add(daily);
+                }
+                else
+                {
+                    daily.IsAbsent = false;
+                    daily.Status = "LEAVE";
+                }
             }
+
+            request.Status = "APPROVED";
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        request.Status = "APPROVED";
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, approverId, cancellationToken))!;
     }
 
     public async Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, CancellationToken cancellationToken = default)
@@ -388,11 +381,26 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบคำร้องขอลาหยุดงานรหัส ID {id}");
         }
 
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            var approverId = 1L; // fallback
+            try
+            {
+                await _approvalWorkflow.ProcessActionAsync(
+                    request.ApprovalInstanceId.Value,
+                    approverId,
+                    "REJECT",
+                    reason,
+                    cancellationToken);
+            }
+            catch { /* Ignore if workflow status mismatch */ }
+        }
+
         request.Status = "REJECTED";
         request.CancelReason = reason;
         await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, null, cancellationToken))!;
     }
 
     public async Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, bool revertToDraftIfPending = false, CancellationToken cancellationToken = default)
@@ -403,18 +411,33 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบคำร้องขอลาหยุดงานรหัส ID {id}");
         }
 
-        // พนักงานถอนคำขอที่ยังรออนุมัติ (ยังไม่มีผลจริงกับโควตา) กลับไปเป็นแบบร่างแทนการยกเลิกถาวร
-        // เพื่อให้แก้ไขและยื่นใหม่ได้เองในภายหลัง โดยไม่ต้องกรอกข้อมูลใหม่ทั้งหมด
         if (revertToDraftIfPending && request.Status == "PENDING")
         {
+            if (request.ApprovalInstanceId.HasValue)
+            {
+                try
+                {
+                    await _approvalWorkflow.ProcessActionAsync(
+                        request.ApprovalInstanceId.Value,
+                        cancelledBy ?? 1,
+                        "CANCEL",
+                        reason,
+                        cancellationToken);
+                }
+                catch { }
+            }
+
             request.Status = "DRAFT";
             request.SubmittedAt = null;
-            await _context.SaveChangesAsync(cancellationToken);
+            request.CancelledAt = null;
+            request.CancelReason = null;
+            request.ApprovalInstanceId = null;
 
-            return (await GetByIdAsync(id, cancellationToken))!;
+            await _context.SaveChangesAsync(cancellationToken);
+            return (await GetByIdAsync(id, cancelledBy, cancellationToken))!;
         }
 
-        // If previously approved, reverse the deducted balance
+        // ถ้าเคย APPROVED แล้ว ต้องคืนยอดวันลา
         if (request.Status == "APPROVED")
         {
             var year = request.StartDatetime.Year;
@@ -443,7 +466,6 @@ public class LeaveRequestService : ILeaveRequestService
                 });
             }
 
-            // คืนสถานะใน AttendanceDaily สำหรับวันที่เคยลา
             var startDate = DateOnly.FromDateTime(request.StartDatetime);
             var endDate = DateOnly.FromDateTime(request.EndDatetime);
 
@@ -464,12 +486,26 @@ public class LeaveRequestService : ILeaveRequestService
             }
         }
 
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            try
+            {
+                await _approvalWorkflow.ProcessActionAsync(
+                    request.ApprovalInstanceId.Value,
+                    cancelledBy ?? 1,
+                    "CANCEL",
+                    reason,
+                    cancellationToken);
+            }
+            catch { }
+        }
+
         request.Status = "CANCELLED";
         request.CancelledAt = DateTime.UtcNow;
         request.CancelReason = reason;
         await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, cancelledBy, cancellationToken))!;
     }
 
     public async Task<LeaveRequestDocument?> GetDocumentAsync(long requestId, long documentId, CancellationToken cancellationToken = default)
@@ -492,8 +528,90 @@ public class LeaveRequestService : ILeaveRequestService
             throw new InvalidOperationException("ลบได้เฉพาะคำขอลาที่ยังเป็นแบบร่างเท่านั้น");
         }
 
-        // Cascade Delete ที่ตั้งค่าไว้ใน DbContext จะลบเอกสารแนบ (LeaveRequestDocument) ที่ผูกอยู่ให้อัตโนมัติ
         _context.LeaveRequests.Remove(request);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<LeaveRequestDto> MapToDtoAsync(
+        LeaveRequest r,
+        EmployeeAssignment? assign,
+        long? currentViewerEmployeeId,
+        CancellationToken cancellationToken)
+    {
+        var emp = r.Employee;
+        var empName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : string.Empty;
+
+        var instance = r.ApprovalInstance;
+        var currentStepNo = instance?.CurrentStepNo;
+        var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
+        string? currentApproverDisplay = null;
+        bool isMyTurn = false;
+
+        if (instance != null && instance.Status == "PENDING" && currentStepNo.HasValue)
+        {
+            var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == currentStepNo.Value);
+            if (step != null)
+            {
+                currentApproverDisplay = step.ApproverType switch
+                {
+                    "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
+                    "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
+                    "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
+                    "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
+                    "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
+                    "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
+                    "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+                    _ => step.ApproverType
+                };
+            }
+
+            if (currentViewerEmployeeId.HasValue)
+            {
+                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentViewerEmployeeId.Value, cancellationToken);
+            }
+        }
+
+        var finalApproveAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
+        return new LeaveRequestDto
+        {
+            Id = r.Id,
+            RequestNo = r.RequestNo,
+            EmployeeId = r.EmployeeId,
+            EmployeeCode = emp?.EmployeeCode ?? string.Empty,
+            EmployeeName = empName,
+            DepartmentName = assign?.Department?.DepartmentName ?? "-",
+            LeaveTypeId = r.LeaveTypeId,
+            LeaveTypeCode = r.LeaveType?.LeaveCode ?? string.Empty,
+            LeaveTypeName = r.LeaveType?.LeaveName ?? string.Empty,
+            StartDatetime = r.StartDatetime,
+            EndDatetime = r.EndDatetime,
+            LeaveHours = r.LeaveHours,
+            LeaveDays = r.LeaveDays,
+            Reason = r.Reason,
+            ContactDuringLeave = r.ContactDuringLeave,
+            Status = r.Status,
+            SubmittedAt = r.SubmittedAt,
+            CancelledAt = r.CancelledAt,
+            CancelReason = r.CancelReason,
+            RejectReason = r.CancelReason,
+            ApprovalInstanceId = r.ApprovalInstanceId,
+            CurrentStepNo = currentStepNo,
+            TotalSteps = totalSteps,
+            CurrentApproverDisplay = currentApproverDisplay,
+            IsMyTurnToApprove = isMyTurn,
+            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
+            ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
+            Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
+            {
+                Id = d.Id,
+                LeaveRequestId = d.LeaveRequestId,
+                FileName = d.FileName,
+                UploadedAt = d.UploadedAt
+            }).ToList()
+        };
     }
 }

@@ -90,6 +90,8 @@ public interface IHrmsDbContext
     DbSet<ApprovalFlow> ApprovalFlows { get; }
     DbSet<ApprovalStep> ApprovalSteps { get; }
     DbSet<ApprovalDelegation> ApprovalDelegations { get; }
+    DbSet<ApprovalInstance> ApprovalInstances { get; }
+    DbSet<ApprovalAction> ApprovalActions { get; }
 
     // Monthly Attendance Summary (Dev 1)
     DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries { get; }

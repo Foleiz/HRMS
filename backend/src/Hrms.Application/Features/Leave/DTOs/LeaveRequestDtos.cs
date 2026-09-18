@@ -24,8 +24,23 @@ public record LeaveRequestDto
     public DateTime? SubmittedAt { get; init; }
     public DateTime? CancelledAt { get; init; }
     public string? CancelReason { get; init; }
+    public string? RejectReason { get; init; }
+
+    // Approval Workflow Engine Integration
+    public long? ApprovalInstanceId { get; init; }
+    public int? CurrentStepNo { get; init; }
+    public int TotalSteps { get; init; }
+    public string? CurrentApproverDisplay { get; init; }
+    public bool IsMyTurnToApprove { get; init; }
+    public string? ApprovedByName { get; init; }
+    public DateTime? ApprovedAt { get; init; }
 
     public List<LeaveRequestDocumentDto> Documents { get; init; } = new();
+}
+
+public record ApproveLeaveRequestPayload
+{
+    public string? Comment { get; init; }
 }
 
 public record LeaveRequestDocumentDto

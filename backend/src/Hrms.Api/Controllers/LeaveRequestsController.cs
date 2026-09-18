@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
+using Hrms.Application.Features.Approvals.DTOs;
+using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,11 +19,16 @@ namespace Hrms.Api.Controllers;
 public class LeaveRequestsController : ControllerBase
 {
     private readonly ILeaveRequestService _requestService;
+    private readonly IApprovalWorkflowService _approvalWorkflow;
     private readonly ICurrentUserService _currentUser;
 
-    public LeaveRequestsController(ILeaveRequestService requestService, ICurrentUserService currentUser)
+    public LeaveRequestsController(
+        ILeaveRequestService requestService,
+        IApprovalWorkflowService approvalWorkflow,
+        ICurrentUserService currentUser)
     {
         _requestService = requestService;
+        _approvalWorkflow = approvalWorkflow;
         _currentUser = currentUser;
     }
 
@@ -35,15 +42,25 @@ public class LeaveRequestsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         // หน้ารายการรออนุมัติ/ประวัติฝั่งแอดมินเรียก endpoint นี้โดยไม่ระบุ employeeId มา —
-        // ถ้าผู้เรียกไม่ใช่ ADMIN ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของ "ลูกทีมสายตรง" ตามสายบังคับบัญชา
-        // ของหัวหน้างานคนนั้น (ManagerEmployeeId) แทนการเห็นคำขอลาทั้งบริษัท
+        // ถ้าผู้เรียกไม่ใช่ ADMIN หรือ HR ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของ "ลูกทีมสายตรง"
         long? scopeToManagerId = null;
         if (!employeeId.HasValue && !_currentUser.HasRole("ADMIN"))
         {
-            scopeToManagerId = _currentUser.EmployeeId;
+            if (!_currentUser.HasRole("HR_MGR") && !_currentUser.HasRole("HR_ADMIN") && !_currentUser.HasRole("HR"))
+            {
+                scopeToManagerId = _currentUser.EmployeeId;
+            }
         }
 
-        var (items, totalCount) = await _requestService.GetAllAsync(employeeId, status, page, pageSize, scopeToManagerId, cancellationToken);
+        var (items, totalCount) = await _requestService.GetAllAsync(
+            employeeId,
+            status,
+            page,
+            pageSize,
+            scopeToManagerId,
+            _currentUser.EmployeeId,
+            cancellationToken);
+
         return Ok(ApiResponse<List<LeaveRequestDto>>.Ok(items, $"ดึงรายการคำร้องขอลาสำเร็จ (ทั้งหมด {totalCount} รายการ)"));
     }
 
@@ -60,7 +77,7 @@ public class LeaveRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> GetById(long id, CancellationToken cancellationToken)
     {
-        var result = await _requestService.GetByIdAsync(id, cancellationToken);
+        var result = await _requestService.GetByIdAsync(id, _currentUser.EmployeeId, cancellationToken);
         if (result == null)
         {
             return NotFound(ApiResponse<LeaveRequestDto>.Fail($"ไม่พบคำร้องขอรหัส ID {id}"));
@@ -94,22 +111,58 @@ public class LeaveRequestsController : ControllerBase
     [HttpPut("{id:long}/approve")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> Approve(
         long id,
+        [FromBody] ApproveLeaveRequestPayload? payload,
         CancellationToken cancellationToken)
     {
         try
         {
-            var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            long.TryParse(empIdStr, out var approverId);
+            var approverId = _currentUser.EmployeeId;
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (long.TryParse(empIdStr, out var parsedId))
+                {
+                    approverId = parsedId;
+                }
+            }
 
-            var result = await _requestService.ApproveAsync(id, approverId > 0 ? approverId : null, cancellationToken);
+            var result = await _requestService.ApproveAsync(id, approverId > 0 ? approverId : null, payload?.Comment, cancellationToken);
             return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "อนุมัติคำร้องขอลาสำเร็จ"));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// ดึงประวัติและผังขั้นตอนการอนุมัติ (Approval Timeline) ตามสายการอนุมัติของคำขอนี้
+    /// </summary>
+    [HttpGet("{id:long}/approval-timeline")]
+    [ProducesResponseType(typeof(ApiResponse<ApprovalTimelineDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ApprovalTimelineDto>>> GetApprovalTimeline(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var timeline = await _approvalWorkflow.GetTimelineByDocumentAsync("LEAVE_REQUEST", id, cancellationToken);
+        if (timeline == null)
+        {
+            return NotFound(ApiResponse<ApprovalTimelineDto>.Fail("ไม่พบประวัติหรือผังขั้นตอนการอนุมัติสำหรับคำขอนี้"));
+        }
+
+        return Ok(ApiResponse<ApprovalTimelineDto>.Ok(timeline, "ดึงข้อมูลผังขั้นตอนการอนุมัติสำเร็จ"));
     }
 
     [HttpPut("{id:long}/reject")]
@@ -280,7 +333,7 @@ public class LeaveRequestsController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<LeaveRequestDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var existing = await _requestService.GetByIdAsync(id, cancellationToken);
+        var existing = await _requestService.GetByIdAsync(id, employeeId, cancellationToken);
         if (existing == null)
             return NotFound(ApiResponse<LeaveRequestDto>.Fail($"ไม่พบคำขอลารหัส ID {id}"));
 
@@ -339,7 +392,7 @@ public class LeaveRequestsController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<LeaveRequestDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var existing = await _requestService.GetByIdAsync(id, cancellationToken);
+        var existing = await _requestService.GetByIdAsync(id, employeeId, cancellationToken);
         if (existing == null)
             return NotFound(ApiResponse<LeaveRequestDto>.Fail($"ไม่พบคำขอลารหัส ID {id}"));
 
@@ -376,7 +429,7 @@ public class LeaveRequestsController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<object>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var existing = await _requestService.GetByIdAsync(id, cancellationToken);
+        var existing = await _requestService.GetByIdAsync(id, employeeId, cancellationToken);
         if (existing == null)
             return NotFound(ApiResponse<object>.Fail($"ไม่พบคำขอลารหัส ID {id}"));
 

@@ -139,6 +139,34 @@ export interface InitializeYearBalanceResult {
   message: string;
 }
 
+export interface ApprovalTimelineStep {
+  stepNo: number;
+  approverTitle: string;
+  approverType: string;
+  designatedApproverName?: string | null;
+  status: 'COMPLETED' | 'WAITING' | 'PENDING_FUTURE' | 'REJECTED' | 'CANCELLED' | string;
+  actionByEmployeeId?: number | null;
+  actionByEmployeeName?: string | null;
+  actionDecision?: 'APPROVE' | 'REJECT' | 'CANCEL' | string | null;
+  actionAt?: string | null;
+  comment?: string | null;
+}
+
+export interface ApprovalTimeline {
+  instanceId: number;
+  flowId: number;
+  flowName: string;
+  flowCode: string;
+  documentType: string;
+  sourceDocumentId: number;
+  currentStepNo?: number | null;
+  totalSteps: number;
+  status: string;
+  createdAt: string;
+  completedAt?: string | null;
+  steps: ApprovalTimelineStep[];
+}
+
 export interface LeaveRequest {
   id: number;
   requestNo: string;
@@ -170,6 +198,12 @@ export interface LeaveRequest {
   approvedAt?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+  // Approval Workflow Engine Integration
+  approvalInstanceId?: number | null;
+  currentStepNo?: number | null;
+  totalSteps?: number;
+  currentApproverDisplay?: string | null;
+  isMyTurnToApprove?: boolean;
   documents?: {
     id: number;
     leaveRequestId: number;

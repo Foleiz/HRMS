@@ -101,6 +101,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<ApprovalFlow> ApprovalFlows => Set<ApprovalFlow>();
     public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
     public DbSet<ApprovalDelegation> ApprovalDelegations => Set<ApprovalDelegation>();
+    public DbSet<ApprovalInstance> ApprovalInstances => Set<ApprovalInstance>();
+    public DbSet<ApprovalAction> ApprovalActions => Set<ApprovalAction>();
 
     // Monthly Attendance Summary (Dev 1)
     public DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries => Set<AttendanceMonthlySummary>();
@@ -1146,6 +1148,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
             entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
             entity.Property(e => e.CancelReason).HasColumnName("cancel_reason");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
 
             entity.HasOne(e => e.Employee)
                 .WithMany()
@@ -1156,6 +1159,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany(t => t.LeaveRequests)
                 .HasForeignKey(e => e.LeaveTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: LeaveRequestDocument
@@ -1212,7 +1220,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.FlowName).HasColumnName("flow_name").HasMaxLength(255).IsRequired();
             entity.Property(e => e.DocumentType)
                 .HasColumnName("document_type")
-                .HasColumnType("hrms.approval_document_type_enum")
+                .HasMaxLength(50)
                 .IsRequired();
             entity.Property(e => e.DepartmentId).HasColumnName("department_id");
             entity.Property(e => e.LevelId).HasColumnName("employee_level_id");
@@ -1283,6 +1291,66 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.DelegateEmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: ApprovalInstance
+        modelBuilder.Entity<ApprovalInstance>(entity =>
+        {
+            entity.ToTable("approval_instance", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.ApprovalFlowId).HasColumnName("approval_flow_id").IsRequired();
+            entity.Property(e => e.DocumentType)
+                .HasColumnName("document_type")
+                .HasMaxLength(50)
+                .IsRequired();
+            entity.Property(e => e.SourceDocumentId).HasColumnName("source_document_id").IsRequired();
+            entity.Property(e => e.CurrentStepNo).HasColumnName("current_step_no");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+
+            entity.HasOne(e => e.ApprovalFlow)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalFlowId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuration: ApprovalAction
+        modelBuilder.Entity<ApprovalAction>(entity =>
+        {
+            entity.ToTable("approval_action", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id").IsRequired();
+            entity.Property(e => e.ApprovalStepId).HasColumnName("approval_step_id");
+            entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id").IsRequired();
+            entity.Property(e => e.ActionDecision).HasColumnName("action_decision").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Comment).HasColumnName("comment");
+            entity.Property(e => e.ActionAt).HasColumnName("action_at").IsRequired();
+            entity.Property(e => e.DelegationId).HasColumnName("delegation_id");
+            entity.Property(e => e.ActedForEmployeeId).HasColumnName("acted_for_employee_id");
+            entity.Property(e => e.SignatureData).HasColumnName("signature_data");
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany(i => i.Actions)
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ApprovalStep)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalStepId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ApproverEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ApproverEmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ActedForEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ActedForEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: SalaryStructure

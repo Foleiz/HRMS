@@ -21,9 +21,11 @@ public class LeaveRequest : BaseEntity
     public DateTime? SubmittedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public string? CancelReason { get; set; }
+    public long? ApprovalInstanceId { get; set; }
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual LeaveType? LeaveType { get; set; }
+    public virtual ApprovalInstance? ApprovalInstance { get; set; }
     public virtual ICollection<LeaveRequestDocument> Documents { get; set; } = new List<LeaveRequestDocument>();
 }
