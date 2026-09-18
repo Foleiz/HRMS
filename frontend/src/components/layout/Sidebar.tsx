@@ -68,6 +68,12 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    title: 'ข่าวสารสำหรับฉัน',
+    href: '/my-news',
+    matchPrefix: '/my-news',
+    icon: CalendarDays,
+  },
+  {
     title: 'ยื่นเอกสาร',
     href: '/documents',
     matchPrefix: '/documents',
@@ -178,10 +184,15 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: 'ข่าวสารและประกาศ',
+    title: 'จัดการประกาศ',
     href: '/announcements',
     matchPrefix: '/announcements',
     icon: Megaphone,
+    requiredPermissions: [
+      'SYS_ADMIN',
+      'ORG_VIEW',
+    ],
+    requiredRoles: ['ADMIN', 'HR_MGR', 'HR_ADMIN', 'SYS_ADMIN'],
   },
   {
     title: 'ตั้งค่า',
