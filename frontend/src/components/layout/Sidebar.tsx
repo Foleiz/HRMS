@@ -22,6 +22,7 @@ import {
   Landmark,
   CalendarDays,
   CalendarRange,
+  Megaphone,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -175,6 +176,12 @@ const menuItems: MenuItem[] = [
       'REPORT_ATT_VIEW',
       'REPORT_HEADCOUNT_VIEW',
     ],
+  },
+  {
+    title: 'ข่าวสารและประกาศ',
+    href: '/announcements',
+    matchPrefix: '/announcements',
+    icon: Megaphone,
   },
   {
     title: 'ตั้งค่า',
