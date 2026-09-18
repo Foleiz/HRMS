@@ -96,5 +96,13 @@ public interface IHrmsDbContext
     // Monthly Attendance Summary (Dev 1)
     DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries { get; }
 
+    // Announcements & News Hub (Dev 1 Phase 2)
+    DbSet<Announcement> Announcements { get; }
+    DbSet<AnnouncementTarget> AnnouncementTargets { get; }
+    DbSet<AnnouncementRead> AnnouncementReads { get; }
+
+    // In-App Notifications Engine (Dev 1 Phase 2)
+    DbSet<Notification> Notifications { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

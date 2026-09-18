@@ -15,10 +15,25 @@ import {
   ShieldAlert,
   Database,
   Terminal,
+  Megaphone,
+  Pin,
+  Calendar,
 } from 'lucide-react';
+import { announcementService } from '@/services/announcementService';
+import { Announcement } from '@/types/announcement';
 
 export default function HomePage() {
   const { user, hasRole, logout } = useAuth();
+  const [announcementFeed, setAnnouncementFeed] = React.useState<Announcement[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = React.useState(true);
+
+  React.useEffect(() => {
+    announcementService.getMyFeed()
+      .then((data) => setAnnouncementFeed(data || []))
+      .catch((err) => console.error('Failed to load announcements for dashboard', err))
+      .finally(() => setLoadingAnnouncements(false));
+  }, []);
+
   const hasAnyPermission = Boolean(
     (user?.permissions && user.permissions.length > 0) || hasRole('ADMIN')
   );
@@ -74,6 +89,82 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+          </div>
+
+          {/* Latest Announcements Widget */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Megaphone className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">ข่าวสารและประกาศองค์กรล่าสุด</h2>
+                  <p className="text-xs text-slate-400">ประชาสัมพันธ์และนโยบายสำคัญสำหรับพนักงานทุกคน</p>
+                </div>
+              </div>
+              <Link
+                href="/announcements"
+                className="text-xs font-bold text-[#0B2046] hover:underline flex items-center gap-1"
+              >
+                <span>ดูประกาศทั้งหมด</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {loadingAnnouncements ? (
+              <div className="py-8 text-center text-xs text-slate-400">กำลังโหลดข่าวสารล่าสุด...</div>
+            ) : announcementFeed.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400">ขณะนี้ยังไม่มีข่าวประกาศใหม่สำหรับสังกัดของคุณ</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {announcementFeed.slice(0, 3).map((item) => (
+                  <Link
+                    key={item.id}
+                    href="/announcements"
+                    className={`p-4 rounded-2xl border transition-all hover:shadow-md flex flex-col justify-between ${
+                      item.isPinned
+                        ? 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
+                        : 'bg-slate-50/50 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        {item.isPinned && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
+                            <Pin className="w-3 h-3 fill-amber-600" />
+                            <span>ปักหมุด</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                          {item.category === 'POLICY'
+                            ? 'นโยบาย'
+                            : item.category === 'ACTIVITY'
+                            ? 'กิจกรรม'
+                            : item.category === 'WELFARE'
+                            ? 'สวัสดิการ'
+                            : item.category === 'URGENT'
+                            ? 'ด่วนที่สุด'
+                            : 'ข่าวทั่วไป'}
+                        </span>
+                        {!item.isReadByCurrentUser && (
+                          <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            ใหม่
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2">{item.title}</h3>
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{item.content}</p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400">
+                      <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}</span>
+                      <span className="text-[#0B2046] font-semibold">เปิดอ่าน →</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Architecture Status Cards */}

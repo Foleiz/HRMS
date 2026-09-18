@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { NotificationBell } from './NotificationBell';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -126,14 +127,8 @@ export const Navbar: React.FC = () => {
 
       {/* 2. Right Side: Notifications, Dark mode toggle, and User Profile Pill */}
       <div className="flex items-center gap-3">
-        {/* Notification Bell */}
-        <button
-          title="การแจ้งเตือน"
-          className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors relative"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
-        </button>
+        {/* Notification Bell Hub */}
+        <NotificationBell />
 
         {/* Dark Mode Toggle */}
         <button

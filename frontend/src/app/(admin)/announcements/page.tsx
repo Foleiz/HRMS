@@ -1,0 +1,1408 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Megaphone,
+  Plus,
+  Search,
+  Loader2,
+  Pin,
+  PinOff,
+  Eye,
+  EyeOff,
+  Edit,
+  Trash2,
+  Calendar,
+  Users,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Filter,
+  BarChart2,
+  X,
+  Sparkles,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  CheckCheck,
+  Building,
+  Tag
+} from 'lucide-react';
+import { announcementService } from '@/services/announcementService';
+import { organizationService } from '@/services/organizationService';
+import { useAuth } from '@/context/AuthContext';
+import {
+  Announcement,
+  AnnouncementCategory,
+  AnnouncementPriority,
+  AnnouncementStatus,
+  AnnouncementReadStats,
+  CreateAnnouncementPayload,
+  UpdateAnnouncementPayload
+} from '@/types/announcement';
+import { Department } from '@/types/organization';
+import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
+
+// ─── Helpers ─────────────────────────────────────────────────
+
+const formatDate = (d?: string | null) => {
+  if (!d) return '-';
+  try {
+    return new Date(d).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return d;
+  }
+};
+
+const formatDateTime = (d?: string | null) => {
+  if (!d) return '-';
+  try {
+    return new Date(d).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return d;
+  }
+};
+
+const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
+  GENERAL: { label: 'ข่าวทั่วไป', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  POLICY: { label: 'นโยบายองค์กร', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  ACTIVITY: { label: 'กิจกรรมและสัมมนา', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  WELFARE: { label: 'สวัสดิการและสิทธิประโยชน์', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  URGENT: { label: 'ประกาศด่วนสำคัญ', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+};
+
+const PRIORITY_MAP: Record<string, { label: string; color: string; badge: string }> = {
+  LOW: { label: 'ทั่วไป', color: 'text-slate-500', badge: 'bg-slate-50 text-slate-600 border-slate-200' },
+  NORMAL: { label: 'ปกติ', color: 'text-blue-600', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+  HIGH: { label: 'สำคัญ', color: 'text-amber-600', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  URGENT: { label: 'ด่วนที่สุด', color: 'text-red-600', badge: 'bg-red-50 text-red-700 border-red-200' },
+};
+
+export default function AnnouncementsPage() {
+  const { setBreadcrumb } = useBreadcrumb();
+  const { user, hasRole, hasPermission } = useAuth();
+
+  const canManage = Boolean(
+    hasRole('ADMIN') ||
+    hasRole('HR_MGR') ||
+    hasRole('HR_ADMIN') ||
+    hasRole('SYS_ADMIN') ||
+    hasPermission('ORG_VIEW') ||
+    hasPermission('SYS_ADMIN')
+  );
+
+  // Active Main Tab: 'FEED' (Employee Feed) or 'MANAGE' (Admin Management)
+  const [activeTab, setActiveTab] = useState<'FEED' | 'MANAGE'>(canManage ? 'MANAGE' : 'FEED');
+
+  // ─── Feed State (สำหรับพนักงาน) ───
+  const [feedItems, setFeedItems] = useState<Announcement[]>([]);
+  const [loadingFeed, setLoadingFeed] = useState(true);
+  const [feedSearch, setFeedSearch] = useState('');
+  const [feedCategory, setFeedCategory] = useState('');
+  const [feedOnlyUnread, setFeedOnlyUnread] = useState(false);
+
+  // Reading Modal
+  const [readingItem, setReadingItem] = useState<Announcement | null>(null);
+
+  // ─── Admin Management State (สำหรับ HR/ผู้ดูแล) ───
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Filter state for Admin
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [pinnedFilter, setPinnedFilter] = useState<boolean | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+
+  // Modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Form fields
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
+  const [formCategory, setFormCategory] = useState<AnnouncementCategory>('GENERAL');
+  const [formPriority, setFormPriority] = useState<AnnouncementPriority>('NORMAL');
+  const [formStatus, setFormStatus] = useState<AnnouncementStatus>('PUBLISHED');
+  const [formIsPinned, setFormIsPinned] = useState(false);
+  const [formBannerUrl, setFormBannerUrl] = useState('');
+  const [formPublishedAt, setFormPublishedAt] = useState('');
+  const [formExpireAt, setFormExpireAt] = useState('');
+  const [formTargetType, setFormTargetType] = useState<'ALL' | 'DEPARTMENT'>('ALL');
+  const [formSelectedDeptIds, setFormSelectedDeptIds] = useState<number[]>([]);
+
+  // Read Stats Modal
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [readStats, setReadStats] = useState<AnnouncementReadStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  // Confirm Modal
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: ConfirmType;
+    singleButton?: boolean;
+    isLoading?: boolean;
+    onConfirm?: () => void | Promise<void>;
+  }>({ isOpen: false, title: '', message: '' });
+
+  // Toast
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Breadcrumb
+  useEffect(() => {
+    setBreadcrumb({
+      section: 'องค์กร',
+      page: 'ข่าวสารและประกาศ',
+    });
+  }, [setBreadcrumb]);
+
+  // Load Feed for Employee
+  const fetchFeed = useCallback(async () => {
+    setLoadingFeed(true);
+    try {
+      const data = await announcementService.getMyFeed();
+      setFeedItems(data || []);
+    } catch (err) {
+      console.error('Failed to fetch feed', err);
+    } finally {
+      setLoadingFeed(false);
+    }
+  }, []);
+
+  // Load Announcements for Admin
+  const fetchAnnouncements = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await announcementService.getAnnouncements({
+        search: searchTerm || undefined,
+        status: statusFilter || undefined,
+        category: categoryFilter || undefined,
+        priority: priorityFilter || undefined,
+        isPinned: pinnedFilter,
+        page,
+        pageSize,
+      });
+      setAnnouncements(res.items);
+      setTotalCount(res.totalCount);
+    } catch (err) {
+      console.error('Failed to fetch announcements', err);
+      showToast('ไม่สามารถโหลดรายการประกาศได้');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, statusFilter, categoryFilter, priorityFilter, pinnedFilter, page, pageSize]);
+
+  // Initial loads
+  useEffect(() => {
+    fetchFeed();
+    if (canManage) {
+      fetchAnnouncements();
+      organizationService.getDepartments().then(setDepartments).catch(console.error);
+    }
+  }, [fetchFeed, fetchAnnouncements, canManage]);
+
+  // Open Reading Modal & Mark Read
+  const handleOpenReading = async (a: Announcement) => {
+    setReadingItem(a);
+    if (!a.isReadByCurrentUser) {
+      try {
+        await announcementService.markAsRead(a.id);
+        setFeedItems((prev) =>
+          prev.map((item) =>
+            item.id === a.id
+              ? { ...item, isReadByCurrentUser: true, readCount: item.readCount + 1 }
+              : item
+          )
+        );
+      } catch (err) {
+        console.error('Failed to mark as read', err);
+      }
+    }
+  };
+
+  // Handle open create form
+  const handleOpenCreate = () => {
+    setEditingAnnouncement(null);
+    setFormTitle('');
+    setFormContent('');
+    setFormCategory('GENERAL');
+    setFormPriority('NORMAL');
+    setFormStatus('PUBLISHED');
+    setFormIsPinned(false);
+    setFormBannerUrl('');
+    setFormPublishedAt(new Date().toISOString().slice(0, 16));
+    setFormExpireAt('');
+    setFormTargetType('ALL');
+    setFormSelectedDeptIds([]);
+    setIsFormOpen(true);
+  };
+
+  // Handle open edit form
+  const handleOpenEdit = (a: Announcement) => {
+    setEditingAnnouncement(a);
+    setFormTitle(a.title);
+    setFormContent(a.content);
+    setFormCategory(a.category);
+    setFormPriority(a.priority);
+    setFormStatus(a.status);
+    setFormIsPinned(a.isPinned);
+    setFormBannerUrl(a.bannerImageUrl || '');
+    setFormPublishedAt(a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 16) : '');
+    setFormExpireAt(a.expireAt ? new Date(a.expireAt).toISOString().slice(0, 16) : '');
+
+    const hasDeptTarget = a.targets.some((t) => t.targetType === 'DEPARTMENT');
+    if (hasDeptTarget) {
+      setFormTargetType('DEPARTMENT');
+      const deptIds = a.targets
+        .filter((t) => t.targetType === 'DEPARTMENT' && t.targetEntityId)
+        .map((t) => Number(t.targetEntityId));
+      setFormSelectedDeptIds(deptIds);
+    } else {
+      setFormTargetType('ALL');
+      setFormSelectedDeptIds([]);
+    }
+
+    setIsFormOpen(true);
+  };
+
+  // Submit save
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formTitle.trim()) {
+      showToast('กรุณากรอกหัวข้อประกาศ');
+      return;
+    }
+    if (!formContent.trim()) {
+      showToast('กรุณากรอกเนื้อหาประกาศ');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const targets =
+        formTargetType === 'ALL'
+          ? [{ targetType: 'ALL' as const, targetEntityId: null }]
+          : formSelectedDeptIds.map((id) => ({ targetType: 'DEPARTMENT' as const, targetEntityId: id }));
+
+      const payload = {
+        title: formTitle.trim(),
+        content: formContent.trim(),
+        category: formCategory,
+        priority: formPriority,
+        status: formStatus,
+        isPinned: formIsPinned,
+        bannerImageUrl: formBannerUrl.trim() || null,
+        publishedAt: formPublishedAt ? new Date(formPublishedAt).toISOString() : null,
+        expireAt: formExpireAt ? new Date(formExpireAt).toISOString() : null,
+        targets,
+      };
+
+      if (editingAnnouncement) {
+        await announcementService.updateAnnouncement(editingAnnouncement.id, payload as UpdateAnnouncementPayload);
+        showToast('ปรับปรุงข่าวประกาศเรียบร้อยแล้ว');
+      } else {
+        await announcementService.createAnnouncement(payload as CreateAnnouncementPayload);
+        showToast('สร้างข่าวประกาศใหม่เรียบร้อยแล้ว');
+      }
+
+      setIsFormOpen(false);
+      fetchAnnouncements();
+      fetchFeed();
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกประกาศ');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Toggle Pin
+  const handleTogglePin = async (a: Announcement) => {
+    try {
+      const newPinned = await announcementService.togglePin(a.id);
+      showToast(newPinned ? 'ปักหมุดประกาศขึ้นบนสุดเรียบร้อย' : 'ยกเลิกการปักหมุดเรียบร้อย');
+      fetchAnnouncements();
+      fetchFeed();
+    } catch (err) {
+      showToast('ไม่สามารถเปลี่ยนสถานะการปักหมุดได้');
+    }
+  };
+
+  // Toggle Publish
+  const handleTogglePublish = async (a: Announcement) => {
+    const isPub = a.status === 'PUBLISHED';
+    try {
+      await announcementService.setPublishStatus(a.id, !isPub);
+      showToast(!isPub ? 'เผยแพร่ประกาศเรียบร้อยแล้ว' : 'เปลี่ยนสถานะเป็นฉบับร่างเรียบร้อย');
+      fetchAnnouncements();
+      fetchFeed();
+    } catch (err) {
+      showToast('ไม่สามารถเปลี่ยนสถานะการเผยแพร่ได้');
+    }
+  };
+
+  // Delete
+  const handleDelete = (a: Announcement) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'ยืนยันการจัดเก็บ/ลบข่าวประกาศ',
+      message: `คุณต้องการลบหรือจัดเก็บประกาศ "${a.title}" ใช่หรือไม่? ข่าวนี้จะไม่แสดงให้พนักงานเห็นอีก`,
+      confirmText: 'ยืนยันการลบ',
+      cancelText: 'ยกเลิก',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await announcementService.deleteAnnouncement(a.id);
+          showToast('ลบ/จัดเก็บข่าวประกาศเรียบร้อยแล้ว');
+          fetchAnnouncements();
+          fetchFeed();
+        } catch (err) {
+          showToast('เกิดข้อผิดพลาด ไม่สามารถลบประกาศได้');
+        }
+      },
+    });
+  };
+
+  // Open Stats Modal
+  const handleOpenStats = async (a: Announcement) => {
+    setStatsModalOpen(true);
+    setLoadingStats(true);
+    setReadStats(null);
+    try {
+      const data = await announcementService.getReadStats(a.id);
+      setReadStats(data);
+    } catch (err) {
+      console.error('Failed to load read stats', err);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  // Filtered Feed Items
+  const filteredFeed = feedItems.filter((item) => {
+    if (feedSearch) {
+      const q = feedSearch.toLowerCase();
+      const matchTitle = item.title.toLowerCase().includes(q);
+      const matchContent = item.content.toLowerCase().includes(q);
+      if (!matchTitle && !matchContent) return false;
+    }
+    if (feedCategory && item.category !== feedCategory) {
+      return false;
+    }
+    if (feedOnlyUnread && item.isReadByCurrentUser) {
+      return false;
+    }
+    return true;
+  });
+
+  // KPIs for Admin
+  const publishedCount = announcements.filter((a) => a.status === 'PUBLISHED').length;
+  const pinnedCount = announcements.filter((a) => a.isPinned).length;
+  const draftCount = announcements.filter((a) => a.status === 'DRAFT').length;
+
+  return (
+    <div className="space-y-6 pb-16">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-sm font-medium animate-in fade-in slide-in-from-top-3">
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span>{toast}</span>
+        </div>
+      )}
+
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
+            <Megaphone className="w-5 h-5 text-[#0B2046]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">ข่าวสารและประกาศองค์กร</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              ศูนย์รวมข่าวสารประชาสัมพันธ์ นโยบายบริษัท และกิจกรรมสำหรับพนักงานทุกคน
+            </p>
+          </div>
+        </div>
+
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0B2046] text-white rounded-xl text-sm font-semibold hover:bg-[#0B2046]/90 transition-all shadow-sm hover:shadow-md cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>สร้างประกาศใหม่</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Tab Navigation */}
+      {canManage && (
+        <div className="flex border-b border-slate-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab('FEED')}
+            className={`flex items-center gap-2 py-3 px-6 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+              activeTab === 'FEED'
+                ? 'border-[#0B2046] text-[#0B2046] bg-blue-50/30'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>ข่าวสารสำหรับฉัน (ฟีดพนักงาน)</span>
+            {feedItems.some((i) => !i.isReadByCurrentUser) && (
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('MANAGE')}
+            className={`flex items-center gap-2 py-3 px-6 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+              activeTab === 'MANAGE'
+                ? 'border-[#0B2046] text-[#0B2046] bg-blue-50/30'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <BarChart2 className="w-4 h-4" />
+            <span>จัดการประกาศองค์กร (ผู้ดูแลระบบ)</span>
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 1: ข่าวสารสำหรับฉัน (EMPLOYEE FEED VIEW)                              */}
+      {/* ========================================================================= */}
+      {activeTab === 'FEED' && (
+        <div className="space-y-6">
+          {/* Feed Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full md:w-80">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="ค้นหาข่าวสาร หรือเนื้อหาประกาศ..."
+                value={feedSearch}
+                onChange={(e) => setFeedSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <select
+                value={feedCategory}
+                onChange={(e) => setFeedCategory(e.target.value)}
+                className="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+              >
+                <option value="">ทุกหมวดหมู่</option>
+                <option value="GENERAL">ข่าวทั่วไป</option>
+                <option value="POLICY">นโยบายองค์กร</option>
+                <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
+                <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
+                <option value="URGENT">ประกาศด่วนสำคัญ</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setFeedOnlyUnread(!feedOnlyUnread)}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  feedOnlyUnread
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>เฉพาะที่ยังไม่ได้อ่าน</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Feed Cards Grid */}
+          {loadingFeed ? (
+            <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-slate-100">
+              <Loader2 className="w-8 h-8 text-[#0B2046] animate-spin mb-2" />
+              <span className="text-xs text-slate-500">กำลังโหลดข่าวสารและประกาศของคุณ...</span>
+            </div>
+          ) : filteredFeed.length === 0 ? (
+            <div className="text-center p-16 bg-white rounded-2xl border border-slate-100">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                <Megaphone className="w-6 h-6" />
+              </div>
+              <h3 className="font-semibold text-slate-800 text-sm">ไม่พบข่าวประกาศตามเงื่อนไขที่เลือก</h3>
+              <p className="text-xs text-slate-500 mt-1">ขณะนี้ยังไม่มีประกาศใหม่สำหรับสังกัดของคุณ หรือคุณได้อ่านครบทุกประกาศแล้ว</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredFeed.map((item) => {
+                const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.GENERAL;
+                const pri = PRIORITY_MAP[item.priority] || PRIORITY_MAP.NORMAL;
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleOpenReading(item)}
+                    className={`bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden relative group ${
+                      item.isPinned
+                        ? 'border-amber-200 hover:border-amber-300 ring-1 ring-amber-100'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Top Banner Image or Decorative Header */}
+                    {item.bannerImageUrl ? (
+                      <div className="w-full h-36 bg-slate-100 overflow-hidden relative">
+                        <img
+                          src={item.bannerImageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-slate-700" />
+                    )}
+
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Badges Bar */}
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                          {item.isPinned && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-xs">
+                              <Pin className="w-3 h-3 text-amber-600 fill-amber-500" />
+                              <span>ปักหมุด</span>
+                            </span>
+                          )}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
+                            {cat.label}
+                          </span>
+                          {item.priority !== 'NORMAL' && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${pri.badge}`}>
+                              {pri.label}
+                            </span>
+                          )}
+                          {!item.isReadByCurrentUser ? (
+                            <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              <span>ยังไม่อ่าน</span>
+                            </span>
+                          ) : (
+                            <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium text-emerald-600">
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              <span>อ่านแล้ว</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                          {item.title}
+                        </h3>
+
+                        {/* Content snippet */}
+                        <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                          {item.content}
+                        </p>
+                      </div>
+
+                      {/* Footer Info */}
+                      <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{formatDate(item.publishedAt || item.createdAt)}</span>
+                        </span>
+                        <span className="text-[#0B2046] font-semibold flex items-center gap-1 group-hover:underline">
+                          <span>อ่านเพิ่มเติม</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: จัดการประกาศองค์กร (ADMIN MANAGEMENT VIEW)                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'MANAGE' && canManage && (
+        <div className="space-y-6">
+          {/* Summary KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">ประกาศทั้งหมด</span>
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{totalCount}</div>
+              <span className="text-xs text-slate-400 mt-1 block">รายการทั้งหมดในระบบ</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">กำลังเผยแพร่</span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Eye className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-bold text-emerald-600">{publishedCount}</div>
+              <span className="text-xs text-slate-400 mt-1 block">แสดงบนพอร์ทัลพนักงาน</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">ปักหมุดสำคัญ</span>
+                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Pin className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-bold text-amber-600">{pinnedCount}</div>
+              <span className="text-xs text-slate-400 mt-1 block">อยู่บนสุดของฟีด</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">ฉบับร่าง</span>
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-bold text-slate-700">{draftCount}</div>
+              <span className="text-xs text-slate-400 mt-1 block">ยังไม่เปิดเผยแพร่</span>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+              {/* Search */}
+              <div className="relative md:col-span-2">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                />
+              </div>
+
+              {/* Status */}
+              <div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                >
+                  <option value="">สถานะทั้งหมด</option>
+                  <option value="PUBLISHED">เผยแพร่แล้ว</option>
+                  <option value="DRAFT">ฉบับร่าง</option>
+                  <option value="ARCHIVED">จัดเก็บ/ลบ</option>
+                </select>
+              </div>
+
+              {/* Category */}
+              <div>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                >
+                  <option value="">หมวดหมู่ทั้งหมด</option>
+                  <option value="GENERAL">ข่าวทั่วไป</option>
+                  <option value="POLICY">นโยบายองค์กร</option>
+                  <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
+                  <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
+                  <option value="URGENT">ประกาศด่วนสำคัญ</option>
+                </select>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                >
+                  <option value="">ความสำคัญทั้งหมด</option>
+                  <option value="LOW">ทั่วไป</option>
+                  <option value="NORMAL">ปกติ</option>
+                  <option value="HIGH">สำคัญ</option>
+                  <option value="URGENT">ด่วนที่สุด</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Announcements Table */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
+                    <th className="py-3 px-4">หัวข้อประกาศ</th>
+                    <th className="py-3 px-4">หมวดหมู่</th>
+                    <th className="py-3 px-4">ความสำคัญ</th>
+                    <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
+                    <th className="py-3 px-4">ยอดเปิดอ่าน</th>
+                    <th className="py-3 px-4">สถานะ</th>
+                    <th className="py-3 px-4">วันที่เผยแพร่</th>
+                    <th className="py-3 px-4 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="w-6 h-6 text-[#0B2046] animate-spin" />
+                          <span>กำลังโหลดข้อมูลประกาศ...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : announcements.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <Megaphone className="w-8 h-8 text-slate-300 stroke-[1.5]" />
+                          <span className="font-semibold text-slate-600">ไม่พบข้อมูลข่าวประกาศ</span>
+                          <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    announcements.map((a) => {
+                      const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
+                      const pri = PRIORITY_MAP[a.priority] || PRIORITY_MAP.NORMAL;
+                      const targetSummary =
+                        a.targets.length === 0 || a.targets.some((t) => t.targetType === 'ALL')
+                          ? 'พนักงานทุกคน (ทั้งบริษัท)'
+                          : `${a.targets.length} แผนกที่กำหนด`;
+
+                      const readPct =
+                        a.totalTargetCount > 0 ? Math.round((a.readCount / a.totalTargetCount) * 100) : 0;
+
+                      return (
+                        <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
+                          {/* Pin Toggle */}
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePin(a)}
+                              title={a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด'}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                a.isPinned
+                                  ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                  : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100'
+                              }`}
+                            >
+                              <Pin className={`w-4 h-4 ${a.isPinned ? 'fill-amber-500' : ''}`} />
+                            </button>
+                          </td>
+
+                          {/* Title */}
+                          <td className="py-3 px-4 font-medium text-slate-800 max-w-xs truncate">
+                            <div className="flex items-center gap-2">
+                              {a.isPinned && (
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              )}
+                              <span className="font-semibold">{a.title}</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 block truncate mt-0.5">
+                              {a.content}
+                            </span>
+                          </td>
+
+                          {/* Category */}
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
+                              {cat.label}
+                            </span>
+                          </td>
+
+                          {/* Priority */}
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${pri.badge}`}>
+                              {pri.label}
+                            </span>
+                          </td>
+
+                          {/* Target */}
+                          <td className="py-3 px-4 text-slate-600">
+                            <div className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{targetSummary}</span>
+                            </div>
+                          </td>
+
+                          {/* Read Receipts */}
+                          <td className="py-3 px-4">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenStats(a)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-semibold text-[11px] cursor-pointer"
+                              title="คลิกเพื่อดูรายชื่อพนักงานที่เปิดอ่าน"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>{a.readCount} / {a.totalTargetCount} ({readPct}%)</span>
+                            </button>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-4">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePublish(a)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
+                                a.status === 'PUBLISHED'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : a.status === 'DRAFT'
+                                  ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200'
+                              }`}
+                              title="คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง"
+                            >
+                              {a.status === 'PUBLISHED' ? (
+                                <>
+                                  <Eye className="w-3 h-3" />
+                                  <span>เผยแพร่แล้ว</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3 h-3" />
+                                  <span>ฉบับร่าง</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+
+                          {/* Published At */}
+                          <td className="py-3 px-4 text-slate-500">
+                            {formatDateTime(a.publishedAt || a.createdAt)}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(a)}
+                                title="แก้ไขประกาศ"
+                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(a)}
+                                title="ลบ/จัดเก็บประกาศ"
+                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalCount > pageSize && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>ทั้งหมด {totalCount} รายการ (หน้า {page} จาก {Math.ceil(totalCount / pageSize)})</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={page >= Math.ceil(totalCount / pageSize)}
+                    onClick={() => setPage(page + 1)}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* READING MODAL (หน้าต่างอ่านประกาศฉบับเต็ม สำหรับพนักงาน)                    */}
+      {/* ========================================================================= */}
+      {readingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header Image */}
+            {readingItem.bannerImageUrl ? (
+              <div className="w-full h-48 bg-slate-100 relative overflow-hidden">
+                <img
+                  src={readingItem.bannerImageUrl}
+                  alt={readingItem.title}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setReadingItem(null)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
+                    <Megaphone className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">ข่าวสารองค์กร</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReadingItem(null)}
+                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Modal Body Content */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {/* Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                {readingItem.isPinned && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    <Pin className="w-3.5 h-3.5 fill-amber-500" />
+                    <span>ปักหมุด</span>
+                  </span>
+                )}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${CATEGORY_MAP[readingItem.category]?.color || CATEGORY_MAP.GENERAL.color}`}>
+                  {CATEGORY_MAP[readingItem.category]?.label || CATEGORY_MAP.GENERAL.label}
+                </span>
+                {readingItem.priority !== 'NORMAL' && (
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${PRIORITY_MAP[readingItem.priority]?.badge || PRIORITY_MAP.NORMAL.badge}`}>
+                    {PRIORITY_MAP[readingItem.priority]?.label || PRIORITY_MAP.NORMAL.label}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-slate-900 leading-snug">
+                {readingItem.title}
+              </h2>
+
+              {/* Metadata */}
+              <div className="flex items-center gap-4 text-xs text-slate-400 pb-3 border-b border-slate-100">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <span>เผยแพร่เมื่อ: {formatDateTime(readingItem.publishedAt || readingItem.createdAt)}</span>
+                </span>
+                {readingItem.createdByEmployeeName && (
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <span>โดย: {readingItem.createdByEmployeeName}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Content Body */}
+              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap pt-2">
+                {readingItem.content}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                <CheckCheck className="w-4 h-4" />
+                <span>บันทึกการเปิดอ่านเรียบร้อยแล้ว</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setReadingItem(null)}
+                className="px-5 py-2 rounded-xl bg-[#0B2046] text-white font-semibold text-xs hover:bg-[#0B2046]/90 transition-all cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* AUDIENCE AUDIT STATS MODAL (หน้าต่างตรวจสอบสถิติคนอ่าน สำหรับ Admin)        */}
+      {/* ========================================================================= */}
+      {statsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <BarChart2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">สถิติและรายชื่อผู้เปิดอ่าน</h3>
+                  <p className="text-[11px] text-slate-400 truncate max-w-sm">{readStats?.title || 'กำลังโหลด...'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStatsModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {loadingStats ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+                  <span className="text-xs">กำลังคำนวณสถิติการเปิดอ่าน...</span>
+                </div>
+              ) : !readStats ? (
+                <div className="py-10 text-center text-xs text-slate-400">ไม่พบข้อมูลสถิติ</div>
+              ) : (
+                <>
+                  {/* Stats Progress Cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-medium block">เป้าหมายทั้งหมด</span>
+                      <span className="text-lg font-bold text-slate-800">{readStats.totalTargetEmployees} คน</span>
+                    </div>
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center">
+                      <span className="text-[11px] text-emerald-700 font-medium block">เปิดอ่านแล้ว</span>
+                      <span className="text-lg font-bold text-emerald-700">{readStats.readCount} คน</span>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
+                      <span className="text-[11px] text-blue-700 font-medium block">อัตราการเข้าถึง</span>
+                      <span className="text-lg font-bold text-blue-700">{readStats.readPercentage}%</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-[#0B2046] h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(readStats.readPercentage, 100)}%` }}
+                    />
+                  </div>
+
+                  {/* Readers Table */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-700">รายชื่อพนักงานที่เปิดอ่านแล้ว ({readStats.receipts.length} คน)</h4>
+                    {readStats.receipts.length === 0 ? (
+                      <div className="p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-400">
+                        ยังไม่มีพนักงานเปิดอ่านประกาศนี้
+                      </div>
+                    ) : (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                        <table className="w-full text-left text-xs whitespace-nowrap">
+                          <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase sticky top-0">
+                            <tr>
+                              <th className="py-2 px-3">รหัสพนักงาน</th>
+                              <th className="py-2 px-3">ชื่อ-นามสกุล</th>
+                              <th className="py-2 px-3">แผนก</th>
+                              <th className="py-2 px-3">เวลาที่เปิดอ่าน</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {readStats.receipts.map((r) => (
+                              <tr key={r.employeeId} className="hover:bg-slate-50">
+                                <td className="py-2 px-3 font-mono text-slate-600">{r.employeeCode}</td>
+                                <td className="py-2 px-3 font-medium text-slate-800">{r.employeeName}</td>
+                                <td className="py-2 px-3 text-slate-500">{r.departmentName || '-'}</td>
+                                <td className="py-2 px-3 text-slate-400 text-[11px]">{formatDateTime(r.readAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setStatsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* CREATE / EDIT FORM MODAL (สำหรับ Admin)                                   */}
+      {/* ========================================================================= */}
+      {isFormOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {editingAnnouncement ? 'แก้ไขข่าวสารและประกาศ' : 'สร้างข่าวสารและประกาศใหม่'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">กรอกข้อมูลรายละเอียดและเลือกกลุ่มเป้าหมายผู้รับข่าวสาร</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="overflow-y-auto p-5 space-y-4 flex-1">
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  หัวข้อข่าวประกาศ <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น ประกาศวันหยุดตามประเพณีประจำปี 2026..."
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                />
+              </div>
+
+              {/* Category & Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่ข่าว</label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  >
+                    <option value="GENERAL">ข่าวทั่วไป</option>
+                    <option value="POLICY">นโยบายองค์กร</option>
+                    <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
+                    <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
+                    <option value="URGENT">ประกาศด่วนสำคัญ</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">ระดับความสำคัญ</label>
+                  <select
+                    value={formPriority}
+                    onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  >
+                    <option value="LOW">ต่ำ (ข่าวทั่วไป)</option>
+                    <option value="NORMAL">ปกติ</option>
+                    <option value="HIGH">สำคัญ</option>
+                    <option value="URGENT">ด่วนที่สุด (Urgent)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  เนื้อหาประกาศอย่างละเอียด <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={5}
+                  placeholder="ระบุข้อความรายละเอียด คำชี้แจง หรือแนวทางปฏิบัติต่างๆ..."
+                  value={formContent}
+                  onChange={(e) => setFormContent(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-sans"
+                />
+              </div>
+
+              {/* Banner URL */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  รูปภาพแบนเนอร์ประกอบ (URL รูปภาพ - ตัวเลือก)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={formBannerUrl}
+                  onChange={(e) => setFormBannerUrl(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                />
+              </div>
+
+              {/* Target Selection */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                <label className="block text-xs font-bold text-slate-800">กลุ่มเป้าหมายผู้รับข่าวสาร</label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetType"
+                      checked={formTargetType === 'ALL'}
+                      onChange={() => setFormTargetType('ALL')}
+                      className="accent-[#0B2046]"
+                    />
+                    <span>พนักงานทุกคนในบริษัท (All Employees)</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetType"
+                      checked={formTargetType === 'DEPARTMENT'}
+                      onChange={() => setFormTargetType('DEPARTMENT')}
+                      className="accent-[#0B2046]"
+                    />
+                    <span>เฉพาะบางแผนก (Specific Departments)</span>
+                  </label>
+                </div>
+
+                {formTargetType === 'DEPARTMENT' && (
+                  <div className="pt-2 border-t border-slate-200 space-y-2">
+                    <span className="text-[11px] text-slate-500 font-medium">เลือกแผนกที่ต้องการส่งประกาศถึง:</span>
+                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-white rounded-lg border border-slate-200">
+                      {departments.map((dept) => {
+                        const isChecked = formSelectedDeptIds.includes(dept.id);
+                        return (
+                          <label key={dept.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormSelectedDeptIds([...formSelectedDeptIds, dept.id]);
+                                } else {
+                                  setFormSelectedDeptIds(formSelectedDeptIds.filter((id) => id !== dept.id));
+                                }
+                              }}
+                              className="accent-[#0B2046]"
+                            />
+                            <span className="truncate">{dept.departmentName}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Pin & Status Settings */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formIsPinned}
+                    onChange={(e) => setFormIsPinned(e.target.checked)}
+                    className="accent-[#0B2046] w-4 h-4"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">ปักหมุดประกาศนี้</span>
+                    <span className="text-[11px] text-slate-400 block">แสดงข่าวนี้อยู่บนสุดของฟีดพนักงานเสมอ</span>
+                  </div>
+                </label>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะเมื่อบันทึก</label>
+                  <select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value as AnnouncementStatus)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  >
+                    <option value="PUBLISHED">เผยแพร่ทันที (Published)</option>
+                    <option value="DRAFT">บันทึกเป็นฉบับร่าง (Draft)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => setIsFormOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-semibold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingAnnouncement ? 'บันทึกการแก้ไข' : 'สร้างและบันทึกประกาศ'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        cancelText={confirmConfig.cancelText}
+        type={confirmConfig.type}
+        singleButton={confirmConfig.singleButton}
+        isLoading={confirmConfig.isLoading}
+        onConfirm={confirmConfig.onConfirm}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
+    </div>
+  );
+}

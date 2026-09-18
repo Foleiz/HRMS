@@ -107,6 +107,14 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Monthly Attendance Summary (Dev 1)
     public DbSet<AttendanceMonthlySummary> AttendanceMonthlySummaries => Set<AttendanceMonthlySummary>();
 
+    // Announcements & News Hub (Dev 1 Phase 2)
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<AnnouncementTarget> AnnouncementTargets => Set<AnnouncementTarget>();
+    public DbSet<AnnouncementRead> AnnouncementReads => Set<AnnouncementRead>();
+
+    // In-App Notifications Engine (Dev 1 Phase 2)
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1573,6 +1581,89 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => new { e.EmployeeId, e.Year, e.Month }).IsUnique();
+        });
+
+        // Configuration: Announcement
+        modelBuilder.Entity<Announcement>(entity =>
+        {
+            entity.ToTable("announcement", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Content).HasColumnName("content").IsRequired();
+            entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+            entity.Property(e => e.ExpireAt).HasColumnName("expire_at");
+            entity.Property(e => e.CreatedByEmployeeId).HasColumnName("created_by_employee_id");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.IsPinned).HasColumnName("is_pinned").IsRequired();
+            entity.Property(e => e.BannerImageUrl).HasColumnName("banner_image_url");
+            entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Priority).HasColumnName("priority").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.CreatedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: AnnouncementTarget
+        modelBuilder.Entity<AnnouncementTarget>(entity =>
+        {
+            entity.ToTable("announcement_target", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.AnnouncementId).HasColumnName("announcement_id").IsRequired();
+            entity.Property(e => e.TargetType).HasColumnName("target_type").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.TargetEntityId).HasColumnName("target_entity_id");
+
+            entity.HasOne(e => e.Announcement)
+                .WithMany(a => a.Targets)
+                .HasForeignKey(e => e.AnnouncementId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: AnnouncementRead
+        modelBuilder.Entity<AnnouncementRead>(entity =>
+        {
+            entity.ToTable("announcement_read", "hrms");
+            entity.HasKey(e => new { e.AnnouncementId, e.EmployeeId });
+            entity.Property(e => e.AnnouncementId).HasColumnName("announcement_id").IsRequired();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.ReadAt).HasColumnName("read_at").IsRequired();
+
+            entity.HasOne(e => e.Announcement)
+                .WithMany(a => a.Reads)
+                .HasForeignKey(e => e.AnnouncementId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: Notification
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notification", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.NotificationType).HasColumnName("notification_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Message).HasColumnName("message");
+            entity.Property(e => e.ReferenceType).HasColumnName("reference_type").HasMaxLength(50);
+            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
+            entity.Property(e => e.IsRead).HasColumnName("is_read").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.ReadAt).HasColumnName("read_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
     }
