@@ -562,7 +562,7 @@ export default function PayrollPage() {
       setConfirmPaymentModalOpen(false);
       setConfirmPaymentNote('');
       await loadTransferList(selectedPeriod.id);
-      showToast('🎉 Confirm การจ่ายเงินสำเร็จ! รอบเงินเดือนเปลี่ยนเป็น PAID');
+      showToast('ยืนยันการจ่ายเงินสำเร็จ รอบเงินเดือนเปลี่ยนเป็นสถานะ PAID เรียบร้อยแล้ว');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการ Confirm การจ่ายเงิน');
     } finally {
@@ -2843,31 +2843,12 @@ export default function PayrollPage() {
             </div>
           )}
 
-          {/* ── PAID: แสดงสรุป ── */}
-          {selectedPeriod?.status === 'PAID' && (
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-6 text-center">
-              <div className="text-4xl mb-3">🎉</div>
-              <h3 className="text-lg font-bold text-emerald-800">จ่ายเงินเดือนเสร็จสิ้น!</h3>
-              <p className="text-sm text-emerald-600 mt-1">
-                รอบเงินเดือน {selectedPeriod?.periodName} ได้รับการจ่ายเงินและ Confirm โดย CEO เรียบร้อยแล้ว
-              </p>
-              {selectedPeriod?.paymentConfirmedAt && (
-                <p className="text-xs text-emerald-500 mt-2">
-                  ยืนยันเมื่อ: {new Date(selectedPeriod.paymentConfirmedAt).toLocaleString('th-TH')}
-                </p>
-              )}
-              {selectedPeriod?.paymentNote && (
-                <div className="mt-3 text-xs text-emerald-700 bg-emerald-100 rounded-xl px-4 py-2 inline-block">
-                  หมายเหตุ: {selectedPeriod.paymentNote}
-                </div>
-              )}
-            </div>
-          )}
+
 
           {/* ── No Period Selected ── */}
           {!selectedPeriod && (
             <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-              <div className="text-4xl mb-3">📋</div>
+              <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-slate-400 text-sm">กรุณาเลือกรอบเงินเดือนก่อน</p>
               <button
                 onClick={() => setActiveTab('process')}
