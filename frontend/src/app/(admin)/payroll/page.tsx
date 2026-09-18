@@ -2405,35 +2405,6 @@ export default function PayrollPage() {
                   </div>
                 </div>
 
-                {/* Approver Decision Card if Pending Approval */}
-                {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') && (
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-bold text-amber-900 flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-amber-600" />
-                        <span>รอบเงินเดือนนี้พร้อมสำหรับการอนุมัติ (Pending Approval)</span>
-                      </div>
-                      <p className="text-xs text-amber-700 mt-1">
-                        ฝ่ายการเงินได้ตรวจสอบยอดเงินเดือนเรียบร้อยแล้ว กรุณาตรวจสอบและตัดสินใจอนุมัติเพื่อให้การเงินนำเงินจ่ายออก
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => setIsRejectModalOpen(true)}
-                        className="h-10 px-4 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                      >
-                        ไม่อนุมัติ (ส่งคืนแก้ไข)
-                      </button>
-                      <button
-                        onClick={handleAdvancePeriodStatus}
-                        className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>อนุมัติรอบเงินเดือน</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Table: Approver Overview */}
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
