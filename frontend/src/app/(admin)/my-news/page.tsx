@@ -546,39 +546,25 @@ export default function MyNewsCalendarPage() {
       {readingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header Banner Image */}
-            {readingItem.bannerImageUrl ? (
-              <div className="w-full h-48 bg-slate-100 relative overflow-hidden">
-                <img
-                  src={readingItem.bannerImageUrl}
-                  alt={readingItem.title}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => setReadingItem(null)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
-                    <Megaphone className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-500">ข่าวสารและประกาศ</span>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
+                  <Megaphone className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setReadingItem(null)}
-                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block leading-tight">ข่าวสารและประกาศ</span>
+                  <span className="text-[11px] text-slate-400">รายละเอียดประกาศ</span>
+                </div>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setReadingItem(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Modal Body Content */}
             <div className="p-6 overflow-y-auto space-y-4 flex-1">

@@ -143,7 +143,6 @@ export default function AnnouncementsPage() {
   const [formPriority, setFormPriority] = useState<AnnouncementPriority>('NORMAL');
   const [formStatus, setFormStatus] = useState<AnnouncementStatus>('PUBLISHED');
   const [formIsPinned, setFormIsPinned] = useState(false);
-  const [formBannerUrl, setFormBannerUrl] = useState('');
   const [formPublishedAt, setFormPublishedAt] = useState('');
   const [formExpireAt, setFormExpireAt] = useState('');
   const [formTargetType, setFormTargetType] = useState<'ALL' | 'DEPARTMENT'>('ALL');
@@ -255,7 +254,6 @@ export default function AnnouncementsPage() {
     setFormPriority('NORMAL');
     setFormStatus('PUBLISHED');
     setFormIsPinned(false);
-    setFormBannerUrl('');
     setFormPublishedAt(new Date().toISOString().slice(0, 16));
     setFormExpireAt('');
     setFormTargetType('ALL');
@@ -272,7 +270,6 @@ export default function AnnouncementsPage() {
     setFormPriority(a.priority);
     setFormStatus(a.status);
     setFormIsPinned(a.isPinned);
-    setFormBannerUrl(a.bannerImageUrl || '');
     setFormPublishedAt(a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 16) : '');
     setFormExpireAt(a.expireAt ? new Date(a.expireAt).toISOString().slice(0, 16) : '');
 
@@ -317,7 +314,7 @@ export default function AnnouncementsPage() {
         priority: formPriority,
         status: formStatus,
         isPinned: formIsPinned,
-        bannerImageUrl: formBannerUrl.trim() || null,
+        bannerImageUrl: null,
         publishedAt: formPublishedAt ? new Date(formPublishedAt).toISOString() : null,
         expireAt: formExpireAt ? new Date(formExpireAt).toISOString() : null,
         targets,
@@ -573,19 +570,8 @@ export default function AnnouncementsPage() {
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    {/* Top Banner Image or Decorative Header */}
-                    {item.bannerImageUrl ? (
-                      <div className="w-full h-36 bg-slate-100 overflow-hidden relative">
-                        <img
-                          src={item.bannerImageUrl}
-                          alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                      </div>
-                    ) : (
-                      <div className="w-full h-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-slate-700" />
-                    )}
+                    {/* Decorative Header Bar */}
+                    <div className="w-full h-2.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-slate-700" />
 
                     <div className="p-5 flex-1 flex flex-col justify-between">
                       <div>
@@ -974,39 +960,25 @@ export default function AnnouncementsPage() {
       {readingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header Image */}
-            {readingItem.bannerImageUrl ? (
-              <div className="w-full h-48 bg-slate-100 relative overflow-hidden">
-                <img
-                  src={readingItem.bannerImageUrl}
-                  alt={readingItem.title}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => setReadingItem(null)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
-                    <Megaphone className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-500">ข่าวสารองค์กร</span>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
+                  <Megaphone className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setReadingItem(null)}
-                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block leading-tight">ข่าวสารองค์กร</span>
+                  <span className="text-[11px] text-slate-400">รายละเอียดประกาศ</span>
+                </div>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setReadingItem(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Modal Body Content */}
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
@@ -1246,10 +1218,10 @@ export default function AnnouncementsPage() {
                     onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
                   >
-                    <option value="LOW">ต่ำ (ข่าวทั่วไป)</option>
+                    <option value="LOW">ต่ำ</option>
                     <option value="NORMAL">ปกติ</option>
                     <option value="HIGH">สำคัญ</option>
-                    <option value="URGENT">ด่วนที่สุด (Urgent)</option>
+                    <option value="URGENT">ด่วนที่สุด</option>
                   </select>
                 </div>
               </div>
@@ -1261,25 +1233,11 @@ export default function AnnouncementsPage() {
                 </label>
                 <textarea
                   required
-                  rows={5}
+                  rows={6}
                   placeholder="ระบุข้อความรายละเอียด คำชี้แจง หรือแนวทางปฏิบัติต่างๆ..."
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-sans"
-                />
-              </div>
-
-              {/* Banner URL */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  รูปภาพแบนเนอร์ประกอบ (URL รูปภาพ - ตัวเลือก)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formBannerUrl}
-                  onChange={(e) => setFormBannerUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
               </div>
 
@@ -1295,7 +1253,7 @@ export default function AnnouncementsPage() {
                       onChange={() => setFormTargetType('ALL')}
                       className="accent-[#0B2046]"
                     />
-                    <span>พนักงานทุกคนในบริษัท (All Employees)</span>
+                    <span>พนักงานทุกคนในองค์กร</span>
                   </label>
                   <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
                     <input
@@ -1305,7 +1263,7 @@ export default function AnnouncementsPage() {
                       onChange={() => setFormTargetType('DEPARTMENT')}
                       className="accent-[#0B2046]"
                     />
-                    <span>เฉพาะบางแผนก (Specific Departments)</span>
+                    <span>เฉพาะบางแผนกที่กำหนด</span>
                   </label>
                 </div>
 
