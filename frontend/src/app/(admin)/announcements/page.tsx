@@ -74,6 +74,37 @@ const formatDateTime = (d?: string | null) => {
   }
 };
 
+const getTodayDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateForInput = (isoDateStr?: string | null) => {
+  if (!isoDateStr) return '';
+  const d = new Date(isoDateStr);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toIsoStringFromDateInput = (dateStr: string) => {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d, 9, 0, 0);
+  return date.toISOString();
+};
+
+const toIsoStringFromExpireInput = (dateStr: string) => {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d, 23, 59, 59);
+  return date.toISOString();
+};
+
 const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   GENERAL: { label: 'ข่าวทั่วไป', color: 'bg-slate-100 text-slate-700 border-slate-200' },
   POLICY: { label: 'นโยบายองค์กร', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -217,7 +248,7 @@ export default function AnnouncementsPage() {
     setFormPriority('NORMAL');
     setFormStatus('PUBLISHED');
     setFormIsPinned(false);
-    setFormPublishedAt(new Date().toISOString().slice(0, 16));
+    setFormPublishedAt(getTodayDateString());
     setFormExpireAt('');
     setFormTargetType('ALL');
     setFormSelectedDeptIds([]);
@@ -233,8 +264,8 @@ export default function AnnouncementsPage() {
     setFormPriority(a.priority);
     setFormStatus(a.status);
     setFormIsPinned(a.isPinned);
-    setFormPublishedAt(a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 16) : '');
-    setFormExpireAt(a.expireAt ? new Date(a.expireAt).toISOString().slice(0, 16) : '');
+    setFormPublishedAt(formatDateForInput(a.publishedAt || a.createdAt));
+    setFormExpireAt(formatDateForInput(a.expireAt));
 
     const hasDeptTarget = a.targets.some((t) => t.targetType === 'DEPARTMENT');
     if (hasDeptTarget) {
@@ -258,6 +289,10 @@ export default function AnnouncementsPage() {
       showToast('กรุณากรอกหัวข้อประกาศ');
       return;
     }
+    if (!formPublishedAt) {
+      showToast('กรุณาระบุวันที่เผยแพร่ประกาศ');
+      return;
+    }
     if (!formContent.trim()) {
       showToast('กรุณากรอกเนื้อหาประกาศ');
       return;
@@ -278,8 +313,8 @@ export default function AnnouncementsPage() {
         status: formStatus,
         isPinned: formIsPinned,
         bannerImageUrl: null,
-        publishedAt: formPublishedAt ? new Date(formPublishedAt).toISOString() : null,
-        expireAt: formExpireAt ? new Date(formExpireAt).toISOString() : null,
+        publishedAt: toIsoStringFromDateInput(formPublishedAt),
+        expireAt: toIsoStringFromExpireInput(formExpireAt),
         targets,
       };
 
@@ -770,6 +805,12 @@ export default function AnnouncementsPage() {
                     <span>โดย: {readingItem.createdByEmployeeName}</span>
                   </span>
                 )}
+                {readingItem.expireAt && (
+                  <span className="flex items-center gap-1 text-amber-600 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>สิ้นสุดการเผยแพร่: {formatDate(readingItem.expireAt)}</span>
+                  </span>
+                )}
               </div>
 
               {/* Content Body */}
@@ -1067,6 +1108,41 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
 
+              {/* Publication Dates */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    วันที่เผยแพร่ประกาศ <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formPublishedAt}
+                    onChange={(e) => setFormPublishedAt(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-0.5 block">
+                    กำหนดวันที่ประกาศจะแสดงผลบนปฏิทินข่าวสาร
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    วันที่สิ้นสุดการเผยแพร่ (ไม่ระบุก็ได้)
+                  </label>
+                  <input
+                    type="date"
+                    min={formPublishedAt || undefined}
+                    value={formExpireAt}
+                    onChange={(e) => setFormExpireAt(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-0.5 block">
+                    จัดเก็บประกาศอัตโนมัติเมื่อพ้นกำหนด
+                  </span>
+                </div>
+              </div>
+
               {/* Content */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1159,8 +1235,8 @@ export default function AnnouncementsPage() {
                     onChange={(e) => setFormStatus(e.target.value as AnnouncementStatus)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
                   >
-                    <option value="PUBLISHED">เผยแพร่ทันที (Published)</option>
-                    <option value="DRAFT">บันทึกเป็นฉบับร่าง (Draft)</option>
+                    <option value="PUBLISHED">เผยแพร่</option>
+                    <option value="DRAFT">บันทึกเป็นฉบับร่าง</option>
                   </select>
                 </div>
               </div>
