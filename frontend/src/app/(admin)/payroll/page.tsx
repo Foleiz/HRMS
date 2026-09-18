@@ -1923,17 +1923,32 @@ export default function PayrollPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200/80 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
                 <Landmark className="w-4 h-4 text-emerald-700" />
-                <span>การดำเนินการฝั่งการเงิน/บัญชี (Finance Toolbar):</span>
+                <span>ไฟล์สำหรับส่งโอนเงินและนำส่งภาษี (Finance Exports):</span>
+                <span className="text-[11px] font-normal text-slate-500">
+                  *(สำหรับอัปโหลดเข้าธนาคารเพื่อโอนเงิน — ไม่ใช่สลิปเงินเดือนพนักงาน)*
+                </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={handleGenerateAndDownloadBankFile}
-                  disabled={isGeneratingBankFile}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>ดาวน์โหลดไฟล์โอนเงินธนาคาร (Bank Batch)</span>
-                </button>
+                {selectedPeriod.status === 'DRAFT' ? (
+                  <button
+                    disabled
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
+                    title="ต้องรอ HR คำนวณเงินเดือนก่อนส่งออกไฟล์"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>ไฟล์สั่งโอนธนาคาร (ต้องคำนวณก่อน)</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleGenerateAndDownloadBankFile}
+                    disabled={isGeneratingBankFile}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                    title="ดาวน์โหลดไฟล์ Text/CSV สำหรับอัปโหลดเข้าอินเทอร์เน็ตแบงก์กิ้งเพื่อโอนเงิน"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>ดาวน์โหลดไฟล์สั่งโอนธนาคาร (Bank Batch)</span>
+                  </button>
+                )}
                 <button
                   onClick={() => handleExportTaxSsoCsv('PND1')}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
