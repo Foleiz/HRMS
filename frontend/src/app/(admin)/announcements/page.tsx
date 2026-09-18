@@ -752,9 +752,9 @@ export default function AnnouncementsPage() {
             </div>
 
             {/* Modal Body Content */}
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+            <div className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1 min-w-0">
               {/* Title */}
-              <h2 className="text-xl font-bold text-slate-900 leading-snug">
+              <h2 className="text-xl font-bold text-slate-900 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
                 {readingItem.title}
               </h2>
 
@@ -773,7 +773,7 @@ export default function AnnouncementsPage() {
               </div>
 
               {/* Content Body */}
-              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap pt-2">
+              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
                 {readingItem.content}
               </div>
             </div>
