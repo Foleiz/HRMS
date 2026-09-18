@@ -101,5 +101,8 @@ public interface IHrmsDbContext
     DbSet<AnnouncementTarget> AnnouncementTargets { get; }
     DbSet<AnnouncementRead> AnnouncementReads { get; }
 
+    // In-App Notifications Engine (Dev 1 Phase 2)
+    DbSet<Notification> Notifications { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

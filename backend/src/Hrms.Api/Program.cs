@@ -12,6 +12,7 @@ using Hrms.Application.Features.Organization.Services;
 using Hrms.Application.Features.Schedule.Services;
 using Hrms.Application.Features.Reports.Services;
 using Hrms.Application.Features.Shift.Services;
+using Hrms.Application.Features.Notifications.Services;
 using Hrms.Application.Features.Leave.Services;
 using Hrms.Application.Features.Settings.Services;
 using Hrms.Application.Features.Transfers.Services;
@@ -79,6 +80,7 @@ builder.Services.AddScoped<IApprovalFlowService, ApprovalFlowService>();
 builder.Services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
 // 4. JWT Authentication

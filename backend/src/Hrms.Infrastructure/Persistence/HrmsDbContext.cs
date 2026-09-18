@@ -112,6 +112,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<AnnouncementTarget> AnnouncementTargets => Set<AnnouncementTarget>();
     public DbSet<AnnouncementRead> AnnouncementReads => Set<AnnouncementRead>();
 
+    // In-App Notifications Engine (Dev 1 Phase 2)
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1638,6 +1641,28 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.Employee)
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: Notification
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notification", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.NotificationType).HasColumnName("notification_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Message).HasColumnName("message");
+            entity.Property(e => e.ReferenceType).HasColumnName("reference_type").HasMaxLength(50);
+            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
+            entity.Property(e => e.IsRead).HasColumnName("is_read").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.ReadAt).HasColumnName("read_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
