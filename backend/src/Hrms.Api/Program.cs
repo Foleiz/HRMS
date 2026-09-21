@@ -80,6 +80,7 @@ builder.Services.AddScoped<IApprovalFlowService, ApprovalFlowService>();
 builder.Services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IMySalaryService, MySalaryService>();
+builder.Services.AddScoped<IPayslipService, PayslipService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 

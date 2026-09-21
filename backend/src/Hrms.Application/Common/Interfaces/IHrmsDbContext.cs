@@ -83,6 +83,7 @@ public interface IHrmsDbContext
     DbSet<PayrollPeriod> PayrollPeriods { get; }
     DbSet<Payroll> Payrolls { get; }
     DbSet<PayrollDetail> PayrollDetails { get; }
+    DbSet<Payslip> Payslips { get; }
 
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }

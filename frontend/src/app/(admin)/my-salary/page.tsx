@@ -101,6 +101,21 @@ export default function MySalaryPage() {
     }
   };
 
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownloadPdf = async (payrollId: number, monthName?: string) => {
+    setDownloadingId(payrollId);
+    try {
+      const fileName = `Payslip_${monthName ? monthName.replace(/\s+/g, '_') : payrollId}.pdf`;
+      await mySalaryService.downloadSlipPdf(payrollId, fileName);
+      success('ดาวน์โหลดสลิปเงินเดือน (PDF) สำเร็จ', 'รหัสผ่านเปิดไฟล์คือวันเดือนปีเกิดของคุณ (ววดดปปปป)');
+    } catch (err: any) {
+      error('ไม่สามารถดาวน์โหลดสลิปเงินเดือนได้', err.message || 'เกิดข้อผิดพลาดในการดาวน์โหลด');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const handleBackToOverview = () => {
     setSelectedPayrollId(null);
     setDetailData(null);
@@ -157,7 +172,7 @@ export default function MySalaryPage() {
     return (
       <div className="space-y-6 font-sans animate-in fade-in duration-200">
         {/* ========================================================= */}
-        {/* TOP HEADER: Back Button + Title + Security Lock Notice    */}
+        {/* TOP HEADER: Back Button + Title + Actions & Security Notice*/}
         {/* ========================================================= */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -178,10 +193,26 @@ export default function MySalaryPage() {
             </div>
           </div>
 
-          {/* Top Right Security Notice Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B2046] text-white text-[11px] font-medium shadow-sm self-start sm:self-auto">
-            <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-            <span>รหัสเปิดไฟล์ PDF คือวันเกิดของคุณ (วว/ดด/ปปปป)</span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Download PDF Button */}
+            <button
+              onClick={() => handleDownloadPdf(selectedPayrollId, detailData?.periodMonthName)}
+              disabled={downloadingId === selectedPayrollId}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {downloadingId === selectedPayrollId ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Download className="w-4 h-4 text-emerald-400" />
+              )}
+              <span>{downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}</span>
+            </button>
+
+            {/* Top Right Security Notice Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium shadow-xs">
+              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>รหัสเปิดไฟล์: วันเกิด (ววดดปปปป)</span>
+            </div>
           </div>
         </div>
 
@@ -486,7 +517,7 @@ export default function MySalaryPage() {
                   <th className="py-2.5 px-3 whitespace-nowrap text-right">เงินเดือนสุทธิ</th>
                   <th className="py-2.5 px-3 whitespace-nowrap text-center">วันที่โอน</th>
                   <th className="py-2.5 px-3 whitespace-nowrap text-center">สถานะ</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-center">ดู</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap text-center">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -518,16 +549,33 @@ export default function MySalaryPage() {
                         </span>
                       </td>
                       <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectSlip(row.payrollId);
-                          }}
-                          title="ดูรายละเอียดสลิป"
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectSlip(row.payrollId);
+                            }}
+                            title="ดูรายละเอียดสลิป"
+                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadPdf(row.payrollId, row.periodMonthName);
+                            }}
+                            disabled={downloadingId === row.payrollId}
+                            title="ดาวน์โหลดสลิปเงินเดือน (PDF)"
+                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {downloadingId === row.payrollId ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

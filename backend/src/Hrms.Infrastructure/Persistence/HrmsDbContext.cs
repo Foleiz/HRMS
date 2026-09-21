@@ -94,6 +94,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
     public DbSet<Payroll> Payrolls => Set<Payroll>();
     public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
+    public DbSet<Payslip> Payslips => Set<Payslip>();
 
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -1685,6 +1686,23 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: Payslip (E-Payslip PDF)
+        modelBuilder.Entity<Payslip>(entity =>
+        {
+            entity.ToTable("payslip", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.PayrollId).HasColumnName("payroll_id").IsRequired();
+            entity.Property(e => e.FileHash).HasColumnName("file_hash").HasMaxLength(255);
+            entity.Property(e => e.GeneratedAt).HasColumnName("generated_at").IsRequired();
+            entity.Property(e => e.PdfData).HasColumnName("pdf_data");
+
+            entity.HasOne(e => e.Payroll)
+                .WithMany()
+                .HasForeignKey(e => e.PayrollId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

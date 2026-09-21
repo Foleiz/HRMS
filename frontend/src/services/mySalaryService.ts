@@ -19,4 +19,32 @@ export const mySalaryService = {
     const response = await apiClient.get<ApiResponse<MySalaryDetail>>(`/api/my-salary/slips/${payrollId}`);
     return response.data.data;
   },
+
+  /**
+   * ดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน)
+   */
+  downloadSlipPdf: async (payrollId: number, defaultFileName?: string): Promise<void> => {
+    const response = await apiClient.get(`/api/my-salary/slips/${payrollId}/download`, {
+      responseType: 'blob',
+    });
+
+    let fileName = defaultFileName || `Payslip_${payrollId}.pdf`;
+    const disposition = response.headers['content-disposition'];
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

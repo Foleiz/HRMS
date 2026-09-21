@@ -12,10 +12,12 @@ namespace Hrms.Api.Controllers;
 public class MySalaryController : ControllerBase
 {
     private readonly IMySalaryService _mySalaryService;
+    private readonly IPayslipService _payslipService;
 
-    public MySalaryController(IMySalaryService mySalaryService)
+    public MySalaryController(IMySalaryService mySalaryService, IPayslipService payslipService)
     {
         _mySalaryService = mySalaryService;
+        _payslipService = payslipService;
     }
 
     /// <summary>
@@ -40,5 +42,17 @@ public class MySalaryController : ControllerBase
     {
         var result = await _mySalaryService.GetMySalaryDetailAsync(payrollId, cancellationToken);
         return Ok(ApiResponse<MySalaryDetailDto>.Ok(result, "ดึงรายละเอียดสลิปเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน) ของตนเอง
+    /// </summary>
+    [HttpGet("slips/{payrollId}/download")]
+    public async Task<IActionResult> DownloadMyPayslip(
+        [FromRoute] long payrollId,
+        CancellationToken cancellationToken)
+    {
+        var (fileBytes, fileName) = await _payslipService.GetMyPayslipPdfAsync(payrollId, cancellationToken);
+        return File(fileBytes, "application/pdf", fileName);
     }
 }

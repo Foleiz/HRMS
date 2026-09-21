@@ -13,10 +13,12 @@ namespace Hrms.Api.Controllers;
 public class SalaryController : ControllerBase
 {
     private readonly ISalaryService _salaryService;
+    private readonly IPayslipService _payslipService;
 
-    public SalaryController(ISalaryService salaryService)
+    public SalaryController(ISalaryService salaryService, IPayslipService payslipService)
     {
         _salaryService = salaryService;
+        _payslipService = payslipService;
     }
 
     #region Salary Structures
@@ -572,6 +574,16 @@ public class SalaryController : ControllerBase
     {
         var receipt = await _salaryService.GetBankReceiptAsync(id, cancellationToken);
         return File(receipt.Data, receipt.ContentType, receipt.FileName);
+    }
+
+    /// <summary>สร้างหรือดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน) ของพนักงาน</summary>
+    [HttpGet("payrolls/{id:long}/payslip-pdf")]
+    public async Task<IActionResult> DownloadEmployeePayslip(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var (fileBytes, fileName) = await _payslipService.GetPayslipPdfAsync(id, cancellationToken);
+        return File(fileBytes, "application/pdf", fileName);
     }
 
     #endregion
