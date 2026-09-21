@@ -476,122 +476,124 @@ export default function MySalaryPage() {
       {/* ========================================================= */}
       {/* MAIN SECTION: History Table (8 cols) + Visual Charts (4 cols) */}
       {/* ========================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* LEFT COLUMN: ประวัติสลิปเงินเดือน (8 Cols) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-5">
-          {/* Table Header with Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                ประวัติสลิปเงินเดือน
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                แสดงเฉพาะรายการของคุณย้อนหลัง 12 เดือน
-              </p>
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
+          <div className="space-y-5 flex-1">
+            {/* Table Header with Search */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  ประวัติสลิปเงินเดือน
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  แสดงเฉพาะรายการของคุณย้อนหลัง 12 เดือน
+                </p>
+              </div>
+
+              {/* Search Input Box */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="ค้นหาเดือน / พ.ศ."
+                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                />
+              </div>
             </div>
 
-            {/* Search Input Box */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="ค้นหาเดือน / พ.ศ."
-                className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-              />
-            </div>
-          </div>
-
-          {/* Slips History Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50">
-                  <th className="py-2.5 px-3 whitespace-nowrap">เดือน-ปี</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-right">รายได้รวม</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-right">รายการหักรวม</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-right">เงินเดือนสุทธิ</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-center">วันที่โอน</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-center">สถานะ</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap text-center">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedHistory.length > 0 ? (
-                  paginatedHistory.map((row) => (
-                    <tr
-                      key={row.payrollId}
-                      className="hover:bg-slate-50/70 transition-colors group cursor-pointer"
-                      onClick={() => handleSelectSlip(row.payrollId)}
-                    >
-                      <td className="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">
-                        {row.periodMonthName}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono text-slate-700 whitespace-nowrap">
-                        {formatMoney(row.totalGrossIncome)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono text-rose-600 whitespace-nowrap">
-                        {formatMoney(row.totalDeductions)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
-                        {formatMoney(row.netPayableSalary)}
-                      </td>
-                      <td className="py-3 px-3 text-center text-slate-600 whitespace-nowrap">
-                        {row.paymentDateThai}
-                      </td>
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectSlip(row.payrollId);
-                            }}
-                            title="ดูรายละเอียดสลิป"
-                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadPdf(row.payrollId, row.periodMonthName);
-                            }}
-                            disabled={downloadingId === row.payrollId}
-                            title="ดาวน์โหลดสลิปเงินเดือน (PDF)"
-                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            {downloadingId === row.payrollId ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                            ) : (
-                              <Download className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
+            {/* Slips History Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50">
+                    <th className="py-3 px-3.5 whitespace-nowrap">เดือน-ปี</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-right">รายได้รวม</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-right">รายการหักรวม</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-right">เงินเดือนสุทธิ</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-center">วันที่โอน</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-center">สถานะ</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedHistory.length > 0 ? (
+                    paginatedHistory.map((row) => (
+                      <tr
+                        key={row.payrollId}
+                        className="hover:bg-slate-50/70 transition-colors group cursor-pointer"
+                        onClick={() => handleSelectSlip(row.payrollId)}
+                      >
+                        <td className="py-3.5 px-3.5 font-semibold text-slate-900 whitespace-nowrap">
+                          {row.periodMonthName}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-right font-mono text-slate-700 whitespace-nowrap">
+                          {formatMoney(row.totalGrossIncome)}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-right font-mono text-rose-600 whitespace-nowrap">
+                          {formatMoney(row.totalDeductions)}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                          {formatMoney(row.netPayableSalary)}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-center text-slate-600 whitespace-nowrap">
+                          {row.paymentDateThai}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {row.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectSlip(row.payrollId);
+                              }}
+                              title="ดูรายละเอียดสลิป"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadPdf(row.payrollId, row.periodMonthName);
+                              }}
+                              disabled={downloadingId === row.payrollId}
+                              title="ดาวน์โหลดสลิปเงินเดือน (PDF)"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {downloadingId === row.payrollId ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-slate-400 text-xs">
+                        {searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                      {searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 text-xs text-slate-500 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 border-t border-slate-100">
             <span>
               แสดงผล {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ
             </span>
