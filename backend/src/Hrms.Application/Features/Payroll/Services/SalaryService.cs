@@ -833,6 +833,13 @@ public class SalaryService : ISalaryService
                 .ToListAsync(cancellationToken)
             : new List<Domain.Entities.LeaveRequest>();
 
+        var attendanceSummaries = (period != null && employeeIds.Any())
+            ? await _context.AttendanceMonthlySummaries
+                .Where(a => employeeIds.Contains(a.EmployeeId) && a.Year == period.Year && a.Month == period.Month)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken)
+            : new List<Domain.Entities.AttendanceMonthlySummary>();
+
         return payrolls.Select(p =>
         {
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == p.EmployeeId);
@@ -846,9 +853,10 @@ public class SalaryService : ISalaryService
             var pendingLeaves = empLeaves.Where(l => l.Status == "PENDING").ToList();
 
             string? leaveSummary = null;
-            if (empLeaves.Any())
+            var approvedLeaves = empLeaves.Where(l => l.Status == "APPROVED").ToList();
+            if (approvedLeaves.Any())
             {
-                var grouped = empLeaves.GroupBy(l => l.LeaveType?.LeaveName ?? "ลา")
+                var grouped = approvedLeaves.GroupBy(l => l.LeaveType?.LeaveName ?? "ลา")
                     .Select(g => $"{g.Key} {g.Sum(x => x.LeaveDays):0.#} วัน");
                 leaveSummary = string.Join(" • ", grouped);
             }
@@ -860,19 +868,10 @@ public class SalaryService : ISalaryService
 
             string? adjustmentsSummary = !hasSalary
                 ? "⚠️ ยังไม่ระบุฐานเงินเดือน"
-                : (adjustments.Any() ? string.Join(", ", adjustments) : (p.EmployeeId % 3 == 1 ? "ค่าคอมมิชชั่นโปรเจกต์ A" : (p.EmployeeId % 3 == 0 ? "เบี้ยขยัน" : "-")));
+                : (adjustments.Any() ? string.Join(", ", adjustments) : "-");
 
-            decimal otHours = (p.EmployeeId % 3 == 0) ? 8.0m : (p.EmployeeId % 2 == 0 ? 0.0m : 6.0m);
-            if (totalLeaveDays == 0 && p.EmployeeId % 2 == 1)
-            {
-                totalLeaveDays = (p.EmployeeId % 4 == 1) ? 0.5m : 2.0m;
-                leaveSummary = (p.EmployeeId % 4 == 1) ? "ลากิจ 0.5 วัน" : "ลาป่วย 2 วัน";
-            }
-            else if (totalLeaveDays == 0 && p.EmployeeId % 3 == 0)
-            {
-                totalLeaveDays = 1.0m;
-                leaveSummary = "ลาพักร้อน 1 วัน";
-            }
+            var empAttendance = attendanceSummaries.FirstOrDefault(a => a.EmployeeId == p.EmployeeId);
+            decimal otHours = empAttendance?.TotalOvertimeHours ?? 0.0m;
 
             string inputStatus;
             string inputStatusText;
@@ -883,7 +882,7 @@ public class SalaryService : ISalaryService
             }
             else
             {
-                var isComplete = pendingLeaves.Count == 0 && (p.EmployeeId % 3 != 0);
+                var isComplete = pendingLeaves.Count == 0;
                 inputStatus = isComplete ? "COMPLETE" : "PENDING_CHECK";
                 inputStatusText = isComplete ? "ครบแล้ว" : "รอ HR ตรวจสอบ";
             }
@@ -919,8 +918,8 @@ public class SalaryService : ISalaryService
 
                 // Finance
                 BankCode = empBank?.Bank?.BankCode ?? "004",
-                BankName = empBank?.Bank?.BankName ?? (p.EmployeeId % 2 == 1 ? "กสิกรไทย" : "ไทยพาณิชย์"),
-                AccountNumber = empBank?.AccountNumber ?? $"012-3-{p.EmployeeId:D5}-9"
+                BankName = empBank?.Bank?.BankName ?? "กสิกรไทย",
+                AccountNumber = empBank?.AccountNumber ?? "-"
             };
         }).ToList();
     }
