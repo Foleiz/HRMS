@@ -1004,6 +1004,13 @@ public class SalaryService : ISalaryService
                     throw new BusinessRuleException($"ไม่อนุญาตให้เปลี่ยนสถานะเป็น {normalized} เนื่องจากยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่ได้แนบสลิปการโอนเงิน ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
                 }
             }
+            else if (period.PaymentMethod == "BANK_BATCH")
+            {
+                if (period.BankReceiptData == null || period.BankReceiptData.Length == 0)
+                {
+                    throw new BusinessRuleException($"ไม่อนุญาตให้เปลี่ยนสถานะเป็น {normalized} เนื่องจากยังไม่ได้แนบสลิปหรือไฟล์ใบเสร็จการโอนเงินรวมของธนาคาร ห้ามกดยืนยันจนกว่าจะแนบสลิปหรือไฟล์ยืนยันจากธนาคาร");
+                }
+            }
         }
 
         period.Status = normalized;

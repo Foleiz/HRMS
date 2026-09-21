@@ -589,6 +589,10 @@ export default function PayrollPage() {
 
   const handleMarkPaid = async () => {
     if (!selectedPeriod) return;
+    if (selectedPeriod.paymentMethod === 'BANK_BATCH' && !selectedPeriod.hasBankReceipt) {
+      showToast('❌ ไม่อนุญาตให้กดยืนยัน: ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน');
+      return;
+    }
     setIsConfirmingPayment(true);
     try {
       const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, 'PAID');
@@ -2861,7 +2865,7 @@ export default function PayrollPage() {
                         onChange={e => setBankReceiptFile(e.target.files?.[0] || null)}
                         className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
                       />
-                      {bankReceiptFile && (
+                      {bankReceiptFile ? (
                         <div className="pt-2 flex justify-end">
                           <button
                             onClick={() => handleUploadBankReceiptSubmit(true)}
@@ -2870,6 +2874,16 @@ export default function PayrollPage() {
                           >
                             {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <CheckCircle className="w-3.5 h-3.5" />}
                             <span>บันทึกสลิปธนาคาร & ยืนยันการจ่ายเงิน (PAID)</span>
+                          </button>
+                        </div>
+                      ) : !selectedPeriod?.hasBankReceipt && (
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            disabled
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
+                          >
+                            <Lock className="w-4 h-4 text-slate-400" />
+                            <span>🔒 ไม่อนุญาตให้กดยืนยัน (ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน)</span>
                           </button>
                         </div>
                       )}
