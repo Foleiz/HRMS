@@ -1905,6 +1905,8 @@ export default function PayrollPage() {
           if (!status || status === 'DRAFT' || status === 'REVIEW') return 1;
           if (status === 'SUBMITTED_TO_FINANCE') return 2;
           if (status === 'FINANCE_VERIFIED' || status === 'PENDING_APPROVAL') return 3;
+          if (status === 'APPROVED' || status === 'PROCESSING' || status === 'PROCESSING_BANK') return 4;
+          if (status === 'PAID' || status === 'CLOSED') return 5;
           return 4;
         };
         const currentStep = getWorkflowStep(selectedPeriod?.status);
@@ -2027,6 +2029,10 @@ export default function PayrollPage() {
                           ? 'ส่งการเงินตรวจทานแล้ว'
                           : selectedPeriod.status === 'PROCESSING_BANK'
                           ? 'ส่งโอนธนาคารแล้ว (รอการเงินตรวจสลิป)'
+                          : selectedPeriod.status === 'PAID'
+                          ? 'จ่ายเงินแล้ว'
+                          : selectedPeriod.status === 'CLOSED'
+                          ? 'ปิดรอบแล้ว'
                           : selectedPeriod.statusText}
                       </span>
                     )}
