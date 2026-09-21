@@ -137,15 +137,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                 </span>
               </div>
 
-              {/* PDF Payslip Action Button */}
-              <button
-                onClick={() => {
-                  window.print();
-                }}
-                className="w-full py-2.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <span>📄 ดาวน์โหลดสลิปเงินเดือน (E-Payslip PDF)</span>
-              </button>
+
             </>
           )}
         </div>
