@@ -218,6 +218,29 @@ function TablePagination({
   );
 }
 
+const THAI_MONTH_NAMES = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const getDefaultPeriodValues = (year: number, month: number) => {
+  const safeMonth = Math.min(Math.max(1, month || 1), 12);
+  const thaiMonth = THAI_MONTH_NAMES[safeMonth - 1];
+  const safeYear = year || 2026;
+  const thaiYear = safeYear + 543;
+  const monthStr = safeMonth.toString().padStart(2, '0');
+  const lastDay = new Date(safeYear, safeMonth, 0).getDate();
+  const lastDayStr = lastDay.toString().padStart(2, '0');
+  const payDay = Math.min(29, lastDay).toString().padStart(2, '0');
+
+  return {
+    periodName: `รอบเดือน${thaiMonth} ${thaiYear}`,
+    startDate: `${safeYear}-${monthStr}-01`,
+    endDate: `${safeYear}-${monthStr}-${lastDayStr}`,
+    paymentDate: `${safeYear}-${monthStr}-${payDay}`,
+  };
+};
+
 export default function PayrollPage() {
   const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
@@ -344,14 +367,55 @@ export default function PayrollPage() {
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [newPeriodForm, setNewPeriodForm] = useState({
+  const [isPeriodNameCustom, setIsPeriodNameCustom] = useState(false);
+  const [newPeriodForm, setNewPeriodForm] = useState(() => ({
     year: 2026,
-    month: 9,
-    periodName: 'รอบเดือนกันยายน 2569',
-    startDate: '2026-09-01',
-    endDate: '2026-09-30',
-    paymentDate: '2026-09-29',
-  });
+    month: 8,
+    periodName: 'รอบเดือนสิงหาคม 2569',
+    startDate: '2026-08-01',
+    endDate: '2026-08-31',
+    paymentDate: '2026-08-29',
+  }));
+
+  const handleMonthChange = (newMonth: number) => {
+    const safeMonth = Math.min(Math.max(1, newMonth || 1), 12);
+    const defaults = getDefaultPeriodValues(newPeriodForm.year, safeMonth);
+    setNewPeriodForm(prev => ({
+      ...prev,
+      month: safeMonth,
+      periodName: isPeriodNameCustom ? prev.periodName : defaults.periodName,
+      startDate: defaults.startDate,
+      endDate: defaults.endDate,
+      paymentDate: defaults.paymentDate,
+    }));
+  };
+
+  const handleYearChange = (newYear: number) => {
+    const safeYear = newYear || 2026;
+    const defaults = getDefaultPeriodValues(safeYear, newPeriodForm.month);
+    setNewPeriodForm(prev => ({
+      ...prev,
+      year: safeYear,
+      periodName: isPeriodNameCustom ? prev.periodName : defaults.periodName,
+      startDate: defaults.startDate,
+      endDate: defaults.endDate,
+      paymentDate: defaults.paymentDate,
+    }));
+  };
+
+  const handleOpenCreatePeriodModal = () => {
+    setIsPeriodNameCustom(false);
+    const defaults = getDefaultPeriodValues(2026, 8);
+    setNewPeriodForm({
+      year: 2026,
+      month: 8,
+      periodName: defaults.periodName,
+      startDate: defaults.startDate,
+      endDate: defaults.endDate,
+      paymentDate: defaults.paymentDate,
+    });
+    setIsCreatePeriodModalOpen(true);
+  };
 
   // Modals
   const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
@@ -2065,7 +2129,7 @@ export default function PayrollPage() {
                   {processSubTab === 'HR' && (
                     <>
                       <button
-                        onClick={() => setIsCreatePeriodModalOpen(true)}
+                        onClick={handleOpenCreatePeriodModal}
                         className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
                       >
                         <Plus className="w-3.5 h-3.5 text-slate-500" />
@@ -3687,15 +3751,36 @@ export default function PayrollPage() {
 
             <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">ชื่อรอบเงินเดือน</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-700">ชื่อรอบเงินเดือน</label>
+                  {isPeriodNameCustom && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPeriodNameCustom(false);
+                        const defaults = getDefaultPeriodValues(newPeriodForm.year, newPeriodForm.month);
+                        setNewPeriodForm(prev => ({ ...prev, periodName: defaults.periodName }));
+                      }}
+                      className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                    >
+                      ↺ ใช้ชื่อตามระบบ
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
                   value={newPeriodForm.periodName}
-                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value })}
-                  placeholder="เช่น รอบเดือนกันยายน 2569"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  onChange={(e) => {
+                    setIsPeriodNameCustom(true);
+                    setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value });
+                  }}
+                  placeholder="เช่น รอบเดือนสิงหาคม 2569"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  💡 ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -3705,21 +3790,23 @@ export default function PayrollPage() {
                     type="number"
                     required
                     value={newPeriodForm.year}
-                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    onChange={(e) => handleYearChange(parseInt(e.target.value) || 2026)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                   />
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">เดือน (1-12)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={12}
-                    required
+                  <select
                     value={newPeriodForm.month}
-                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, month: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                  />
+                    onChange={(e) => handleMonthChange(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                  >
+                    {THAI_MONTH_NAMES.map((name, idx) => (
+                      <option key={idx + 1} value={idx + 1}>
+                        {idx + 1} - {name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
