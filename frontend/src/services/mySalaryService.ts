@@ -8,7 +8,7 @@ export const mySalaryService = {
    */
   getOverview: async (year?: number): Promise<MySalaryOverview> => {
     const params = year ? { year } : undefined;
-    const response = await apiClient.get<ApiResponse<MySalaryOverview>>('/api/my-salary/overview', { params });
+    const response = await apiClient.get<ApiResponse<MySalaryOverview>>('/my-salary/overview', { params });
     return response.data.data;
   },
 
@@ -16,7 +16,7 @@ export const mySalaryService = {
    * ดึงรายละเอียดแจกแจงรายได้-รายหักของสลิปเงินเดือนงวดที่เลือก
    */
   getDetail: async (payrollId: number): Promise<MySalaryDetail> => {
-    const response = await apiClient.get<ApiResponse<MySalaryDetail>>(`/api/my-salary/slips/${payrollId}`);
+    const response = await apiClient.get<ApiResponse<MySalaryDetail>>(`/my-salary/slips/${payrollId}`);
     return response.data.data;
   },
 
@@ -24,7 +24,7 @@ export const mySalaryService = {
    * ดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน)
    */
   downloadSlipPdf: async (payrollId: number, defaultFileName?: string): Promise<void> => {
-    const response = await apiClient.get(`/api/my-salary/slips/${payrollId}/download`, {
+    const response = await apiClient.get(`/my-salary/slips/${payrollId}/download`, {
       responseType: 'blob',
     });
 
