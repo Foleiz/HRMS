@@ -2052,20 +2052,27 @@ export default function PayrollPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <div className="relative inline-block">
-                      <select
-                        value={selectedPeriod?.id || ''}
-                        onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                        className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
-                      >
-                        {periods.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.periodName}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
+                    {periods.length > 0 ? (
+                      <div className="relative inline-block">
+                        <select
+                          value={selectedPeriod?.id || ''}
+                          onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                          className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                        >
+                          {periods.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.periodName}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 py-1 text-slate-500 font-bold text-sm">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span>ยังไม่มีรอบเงินเดือนในระบบ</span>
+                      </div>
+                    )}
 
                     {selectedPeriod && (
                       <span
@@ -2106,15 +2113,19 @@ export default function PayrollPage() {
                     <span>
                       ช่วงเงินเดือน:{' '}
                       <span className="text-slate-600 font-medium">
-                        {selectedPeriod?.month === 8 && selectedPeriod?.year === 2026
-                          ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
-                          : `${selectedPeriod?.startDate} - ${selectedPeriod?.endDate}`}
+                        {selectedPeriod
+                          ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026
+                              ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
+                              : `${selectedPeriod.startDate || '-'} - ${selectedPeriod.endDate || '-'}`)
+                          : '-'}
                       </span>
                     </span>
                     <span>
                       วันจ่ายเงิน:{' '}
                       <span className="text-slate-600 font-medium">
-                        {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
+                        {selectedPeriod?.paymentDate
+                          ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026 ? '29 ส.ค. 2569' : selectedPeriod.paymentDate)
+                          : '-'}
                       </span>
                     </span>
                     <span>
