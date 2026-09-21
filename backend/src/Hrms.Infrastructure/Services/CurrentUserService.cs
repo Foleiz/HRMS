@@ -22,7 +22,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            string? sub = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub");
+            string? sub = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub") ?? User?.FindFirstValue("nameid");
             return long.TryParse(sub, out long id) ? id : null;
         }
     }
@@ -33,12 +33,17 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            string? empId = User?.FindFirstValue("employee_id");
+            string? empId = User?.FindFirstValue("employee_id") ?? User?.FindFirstValue("employeeId");
             return long.TryParse(empId, out long id) ? id : null;
         }
     }
 
-    public List<string> Roles => User?.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList() ?? new List<string>();
+    public List<string> Roles => (User?.FindAll(ClaimTypes.Role) ?? Enumerable.Empty<Claim>())
+        .Concat(User?.FindAll("role") ?? Enumerable.Empty<Claim>())
+        .Select(c => c.Value)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
 
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 

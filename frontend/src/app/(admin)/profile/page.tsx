@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const { success, error, warning } = useToast();
 
@@ -162,8 +162,11 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    fetchEmployeeData();
-  }, [user?.employeeId]);
+    if (!isAuthLoading) {
+      fetchEmployeeData();
+    }
+  }, [user?.employeeId, isAuthLoading]);
+
 
   // Handle Input Changes
   const handleInputChange = (field: string, value: any) => {

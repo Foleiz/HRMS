@@ -351,11 +351,20 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์แก้ไข
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS)
+        bool hasManagePermission = _currentUserService.HasRole("ADMIN") ||
+                                   _currentUserService.HasPermission("EMP_MANAGE") ||
+                                   _currentUserService.HasPermission("EMP_EDIT") ||
+                                   _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+
+        long? currentEmpId = _currentUserService.EmployeeId;
+        bool isSelfUpdate = currentEmpId.HasValue && currentEmpId.Value == id;
+
+        if (!hasManagePermission && !isSelfUpdate)
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
         }
+
 
         string idStr = id.ToString();
         var employee = await _dbContext.Employees
@@ -384,13 +393,16 @@ public class EmployeeService : IEmployeeService
             var newCode = request.EmployeeCode.Trim();
             if (!string.Equals(employee.EmployeeCode, newCode, StringComparison.OrdinalIgnoreCase))
             {
-                bool codeExists = await _dbContext.Employees
-                    .AnyAsync(e => e.EmployeeCode == newCode && e.Id != employee.Id, cancellationToken);
-                if (codeExists)
+                if (hasManagePermission)
                 {
-                    throw new ValidationException($"รหัสพนักงาน '{newCode}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
+                    bool codeExists = await _dbContext.Employees
+                        .AnyAsync(e => e.EmployeeCode == newCode && e.Id != employee.Id, cancellationToken);
+                    if (codeExists)
+                    {
+                        throw new ValidationException($"รหัสพนักงาน '{newCode}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
+                    }
+                    employee.EmployeeCode = newCode;
                 }
-                employee.EmployeeCode = newCode;
             }
         }
 
@@ -719,8 +731,12 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์ (EMP_MANAGE หรือพนักงานตัวเอง)
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
+        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+                               _currentUserService.HasPermission("EMP_MANAGE") ||
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+
+        if (!canManageAvatar)
         {
             long? myEmpId = _currentUserService.EmployeeId;
             if (!myEmpId.HasValue || myEmpId.Value != id)
@@ -805,7 +821,11 @@ public class EmployeeService : IEmployeeService
         long id,
         CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+                               _currentUserService.HasPermission("EMP_MANAGE") ||
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+
+        if (!canManageAvatar)
         {
             long? myEmpId = _currentUserService.EmployeeId;
             if (!myEmpId.HasValue || myEmpId.Value != id)
@@ -840,7 +860,22 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
+        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+                            _currentUserService.HasPermission("EMP_MANAGE") ||
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+
+        if (!canManageSig)
+        {
+            long? myEmpId = _currentUserService.EmployeeId;
+            if (!myEmpId.HasValue || myEmpId.Value != id)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็นของพนักงานท่านอื่น");
+            }
+        }
+
         var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+
         if (employee == null)
         {
             throw new NotFoundException("Employee", id);
@@ -915,6 +950,19 @@ public class EmployeeService : IEmployeeService
 
     public async Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default)
     {
+        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+                            _currentUserService.HasPermission("EMP_MANAGE") ||
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+
+        if (!canManageSig)
+        {
+            long? myEmpId = _currentUserService.EmployeeId;
+            if (!myEmpId.HasValue || myEmpId.Value != id)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็นของพนักงานท่านอื่น");
+            }
+        }
+
         var signature = await _dbContext.EmployeeSignatures
             .FirstOrDefaultAsync(s => s.EmployeeId == id && s.IsActive, cancellationToken);
 
