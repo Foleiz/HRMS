@@ -52,4 +52,21 @@ export const employeeService = {
   async deleteAvatar(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<boolean>>(`/employees/${id}/avatar`);
   },
+
+  // อัปโหลดไฟล์ลายเซ็นพนักงาน (เก็บลง PostgreSQL Binary hrms.employee_signature)
+  async uploadSignature(id: number, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<ApiResponse<string>>(`/employees/${id}/signature`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data.data;
+  },
+
+  // ลบไฟล์ลายเซ็นพนักงาน
+  async deleteSignature(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<boolean>>(`/employees/${id}/signature`);
+  },
 };

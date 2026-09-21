@@ -148,6 +148,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseCors("AllowFrontend");
+
 // 8. Global Exception Middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -166,8 +168,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-
-app.UseCors("AllowFrontend");
 
 // 10. Authentication & Authorization Middleware
 app.UseAuthentication();

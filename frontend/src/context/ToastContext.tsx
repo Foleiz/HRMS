@@ -55,7 +55,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       const id = Math.random().toString(36).substring(2, 9);
       const newToast: ToastItem = { id, type, message, title, duration };
 
-      setToasts((prev) => [...prev, newToast]);
+      setToasts((prev) => {
+        if (prev.some((t) => t.message === message && t.type === type)) {
+          return prev;
+        }
+        return [...prev, newToast];
+      });
 
       if (duration > 0) {
         setTimeout(() => {
@@ -97,18 +102,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [showToast]
   );
 
+  const contextValue = React.useMemo(
+    () => ({
+      toasts,
+      showToast,
+      removeToast,
+      success,
+      error,
+      warning,
+      info,
+    }),
+    [toasts, showToast, removeToast, success, error, warning, info]
+  );
+
   return (
-    <ToastContext.Provider
-      value={{
-        toasts,
-        showToast,
-        removeToast,
-        success,
-        error,
-        warning,
-        info,
-      }}
-    >
+    <ToastContext.Provider value={contextValue}>
       {children}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </ToastContext.Provider>

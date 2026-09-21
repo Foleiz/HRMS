@@ -111,6 +111,7 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
+            .Include(e => e.Signatures)
             .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
@@ -366,6 +367,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
             .Include(e => e.Assignments)
+            .Include(e => e.Signatures)
             .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
@@ -830,10 +832,114 @@ public class EmployeeService : IEmployeeService
         return true;
     }
 
+    public async Task<string> UploadSignatureAsync(
+        long id,
+        Stream stream,
+        string fileName,
+        string contentType,
+        long length,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee", id);
+        }
+
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/jpg" };
+        if (!allowedTypes.Contains(contentType.ToLowerInvariant()))
+        {
+            throw new ValidationException("รองรับเฉพาะไฟล์ภาพนามสกุล PNG หรือ JPG เท่านั้น");
+        }
+
+        if (length > 2 * 1024 * 1024)
+        {
+            throw new ValidationException("ขนาดไฟล์ต้องไม่เกิน 2MB");
+        }
+
+        byte[] signatureBytes;
+        using (var memoryStream = new MemoryStream())
+        {
+            await stream.CopyToAsync(memoryStream, cancellationToken);
+            signatureBytes = memoryStream.ToArray();
+        }
+
+        var existingSignature = await _dbContext.EmployeeSignatures
+            .FirstOrDefaultAsync(s => s.EmployeeId == id && s.IsActive, cancellationToken);
+
+        var now = DateTime.UtcNow;
+        if (existingSignature != null)
+        {
+            existingSignature.SignatureData = signatureBytes;
+            existingSignature.FileName = fileName;
+            existingSignature.FileSize = (int)length;
+            existingSignature.MimeType = contentType;
+            existingSignature.UpdatedAt = now;
+        }
+        else
+        {
+            var newSignature = new EmployeeSignature
+            {
+                EmployeeId = id,
+                SignatureData = signatureBytes,
+                FileName = fileName,
+                FileSize = (int)length,
+                MimeType = contentType,
+                IsActive = true,
+                UploadedAt = now,
+                UpdatedAt = now
+            };
+            _dbContext.EmployeeSignatures.Add(newSignature);
+        }
+
+        employee.UpdatedAt = now;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return $"/api/employees/{id}/signature?v={now.Ticks}";
+    }
+
+    public async Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var signature = await _dbContext.EmployeeSignatures
+            .Where(s => s.EmployeeId == id && s.IsActive)
+            .OrderByDescending(s => s.UpdatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (signature == null || signature.SignatureData == null || signature.SignatureData.Length == 0)
+        {
+            return null;
+        }
+
+        return (signature.SignatureData, signature.MimeType);
+    }
+
+    public async Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var signature = await _dbContext.EmployeeSignatures
+            .FirstOrDefaultAsync(s => s.EmployeeId == id && s.IsActive, cancellationToken);
+
+        if (signature == null)
+        {
+            return false;
+        }
+
+        _dbContext.EmployeeSignatures.Remove(signature);
+        var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
+        if (employee != null)
+        {
+            employee.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private EmployeeDto MapToDto(Employee e)
     {
         var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
         var currentAssignment = e.Assignments?.FirstOrDefault(a => a.IsCurrent) ?? e.Assignments?.FirstOrDefault();
+
+        var activeSig = e.Signatures?.FirstOrDefault(s => s.IsActive);
 
         return new EmployeeDto
         {
@@ -871,6 +977,10 @@ public class EmployeeService : IEmployeeService
             AvatarUpdatedAt = e.AvatarUpdatedAt,
             AvatarUrl = e.AvatarUpdatedAt.HasValue
                 ? $"/api/employees/{e.Id}/avatar?v={e.AvatarUpdatedAt.Value.Ticks}"
+                : null,
+            HasSignature = activeSig != null,
+            SignatureUrl = activeSig != null
+                ? $"/api/employees/{e.Id}/signature?v={activeSig.UpdatedAt.Ticks}"
                 : null,
             Contact = e.Contact != null ? new EmployeeContactDto
             {

@@ -17,4 +17,9 @@ public interface IEmployeeService
     Task<string> UploadAvatarAsync(long id, Stream stream, string contentType, long length, CancellationToken cancellationToken = default);
     Task<(byte[] ImageData, string MimeType)?> GetAvatarAsync(long id, CancellationToken cancellationToken = default);
     Task<bool> DeleteAvatarAsync(long id, CancellationToken cancellationToken = default);
+
+    // จัดการลายเซ็นดิจิทัล (PostgreSQL Binary Storage)
+    Task<string> UploadSignatureAsync(long id, Stream stream, string fileName, string contentType, long length, CancellationToken cancellationToken = default);
+    Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default);
 }

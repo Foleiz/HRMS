@@ -199,6 +199,9 @@ export default function SettingsPage() {
     }
   }, [error]);
 
+  const selectedRoleIdRef = React.useRef<number | null>(null);
+  selectedRoleIdRef.current = selectedRoleId;
+
   const loadRoles = useCallback(async () => {
     setIsRolesLoading(true);
     try {
@@ -206,12 +209,11 @@ export default function SettingsPage() {
       setRoles(rolesData);
 
       if (rolesData.length > 0) {
-        setSelectedRoleId((prevId) => {
-          const currentExists = prevId && rolesData.some((r) => r.id === prevId);
-          const activeId = currentExists ? prevId : rolesData[0].id;
-          loadRoleMatrix(activeId);
-          return activeId;
-        });
+        const prevId = selectedRoleIdRef.current;
+        const currentExists = prevId && rolesData.some((r) => r.id === prevId);
+        const activeId = currentExists ? prevId : rolesData[0].id;
+        setSelectedRoleId(activeId);
+        loadRoleMatrix(activeId);
       }
     } catch (err: any) {
       error(err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้');
@@ -246,27 +248,31 @@ export default function SettingsPage() {
     }
   };
 
-  // Initial Load
-  useEffect(() => {
-    if (canViewUsersTab) {
-      loadUsers();
-      loadEmployees();
-    }
-    if (canViewRolesTab) {
-      loadRoles();
-    }
-  }, [canViewUsersTab, canViewRolesTab]);
-
-  // Fetch when tab changes or specific page filters change
+  // Fetch when active tab changes or permissions become available
   useEffect(() => {
     if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
+      loadEmployees();
     } else if (activeTab === 'roles' && canViewRolesTab) {
       loadRoles();
     } else if (activeTab === 'audit-log' && canViewAuditLogTab) {
       loadAuditLogs();
     }
-  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, loadUsers, loadRoles, loadAuditLogs]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab]);
+
+  // Fetch users when pagination or filters change while on users tab
+  useEffect(() => {
+    if (activeTab === 'users' && canViewUsersTab) {
+      loadUsers();
+    }
+  }, [userPage, userSearch, userRoleFilter, userStatusFilter]);
+
+  // Fetch audit logs when pagination or filters change while on audit-log tab
+  useEffect(() => {
+    if (activeTab === 'audit-log' && canViewAuditLogTab) {
+      loadAuditLogs();
+    }
+  }, [auditLogPage, auditLogFilters]);
 
   // === 4. User Actions ===
   const handleCreateUser = async (data: CreateUserRequest) => {

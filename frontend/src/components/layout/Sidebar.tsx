@@ -23,6 +23,7 @@ import {
   CalendarDays,
   CalendarRange,
   Megaphone,
+  User,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -54,6 +55,12 @@ const menuItems: MenuItem[] = [
       'EMP_TRANSFER_VIEW',
       'EMP_TYPE_VIEW',
     ],
+  },
+  {
+    title: 'โปรไฟล์ของฉัน (ESS)',
+    href: '/profile',
+    matchPrefix: '/profile',
+    icon: User,
   },
   {
     title: 'บันทึกเวลาของฉัน (ESS)',

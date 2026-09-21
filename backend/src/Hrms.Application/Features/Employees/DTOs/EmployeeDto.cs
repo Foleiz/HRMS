@@ -49,6 +49,8 @@ public class EmployeeDto
     public DateTime UpdatedAt { get; set; }
     public DateTime? AvatarUpdatedAt { get; set; }
     public string? AvatarUrl { get; set; }
+    public bool HasSignature { get; set; }
+    public string? SignatureUrl { get; set; }
 
     // ข้อมูลส่วนย่อย (Navigation DTOs)
     public EmployeeContactDto? Contact { get; set; }

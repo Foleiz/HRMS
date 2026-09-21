@@ -60,4 +60,5 @@ public class Employee : BaseEntity
     public virtual ICollection<EmployeeAssignment> Assignments { get; set; } = new List<EmployeeAssignment>();
     public virtual ICollection<EmploymentContract> Contracts { get; set; } = new List<EmploymentContract>();
     public virtual ICollection<EmployeeStatusHistory> StatusHistories { get; set; } = new List<EmployeeStatusHistory>();
+    public virtual ICollection<EmployeeSignature> Signatures { get; set; } = new List<EmployeeSignature>();
 }

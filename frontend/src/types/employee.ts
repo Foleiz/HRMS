@@ -60,6 +60,8 @@ export interface Employee {
   updatedAt: string;
   avatarUpdatedAt?: string | null;
   avatarUrl?: string | null;
+  hasSignature?: boolean;
+  signatureUrl?: string | null;
   positionId?: number;
   positionName?: string;
   departmentName?: string;
@@ -158,6 +160,8 @@ export interface CreateEmployeePayload {
   employeeType?: string;
 
   // ครอบครัว & กรณีฉุกเฉิน
+  spouseHasIncome?: boolean;
+  numberOfChildren?: number;
   familyMembers?: FamilyMember[];
   emergencyContact?: EmergencyContact;
 

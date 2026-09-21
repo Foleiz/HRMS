@@ -61,6 +61,7 @@ public interface IHrmsDbContext
 
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     DbSet<EmployeeAvatar> EmployeeAvatars { get; }
+    DbSet<EmployeeSignature> EmployeeSignatures { get; }
 
     // Employee Transfer & Promotion Requests (Dev 2)
     DbSet<EmployeeTransferRequest> EmployeeTransferRequests { get; }

@@ -140,6 +140,43 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task<bool> ChangePasswordAsync(long userId, ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+        {
+            throw new ValidationException("กรุณากรอกรหัสผ่านปัจจุบัน");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new ValidationException("กรุณากรอกรหัสผ่านใหม่");
+        }
+
+        if (request.NewPassword.Length < 6)
+        {
+            throw new ValidationException("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+        }
+
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            throw new ValidationException("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        }
+
+        var user = await _dbContext.UserAccounts.FindAsync(new object[] { userId }, cancellationToken)
+            ?? throw new NotFoundException("UserAccount", userId);
+
+        if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            throw new ValidationException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private async Task<UserInfoDto> BuildUserInfoDtoAsync(long userId, CancellationToken cancellationToken = default)
     {
         var user = await _dbContext.UserAccounts

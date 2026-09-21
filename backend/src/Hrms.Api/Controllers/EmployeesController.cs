@@ -152,4 +152,64 @@ public class EmployeesController : ControllerBase
         var success = await _employeeService.DeleteAvatarAsync(id, cancellationToken);
         return Ok(ApiResponse<bool>.Ok(success, "ลบรูปโปรไฟล์สำเร็จ"));
     }
+
+    /// <summary>
+    /// ดึงไฟล์ภาพลายเซ็นพนักงาน (Binary stream)
+    /// </summary>
+    [HttpGet("{id:long}/signature")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSignature(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var sig = await _employeeService.GetSignatureAsync(id, cancellationToken);
+        if (sig == null)
+        {
+            return NotFound();
+        }
+
+        return File(sig.Value.SignatureData, sig.Value.MimeType);
+    }
+
+    /// <summary>
+    /// อัปโหลดไฟล์ภาพลายเซ็นพนักงาน (PNG/JPG ขนาดไม่เกิน 2MB)
+    /// </summary>
+    [HttpPost("{id:long}/signature")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> UploadSignature(
+        long id,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<object>.Fail("กรุณาเลือกไฟล์ภาพลายเซ็นที่ต้องการอัปโหลด"));
+        }
+
+        using var stream = file.OpenReadStream();
+        var sigUrl = await _employeeService.UploadSignatureAsync(
+            id,
+            stream,
+            file.FileName,
+            file.ContentType,
+            file.Length,
+            cancellationToken);
+
+        return Ok(ApiResponse<string>.Ok(sigUrl, "อัปโหลดภาพลายเซ็นเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>
+    /// ลบภาพลายเซ็นพนักงาน
+    /// </summary>
+    [HttpDelete("{id:long}/signature")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteSignature(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var success = await _employeeService.DeleteSignatureAsync(id, cancellationToken);
+        return Ok(ApiResponse<bool>.Ok(success, "ลบภาพลายเซ็นเรียบร้อยแล้ว"));
+    }
 }

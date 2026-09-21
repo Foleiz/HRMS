@@ -73,6 +73,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     public DbSet<EmployeeAvatar> EmployeeAvatars => Set<EmployeeAvatar>();
+    public DbSet<EmployeeSignature> EmployeeSignatures => Set<EmployeeSignature>();
 
     // Employee Transfer & Promotion Requests (Dev 2)
     public DbSet<EmployeeTransferRequest> EmployeeTransferRequests => Set<EmployeeTransferRequest>();
@@ -955,6 +956,27 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.Employee)
                 .WithOne(e => e.Avatar)
                 .HasForeignKey<EmployeeAvatar>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeSignature (hrms.employee_signature)
+        modelBuilder.Entity<EmployeeSignature>(entity =>
+        {
+            entity.ToTable("employee_signature", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.SignatureData).HasColumnName("signature_data").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.FileSize).HasColumnName("file_size").IsRequired();
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(e => e.Signatures)
+                .HasForeignKey(e => e.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

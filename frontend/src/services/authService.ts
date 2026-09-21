@@ -34,4 +34,15 @@ export const authService = {
   async seedPasswords(password = 'Admin@123456'): Promise<void> {
     await apiClient.post(`/auth/seed-passwords?password=${encodeURIComponent(password)}`);
   },
+
+  /**
+   * เปลี่ยนรหัสผ่านสำหรับผู้ใช้งานปัจจุบัน
+   */
+  async changePassword(payload: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<boolean> {
+    const response = await apiClient.post<ApiResponse<boolean>>('/auth/change-password', payload);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
+    }
+    return response.data.data ?? true;
+  },
 };

@@ -56,6 +56,26 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// เปลี่ยนรหัสผ่านสำหรับผู้ใช้งานปัจจุบันที่ล็อกอินอยู่
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request, CancellationToken cancellationToken)
+    {
+        long? userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("ไม่พบข้อมูลผู้ใช้งาน หรือ Token หมดอายุแล้ว"));
+        }
+
+        var success = await _authService.ChangePasswordAsync(userId.Value, request, cancellationToken);
+        return Ok(ApiResponse<bool>.Ok(success, "เปลี่ยนรหัสผ่านสำเร็จแล้ว"));
+    }
+
+    /// <summary>
     /// Utility สำหรับตั้งค่ารหัสผ่านเริ่มต้นสำหรับบัญชีทดสอบทั้งหมดในระบบ (Development Only)
     /// รหัสผ่านเริ่มต้นคือ "Admin@123456"
     /// </summary>

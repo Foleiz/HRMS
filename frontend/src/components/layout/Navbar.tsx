@@ -54,6 +54,9 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/employees/transfers')) return { section: 'พนักงาน', page: 'การโอนย้ายพนักงาน' };
     if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
 
+    // โปรไฟล์ (Profile / ESS)
+    if (pathname.startsWith('/profile')) return { section: 'โปรไฟล์', page: 'แก้ไขโปรไฟล์' };
+
     // 4. บันทึกเวลาของฉัน (ESS)
     if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
 
@@ -179,12 +182,21 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 <div className="px-1 py-1">
+                  <Link
+                    href="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 text-slate-500" />
+                    โปรไฟล์ของฉัน
+                  </Link>
+
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors mt-0.5"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     ออกจากระบบ
