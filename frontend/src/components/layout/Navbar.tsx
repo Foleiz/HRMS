@@ -60,6 +60,9 @@ export const Navbar: React.FC = () => {
     // ยอดวันลาคงเหลือ (ESS)
     if (pathname.startsWith('/leave-balances')) return { section: 'ยอดวันลาคงเหลือ', page: 'ภาพรวมยอดวันลา' };
 
+    // เงินเดือนของฉัน (ESS)
+    if (pathname.startsWith('/my-salary')) return { section: 'เงินเดือนของฉัน', page: 'ภาพรวมเงินเดือน' };
+
     // 4. บันทึกเวลาของฉัน (ESS)
     if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
 

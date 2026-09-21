@@ -24,6 +24,7 @@ import {
   CalendarRange,
   Megaphone,
   User,
+  Wallet,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -55,6 +56,12 @@ const menuItems: MenuItem[] = [
       'EMP_TRANSFER_VIEW',
       'EMP_TYPE_VIEW',
     ],
+  },
+  {
+    title: 'เงินเดือนของฉัน',
+    href: '/my-salary',
+    matchPrefix: '/my-salary',
+    icon: Wallet,
   },
   {
     title: 'โปรไฟล์ของฉัน (ESS)',
