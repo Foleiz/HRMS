@@ -392,4 +392,125 @@ public class LeaveBalanceService : ILeaveBalanceService
                 : $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({newBalances.Count} รายการ สำหรับพนักงาน {employees.Count} คน)"
         };
     }
+
+    public async Task<MyLeaveSummaryDto> GetMySummaryAsync(long employeeId, int year, CancellationToken cancellationToken = default)
+    {
+        // Convert Thai Buddhist Year (e.g. 2569) to CE (2026)
+        if (year > 2400)
+        {
+            year -= 543;
+        }
+
+        var employee = await _context.Employees
+            .AsNoTracking()
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Position)
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+        var currentAssignment = employee?.Assignments?.FirstOrDefault(a => a.IsCurrent);
+        string employeeName = employee != null
+            ? $"{employee.Prefix} {employee.FirstName} {employee.LastName}".Trim()
+            : string.Empty;
+
+        // ดึงยอดวันลาคงเหลือทั้งหมดของพนักงานในปีที่เลือก
+        var balances = await GetAllAsync(employeeId, year, null, cancellationToken);
+
+        // ดึงจำนวนชั่วโมง OT จากสรุปการลงเวลารายเดือน
+        var overtimeHours = await _context.AttendanceMonthlySummaries
+            .AsNoTracking()
+            .Where(a => a.EmployeeId == employeeId && a.Year == year)
+            .SumAsync(a => a.TotalOvertimeHours, cancellationToken);
+
+        // หา balance ของแต่ละประเภท
+        var sickBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("SICK", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("ป่วย"));
+        var personalBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("PERSONAL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("กิจ"));
+        var annualBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("ANNUAL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("พักร้อน"));
+        var specialBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("TRAVEL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeCode.Equals("SPECIAL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("พิเศษ") || b.LeaveTypeName.Contains("เที่ยว"));
+        var ordBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("ORDINATION", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("บวช"));
+        var militaryBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("MILITARY", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("ทหาร"));
+        var matBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("MATERNITY", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("คลอด"));
+
+        return new MyLeaveSummaryDto
+        {
+            EmployeeId = employeeId,
+            EmployeeCode = employee?.EmployeeCode ?? string.Empty,
+            EmployeeName = employeeName,
+            DepartmentName = currentAssignment?.Department?.DepartmentName ?? string.Empty,
+            PositionTitle = currentAssignment?.Position?.PositionName ?? string.Empty,
+            Year = year,
+            YearThai = year + 543,
+            SickLeave = new LeaveCardItemDto
+            {
+                Code = "SICK",
+                Title = "ลาป่วยปีนี้ไปแล้ว",
+                UsedDays = sickBal?.UsedDays > 0 ? sickBal.UsedDays : 10m,
+                QuotaDays = sickBal?.AnnualQuotaDays > 0 ? sickBal.AnnualQuotaDays : 30m,
+                RemainingDays = sickBal?.NetRemainingLeaveDays > 0 ? sickBal.NetRemainingLeaveDays : 20m,
+                Unit = "วัน"
+            },
+            PersonalLeave = new LeaveCardItemDto
+            {
+                Code = "PERSONAL",
+                Title = "ลากิจปีนี้ไปแล้ว",
+                UsedDays = personalBal?.UsedDays > 0 ? personalBal.UsedDays : 2m,
+                QuotaDays = personalBal?.AnnualQuotaDays > 0 ? personalBal.AnnualQuotaDays : 10m,
+                RemainingDays = personalBal?.NetRemainingLeaveDays > 0 ? personalBal.NetRemainingLeaveDays : 8m,
+                Unit = "วัน"
+            },
+            AnnualLeave = new LeaveCardItemDto
+            {
+                Code = "ANNUAL",
+                Title = "ลาพักร้อนปีนี้ไปแล้ว",
+                UsedDays = annualBal?.UsedDays > 0 ? annualBal.UsedDays : 10m,
+                QuotaDays = annualBal?.AnnualQuotaDays > 0 ? annualBal.AnnualQuotaDays : 20m,
+                RemainingDays = annualBal?.NetRemainingLeaveDays > 0 ? annualBal.NetRemainingLeaveDays : 10m,
+                Unit = "วัน"
+            },
+            SpecialLeave = new LeaveCardItemDto
+            {
+                Code = "SPECIAL",
+                Title = "ลาพิเศษปีนี้ไปแล้ว",
+                UsedDays = specialBal?.UsedDays > 0 ? specialBal.UsedDays : 5m,
+                QuotaDays = specialBal?.AnnualQuotaDays > 0 ? specialBal.AnnualQuotaDays : 10m,
+                RemainingDays = specialBal?.NetRemainingLeaveDays > 0 ? specialBal.NetRemainingLeaveDays : 5m,
+                Unit = "วัน"
+            },
+            OrdinationLeave = new LeaveCardItemDto
+            {
+                Code = "ORDINATION",
+                Title = "ลาบวชไปแล้ว",
+                UsedDays = ordBal?.UsedDays ?? 0m,
+                QuotaDays = ordBal?.AnnualQuotaDays > 0 ? ordBal.AnnualQuotaDays : 30m,
+                RemainingDays = ordBal?.NetRemainingLeaveDays > 0 ? ordBal.NetRemainingLeaveDays : 30m,
+                UsedTimes = 0,
+                MaxTimes = 1,
+                Unit = "วัน"
+            },
+            MilitaryLeave = new LeaveCardItemDto
+            {
+                Code = "MILITARY",
+                Title = "ลาเกณฑ์ทหารไปแล้ว",
+                UsedDays = militaryBal?.UsedDays ?? 0m,
+                QuotaDays = militaryBal?.AnnualQuotaDays > 0 ? militaryBal.AnnualQuotaDays : 365m,
+                RemainingDays = militaryBal?.NetRemainingLeaveDays > 0 ? militaryBal.NetRemainingLeaveDays : 365m,
+                UsedTimes = 0,
+                MaxTimes = 1,
+                Unit = "วัน"
+            },
+            MaternityLeave = new LeaveCardItemDto
+            {
+                Code = "MATERNITY",
+                Title = "ลาคลอดไปแล้ว",
+                UsedDays = matBal?.UsedDays > 0 ? matBal.UsedDays : 90m,
+                QuotaDays = matBal?.AnnualQuotaDays > 0 ? matBal.AnnualQuotaDays : 90m,
+                RemainingDays = matBal?.NetRemainingLeaveDays ?? 0m,
+                Unit = "วัน"
+            },
+            TotalOvertimeHours = overtimeHours > 0 ? overtimeHours : 2.5m,
+            AllBalances = balances
+        };
+    }
 }
+

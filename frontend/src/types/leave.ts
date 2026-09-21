@@ -241,3 +241,34 @@ export interface LeaveStats {
   rejectedCount?: number;
   cancelledCount?: number;
 }
+
+export interface LeaveCardItem {
+  code: string;
+  title: string;
+  usedDays: number;
+  quotaDays: number;
+  remainingDays: number;
+  usedTimes?: number | null;
+  maxTimes?: number | null;
+  unit: string;
+}
+
+export interface MyLeaveSummary {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string;
+  positionTitle: string;
+  year: number;
+  yearThai: number;
+  sickLeave: LeaveCardItem;
+  personalLeave: LeaveCardItem;
+  annualLeave: LeaveCardItem;
+  specialLeave: LeaveCardItem;
+  ordinationLeave: LeaveCardItem;
+  militaryLeave: LeaveCardItem;
+  maternityLeave: LeaveCardItem;
+  totalOvertimeHours: number;
+  allBalances: LeaveBalance[];
+}
+

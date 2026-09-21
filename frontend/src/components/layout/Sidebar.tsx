@@ -63,6 +63,13 @@ const menuItems: MenuItem[] = [
     icon: User,
   },
   {
+    title: 'ยอดวันลาคงเหลือ',
+    href: '/leave-balances',
+    matchPrefix: '/leave-balances',
+    icon: CalendarCheck,
+  },
+
+  {
     title: 'บันทึกเวลาของฉัน (ESS)',
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',

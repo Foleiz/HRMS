@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
@@ -16,11 +17,33 @@ namespace Hrms.Api.Controllers;
 public class LeaveBalancesController : ControllerBase
 {
     private readonly ILeaveBalanceService _balanceService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public LeaveBalancesController(ILeaveBalanceService balanceService)
+    public LeaveBalancesController(
+        ILeaveBalanceService balanceService,
+        ICurrentUserService currentUserService)
     {
         _balanceService = balanceService;
+        _currentUserService = currentUserService;
     }
+
+    /// <summary>
+    /// ดึงข้อมูลสรุปยอดวันลาคงเหลือ 8 หมวดหมู่ประจำตัวพนักงานสำหรับหน้า ESS
+    /// </summary>
+    [HttpGet("my-summary")]
+    [ProducesResponseType(typeof(ApiResponse<MyLeaveSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<MyLeaveSummaryDto>>> GetMySummary(
+        [FromQuery] int? year,
+        [FromQuery] long? employeeId,
+        CancellationToken cancellationToken)
+    {
+        long targetEmpId = employeeId ?? _currentUserService.EmployeeId ?? 1;
+        int targetYear = year ?? DateTime.Now.Year;
+
+        var result = await _balanceService.GetMySummaryAsync(targetEmpId, targetYear, cancellationToken);
+        return Ok(ApiResponse<MyLeaveSummaryDto>.Ok(result, "ดึงข้อมูลสรุปยอดวันลาคงเหลือสำเร็จ"));
+    }
+
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<LeaveBalanceDto>>), StatusCodes.Status200OK)]

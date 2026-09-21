@@ -57,6 +57,9 @@ export const Navbar: React.FC = () => {
     // โปรไฟล์ (Profile / ESS)
     if (pathname.startsWith('/profile')) return { section: 'โปรไฟล์', page: 'แก้ไขโปรไฟล์' };
 
+    // ยอดวันลาคงเหลือ (ESS)
+    if (pathname.startsWith('/leave-balances')) return { section: 'ยอดวันลาคงเหลือ', page: 'ภาพรวมยอดวันลา' };
+
     // 4. บันทึกเวลาของฉัน (ESS)
     if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
 

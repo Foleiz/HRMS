@@ -17,7 +17,9 @@ import {
   CreateLeaveRequestPayload,
   CreateMyLeaveRequestPayload,
   ApprovalTimeline,
+  MyLeaveSummary,
 } from '@/types/leave';
+
 
 /**
  * Service สำหรับเรียก API จัดการการลา (Leave Management)
@@ -90,6 +92,13 @@ export const leaveService = {
     const res = await apiClient.post<ApiResponse<InitializeYearBalanceResult>>('/leave-balances/initialize-year', data);
     return res.data.data;
   },
+
+  // สรุปยอดวันลาคงเหลือ 8 หมวดหมู่สำหรับพนักงาน (ESS)
+  async getMyLeaveSummary(params?: { year?: number; employeeId?: number }): Promise<MyLeaveSummary> {
+    const res = await apiClient.get<ApiResponse<MyLeaveSummary>>('/leave-balances/my-summary', { params });
+    return res.data.data;
+  },
+
 
   // === 4. Leave Requests (คำร้องขอลาหยุดงาน) ===
   async getLeaveRequests(params?: { employeeId?: number; status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
