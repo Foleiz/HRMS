@@ -48,7 +48,7 @@ export default function MySalaryPage() {
   // Search & Pagination
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState<number>(5);
 
   // Breadcrumb sync
   useEffect(() => {
@@ -592,11 +592,28 @@ export default function MySalaryPage() {
             </div>
           </div>
 
-          {/* Pagination */}
+          {/* Pagination & Page Size Selector */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 border-t border-slate-100">
-            <span>
-              แสดงผล {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-slate-600">แสดงผล</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
+              >
+                <option value={5}>5 รายการ / หน้า</option>
+                <option value={8}>8 รายการ / หน้า</option>
+                <option value={10}>10 รายการ / หน้า</option>
+                <option value={12}>12 รายการ / หน้า</option>
+                <option value={20}>20 รายการ / หน้า</option>
+              </select>
+              <span className="text-slate-400">
+                (แสดง {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ)
+              </span>
+            </div>
 
             <div className="flex items-center gap-1">
               <button
