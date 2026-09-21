@@ -754,18 +754,61 @@ public class SalaryService : ISalaryService
     public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
     {
         var period = await _context.PayrollPeriods
-            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+
+        var activeEmployees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .OrderBy(e => e.EmployeeCode)
+            .ToListAsync(cancellationToken);
 
         var payrolls = await _context.Payrolls
             .Include(p => p.Employee)
             .Include(p => p.Details).ThenInclude(d => d.PayrollItem)
             .Where(p => p.PeriodId == periodId)
             .OrderBy(p => p.Id)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var existingEmployeeIds = payrolls.Select(p => p.EmployeeId).ToHashSet();
+        var missingEmployees = activeEmployees.Where(e => !existingEmployeeIds.Contains(e.Id)).ToList();
+
+        if (missingEmployees.Any() && period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
+        {
+            var newPayrolls = missingEmployees.Select(emp =>
+            {
+                var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
+                return new Domain.Entities.Payroll
+                {
+                    PeriodId = period.Id,
+                    EmployeeId = emp.Id,
+                    TotalGrossIncome = 0,
+                    TotalDeductionAmount = 0,
+                    NetPayableSalary = 0,
+                    Status = "DRAFT",
+                    SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim(),
+                    SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-"
+                };
+            }).ToList();
+
+            _context.Payrolls.AddRange(newPayrolls);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            payrolls = await _context.Payrolls
+                .Include(p => p.Employee)
+                .Include(p => p.Details).ThenInclude(d => d.PayrollItem)
+                .Where(p => p.PeriodId == periodId)
+                .OrderBy(p => p.Id)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
         var employeeIds = payrolls.Select(p => p.EmployeeId).Distinct().ToList();
+
+        var allSalaries = await _context.EmployeeSalaries
+            .Where(s => employeeIds.Contains(s.EmployeeId))
+            .OrderByDescending(s => s.EffectiveFrom)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         var employeeBankAccounts = employeeIds.Any()
             ? await _context.EmployeeBankAccounts
@@ -792,7 +835,9 @@ public class SalaryService : ISalaryService
 
         return payrolls.Select(p =>
         {
-            var isCalculated = p.Status != "DRAFT" && p.TotalGrossIncome > 0;
+            var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == p.EmployeeId);
+            var hasSalary = empSalary != null && empSalary.BaseSalary > 0;
+            var isCalculated = p.Status != "DRAFT" && p.TotalGrossIncome > 0 && hasSalary;
             var empBank = employeeBankAccounts.FirstOrDefault(b => b.EmployeeId == p.EmployeeId && b.IsPrimary)
                        ?? employeeBankAccounts.FirstOrDefault(b => b.EmployeeId == p.EmployeeId);
 
@@ -813,7 +858,9 @@ public class SalaryService : ISalaryService
                 .Select(d => d.PayrollItem!.ItemName)
                 .ToList();
 
-            string? adjustmentsSummary = adjustments.Any() ? string.Join(", ", adjustments) : null;
+            string? adjustmentsSummary = !hasSalary
+                ? "⚠️ ยังไม่ระบุฐานเงินเดือน"
+                : (adjustments.Any() ? string.Join(", ", adjustments) : (p.EmployeeId % 3 == 1 ? "ค่าคอมมิชชั่นโปรเจกต์ A" : (p.EmployeeId % 3 == 0 ? "เบี้ยขยัน" : "-")));
 
             decimal otHours = (p.EmployeeId % 3 == 0) ? 8.0m : (p.EmployeeId % 2 == 0 ? 0.0m : 6.0m);
             if (totalLeaveDays == 0 && p.EmployeeId % 2 == 1)
@@ -827,9 +874,19 @@ public class SalaryService : ISalaryService
                 leaveSummary = "ลาพักร้อน 1 วัน";
             }
 
-            var isComplete = pendingLeaves.Count == 0 && (p.EmployeeId % 3 != 0);
-            var inputStatus = isComplete ? "COMPLETE" : "PENDING_CHECK";
-            var inputStatusText = isComplete ? "ครบแล้ว" : "รอ HR ตรวจสอบ";
+            string inputStatus;
+            string inputStatusText;
+            if (!hasSalary)
+            {
+                inputStatus = "PENDING_SALARY";
+                inputStatusText = "ยังไม่ระบุฐานเงินเดือน";
+            }
+            else
+            {
+                var isComplete = pendingLeaves.Count == 0 && (p.EmployeeId % 3 != 0);
+                inputStatus = isComplete ? "COMPLETE" : "PENDING_CHECK";
+                inputStatusText = isComplete ? "ครบแล้ว" : "รอ HR ตรวจสอบ";
+            }
 
             return new PayrollRecordDto
             {
@@ -856,7 +913,7 @@ public class SalaryService : ISalaryService
                 LeaveDays = totalLeaveDays,
                 LeaveSummary = leaveSummary,
                 OvertimeHours = otHours,
-                AdjustmentsSummary = adjustmentsSummary ?? (p.EmployeeId % 3 == 1 ? "ค่าคอมมิชชั่นโปรเจกต์ A" : (p.EmployeeId % 3 == 0 ? "เบี้ยขยัน" : "-")),
+                AdjustmentsSummary = adjustmentsSummary,
                 InputStatus = inputStatus,
                 InputStatusText = inputStatusText,
 
@@ -1059,7 +1116,40 @@ public class SalaryService : ISalaryService
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == emp.Id);
             decimal baseSalary = empSalary?.BaseSalary ?? 0;
 
-            if (baseSalary <= 0) continue;
+            var existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
+
+            if (baseSalary <= 0)
+            {
+                if (existingPayroll == null)
+                {
+                    var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
+                    existingPayroll = new Domain.Entities.Payroll
+                    {
+                        PeriodId = period.Id,
+                        EmployeeId = emp.Id,
+                        TotalGrossIncome = 0,
+                        TotalDeductionAmount = 0,
+                        NetPayableSalary = 0,
+                        Status = "DRAFT",
+                        SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim(),
+                        SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-"
+                    };
+                    _context.Payrolls.Add(existingPayroll);
+                }
+                else
+                {
+                    existingPayroll.TotalGrossIncome = 0;
+                    existingPayroll.TotalDeductionAmount = 0;
+                    existingPayroll.NetPayableSalary = 0;
+                    existingPayroll.Status = "DRAFT";
+                    if (existingPayroll.Details.Any())
+                    {
+                        _context.PayrollDetails.RemoveRange(existingPayroll.Details);
+                        existingPayroll.Details.Clear();
+                    }
+                }
+                continue;
+            }
 
             // 1. Calculate SSO
             decimal ssoBase = Math.Min(Math.Max(baseSalary, ssoMinWage), ssoMaxWage);
@@ -1095,7 +1185,7 @@ public class SalaryService : ISalaryService
             decimal netPay = Math.Max(0, totalGross - totalDeductions);
 
             // Find existing payroll record or create new
-            var existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
+            existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
             if (existingPayroll == null)
             {
                 existingPayroll = new Domain.Entities.Payroll
