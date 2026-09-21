@@ -3864,9 +3864,11 @@ export default function PayrollPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs"
+                  disabled={isCreatingPeriod}
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
-                  สร้างรอบเงินเดือน
+                  {isCreatingPeriod && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isCreatingPeriod ? 'กำลังสร้าง...' : 'สร้างรอบเงินเดือน'}</span>
                 </button>
               </div>
             </form>
