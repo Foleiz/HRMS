@@ -77,9 +77,15 @@ apiClient.interceptors.response.use(
  */
 export const getAvatarUrl = (avatarUrl?: string | null): string | null => {
   if (!avatarUrl) return null;
-  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+  if (
+    avatarUrl.startsWith('http://') ||
+    avatarUrl.startsWith('https://') ||
+    avatarUrl.startsWith('blob:') ||
+    avatarUrl.startsWith('data:')
+  ) {
     return avatarUrl;
   }
   const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api').replace(/\/api\/?$/, '');
   return `${base}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
 };
+

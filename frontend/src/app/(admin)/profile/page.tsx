@@ -6,6 +6,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { employeeService } from '@/services/employeeService';
 import { authService } from '@/services/authService';
+import { getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import {
   User,
@@ -142,13 +143,16 @@ export default function ProfilePage() {
       });
 
       if (data.avatarUrl) {
-        setAvatarPreview(data.avatarUrl);
+        setAvatarPreview(getAvatarUrl(data.avatarUrl));
+      } else {
+        setAvatarPreview(null);
       }
       if (data.signatureUrl) {
-        setSignaturePreview(data.signatureUrl);
+        setSignaturePreview(getAvatarUrl(data.signatureUrl));
       } else {
         setSignaturePreview(null);
       }
+
     } catch (err: any) {
       console.error('Failed to load profile:', err);
       error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
@@ -251,15 +255,24 @@ export default function ProfilePage() {
       return;
     }
 
+    // Instant local preview
+    const localUrl = URL.createObjectURL(file);
+    setAvatarPreview(localUrl);
     setIsUploadingAvatar(true);
+
     try {
       const url = await employeeService.uploadAvatar(employee.id, file);
-      setAvatarPreview(url);
+      setAvatarPreview(getAvatarUrl(url));
       success('อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว');
+      await fetchEmployeeData();
     } catch (err: any) {
+      setAvatarPreview(employee.avatarUrl ? getAvatarUrl(employee.avatarUrl) : null);
       error(err.message || 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ');
     } finally {
       setIsUploadingAvatar(false);
+      if (avatarFileInputRef.current) {
+        avatarFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -278,15 +291,24 @@ export default function ProfilePage() {
       return;
     }
 
+    // Instant local preview
+    const localUrl = URL.createObjectURL(file);
+    setSignaturePreview(localUrl);
     setIsUploadingSig(true);
+
     try {
       const url = await employeeService.uploadSignature(employee.id, file);
-      setSignaturePreview(url);
+      setSignaturePreview(getAvatarUrl(url));
       success('อัปโหลดลายเซ็นดิจิทัลเรียบร้อยแล้ว');
+      await fetchEmployeeData();
     } catch (err: any) {
+      setSignaturePreview(employee.signatureUrl ? getAvatarUrl(employee.signatureUrl) : null);
       error(err.message || 'อัปโหลดลายเซ็นไม่สำเร็จ');
     } finally {
       setIsUploadingSig(false);
+      if (sigFileInputRef.current) {
+        sigFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -298,7 +320,11 @@ export default function ProfilePage() {
     try {
       await employeeService.deleteSignature(employee.id);
       setSignaturePreview(null);
+      if (sigFileInputRef.current) {
+        sigFileInputRef.current.value = '';
+      }
       success('ลบลายเซ็นดิจิทัลเรียบร้อยแล้ว');
+      await fetchEmployeeData();
     } catch (err: any) {
       error(err.message || 'ลบลายเซ็นไม่สำเร็จ');
     }
@@ -385,8 +411,9 @@ export default function ProfilePage() {
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
-                      alt="Profile Avatar"
+                      alt="รูปโปรไฟล์"
                       className="w-full h-full object-cover"
+                      onError={() => setAvatarPreview(null)}
                     />
                   ) : (
                     <span>
@@ -851,6 +878,7 @@ export default function ProfilePage() {
                         src={signaturePreview}
                         alt="Digital Signature"
                         className="max-h-full max-w-full object-contain"
+                        onError={() => setSignaturePreview(null)}
                       />
                     ) : (
                       <div className="text-center text-slate-400 text-xs font-medium">

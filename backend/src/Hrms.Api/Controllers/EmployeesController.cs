@@ -154,9 +154,10 @@ public class EmployeesController : ControllerBase
     }
 
     /// <summary>
-    /// ดึงไฟล์ภาพลายเซ็นพนักงาน (Binary stream)
+    /// ดึงไฟล์ภาพลายเซ็นพนักงาน (ส่งคืนเป็น Binary Stream)
     /// </summary>
     [HttpGet("{id:long}/signature")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSignature(
