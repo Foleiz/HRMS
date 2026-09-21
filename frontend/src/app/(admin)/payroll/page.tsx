@@ -2862,39 +2862,14 @@ export default function PayrollPage() {
                         className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
                       />
                       {bankReceiptFile && (
-                        <div className="pt-2 flex flex-wrap gap-2 justify-end">
+                        <div className="pt-2 flex justify-end">
                           <button
                             onClick={() => handleUploadBankReceiptSubmit(false)}
                             disabled={isUploadingBankReceipt}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
-                          >
-                            {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Check className="w-3.5 h-3.5" />}
-                            <span>บันทึกสลิปธนาคาร (เสร็จสิ้นขั้นตอนที่ 3)</span>
-                          </button>
-                          <button
-                            onClick={() => handleUploadBankReceiptSubmit(true)}
-                            disabled={isUploadingBankReceipt}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
                           >
                             {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                            <span>บันทึกสลิป & ยืนยันรอบเงินเดือน (PAID)</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {/* If receipt is already uploaded, but status is not PAID yet, show button to advance to PAID (Step 4) */}
-                      {selectedPeriod?.hasBankReceipt && selectedPeriod?.status === 'PROCESSING_BANK' && (
-                        <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-xs text-slate-600">
-                            ขั้นตอนที่ 3 ฝ่ายการเงินตรวจสลิปเสร็จเรียบร้อยแล้ว กดปุ่มเพื่อเข้าสู่สถานะ PAID
-                          </span>
-                          <button
-                            onClick={handleMarkPaid}
-                            disabled={isConfirmingPayment}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
-                          >
-                            {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                            <span>ยืนยันเข้าสู่สถานะ PAID (ขั้นตอนที่ 4)</span>
+                            <span>บันทึกสลิปธนาคาร</span>
                           </button>
                         </div>
                       )}
@@ -2924,6 +2899,31 @@ export default function PayrollPage() {
                     </div>
                   )
                 )
+              )}
+
+              {/* Step 4: HR รับแจ้งสถานะ และ ยืนยันสถานะรอบเงินเดือน (PAID) */}
+              {selectedPeriod?.status === 'PROCESSING_BANK' && selectedPeriod?.hasBankReceipt && (
+                <div className="bg-emerald-50/80 rounded-2xl border border-emerald-200 p-4 space-y-3 mt-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-emerald-900 flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span>ขั้นตอนที่ 4: HR รับแจ้งสถานะ และ ยืนยันรอบเงินเดือน (PAID)</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-emerald-800 leading-relaxed">
+                    ฝ่ายการเงินได้ตรวจสอบและแนบสลิป/ใบเสร็จรวมจากธนาคารเรียบร้อยแล้ว (ขั้นตอนที่ 3 เสร็จสิ้น) กดปุ่มด้านล่างเพื่อเสร็จสิ้นขั้นตอนที่ 4 และเปลี่ยนสถานะรอบเงินเดือนเป็น <strong>PAID (จ่ายเงินสำเร็จสมบูรณ์)</strong>
+                  </p>
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      onClick={handleMarkPaid}
+                      disabled={isConfirmingPayment}
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all hover:scale-102"
+                    >
+                      {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      <span>ยืนยันสถานะรอบเงินเดือน (PAID)</span>
+                    </button>
+                  </div>
+                </div>
               )}
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
