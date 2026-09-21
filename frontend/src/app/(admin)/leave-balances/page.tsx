@@ -246,7 +246,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary?.sickLeave ? `${summary.sickLeave.usedDays}/${summary.sickLeave.quotaDays}` : '10/30'}
+                  {summary?.sickLeave ? `${summary.sickLeave.usedDays}/${summary.sickLeave.quotaDays}` : '0/30'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
@@ -266,7 +266,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary?.personalLeave ? `${summary.personalLeave.usedDays}/${summary.personalLeave.quotaDays}` : '2/10'}
+                  {summary?.personalLeave ? `${summary.personalLeave.usedDays}/${summary.personalLeave.quotaDays}` : '0/3'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
@@ -286,7 +286,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary?.annualLeave ? `${summary.annualLeave.usedDays}/${summary.annualLeave.quotaDays}` : '10/20'}
+                  {summary?.annualLeave ? `${summary.annualLeave.usedDays}/${summary.annualLeave.quotaDays}` : '0/6'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
@@ -306,7 +306,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary?.specialLeave ? `${summary.specialLeave.usedDays}/${summary.specialLeave.quotaDays}` : '5/10'}
+                  {summary?.specialLeave ? `${summary.specialLeave.usedDays}/${summary.specialLeave.quotaDays}` : '0/10'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
@@ -378,7 +378,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary?.maternityLeave ? `${summary.maternityLeave.usedDays}/${summary.maternityLeave.quotaDays}` : '90/90'}
+                  {summary?.maternityLeave ? `${summary.maternityLeave.usedDays}/${summary.maternityLeave.quotaDays}` : '0/98'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
@@ -398,7 +398,7 @@ export default function LeaveBalancesPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {summary ? summary.totalOvertimeHours : '2.5'}
+                  {summary ? summary.totalOvertimeHours : '0'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">ชั่วโมง</span>
               </div>
