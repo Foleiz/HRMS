@@ -2199,7 +2199,7 @@ export default function PayrollPage() {
                         </button>
                       )}
 
-                      {selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' ? (
+                      {selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
                         <>
                           <button
                             onClick={handleDownloadBankFile}
@@ -2228,6 +2228,13 @@ export default function PayrollPage() {
                               <ShieldCheck className="w-3.5 h-3.5" />
                               <span>ปิดรอบเงินเดือน</span>
                             </button>
+                          )}
+
+                          {selectedPeriod?.status === 'CLOSED' && (
+                            <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-semibold">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
+                            </span>
                           )}
                         </>
                       ) : (
@@ -2263,10 +2270,10 @@ export default function PayrollPage() {
                             <span>อนุมัติรอบเงินเดือน</span>
                           </button>
                         </>
-                      ) : selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' ? (
+                      ) : selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>CEO อนุมัติรอบนี้เรียบร้อยแล้ว</span>
+                          <span>{selectedPeriod?.status === 'CLOSED' ? 'ปิดรอบเงินเดือนสมบูรณ์แล้ว' : 'CEO อนุมัติรอบนี้เรียบร้อยแล้ว'}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
