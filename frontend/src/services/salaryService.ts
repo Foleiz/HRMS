@@ -271,8 +271,8 @@ export const salaryService = {
     return res.data.data;
   },
 
-  /** ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร และเปลี่ยนสถานะเป็น PAID */
-  async uploadBankReceipt(periodId: number, payload: { base64Data: string; fileName: string; contentType: string; note?: string }): Promise<PayrollPeriod> {
+  /** ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร */
+  async uploadBankReceipt(periodId: number, payload: { base64Data: string; fileName: string; contentType: string; note?: string; markAsPaid?: boolean }): Promise<PayrollPeriod> {
     const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/upload-bank-receipt`, payload);
     return res.data.data;
   },

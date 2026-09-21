@@ -550,7 +550,7 @@ export default function PayrollPage() {
     }
   };
 
-  const handleUploadBankReceiptSubmit = async () => {
+  const handleUploadBankReceiptSubmit = async (markAsPaid: boolean = true) => {
     if (!selectedPeriod || !bankReceiptFile) return;
     setIsUploadingBankReceipt(true);
     try {
@@ -563,12 +563,17 @@ export default function PayrollPage() {
             fileName: bankReceiptFile.name,
             contentType: bankReceiptFile.type || 'application/pdf',
             note: confirmPaymentNote.trim() || undefined,
+            markAsPaid,
           });
           setSelectedPeriod(updated);
           setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
           setConfirmPaymentModalOpen(false);
           setBankReceiptFile(null);
-          showToast('🏦 อัปโหลดสลิป/ใบเสร็จการโอนเงินรวมของธนาคารสำเร็จ! รอบเงินเดือนเปลี่ยนเป็น PAID (โอนเงินสำเร็จ)');
+          if (markAsPaid) {
+            showToast('🏦 อัปโหลดสลิปธนาคารและยืนยันรอบเงินเดือนเป็น PAID สำเร็จ!');
+          } else {
+            showToast('📄 อัปโหลดสลิป/ใบเสร็จธนาคารเรียบร้อยแล้ว (ขั้นตอนที่ 3 เสร็จสิ้น)');
+          }
         } catch (err: any) {
           showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอัปโหลดสลิปธนาคาร');
         } finally {
@@ -579,6 +584,21 @@ export default function PayrollPage() {
     } catch (err: any) {
       showToast('เกิดข้อผิดพลาดในการอ่านไฟล์');
       setIsUploadingBankReceipt(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!selectedPeriod) return;
+    setIsConfirmingPayment(true);
+    try {
+      const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, 'PAID');
+      setSelectedPeriod(updated);
+      setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      showToast('🎉 ยืนยันรอบเงินเดือนเข้าสู่สถานะ PAID เรียบร้อยแล้ว (ขั้นตอนที่ 4 เสร็จสิ้น)');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะเป็น PAID');
+    } finally {
+      setIsConfirmingPayment(false);
     }
   };
 
@@ -747,7 +767,7 @@ export default function PayrollPage() {
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       setConfirmPaymentModalOpen(false);
       setConfirmPaymentNote('');
-      showToast('🏦 Confirm Bank Transfer สำเร็จ! รอบเงินเดือนเปลี่ยนเป็น PAID');
+      showToast('🏦 ยืนยันธนาคารโอนเงินเรียบร้อยแล้ว (ขั้นตอนที่ 2 เสร็จสิ้น -> รอดำเนินการขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป/ใบเสร็จ)');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการ Confirm Bank Transfer');
     } finally {
@@ -1986,6 +2006,8 @@ export default function PayrollPage() {
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : selectedPeriod.status === 'PROCESSING_BANK'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
                             : selectedPeriod.status === 'APPROVED'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : selectedPeriod.status === 'PAID'
@@ -1999,6 +2021,8 @@ export default function PayrollPage() {
                           ? 'การเงินตรวจแล้ว (รออนุมัติ)'
                           : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
                           ? 'ส่งการเงินตรวจทานแล้ว'
+                          : selectedPeriod.status === 'PROCESSING_BANK'
+                          ? 'ส่งโอนธนาคารแล้ว (รอการเงินตรวจสลิป)'
                           : selectedPeriod.statusText}
                       </span>
                     )}
@@ -2715,12 +2739,32 @@ export default function PayrollPage() {
               {/* Steps for Flow 1 */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 {[
-                  { step: '1', title: 'ดาวน์โหลดไฟล์', desc: 'ผู้อนุมัติตรวจสอบและดาวน์โหลดไฟล์ .CSV สำหรับส่งธนาคาร', done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' },
-                  { step: '2', title: 'ธนาคารโอนเงิน', desc: 'ธนาคารทำการโอนเงินตามไฟล์ Bank Batch', done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' },
-                  { step: '3', title: 'การเงินตรวจสลิป', desc: 'ฝ่ายการเงินรับสลิป/ใบเสร็จรวมจากธนาคาร แนบยืนยันยอด', done: selectedPeriod?.status === 'PAID' },
-                  { step: '4', title: 'HR รับแจ้งสถานะ', desc: 'HR รับแจ้งสถานะโอนสำเร็จ (PAID) โดยไม่ต้องเห็นสลิปโอน', done: selectedPeriod?.status === 'PAID' },
+                  {
+                    step: '1',
+                    title: 'ดาวน์โหลดไฟล์',
+                    desc: 'ผู้อนุมัติตรวจสอบและดาวน์โหลดไฟล์ .CSV สำหรับส่งธนาคาร',
+                    done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' || selectedPeriod?.status === 'PROCESSING_BANK' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
+                  },
+                  {
+                    step: '2',
+                    title: 'ธนาคารโอนเงิน',
+                    desc: 'ธนาคารทำการโอนเงินตามไฟล์ Bank Batch (กดยืนยันเมื่อโอนแล้ว)',
+                    done: selectedPeriod?.status === 'PROCESSING_BANK' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
+                  },
+                  {
+                    step: '3',
+                    title: 'การเงินตรวจสลิป',
+                    desc: 'ฝ่ายการเงินรับสลิป/ใบเสร็จรวมจากธนาคาร และแนบไฟล์ยืนยัน',
+                    done: !!selectedPeriod?.hasBankReceipt,
+                  },
+                  {
+                    step: '4',
+                    title: 'HR รับแจ้งสถานะ',
+                    desc: 'ระบบเข้าสู่สถานะจ่ายแล้วสมบูรณ์ (PAID)',
+                    done: selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
+                  },
                 ].map(({ step, title, desc, done }) => (
-                  <div key={step} className={`p-4 rounded-xl border ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <div key={step} className={`p-4 rounded-xl border transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-2 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
                       {done ? '✓' : step}
                     </div>
@@ -2730,27 +2774,84 @@ export default function PayrollPage() {
                 ))}
               </div>
 
-              {/* Finance Corporate Bank Receipt Upload Zone */}
+              {/* Step 2 Confirmation Section */}
+              {(selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' || selectedPeriod?.status === 'PROCESSING_BANK') && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
+                    <span>📁 ไฟล์โอนเงินพร้อมใช้งาน</span>
+                    <span className={`px-2.5 py-0.5 rounded-md font-semibold text-[11px] ${
+                      selectedPeriod?.status === 'PROCESSING_BANK'
+                        ? 'bg-blue-100 text-blue-800'
+                        : selectedPeriod?.status === 'PAID'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      สถานะ: {selectedPeriod?.status === 'PROCESSING_BANK' ? 'ส่งโอนธนาคารแล้ว (PROCESSING_BANK)' : selectedPeriod?.statusText || selectedPeriod?.status}
+                    </span>
+                  </div>
+
+                  {selectedPeriod?.status !== 'PAID' && selectedPeriod?.status !== 'PROCESSING_BANK' && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-emerald-900 text-xs">
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>ขั้นตอนที่ 2: ยืนยันว่าธนาคารโอนเงินแล้ว</span>
+                      </div>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        1. นำไฟล์ .CSV ที่ดาวน์โหลดไปอัปโหลดเข้าระบบธนาคาร (Corporate iBanking)<br />
+                        2. เมื่อธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว ให้กดปุ่ม <strong>"ยืนยันว่าธนาคารโอนเงินแล้ว"</strong> ด้านล่างนี้เพื่อบันทึกสถานะและส่งต่อให้ฝ่ายการเงินตรวจสลิป
+                      </p>
+                      <div className="pt-2">
+                        <button
+                          onClick={() => setConfirmPaymentModalOpen(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-102"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>ยืนยันว่าธนาคารโอนเงินแล้ว</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPeriod?.status === 'PROCESSING_BANK' && (
+                    <div className="p-4 bg-blue-50 border border-blue-200/80 rounded-2xl space-y-1.5">
+                      <div className="flex items-center gap-2 font-bold text-blue-900 text-xs">
+                        <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>ขั้นตอนที่ 2 สำเร็จ: ธนาคารโอนเงินเรียบร้อยแล้ว</span>
+                      </div>
+                      <p className="text-xs text-blue-800 leading-relaxed">
+                        ระบบได้รับการยืนยันการโอนเงินจากธนาคารแล้ว ขั้นตอนถัดไปคือ <strong>ขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป</strong> โดยฝ่ายการเงินจะแนบไฟล์ใบเสร็จ/สลิปรวมของธนาคาร เพื่อเสร็จสิ้นขั้นตอนที่ 3 และเข้าสู่สถานะ <strong>PAID (ขั้นตอนที่ 4)</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Finance Corporate Bank Receipt Upload Zone (Step 3 & Step 4) */}
               {isFinance ? (
                 <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3 mt-3">
                   <div className="flex items-center justify-between">
                     <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
                       <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                      <span>สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน/บัญชี)</span>
+                      <span>ขั้นตอนที่ 3: สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน/บัญชี)</span>
                     </div>
                     {selectedPeriod?.hasBankReceipt && (
-                      <button
-                        onClick={handleDownloadBankReceipt}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>ดาวน์โหลดใบเสร็จธนาคาร</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                          ✓ แนบสลิปธนาคารแล้ว: {selectedPeriod?.bankReceiptFileName || 'receipt.pdf'}
+                        </span>
+                        <button
+                          onClick={handleDownloadBankReceipt}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>ดาวน์โหลด</span>
+                        </button>
+                      </div>
                     )}
                   </div>
 
                   {selectedPeriod?.status !== 'PAID' && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <label className="block text-[11px] font-semibold text-slate-600">
                         อัปโหลดสลิป/ใบเสร็จยืนยันการโอนเงินรวมจากธนาคาร (PDF / JPG / PNG)
                       </label>
@@ -2761,14 +2862,39 @@ export default function PayrollPage() {
                         className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
                       />
                       {bankReceiptFile && (
-                        <div className="pt-2 flex justify-end">
+                        <div className="pt-2 flex flex-wrap gap-2 justify-end">
                           <button
-                            onClick={handleUploadBankReceiptSubmit}
+                            onClick={() => handleUploadBankReceiptSubmit(false)}
                             disabled={isUploadingBankReceipt}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
                           >
-                            {isUploadingBankReceipt ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <CheckCircle className="w-4 h-4" />}
-                            <span>บันทึกสลิปธนาคาร & ยืนยันรอบเงินเดือน (PAID)</span>
+                            {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Check className="w-3.5 h-3.5" />}
+                            <span>บันทึกสลิปธนาคาร (เสร็จสิ้นขั้นตอนที่ 3)</span>
+                          </button>
+                          <button
+                            onClick={() => handleUploadBankReceiptSubmit(true)}
+                            disabled={isUploadingBankReceipt}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
+                          >
+                            {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                            <span>บันทึกสลิป & ยืนยันรอบเงินเดือน (PAID)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* If receipt is already uploaded, but status is not PAID yet, show button to advance to PAID (Step 4) */}
+                      {selectedPeriod?.hasBankReceipt && selectedPeriod?.status === 'PROCESSING_BANK' && (
+                        <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs text-slate-600">
+                            ขั้นตอนที่ 3 ฝ่ายการเงินตรวจสลิปเสร็จเรียบร้อยแล้ว กดปุ่มเพื่อเข้าสู่สถานะ PAID
+                          </span>
+                          <button
+                            onClick={handleMarkPaid}
+                            disabled={isConfirmingPayment}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                          >
+                            {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                            <span>ยืนยันเข้าสู่สถานะ PAID (ขั้นตอนที่ 4)</span>
                           </button>
                         </div>
                       )}
@@ -2776,7 +2902,7 @@ export default function PayrollPage() {
                   )}
                 </div>
               ) : (
-                selectedPeriod?.status === 'PAID' && (
+                selectedPeriod?.status === 'PAID' ? (
                   <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800 mt-3">
                     <div className="flex items-center gap-2">
                       <span className="text-base">✅</span>
@@ -2784,38 +2910,20 @@ export default function PayrollPage() {
                     </div>
                     <span className="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px]">สถานะ: โอนสำเร็จ (PAID)</span>
                   </div>
-                )
-              )}
-
-              {(selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING') && (
-                <div className="space-y-3 pt-2 border-t border-slate-100">
-                  <div className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
-                    <span>📁 ไฟล์โอนเงินพร้อมใช้งาน (สถานะประมวลผล)</span>
-                    <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-semibold text-[11px]">สถานะ: PROCESSING</span>
-                  </div>
-
-                  {selectedPeriod?.status !== 'PAID' && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl space-y-2">
-                      <div className="flex items-center gap-2 font-bold text-emerald-900 text-xs">
-                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>ขั้นตอนถัดไป (Next Process): ยืนยันการโอนเงิน</span>
-                      </div>
-                      <p className="text-xs text-emerald-800 leading-relaxed">
-                        1. นำไฟล์ .CSV ที่ดาวน์โหลดไปอัปโหลดเข้าระบบธนาคาร (Corporate iBanking)<br />
-                        2. เมื่อธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว ให้กดปุ่ม <strong>"CEO Confirm — ธนาคารโอนเงินเสร็จแล้ว"</strong> ด้านล่างนี้เพื่ออนุมัติปิดรอบเงินเดือนเป็น <strong>PAID (จ่ายแล้ว)</strong>
-                      </p>
-                      <div className="pt-2">
-                        <button
-                          onClick={() => setConfirmPaymentModalOpen(true)}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-102"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          <span>CEO Confirm — ธนาคารโอนเงินเสร็จแล้ว</span>
-                        </button>
-                      </div>
+                ) : (
+                  selectedPeriod?.hasBankReceipt && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs text-blue-800 mt-3">
+                      <span>✓ ฝ่ายการเงินได้แนบสลิป/ใบเสร็จของธนาคารแล้ว ({selectedPeriod?.bankReceiptFileName || 'receipt'})</span>
+                      <button
+                        onClick={handleDownloadBankReceipt}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-medium cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>ดาวน์โหลด</span>
+                      </button>
                     </div>
-                  )}
-                </div>
+                  )
+                )
               )}
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -3105,10 +3213,12 @@ export default function PayrollPage() {
               <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="text-center">
                   <div className="text-5xl mb-3">🔐</div>
-                  <h3 className="text-lg font-bold text-slate-900">Confirm การจ่ายเงินเดือน</h3>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'Confirm การจ่ายเงินเดือน'}
+                  </h3>
                   <p className="text-sm text-slate-500 mt-1">
                     {selectedPeriod?.paymentMethod === 'BANK_BATCH'
-                      ? 'ยืนยันว่าธนาคารได้โอนเงินเดือนให้พนักงานทุกคนเสร็จสิ้นแล้ว'
+                      ? 'ยืนยันว่าธนาคารได้โอนเงินเดือนตามไฟล์ Bank Batch เรียบร้อยแล้ว (สถานะจะเปลี่ยนเป็น PROCESSING_BANK เพื่อให้ฝ่ายการเงินตรวจสลิป)'
                       : `ยืนยันว่าโอนเงินเดือนให้พนักงานครบ ${transferList?.totalEmployees} คน พร้อมสลิปครบถ้วนแล้ว`}
                   </p>
                 </div>
@@ -3169,9 +3279,9 @@ export default function PayrollPage() {
                     className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all inline-flex items-center justify-center gap-2"
                   >
                     {isConfirmingPayment ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลัง Confirm...</span></>
+                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลังยืนยัน...</span></>
                     ) : (
-                      <><CheckCircle className="w-4 h-4" /><span>CEO Confirm</span></>
+                      <><CheckCircle className="w-4 h-4" /><span>{selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'CEO Confirm'}</span></>
                     )}
                   </button>
                 </div>

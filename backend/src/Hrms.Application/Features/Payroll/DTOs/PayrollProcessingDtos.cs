@@ -34,6 +34,7 @@ public class UploadBankReceiptRequest
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = string.Empty;
     public string? Note { get; set; }
+    public bool MarkAsPaid { get; set; } = true;
 }
 
 public class PayrollRecordDto

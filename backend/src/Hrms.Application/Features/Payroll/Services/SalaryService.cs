@@ -1007,6 +1007,16 @@ public class SalaryService : ISalaryService
         }
 
         period.Status = normalized;
+        if (normalized == "PAID")
+        {
+            if (period.PaymentConfirmedAt == null) period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+            period.TotalTransferredCount = period.Payrolls.Count;
+            foreach (var p in period.Payrolls)
+            {
+                p.PaymentStatus = "TRANSFERRED";
+                if (p.TransferredAt == null) p.TransferredAt = DateTimeOffset.UtcNow;
+            }
+        }
         if (normalized == "CLOSED")
         {
             period.ClosedAt = DateTimeOffset.UtcNow;
@@ -1730,7 +1740,7 @@ public class SalaryService : ISalaryService
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
             ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
 
-        if (period.Status != "PROCESSING" && period.Status != "APPROVED")
+        if (period.Status != "PROCESSING" && period.Status != "APPROVED" && period.Status != "PROCESSING_BANK")
             throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ PROCESSING เพื่อ Confirm Bank Transfer");
 
         if (string.IsNullOrEmpty(period.PaymentMethod))
@@ -1754,7 +1764,7 @@ public class SalaryService : ISalaryService
             payroll.TransferredAt = DateTimeOffset.UtcNow;
         }
 
-        period.Status = "PAID";
+        period.Status = "PROCESSING_BANK";
         period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
         period.PaymentConfirmedBy = confirmedByEmployeeId;
         period.PaymentNote = request.Note?.Trim();
@@ -1810,16 +1820,22 @@ public class SalaryService : ISalaryService
         period.BankReceiptData = receiptBytes;
         period.BankReceiptFileName = request.FileName;
         period.BankReceiptContentType = request.ContentType;
-        period.Status = "PAID";
-        period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
-        period.PaymentConfirmedBy = employeeId;
-        period.PaymentNote = request.Note?.Trim();
-        period.TotalTransferredCount = period.Payrolls.Count;
 
-        foreach (var p in period.Payrolls)
+        if (request.MarkAsPaid)
         {
-            p.PaymentStatus = "TRANSFERRED";
-            p.TransferredAt = DateTimeOffset.UtcNow;
+            period.Status = "PAID";
+            period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+            period.PaymentConfirmedBy = employeeId;
+            if (!string.IsNullOrWhiteSpace(request.Note))
+                period.PaymentNote = request.Note.Trim();
+            period.TotalTransferredCount = period.Payrolls.Count;
+
+            foreach (var p in period.Payrolls)
+            {
+                p.PaymentStatus = "TRANSFERRED";
+                if (p.TransferredAt == null)
+                    p.TransferredAt = DateTimeOffset.UtcNow;
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);
