@@ -2754,13 +2754,13 @@ export default function PayrollPage() {
                   {
                     step: '3',
                     title: 'การเงินตรวจสลิป',
-                    desc: 'ฝ่ายการเงินรับสลิป/ใบเสร็จรวมจากธนาคาร และแนบไฟล์ยืนยัน',
-                    done: !!selectedPeriod?.hasBankReceipt,
+                    desc: 'ฝ่ายการเงินรับสลิป/ใบเสร็จรวมจากธนาคาร แนบยืนยันยอดและปิดรอบ',
+                    done: selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' || (!!selectedPeriod?.hasBankReceipt && selectedPeriod?.status === 'PROCESSING_BANK'),
                   },
                   {
                     step: '4',
                     title: 'HR รับแจ้งสถานะ',
-                    desc: 'ระบบเข้าสู่สถานะจ่ายแล้วสมบูรณ์ (PAID)',
+                    desc: 'HR รับแจ้งสถานะโอนสำเร็จ (PAID) อัตโนมัติ',
                     done: selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
                   },
                 ].map(({ step, title, desc, done }) => (
@@ -2819,14 +2819,14 @@ export default function PayrollPage() {
                         <span>ขั้นตอนที่ 2 สำเร็จ: ธนาคารโอนเงินเรียบร้อยแล้ว</span>
                       </div>
                       <p className="text-xs text-blue-800 leading-relaxed">
-                        ระบบได้รับการยืนยันการโอนเงินจากธนาคารแล้ว ขั้นตอนถัดไปคือ <strong>ขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป</strong> โดยฝ่ายการเงินจะแนบไฟล์ใบเสร็จ/สลิปรวมของธนาคาร เพื่อเสร็จสิ้นขั้นตอนที่ 3 และเข้าสู่สถานะ <strong>PAID (ขั้นตอนที่ 4)</strong>
+                        ระบบได้รับการยืนยันการโอนเงินจากธนาคารแล้ว ขั้นตอนถัดไปคือ <strong>ขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป</strong> โดยฝ่ายการเงินจะแนบไฟล์ใบเสร็จ/สลิปรวมของธนาคาร และยืนยันการจ่ายเงิน (PAID) เพื่อให้ระบบแจ้งสถานะไปยังฝ่ายบุคคล (HR) ในขั้นตอนที่ 4
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Finance Corporate Bank Receipt Upload Zone (Step 3 & Step 4) */}
+              {/* Finance Corporate Bank Receipt Upload Zone (Step 3) */}
               {isFinance ? (
                 <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3 mt-3">
                   <div className="flex items-center justify-between">
@@ -2864,12 +2864,29 @@ export default function PayrollPage() {
                       {bankReceiptFile && (
                         <div className="pt-2 flex justify-end">
                           <button
-                            onClick={() => handleUploadBankReceiptSubmit(false)}
+                            onClick={() => handleUploadBankReceiptSubmit(true)}
                             disabled={isUploadingBankReceipt}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
                           >
                             {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                            <span>บันทึกสลิปธนาคาร</span>
+                            <span>บันทึกสลิปธนาคาร & ยืนยันการจ่ายเงิน (PAID)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* If receipt was already attached before, allow confirming to PAID */}
+                      {selectedPeriod?.hasBankReceipt && !bankReceiptFile && selectedPeriod?.status === 'PROCESSING_BANK' && (
+                        <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs text-slate-600">
+                            แนบสลิปธนาคารเรียบร้อยแล้ว กดปุ่มเพื่อยืนยันการจ่ายเงินและปรับสถานะรอบเงินเดือนเป็น PAID
+                          </span>
+                          <button
+                            onClick={handleMarkPaid}
+                            disabled={isConfirmingPayment}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                          >
+                            {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                            <span>ยืนยันการจ่ายเงิน (เปลี่ยนสถานะเป็น PAID)</span>
                           </button>
                         </div>
                       )}
@@ -2877,16 +2894,8 @@ export default function PayrollPage() {
                   )}
                 </div>
               ) : (
-                selectedPeriod?.status === 'PAID' ? (
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800 mt-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
-                      <span>ธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว (ฝ่ายการเงินตรวจสอบสลิปและปิดยอดแล้ว)</span>
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px]">สถานะ: โอนสำเร็จ (PAID)</span>
-                  </div>
-                ) : (
-                  selectedPeriod?.hasBankReceipt && (
+                !isFinance && selectedPeriod?.status !== 'PAID' && (
+                  selectedPeriod?.hasBankReceipt ? (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs text-blue-800 mt-3">
                       <span>✓ ฝ่ายการเงินได้แนบสลิป/ใบเสร็จของธนาคารแล้ว ({selectedPeriod?.bankReceiptFileName || 'receipt'})</span>
                       <button
@@ -2897,32 +2906,25 @@ export default function PayrollPage() {
                         <span>ดาวน์โหลด</span>
                       </button>
                     </div>
+                  ) : (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-600 mt-3">
+                      <span>⏳ รอดำเนินการ: ฝ่ายการเงินตรวจสอบและแนบสลิปโอนเงินรวมของธนาคาร (ขั้นตอนที่ 3)</span>
+                    </div>
                   )
                 )
               )}
 
-              {/* Step 4: HR รับแจ้งสถานะ และ ยืนยันสถานะรอบเงินเดือน (PAID) */}
-              {selectedPeriod?.status === 'PROCESSING_BANK' && selectedPeriod?.hasBankReceipt && (
-                <div className="bg-emerald-50/80 rounded-2xl border border-emerald-200 p-4 space-y-3 mt-3">
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold text-xs text-emerald-900 flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-600" />
-                      <span>ขั้นตอนที่ 4: HR รับแจ้งสถานะ และ ยืนยันรอบเงินเดือน (PAID)</span>
+              {/* Status Banner when PAID for all roles */}
+              {selectedPeriod?.status === 'PAID' && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800 mt-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">✅</span>
+                    <div>
+                      <div className="font-bold text-emerald-900">ธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว (สถานะ: PAID)</div>
+                      <div className="text-[11px] text-emerald-700 mt-0.5">ฝ่ายการเงินตรวจสอบสลิปและปิดยอดแล้ว — ระบบแจ้งสถานะไปยังฝ่ายบุคคล (HR) เรียบร้อยแล้ว</div>
                     </div>
                   </div>
-                  <p className="text-xs text-emerald-800 leading-relaxed">
-                    ฝ่ายการเงินได้ตรวจสอบและแนบสลิป/ใบเสร็จรวมจากธนาคารเรียบร้อยแล้ว (ขั้นตอนที่ 3 เสร็จสิ้น) กดปุ่มด้านล่างเพื่อเสร็จสิ้นขั้นตอนที่ 4 และเปลี่ยนสถานะรอบเงินเดือนเป็น <strong>PAID (จ่ายเงินสำเร็จสมบูรณ์)</strong>
-                  </p>
-                  <div className="pt-1 flex justify-end">
-                    <button
-                      onClick={handleMarkPaid}
-                      disabled={isConfirmingPayment}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all hover:scale-102"
-                    >
-                      {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      <span>ยืนยันสถานะรอบเงินเดือน (PAID)</span>
-                    </button>
-                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px] shrink-0">สถานะ: โอนสำเร็จ (PAID)</span>
                 </div>
               )}
 
