@@ -12,6 +12,7 @@ import {
   User,
   UserCheck,
   Shield,
+  ShieldCheck,
   Camera,
   Phone,
   Mail,
@@ -72,6 +73,7 @@ export default function ProfilePage() {
     address: '',
     bankName: '',
     accountNumber: '',
+    hospitalName: '',
   });
 
   // Password Change Modal State for Tab 2 (Account Management)
@@ -140,6 +142,7 @@ export default function ProfilePage() {
         address: addressString,
         bankName: primaryBank?.bankName || '',
         accountNumber: primaryBank?.accountNumber || '',
+        hospitalName: data.socialSecurity?.hospitalName || '',
       });
 
       if (data.avatarUrl) {
@@ -229,6 +232,7 @@ export default function ProfilePage() {
         addressLine: formData.address,
         bankName: formData.bankName,
         accountNumber: formData.accountNumber,
+        hospitalName: formData.hospitalName,
         familyMembers: familyMembersPayload,
       };
 
@@ -516,6 +520,12 @@ export default function ProfilePage() {
                     {employee?.createdAt
                       ? new Date(employee.createdAt).toLocaleDateString('th-TH')
                       : '01/01/2023'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block mb-0.5">โรงพยาบาลประกันสังคม</span>
+                  <span className="text-slate-800 font-medium">
+                    {formData.hospitalName || employee?.socialSecurity?.hospitalName || '-'}
                   </span>
                 </div>
               </div>
@@ -861,7 +871,39 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Card 5: ลายเซ็นดิจิทัล (Digital Signature - Mockup 2) */}
+              {/* Card 5: สิทธิประโยชน์และประกันสังคม */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
+                    สิทธิประโยชน์และประกันสังคม
+                  </h3>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    สิทธิการรักษาพยาบาล (ผู้ประกันตน ม.33)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* โรงพยาบาลประกันสังคม */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      โรงพยาบาลประกันสังคม
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.hospitalName}
+                      onChange={(e) => handleInputChange('hospitalName', e.target.value)}
+                      placeholder="เช่น โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      สถานพยาบาลหลักที่ลงทะเบียนไว้ตามสิทธิประกันสังคม (เลขประจำตัวผู้ประกันตนใช้เลขเดียวกันกับบัตรประจำตัวประชาชน)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6: ลายเซ็นดิจิทัล (Digital Signature - Mockup 2) */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">

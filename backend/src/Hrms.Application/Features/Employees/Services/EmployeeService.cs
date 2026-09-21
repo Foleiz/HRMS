@@ -457,16 +457,25 @@ public class EmployeeService : IEmployeeService
         }
 
         // 5. ประกันสังคม
-        if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo))
+        if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo) || request.HospitalName != null || request.HospitalCode != null)
         {
             if (employee.SocialSecurity == null)
             {
                 employee.SocialSecurity = new EmployeeSocialSecurity { EmployeeId = employee.Id };
             }
-            employee.SocialSecurity.SocialSecurityNoEncrypted = _cryptoService.Encrypt(request.SocialSecurityNo.Trim());
-            employee.SocialSecurity.SocialSecurityNoMasked = _cryptoService.MaskCitizenId(request.SocialSecurityNo.Trim());
-            employee.SocialSecurity.HospitalName = request.HospitalName?.Trim();
-            employee.SocialSecurity.HospitalCode = request.HospitalCode?.Trim();
+            if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo))
+            {
+                employee.SocialSecurity.SocialSecurityNoEncrypted = _cryptoService.Encrypt(request.SocialSecurityNo.Trim());
+                employee.SocialSecurity.SocialSecurityNoMasked = _cryptoService.MaskCitizenId(request.SocialSecurityNo.Trim());
+            }
+            if (request.HospitalName != null)
+            {
+                employee.SocialSecurity.HospitalName = request.HospitalName.Trim();
+            }
+            if (request.HospitalCode != null)
+            {
+                employee.SocialSecurity.HospitalCode = request.HospitalCode.Trim();
+            }
         }
 
         // 6. ที่อยู่ (Address)
