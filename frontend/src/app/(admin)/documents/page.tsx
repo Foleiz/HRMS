@@ -51,7 +51,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: BadgeCheck,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
-    available: false,
+    available: true,
   },
 ];
 

@@ -104,5 +104,10 @@ public interface IHrmsDbContext
     // In-App Notifications Engine (Dev 1 Phase 2)
     DbSet<Notification> Notifications { get; }
 
+    // Certificate Requests & Digital Signature (Dev 1 Phase 2)
+    DbSet<CertificateType> CertificateTypes { get; }
+    DbSet<CertificateRequest> CertificateRequests { get; }
+    DbSet<EmployeeSignature> EmployeeSignatures { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

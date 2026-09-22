@@ -115,6 +115,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // In-App Notifications Engine (Dev 1 Phase 2)
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    // Certificate Requests & Digital Signature (Dev 1 Phase 2)
+    public DbSet<CertificateType> CertificateTypes => Set<CertificateType>();
+    public DbSet<CertificateRequest> CertificateRequests => Set<CertificateRequest>();
+    public DbSet<EmployeeSignature> EmployeeSignatures => Set<EmployeeSignature>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1666,5 +1671,66 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configuration: CertificateType
+        modelBuilder.Entity<CertificateType>(entity =>
+        {
+            entity.ToTable("certificate_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CertificateCode).HasColumnName("certificate_code").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CertificateName).HasColumnName("certificate_name").HasMaxLength(255).IsRequired();
+        });
+
+        // Configuration: CertificateRequest
+        modelBuilder.Entity<CertificateRequest>(entity =>
+        {
+            entity.ToTable("certificate_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.CertificateTypeId).HasColumnName("certificate_type_id").IsRequired();
+            entity.Property(e => e.Purpose).HasColumnName("purpose");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.RequestedAt).HasColumnName("requested_at").IsRequired();
+            entity.Property(e => e.IssuedFileUrl).HasColumnName("issued_file_url");
+            entity.Property(e => e.IssuedAt).HasColumnName("issued_at");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.CertificateType)
+                .WithMany(t => t.Requests)
+                .HasForeignKey(e => e.CertificateTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeSignature
+        modelBuilder.Entity<EmployeeSignature>(entity =>
+        {
+            entity.ToTable("employee_signature", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.SignatureData).HasColumnName("signature_data").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

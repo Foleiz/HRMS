@@ -202,6 +202,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         {
             instance.Status = "REJECTED";
             instance.CompletedAt = DateTime.UtcNow;
+            await SyncSourceDocumentStatusAsync(instance, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return new WorkflowActionResult
@@ -218,6 +219,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         {
             instance.Status = "CANCELLED";
             instance.CompletedAt = DateTime.UtcNow;
+            await SyncSourceDocumentStatusAsync(instance, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return new WorkflowActionResult
@@ -255,6 +257,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         // ขั้นตอนสุดท้ายสมบูรณ์แล้ว -> เปลี่ยนสถานะเป็น APPROVED
         instance.Status = "APPROVED";
         instance.CompletedAt = DateTime.UtcNow;
+        await SyncSourceDocumentStatusAsync(instance, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new WorkflowActionResult
@@ -409,5 +412,23 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             CompletedAt = instance.CompletedAt,
             Steps = timelineSteps
         };
+    }
+
+    private async Task SyncSourceDocumentStatusAsync(ApprovalInstance instance, CancellationToken cancellationToken)
+    {
+        if (instance.DocumentType == "CERTIFICATE_REQUEST")
+        {
+            var cert = await _context.CertificateRequests
+                .FirstOrDefaultAsync(c => c.Id == instance.SourceDocumentId, cancellationToken);
+
+            if (cert != null)
+            {
+                cert.Status = instance.Status;
+                if (instance.Status == "APPROVED")
+                {
+                    cert.IssuedAt = DateTime.UtcNow;
+                }
+            }
+        }
     }
 }
