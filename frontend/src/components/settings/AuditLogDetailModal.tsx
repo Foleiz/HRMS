@@ -5,6 +5,7 @@ import {
   X,
   FileText,
   User,
+  Globe,
   Calendar,
   Layers,
   Copy,
@@ -156,6 +157,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
       oldValue: log.oldValue,
       newValue: log.newValue,
       user: log.username,
+      ipAddress: log.ipAddress,
       createdAt: log.createdAt,
     };
     navigator.clipboard.writeText(JSON.stringify(dataToCopy, null, 2));
@@ -230,7 +232,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-5 text-xs overflow-y-auto">
           {/* Metadata Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
             <div>
               <span className="text-[10px] font-medium text-slate-400 block mb-0.5">ผู้ดำเนินการ</span>
               <div className="font-semibold text-slate-800 flex items-center gap-1">
@@ -257,6 +259,14 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
               {log.entityId && (
                 <span className="text-[10px] text-slate-500 font-mono">ID: #{log.entityId}</span>
               )}
+            </div>
+
+            <div>
+              <span className="text-[10px] font-medium text-slate-400 block mb-0.5">ไอพีแอดเดรส</span>
+              <div className="font-mono text-slate-700 flex items-center gap-1 truncate">
+                <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="truncate">{log.ipAddress || '-'}</span>
+              </div>
             </div>
           </div>
 
