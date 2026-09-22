@@ -270,7 +270,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
-              placeholder="ค้นหาด้วยคำสำคัญ บัญชีผู้ใช้ ไอพีแอดเดรส หรือรหัสข้อมูล..."
+              placeholder="ค้นหาด้วยคำสำคัญ บัญชีผู้ใช้ หรือรหัสข้อมูล..."
               className="w-full h-9.5 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
             />
           </div>
@@ -314,7 +314,6 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <th className="py-3.5 px-4 min-w-[130px]">โมดูลข้อมูล</th>
                 <th className="py-3.5 px-3 min-w-[90px]">รหัสข้อมูล</th>
                 <th className="py-3.5 px-4 min-w-[180px]">รายละเอียดการเปลี่ยนแปลง</th>
-                <th className="py-3.5 px-4 min-w-[120px]">ไอพีแอดเดรส</th>
                 <th className="py-3.5 px-3 w-16 text-center">จัดการ</th>
               </tr>
             </thead>
@@ -322,13 +321,13 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
                     กำลังโหลดบันทึกการใช้งานระบบ...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
                     ไม่พบบันทึกการใช้งานระบบที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
@@ -385,12 +384,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                         )}
                       </td>
 
-                      {/* 7. ไอพีแอดเดรส */}
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
-                        {item.ipAddress || '-'}
-                      </td>
-
-                      {/* 8. ปุ่มดูรายละเอียด */}
+                      {/* 7. ปุ่มดูรายละเอียด */}
                       <td className="py-3.5 px-3 text-center">
                         <button
                           type="button"
