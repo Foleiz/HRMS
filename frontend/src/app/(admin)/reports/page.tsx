@@ -107,7 +107,7 @@ export default function ReportsPage() {
   // Tab 2: Monthly Attendance & Lateness State
   // -------------------------------------------------------------
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedMonth, setSelectedMonth] = useState<number>(8); // มีข้อมูลการลงเวลาและสถิติการมาสายครบถ้วนที่เดือน 8
   const [latenessDepartment, setLatenessDepartment] = useState<number | 'ALL'>('ALL');
   const [latenessSearch, setLatenessSearch] = useState<string>('');
   const [latenessData, setLatenessData] = useState<MonthlyLatenessReport | null>(null);
@@ -531,8 +531,23 @@ export default function ReportsPage() {
 
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 lg:col-span-1">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างาน</span>
-                <div className="text-2xl font-extrabold text-[#0B2046]">{headcountData.overallAttendanceRate}%</div>
+                <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%</div>
               </div>
+            </div>
+          )}
+
+          {/* Notice when current date has no check-ins yet */}
+          {headcountData && headcountData.totalPresent === 0 && headcountData.totalEmployees > 0 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
+              <div>
+                <span className="font-semibold text-slate-800">วันที่ {selectedDate}:</span> ยังไม่มีรายการลงเวลาทำงานของพนักงานในระบบ (ข้อมูลการลงเวลาล่าสุดคือวันที่ 14 ก.ย. 2569)
+              </div>
+              <button
+                onClick={() => setSelectedDate('2026-09-14')}
+                className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 transition-colors shadow-xs whitespace-nowrap"
+              >
+                ดูข้อมูลวันที่ 14 ก.ย. 2569
+              </button>
             </div>
           )}
 
@@ -611,11 +626,11 @@ export default function ReportsPage() {
                                     ? 'bg-amber-500'
                                     : 'bg-rose-500'
                                 }`}
-                                style={{ width: `${Math.min(dept.attendanceRate, 100)}%` }}
+                                style={{ width: `${Math.min(100, Math.max(0, dept.attendanceRate))}%` }}
                               ></div>
                             </div>
                             <span className="text-xs font-bold text-slate-700 min-w-[36px]">
-                              {dept.attendanceRate}%
+                              {Math.min(100, Math.max(0, dept.attendanceRate))}%
                             </span>
                           </div>
                         </td>
@@ -749,7 +764,7 @@ export default function ReportsPage() {
 
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างานเฉลี่ย</span>
-                <div className="text-2xl font-extrabold text-[#0B2046]">{latenessData.overallAttendanceRate}%</div>
+                <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%</div>
               </div>
             </div>
           )}
@@ -844,7 +859,7 @@ export default function ReportsPage() {
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
                             }`}
                           >
-                            {item.attendanceRate}%
+                            {Math.min(100, Math.max(0, item.attendanceRate))}%
                           </span>
                         </td>
                       </tr>

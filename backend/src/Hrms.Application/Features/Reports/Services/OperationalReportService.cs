@@ -119,7 +119,7 @@ public class OperationalReportService : IOperationalReportService
                 }
             }
 
-            double rate = totalHeadcount > 0 ? Math.Round(((double)presentCount / totalHeadcount) * 100, 1) : 0;
+            double rate = totalHeadcount > 0 ? Math.Min(100.0, Math.Round(((double)presentCount / totalHeadcount) * 100, 1)) : 0;
 
             result.Departments.Add(new DailyDepartmentHeadcountDto
             {
@@ -143,7 +143,7 @@ public class OperationalReportService : IOperationalReportService
         }
 
         result.OverallAttendanceRate = result.TotalEmployees > 0
-            ? Math.Round(((double)result.TotalPresent / result.TotalEmployees) * 100, 1)
+            ? Math.Min(100.0, Math.Round(((double)result.TotalPresent / result.TotalEmployees) * 100, 1))
             : 0;
 
         return result;
@@ -244,15 +244,25 @@ public class OperationalReportService : IOperationalReportService
             var workRecords = records.Where(r => r.Status != "HOLIDAY" && r.Status != "OFF").ToList();
 
             int totalWorkDays = workRecords.Count;
-            int presentDays = workRecords.Count(r => r.Status == "PRESENT");
+            // วันที่มาทำงานจริง (ไม่ขาดงาน และไม่ได้ลา)
+            int presentDays = workRecords.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && !r.IsAbsent && r.Status != "ABSENT" && r.Status != "LEAVE"));
             int lateDays = workRecords.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
             int totalLateMinutes = workRecords.Sum(r => r.LateMinutes);
             int earlyLeaveDays = workRecords.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
             int totalEarlyLeaveMinutes = workRecords.Sum(r => r.EarlyLeaveMinutes);
-            int absentDays = workRecords.Count(r => r.IsAbsent || r.Status == "ABSENT");
+            int absentDays = workRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
+            int leaveDays = workRecords.Count(r => r.Status == "LEAVE");
 
-            int actualPresentDays = presentDays + lateDays + earlyLeaveDays;
-            double rate = totalWorkDays > 0 ? Math.Round(((double)actualPresentDays / totalWorkDays) * 100, 1) : 0;
+            // อัตราการเข้างาน: คิดจากวันที่มาทำงานจริง (รวมการมาสาย/ออกก่อน ซึ่งถือว่ามาทำงาน) เทียบกับวันทำงานทั้งหมด (Max 100%)
+            int actualPresentDays = presentDays;
+            if (actualPresentDays == 0 && absentDays < totalWorkDays)
+            {
+                actualPresentDays = Math.Max(0, totalWorkDays - absentDays);
+            }
+
+            double rate = totalWorkDays > 0 
+                ? Math.Min(100.0, Math.Round(((double)(actualPresentDays + leaveDays) / totalWorkDays) * 100.0, 1)) 
+                : 0;
 
             result.Items.Add(new MonthlyAttendanceLatenessDto
             {
@@ -262,7 +272,7 @@ public class OperationalReportService : IOperationalReportService
                 DepartmentName = emp.Department?.DepartmentName ?? "-",
                 PositionName = emp.Position?.PositionName ?? "-",
                 TotalWorkDays = totalWorkDays,
-                PresentDays = presentDays,
+                PresentDays = actualPresentDays,
                 LateDays = lateDays,
                 TotalLateMinutes = totalLateMinutes,
                 EarlyLeaveDays = earlyLeaveDays,
@@ -277,7 +287,7 @@ public class OperationalReportService : IOperationalReportService
 
         if (result.Items.Count > 0)
         {
-            result.OverallAttendanceRate = Math.Round(result.Items.Average(i => i.AttendanceRate), 1);
+            result.OverallAttendanceRate = Math.Min(100.0, Math.Round(result.Items.Average(i => i.AttendanceRate), 1));
         }
 
         return result;
