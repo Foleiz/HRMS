@@ -13,10 +13,12 @@ namespace Hrms.Api.Controllers;
 public class SalaryController : ControllerBase
 {
     private readonly ISalaryService _salaryService;
+    private readonly IPayslipPdfService _payslipPdfService;
 
-    public SalaryController(ISalaryService salaryService)
+    public SalaryController(ISalaryService salaryService, IPayslipPdfService payslipPdfService)
     {
         _salaryService = salaryService;
+        _payslipPdfService = payslipPdfService;
     }
 
     #region Salary Structures
@@ -498,7 +500,19 @@ public class SalaryController : ControllerBase
         return File(slip.Data, slip.ContentType, slip.FileName);
     }
 
-    /// <summary>สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
+    /// <summary>สร้างไฟล์ PDF สลิปเงินเดือนพนักงาน (e-Payslip) พร้อมรหัสผ่านป้องกันตาม PDPA</summary>
+    [HttpPost("payrolls/{id:long}/payslip-pdf")]
+    public async Task<IActionResult> GeneratePayslipPdf(
+        long id,
+        [FromBody] GeneratePayslipPdfRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var bytes = await _payslipPdfService.GeneratePayslipPdfAsync(id, request?.Password, cancellationToken);
+        var filename = $"Payslip_{id}_{DateTime.Now:yyyyMMdd}.pdf";
+        return File(bytes, "application/pdf", filename);
+    }
+
+    /// <summary>สร้างไฟล์ธนาคารสำหรับการโอนเงินเดือน และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
     [HttpPost("periods/{id:long}/generate-bank-file")]
     public async Task<IActionResult> GenerateBankFile(
         long id,
@@ -506,8 +520,25 @@ public class SalaryController : ControllerBase
         CancellationToken cancellationToken)
     {
         var bytes = await _salaryService.GenerateAndMarkBankFileAsync(id, bankCode, cancellationToken);
-        var filename = $"BankTransfer_Period_{id}_{bankCode ?? "ALL"}_{DateTime.Now:yyyyMMdd}.csv";
-        return File(bytes, "text/csv", filename);
+        var bCode = (bankCode ?? "ALL").ToUpper();
+        var isText = bCode is "KBANK" or "KTB" or "BBL";
+        var ext = isText ? "txt" : "csv";
+        var contentType = isText ? "text/plain; charset=utf-8" : "text/csv; charset=utf-8";
+        var filename = $"BankTransfer_Period_{id}_{bCode}_{DateTime.Now:yyyyMMdd}.{ext}";
+        return File(bytes, contentType, filename);
+    }
+
+    /// <summary>สร้างไฟล์ ZIP รวม PDF สลิปเงินเดือนพนักงานทุกคนในรอบ (เข้ารหัสผ่านป้องกันรายบุคคล)</summary>
+    [HttpPost("periods/{id:long}/payslips-zip")]
+    public async Task<IActionResult> GeneratePeriodPayslipsZip(
+        long id,
+        [FromBody] GeneratePeriodPayslipsZipRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var passwordType = request?.PasswordType ?? "CITIZEN_ID_LAST4";
+        var bytes = await _payslipPdfService.GeneratePeriodPayslipsZipAsync(id, passwordType, cancellationToken);
+        var filename = $"Payslips_Period_{id}_{DateTime.Now:yyyyMMdd}.zip";
+        return File(bytes, "application/zip", filename);
     }
 
     /// <summary>CEO Confirm ว่าธนาคารโอนเงินแล้ว (BANK_BATCH) — เฉพาะ CEO เท่านั้น</summary>

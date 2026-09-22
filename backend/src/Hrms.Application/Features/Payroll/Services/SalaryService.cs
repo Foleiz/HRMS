@@ -1315,17 +1315,82 @@ public class SalaryService : ISalaryService
 
     public async Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default)
     {
+        var period = await _context.PayrollPeriods.AsNoTracking().FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
         var summary = await GetBankTransferSummaryAsync(periodId, bankCode, cancellationToken);
         var sb = new System.Text.StringBuilder();
 
-        sb.AppendLine("SEQUENCE,EMPLOYEE_CODE,ACCOUNT_NUMBER,ACCOUNT_NAME,BANK_CODE,AMOUNT,CURRENCY,PAYMENT_DATE");
-        int seq = 1;
-        foreach (var item in summary.Items)
+        var payDate = period.PaymentDate ?? DateOnly.FromDateTime(DateTime.Today);
+        string payDateYmd = payDate.ToString("yyyyMMdd");
+        string payDateDmy = payDate.ToString("dd/MM/yyyy");
+
+        string normalizedBank = (bankCode ?? "ALL").ToUpper().Trim();
+
+        switch (normalizedBank)
         {
-            var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
-            // Format ACCOUNT_NUMBER with ="{cleanAcc}" so Excel reads as string, not scientific E+ notation
-            sb.AppendLine($"{seq:D4},{item.EmployeeCode},=\"{cleanAcc}\",\"{item.AccountName}\",{item.BankCode},{item.NetPayableSalary:F2},THB,20260829");
-            seq++;
+            case "KBANK":
+                // ธนาคารกสิกรไทย - K-Cash Connect Plus Text Format
+                sb.AppendLine($"H,004,COMPANY_ACC,{payDateYmd},{summary.TotalTransferAmount:F2},{summary.TotalEmployees}");
+                int kSeq = 1;
+                foreach (var item in summary.Items)
+                {
+                    var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+                    sb.AppendLine($"D,{kSeq:D6},{item.BankCode},{cleanAcc},{item.NetPayableSalary:F2},THB,{item.AccountName.Trim()},{item.EmployeeCode}");
+                    kSeq++;
+                }
+                sb.AppendLine($"T,{summary.TotalEmployees},{summary.TotalTransferAmount:F2}");
+                break;
+
+            case "SCB":
+                // ธนาคารไทยพาณิชย์ - SCB Business Net CSV Format
+                sb.AppendLine("ลำดับ,รหัสธนาคาร,เลขที่บัญชี,ชื่อบัญชี,จำนวนเงิน,ผู้รับภาระค่าธรรมเนียม,วันที่โอน,รหัสพนักงานอ้างอิง");
+                int sSeq = 1;
+                foreach (var item in summary.Items)
+                {
+                    var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+                    sb.AppendLine($"{sSeq:D5},{item.BankCode},=\"{cleanAcc}\",\"{item.AccountName}\",{item.NetPayableSalary:F2},BEN,{payDateDmy},{item.EmployeeCode}");
+                    sSeq++;
+                }
+                break;
+
+            case "KTB":
+                // ธนาคารกรุงไทย - KTB Corporate Online Text Pipe-Delimited Format
+                sb.AppendLine($"H|006|{payDateYmd}|{summary.TotalEmployees}|{summary.TotalTransferAmount:F2}");
+                int ktbSeq = 1;
+                foreach (var item in summary.Items)
+                {
+                    var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+                    sb.AppendLine($"D|{ktbSeq:D4}|{cleanAcc}|{item.AccountName.Trim()}|{item.NetPayableSalary:F2}|{item.BankCode}|{item.EmployeeCode}");
+                    ktbSeq++;
+                }
+                sb.AppendLine($"T|{summary.TotalEmployees}|{summary.TotalTransferAmount:F2}");
+                break;
+
+            case "BBL":
+                // ธนาคารกรุงเทพ - BBL iCash Text Pipe-Delimited Format
+                sb.AppendLine($"HEADER|002|{payDateYmd}|{summary.TotalEmployees}|{summary.TotalTransferAmount:F2}");
+                int bblSeq = 1;
+                foreach (var item in summary.Items)
+                {
+                    var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+                    sb.AppendLine($"DETAIL|{bblSeq:D5}|{cleanAcc}|{item.AccountName.Trim()}|{item.NetPayableSalary:F2}|{item.BankCode}|THB|{item.EmployeeCode}");
+                    bblSeq++;
+                }
+                sb.AppendLine($"TRAILER|{summary.TotalEmployees}|{summary.TotalTransferAmount:F2}");
+                break;
+
+            default:
+                // มาตรฐานกลาง CSV (Standard Payroll Export)
+                sb.AppendLine("ลำดับ,รหัสพนักงาน,เลขที่บัญชี,ชื่อบัญชีผู้รับโอน,รหัสธนาคาร,จำนวนเงินสุทธิ,สกุลเงิน,วันที่โอนเงิน");
+                int defSeq = 1;
+                foreach (var item in summary.Items)
+                {
+                    var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
+                    sb.AppendLine($"{defSeq:D4},{item.EmployeeCode},=\"{cleanAcc}\",\"{item.AccountName}\",{item.BankCode},{item.NetPayableSalary:F2},THB,{payDateDmy}");
+                    defSeq++;
+                }
+                break;
         }
 
         var preamble = System.Text.Encoding.UTF8.GetPreamble();

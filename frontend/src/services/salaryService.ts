@@ -241,6 +241,22 @@ export const salaryService = {
     return res.data;
   },
 
+  /** ดาวน์โหลดสลิปเงินเดือนพนักงาน (PDF พร้อมรหัสผ่านป้องกัน) */
+  async downloadPayslipPdf(payrollId: number, password?: string): Promise<Blob> {
+    const res = await apiClient.post(`/salary/payrolls/${payrollId}/payslip-pdf`, { password }, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
+  /** ดาวน์โหลดสลิปเงินเดือนทั้งหมดในรอบ (ZIP ไฟล์รวม PDF ที่ใส่รหัสผ่านรายบุคคล) */
+  async downloadPeriodPayslipsZip(periodId: number, passwordType: string = 'CITIZEN_ID_LAST4'): Promise<Blob> {
+    const res = await apiClient.post(`/salary/periods/${periodId}/payslips-zip`, { passwordType }, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
   /** สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH) */
   async generateBankFile(periodId: number, bankCode?: string): Promise<Blob> {
     const res = await apiClient.post(`/salary/periods/${periodId}/generate-bank-file`, null, {

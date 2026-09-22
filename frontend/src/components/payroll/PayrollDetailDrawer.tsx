@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
+import { PayslipPasswordModal } from '@/components/payroll/PayslipPasswordModal';
 
 interface Props {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState<PayrollDetailItem[]>([]);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && record) {
@@ -52,7 +54,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
           <div>
             <h3 className="text-base font-bold text-slate-900">{record.employeeName}</h3>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              {record.employeeCode} · {record.departmentName} · payroll_detail
+              {record.employeeCode} · {record.departmentName}
             </p>
           </div>
           <button
@@ -127,9 +129,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* เงินเดือนสุทธิ (net_salary) */}
+              {/* เงินเดือนสุทธิ */}
               <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-white shadow-2xs">
-                <span className="text-xs font-semibold text-slate-700">เงินเดือนสุทธิ (net_salary)</span>
+                <span className="text-xs font-semibold text-slate-700">เงินเดือนสุทธิ</span>
                 <span className="text-sm font-bold text-slate-900 font-mono">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
@@ -139,17 +141,26 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
               {/* PDF Payslip Action Button */}
               <button
-                onClick={() => {
-                  window.print();
-                }}
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
                 className="w-full py-2.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <span>📄 ดาวน์โหลดสลิปเงินเดือน (E-Payslip PDF)</span>
+                <span>📄 ดาวน์โหลดสลิปเงินเดือน (PDF พร้อมรหัสผ่าน)</span>
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Payslip Password Modal */}
+      <PayslipPasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        mode="single"
+        payrollId={record.id}
+        titleName={record.employeeName}
+        subtitle={record.employeeCode}
+      />
     </div>
   );
 };

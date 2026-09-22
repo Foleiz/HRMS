@@ -38,6 +38,7 @@ import {
   Download,
   Lock,
   Landmark,
+  Archive,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -68,6 +69,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
+import { PayslipPasswordModal } from '@/components/payroll/PayslipPasswordModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PayrollViewSwitcher, PayrollViewMode } from '@/components/payroll/PayrollViewSwitcher';
 
@@ -393,6 +395,7 @@ export default function PayrollPage() {
   const [bankSummary, setBankSummary] = useState<BankTransferSummary | null>(null);
   const [selectedBankFilter, setSelectedBankFilter] = useState<string>('ALL');
   const [isExportingBankFile, setIsExportingBankFile] = useState<boolean>(false);
+  const [isBatchPayslipModalOpen, setIsBatchPayslipModalOpen] = useState<boolean>(false);
 
   // Tab 6: Bonus state
   const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
@@ -716,11 +719,14 @@ export default function PayrollPage() {
     if (!selectedPeriod) return;
     setIsGeneratingBankFile(true);
     try {
-      const blob = await salaryService.generateBankFile(selectedPeriod.id, selectedBankFilter !== 'ALL' ? selectedBankFilter : undefined);
+      const bankCodeParam = selectedBankFilter !== 'ALL' ? selectedBankFilter : undefined;
+      const blob = await salaryService.generateBankFile(selectedPeriod.id, bankCodeParam);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `BankTransfer_P${selectedPeriod.id}_${new Date().toISOString().slice(0, 10)}.csv`;
+      const bCode = (selectedBankFilter || 'ALL').toUpperCase();
+      const ext = (bCode === 'KBANK' || bCode === 'KTB' || bCode === 'BBL') ? 'txt' : 'csv';
+      a.download = `BankTransfer_P${selectedPeriod.id}_${bCode}_${new Date().toISOString().slice(0, 10)}.${ext}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -728,7 +734,7 @@ export default function PayrollPage() {
       // Refresh period to show bankFileGeneratedAt
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
-      showToast('📁 ดาวน์โหลดไฟล์ธนาคารสำเร็จ สถานะเปลี่ยนเป็น PROCESSING');
+      showToast('📁 ดาวน์โหลดไฟล์โอนเงินธนาคารสำเร็จ สถานะเปลี่ยนเป็น กำลังดำเนินการจ่าย');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างไฟล์ธนาคาร');
     } finally {
@@ -2075,6 +2081,18 @@ export default function PayrollPage() {
                           </button>
                         )
                       )}
+
+                      {payrolls.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsBatchPayslipModalOpen(true)}
+                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          title="ดาวน์โหลดสลิปเงินเดือนของพนักงานทุกคนในรอบนี้เป็นไฟล์ ZIP พร้อมรหัสผ่านป้องกัน"
+                        >
+                          <Archive className="w-3.5 h-3.5 text-blue-600" />
+                          <span>ดาวน์โหลดสลิปทั้งรอบ (.ZIP)</span>
+                        </button>
+                      )}
                     </>
                   )}
 
@@ -2818,15 +2836,48 @@ export default function PayrollPage() {
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  onClick={handleGenerateAndDownloadBankFile}
-                  disabled={isGeneratingBankFile || selectedPeriod?.status === 'PAID'}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 disabled:opacity-50 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  {isGeneratingBankFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Building2 className="w-4 h-4" />}
-                  <span>{selectedPeriod?.bankFileGeneratedAt ? 'ดาวน์โหลดไฟล์อีกครั้ง' : 'ดาวน์โหลดไฟล์ธนาคาร'}</span>
-                </button>
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      เลือกรูปแบบไฟล์ธนาคารสำหรับการโอนเงิน:
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      เลือกธนาคารหลักที่องค์กรใช้จ่ายเงินเดือน เพื่อสร้างโครงสร้างไฟล์ที่เข้ากันได้กับระบบของธนาคารนั้น
+                    </p>
+                  </div>
+                  <select
+                    value={selectedBankFilter}
+                    onChange={(e) => setSelectedBankFilter(e.target.value)}
+                    className="px-3.5 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700 cursor-pointer"
+                  >
+                    <option value="ALL">มาตรฐานทั่วไป (CSV)</option>
+                    <option value="KBANK">ธนาคารกสิกรไทย — K-Cash Connect Plus (.txt)</option>
+                    <option value="SCB">ธนาคารไทยพาณิชย์ — SCB Business Net (.csv)</option>
+                    <option value="KTB">ธนาคารกรุงไทย — KTB Corporate Online (.txt)</option>
+                    <option value="BBL">ธนาคารกรุงเทพ — BBL iCash (.txt)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
+                  <button
+                    onClick={handleGenerateAndDownloadBankFile}
+                    disabled={isGeneratingBankFile || selectedPeriod?.status === 'PAID'}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] text-white disabled:opacity-50 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    {isGeneratingBankFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Building2 className="w-4 h-4" />}
+                    <span>{selectedPeriod?.bankFileGeneratedAt ? 'ดาวน์โหลดไฟล์ธนาคารอีกครั้ง' : 'สร้างและดาวน์โหลดไฟล์ธนาคาร'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsBatchPayslipModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Archive className="w-4 h-4 text-blue-600" />
+                    <span>ดาวน์โหลดสลิปเงินเดือนทั้งหมด (.ZIP)</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3661,6 +3712,18 @@ export default function PayrollPage() {
         confirmText="ส่งคืนให้ HR แก้ไข"
         cancelText="ยกเลิก"
         type="danger"
+      />
+
+      {/* Payslip Password Modal สำหรับดาวน์โหลด ZIP สลิปเงินเดือนทั้งรอบ */}
+      <PayslipPasswordModal
+        isOpen={isBatchPayslipModalOpen}
+        onClose={() => setIsBatchPayslipModalOpen(false)}
+        mode="batch"
+        periodId={selectedPeriod?.id}
+        titleName={selectedPeriod?.periodName || 'รอบเงินเดือน'}
+        subtitle={selectedPeriod ? `พนักงานทั้งหมดในรอบนี้` : undefined}
+        onSuccess={(msg) => showToast(msg)}
+        onError={(msg) => showToast(msg)}
       />
     </div>
   );
