@@ -374,20 +374,19 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <th className="py-3.5 px-3 min-w-[100px]">ฟิลด์ที่เปลี่ยน</th>
                 <th className="py-3.5 px-3 min-w-[90px]">ค่าเดิม</th>
                 <th className="py-3.5 px-4 min-w-[180px]">ค่าใหม่ / ข้อมูลเพิ่มเติม</th>
-                <th className="py-3.5 px-4 min-w-[110px]">IP Address</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                     กำลังโหลดบันทึกการใช้งานระบบ...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                     ไม่พบบันทึกการใช้งานระบบที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
@@ -450,11 +449,6 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                       {/* 8. ค่าใหม่ / ข้อมูลเพิ่มเติม (สีเขียวตาม Figma) */}
                       <td className="py-3.5 px-4 text-[11px] font-mono text-emerald-600 font-medium truncate max-w-[200px]">
                         {newPreview}
-                      </td>
-
-                      {/* 9. IP Address */}
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
-                        {item.ipAddress || '-'}
                       </td>
                     </tr>
                   );
