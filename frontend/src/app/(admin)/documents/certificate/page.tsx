@@ -15,6 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 import { CertificateType, CertificateDocument } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
+import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -187,7 +188,10 @@ export default function CertificatePage() {
   };
 
   return (
-    <div className="space-y-5 pb-12">
+    <div className="space-y-6 pb-12">
+      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" คงรูปแบบเดียวกับเอกสารการลา */}
+      <DocumentsSubNav />
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2.5 text-xs animate-in slide-in-from-top-3">
