@@ -26,6 +26,8 @@ import { resignationService } from '@/services/resignationService';
 import { ResignationRequest } from '@/types/resignation';
 import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
+import { generalDocumentService } from '@/services/generalDocumentService';
+import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
@@ -48,7 +50,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
-// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง)
+// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป)
 interface MyDocumentRow {
   id: string;
   code: string;
@@ -60,10 +62,11 @@ interface MyDocumentRow {
   documents?: { id: number; fileName?: string | null }[];
   /** ลิงก์ไปหน้าฟอร์มต้นทางเพื่อแก้ไขต่อ — มีเฉพาะเอกสารที่ยังเป็นแบบร่าง (DRAFT) */
   editUrl?: string;
-  source: 'LEAVE' | 'RESIGNATION' | 'CERTIFICATE';
+  source: 'LEAVE' | 'RESIGNATION' | 'CERTIFICATE' | 'GENERAL';
   rawLeave?: LeaveRequest;
   rawResignation?: ResignationRequest;
   rawCertificate?: CertificateRequest;
+  rawGeneral?: GeneralDocumentRequest;
   canCancel?: boolean;
 }
 
@@ -83,6 +86,7 @@ export default function DocumentHistoryPage() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
   const [certificateRequests, setCertificateRequests] = useState<CertificateRequest[]>([]);
+  const [generalRequests, setGeneralRequests] = useState<GeneralDocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -141,15 +145,17 @@ export default function DocumentHistoryPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leaveRes, resignRes, certRes] = await Promise.allSettled([
+      const [leaveRes, resignRes, certRes, genRes] = await Promise.allSettled([
         leaveService.getMyLeaveRequests({ pageSize: 200 }),
         resignationService.getMyRequests(),
         certificateService.getMyRequests(),
+        generalDocumentService.getMyRequests(),
       ]);
 
       if (leaveRes.status === 'fulfilled') setLeaveRequests(leaveRes.value);
       if (resignRes.status === 'fulfilled') setResignationRequests(resignRes.value);
       if (certRes.status === 'fulfilled') setCertificateRequests(certRes.value);
+      if (genRes.status === 'fulfilled') setGeneralRequests(genRes.value);
     } catch (err) {
       console.error('Failed to load document history', err);
     } finally {
@@ -161,7 +167,7 @@ export default function DocumentHistoryPage() {
     fetchData();
   }, [fetchData]);
 
-  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (การลา, ลาออก, หนังสือรับรอง) ───
+  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป) ───
   const documents: MyDocumentRow[] = useMemo(() => {
     const leaveRows: MyDocumentRow[] = leaveRequests.map((r) => ({
       id: `LEAVE-${r.id}`,
@@ -206,9 +212,22 @@ export default function DocumentHistoryPage() {
       canCancel: r.canCancel,
     }));
 
-    const all = [...leaveRows, ...resignRows, ...certRows];
+    const genRows: MyDocumentRow[] = generalRequests.map((r) => ({
+      id: r.id,
+      code: r.requestNo,
+      submittedDate: r.submittedAt,
+      detailDate: `วัตถุประสงค์: ${r.purpose}`,
+      documentType: `คำร้องเอกสารทั่วไป (${r.documentType})`,
+      status: r.status,
+      documents: r.fileName ? [{ id: 1, fileName: r.fileName }] : undefined,
+      source: 'GENERAL',
+      rawGeneral: r,
+      canCancel: r.canCancel,
+    }));
+
+    const all = [...leaveRows, ...resignRows, ...certRows, ...genRows];
     return all.sort((a, b) => (b.submittedDate || '').localeCompare(a.submittedDate || ''));
-  }, [leaveRequests, resignationRequests, certificateRequests]);
+  }, [leaveRequests, resignationRequests, certificateRequests, generalRequests]);
 
   const stats = useMemo(() => {
     const approved = documents.filter((d) => d.status === 'APPROVED').length;
@@ -254,6 +273,10 @@ export default function DocumentHistoryPage() {
             await certificateService.cancelRequest(doc.rawCertificate.id);
             closeConfirm();
             showToast('ยกเลิกคำขอหนังสือรับรองสำเร็จ');
+          } else if (doc.source === 'GENERAL' && doc.rawGeneral) {
+            await generalDocumentService.cancelRequest(doc.rawGeneral.id);
+            closeConfirm();
+            showToast('ยกเลิกคำร้องเอกสารทั่วไปสำเร็จ');
           }
           fetchData();
         } catch (err: any) {

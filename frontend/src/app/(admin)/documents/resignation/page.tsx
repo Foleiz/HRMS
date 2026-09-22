@@ -10,7 +10,10 @@ import {
   Eye,
   Loader2,
   Clock,
-  Info,
+  Building2,
+  User,
+  Calendar,
+  Send,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
@@ -21,8 +24,8 @@ import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 
-const REASON_MAX_LENGTH = 300;
-const HANDOVER_MAX_LENGTH = 300;
+const REASON_MAX_LENGTH = 160;
+const HANDOVER_MAX_LENGTH = 250;
 const CONTACT_MAX_LENGTH = 150;
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
@@ -57,7 +60,13 @@ export default function ResignationPage() {
   });
 
   // วันที่ยื่นคำขอ (วันนี้)
-  const submissionDate = useMemo(() => toInputDate(new Date()), []);
+  const [submissionDate, setSubmissionDate] = useState(() => toInputDate(new Date()));
+
+  // ช่อง "เรียน" ตาม Figma
+  const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+
+  // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
+  const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>('นาย');
 
   // Form Fields
   const [reasonCategory, setReasonCategory] = useState<string>(RESIGNATION_REASON_CATEGORIES[0].value);
@@ -94,12 +103,14 @@ export default function ResignationPage() {
 
   // Sync breadcrumb & Load saved draft
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลาออก' });
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'เอกสารขอลาออก' });
 
     try {
       const savedDraft = localStorage.getItem('hrms_resignation_draft');
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
+        if (parsed.addressedTo) setAddressedTo(parsed.addressedTo);
+        if (parsed.titlePrefix) setTitlePrefix(parsed.titlePrefix);
         if (parsed.reasonCategory) setReasonCategory(parsed.reasonCategory);
         if (parsed.reasonDetail) setReasonDetail(parsed.reasonDetail);
         if (parsed.handoverNotes) setHandoverNotes(parsed.handoverNotes);
@@ -149,6 +160,8 @@ export default function ResignationPage() {
 
   // ล้างฟอร์ม
   const handleResetForm = () => {
+    setAddressedTo('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+    setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
     setHandoverNotes('');
@@ -164,7 +177,7 @@ export default function ResignationPage() {
   // บันทึกแบบร่าง
   const handleSaveDraft = async () => {
     if (!reasonDetail.trim()) {
-      setFormError('กรุณากรอกรายละเอียดเหตุผลการลาออกก่อนบันทึกแบบร่าง');
+      setFormError('กรุณากรอกเหตุผลการลาออกก่อนบันทึกแบบร่าง');
       return;
     }
     setSavingDraft(true);
@@ -172,6 +185,8 @@ export default function ResignationPage() {
       localStorage.setItem(
         'hrms_resignation_draft',
         JSON.stringify({
+          addressedTo,
+          titlePrefix,
           reasonCategory,
           reasonDetail: reasonDetail.trim(),
           handoverNotes: handoverNotes.trim(),
@@ -193,15 +208,15 @@ export default function ResignationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reasonDetail.trim()) {
-      setFormError('กรุณาระบุรายละเอียดเหตุผลการลาออก');
+      setFormError('กรุณาระบุเหตุผลการลาออก *');
       return;
     }
     if (!requestedLastWorkingDate) {
-      setFormError('กรุณาระบุวันที่ต้องการทำงานวันสุดท้าย');
+      setFormError('กรุณาระบุวันที่มีผลลาออก (วันทำงานวันสุดท้าย) *');
       return;
     }
     if (noticeDays <= 0) {
-      setFormError('วันที่ต้องการทำงานวันสุดท้ายต้องเป็นวันหลังจากวันนี้เป็นต้นไป');
+      setFormError('วันที่มีผลลาออกต้องเป็นวันหลังจากวันนี้เป็นต้นไป');
       return;
     }
 
@@ -239,15 +254,15 @@ export default function ResignationPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" */}
+      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" คงรูปแบบเดียวกับระบบทั้งหมด */}
       <DocumentsSubNav />
 
-      {/* Page Header (มาตรฐานเดียวกับเอกสารการลาและหนังสือรับรอง) */}
+      {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ยื่นคำขอลาออก</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารขอลาออก</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            แบบฟอร์มแสดงความประสงค์ขอลาออกจากงานและส่งต่อสายการอนุมัติ ติดตามสถานะได้ที่หน้าประวัติเอกสาร
+            กรอกแบบฟอร์มแสดงความประสงค์ขอลาออกจากงานและส่งต่อสายการอนุมัติ
           </p>
         </div>
         <button
@@ -268,211 +283,230 @@ export default function ResignationPage() {
         </div>
       )}
 
-      {/* Main Form Card (Single Card 2-Column Standard) */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7">
+      {/* Main Form (ออกแบบตาม Figma แบบ 2 ฝั่ง แต่คุม Theme และความประณีตระดับ Enterprise) */}
+      <form onSubmit={handleSubmit} className="space-y-6">
         {formError && (
-          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{formError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
-          {/* ─── คอลัมน์ซ้าย: ข้อมูลทั่วไป & สาเหตุการลาออก ─── */}
-          <div className="space-y-5">
-            {/* กล่องข้อมูลทั่วไป 4 ช่อง */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลทั่วไป</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ยื่นคำขอ</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={formatThaiShort(submissionDate)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed font-mono"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป + ข้อมูลพนักงาน (ตาม Figma) ─── */}
+          <div className="space-y-6">
+            {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ *</label>
+                  <LeaveDateRangePicker
+                    mode="single"
+                    className="w-full"
+                    startDate={submissionDate}
+                    endDate={submissionDate}
+                    onChange={(d) => setSubmissionDate(d)}
                   />
                 </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล</label>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">เรียน</label>
+                  <input
+                    type="text"
+                    value={addressedTo}
+                    onChange={(e) => setAddressedTo(e.target.value)}
+                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <h3 className="text-sm font-bold text-gray-900">ข้อมูลพนักงาน</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">คำนำหน้า</label>
+                  <select
+                    value={titlePrefix}
+                    onChange={(e) => setTitlePrefix(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  >
+                    <option value="นาย">นาย</option>
+                    <option value="นาง">นาง</option>
+                    <option value="นางสาว">นางสาว</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล *</label>
                   <input
                     type="text"
                     readOnly
                     value={profile.fullName}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed font-medium"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.positionTitle || '-'}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก/สังกัด</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.departmentName || '-'}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
-                  />
+                <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={profile.positionTitle || '-'}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก / สังกัด</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={profile.departmentName || '-'}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* หมวดหมู่สาเหตุการลาออก */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                สาเหตุการลาออก *
-              </label>
-              <select
-                value={reasonCategory}
-                onChange={(e) => setReasonCategory(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-                required
-              >
-                {RESIGNATION_REASON_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* รายละเอียดเหตุผลการลาออก */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">
-                  รายละเอียดเหตุผลการลาออก *
-                </label>
-                <span className="text-2xs text-gray-400 font-mono">
-                  {reasonDetail.length}/{REASON_MAX_LENGTH}
-                </span>
-              </div>
-              <textarea
-                value={reasonDetail}
-                maxLength={REASON_MAX_LENGTH}
-                onChange={(e) => setReasonDetail(e.target.value)}
-                rows={4}
-                placeholder="ระบุเหตุผลและคำชี้แจงความประสงค์ในการขอลาออกโดยสังเขป..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-                required
-              />
             </div>
           </div>
 
-          {/* ─── คอลัมน์ขวา: วันที่ทำงานวันสุดท้าย, การบอกกล่าวล่วงหน้า, การส่งมอบงาน ─── */}
-          <div className="space-y-5">
-            {/* วันที่ต้องการทำงานวันสุดท้าย (ใช้ LeaveDateRangePicker เหมือนหน้ายื่นการลา) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                วันที่ต้องการทำงานวันสุดท้าย *
-              </label>
-              <LeaveDateRangePicker
-                mode="single"
-                className="w-full"
-                startDate={requestedLastWorkingDate}
-                endDate={requestedLastWorkingDate}
-                onChange={(start) => setRequestedLastWorkingDate(start)}
-              />
-            </div>
+          {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-gray-900">รายละเอียดการขอลาออก</h3>
 
-            {/* Notice Period Alert Card */}
-            <div
-              className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs leading-relaxed ${
-                noticeDays >= 30
-                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
-                  : 'bg-amber-50/70 border-amber-200 text-amber-800'
-              }`}
-            >
-              <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+              {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
               <div>
-                <p className="font-semibold">
-                  ระยะเวลาบอกกล่าวล่วงหน้า: {noticeDays} วัน
-                </p>
-                {noticeDays >= 30 ? (
-                  <p className="text-emerald-700 mt-0.5">
-                    ครบถ้วนตามระเบียบบริษัท (ต้องบอกกล่าวล่วงหน้าอย่างน้อย 30 วันก่อนวันมีผล)
-                  </p>
-                ) : (
-                  <p className="text-amber-700 mt-0.5">
-                    น้อยกว่าเกณฑ์ 30 วันตามระเบียบ — การอนุมัติจะต้องได้รับการพิจารณาเป็นกรณีพิเศษจากหัวหน้างานและฝ่ายบุคคล
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* แผนและรายละเอียดการส่งมอบงาน */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">
-                  แผนการส่งมอบงานและทรัพย์สินบริษัท
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  วันที่มีผลลาออก ( วันทำงานวันสุดท้าย ) *
                 </label>
-                <span className="text-2xs text-gray-400 font-mono">
-                  {handoverNotes.length}/{HANDOVER_MAX_LENGTH}
+                <LeaveDateRangePicker
+                  mode="single"
+                  className="w-full"
+                  startDate={requestedLastWorkingDate}
+                  endDate={requestedLastWorkingDate}
+                  onChange={(start) => setRequestedLastWorkingDate(start)}
+                />
+              </div>
+
+              {/* กล่องสรุปสถานะการแจ้งล่วงหน้า */}
+              <div
+                className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                  noticeDays >= 30
+                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
+                    : 'bg-amber-50/70 border-amber-200 text-amber-800'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  <span>บอกกล่าวล่วงหน้า: <strong>{noticeDays} วัน</strong></span>
+                </div>
+                <span className="font-medium">
+                  {noticeDays >= 30 ? '✓ ครบตามเกณฑ์ 30 วัน' : '⚠ น้อยกว่าเกณฑ์ 30 วัน'}
                 </span>
               </div>
-              <textarea
-                value={handoverNotes}
-                maxLength={HANDOVER_MAX_LENGTH}
-                onChange={(e) => setHandoverNotes(e.target.value)}
-                rows={3}
-                placeholder="ระบุรายชื่อผู้รับมอบงาน รายการโปรเจกต์ หรือทรัพย์สินที่ต้องส่งมอบ..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-              />
-            </div>
 
-            {/* ข้อมูลติดต่อหลังพ้นสภาพพนักงาน */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">
-                  ข้อมูลติดต่อหลังพ้นสภาพพนักงาน (เบอร์โทรศัพท์ / อีเมลส่วนตัว)
+              {/* สาเหตุการลาออก (หมวดหมู่) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  หมวดหมู่สาเหตุการลาออก
                 </label>
-                <span className="text-2xs text-gray-400 font-mono">
-                  {contactAfterResignation.length}/{CONTACT_MAX_LENGTH}
-                </span>
+                <select
+                  value={reasonCategory}
+                  onChange={(e) => setReasonCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                >
+                  {RESIGNATION_REASON_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <input
-                type="text"
-                value={contactAfterResignation}
-                maxLength={CONTACT_MAX_LENGTH}
-                onChange={(e) => setContactAfterResignation(e.target.value)}
-                placeholder="เช่น 081-234-5678, personal.email@gmail.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
+
+              {/* เหตุผลการลาออก (Textarea พร้อมตัวนับตาม Figma: สถานที่/เบอร์ติดต่อระหว่างลา หรือเหตุผล) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    เหตุผลการลาออก *
+                  </label>
+                  <span className="text-2xs text-gray-400 font-mono">
+                    {reasonDetail.length}/{REASON_MAX_LENGTH}
+                  </span>
+                </div>
+                <textarea
+                  value={reasonDetail}
+                  maxLength={REASON_MAX_LENGTH}
+                  onChange={(e) => setReasonDetail(e.target.value)}
+                  rows={4}
+                  placeholder="ระบุเหตุผลการลาออก และสถานที่หรือเบอร์ติดต่อระหว่างลา..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  required
+                />
+              </div>
+
+              {/* แผนการส่งมอบงาน & ข้อมูลติดต่อเพิ่มเติม */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-2xs font-medium text-gray-500">แผนส่งมอบงาน (ถ้ามี)</label>
+                    <span className="text-2xs text-gray-400 font-mono">{handoverNotes.length}/{HANDOVER_MAX_LENGTH}</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={handoverNotes}
+                    maxLength={HANDOVER_MAX_LENGTH}
+                    onChange={(e) => setHandoverNotes(e.target.value)}
+                    placeholder="เช่น ส่งมอบโปรเจกต์ให้ทีมงาน"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-2xs font-medium text-gray-500">ข้อมูลติดต่อหลังลาออก</label>
+                    <span className="text-2xs text-gray-400 font-mono">{contactAfterResignation.length}/{CONTACT_MAX_LENGTH}</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={contactAfterResignation}
+                    maxLength={CONTACT_MAX_LENGTH}
+                    onChange={(e) => setContactAfterResignation(e.target.value)}
+                    placeholder="เช่น 081-xxx-xxxx, email@..."
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ─── Actions (ชิดขวาตามแบบฟอร์มมาตรฐาน) ─── */}
-        <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
+        {/* ─── แถบปุ่มสั่งการด้านล่าง (ตาม Figma และตามสไตล์เมนูอื่นๆ: ดูตัวอย่าง / บันทึกแบบร่าง / ถัดไป-ยื่นคำขอ) ─── */}
+        <div className="flex items-center justify-center sm:justify-end gap-3 pt-6 border-t border-gray-200">
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-4 h-4 text-gray-500" />
             ดูตัวอย่าง
           </button>
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
           >
-            {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500" />}
             บันทึกแบบร่าง
           </button>
           <button
             type="submit"
             disabled={isSubmitting || savingDraft}
-            className="px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
           >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            ยื่นคำขอลาออก
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            ถัดไป (ยื่นคำขอลาออก)
           </button>
         </div>
       </form>
@@ -523,7 +557,7 @@ export default function ResignationPage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         data={{
-          employeeName: profile.fullName,
+          employeeName: `${titlePrefix} ${profile.fullName}`,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,
           departmentName: profile.departmentName,

@@ -42,7 +42,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: FileStack,
     color: 'text-amber-600',
     bg: 'bg-amber-50',
-    available: false,
+    available: true,
   },
   {
     title: 'ขอหนังสือรับรอง',
