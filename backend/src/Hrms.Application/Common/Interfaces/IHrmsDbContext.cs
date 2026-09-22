@@ -109,5 +109,8 @@ public interface IHrmsDbContext
     DbSet<CertificateRequest> CertificateRequests { get; }
     DbSet<EmployeeSignature> EmployeeSignatures { get; }
 
+    // Resignation Requests (Dev 1 Phase 2)
+    DbSet<ResignationRequest> ResignationRequests { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

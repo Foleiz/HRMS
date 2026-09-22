@@ -33,7 +33,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: LogOut,
     color: 'text-rose-600',
     bg: 'bg-rose-50',
-    available: false,
+    available: true,
   },
   {
     title: 'คำร้องเอกสารทั่วไป',

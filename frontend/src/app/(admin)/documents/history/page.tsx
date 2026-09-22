@@ -22,6 +22,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
+import { resignationService } from '@/services/resignationService';
+import { ResignationRequest } from '@/types/resignation';
+import { certificateService } from '@/services/certificateService';
+import { CertificateRequest } from '@/types/certificates';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
@@ -44,8 +48,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
-// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" — ตอนนี้มีเฉพาะ "เอกสารการลา" ที่พร้อมใช้งานจริง
-// ส่วนอีก 3 ประเภท (ลาออก/คำร้องเอกสารทั่วไป/หนังสือรับรอง) จะเข้ามารวมในตารางนี้อัตโนมัติเมื่อพัฒนาเสร็จ
+// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง)
 interface MyDocumentRow {
   id: string;
   code: string;
@@ -57,8 +60,11 @@ interface MyDocumentRow {
   documents?: { id: number; fileName?: string | null }[];
   /** ลิงก์ไปหน้าฟอร์มต้นทางเพื่อแก้ไขต่อ — มีเฉพาะเอกสารที่ยังเป็นแบบร่าง (DRAFT) */
   editUrl?: string;
-  source: 'LEAVE';
-  raw: LeaveRequest;
+  source: 'LEAVE' | 'RESIGNATION' | 'CERTIFICATE';
+  rawLeave?: LeaveRequest;
+  rawResignation?: ResignationRequest;
+  rawCertificate?: CertificateRequest;
+  canCancel?: boolean;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -75,6 +81,8 @@ export default function DocumentHistoryPage() {
   }, [setBreadcrumb]);
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
+  const [certificateRequests, setCertificateRequests] = useState<CertificateRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -133,22 +141,29 @@ export default function DocumentHistoryPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const requestsData = await leaveService.getMyLeaveRequests({ pageSize: 200 });
-      setLeaveRequests(requestsData);
+      const [leaveRes, resignRes, certRes] = await Promise.allSettled([
+        leaveService.getMyLeaveRequests({ pageSize: 200 }),
+        resignationService.getMyRequests(),
+        certificateService.getMyRequests(),
+      ]);
+
+      if (leaveRes.status === 'fulfilled') setLeaveRequests(leaveRes.value);
+      if (resignRes.status === 'fulfilled') setResignationRequests(resignRes.value);
+      if (certRes.status === 'fulfilled') setCertificateRequests(certRes.value);
     } catch (err) {
       console.error('Failed to load document history', err);
     } finally {
       setLoading(false);
     }
-  }, [user?.employeeId]);
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (ตอนนี้มีแหล่งข้อมูลเดียวคือคำขอลา) ───
+  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (การลา, ลาออก, หนังสือรับรอง) ───
   const documents: MyDocumentRow[] = useMemo(() => {
-    const rows: MyDocumentRow[] = leaveRequests.map((r) => ({
+    const leaveRows: MyDocumentRow[] = leaveRequests.map((r) => ({
       id: `LEAVE-${r.id}`,
       code: r.requestNo,
       submittedDate: r.submittedAt ?? r.createdAt,
@@ -162,10 +177,38 @@ export default function DocumentHistoryPage() {
       documents: r.documents,
       editUrl: r.status === 'DRAFT' ? `/documents/leave?draftId=${r.id}` : undefined,
       source: 'LEAVE',
-      raw: r,
+      rawLeave: r,
+      canCancel: r.status === 'PENDING',
     }));
-    return rows.sort((a, b) => (b.submittedDate || '').localeCompare(a.submittedDate || ''));
-  }, [leaveRequests]);
+
+    const resignRows: MyDocumentRow[] = resignationRequests.map((r) => ({
+      id: `RESIGN-${r.id}`,
+      code: r.requestNo,
+      submittedDate: r.submittedAt,
+      detailDate: `วันทำงานสุดท้าย: ${formatShortDate(r.requestedLastWorkingDate)}`,
+      documentType: `คำขอลาออก (${r.reasonCategory || 'ทั่วไป'})`,
+      status: r.status,
+      rejectReason: r.cancelReason,
+      source: 'RESIGNATION',
+      rawResignation: r,
+      canCancel: r.canCancel,
+    }));
+
+    const certRows: MyDocumentRow[] = certificateRequests.map((r) => ({
+      id: `CERT-${r.id}`,
+      code: `CERT-${r.id}`,
+      submittedDate: r.requestedAt,
+      detailDate: `วัตถุประสงค์: ${r.purpose || '-'}`,
+      documentType: `หนังสือรับรอง (${r.certificateName || '-'})`,
+      status: r.status,
+      source: 'CERTIFICATE',
+      rawCertificate: r,
+      canCancel: r.canCancel,
+    }));
+
+    const all = [...leaveRows, ...resignRows, ...certRows];
+    return all.sort((a, b) => (b.submittedDate || '').localeCompare(a.submittedDate || ''));
+  }, [leaveRequests, resignationRequests, certificateRequests]);
 
   const stats = useMemo(() => {
     const approved = documents.filter((d) => d.status === 'APPROVED').length;
@@ -184,30 +227,34 @@ export default function DocumentHistoryPage() {
   // ─── Actions ────────────────────────────────────────────────
 
   const handleCancel = (doc: MyDocumentRow) => {
-    // คำขอที่ยังรออนุมัติ (PENDING) การถอนคำขอจะถอนกลับไปเป็นแบบร่างแทนการยกเลิกถาวร
-    // (ตามฝั่ง backend ที่ปรับใหม่) เพื่อให้แก้ไขและยื่นใหม่ได้เองในภายหลัง
     setConfirmConfig({
       isOpen: true,
       singleButton: false,
       isLoading: false,
-      title: 'ถอนคำขอกลับไปเป็นแบบร่าง',
-      message: `ถอนคำขอ "${doc.documentType}" รหัส ${doc.code} กลับไปเป็นแบบร่างใช่หรือไม่? คุณจะสามารถแก้ไขและยื่นใหม่ได้ภายหลัง`,
-      confirmText: 'ถอนคำขอ',
+      title: doc.source === 'LEAVE' ? 'ถอนคำขอกลับไปเป็นแบบร่าง' : 'ยกเลิกคำขอ',
+      message: `คุณต้องการยกเลิกคำขอ "${doc.documentType}" รหัส ${doc.code} ใช่หรือไม่?`,
+      confirmText: 'ยืนยันยกเลิก',
       cancelText: 'ปิด',
       type: 'warning',
       onConfirm: async () => {
         try {
-          let resultStatus: string | undefined;
-          if (doc.source === 'LEAVE') {
-            const updated = await leaveService.cancelMyLeaveRequest(doc.raw.id);
-            resultStatus = updated?.status;
+          if (doc.source === 'LEAVE' && doc.rawLeave) {
+            const updated = await leaveService.cancelMyLeaveRequest(doc.rawLeave.id);
+            closeConfirm();
+            showToast(
+              updated?.status === 'DRAFT'
+                ? 'ถอนคำขอกลับไปเป็นแบบร่างสำเร็จ สามารถแก้ไขและยื่นใหม่ได้'
+                : 'ยกเลิกคำขอสำเร็จ'
+            );
+          } else if (doc.source === 'RESIGNATION' && doc.rawResignation) {
+            await resignationService.cancelRequest(doc.rawResignation.id);
+            closeConfirm();
+            showToast('ยกเลิกคำขอลาออกสำเร็จ');
+          } else if (doc.source === 'CERTIFICATE' && doc.rawCertificate) {
+            await certificateService.cancelRequest(doc.rawCertificate.id);
+            closeConfirm();
+            showToast('ยกเลิกคำขอหนังสือรับรองสำเร็จ');
           }
-          closeConfirm();
-          showToast(
-            resultStatus === 'DRAFT'
-              ? 'ถอนคำขอกลับไปเป็นแบบร่างสำเร็จ สามารถแก้ไขและยื่นใหม่ได้'
-              : 'ยกเลิกคำขอสำเร็จ'
-          );
           fetchData();
         } catch (err: any) {
           closeConfirm();
@@ -230,8 +277,8 @@ export default function DocumentHistoryPage() {
       type: 'danger',
       onConfirm: async () => {
         try {
-          if (doc.source === 'LEAVE') {
-            await leaveService.deleteMyLeaveRequest(doc.raw.id);
+          if (doc.source === 'LEAVE' && doc.rawLeave) {
+            await leaveService.deleteMyLeaveRequest(doc.rawLeave.id);
           }
           closeConfirm();
           showToast('ลบแบบร่างสำเร็จ');
@@ -246,8 +293,8 @@ export default function DocumentHistoryPage() {
 
   const handleDownloadDoc = async (doc: MyDocumentRow, docId: number, fileName: string) => {
     try {
-      if (doc.source === 'LEAVE') {
-        const blob = await leaveService.downloadLeaveDocument(doc.raw.id, docId);
+      if (doc.source === 'LEAVE' && doc.rawLeave) {
+        const blob = await leaveService.downloadLeaveDocument(doc.rawLeave.id, docId);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

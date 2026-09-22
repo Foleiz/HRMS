@@ -18,6 +18,7 @@ using Hrms.Application.Features.Settings.Services;
 using Hrms.Application.Features.Transfers.Services;
 using Hrms.Application.Features.WorkCalendar.Services;
 using Hrms.Application.Features.Certificates.Services;
+using Hrms.Application.Features.Resignation.Services;
 using Hrms.Application.Features.Payroll.Services;
 using Hrms.Infrastructure.Persistence;
 using Hrms.Infrastructure.Persistence.Interceptors;
@@ -86,6 +87,7 @@ builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
+builder.Services.AddScoped<IResignationService, ResignationService>();
 
 
 // 4. JWT Authentication

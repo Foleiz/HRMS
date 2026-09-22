@@ -227,6 +227,7 @@ public class AuditLogService : IAuditLogService
             "announcement" => "ประกาศองค์กร",
             "notification" => "การแจ้งเตือน",
             "certificate_request" or "certificaterequest" => "คำขอหนังสือรับรอง",
+            "resignation_request" or "resignationrequest" => "คำขอลาออก",
             "employment_contract" or "employmentcontract" => "สัญญาจ้างงาน",
             "salary_structure" or "salarystructure" => "โครงสร้างเงินเดือน",
             "department" => "แผนก",

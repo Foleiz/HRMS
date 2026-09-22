@@ -430,5 +430,30 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 }
             }
         }
+        else if (instance.DocumentType == "RESIGNATION_REQUEST")
+        {
+            var resign = await _context.ResignationRequests
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+
+            if (resign != null)
+            {
+                resign.Status = instance.Status;
+                if (instance.Status == "APPROVED")
+                {
+                    resign.ApprovedAt = DateTime.UtcNow;
+                    var lastAction = instance.Actions
+                        .OrderByDescending(a => a.ActionAt)
+                        .FirstOrDefault();
+                    if (lastAction != null)
+                    {
+                        resign.ApprovedByEmployeeId = lastAction.ApproverEmployeeId;
+                    }
+                }
+                else if (instance.Status == "CANCELLED")
+                {
+                    resign.CancelledAt ??= DateTime.UtcNow;
+                }
+            }
+        }
     }
 }
