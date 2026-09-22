@@ -8,13 +8,15 @@ import { certificateService } from '@/services/certificateService';
 interface CertificatePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  requestId: number | null;
+  requestId?: number | null;
+  initialDoc?: CertificateDocument | null;
 }
 
 export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = ({
   isOpen,
   onClose,
   requestId,
+  initialDoc,
 }) => {
   const [doc, setDoc] = useState<CertificateDocument | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,9 +24,21 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   const [currentLang, setCurrentLang] = useState<'TH' | 'EN'>('TH');
 
   useEffect(() => {
-    if (!isOpen || !requestId) {
+    if (!isOpen) {
       setDoc(null);
       setError(null);
+      return;
+    }
+
+    if (initialDoc && !requestId) {
+      setDoc(initialDoc);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!requestId) {
+      setDoc(null);
       return;
     }
 
