@@ -193,6 +193,261 @@ public class ApprovalFlowService : IApprovalFlowService
         return steps;
     }
 
+    public async Task<WorkflowSimulationResultDto> SimulateWorkflowAsync(WorkflowSimulationRequest request, CancellationToken cancellationToken = default)
+    {
+        var effectiveDate = request.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        // 1. Get Requester with current assignment
+        var requester = await _context.Employees
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.Division)
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.Position)
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.EmployeeLevel)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken);
+
+        if (requester == null)
+        {
+            return new WorkflowSimulationResultDto
+            {
+                Success = false,
+                Message = $"ไม่พบข้อมูลพนักงานรหัส ID {request.EmployeeId}",
+                DocumentType = request.DocumentType
+            };
+        }
+
+        var currentAssignment = requester.Assignments.FirstOrDefault(a => a.IsCurrent);
+
+        var requesterDto = new SimulatedApproverDto
+        {
+            EmployeeId = requester.Id,
+            EmployeeCode = requester.EmployeeCode,
+            FullName = requester.FullName,
+            PositionName = currentAssignment?.Position?.PositionName,
+            DepartmentName = currentAssignment?.Department?.DepartmentName
+        };
+
+        // 2. Find matching ApprovalFlow
+        var candidateFlows = await _context.ApprovalFlows
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Where(f => f.DocumentType == request.DocumentType && f.Status == "ACTIVE")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        ApprovalFlow? matchedFlow = null;
+        if (currentAssignment != null)
+        {
+            matchedFlow = candidateFlows.FirstOrDefault(f => f.DepartmentId == currentAssignment.DepartmentId && f.LevelId == currentAssignment.EmployeeLevelId)
+                       ?? candidateFlows.FirstOrDefault(f => f.DepartmentId == currentAssignment.DepartmentId && f.LevelId == null)
+                       ?? candidateFlows.FirstOrDefault(f => f.DepartmentId == null && f.LevelId == currentAssignment.EmployeeLevelId)
+                       ?? candidateFlows.FirstOrDefault(f => f.DepartmentId == null && f.LevelId == null);
+        }
+        else
+        {
+            matchedFlow = candidateFlows.FirstOrDefault(f => f.DepartmentId == null && f.LevelId == null)
+                       ?? candidateFlows.FirstOrDefault();
+        }
+
+        if (matchedFlow == null)
+        {
+            return new WorkflowSimulationResultDto
+            {
+                Success = false,
+                Message = $"ไม่พบสายการอนุมัติที่เปิดใช้งานสำหรับประเภทเอกสาร '{request.DocumentType}' ที่ตรงกับแผนกหรือระดับตำแหน่งของพนักงาน",
+                DocumentType = request.DocumentType,
+                Requester = requesterDto
+            };
+        }
+
+        // 3. Resolve each step
+        var steps = matchedFlow.Steps.OrderBy(s => s.StepNo).ToList();
+        var simulatedSteps = new List<SimulatedStepDto>();
+
+        foreach (var step in steps)
+        {
+            SimulatedApproverDto? approver = null;
+
+            switch (step.ApproverType)
+            {
+                case "EMPLOYEE":
+                    if (step.ApproverEmployee != null)
+                    {
+                        approver = await GetSimulatedApproverAsync(step.ApproverEmployee.Id, cancellationToken);
+                    }
+                    break;
+
+                case "MANAGER":
+                    if (currentAssignment?.ManagerEmployeeId.HasValue == true)
+                    {
+                        approver = await GetSimulatedApproverAsync(currentAssignment.ManagerEmployeeId.Value, cancellationToken);
+                    }
+                    break;
+
+                case "DEPARTMENT_HEAD":
+                    if (currentAssignment?.DepartmentId != null)
+                    {
+                        var dept = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == currentAssignment.DepartmentId, cancellationToken);
+                        if (dept?.HeadEmployeeId.HasValue == true)
+                        {
+                            approver = await GetSimulatedApproverAsync(dept.HeadEmployeeId.Value, cancellationToken);
+                        }
+                    }
+                    break;
+
+                case "DIVISION_HEAD":
+                    if (currentAssignment?.DivisionId != null)
+                    {
+                        var div = await _context.Divisions.AsNoTracking().FirstOrDefaultAsync(d => d.Id == currentAssignment.DivisionId, cancellationToken);
+                        if (div?.HeadEmployeeId.HasValue == true)
+                        {
+                            approver = await GetSimulatedApproverAsync(div.HeadEmployeeId.Value, cancellationToken);
+                        }
+                    }
+                    break;
+
+                case "ROLE":
+                    if (step.ApproverRoleId.HasValue)
+                    {
+                        var userRole = await _context.UserRoles
+                            .Include(ur => ur.User)
+                            .Where(ur => ur.RoleId == step.ApproverRoleId.Value && ur.User.EmployeeId > 0)
+                            .FirstOrDefaultAsync(cancellationToken);
+                        if (userRole?.User != null && userRole.User.EmployeeId > 0)
+                        {
+                            approver = await GetSimulatedApproverAsync(userRole.User.EmployeeId, cancellationToken);
+                        }
+                    }
+                    break;
+
+                case "HR":
+                    var hrUser = await _context.UserRoles
+                        .Include(ur => ur.User)
+                        .Include(ur => ur.Role)
+                        .Where(ur => (ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR") && ur.User.EmployeeId > 0)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (hrUser?.User != null && hrUser.User.EmployeeId > 0)
+                    {
+                        approver = await GetSimulatedApproverAsync(hrUser.User.EmployeeId, cancellationToken);
+                    }
+                    break;
+
+                case "CEO":
+                    var ceoUser = await _context.UserRoles
+                        .Include(ur => ur.User)
+                        .Include(ur => ur.Role)
+                        .Where(ur => (ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE") && ur.User.EmployeeId > 0)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (ceoUser?.User != null && ceoUser.User.EmployeeId > 0)
+                    {
+                        approver = await GetSimulatedApproverAsync(ceoUser.User.EmployeeId, cancellationToken);
+                    }
+                    else
+                    {
+                        var ceoEmp = await _context.Employees
+                            .Where(e => e.IsTopLevel)
+                            .FirstOrDefaultAsync(cancellationToken);
+                        if (ceoEmp != null)
+                        {
+                            approver = await GetSimulatedApproverAsync(ceoEmp.Id, cancellationToken);
+                        }
+                    }
+                    break;
+            }
+
+            // Check delegation for this approver on effectiveDate
+            bool hasDelegation = false;
+            SimulatedApproverDto? delegatedTo = null;
+            string? delegationPeriod = null;
+
+            if (approver != null)
+            {
+                var delegation = await _context.ApprovalDelegations
+                    .Include(d => d.DelegateEmployee)
+                    .Where(d => d.DelegatorEmployeeId == approver.EmployeeId
+                             && d.Status == "ACTIVE"
+                             && (d.DocumentType == null || d.DocumentType == request.DocumentType)
+                             && d.StartDate <= effectiveDate
+                             && d.EndDate >= effectiveDate)
+                    .OrderByDescending(d => d.DocumentType != null)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (delegation != null)
+                {
+                    hasDelegation = true;
+                    delegatedTo = await GetSimulatedApproverAsync(delegation.DelegateEmployeeId, cancellationToken);
+                    delegationPeriod = $"{delegation.StartDate:dd/MM/yyyy} - {delegation.EndDate:dd/MM/yyyy}";
+                }
+            }
+
+            simulatedSteps.Add(new SimulatedStepDto
+            {
+                StepNo = step.StepNo,
+                ApproverType = step.ApproverType,
+                ApproverTypeLabel = GetApproverTypeLabel(step.ApproverType),
+                IsRequired = step.IsRequired,
+                Approver = approver,
+                HasDelegation = hasDelegation,
+                DelegatedTo = delegatedTo,
+                DelegationPeriod = delegationPeriod
+            });
+        }
+
+        return new WorkflowSimulationResultDto
+        {
+            Success = true,
+            Message = "จำลองสายการอนุมัติสำเร็จ",
+            FlowId = matchedFlow.Id,
+            FlowCode = matchedFlow.FlowCode,
+            FlowName = matchedFlow.FlowName,
+            DocumentType = request.DocumentType,
+            Requester = requesterDto,
+            Steps = simulatedSteps
+        };
+    }
+
+    private async Task<SimulatedApproverDto?> GetSimulatedApproverAsync(long employeeId, CancellationToken cancellationToken)
+    {
+        var emp = await _context.Employees
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments.Where(a => a.IsCurrent))
+                .ThenInclude(a => a.Position)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+        if (emp == null) return null;
+
+        var assign = emp.Assignments.FirstOrDefault(a => a.IsCurrent);
+        return new SimulatedApproverDto
+        {
+            EmployeeId = emp.Id,
+            EmployeeCode = emp.EmployeeCode,
+            FullName = emp.FullName,
+            PositionName = assign?.Position?.PositionName,
+            DepartmentName = assign?.Department?.DepartmentName
+        };
+    }
+
+    private static string GetApproverTypeLabel(string approverType)
+    {
+        return approverType switch
+        {
+            "MANAGER" => "หัวหน้างานโดยตรง",
+            "DEPARTMENT_HEAD" => "ผู้จัดการแผนก",
+            "DIVISION_HEAD" => "หัวหน้าฝ่าย",
+            "HR" => "ฝ่ายบุคคล",
+            "CEO" => "ประธานเจ้าหน้าที่บริหาร",
+            "ROLE" => "ระบุตามบทบาท",
+            "EMPLOYEE" => "ระบุตัวบุคคล",
+            _ => approverType
+        };
+    }
+
     private static ApprovalFlowDto MapToDto(ApprovalFlow flow)
     {
         return new ApprovalFlowDto

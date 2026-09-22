@@ -68,6 +68,78 @@ export interface UpdateApprovalFlowPayload {
   steps: ApprovalStepInput[];
 }
 
+/** ข้อมูลการมอบอำนาจอนุมัติแทน */
+export interface ApprovalDelegation {
+  id: number;
+  delegatorEmployeeId: number;
+  delegatorEmployeeCode: string;
+  delegatorEmployeeName: string;
+  delegatorPosition?: string | null;
+  delegateEmployeeId: number;
+  delegateEmployeeCode: string;
+  delegateEmployeeName: string;
+  delegatePosition?: string | null;
+  documentType?: string | null;
+  documentTypeLabel: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  isActiveNow: boolean;
+}
+
+export interface CreateApprovalDelegationPayload {
+  delegatorEmployeeId: number;
+  delegateEmployeeId: number;
+  documentType?: string | null;
+  startDate: string;
+  endDate: string;
+}
+
+export interface UpdateApprovalDelegationPayload {
+  delegateEmployeeId: number;
+  documentType?: string | null;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+/** จำลองสายการอนุมัติ (Workflow Simulation) */
+export interface WorkflowSimulationRequest {
+  employeeId: number;
+  documentType: string;
+  effectiveDate?: string;
+}
+
+export interface SimulatedApprover {
+  employeeId: number;
+  employeeCode: string;
+  fullName: string;
+  positionName?: string | null;
+  departmentName?: string | null;
+}
+
+export interface SimulatedStep {
+  stepNo: number;
+  approverType: string;
+  approverTypeLabel: string;
+  isRequired: boolean;
+  approver?: SimulatedApprover | null;
+  hasDelegation: boolean;
+  delegatedTo?: SimulatedApprover | null;
+  delegationPeriod?: string | null;
+}
+
+export interface WorkflowSimulationResult {
+  success: boolean;
+  message: string;
+  flowId?: number | null;
+  flowCode?: string | null;
+  flowName?: string | null;
+  documentType: string;
+  requester?: SimulatedApprover | null;
+  steps: SimulatedStep[];
+}
+
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทเอกสาร */
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   ATTENDANCE_ADJUSTMENT: 'คำขอปรับปรุงเวลาเข้า-ออกงาน',
@@ -78,13 +150,13 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   PAYROLL_PERIOD: 'รอบเงินเดือน',
 };
 
-/** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ */
+/** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ (Pure Thai - Rule #10) */
 export const APPROVER_TYPE_LABELS: Record<string, string> = {
   EMPLOYEE: 'ระบุตัวบุคคล',
   ROLE: 'ระบุตามบทบาท',
   MANAGER: 'หัวหน้างานตรง',
   DEPARTMENT_HEAD: 'หัวหน้าแผนก',
   DIVISION_HEAD: 'หัวหน้าฝ่าย',
-  HR: 'ฝ่ายบุคคล',
-  CEO: 'ผู้บริหารสูงสุด (CEO)',
+  HR: 'ฝ่ายทรัพยากรบุคคล',
+  CEO: 'ผู้บริหารสูงสุด',
 };

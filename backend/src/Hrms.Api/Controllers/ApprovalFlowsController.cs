@@ -100,4 +100,23 @@ public class ApprovalFlowsController : ControllerBase
         }
         return Ok(ApiResponse<bool>.Ok(true, "ลบสายการอนุมัติสำเร็จ"));
     }
+
+    [HttpPost("simulate")]
+    [ProducesResponseType(typeof(ApiResponse<WorkflowSimulationResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<WorkflowSimulationResultDto>>> Simulate(
+        [FromBody] WorkflowSimulationRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _flowService.SimulateWorkflowAsync(request, cancellationToken);
+            return Ok(ApiResponse<WorkflowSimulationResultDto>.Ok(result, result.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<WorkflowSimulationResultDto>.Fail(ex.Message));
+        }
+    }
 }
+
