@@ -12,7 +12,6 @@ import {
   Calendar,
   Building,
   Briefcase,
-  AlertTriangle,
   UserCheck,
   RefreshCw,
 } from 'lucide-react';
@@ -247,11 +246,7 @@ export const WorkflowSimulatorView: React.FC<WorkflowSimulatorViewProps> = ({ em
                     return (
                       <React.Fragment key={step.stepNo}>
                         <div
-                          className={`w-full lg:w-72 rounded-2xl p-4 shrink-0 space-y-2.5 border transition-all ${
-                            step.hasDelegation
-                              ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-200/50'
-                              : 'bg-white border-slate-200 hover:border-[#0B2046]/30 shadow-xs'
-                          }`}
+                          className="w-full lg:w-72 rounded-2xl p-4 shrink-0 space-y-2.5 border bg-white border-slate-200 hover:border-[#0B2046]/30 shadow-xs transition-all"
                         >
                           {/* Step Header */}
                           <div className="flex items-center justify-between">
@@ -286,27 +281,6 @@ export const WorkflowSimulatorView: React.FC<WorkflowSimulatorViewProps> = ({ em
                             <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-[11px] flex items-start gap-1.5">
                               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                               <span>ไม่พบผู้ดำรงตำแหน่งหรือสิทธิ์นี้ในสายงาน</span>
-                            </div>
-                          )}
-
-                          {/* Active Delegation Alert */}
-                          {step.hasDelegation && step.delegatedTo && (
-                            <div className="p-2.5 bg-amber-100/80 border border-amber-300 rounded-xl text-[11px] text-amber-900 space-y-1">
-                              <div className="flex items-center gap-1 font-bold text-amber-950">
-                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                <span>มีการมอบอำนาจอนุมัติแทน</span>
-                              </div>
-                              <div className="text-[11px] font-semibold text-amber-900">
-                                ปฏิบัติการแทน: {step.delegatedTo.fullName} ({step.delegatedTo.employeeCode})
-                              </div>
-                              <div className="text-[10px] text-amber-700">
-                                ตำแหน่ง: {step.delegatedTo.positionName || '-'}
-                              </div>
-                              {step.delegationPeriod && (
-                                <div className="text-[10px] text-amber-700">
-                                  ช่วงเวลา: {step.delegationPeriod}
-                                </div>
-                              )}
                             </div>
                           )}
 

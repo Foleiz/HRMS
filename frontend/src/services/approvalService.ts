@@ -4,15 +4,12 @@ import {
   ApprovalFlow,
   CreateApprovalFlowPayload,
   UpdateApprovalFlowPayload,
-  ApprovalDelegation,
-  CreateApprovalDelegationPayload,
-  UpdateApprovalDelegationPayload,
   WorkflowSimulationRequest,
   WorkflowSimulationResult,
 } from '@/types/approval';
 
 /**
- * Service สำหรับเรียก API ตั้งค่าสายการอนุมัติเอกสารกลาง (Approval Workflow Designer & Delegation Hub)
+ * Service สำหรับเรียก API ตั้งค่าสายการอนุมัติเอกสารกลาง (Approval Workflow Designer & Simulation Engine)
  */
 export const approvalService = {
   // === 1. Approval Flows (สายการอนุมัติ) ===
@@ -44,37 +41,6 @@ export const approvalService = {
   // === 2. Workflow Simulation (การจำลองสายการอนุมัติ) ===
   async simulateWorkflow(payload: WorkflowSimulationRequest): Promise<WorkflowSimulationResult> {
     const res = await apiClient.post<ApiResponse<WorkflowSimulationResult>>('/approval-flows/simulate', payload);
-    return res.data.data;
-  },
-
-  // === 3. Approval Delegations (การมอบอำนาจอนุมัติแทน) ===
-  async getDelegations(params?: {
-    status?: string;
-    delegatorId?: number;
-    delegateId?: number;
-    documentType?: string;
-  }): Promise<ApprovalDelegation[]> {
-    const res = await apiClient.get<ApiResponse<ApprovalDelegation[]>>('/approval-delegations', { params });
-    return res.data.data;
-  },
-
-  async getDelegationById(id: number): Promise<ApprovalDelegation> {
-    const res = await apiClient.get<ApiResponse<ApprovalDelegation>>(`/approval-delegations/${id}`);
-    return res.data.data;
-  },
-
-  async createDelegation(payload: CreateApprovalDelegationPayload): Promise<ApprovalDelegation> {
-    const res = await apiClient.post<ApiResponse<ApprovalDelegation>>('/approval-delegations', payload);
-    return res.data.data;
-  },
-
-  async updateDelegation(id: number, payload: UpdateApprovalDelegationPayload): Promise<ApprovalDelegation> {
-    const res = await apiClient.put<ApiResponse<ApprovalDelegation>>(`/approval-delegations/${id}`, payload);
-    return res.data.data;
-  },
-
-  async deleteDelegation(id: number): Promise<boolean> {
-    const res = await apiClient.delete<ApiResponse<boolean>>(`/approval-delegations/${id}`);
     return res.data.data;
   },
 };

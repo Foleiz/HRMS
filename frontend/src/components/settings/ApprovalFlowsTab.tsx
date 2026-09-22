@@ -17,12 +17,8 @@ import {
   CheckCircle2,
   Ban,
   GitMerge,
-  ArrowLeftRight,
   Compass,
-  Calendar,
-  AlertCircle,
   Sparkles,
-  ShieldCheck,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { approvalService } from '@/services/approvalService';
@@ -34,9 +30,6 @@ import {
   ApprovalStep,
   ApprovalStepInput,
   CreateApprovalFlowPayload,
-  ApprovalDelegation,
-  CreateApprovalDelegationPayload,
-  UpdateApprovalDelegationPayload,
   DOCUMENT_TYPE_LABELS,
   APPROVER_TYPE_LABELS,
 } from '@/types/approval';
@@ -44,10 +37,9 @@ import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { ApprovalDelegationModal } from './ApprovalDelegationModal';
 import { WorkflowSimulatorView } from './WorkflowSimulatorView';
 
-type SubTab = 'flows' | 'delegations' | 'simulator';
+type SubTab = 'flows' | 'simulator';
 
 const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
 const APPROVER_TYPE_OPTIONS = Object.keys(APPROVER_TYPE_LABELS);
@@ -100,19 +92,6 @@ const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: E
   }
 };
 
-const formatDateThai = (d?: string | null) => {
-  if (!d) return '-';
-  try {
-    return new Date(d).toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return d;
-  }
-};
-
 const emptyStep = (stepNo: number): ApprovalStepInput => ({
   stepNo,
   approverType: 'MANAGER',
@@ -133,7 +112,7 @@ export const ApprovalFlowsTab: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<RoleSummary[]>([]);
 
-  // === Tab 1: Flows Data ===
+  // === Flows Data ===
   const [flows, setFlows] = useState<ApprovalFlow[]>([]);
   const [loadingFlows, setLoadingFlows] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,15 +136,6 @@ export const ApprovalFlowsTab: React.FC = () => {
     status: 'ACTIVE',
     steps: [emptyStep(1)],
   });
-
-  // === Tab 2: Delegations Data ===
-  const [delegations, setDelegations] = useState<ApprovalDelegation[]>([]);
-  const [loadingDelegations, setLoadingDelegations] = useState(false);
-  const [delegationSearch, setDelegationSearch] = useState('');
-  const [delegationDocFilter, setDelegationDocFilter] = useState('');
-  const [delegationStatusFilter, setDelegationStatusFilter] = useState('');
-  const [isDelegationModalOpen, setIsDelegationModalOpen] = useState(false);
-  const [editingDelegation, setEditingDelegation] = useState<ApprovalDelegation | null>(null);
 
   // Common Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
@@ -215,24 +185,9 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
   }, [error]);
 
-  // 3. Load Delegations
-  const loadDelegations = useCallback(async () => {
-    try {
-      setLoadingDelegations(true);
-      const res = await approvalService.getDelegations();
-      setDelegations(res);
-    } catch (err: any) {
-      console.error('Failed to load delegations', err);
-      error(err?.response?.data?.message || err.message || 'ไม่สามารถโหลดข้อมูลการมอบอำนาจได้');
-    } finally {
-      setLoadingDelegations(false);
-    }
-  }, [error]);
-
   useEffect(() => {
     loadFlows();
-    loadDelegations();
-  }, [loadFlows, loadDelegations]);
+  }, [loadFlows]);
 
   // Filtered Flows
   const filteredFlows = useMemo(() => {
@@ -249,28 +204,6 @@ export const ApprovalFlowsTab: React.FC = () => {
       return true;
     });
   }, [flows, searchTerm, docTypeFilter, deptFilter, statusFilter]);
-
-  // Filtered Delegations
-  const filteredDelegations = useMemo(() => {
-    return delegations.filter((d) => {
-      if (delegationSearch.trim()) {
-        const term = delegationSearch.toLowerCase();
-        const matchDelegator =
-          d.delegatorEmployeeName.toLowerCase().includes(term) ||
-          d.delegatorEmployeeCode.toLowerCase().includes(term);
-        const matchDelegate =
-          d.delegateEmployeeName.toLowerCase().includes(term) ||
-          d.delegateEmployeeCode.toLowerCase().includes(term);
-        if (!matchDelegator && !matchDelegate) return false;
-      }
-      if (delegationDocFilter && d.documentType !== delegationDocFilter) return false;
-      if (delegationStatusFilter) {
-        if (delegationStatusFilter === 'ACTIVE_NOW' && !d.isActiveNow) return false;
-        if (delegationStatusFilter === 'INACTIVE' && d.status !== 'INACTIVE') return false;
-      }
-      return true;
-    });
-  }, [delegations, delegationSearch, delegationDocFilter, delegationStatusFilter]);
 
   // Quick Toggle Status for Flow
   const handleToggleStatus = async (flow: ApprovalFlow) => {
@@ -475,46 +408,6 @@ export const ApprovalFlowsTab: React.FC = () => {
     });
   };
 
-  // Delegation Actions
-  const handleOpenCreateDelegation = () => {
-    setEditingDelegation(null);
-    setIsDelegationModalOpen(true);
-  };
-
-  const handleOpenEditDelegation = (delegation: ApprovalDelegation) => {
-    setEditingDelegation(delegation);
-    setIsDelegationModalOpen(true);
-  };
-
-  const handleSaveDelegation = async (payload: CreateApprovalDelegationPayload | UpdateApprovalDelegationPayload) => {
-    if (editingDelegation) {
-      await approvalService.updateDelegation(editingDelegation.id, payload as UpdateApprovalDelegationPayload);
-      success('แก้ไขการมอบอำนาจอนุมัติแทนสำเร็จ');
-    } else {
-      await approvalService.createDelegation(payload as CreateApprovalDelegationPayload);
-      success('เพิ่มการมอบอำนาจอนุมัติแทนสำเร็จ');
-    }
-    loadDelegations();
-  };
-
-  const handleDeleteDelegation = (delegation: ApprovalDelegation) => {
-    setConfirmModalConfig({
-      isOpen: true,
-      title: 'ยืนยันการยกเลิกการมอบอำนาจ',
-      message: `คุณต้องการลบหรือยกเลิกการมอบอำนาจจาก ${delegation.delegatorEmployeeName} ให้แก่ ${delegation.delegateEmployeeName} ใช่หรือไม่?`,
-      onConfirm: async () => {
-        try {
-          await approvalService.deleteDelegation(delegation.id);
-          success('ลบการมอบอำนาจสำเร็จ');
-          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
-          loadDelegations();
-        } catch (err: any) {
-          error(err?.response?.data?.message || 'ไม่สามารถลบการมอบอำนาจได้');
-        }
-      },
-    });
-  };
-
   return (
     <div className="space-y-6 pb-16">
       {/* 1. Sub-Tab Switcher Pills (Rule #10 Pure Thai) */}
@@ -532,22 +425,6 @@ export const ApprovalFlowsTab: React.FC = () => {
           <span>ผังสายการอนุมัติ</span>
           <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600">
             {flows.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('delegations')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === 'delegations'
-              ? 'bg-white text-[#0B2046] shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <ArrowLeftRight className="w-4 h-4 text-[#0B2046]" />
-          <span>การมอบอำนาจอนุมัติแทน</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600">
-            {delegations.length}
           </span>
         </button>
 
@@ -787,192 +664,7 @@ export const ApprovalFlowsTab: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 2: การมอบอำนาจอนุมัติแทน (Approval Delegation Hub) */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'delegations' && (
-        <div className="space-y-6">
-          {/* Top Filter & Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Search */}
-              <div className="relative w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อหรือรหัสพนักงาน..."
-                  value={delegationSearch}
-                  onChange={(e) => setDelegationSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 transition-all placeholder:text-slate-400"
-                />
-              </div>
-
-              {/* Doc Type Filter */}
-              <div className="relative">
-                <select
-                  value={delegationDocFilter}
-                  onChange={(e) => setDelegationDocFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
-                >
-                  <option value="">ประเภทเอกสารทั้งหมด</option>
-                  {DOCUMENT_TYPE_OPTIONS.map((dt) => (
-                    <option key={dt} value={dt}>
-                      {DOCUMENT_TYPE_LABELS[dt]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
-
-              {/* Status Filter */}
-              <div className="relative">
-                <select
-                  value={delegationStatusFilter}
-                  onChange={(e) => setDelegationStatusFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
-                >
-                  <option value="">สถานะทั้งหมด</option>
-                  <option value="ACTIVE_NOW">กำลังมีผลในปัจจุบัน</option>
-                  <option value="INACTIVE">ปิดใช้งาน</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Add Delegation Button */}
-            <button
-              type="button"
-              onClick={handleOpenCreateDelegation}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-medium transition-all shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> เพิ่มการมอบอำนาจอนุมัติแทน
-            </button>
-          </div>
-
-          {/* Delegations Table */}
-          {loadingDelegations ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
-              <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลการมอบอำนาจ...
-            </div>
-          ) : filteredDelegations.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
-              ยังไม่มีประวัติการมอบอำนาจอนุมัติแทนในระบบ
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-600">
-                  <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-700 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-5 py-3.5">ผู้มอบอำนาจ (เจ้าของสิทธิ์)</th>
-                      <th className="px-5 py-3.5">ผู้รับมอบอำนาจแทน</th>
-                      <th className="px-5 py-3.5">ประเภทเอกสาร</th>
-                      <th className="px-5 py-3.5">ช่วงวันที่มีผล</th>
-                      <th className="px-5 py-3.5 text-center">สถานะ</th>
-                      <th className="px-5 py-3.5 text-right">การจัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredDelegations.map((d) => {
-                      const isExpired = new Date(d.endDate) < new Date(new Date().toDateString());
-                      const isPending = new Date(d.startDate) > new Date();
-
-                      return (
-                        <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
-                          {/* Delegator */}
-                          <td className="px-5 py-4">
-                            <div className="font-bold text-slate-800">{d.delegatorEmployeeName}</div>
-                            <div className="text-[11px] text-slate-400">
-                              {d.delegatorEmployeeCode} • {d.delegatorPosition || 'ไม่ระบุตำแหน่ง'}
-                            </div>
-                          </td>
-
-                          {/* Delegate */}
-                          <td className="px-5 py-4">
-                            <div className="font-bold text-[#0B2046] flex items-center gap-1.5">
-                              <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span>{d.delegateEmployeeName}</span>
-                            </div>
-                            <div className="text-[11px] text-slate-400 pl-5">
-                              {d.delegateEmployeeCode} • {d.delegatePosition || 'ไม่ระบุตำแหน่ง'}
-                            </div>
-                          </td>
-
-                          {/* Document Type */}
-                          <td className="px-5 py-4">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                              {d.documentTypeLabel}
-                            </span>
-                          </td>
-
-                          {/* Dates */}
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span>
-                                {formatDateThai(d.startDate)} - {formatDateThai(d.endDate)}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Status Badge */}
-                          <td className="px-5 py-4 text-center">
-                            {d.status === 'INACTIVE' ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                ปิดใช้งาน
-                              </span>
-                            ) : d.isActiveNow ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                กำลังมีผล
-                              </span>
-                            ) : isPending ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                                รอถึงกำหนด
-                              </span>
-                            ) : isExpired ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-600 border border-rose-200">
-                                สิ้นสุดแล้ว
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
-                                ปกติ
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Actions */}
-                          <td className="px-5 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditDelegation(d)}
-                                className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                                title="แก้ไขข้อมูล"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteDelegation(d)}
-                                className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title="ลบการมอบอำนาจ"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-TAB 3: ทดสอบจำลองสายการอนุมัติ (Workflow Simulator) */}
+      {/* SUB-TAB 2: ทดสอบจำลองสายการอนุมัติ (Workflow Simulator) */}
       {/* ========================================================================= */}
       {activeSubTab === 'simulator' && (
         <WorkflowSimulatorView employees={employees} />
@@ -1432,20 +1124,6 @@ export const ApprovalFlowsTab: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* Delegation Modal */}
-      {/* ========================================================================= */}
-      <ApprovalDelegationModal
-        isOpen={isDelegationModalOpen}
-        onClose={() => {
-          setIsDelegationModalOpen(false);
-          setEditingDelegation(null);
-        }}
-        onSave={handleSaveDelegation}
-        editingDelegation={editingDelegation}
-        employees={employees}
-      />
 
       {/* ========================================================================= */}
       {/* Common Confirm Modal */}

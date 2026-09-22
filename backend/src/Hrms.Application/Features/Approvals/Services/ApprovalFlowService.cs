@@ -359,41 +359,13 @@ public class ApprovalFlowService : IApprovalFlowService
                     break;
             }
 
-            // Check delegation for this approver on effectiveDate
-            bool hasDelegation = false;
-            SimulatedApproverDto? delegatedTo = null;
-            string? delegationPeriod = null;
-
-            if (approver != null)
-            {
-                var delegation = await _context.ApprovalDelegations
-                    .Include(d => d.DelegateEmployee)
-                    .Where(d => d.DelegatorEmployeeId == approver.EmployeeId
-                             && d.Status == "ACTIVE"
-                             && (d.DocumentType == null || d.DocumentType == request.DocumentType)
-                             && d.StartDate <= effectiveDate
-                             && d.EndDate >= effectiveDate)
-                    .OrderByDescending(d => d.DocumentType != null)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (delegation != null)
-                {
-                    hasDelegation = true;
-                    delegatedTo = await GetSimulatedApproverAsync(delegation.DelegateEmployeeId, cancellationToken);
-                    delegationPeriod = $"{delegation.StartDate:dd/MM/yyyy} - {delegation.EndDate:dd/MM/yyyy}";
-                }
-            }
-
             simulatedSteps.Add(new SimulatedStepDto
             {
                 StepNo = step.StepNo,
                 ApproverType = step.ApproverType,
                 ApproverTypeLabel = GetApproverTypeLabel(step.ApproverType),
                 IsRequired = step.IsRequired,
-                Approver = approver,
-                HasDelegation = hasDelegation,
-                DelegatedTo = delegatedTo,
-                DelegationPeriod = delegationPeriod
+                Approver = approver
             });
         }
 

@@ -68,41 +68,6 @@ export interface UpdateApprovalFlowPayload {
   steps: ApprovalStepInput[];
 }
 
-/** ข้อมูลการมอบอำนาจอนุมัติแทน */
-export interface ApprovalDelegation {
-  id: number;
-  delegatorEmployeeId: number;
-  delegatorEmployeeCode: string;
-  delegatorEmployeeName: string;
-  delegatorPosition?: string | null;
-  delegateEmployeeId: number;
-  delegateEmployeeCode: string;
-  delegateEmployeeName: string;
-  delegatePosition?: string | null;
-  documentType?: string | null;
-  documentTypeLabel: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  isActiveNow: boolean;
-}
-
-export interface CreateApprovalDelegationPayload {
-  delegatorEmployeeId: number;
-  delegateEmployeeId: number;
-  documentType?: string | null;
-  startDate: string;
-  endDate: string;
-}
-
-export interface UpdateApprovalDelegationPayload {
-  delegateEmployeeId: number;
-  documentType?: string | null;
-  startDate: string;
-  endDate: string;
-  status: string;
-}
-
 /** จำลองสายการอนุมัติ (Workflow Simulation) */
 export interface WorkflowSimulationRequest {
   employeeId: number;
@@ -124,9 +89,6 @@ export interface SimulatedStep {
   approverTypeLabel: string;
   isRequired: boolean;
   approver?: SimulatedApprover | null;
-  hasDelegation: boolean;
-  delegatedTo?: SimulatedApprover | null;
-  delegationPeriod?: string | null;
 }
 
 export interface WorkflowSimulationResult {
