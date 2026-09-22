@@ -183,6 +183,40 @@ useEffect(() => {
 
 ---
 
+### 2.3 มาตรฐานแบบฟอร์มยื่นเอกสาร ESS (Standardized ESS Document Submission Form Pattern)
+เพื่อให้ประสบการณ์ใช้งานในหมวด **"ยื่นเอกสาร" (ESS Documents)** สอดคล้องกัน 100% ทั้ง 4 ประเภทเอกสาร:
+1. **ยื่นคำขอลา** (`/documents/leave`)
+2. **ขอหนังสือรับรอง** (`/documents/certificate`)
+3. **ยื่นคำขอลาออก** (`/documents/resignation`) *(สำหรับงานในอนาคต)*
+4. **คำร้องเอกสารทั่วไป** (`/documents/general`) *(สำหรับงานในอนาคต)*
+
+#### ข้อกำหนดโครงสร้างของทุกหน้าในหมวดนี้:
+1. **แถบเมนูย่อยด้านบนสุด (Top Sub-Nav):**
+   - ต้องใส่ `<DocumentsSubNav />` ด้านบนสุดของหน้าเสมอ เพื่อให้มีแท็บสลับ `รายการเอกสาร` และ `ประวัติเอกสาร` คงอยู่ตลอดเวลา
+2. **ส่วนหัวของหน้า (Page Header):**
+   - ด้านซ้าย: หัวข้อหลัก (`text-2xl font-bold text-gray-900 tracking-tight`) พร้อมคำอธิบายย่อย (`text-sm text-gray-500 mt-0.5`)
+   - ด้านขวา: ปุ่ม **"ล้างฟอร์ม"** พร้อมไอคอน `<RotateCcw className="w-4 h-4" />` (`bg-white border border-gray-200 text-gray-600 rounded-xl text-sm`)
+3. **การ์ดคอนเทนเนอร์และพื้นหลัง (Single Form Card):**
+   - ใช้การ์ดสีขาวผืนเดียว: `bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7`
+   - แบ่งเป็น 2 คอลัมน์ภายใน: `grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6`
+4. **การจัดวางฟิลด์ข้อมูล (2 Columns):**
+   - **คอลัมน์ซ้าย:**
+     - กล่อง `ข้อมูลทั่วไป` 4 ช่อง (Grid 2x2, Read-only / Disabled, `bg-gray-50`): วันที่ยื่น, ชื่อ-นามสกุล, ตำแหน่ง, แผนก/สังกัด
+     - ช่องเลือกประเภทเอกสาร/เหตุผลหลัก
+     - กล่องข้อความวัตถุประสงค์/เหตุผล พร้อมตัวนับตัวอักษรชิดขวาของ Label (เช่น `0/160`)
+   - **คอลัมน์ขวา:**
+     - วันที่และช่วงเวลา: **ต้องใช้คอมโพเนนต์ปฏิทิน `<LeaveDateRangePicker />`** เสมอ (ไม่ใช้ plain input) เพื่อให้มีปฏิทิน Popover ภาษาไทยและ พ.ศ. ตรงกัน
+     - ปุ่มตัวเลือกรูปแบบ/ภาษา: ใช้สไตล์ Pill tabs ภายในกล่อง `bg-gray-50` และไฮไลต์ Active ด้วย `bg-[#0B2046] text-white shadow-sm`
+     - ช่องหมายเหตุเพิ่มเติม พร้อมตัวนับตัวอักษรชิดขวา
+5. **แถบปุ่มสั่งการด้านล่าง (Bottom Action Bar):**
+   - ต้องมีเส้นคั่นบน `border-t border-gray-100 pt-6 mt-6`
+   - **จัดวางปุ่มชิดขวาทั้งหมด (`flex items-center justify-end gap-3`)**:
+     - ปุ่มดูตัวอย่าง (ถ้ามี): `bg-white border border-gray-200 text-gray-600 rounded-xl text-sm` พร้อมไอคอน `<Eye />`
+     - ปุ่มบันทึกแบบร่าง: `bg-white border border-gray-200 text-gray-600 rounded-xl text-sm` พร้อมไอคอน `<Save />`
+     - ปุ่มยืนยันยื่นคำขอ: ปุ่มทึบ `bg-[#0B2046] text-white rounded-xl text-sm font-medium px-6 py-2.5 shadow-sm`
+
+---
+
 ## 🛠️ PART 3: คู่มือแก้ปัญหาข้อผิดพลาดทางเทคนิค (Troubleshooting Checklist)
 
 ### 3.1 Dependency Injection Resolution (`Unable to resolve service for type`)
