@@ -18,9 +18,28 @@ import { certificateService } from '@/services/certificateService';
 import { leaveService } from '@/services/leaveService';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
+
+// แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
+const toInputDate = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// แปลง 'YYYY-MM-DD' -> แสดงผล 'dd/mm/yyyy' (พ.ศ.)
+const formatThaiShort = (s: string): string => {
+  if (!s) return '-';
+  const parts = s.split('-');
+  if (parts.length !== 3) return s;
+  const [y, m, d] = parts.map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+};
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -44,8 +63,14 @@ export default function CertificatePage() {
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<'TH' | 'EN'>('TH');
-  const [issueDate, setIssueDate] = useState('22/09/2569');
-  const [expiryDate, setExpiryDate] = useState('21/12/2569');
+
+  // Dates in 'YYYY-MM-DD' format (compatible with LeaveDateRangePicker)
+  const [issueDate, setIssueDate] = useState(() => toInputDate(new Date()));
+  const [expiryDate, setExpiryDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 90);
+    return toInputDate(d);
+  });
 
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,24 +83,10 @@ export default function CertificatePage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<CertificateDocument | null>(null);
 
-  // Initialize dates and breadcrumb
+  // Initialize breadcrumb & load saved draft
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' });
 
-    // Set today and +90 days
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear() + 543;
-    setIssueDate(`${d}/${m}/${y}`);
-
-    const exp = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-    const expD = String(exp.getDate()).padStart(2, '0');
-    const expM = String(exp.getMonth() + 1).padStart(2, '0');
-    const expY = exp.getFullYear() + 543;
-    setExpiryDate(`${expD}/${expM}/${expY}`);
-
-    // Load saved draft if present
     try {
       const savedDraft = localStorage.getItem('hrms_cert_draft');
       if (savedDraft) {
@@ -84,6 +95,8 @@ export default function CertificatePage() {
         if (parsed.selectedTypeId) setSelectedTypeId(parsed.selectedTypeId);
         if (parsed.notes) setNotes(parsed.notes);
         if (parsed.language) setSelectedLanguage(parsed.language);
+        if (parsed.issueDate) setIssueDate(parsed.issueDate);
+        if (parsed.expiryDate) setExpiryDate(parsed.expiryDate);
       }
     } catch {
       // Ignore
@@ -139,6 +152,10 @@ export default function CertificatePage() {
     setNotes('');
     if (types.length > 0) setSelectedTypeId(types[0].id);
     setSelectedLanguage('TH');
+    setIssueDate(toInputDate(new Date()));
+    const d = new Date();
+    d.setDate(d.getDate() + 90);
+    setExpiryDate(toInputDate(d));
     setFormError(null);
     localStorage.removeItem('hrms_cert_draft');
     showToast('ล้างข้อมูลในแบบฟอร์มเรียบร้อยแล้ว');
@@ -150,7 +167,7 @@ export default function CertificatePage() {
     const previewData: CertificateDocument = {
       requestId: 0,
       documentNumber: 'CERT-ตัวอย่างแบบร่าง',
-      issueDate: new Date().toISOString(),
+      issueDate: issueDate ? new Date(issueDate).toISOString() : new Date().toISOString(),
       language: selectedLanguage,
       certificateCode: currentType?.certificateCode || 'CERT_SALARY',
       certificateTitle: currentType?.certificateName || 'หนังสือรับรองเงินเดือน',
@@ -194,6 +211,8 @@ export default function CertificatePage() {
           selectedTypeId,
           notes: notes.trim(),
           language: selectedLanguage,
+          issueDate,
+          expiryDate,
           savedAt: new Date().toISOString(),
         })
       );
@@ -224,7 +243,7 @@ export default function CertificatePage() {
 
       const remarks = [
         notes.trim() ? `หมายเหตุ: ${notes.trim()}` : null,
-        `วันหมดอายุเอกสาร: ${expiryDate}`,
+        `วันหมดอายุเอกสาร: ${formatThaiShort(expiryDate)}`,
       ].filter(Boolean).join(' | ');
 
       await certificateService.createRequest({
@@ -299,7 +318,7 @@ export default function CertificatePage() {
                   <input
                     type="text"
                     readOnly
-                    value={issueDate}
+                    value={formatThaiShort(issueDate)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed font-mono"
                   />
                 </div>
@@ -377,20 +396,24 @@ export default function CertificatePage() {
 
           {/* ─── คอลัมน์ขวา: วันที่ออก, วันหมดอายุ, ภาษา, หมายเหตุ ─── */}
           <div className="space-y-5">
-            {/* วันที่ออก & รูปแบบภาษา (โครงสร้างเดียวกับ วันที่ลา & รูปแบบการลา) */}
+            {/* วันที่ออก & รูปแบบภาษา (ใช้ LeaveDateRangePicker เหมือนหน้ายื่นการลา) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ออก *</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    placeholder="dd/mm/yyyy"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
-                  />
-                  <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <LeaveDateRangePicker
+                  mode="single"
+                  className="w-full"
+                  startDate={issueDate}
+                  endDate={issueDate}
+                  onChange={(d) => {
+                    setIssueDate(d);
+                    if (d) {
+                      const [y, m, day] = d.split('-').map(Number);
+                      const nextExp = new Date(y, m - 1, day + 90);
+                      setExpiryDate(toInputDate(nextExp));
+                    }
+                  }}
+                />
               </div>
 
               <div>
@@ -422,21 +445,18 @@ export default function CertificatePage() {
               </div>
             </div>
 
-            {/* วันหมดอายุ */}
+            {/* วันหมดอายุ (ใช้ LeaveDateRangePicker เหมือนหน้ายื่นการลา) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 วันหมดอายุ (มีผลบังคับใช้)
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  placeholder="dd/mm/yyyy"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
-                />
-                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <LeaveDateRangePicker
+                mode="single"
+                className="w-full"
+                startDate={expiryDate}
+                endDate={expiryDate}
+                onChange={(d) => setExpiryDate(d)}
+              />
             </div>
 
             {/* หมายเหตุเพิ่มเติม (โครงสร้างเดียวกับ ระหว่างลาจะติดต่อข้าพเจ้าได้ที่) */}

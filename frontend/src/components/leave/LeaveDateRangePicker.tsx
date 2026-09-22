@@ -11,6 +11,7 @@ interface LeaveDateRangePickerProps {
   onChange: (startDate: string, endDate: string) => void;
   /** 'range' (ค่าเริ่มต้น) = เลือกช่วงวันที่ (คลิก 2 ครั้ง) สำหรับลาแบบเต็มวัน, 'single' = เลือกวันเดียวจบ สำหรับลาแบบครึ่งวัน */
   mode?: 'range' | 'single';
+  className?: string;
 }
 
 const THAI_MONTHS_FULL = [
@@ -51,7 +52,13 @@ const formatThaiShort = (s: string): string => {
  * ใช้แทน input[type=date] คู่เดิม สำหรับกรณีลาแบบ "เต็มวัน" (ช่วงวันที่)
  * รองรับ: ตัวเลือกเดือน/ปีแบบ dropdown grid, จุดเน้นวันที่ปัจจุบัน, และแสดงตัวอย่างช่วงแบบเรียลไทม์ตอนเลื่อนเมาส์เลือกวันสิ้นสุด
  */
-export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({ startDate, endDate, onChange, mode = 'range' }) => {
+export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
+  startDate,
+  endDate,
+  onChange,
+  mode = 'range',
+  className = 'w-[320px] max-w-none',
+}) => {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => parseInputDate(startDate) || new Date());
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
@@ -148,7 +155,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({ star
       <button
         type="button"
         onClick={handleToggleOpen}
-        className="w-[320px] max-w-none flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+        className={`${className} flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white cursor-pointer`}
       >
         <span className={startDate || endDate ? 'text-gray-800' : 'text-gray-400'}>
           {mode === 'single' ? (
