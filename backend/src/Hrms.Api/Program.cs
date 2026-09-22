@@ -57,6 +57,7 @@ builder.Services.AddScoped<IBankService, BankService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<ICompanyBankAccountService, CompanyBankAccountService>();
 builder.Services.AddScoped<IWorkCalendarService, WorkCalendarService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IWorkScheduleService, WorkScheduleService>();

@@ -23,6 +23,7 @@ public interface IHrmsDbContext
 
     // Organization Master Data (Dev 1 Sprint 1)
     DbSet<Company> Companies { get; }
+    DbSet<CompanyBankAccount> CompanyBankAccounts { get; }
     DbSet<Division> Divisions { get; }
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }

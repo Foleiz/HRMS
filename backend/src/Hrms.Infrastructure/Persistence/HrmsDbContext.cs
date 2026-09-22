@@ -35,6 +35,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Organization Master Data (Dev 1 Sprint 1)
     public DbSet<Company> Companies => Set<Company>();
+    public DbSet<CompanyBankAccount> CompanyBankAccounts => Set<CompanyBankAccount>();
     public DbSet<Division> Divisions => Set<Division>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Position> Positions => Set<Position>();
@@ -442,6 +443,30 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.CeoEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+ 
+        // Configuration: CompanyBankAccount
+        modelBuilder.Entity<CompanyBankAccount>(entity =>
+        {
+            entity.ToTable("company_bank_account", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.BankId).HasColumnName("bank_id").IsRequired();
+            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.AccountName).HasColumnName("account_name").HasMaxLength(255);
+            entity.Property(e => e.IsPrimaryPayrollAccount).HasColumnName("is_primary_payroll_account");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Bank)
+                .WithMany()
+                .HasForeignKey(e => e.BankId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configuration: Division

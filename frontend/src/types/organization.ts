@@ -141,3 +141,35 @@ export interface OrganizationSummary {
   positionCount: number;
   levelCount: number;
 }
+
+export interface CompanyBankAccount {
+  id: number;
+  companyId: number;
+  companyName?: string;
+  bankId: number;
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  accountName?: string;
+  isPrimaryPayrollAccount: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+}
+
+export interface CreateCompanyBankAccountRequest {
+  companyId?: number;
+  bankId: number;
+  accountNumber: string;
+  accountName?: string;
+  isPrimaryPayrollAccount?: boolean;
+  status?: string;
+}
+
+export interface UpdateCompanyBankAccountRequest {
+  companyId?: number;
+  bankId: number;
+  accountNumber: string;
+  accountName?: string;
+  isPrimaryPayrollAccount?: boolean;
+  status?: string;
+}
+

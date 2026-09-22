@@ -35,10 +35,14 @@ import {
   Users,
   Download,
   Share2,
+  Landmark,
+  CreditCard,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
 import { employeeService } from '@/services/employeeService';
+import { bankService } from '@/services/bankService';
+import { companyBankAccountService } from '@/services/companyBankAccountService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
@@ -58,12 +62,16 @@ import {
   UpdateCompanyRequest,
   CreateEmployeeLevelRequest,
   UpdateEmployeeLevelRequest,
+  CompanyBankAccount,
+  CreateCompanyBankAccountRequest,
+  UpdateCompanyBankAccountRequest,
 } from '@/types/organization';
+import { Bank } from '@/types/api';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
-type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'orgchart';
+type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts' | 'orgchart';
 
 const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> = {
   STATUTORY: { label: 'กฎหมายแรงงาน', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Shield },
@@ -122,6 +130,7 @@ export default function OrganizationPage() {
     levels: 'ระดับพนักงาน',
     benefits: 'สวัสดิการและสิทธิประโยชน์',
     company: 'ข้อมูลบริษัท',
+    'bank-accounts': 'บัญชีธนาคารบริษัท',
     orgchart: 'แผนผังองค์กร',
   };
 
@@ -356,7 +365,7 @@ export default function OrganizationPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
-      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'orgchart'].includes(tabParam)) {
+      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'bank-accounts', 'orgchart'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
@@ -467,10 +476,31 @@ export default function OrganizationPage() {
     ceoEmployeeId: null,
   });
 
+  // Company Bank Account states
+  const [bankAccounts, setBankAccounts] = useState<CompanyBankAccount[]>([]);
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [bankAccountModalOpen, setBankAccountModalOpen] = useState(false);
+  const [editingBankAccount, setEditingBankAccount] = useState<CompanyBankAccount | null>(null);
+  const [bankAccountForm, setBankAccountForm] = useState<{
+    id?: number;
+    bankId: number;
+    accountNumber: string;
+    accountName: string;
+    isPrimaryPayrollAccount: boolean;
+    status: string;
+  }>({
+    bankId: 0,
+    accountNumber: '',
+    accountName: '',
+    isPrimaryPayrollAccount: false,
+    status: 'ACTIVE',
+  });
+  const [savingBankAccount, setSavingBankAccount] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [divs, depts, pos, lvls, comp, ben, emps] = await Promise.all([
+      const [divs, depts, pos, lvls, comp, ben, emps, bAccounts, bList] = await Promise.all([
         organizationService.getDivisions(),
         organizationService.getDepartments(),
         organizationService.getPositions(),
@@ -478,6 +508,8 @@ export default function OrganizationPage() {
         organizationService.getCompany(),
         benefitService.getAll().catch(() => []),
         employeeService.getAll().catch(() => []),
+        companyBankAccountService.getAll().catch(() => []),
+        bankService.getAll().catch(() => []),
       ]);
       setDivisions(divs);
       setDepartments(depts);
@@ -486,6 +518,8 @@ export default function OrganizationPage() {
       setCompany(comp);
       setBenefits(ben || []);
       setEmployees(emps || []);
+      setBankAccounts(bAccounts || []);
+      setBanks(bList || []);
       if (comp) {
         setCompanyForm({
           companyName: comp.companyName,
@@ -795,6 +829,85 @@ export default function OrganizationPage() {
     }
   };
 
+  // Handlers for Company Bank Accounts
+  const handleOpenBankAccountModal = (account?: CompanyBankAccount) => {
+    if (account) {
+      setEditingBankAccount(account);
+      setBankAccountForm({
+        id: account.id,
+        bankId: account.bankId,
+        accountNumber: account.accountNumber,
+        accountName: account.accountName || '',
+        isPrimaryPayrollAccount: account.isPrimaryPayrollAccount,
+        status: account.status,
+      });
+    } else {
+      setEditingBankAccount(null);
+      const defaultBankId = banks.length > 0 ? banks[0].id : 0;
+      setBankAccountForm({
+        bankId: defaultBankId,
+        accountNumber: '',
+        accountName: company?.companyName || '',
+        isPrimaryPayrollAccount: bankAccounts.length === 0,
+        status: 'ACTIVE',
+      });
+    }
+    setBankAccountModalOpen(true);
+  };
+
+  const handleSaveBankAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bankAccountForm.bankId || bankAccountForm.bankId === 0) {
+      toast.error('กรุณาเลือกธนาคาร');
+      return;
+    }
+    if (!bankAccountForm.accountNumber.trim()) {
+      toast.error('กรุณาระบุเลขที่บัญชี');
+      return;
+    }
+
+    setSavingBankAccount(true);
+    try {
+      if (editingBankAccount) {
+        await companyBankAccountService.update(editingBankAccount.id, {
+          bankId: Number(bankAccountForm.bankId),
+          accountNumber: bankAccountForm.accountNumber.trim(),
+          accountName: bankAccountForm.accountName.trim() || undefined,
+          isPrimaryPayrollAccount: bankAccountForm.isPrimaryPayrollAccount,
+          status: bankAccountForm.status,
+        });
+        showSuccess('อัปเดตข้อมูลบัญชีธนาคารสำเร็จ');
+      } else {
+        await companyBankAccountService.create({
+          bankId: Number(bankAccountForm.bankId),
+          accountNumber: bankAccountForm.accountNumber.trim(),
+          accountName: bankAccountForm.accountName.trim() || undefined,
+          isPrimaryPayrollAccount: bankAccountForm.isPrimaryPayrollAccount,
+          status: bankAccountForm.status,
+        });
+        showSuccess('เพิ่มบัญชีธนาคารบริษัทสำเร็จ');
+      }
+      setBankAccountModalOpen(false);
+      loadData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก'));
+    } finally {
+      setSavingBankAccount(false);
+    }
+  };
+
+  const handleSetPrimaryBankAccount = async (account: CompanyBankAccount) => {
+    try {
+      await companyBankAccountService.setPrimary(account.id);
+      showSuccess(`ตั้ง ${account.bankName} (${account.accountNumber}) เป็นบัญชีจ่ายเงินเดือนหลักสำเร็จ`);
+      loadData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'));
+    }
+  };
+
   // Delete Handlers
   const handleConfirmDelete = (id: number, name: string, type: string) => {
     setItemToDelete({ id, name, type });
@@ -819,6 +932,9 @@ export default function OrganizationPage() {
       } else if (itemToDelete.type === 'level') {
         await organizationService.deleteLevel(itemToDelete.id);
         showSuccess(`ลบระดับพนักงาน ${itemToDelete.name} สำเร็จ`);
+      } else if (itemToDelete.type === 'bank-account') {
+        await companyBankAccountService.delete(itemToDelete.id);
+        showSuccess(`ลบบัญชีธนาคาร ${itemToDelete.name} สำเร็จ`);
       }
       setDeleteModalOpen(false);
       setItemToDelete(null);
@@ -831,6 +947,12 @@ export default function OrganizationPage() {
   };
 
   // Filtered lists
+  const filteredBankAccounts = bankAccounts.filter((ba) =>
+    ba.bankName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    ba.bankCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    ba.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (ba.accountName && ba.accountName.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   const filteredDivisions = divisions.filter((d) =>
     d.divisionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.divisionCode.toLowerCase().includes(searchQuery.toLowerCase())
@@ -958,6 +1080,21 @@ export default function OrganizationPage() {
               }`}
             >
               ข้อมูลบริษัท
+            </button>
+          )}
+
+          {canViewCompany && (
+            <button
+              type="button"
+              onClick={() => { setActiveTab('bank-accounts'); setSearchQuery(''); }}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'bank-accounts'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              <Landmark className="w-4 h-4" />
+              บัญชีธนาคารบริษัท
             </button>
           )}
 
@@ -1743,6 +1880,163 @@ export default function OrganizationPage() {
               </button>
             </div>
           </form>
+        )}
+
+        {/* TAB: COMPANY BANK ACCOUNTS (Payroll) */}
+        {activeTab === 'bank-accounts' && (
+          <div className="space-y-6">
+            {/* Header / Actions Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-blue-50 text-[#0B2046]">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base leading-tight">บัญชีธนาคารบริษัท (สำหรับจ่ายเงินเดือน)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      จัดการบัญชีธนาคารของบริษัทสำหรับโอนจ่ายเงินเดือนพนักงาน (Payroll Direct Credit) และกำหนดบัญชีหลัก
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenBankAccountModal()}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                เพิ่มบัญชีธนาคาร
+              </button>
+            </div>
+
+            {/* Search Filter */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+            </div>
+
+            {/* Bank Accounts Table */}
+            {filteredBankAccounts.length === 0 ? (
+              <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                  <Landmark className="w-6 h-6" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 mb-1">
+                  {searchQuery ? 'ไม่พบข้อมูลบัญชีธนาคารที่ตรงกับคำค้นหา' : 'ยังไม่มีข้อมูลบัญชีธนาคารบริษัท'}
+                </h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                  {searchQuery ? 'ลองค้นหาด้วยคำอื่น หรือล้างคำค้นหา' : 'เพิ่มบัญชีธนาคารของบริษัทเพื่อใช้เป็นบัญชีต้นทางในการโอนจ่ายเงินเดือนพนักงาน'}
+                </p>
+                {!searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenBankAccountModal()}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold shadow-sm hover:bg-[#081836] transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    เพิ่มบัญชีแรก
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                      <th className="py-3 px-4">ธนาคาร</th>
+                      <th className="py-3 px-4">เลขที่บัญชี</th>
+                      <th className="py-3 px-4">ชื่อบัญชี</th>
+                      <th className="py-3 px-4 text-center">บัญชีจ่ายเงินเดือน</th>
+                      <th className="py-3 px-4 text-center">สถานะ</th>
+                      <th className="py-3 px-4 text-right">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredBankAccounts.map((acc) => (
+                      <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0B2046] shrink-0 font-bold text-xs">
+                              {acc.bankCode || 'BK'}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-slate-900 leading-snug">{acc.bankName}</div>
+                              <div className="text-[11px] text-slate-400 font-mono">รหัสธนาคาร: {acc.bankCode}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono font-bold text-slate-800 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200">
+                            {acc.accountNumber}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-700 font-medium">
+                          {acc.accountName || '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          {acc.isPrimaryPayrollAccount ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              บัญชีหลัก (Payroll Primary)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryBankAccount(acc)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer"
+                              title="คลิกเพื่อตั้งบัญชีนี้เป็นบัญชีจ่ายเงินเดือนหลัก"
+                            >
+                              ตั้งเป็นบัญชีหลัก
+                            </button>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                              acc.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {acc.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้งาน'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenBankAccountModal(acc)}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="แก้ไขข้อมูลบัญชี"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="ลบบัญชี"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -2708,6 +3002,125 @@ export default function OrganizationPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create / Edit Company Bank Account */}
+      {bankAccountModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-50 text-[#0B2046]">
+                  <Landmark className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">
+                  {editingBankAccount ? 'แก้ไขบัญชีธนาคารบริษัท' : 'เพิ่มบัญชีธนาคารบริษัทใหม่'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setBankAccountModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBankAccount} className="space-y-4 pt-4">
+              {/* ธนาคาร */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">ธนาคารพาณิชย์ *</label>
+                <select
+                  required
+                  value={bankAccountForm.bankId}
+                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankId: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value={0} disabled>-- เลือกธนาคาร --</option>
+                  {banks.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      [{b.bankCode}] {b.bankName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* เลขที่บัญชี */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">เลขที่บัญชีธนาคาร *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น 789-0-12345-6"
+                  value={bankAccountForm.accountNumber}
+                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              {/* ชื่อบัญชี */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อบัญชี (Account Name)</label>
+                <input
+                  type="text"
+                  placeholder="เช่น บจก. สยาม อินโนเวชั่น เทคโนโลยี"
+                  value={bankAccountForm.accountName}
+                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                />
+              </div>
+
+              {/* ตั้งเป็นบัญชีจ่ายเงินเดือนหลัก */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="isPrimaryPayrollAccount"
+                  checked={bankAccountForm.isPrimaryPayrollAccount}
+                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, isPrimaryPayrollAccount: e.target.checked })}
+                  className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
+                />
+                <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
+                  <span className="font-semibold text-slate-800 block">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน
+                  </span>
+                </label>
+              </div>
+
+              {/* สถานะ */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะการใช้งาน</label>
+                <select
+                  value={bankAccountForm.status}
+                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
+                  <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setBankAccountModalOpen(false)}
+                  disabled={savingBankAccount}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingBankAccount}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#081836] rounded-xl shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {savingBankAccount && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {editingBankAccount ? 'บันทึกการแก้ไข' : 'เพิ่มบัญชีธนาคาร'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
