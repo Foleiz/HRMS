@@ -1087,13 +1087,12 @@ export default function OrganizationPage() {
             <button
               type="button"
               onClick={() => { setActiveTab('bank-accounts'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'bank-accounts'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Landmark className="w-4 h-4" />
               บัญชีธนาคารบริษัท
             </button>
           )}
