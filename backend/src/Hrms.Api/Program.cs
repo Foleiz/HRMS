@@ -20,6 +20,7 @@ using Hrms.Application.Features.WorkCalendar.Services;
 using Hrms.Application.Features.Certificates.Services;
 using Hrms.Application.Features.Payroll.Services;
 using Hrms.Infrastructure.Persistence;
+using Hrms.Infrastructure.Persistence.Interceptors;
 using Hrms.Infrastructure.Security;
 using Hrms.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,12 +37,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database Connection (PostgreSQL - Schema: hrms)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<HrmsDbContext>(options =>
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<HrmsDbContext>((sp, options) =>
 {
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "hrms");
     });
+    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
 });
 
 builder.Services.AddScoped<IHrmsDbContext>(provider => provider.GetRequiredService<HrmsDbContext>());
@@ -174,6 +177,9 @@ app.UseCors("AllowFrontend");
 // 10. Authentication & Authorization Middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 11. Audit Logging Middleware (HTTP Level)
+app.UseMiddleware<AuditLoggingMiddleware>();
 
 app.MapControllers();
 

@@ -1212,7 +1212,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IpAddress)
                 .HasColumnName("ip_address")
                 .HasConversion(
-                    v => string.IsNullOrEmpty(v) ? null : System.Net.IPAddress.Parse(v),
+                    v => ParseIpAddress(v),
                     v => v == null ? null : v.ToString());
             entity.Property(e => e.UserAgent).HasColumnName("user_agent");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
@@ -1732,5 +1732,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .HasForeignKey(e => e.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+    }
+
+    private static System.Net.IPAddress? ParseIpAddress(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return null;
+        return System.Net.IPAddress.TryParse(v, out var ip) ? ip : null;
     }
 }

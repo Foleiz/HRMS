@@ -40,4 +40,12 @@ public class AuditLogsController : ControllerBase
         var fileName = $"AuditLogs_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
         return File(bytes, "text/csv; charset=utf-8", fileName);
     }
+
+    [HttpGet("modules")]
+    [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<string>>>> GetModules(CancellationToken cancellationToken)
+    {
+        var modules = await _auditLogService.GetDistinctEntityTypesAsync(cancellationToken);
+        return Ok(ApiResponse<List<string>>.Ok(modules, "ดึงรายชื่อโมดูลที่มีบันทึกสำเร็จ"));
+    }
 }

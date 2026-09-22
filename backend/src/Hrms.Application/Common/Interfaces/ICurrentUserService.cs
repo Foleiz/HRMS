@@ -13,4 +13,6 @@ public interface ICurrentUserService
     bool HasRole(string role);
     bool HasPermission(string permission);
     string GetDataScope(string permission);
+    string? IpAddress { get; }
+    string? UserAgent { get; }
 }

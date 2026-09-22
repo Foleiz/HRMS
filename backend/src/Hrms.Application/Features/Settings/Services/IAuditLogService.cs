@@ -23,4 +23,6 @@ public interface IAuditLogService
     Task<PagedResult<AuditLogDto>> GetLogsAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default);
 
     Task<byte[]> ExportLogsCsvAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default);
+
+    Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken cancellationToken = default);
 }
