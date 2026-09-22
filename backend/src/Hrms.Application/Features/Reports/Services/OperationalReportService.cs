@@ -319,6 +319,400 @@ public class OperationalReportService : IOperationalReportService
         return fullBytes;
     }
 
+    /// <summary>
+    /// ดึงรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และประกันสังคม (สปส. 1-10) ประจำเดือน
+    /// </summary>
+    public async Task<PayrollTaxSummaryDto> GetPayrollTaxSummaryReportAsync(
+        int year,
+        int month,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(pr => pr.Employee)
+            .Include(p => p.Payrolls)
+                .ThenInclude(pr => pr.Details)
+                    .ThenInclude(d => d.PayrollItem)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Year == year && p.Month == month, cancellationToken);
+
+        var result = new PayrollTaxSummaryDto
+        {
+            Year = year,
+            Month = month,
+            PeriodId = period?.Id,
+            PeriodStatus = period?.Status ?? "NONE",
+            Items = new List<PayrollTaxItemDto>()
+        };
+
+        if (period == null || period.Payrolls == null || !period.Payrolls.Any())
+        {
+            return result;
+        }
+
+        // หากมีตัวกรองแผนก ให้หาชื่อแผนก
+        string? filterDeptName = null;
+        if (departmentId.HasValue && departmentId.Value > 0)
+        {
+            var targetDept = await _context.Departments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == departmentId.Value, cancellationToken);
+            filterDeptName = targetDept?.DepartmentName;
+        }
+
+        var payrolls = period.Payrolls.AsEnumerable();
+        if (!string.IsNullOrEmpty(filterDeptName))
+        {
+            payrolls = payrolls.Where(p => 
+                string.Equals(p.SnapshotDepartmentName?.Trim(), filterDeptName.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        foreach (var p in payrolls.OrderBy(x => x.Employee?.EmployeeCode ?? x.Id.ToString()))
+        {
+            decimal taxAmount = p.Details
+                .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemCode == "DED_TAX" || d.PayrollItem.ItemName.Contains("ภาษี")))
+                .Sum(d => d.Amount);
+
+            decimal ssoEmpAmount = p.Details
+                .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemCode == "DED_SSO" || d.PayrollItem.ItemName.Contains("ประกันสังคม")))
+                .Sum(d => d.Amount);
+
+            // นายจ้างสมทบ 5% เท่ากับลูกจ้าง
+            decimal ssoEmployerAmount = ssoEmpAmount;
+
+            string citizenId = p.Employee?.CitizenId ?? string.Empty;
+            string maskedCitizenId = p.Employee?.CitizenIdMasked ?? string.Empty;
+            if (string.IsNullOrEmpty(maskedCitizenId) && !string.IsNullOrEmpty(citizenId))
+            {
+                if (citizenId.Length >= 13)
+                {
+                    maskedCitizenId = $"{citizenId[0]}-{citizenId.Substring(1, 4)}-xxxxx-{citizenId.Substring(10, 2)}-{citizenId[12]}";
+                }
+                else
+                {
+                    maskedCitizenId = citizenId.Length > 4 ? new string('x', citizenId.Length - 4) + citizenId[^4..] : citizenId;
+                }
+            }
+            if (string.IsNullOrEmpty(maskedCitizenId))
+            {
+                maskedCitizenId = "-";
+            }
+
+            var itemDto = new PayrollTaxItemDto
+            {
+                EmployeeId = p.EmployeeId,
+                EmployeeCode = p.Employee?.EmployeeCode ?? "-",
+                EmployeeName = !string.IsNullOrWhiteSpace(p.SnapshotEmployeeName) 
+                    ? p.SnapshotEmployeeName 
+                    : $"{p.Employee?.FirstName} {p.Employee?.LastName}".Trim(),
+                DepartmentName = p.SnapshotDepartmentName ?? "-",
+                PositionName = p.SnapshotPositionName ?? "-",
+                CitizenIdMasked = maskedCitizenId,
+                GrossIncome = p.TotalGrossIncome,
+                WithholdingTax = taxAmount,
+                SsoEmployee = ssoEmpAmount,
+                SsoEmployer = ssoEmployerAmount,
+                TotalDeductions = p.TotalDeductionAmount,
+                NetSalary = p.NetPayableSalary
+            };
+
+            result.Items.Add(itemDto);
+        }
+
+        result.TotalEmployees = result.Items.Count;
+        result.TaxableEmployeesCount = result.Items.Count(i => i.WithholdingTax > 0);
+        result.TotalGrossIncome = result.Items.Sum(i => i.GrossIncome);
+        result.TotalWithholdingTax = result.Items.Sum(i => i.WithholdingTax);
+        result.TotalSsoEmployee = result.Items.Sum(i => i.SsoEmployee);
+        result.TotalSsoEmployer = result.Items.Sum(i => i.SsoEmployer);
+        result.TotalSsoRemittance = result.TotalSsoEmployee + result.TotalSsoEmployer;
+        result.TotalNetSalary = result.Items.Sum(i => i.NetSalary);
+
+        return result;
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) เป็นไฟล์ CSV (UTF-8 with BOM)
+    /// </summary>
+    public async Task<byte[]> ExportPayrollTaxCsvAsync(
+        int year,
+        int month,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetPayrollTaxSummaryReportAsync(year, month, departmentId, cancellationToken);
+
+        var thaiMonths = new[] { "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม" };
+        string monthName = month >= 1 && month <= 12 ? thaiMonths[month] : month.ToString();
+        int thaiYear = year + 543;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"รายงานสรุปภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1),ประจำเดือน {monthName} พ.ศ. {thaiYear}");
+        sb.AppendLine($"สรุปภาพรวม: จำนวนพนักงานทั้งหมด {data.TotalEmployees} คน, ผู้มีหน้าที่เสียภาษี {data.TaxableEmployeesCount} คน, เงินได้พึงประเมินรวม {data.TotalGrossIncome:N2} บาท, ภาษีหัก ณ ที่จ่ายรวม {data.TotalWithholdingTax:N2} บาท");
+        sb.AppendLine();
+        sb.AppendLine("ลำดับ,รหัสพนักงาน,เลขประจำตัวประชาชน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,เงินได้พึงประเมิน (บาท),ภาษีหัก ณ ที่จ่าย (บาท),เงินเดือนสุทธิ (บาท)");
+
+        int seq = 1;
+        foreach (var item in data.Items)
+        {
+            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(item.CitizenIdMasked)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.WithholdingTax:F2},{item.NetSalary:F2}");
+        }
+
+        // Summary Row
+        sb.AppendLine($",,,รวมทั้งสิ้น,,, {data.TotalGrossIncome:F2},{data.TotalWithholdingTax:F2},{data.TotalNetSalary:F2}");
+
+        return PrependUtf8Bom(sb.ToString());
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานเงินสมทบประกันสังคม (สปส. 1-10) เป็นไฟล์ CSV (UTF-8 with BOM)
+    /// </summary>
+    public async Task<byte[]> ExportSsoCsvAsync(
+        int year,
+        int month,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetPayrollTaxSummaryReportAsync(year, month, departmentId, cancellationToken);
+
+        var thaiMonths = new[] { "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม" };
+        string monthName = month >= 1 && month <= 12 ? thaiMonths[month] : month.ToString();
+        int thaiYear = year + 543;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"รายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10),ประจำเดือน {monthName} พ.ศ. {thaiYear}");
+        sb.AppendLine($"สรุปภาพรวม: จำนวนผู้ประกันตน {data.TotalEmployees} คน, ค่าจ้างรวม {data.TotalGrossIncome:N2} บาท, สมทบส่วนผู้ประกันตน {data.TotalSsoEmployee:N2} บาท, สมทบส่วนนายจ้าง {data.TotalSsoEmployer:N2} บาท, รวมเงินสมทบนำส่งทั้งสิ้น {data.TotalSsoRemittance:N2} บาท");
+        sb.AppendLine();
+        sb.AppendLine("ลำดับ,รหัสพนักงาน,เลขประจำตัวประชาชน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,ค่าจ้างที่ใช้คำนวณ (บาท),เงินสมทบผู้ประกันตน (5%),เงินสมทบนายจ้าง (5%),รวมยอดนำส่ง (บาท)");
+
+        int seq = 1;
+        foreach (var item in data.Items)
+        {
+            decimal totalRemit = item.SsoEmployee + item.SsoEmployer;
+            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(item.CitizenIdMasked)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.SsoEmployee:F2},{item.SsoEmployer:F2},{totalRemit:F2}");
+        }
+
+        // Summary Row
+        sb.AppendLine($",,,รวมทั้งสิ้น,,, {data.TotalGrossIncome:F2},{data.TotalSsoEmployee:F2},{data.TotalSsoEmployer:F2},{data.TotalSsoRemittance:F2}");
+
+        return PrependUtf8Bom(sb.ToString());
+    }
+
+    /// <summary>
+    /// ดึงรายงานอัตราการเข้า-ออกของพนักงาน (Monthly Turnover Rate)
+    /// </summary>
+    public async Task<MonthlyTurnoverSummaryDto> GetMonthlyTurnoverReportAsync(
+        int year,
+        int month,
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        DateOnly monthStart = new DateOnly(year, month, 1);
+        DateOnly monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        // 1. ดึงแผนกทั้งหมดตามเงื่อนไข
+        var deptQuery = _context.Departments
+            .Include(d => d.Division)
+            .AsNoTracking();
+
+        if (divisionId.HasValue && divisionId.Value > 0)
+        {
+            deptQuery = deptQuery.Where(d => d.DivisionId == divisionId.Value);
+        }
+
+        if (departmentId.HasValue && departmentId.Value > 0)
+        {
+            deptQuery = deptQuery.Where(d => d.Id == departmentId.Value);
+        }
+
+        var departments = await deptQuery
+            .OrderBy(d => d.Division != null ? d.Division.DivisionCode : "")
+            .ThenBy(d => d.DepartmentCode)
+            .ToListAsync(cancellationToken);
+
+        // 2. ดึงข้อมูลสัญญาจ้างและการมอบหมายงานปัจจุบันของพนักงานทั้งหมด
+        var contracts = await _context.EmploymentContracts
+            .Include(c => c.Employee)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var assignments = await _context.EmployeeAssignments
+            .Include(a => a.Employee)
+            .Include(a => a.Department)
+            .Include(a => a.Position)
+            .Where(a => a.IsCurrent)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var contractMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).First());
+
+        var result = new MonthlyTurnoverSummaryDto
+        {
+            Year = year,
+            Month = month,
+            DepartmentTurnovers = new List<DepartmentTurnoverDto>(),
+            EventLogs = new List<TurnoverEventLogDto>()
+        };
+
+        foreach (var dept in departments)
+        {
+            var deptAssignments = assignments.Where(a => a.DepartmentId == dept.Id).ToList();
+
+            int startCount = 0;
+            int joinedCount = 0;
+            int resignedCount = 0;
+
+            foreach (var assign in deptAssignments)
+            {
+                contractMap.TryGetValue(assign.EmployeeId, out var contract);
+                DateOnly empStart = contract?.StartDate ?? assign.EffectiveFrom;
+                DateOnly? empEnd = contract?.TerminationDate ?? assign.EffectiveTo;
+
+                // พนักงานต้นงวด: เริ่มงานก่อนต้นเดือน และยังไม่ลาออกก่อนต้นเดือน
+                if (empStart < monthStart && (empEnd == null || empEnd >= monthStart))
+                {
+                    startCount++;
+                }
+
+                // พนักงานเข้าใหม่ในเดือนนี้
+                if (empStart >= monthStart && empStart <= monthEnd)
+                {
+                    joinedCount++;
+                    result.EventLogs.Add(new TurnoverEventLogDto
+                    {
+                        EmployeeId = assign.EmployeeId,
+                        EmployeeCode = assign.Employee?.EmployeeCode ?? "-",
+                        EmployeeName = $"{assign.Employee?.FirstName} {assign.Employee?.LastName}".Trim(),
+                        DepartmentName = dept.DepartmentName,
+                        PositionName = assign.Position?.PositionName ?? "-",
+                        EventType = "JOINED",
+                        EventDate = empStart,
+                        Reason = "เริ่มงานใหม่"
+                    });
+                }
+
+                // พนักงานลาออกในเดือนนี้
+                if (empEnd.HasValue && empEnd.Value >= monthStart && empEnd.Value <= monthEnd)
+                {
+                    resignedCount++;
+                    result.EventLogs.Add(new TurnoverEventLogDto
+                    {
+                        EmployeeId = assign.EmployeeId,
+                        EmployeeCode = assign.Employee?.EmployeeCode ?? "-",
+                        EmployeeName = $"{assign.Employee?.FirstName} {assign.Employee?.LastName}".Trim(),
+                        DepartmentName = dept.DepartmentName,
+                        PositionName = assign.Position?.PositionName ?? "-",
+                        EventType = "RESIGNED",
+                        EventDate = empEnd.Value,
+                        Reason = contract?.TerminationReason ?? "สิ้นสุดสัญญา / ลาออก"
+                    });
+                }
+            }
+
+            int endCount = startCount + joinedCount - resignedCount;
+            if (endCount < 0) endCount = 0;
+
+            double avgCount = (startCount + endCount) / 2.0;
+            double turnoverRate = avgCount > 0 ? Math.Round(((double)resignedCount / avgCount) * 100.0, 2) : 0.0;
+            double retentionRate = startCount > 0 ? Math.Round(((double)(startCount - resignedCount) / startCount) * 100.0, 2) : 100.0;
+            if (retentionRate < 0) retentionRate = 0;
+            if (retentionRate > 100) retentionRate = 100;
+
+            result.DepartmentTurnovers.Add(new DepartmentTurnoverDto
+            {
+                DepartmentId = dept.Id,
+                DepartmentCode = dept.DepartmentCode,
+                DepartmentName = dept.DepartmentName,
+                DivisionName = dept.Division?.DivisionName ?? "-",
+                BeginningHeadcount = startCount,
+                JoinedCount = joinedCount,
+                ResignedCount = resignedCount,
+                EndingHeadcount = endCount,
+                TurnoverRate = turnoverRate,
+                RetentionRate = retentionRate
+            });
+
+            result.TotalBeginningHeadcount += startCount;
+            result.TotalJoinedCount += joinedCount;
+            result.TotalResignedCount += resignedCount;
+            result.TotalEndingHeadcount += endCount;
+        }
+
+        double totalAvg = (result.TotalBeginningHeadcount + result.TotalEndingHeadcount) / 2.0;
+        result.OverallTurnoverRate = totalAvg > 0 
+            ? Math.Round(((double)result.TotalResignedCount / totalAvg) * 100.0, 2) 
+            : 0.0;
+
+        result.OverallRetentionRate = result.TotalBeginningHeadcount > 0 
+            ? Math.Round(((double)(result.TotalBeginningHeadcount - result.TotalResignedCount) / result.TotalBeginningHeadcount) * 100.0, 2) 
+            : 100.0;
+        if (result.OverallRetentionRate < 0) result.OverallRetentionRate = 0;
+        if (result.OverallRetentionRate > 100) result.OverallRetentionRate = 100;
+
+        result.EventLogs = result.EventLogs.OrderByDescending(e => e.EventDate).ToList();
+
+        return result;
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานอัตราการเข้า-ออกของพนักงานเป็นไฟล์ CSV (UTF-8 with BOM)
+    /// </summary>
+    public async Task<byte[]> ExportMonthlyTurnoverCsvAsync(
+        int year,
+        int month,
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetMonthlyTurnoverReportAsync(year, month, divisionId, departmentId, cancellationToken);
+
+        var thaiMonths = new[] { "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม" };
+        string monthName = month >= 1 && month <= 12 ? thaiMonths[month] : month.ToString();
+        int thaiYear = year + 543;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"รายงานสรุปอัตราการเข้า-ออกของพนักงาน (Turnover Rate),ประจำเดือน {monthName} พ.ศ. {thaiYear}");
+        sb.AppendLine($"สรุปภาพรวม: ต้นงวด {data.TotalBeginningHeadcount} คน, เข้าใหม่ {data.TotalJoinedCount} คน, ลาออก {data.TotalResignedCount} คน, สิ้นงวด {data.TotalEndingHeadcount} คน, อัตรา Turnover {data.OverallTurnoverRate}%, อัตรา Retention {data.OverallRetentionRate}%");
+        sb.AppendLine();
+        sb.AppendLine("--- จำแนกตามฝ่ายและแผนก ---");
+        sb.AppendLine("ฝ่าย,รหัสแผนก,ชื่อแผนก,ต้นงวด (คน),เข้าใหม่ (คน),ลาออก (คน),สิ้นงวด (คน),Turnover Rate (%),Retention Rate (%)");
+
+        foreach (var d in data.DepartmentTurnovers)
+        {
+            sb.AppendLine($"\"{EscapeCsv(d.DivisionName)}\",\"{EscapeCsv(d.DepartmentCode)}\",\"{EscapeCsv(d.DepartmentName)}\",{d.BeginningHeadcount},{d.JoinedCount},{d.ResignedCount},{d.EndingHeadcount},{d.TurnoverRate}%,{d.RetentionRate}%");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("--- บันทึกประวัติการเคลื่อนไหวพนักงานประจำเดือน ---");
+        sb.AppendLine("วันที่,รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,ประเภทเหตุการณ์,เหตุผล/หมายเหตุ");
+
+        foreach (var ev in data.EventLogs)
+        {
+            string eventTypeTh = ev.EventType switch
+            {
+                "JOINED" => "เริ่มงานใหม่",
+                "RESIGNED" => "ลาออก",
+                "TERMINATED" => "เลิกจ้าง",
+                _ => ev.EventType
+            };
+            sb.AppendLine($"{ev.EventDate:yyyy-MM-dd},\"{EscapeCsv(ev.EmployeeCode)}\",\"{EscapeCsv(ev.EmployeeName)}\",\"{EscapeCsv(ev.DepartmentName)}\",\"{EscapeCsv(ev.PositionName)}\",\"{EscapeCsv(eventTypeTh)}\",\"{EscapeCsv(ev.Reason)}\"");
+        }
+
+        return PrependUtf8Bom(sb.ToString());
+    }
+
+    private static byte[] PrependUtf8Bom(string content)
+    {
+        var preamble = Encoding.UTF8.GetPreamble();
+        var contentBytes = Encoding.UTF8.GetBytes(content);
+        var fullBytes = new byte[preamble.Length + contentBytes.Length];
+        Buffer.BlockCopy(preamble, 0, fullBytes, 0, preamble.Length);
+        Buffer.BlockCopy(contentBytes, 0, fullBytes, preamble.Length, contentBytes.Length);
+        return fullBytes;
+    }
+
     private static string EscapeCsv(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;

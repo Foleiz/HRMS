@@ -99,4 +99,102 @@ public class ReportsController : ControllerBase
 
         return File(csvBytes, "text/csv; charset=utf-8", fileName);
     }
+
+    /// <summary>
+    /// ดึงรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และประกันสังคม (สปส. 1-10) ประจำเดือน
+    /// </summary>
+    [HttpGet("financial/payroll-tax")]
+    public async Task<ActionResult<ApiResponse<PayrollTaxSummaryDto>>> GetPayrollTaxSummaryReport(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Today;
+        int queryYear = year ?? now.Year;
+        int queryMonth = month ?? now.Month;
+
+        var result = await _reportService.GetPayrollTaxSummaryReportAsync(queryYear, queryMonth, departmentId, cancellationToken);
+        return Ok(ApiResponse<PayrollTaxSummaryDto>.Ok(result, "ดึงรายงานสรุปภาษีหัก ณ ที่จ่ายและประกันสังคมสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) เป็นไฟล์ CSV
+    /// </summary>
+    [HttpGet("financial/payroll-tax/export")]
+    public async Task<IActionResult> ExportPayrollTaxCsv(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Today;
+        int queryYear = year ?? now.Year;
+        int queryMonth = month ?? now.Month;
+
+        var csvBytes = await _reportService.ExportPayrollTaxCsvAsync(queryYear, queryMonth, departmentId, cancellationToken);
+        var fileName = $"PND1_Tax_Report_{queryYear}_{queryMonth:D2}.csv";
+
+        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10) เป็นไฟล์ CSV
+    /// </summary>
+    [HttpGet("financial/sso/export")]
+    public async Task<IActionResult> ExportSsoCsv(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Today;
+        int queryYear = year ?? now.Year;
+        int queryMonth = month ?? now.Month;
+
+        var csvBytes = await _reportService.ExportSsoCsvAsync(queryYear, queryMonth, departmentId, cancellationToken);
+        var fileName = $"SSO_Report_1_10_{queryYear}_{queryMonth:D2}.csv";
+
+        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    /// <summary>
+    /// ดึงรายงานอัตราการเข้า-ออกของพนักงาน (Monthly Turnover Rate)
+    /// </summary>
+    [HttpGet("analytics/turnover")]
+    public async Task<ActionResult<ApiResponse<MonthlyTurnoverSummaryDto>>> GetMonthlyTurnoverReport(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? divisionId,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Today;
+        int queryYear = year ?? now.Year;
+        int queryMonth = month ?? now.Month;
+
+        var result = await _reportService.GetMonthlyTurnoverReportAsync(queryYear, queryMonth, divisionId, departmentId, cancellationToken);
+        return Ok(ApiResponse<MonthlyTurnoverSummaryDto>.Ok(result, "ดึงรายงานอัตราการเข้า-ออกของพนักงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ส่งออกรายงานอัตราการเข้า-ออกของพนักงานเป็นไฟล์ CSV
+    /// </summary>
+    [HttpGet("analytics/turnover/export")]
+    public async Task<IActionResult> ExportMonthlyTurnoverCsv(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] long? divisionId,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Today;
+        int queryYear = year ?? now.Year;
+        int queryMonth = month ?? now.Month;
+
+        var csvBytes = await _reportService.ExportMonthlyTurnoverCsvAsync(queryYear, queryMonth, divisionId, departmentId, cancellationToken);
+        var fileName = $"Turnover_Report_{queryYear}_{queryMonth:D2}.csv";
+
+        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+    }
 }
