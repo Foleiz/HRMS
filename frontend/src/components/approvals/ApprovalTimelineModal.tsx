@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -19,10 +19,19 @@ import {
 import { ApprovalTimeline, LeaveRequest } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 
+export interface GenericApprovalRequestInfo {
+  id: number;
+  requestNo: string;
+  employeeName: string;
+  subtitle?: string;
+  fetchTimeline: (id: number) => Promise<ApprovalTimeline>;
+}
+
 interface ApprovalTimelineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  leaveRequest: LeaveRequest | null;
+  leaveRequest?: LeaveRequest | null;
+  requestInfo?: GenericApprovalRequestInfo | null;
 }
 
 const formatDateTime = (d?: string | null) => {
@@ -44,25 +53,36 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
   isOpen,
   onClose,
   leaveRequest,
+  requestInfo,
 }) => {
   const [timeline, setTimeline] = useState<ApprovalTimeline | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const effectiveRequest: GenericApprovalRequestInfo | null = leaveRequest
+    ? {
+        id: leaveRequest.id,
+        requestNo: leaveRequest.requestNo,
+        employeeName: leaveRequest.employeeName,
+        subtitle: `ผู้ยื่น: ${leaveRequest.employeeName} (${leaveRequest.departmentName}) • ${leaveRequest.leaveTypeName}`,
+        fetchTimeline: (id: number) => leaveService.getApprovalTimeline(id),
+      }
+    : requestInfo || null;
+
   useEffect(() => {
-    if (isOpen && leaveRequest) {
-      loadTimeline(leaveRequest.id);
+    if (isOpen && effectiveRequest) {
+      loadTimeline(effectiveRequest);
     } else {
       setTimeline(null);
       setError(null);
     }
-  }, [isOpen, leaveRequest]);
+  }, [isOpen, leaveRequest?.id, requestInfo?.id]);
 
-  const loadTimeline = async (id: number) => {
+  const loadTimeline = async (req: GenericApprovalRequestInfo) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await leaveService.getApprovalTimeline(id);
+      const data = await req.fetchTimeline(req.id);
       setTimeline(data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'ไม่สามารถโหลดผังการอนุมัติได้');
@@ -71,7 +91,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
     }
   };
 
-  if (!isOpen || !leaveRequest) return null;
+  if (!isOpen || !effectiveRequest) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -91,12 +111,14 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                   ผังขั้นตอนการอนุมัติ (Approval Workflow)
                 </h3>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 font-medium">
-                  {leaveRequest.requestNo}
+                  {effectiveRequest.requestNo}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                ผู้ยื่น: {leaveRequest.employeeName} ({leaveRequest.departmentName}) • {leaveRequest.leaveTypeName}
-              </p>
+              {effectiveRequest.subtitle && (
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {effectiveRequest.subtitle}
+                </p>
+              )}
             </div>
           </div>
           <button

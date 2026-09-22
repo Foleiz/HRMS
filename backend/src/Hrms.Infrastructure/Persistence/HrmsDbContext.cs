@@ -402,10 +402,12 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
         modelBuilder.Entity<RoleDataScope>(entity =>
         {
             entity.ToTable("role_data_scope", "hrms");
-            entity.HasKey(e => new { e.RoleId, e.PermissionId });
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.PermissionId).HasColumnName("permission_id");
             entity.Property(e => e.DataVisibilityScope).HasColumnName("data_visibility_scope").IsRequired().HasMaxLength(30);
+            entity.HasIndex(e => new { e.RoleId, e.PermissionId, e.DataVisibilityScope }).IsUnique();
 
             entity.HasOne(e => e.Role)
                 .WithMany(r => r.RoleDataScopes)
@@ -1000,11 +1002,22 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ToManagerId).HasColumnName("to_manager_id");
             entity.Property(e => e.EffectiveDate).HasColumnName("effective_date").IsRequired();
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired().HasDefaultValue("PENDING");
+            entity.Property(e => e.RecordType).HasColumnName("record_type").HasMaxLength(20).IsRequired().HasDefaultValue("REQUEST");
             entity.Property(e => e.OrderNo).HasColumnName("order_no").HasMaxLength(100);
             entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.DocumentName).HasColumnName("document_name").HasMaxLength(255);
+            entity.Property(e => e.DocumentContentType).HasColumnName("document_content_type").HasMaxLength(100);
+            entity.Property(e => e.DocumentData).HasColumnName("document_data");
+            entity.Property(e => e.DocumentSize).HasColumnName("document_size");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
             entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
             entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(e => e.Employee)
                 .WithMany()

@@ -5,7 +5,8 @@ export type ApprovalDocumentType =
   | 'RESIGNATION_REQUEST'
   | 'CERTIFICATE_REQUEST'
   | 'EMPLOYMENT_CONTRACT'
-  | 'PAYROLL_PERIOD';
+  | 'PAYROLL_PERIOD'
+  | 'TRANSFER_REQUEST';
 
 export type ApproverType =
   | 'EMPLOYEE'
@@ -76,6 +77,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   CERTIFICATE_REQUEST: 'คำขอหนังสือรับรอง',
   EMPLOYMENT_CONTRACT: 'สัญญาจ้างงาน',
   PAYROLL_PERIOD: 'รอบเงินเดือน',
+  TRANSFER_REQUEST: 'คำขอย้ายแผนก/เลื่อนตำแหน่ง',
 };
 
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ */

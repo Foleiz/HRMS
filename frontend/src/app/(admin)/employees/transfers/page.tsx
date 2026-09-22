@@ -15,6 +15,11 @@ import {
   Eye,
   Building2,
   UserCheck,
+  FileText,
+  Download,
+  GitPullRequest,
+  Archive,
+  XCircle,
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { employeeService } from '@/services/employeeService';
@@ -22,6 +27,7 @@ import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import { Employee } from '@/types/employee';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
+import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
 
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -67,6 +73,10 @@ export default function TransfersPage() {
     code: string;
   }>({ id: null, name: '', code: '' });
 
+  // Approval Timeline Modal State
+  const [selectedApprovalInfo, setSelectedApprovalInfo] = useState<GenericApprovalRequestInfo | null>(null);
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState<boolean>(false);
+
   // Row Action Dropdown
   const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
@@ -92,6 +102,52 @@ export default function TransfersPage() {
     }
   };
 
+  const handleApprove = async (id: number) => {
+    if (!confirm('ยืนยันการอนุมัติคำขอนี้ใช่หรือไม่? ระบบจะปรับปรุงตำแหน่ง/สังกัดของพนักงานทันที')) return;
+    try {
+      await transferService.approve(id);
+      fetchData();
+      setActionMenuOpenId(null);
+    } catch (err: any) {
+      console.error('Failed to approve transfer:', err);
+      alert(err.response?.data?.message || 'ไม่สามารถอนุมัติคำขอได้');
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const reason = prompt('กรุณาระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):');
+    if (reason === null) return;
+    try {
+      await transferService.reject(id, reason);
+      fetchData();
+      setActionMenuOpenId(null);
+    } catch (err: any) {
+      console.error('Failed to reject transfer:', err);
+      alert(err.response?.data?.message || 'ไม่สามารถปฏิเสธคำขอได้');
+    }
+  };
+
+  const handleDownloadDocument = async (transfer: EmployeeTransfer) => {
+    try {
+      await transferService.downloadDocument(transfer.id, transfer.documentName);
+    } catch (err: any) {
+      console.error('Failed to download transfer document:', err);
+      alert(err.response?.data?.message || 'ไม่พบไฟล์เอกสารหรือเกิดข้อผิดพลาดในการดาวน์โหลด');
+    }
+  };
+
+  const handleViewApprovalTimeline = (transfer: EmployeeTransfer) => {
+    setSelectedApprovalInfo({
+      id: transfer.id,
+      requestNo: transfer.requestNo,
+      employeeName: transfer.employeeName,
+      subtitle: `ประเภท: ${transfer.transferTypeDisplay} • ย้ายไป: ${transfer.toDisplay} (มีผล: ${transfer.effectiveDateDisplay})`,
+      fetchTimeline: (id: number) => transferService.getApprovalTimeline(id),
+    });
+    setIsApprovalModalOpen(true);
+    setActionMenuOpenId(null);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -106,6 +162,7 @@ export default function TransfersPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
 
   // Filtered Transfers
   const filteredTransfers = useMemo(() => {
@@ -148,17 +205,6 @@ export default function TransfersPage() {
   const totalPages = Math.ceil(
     (activeTab === 'transfers' ? filteredTransfers.length : filteredEmployees.length) / pageSize
   ) || 1;
-
-  // Handle Approve
-  const handleApprove = async (id: number) => {
-    try {
-      await transferService.approve(id);
-      await fetchData();
-      setActionMenuOpenId(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'ไม่สามารถอนุมัติคำขอได้');
-    }
-  };
 
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
@@ -374,21 +420,55 @@ export default function TransfersPage() {
                 ) : (
                   paginatedTransfers.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* เลขที่คำขอ */}
-                      <td className="py-4 px-6 font-semibold text-slate-900">
-                        <button
-                          onClick={() => {
-                            setSelectedTimelineEmployee({
-                              id: item.employeeId,
-                              name: item.employeeName,
-                              code: item.employeeCode,
-                            });
-                            setIsTimelineModalOpen(true);
-                          }}
-                          className="hover:underline hover:text-blue-700 cursor-pointer font-medium"
-                        >
-                          {item.requestNo}
-                        </button>
+                      {/* เลขที่คำขอ และ ประเภทการบันทึก */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setSelectedTimelineEmployee({
+                                id: item.employeeId,
+                                name: item.employeeName,
+                                code: item.employeeCode,
+                              });
+                              setIsTimelineModalOpen(true);
+                            }}
+                            className="hover:underline hover:text-blue-700 cursor-pointer font-bold text-slate-900"
+                          >
+                            {item.requestNo}
+                          </button>
+                          {item.recordType === 'ARCHIVE' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Archive className="w-2.5 h-2.5" />
+                              คำสั่งย้อนหลัง
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              <GitPullRequest className="w-2.5 h-2.5" />
+                              ขออนุมัติ
+                            </span>
+                          )}
+                        </div>
+
+                        {item.orderNo && (
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            เลขที่: <span className="font-medium text-slate-700">{item.orderNo}</span>
+                          </p>
+                        )}
+
+                        {item.hasDocument && (
+                          <div className="mt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadDocument(item)}
+                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium bg-blue-50/70 hover:bg-blue-100/70 px-2 py-0.5 rounded-md transition-colors"
+                              title={item.documentName || 'ดาวน์โหลดเอกสารคำสั่ง'}
+                            >
+                              <FileText className="w-3 h-3 text-blue-600 shrink-0" />
+                              <span className="max-w-[150px] truncate">{item.documentName || 'เอกสารคำสั่งย้าย'}</span>
+                              <Download className="w-2.5 h-2.5 text-blue-500 shrink-0 ml-0.5" />
+                            </button>
+                          </div>
+                        )}
                       </td>
 
                       {/* พนักงาน */}
@@ -464,8 +544,33 @@ export default function TransfersPage() {
                           {actionMenuOpenId === item.id && (
                             <div
                               ref={actionMenuRef}
-                              className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
+                              className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
                             >
+                              {/* ผังการอนุมัติ */}
+                              {(item.recordType === 'REQUEST' || item.approvalInstanceId) && (
+                                <button
+                                  onClick={() => handleViewApprovalTimeline(item)}
+                                  className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
+                                >
+                                  <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />
+                                  <span>ดูผังการอนุมัติ (Workflow)</span>
+                                </button>
+                              )}
+
+                              {/* ดาวน์โหลดเอกสารคำสั่ง */}
+                              {item.hasDocument && (
+                                <button
+                                  onClick={() => {
+                                    handleDownloadDocument(item);
+                                    setActionMenuOpenId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-indigo-600" />
+                                  <span>ดาวน์โหลดเอกสารคำสั่ง</span>
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => {
                                   setSelectedTimelineEmployee({
@@ -476,20 +581,29 @@ export default function TransfersPage() {
                                   setIsTimelineModalOpen(true);
                                   setActionMenuOpenId(null);
                                 }}
-                                className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
                               >
                                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>ประวัติรายบุคคล</span>
                               </button>
 
                               {item.status === 'PENDING' && (
-                                <button
-                                  onClick={() => handleApprove(item.id)}
-                                  className="w-full px-3 py-2 text-[#16a34a] hover:bg-emerald-50 flex items-center gap-2 font-medium"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>อนุมัติคำขอ</span>
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleApprove(item.id)}
+                                    className="w-full px-3 py-2 text-[#16a34a] hover:bg-emerald-50 flex items-center gap-2 font-medium cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>อนุมัติคำขอ</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject(item.id)}
+                                    className="w-full px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium cursor-pointer"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                                    <span>ไม่อนุมัติคำขอ</span>
+                                  </button>
+                                </>
                               )}
                             </div>
                           )}
@@ -644,6 +758,17 @@ export default function TransfersPage() {
         employeeName={selectedTimelineEmployee.name}
         employeeCode={selectedTimelineEmployee.code}
       />
+
+      {/* 10. Approval Workflow Timeline Modal */}
+      <ApprovalTimelineModal
+        isOpen={isApprovalModalOpen}
+        onClose={() => {
+          setIsApprovalModalOpen(false);
+          setSelectedApprovalInfo(null);
+        }}
+        requestInfo={selectedApprovalInfo}
+      />
     </div>
   );
 }
+

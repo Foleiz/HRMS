@@ -34,6 +34,13 @@ export interface EmployeeTransfer {
   orderNo?: string;
   reason?: string;
 
+  recordType: 'REQUEST' | 'ARCHIVE' | string;
+  recordTypeDisplay: string;
+  approvalInstanceId?: number;
+  hasDocument: boolean;
+  documentName?: string;
+  documentSize?: number;
+
   createdAt: string;
   approvedAt?: string;
 }
@@ -55,4 +62,11 @@ export interface CreateTransferRequest {
   orderNo?: string;
   reason?: string;
   autoApprove?: boolean;
+
+  recordType?: 'REQUEST' | 'ARCHIVE' | string;
+  documentName?: string;
+  documentContentType?: string;
+  documentBase64?: string;
+  documentSize?: number;
 }
+

@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
 import { EmployeeTransfer, TransferSummaryStats, CreateTransferRequest } from '@/types/transfer';
+import { ApprovalTimeline } from '@/types/leave';
 
 /**
  * Service สำหรับเรียก API การย้ายแผนกและการเลื่อนตำแหน่ง (Employee Transfers & Promotions)
@@ -41,4 +42,36 @@ export const transferService = {
     const res = await apiClient.put<ApiResponse<EmployeeTransfer>>(`/employee-transfers/${id}/reject`, { reason });
     return res.data.data;
   },
+
+  // ดาวน์โหลดเอกสารคำสั่งย้าย
+  async downloadDocument(id: number, fileName?: string): Promise<void> {
+    const res = await apiClient.get(`/employee-transfers/${id}/document`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([res.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName || `transfer-order-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  // ดูไทม์ไลน์การอนุมัติ
+  async getApprovalTimeline(id: number): Promise<ApprovalTimeline> {
+    const res = await apiClient.get<ApiResponse<ApprovalTimeline>>(`/employee-transfers/${id}/approval-timeline`);
+    return res.data.data;
+  },
+
+  // ดำเนินการ Action ใน Approval Workflow (APPROVE / REJECT)
+  async processAction(id: number, actionDecision: 'APPROVE' | 'REJECT', comment?: string): Promise<EmployeeTransfer> {
+    const res = await apiClient.put<ApiResponse<EmployeeTransfer>>(`/employee-transfers/${id}/process-action`, {
+      actionDecision,
+      comment,
+    });
+    return res.data.data;
+  },
 };
+

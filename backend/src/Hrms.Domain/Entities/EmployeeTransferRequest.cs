@@ -26,9 +26,20 @@ public class EmployeeTransferRequest : BaseEntity
     
     public DateOnly EffectiveDate { get; set; }
     public string Status { get; set; } = "PENDING"; // PENDING, APPROVED, REJECTED
+    public string RecordType { get; set; } = "REQUEST"; // REQUEST (สายการอนุมัติ), ARCHIVE (บันทึกย้อนหลังพร้อมแนบเอกสาร)
     public string? OrderNo { get; set; }
     public string? Reason { get; set; }
     
+    // สายงานการอนุมัติ (Approval Workflow)
+    public long? ApprovalInstanceId { get; set; }
+    public virtual ApprovalInstance? ApprovalInstance { get; set; }
+
+    // เอกสารคำสั่งย้ายแผนก/เลื่อนตำแหน่ง (Attached Order Document)
+    public string? DocumentName { get; set; }
+    public string? DocumentContentType { get; set; }
+    public byte[]? DocumentData { get; set; }
+    public long? DocumentSize { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ApprovedAt { get; set; }
     public long? ApprovedBy { get; set; }

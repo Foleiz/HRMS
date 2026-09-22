@@ -31,7 +31,18 @@ public class CreateEmployeeTransferRequest
     public string? Reason { get; set; }
 
     /// <summary>
-    /// หากต้องการให้อนุมัติและมีผลทันทีเมื่อสร้าง
+    /// รูปแบบการบันทึก: "REQUEST" = ยื่นขออนุมัติตามสายงาน, "ARCHIVE" = บันทึกคำสั่งย้ายย้อนหลัง (แนบเอกสารและมีผลทันที)
+    /// </summary>
+    public string RecordType { get; set; } = "REQUEST";
+
+    // ข้อมูลเอกสารคำสั่งย้าย (สำหรับแนบไฟล์ PDF หรือรูปภาพ)
+    public string? DocumentName { get; set; }
+    public string? DocumentContentType { get; set; }
+    public string? DocumentBase64 { get; set; }
+    public long? DocumentSize { get; set; }
+
+    /// <summary>
+    /// หากต้องการให้อนุมัติและมีผลทันทีเมื่อสร้าง (ในโหมด ARCHIVE จะ true เสมอ)
     /// </summary>
     public bool AutoApprove { get; set; } = false;
 }

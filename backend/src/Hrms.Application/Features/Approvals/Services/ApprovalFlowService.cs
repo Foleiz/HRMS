@@ -14,7 +14,8 @@ public class ApprovalFlowService : IApprovalFlowService
     private static readonly HashSet<string> ValidDocumentTypes = new()
     {
         "ATTENDANCE_ADJUSTMENT", "LEAVE_REQUEST", "RESIGNATION_REQUEST",
-        "CERTIFICATE_REQUEST", "EMPLOYMENT_CONTRACT", "PAYROLL_PERIOD"
+        "CERTIFICATE_REQUEST", "EMPLOYMENT_CONTRACT", "PAYROLL_PERIOD",
+        "TRANSFER_REQUEST"
     };
 
     private static readonly HashSet<string> ValidApproverTypes = new()

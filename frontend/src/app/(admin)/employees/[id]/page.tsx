@@ -83,7 +83,7 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'user'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user'>('personal');
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -436,6 +436,18 @@ export default function EmployeeDetailPage() {
 
               <button
                 type="button"
+                onClick={() => setActiveTab('emergency')}
+                className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
+                  activeTab === 'emergency'
+                    ? 'border-[#0B2046] text-[#0B2046]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                ผู้ติดต่อกรณีฉุกเฉิน
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('user')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'user'
@@ -612,20 +624,19 @@ export default function EmployeeDetailPage() {
           {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
           {/* ============================================================ */}
           {activeTab === 'family' && (
-            <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
-              {/* ซ้าย: สมาชิกในครอบครัว */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-[#0B2046]" />
-                  <h3 className="font-bold text-slate-800 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
-                </div>
+            <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-[#0B2046]" />
+                <h3 className="font-bold text-slate-800 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
+              </div>
 
-                {!employee.familyMembers || employee.familyMembers.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    ยังไม่มีข้อมูลสมาชิกครอบครัว
-                  </div>
-                ) : (
-                  employee.familyMembers.map((member, idx) => (
+              {!employee.familyMembers || employee.familyMembers.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  ยังไม่มีข้อมูลสมาชิกครอบครัว
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {employee.familyMembers.map((member, idx) => (
                     <div
                       key={member.id || idx}
                       className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-2.5"
@@ -660,23 +671,29 @@ export default function EmployeeDetailPage() {
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TAB 3: กรณีฉุกเฉินติดต่อใคร (Emergency Contact)             */}
+          {/* ============================================================ */}
+          {activeTab === 'emergency' && (
+            <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Phone className="w-4 h-4 text-[#0B2046]" />
+                <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
               </div>
 
-              {/* ขวา: กรณีฉุกเฉินติดต่อใคร */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Phone className="w-4 h-4 text-[#0B2046]" />
-                  <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
+              {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน
                 </div>
-
-                {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน
-                  </div>
-                ) : (
-                  employee.emergencyContacts.map((contact, idx) => (
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {employee.emergencyContacts.map((contact, idx) => (
                     <div
                       key={contact.id || idx}
                       className="p-5 bg-sky-50/50 border border-sky-100 rounded-xl space-y-3"
@@ -720,9 +737,9 @@ export default function EmployeeDetailPage() {
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

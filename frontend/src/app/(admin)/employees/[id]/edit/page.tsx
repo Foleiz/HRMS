@@ -64,8 +64,8 @@ export default function EmployeeEditPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Active Tab: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว
-  const [activeTab, setActiveTab] = useState<'personal' | 'family'>('personal');
+  // Active Tab: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว vs ผู้ติดต่อกรณีฉุกเฉิน
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency'>('personal');
   const [activeFamilyIndex, setActiveFamilyIndex] = useState<number>(0);
 
   // Sub-Navigation Tabs ด้านบนตามภาพ Figma
@@ -394,6 +394,18 @@ export default function EmployeeEditPage() {
                 }`}
               >
                 ข้อมูลครอบครัว
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('emergency')}
+                className={`pb-2 transition-all border-b-2 cursor-pointer ${
+                  activeTab === 'emergency'
+                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                ผู้ติดต่อกรณีฉุกเฉิน
               </button>
             </div>
 
@@ -820,14 +832,13 @@ export default function EmployeeEditPage() {
             {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
             {/* ============================================================ */}
             {activeTab === 'family' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start text-xs animate-in fade-in duration-150">
-                {/* คอลัมน์ซ้าย: สมาชิกในครอบครัว */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#0B2046]" />
-                    <h3 className="font-bold text-slate-800 text-sm">สมาชิกในครอบครัว</h3>
-                  </div>
+              <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <Users className="w-4 h-4 text-[#0B2046]" />
+                  <h3 className="font-bold text-slate-800 text-sm">สมาชิกในครอบครัว</h3>
+                </div>
 
+                <div className="space-y-4">
                   {/* Family Member Switcher Tabs */}
                   <div className="flex items-center gap-2 mb-2">
                     {formData.familyMembers?.map((_, idx) => (
@@ -868,7 +879,7 @@ export default function EmployeeEditPage() {
 
                   {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
                   {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
-                    <div className="space-y-3.5 bg-slate-50/70 p-4 border border-slate-200/80 rounded-xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 p-5 border border-slate-200/80 rounded-xl">
                       <div>
                         <label className="font-semibold text-slate-700 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
@@ -977,161 +988,165 @@ export default function EmployeeEditPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
 
-                {/* คอลัมน์ขวา: กรณีฉุกเฉินติดต่อใคร */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-[#0B2046]" />
-                    <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
+            {/* ============================================================ */}
+            {/* TAB 3: กรณีฉุกเฉินติดต่อใคร (Emergency Contact)             */}
+            {/* ============================================================ */}
+            {activeTab === 'emergency' && (
+              <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <Phone className="w-4 h-4 text-[#0B2046]" />
+                  <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-sky-50/40 p-5 border border-sky-100 rounded-xl">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={formData.emergencyContact?.relationship || 'บิดา'}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            relationship: e.target.value,
+                            firstName: formData.emergencyContact?.firstName || '',
+                            lastName: formData.emergencyContact?.lastName || '',
+                            primaryPhone: formData.emergencyContact?.primaryPhone || '',
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="บิดา">บิดา</option>
+                      <option value="มารดา">มารดา</option>
+                      <option value="คู่สมรส">คู่สมรส</option>
+                      <option value="พี่น้อง">พี่น้อง</option>
+                      <option value="ญาติ">ญาติ</option>
+                      <option value="เพื่อน">เพื่อน</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
                   </div>
 
-                  <div className="space-y-3.5 bg-sky-50/50 p-4 border border-sky-100 rounded-xl">
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">
-                        ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
-                      </label>
-                      <select
-                        value={formData.emergencyContact?.relationship || 'บิดา'}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              relationship: e.target.value,
-                              firstName: formData.emergencyContact?.firstName || '',
-                              lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: formData.emergencyContact?.primaryPhone || '',
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
-                      >
-                        <option value="บิดา">บิดา</option>
-                        <option value="มารดา">มารดา</option>
-                        <option value="คู่สมรส">คู่สมรส</option>
-                        <option value="พี่น้อง">พี่น้อง</option>
-                        <option value="ญาติ">ญาติ</option>
-                        <option value="เพื่อน">เพื่อน</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">คำนำหน้า</label>
+                    <select
+                      value={formData.emergencyContact?.prefix || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            prefix: e.target.value,
+                            firstName: formData.emergencyContact?.firstName || '',
+                            lastName: formData.emergencyContact?.lastName || '',
+                            primaryPhone: formData.emergencyContact?.primaryPhone || '',
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">เลือกคำนำหน้า</option>
+                      <option value="นาย">นาย</option>
+                      <option value="นางสาว">นางสาว</option>
+                      <option value="นาง">นาง</option>
+                    </select>
+                  </div>
 
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">คำนำหน้า</label>
-                      <select
-                        value={formData.emergencyContact?.prefix || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              prefix: e.target.value,
-                              firstName: formData.emergencyContact?.firstName || '',
-                              lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: formData.emergencyContact?.primaryPhone || '',
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
-                      >
-                        <option value="">เลือกคำนำหน้า</option>
-                        <option value="นาย">นาย</option>
-                        <option value="นางสาว">นางสาว</option>
-                        <option value="นาง">นาง</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      ชื่อผู้ติดต่อ <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="กรอกชื่อผู้ติดต่อฉุกเฉิน"
+                      value={formData.emergencyContact?.firstName || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            firstName: e.target.value,
+                            lastName: formData.emergencyContact?.lastName || '',
+                            primaryPhone: formData.emergencyContact?.primaryPhone || '',
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">
-                        ชื่อผู้ติดต่อ <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="กรอกชื่อผู้ติดต่อฉุกเฉิน"
-                        value={formData.emergencyContact?.firstName || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              firstName: e.target.value,
-                              lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: formData.emergencyContact?.primaryPhone || '',
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      นามสกุลผู้ติดต่อ <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="กรอกนามสกุล"
+                      value={formData.emergencyContact?.lastName || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            firstName: formData.emergencyContact?.firstName || '',
+                            lastName: e.target.value,
+                            primaryPhone: formData.emergencyContact?.primaryPhone || '',
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">
-                        นามสกุลผู้ติดต่อ <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="กรอกนามสกุล"
-                        value={formData.emergencyContact?.lastName || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              firstName: formData.emergencyContact?.firstName || '',
-                              lastName: e.target.value,
-                              primaryPhone: formData.emergencyContact?.primaryPhone || '',
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      เบอร์โทรศัพท์ฉุกเฉิน <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={12}
+                      placeholder="08X-XXX-XXXX"
+                      value={formData.emergencyContact?.primaryPhone || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            firstName: formData.emergencyContact?.firstName || '',
+                            lastName: formData.emergencyContact?.lastName || '',
+                            primaryPhone: autoFormatPhone(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">
-                        เบอร์โทรศัพท์ฉุกเฉิน <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={12}
-                        placeholder="08X-XXX-XXXX"
-                        value={formData.emergencyContact?.primaryPhone || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              firstName: formData.emergencyContact?.firstName || '',
-                              lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: autoFormatPhone(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">ที่อยู่ผู้ติดต่อ</label>
-                      <textarea
-                        rows={2}
-                        placeholder="ที่อยู่สำหรับติดต่อกรณีฉุกเฉิน"
-                        value={formData.emergencyContact?.address || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContact: {
-                              ...formData.emergencyContact,
-                              firstName: formData.emergencyContact?.firstName || '',
-                              lastName: formData.emergencyContact?.lastName || '',
-                              primaryPhone: formData.emergencyContact?.primaryPhone || '',
-                              address: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">ที่อยู่ผู้ติดต่อ</label>
+                    <textarea
+                      rows={2}
+                      placeholder="ที่อยู่สำหรับติดต่อกรณีฉุกเฉิน"
+                      value={formData.emergencyContact?.address || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: {
+                            ...formData.emergencyContact,
+                            firstName: formData.emergencyContact?.firstName || '',
+                            lastName: formData.emergencyContact?.lastName || '',
+                            primaryPhone: formData.emergencyContact?.primaryPhone || '',
+                            address: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
                   </div>
                 </div>
               </div>

@@ -39,6 +39,12 @@ public class EmployeeTransferDto
     public string EffectiveDateDisplay { get; set; } = string.Empty; // e.g. "01/09/2569"
     public string Status { get; set; } = string.Empty; // PENDING, APPROVED, REJECTED
     public string StatusDisplay { get; set; } = string.Empty;
+    public string RecordType { get; set; } = "REQUEST";
+    public string RecordTypeDisplay { get; set; } = "ยื่นขออนุมัติ";
+    public long? ApprovalInstanceId { get; set; }
+    public bool HasDocument { get; set; }
+    public string? DocumentName { get; set; }
+    public long? DocumentSize { get; set; }
     public string? OrderNo { get; set; }
     public string? Reason { get; set; }
 

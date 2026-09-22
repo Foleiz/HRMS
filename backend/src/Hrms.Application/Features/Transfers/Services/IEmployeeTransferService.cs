@@ -19,4 +19,10 @@ public interface IEmployeeTransferService
     Task<EmployeeTransferDto> ApproveAsync(long id, CancellationToken cancellationToken = default);
 
     Task<EmployeeTransferDto> RejectAsync(long id, string? reason, CancellationToken cancellationToken = default);
+
+    Task<(byte[] Data, string ContentType, string FileName)?> GetDocumentAsync(long id, CancellationToken cancellationToken = default);
+
+    Task<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto?> GetApprovalTimelineAsync(long id, CancellationToken cancellationToken = default);
+
+    Task<EmployeeTransferDto> ProcessActionAsync(long id, long approverEmployeeId, string actionDecision, string? comment = null, CancellationToken cancellationToken = default);
 }

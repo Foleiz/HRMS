@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Phone,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
@@ -143,7 +144,7 @@ export default function EmployeesPage() {
   const [commentInput, setCommentInput] = useState('');
 
   // Modal Tabs & Family Member state
-  const [activeModalTab, setActiveModalTab] = useState<'personal' | 'family'>('personal');
+  const [activeModalTab, setActiveModalTab] = useState<'personal' | 'family' | 'emergency'>('personal');
   const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
 
   // Form State for creating employee
@@ -354,8 +355,18 @@ export default function EmployeesPage() {
     'employeeType',
   ];
 
+  const emergencyErrorKeys = [
+    'emergency_relationship',
+    'emergency_prefix',
+    'emergency_firstName',
+    'emergency_lastName',
+    'emergency_address',
+    'emergency_primaryPhone',
+  ];
+
   const personalErrorsCount = Object.keys(formErrors).filter((k) => personalErrorKeys.includes(k)).length;
-  const familyErrorsCount = Object.keys(formErrors).filter((k) => !personalErrorKeys.includes(k)).length;
+  const emergencyErrorsCount = Object.keys(formErrors).filter((k) => emergencyErrorKeys.includes(k)).length;
+  const familyErrorsCount = Object.keys(formErrors).filter((k) => !personalErrorKeys.includes(k) && !emergencyErrorKeys.includes(k)).length;
 
   const clearFieldError = (key: string) => {
     if (formErrors[key]) {
@@ -534,12 +545,18 @@ export default function EmployeesPage() {
       setHasAttemptedSubmit(true);
 
       const hasPersonalError = Object.keys(errors).some((k) => personalErrorKeys.includes(k));
-      const hasFamilyError = Object.keys(errors).some((k) => !personalErrorKeys.includes(k));
+      const hasFamilyError = Object.keys(errors).some((k) => !personalErrorKeys.includes(k) && !emergencyErrorKeys.includes(k));
+      const hasEmergencyError = Object.keys(errors).some((k) => emergencyErrorKeys.includes(k));
 
-      if (activeModalTab === 'family' && hasPersonalError && !hasFamilyError) {
-        setActiveModalTab('personal');
-      } else if (activeModalTab === 'personal' && !hasPersonalError && hasFamilyError) {
-        setActiveModalTab('family');
+      if (activeModalTab === 'personal' && !hasPersonalError) {
+        if (hasFamilyError) setActiveModalTab('family');
+        else if (hasEmergencyError) setActiveModalTab('emergency');
+      } else if (activeModalTab === 'family' && !hasFamilyError) {
+        if (hasPersonalError) setActiveModalTab('personal');
+        else if (hasEmergencyError) setActiveModalTab('emergency');
+      } else if (activeModalTab === 'emergency' && !hasEmergencyError) {
+        if (hasPersonalError) setActiveModalTab('personal');
+        else if (hasFamilyError) setActiveModalTab('family');
       }
 
       if (hasFamilyError) {
@@ -1288,6 +1305,22 @@ export default function EmployeesPage() {
                     </span>
                   )}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab('emergency')}
+                  className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
+                    activeModalTab === 'emergency'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <span>ผู้ติดต่อกรณีฉุกเฉิน</span>
+                  {hasAttemptedSubmit && emergencyErrorsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                      {emergencyErrorsCount}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <button
@@ -1314,7 +1347,7 @@ export default function EmployeesPage() {
                   </div>
                 )}
 
-                {activeModalTab === 'personal' ? (
+                {activeModalTab === 'personal' && (
                   /* ================= TAB 1: ข้อมูลส่วนตัว ================= */
                   <div className="space-y-6">
                     {/* Top 3 Columns */}
@@ -1927,10 +1960,17 @@ export default function EmployeesPage() {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  /* ================= TAB 2: ข้อมูลครอบครัว ================= */
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-                    {/* คอลัมน์ซ้าย: สมาชิกในครอบครัว */}
+                )}
+
+                {/* ================= TAB 2: ข้อมูลครอบครัว ================= */}
+                {activeModalTab === 'family' && (
+                  <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                      <h3 className="text-sm font-bold text-slate-900">
+                        ข้อมูลสมาชิกในครอบครัว (Family Members)
+                      </h3>
+                    </div>
+
                     <div className="space-y-4">
                       {/* Family Member Switcher Tabs */}
                       <div className="flex items-center gap-2 mb-2">
@@ -1978,7 +2018,7 @@ export default function EmployeesPage() {
 
                       {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
                       {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
-                        <div className="space-y-3.5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="font-semibold text-slate-700 block mb-1">
                               ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
@@ -2106,162 +2146,167 @@ export default function EmployeesPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                )}
 
-                    {/* คอลัมน์ขวา: กรณีฉุกเฉินติดต่อใคร */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-slate-900 pb-1">
-                        กรณีฉุกเฉินติดต่อใคร
+                {/* ================= TAB 3: กรณีฉุกเฉินติดต่อใคร ================= */}
+                {activeModalTab === 'emergency' && (
+                  <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                      <Phone className="w-4 h-4 text-[#0B2046]" />
+                      <h3 className="text-sm font-bold text-slate-900">
+                        กรณีฉุกเฉินติดต่อใคร (Emergency Contact)
                       </h3>
+                    </div>
 
-                      <div className="space-y-3.5">
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={formData.emergencyContact?.relationship || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
-                                  relationship: e.target.value,
-                                },
-                              });
-                              clearFieldError('emergency_relationship');
-                            }}
-                            className={`${getFieldClass('emergency_relationship')} cursor-pointer`}
-                          >
-                            <option value="">เลือกความสัมพันธ์</option>
-                            <option value="บิดา">บิดา</option>
-                            <option value="มารดา">มารดา</option>
-                            <option value="คู่สมรส">คู่สมรส</option>
-                            <option value="บุตร">บุตร</option>
-                            <option value="ญาติ">ญาติ</option>
-                            <option value="เพื่อน">เพื่อน</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
-                          </select>
-                          {renderFieldError('emergency_relationship')}
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={formData.emergencyContact?.relationship || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                relationship: e.target.value,
+                              },
+                            });
+                            clearFieldError('emergency_relationship');
+                          }}
+                          className={`${getFieldClass('emergency_relationship')} cursor-pointer`}
+                        >
+                          <option value="">เลือกความสัมพันธ์</option>
+                          <option value="บิดา">บิดา</option>
+                          <option value="มารดา">มารดา</option>
+                          <option value="คู่สมรส">คู่สมรส</option>
+                          <option value="บุตร">บุตร</option>
+                          <option value="ญาติ">ญาติ</option>
+                          <option value="เพื่อน">เพื่อน</option>
+                          <option value="อื่นๆ">อื่นๆ</option>
+                        </select>
+                        {renderFieldError('emergency_relationship')}
+                      </div>
 
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={formData.emergencyContact?.prefix || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
-                                  prefix: e.target.value,
-                                },
-                              });
-                              clearFieldError('emergency_prefix');
-                            }}
-                            className={`${getFieldClass('emergency_prefix')} cursor-pointer`}
-                          >
-                            <option value="">เลือกคำนำหน้า</option>
-                            <option value="นาย">นาย</option>
-                            <option value="นางสาว">นางสาว</option>
-                            <option value="นาง">นาง</option>
-                          </select>
-                          {renderFieldError('emergency_prefix')}
-                        </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={formData.emergencyContact?.prefix || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                prefix: e.target.value,
+                              },
+                            });
+                            clearFieldError('emergency_prefix');
+                          }}
+                          className={`${getFieldClass('emergency_prefix')} cursor-pointer`}
+                        >
+                          <option value="">เลือกคำนำหน้า</option>
+                          <option value="นาย">นาย</option>
+                          <option value="นางสาว">นางสาว</option>
+                          <option value="นาง">นาง</option>
+                        </select>
+                        {renderFieldError('emergency_prefix')}
+                      </div>
 
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            ชื่อ (First Name) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="กรอกชื่อ"
-                            value={formData.emergencyContact?.firstName || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { lastName: '', primaryPhone: '' }),
-                                  firstName: e.target.value,
-                                },
-                              });
-                              clearFieldError('emergency_firstName');
-                            }}
-                            className={getFieldClass('emergency_firstName')}
-                          />
-                          {renderFieldError('emergency_firstName')}
-                        </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          ชื่อ (First Name) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="กรอกชื่อ"
+                          value={formData.emergencyContact?.firstName || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { lastName: '', primaryPhone: '' }),
+                                firstName: e.target.value,
+                              },
+                            });
+                            clearFieldError('emergency_firstName');
+                          }}
+                          className={getFieldClass('emergency_firstName')}
+                        />
+                        {renderFieldError('emergency_firstName')}
+                      </div>
 
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            นามสกุล (Last Name) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="กรอกนามสกุล"
-                            value={formData.emergencyContact?.lastName || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { firstName: '', primaryPhone: '' }),
-                                  lastName: e.target.value,
-                                },
-                              });
-                              clearFieldError('emergency_lastName');
-                            }}
-                            className={getFieldClass('emergency_lastName')}
-                          />
-                          {renderFieldError('emergency_lastName')}
-                        </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="กรอกนามสกุล"
+                          value={formData.emergencyContact?.lastName || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { firstName: '', primaryPhone: '' }),
+                                lastName: e.target.value,
+                              },
+                            });
+                            clearFieldError('emergency_lastName');
+                          }}
+                          className={getFieldClass('emergency_lastName')}
+                        />
+                        {renderFieldError('emergency_lastName')}
+                      </div>
 
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            ที่อยู่ (Address) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="กรอกที่อยู่"
-                            value={formData.emergencyContact?.address || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
-                                  address: e.target.value,
-                                },
-                              });
-                              clearFieldError('emergency_address');
-                            }}
-                            className={getFieldClass('emergency_address')}
-                          />
-                          {renderFieldError('emergency_address')}
-                        </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          เบอร์โทร (Phone number) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={12}
+                          placeholder="08X-XXX-XXXX"
+                          value={formData.emergencyContact?.primaryPhone || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { firstName: '', lastName: '' }),
+                                primaryPhone: autoFormatPhone(e.target.value),
+                              },
+                            });
+                            clearFieldError('emergency_primaryPhone');
+                          }}
+                          className={getFieldClass('emergency_primaryPhone', true)}
+                        />
+                        {renderFieldError('emergency_primaryPhone')}
+                      </div>
 
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
-                            เบอร์โทร (Phone number) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            maxLength={12}
-                            placeholder="08X-XXX-XXXX"
-                            value={formData.emergencyContact?.primaryPhone || ''}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                emergencyContact: {
-                                  ...(formData.emergencyContact || { firstName: '', lastName: '' }),
-                                  primaryPhone: autoFormatPhone(e.target.value),
-                                },
-                              });
-                              clearFieldError('emergency_primaryPhone');
-                            }}
-                            className={getFieldClass('emergency_primaryPhone', true)}
-                          />
-                          {renderFieldError('emergency_primaryPhone')}
-                        </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="กรอกที่อยู่"
+                          value={formData.emergencyContact?.address || ''}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              emergencyContact: {
+                                ...(formData.emergencyContact || { firstName: '', lastName: '', primaryPhone: '' }),
+                                address: e.target.value,
+                              },
+                            });
+                            clearFieldError('emergency_address');
+                          }}
+                          className={getFieldClass('emergency_address')}
+                        />
+                        {renderFieldError('emergency_address')}
                       </div>
                     </div>
                   </div>

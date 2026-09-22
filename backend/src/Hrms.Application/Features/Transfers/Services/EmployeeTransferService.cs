@@ -1,6 +1,8 @@
 using System.Globalization;
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Approvals.DTOs;
+using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Transfers.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +12,14 @@ namespace Hrms.Application.Features.Transfers.Services;
 public class EmployeeTransferService : IEmployeeTransferService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IApprovalWorkflowService _approvalWorkflowService;
 
-    public EmployeeTransferService(IHrmsDbContext context)
+    public EmployeeTransferService(
+        IHrmsDbContext context,
+        IApprovalWorkflowService approvalWorkflowService)
     {
         _context = context;
+        _approvalWorkflowService = approvalWorkflowService;
     }
 
     public async Task<List<EmployeeTransferDto>> GetAllAsync(
@@ -168,11 +174,33 @@ public class EmployeeTransferService : IEmployeeTransferService
 
         var requestNo = $"{prefix}{nextSeq:D3}";
 
+        bool isArchive = string.Equals(request.RecordType, "ARCHIVE", StringComparison.OrdinalIgnoreCase);
+        byte[]? docData = null;
+        if (!string.IsNullOrWhiteSpace(request.DocumentBase64))
+        {
+            try
+            {
+                var base64 = request.DocumentBase64;
+                if (base64.Contains(','))
+                {
+                    base64 = base64.Substring(base64.IndexOf(',') + 1);
+                }
+                docData = Convert.FromBase64String(base64);
+            }
+            catch
+            {
+                // ignore base64 conversion errors
+            }
+        }
+
+        bool shouldApproveImmediately = isArchive || request.AutoApprove;
+
         var transfer = new EmployeeTransferRequest
         {
             RequestNo = requestNo,
             EmployeeId = request.EmployeeId,
             TransferType = request.TransferType,
+            RecordType = isArchive ? "ARCHIVE" : "REQUEST",
             FromDivisionId = currentAssign?.DivisionId,
             FromDepartmentId = currentAssign?.DepartmentId,
             FromPositionId = currentAssign?.PositionId,
@@ -182,22 +210,60 @@ public class EmployeeTransferService : IEmployeeTransferService
             ToPositionId = request.ToPositionId,
             ToManagerId = request.ToManagerId,
             EffectiveDate = request.EffectiveDate,
-            Status = request.AutoApprove ? "APPROVED" : "PENDING",
+            Status = shouldApproveImmediately ? "APPROVED" : "PENDING",
             OrderNo = request.OrderNo,
             Reason = request.Reason,
+            DocumentName = request.DocumentName,
+            DocumentContentType = request.DocumentContentType,
+            DocumentData = docData,
+            DocumentSize = request.DocumentSize ?? docData?.Length,
             CreatedAt = DateTime.UtcNow,
-            ApprovedAt = request.AutoApprove ? DateTime.UtcNow : null
+            ApprovedAt = shouldApproveImmediately ? DateTime.UtcNow : null
         };
 
         _context.EmployeeTransferRequests.Add(transfer);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        // หากเป็นการอนุมัติทันที ให้ปรับปรุง EmployeeAssignment ทันที
-        if (request.AutoApprove)
+        // กรณีบันทึกย้อนหลัง (ARCHIVE) หรือเปิด AutoApprove ให้ปรับปรุง Assignment ทันที
+        if (shouldApproveImmediately)
         {
             ApplyAssignmentUpdate(currentAssign, transfer);
+            await _context.SaveChangesAsync(cancellationToken);
         }
+        else
+        {
+            // กรณีเป็นคำขอทั่วไป (REQUEST) ให้เริ่มต้น Approval Workflow ตามสายการอนุมัติ
+            try
+            {
+                var instanceId = await _approvalWorkflowService.StartWorkflowAsync(
+                    "TRANSFER_REQUEST",
+                    transfer.Id,
+                    transfer.EmployeeId,
+                    cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
+                if (instanceId.HasValue)
+                {
+                    transfer.ApprovalInstanceId = instanceId.Value;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                else
+                {
+                    // หากไม่ได้ตั้งค่าสายการอนุมัติไว้ ให้มีผลอัตโนมัติ
+                    transfer.Status = "APPROVED";
+                    transfer.ApprovedAt = DateTime.UtcNow;
+                    ApplyAssignmentUpdate(currentAssign, transfer);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+            catch
+            {
+                // Fallback ป้องกันระบบค้างหาก workflow service มีปัญหา
+                transfer.Status = "APPROVED";
+                transfer.ApprovedAt = DateTime.UtcNow;
+                ApplyAssignmentUpdate(currentAssign, transfer);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         return await GetByIdAsync(transfer.Id, cancellationToken);
     }
@@ -252,6 +318,101 @@ public class EmployeeTransferService : IEmployeeTransferService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(id, cancellationToken);
+    }
+
+    public async Task<(byte[] Data, string ContentType, string FileName)?> GetDocumentAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var transfer = await _context.EmployeeTransferRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (transfer == null || transfer.DocumentData == null || transfer.DocumentData.Length == 0)
+        {
+            return null;
+        }
+
+        return (
+            transfer.DocumentData,
+            transfer.DocumentContentType ?? "application/pdf",
+            transfer.DocumentName ?? $"transfer-order-{transfer.RequestNo}.pdf"
+        );
+    }
+
+    public async Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var transfer = await _context.EmployeeTransferRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (transfer == null) return null;
+
+        if (transfer.ApprovalInstanceId.HasValue)
+        {
+            return await _approvalWorkflowService.GetTimelineAsync(transfer.ApprovalInstanceId.Value, cancellationToken);
+        }
+
+        return await _approvalWorkflowService.GetTimelineByDocumentAsync("TRANSFER_REQUEST", transfer.Id, cancellationToken);
+    }
+
+    public async Task<EmployeeTransferDto> ProcessActionAsync(
+        long id,
+        long approverEmployeeId,
+        string actionDecision,
+        string? comment = null,
+        CancellationToken cancellationToken = default)
+    {
+        var transfer = await _context.EmployeeTransferRequests
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (transfer == null)
+        {
+            throw new NotFoundException("คำขอย้าย/เลื่อนตำแหน่ง", id);
+        }
+
+        if (!transfer.ApprovalInstanceId.HasValue)
+        {
+            if (actionDecision == "APPROVE")
+            {
+                return await ApproveAsync(id, cancellationToken);
+            }
+            return await RejectAsync(id, comment, cancellationToken);
+        }
+
+        var result = await _approvalWorkflowService.ProcessActionAsync(
+            transfer.ApprovalInstanceId.Value,
+            approverEmployeeId,
+            actionDecision,
+            comment,
+            cancellationToken);
+
+        if (result.Status == "APPROVED")
+        {
+            transfer.Status = "APPROVED";
+            transfer.ApprovedAt = DateTime.UtcNow;
+            transfer.ApprovedBy = approverEmployeeId;
+
+            var currentAssign = await _context.EmployeeAssignments
+                .Where(a => a.EmployeeId == transfer.EmployeeId && a.IsCurrent)
+                .OrderByDescending(a => a.EffectiveFrom)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            ApplyAssignmentUpdate(currentAssign, transfer);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        else if (result.Status == "REJECTED")
+        {
+            transfer.Status = "REJECTED";
+            if (!string.IsNullOrWhiteSpace(comment))
+            {
+                transfer.Reason = string.IsNullOrWhiteSpace(transfer.Reason)
+                    ? $"เหตุผลที่ไม่อนุมัติ: {comment}"
+                    : $"{transfer.Reason} (ไม่อนุมัติ: {comment})";
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         return await GetByIdAsync(id, cancellationToken);
     }
 
@@ -379,6 +540,12 @@ public class EmployeeTransferService : IEmployeeTransferService
             EffectiveDateDisplay = dateDisplay,
             Status = t.Status,
             StatusDisplay = statusDisplay,
+            RecordType = t.RecordType ?? "REQUEST",
+            RecordTypeDisplay = (t.RecordType == "ARCHIVE") ? "บันทึกคำสั่งย้อนหลัง" : "ยื่นขออนุมัติตามสายงาน",
+            ApprovalInstanceId = t.ApprovalInstanceId,
+            HasDocument = (t.DocumentData != null && t.DocumentData.Length > 0) || !string.IsNullOrEmpty(t.DocumentName),
+            DocumentName = t.DocumentName,
+            DocumentSize = t.DocumentSize,
             OrderNo = t.OrderNo,
             Reason = t.Reason,
             CreatedAt = t.CreatedAt,

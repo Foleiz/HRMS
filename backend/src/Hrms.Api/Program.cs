@@ -175,6 +175,9 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 11. Global Audit Log Middleware (PDPA & Enterprise Audit Trail)
+app.UseMiddleware<AuditLogMiddleware>();
+
 app.MapControllers();
 
 app.Run();

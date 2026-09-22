@@ -1,3 +1,5 @@
+using Hrms.Domain.Common;
+
 namespace Hrms.Domain.Entities;
 
 /// <summary>
@@ -8,7 +10,7 @@ namespace Hrms.Domain.Entities;
 /// - Staff มองเห็นระดับ SELF (เฉพาะข้อมูลตนเอง)
 /// แมปกับตาราง hrms.role_data_scope
 /// </summary>
-public class RoleDataScope
+public class RoleDataScope : BaseEntity
 {
     public long RoleId { get; set; }
     public long PermissionId { get; set; }
