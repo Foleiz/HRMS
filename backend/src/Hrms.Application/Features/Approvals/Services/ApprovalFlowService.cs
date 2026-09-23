@@ -115,10 +115,40 @@ public class ApprovalFlowService : IApprovalFlowService
         flow.LevelId = request.LevelId;
         flow.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper();
 
-        // แทนที่ขั้นตอนอนุมัติทั้งชุดทุกครั้งที่บันทึก — ยังไม่มีการอ้างอิงจาก approval_action มาถึง step
-        // เดิม (Approval Execution Engine ยังไม่เชื่อมใช้งานจริงในเฟสนี้) จึงลบแล้วสร้างใหม่ได้อย่างปลอดภัย
-        _context.ApprovalSteps.RemoveRange(flow.Steps);
-        flow.Steps = newSteps;
+        // อัปเดตขั้นตอนเดิม หรือเพิ่มขั้นตอนใหม่ แทนที่จะลบทั้งชุด (ป้องกัน FK constraint violation กับ approval_action)
+        var existingStepsList = flow.Steps.OrderBy(s => s.StepNo).ToList();
+        var newStepsList = newSteps.OrderBy(s => s.StepNo).ToList();
+
+        int commonCount = Math.Min(existingStepsList.Count, newStepsList.Count);
+        for (int i = 0; i < commonCount; i++)
+        {
+            var existing = existingStepsList[i];
+            var incoming = newStepsList[i];
+
+            existing.StepNo = incoming.StepNo;
+            existing.ApproverType = incoming.ApproverType;
+            existing.ApproverEmployeeId = incoming.ApproverEmployeeId;
+            existing.ApproverRoleId = incoming.ApproverRoleId;
+            existing.IsRequired = incoming.IsRequired;
+        }
+
+        for (int i = commonCount; i < newStepsList.Count; i++)
+        {
+            flow.Steps.Add(newStepsList[i]);
+        }
+
+        for (int i = commonCount; i < existingStepsList.Count; i++)
+        {
+            var stepToDelete = existingStepsList[i];
+            var actionsReferencing = await _context.ApprovalActions
+                .Where(a => a.ApprovalStepId == stepToDelete.Id)
+                .ToListAsync(cancellationToken);
+            foreach (var act in actionsReferencing)
+            {
+                act.ApprovalStepId = null;
+            }
+            _context.ApprovalSteps.Remove(stepToDelete);
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

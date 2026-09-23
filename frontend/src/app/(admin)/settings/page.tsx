@@ -253,6 +253,7 @@ export default function SettingsPage() {
     if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
       loadEmployees();
+      loadRoles();
     } else if (activeTab === 'roles' && canViewRolesTab) {
       loadRoles();
     } else if (activeTab === 'audit-log' && canViewAuditLogTab) {
