@@ -405,7 +405,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-4 font-sans pb-12">
+    <div className={`space-y-4 font-sans ${activeTab === 'roles' ? 'pb-2' : 'pb-12'}`}>
       {/* 1. Sub-Navigation Tabs (ตรงตามรูปแบบเดียวกับเมนูพนักงาน) */}
       <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">

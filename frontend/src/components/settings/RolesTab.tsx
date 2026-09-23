@@ -22,6 +22,7 @@ import {
   CheckSquare,
   Eye,
   X,
+  Shield,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -456,12 +457,23 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   /*  RENDER                                                      */
   /* ──────────────────────────────────────────────────────────── */
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch min-h-[calc(100vh-210px)] w-full">
 
-      {/* =========== LEFT PANE: ROLES LIST (4 cols) =========== */}
-      <div className="lg:col-span-4 space-y-3">
+      {/* =========== LEFT PANE: ROLES LIST (4 cols lg, 3 cols xl) =========== */}
+      <div className="lg:col-span-4 xl:col-span-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col h-full min-h-[calc(100vh-210px)]">
+        {/* Header: Title + Badge */}
+        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[#0B2046]" />
+            <h3 className="text-sm font-bold text-slate-900">บทบาทผู้ใช้งาน</h3>
+          </div>
+          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[11px] font-semibold">
+            {roles.length} บทบาท
+          </span>
+        </div>
+
         {/* Search & Add */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-3 shrink-0">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -469,45 +481,45 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               value={searchRole}
               onChange={(e) => setSearchRole(e.target.value)}
               placeholder="ค้นหาบทบาท..."
-              className="w-full h-9.5 pl-8 pr-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              className="w-full h-9 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
             />
           </div>
           <button
             onClick={onAddRoleClick}
-            className="h-9.5 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
+            className="h-9 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ เพิ่มบทบาท</span>
+            <span>เพิ่ม</span>
           </button>
         </div>
 
         {/* Roles List */}
-        <div className="space-y-2.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+        <div className="mt-3 space-y-2.5 flex-1 overflow-y-auto pr-1">
           {filteredRoles.map((role) => {
             const isSelected = selectedRoleMatrix?.id === role.id;
             return (
               <div
                 key={role.id}
                 onClick={() => onSelectRole(role.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'bg-white border-[#0B2046] ring-2 ring-[#0B2046]/10 shadow-sm'
-                    : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                    ? 'bg-[#0B2046]/5 border-[#0B2046] ring-1 ring-[#0B2046]/20 shadow-xs'
+                    : 'bg-slate-50/60 border-slate-200/80 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-slate-900 tracking-tight">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`font-bold text-xs tracking-tight ${isSelected ? 'text-[#0B2046]' : 'text-slate-900'}`}>
                         {role.roleCode}
                       </span>
                       {role.isSystemDefault && (
-                        <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded text-[9px] font-semibold">
-                          System Default
+                        <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200/60 rounded text-[9px] font-semibold">
+                          Default
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    <div className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-1">
                       {role.roleName}
                     </div>
                   </div>
@@ -518,13 +530,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 </div>
 
                 {role.description && (
-                  <p className="text-[11px] text-slate-400 line-clamp-2 mt-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">
                     {role.description}
                   </p>
                 )}
 
                 {!role.isSystemDefault && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-3 text-[11px]">
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-end gap-3 text-[11px]">
                     <button
                       onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
                       className="text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
@@ -545,8 +557,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         </div>
       </div>
 
-      {/* =========== RIGHT PANE: TOGGLE PERMISSION UI (8 cols) =========== */}
-      <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
+      {/* =========== RIGHT PANE: TOGGLE PERMISSION UI (8 cols lg, 9 cols xl) =========== */}
+      <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col justify-between h-full min-h-[calc(100vh-210px)]">
         {selectedRoleMatrix ? (
           <>
             {/* Header */}
@@ -834,7 +846,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             )}
 
             {/* Bottom Save Bar */}
-            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <p className="text-slate-400 text-[11px] italic">
                 * การเปลี่ยนสิทธิ์จะมีผลกับผู้ใช้ในบทบาทนี้ทันทีเมื่อทำการบันทึกข้อมูล
               </p>
