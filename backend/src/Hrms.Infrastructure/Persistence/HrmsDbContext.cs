@@ -1002,9 +1002,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
             entity.Property(e => e.SignatureData).HasColumnName("signature_data").IsRequired();
-            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255).IsRequired();
-            entity.Property(e => e.FileSize).HasColumnName("file_size").IsRequired();
-            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").HasDefaultValueSql("now()");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
@@ -1792,26 +1792,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Configuration: EmployeeSignature
-        modelBuilder.Entity<EmployeeSignature>(entity =>
-        {
-            entity.ToTable("employee_signature", "hrms");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
-            entity.Property(e => e.SignatureData).HasColumnName("signature_data").IsRequired();
-            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
-            entity.Property(e => e.FileSize).HasColumnName("file_size");
-            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
-            entity.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
-            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
-
-            entity.HasOne(e => e.Employee)
-                .WithMany()
-                .HasForeignKey(e => e.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
 
         // Configuration: ResignationRequest
         modelBuilder.Entity<ResignationRequest>(entity =>
