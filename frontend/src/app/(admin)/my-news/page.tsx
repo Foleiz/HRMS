@@ -114,6 +114,12 @@ export default function MyNewsCalendarPage() {
   // Modal Reading State
   const [readingItem, setReadingItem] = useState<Announcement | null>(null);
 
+  // Modal for all announcements on a selected day (when clicking "+N รายการเพิ่มเติม")
+  const [selectedDayModal, setSelectedDayModal] = useState<{
+    date: Date;
+    items: Announcement[];
+  } | null>(null);
+
   // Set Breadcrumb
   useEffect(() => {
     setBreadcrumb({
@@ -419,12 +425,18 @@ export default function MyNewsCalendarPage() {
                     })}
 
                     {itemsOnDay.length > 3 && (
-                      <div
-                        onClick={() => handleOpenReading(itemsOnDay[3])}
-                        className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer pl-1"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedDayModal({
+                            date: dayItem.date,
+                            items: itemsOnDay,
+                          })
+                        }
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer pl-1 text-left"
                       >
                         +{itemsOnDay.length - 3} รายการเพิ่มเติม
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -603,6 +615,110 @@ export default function MyNewsCalendarPage() {
                 className="px-5 py-2 rounded-xl bg-[#0B2046] text-white font-semibold text-xs hover:bg-[#0B2046]/90 transition-all cursor-pointer"
               >
                 ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal แสดงรายการประกาศทั้งหมดในวันที่เลือก (เมื่อกด +N รายการเพิ่มเติม) */}
+      {selectedDayModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#0B2046]/5 text-[#0B2046] border border-[#0B2046]/10 flex flex-col items-center justify-center">
+                  <span className="text-[10px] font-medium leading-none text-slate-400">วันที่</span>
+                  <span className="text-base font-extrabold leading-none">{selectedDayModal.date.getDate()}</span>
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    รายการประกาศวันที่ {selectedDayModal.date.toLocaleDateString('th-TH', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    พบทั้งหมด {selectedDayModal.items.length} รายการ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDayModal(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: รายการประกาศทั้งหมด */}
+            <div className="p-4 overflow-y-auto space-y-2 flex-1 divide-y divide-slate-100">
+              {selectedDayModal.items.map((item, idx) => {
+                const style = CATEGORY_STYLES[item.category] || CATEGORY_STYLES.GENERAL;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedDayModal(null);
+                      handleOpenReading(item);
+                    }}
+                    className={`pt-2.5 first:pt-0 group p-3 rounded-xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col gap-1.5 ${
+                      !item.isReadByCurrentUser ? 'bg-amber-50/20' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${style.badgeBg}`}>
+                          {style.label}
+                        </span>
+                        {item.isPinned && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            <Pin className="w-2.5 h-2.5 fill-current" />
+                            ปักหมุด
+                          </span>
+                        )}
+                        {!item.isReadByCurrentUser && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            ยังไม่ได้อ่าน
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-blue-600 group-hover:text-blue-700 font-medium flex items-center gap-1 shrink-0">
+                        <Eye className="w-3 h-3" />
+                        เปิดอ่าน
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-[#0B2046] transition-colors leading-snug">
+                      {idx + 1}. {item.title}
+                    </h4>
+
+                    {item.content && (
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        {item.content}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                คลิกรายการเพื่อเปิดอ่านเนื้อหาฉบับเต็ม
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedDayModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-300 transition-all cursor-pointer"
+              >
+                ปิด
               </button>
             </div>
           </div>
