@@ -42,14 +42,34 @@ interface RolesTabProps {
   isLoading: boolean;
   isSavingMatrix: boolean;
 }
+const Checkbox: React.FC<{
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+  title?: string;
+  ariaLabel?: string;
+  disabled?: boolean;
+}> = ({ checked, indeterminate = false, onChange, title, ariaLabel, disabled }) => {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
 
-const SCOPES = [
-  { key: 'SELF', label: 'ตัวเอง', tip: 'มองเห็นเฉพาะข้อมูลที่เป็นของตนเองเท่านั้น' },
-  { key: 'TEAM', label: 'ทีม', tip: 'มองเห็นข้อมูลของสมาชิกในทีมที่อยู่ใต้บังคับบัญชาสายตรง (Direct Reports)' },
-  { key: 'DEPARTMENT', label: 'แผนก', tip: 'มองเห็นข้อมูลของพนักงานทุกคนในแผนกเดียวกัน' },
-  { key: 'DIVISION', label: 'ฝ่าย', tip: 'มองเห็นข้อมูลของพนักงานทุกคนในฝ่ายงานเดียวกัน' },
-  { key: 'ORGANIZATION', label: 'องค์กร', tip: 'มองเห็นข้อมูลของพนักงานทุกคนในทั้งองค์กร/บริษัท' },
-];
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+      className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+    />
+  );
+};
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   EMPLOYEE: Users,
@@ -61,158 +81,31 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   REPORT: BarChart3,
 };
 
-interface ActionSwitchProps {
-  checked: boolean;
-  onChange: () => void;
-  ariaLabel?: string;
-}
+const SCOPES_CONFIG: {
+  key: 'self' | 'team' | 'department' | 'division' | 'organization';
+  label: string;
+  badgeBg: string;
+  badgeText: string;
+  headerBg: string;
+}[] = [
+  { key: 'self', label: 'ตัวเอง', badgeBg: 'bg-slate-100', badgeText: 'text-slate-800', headerBg: 'bg-slate-100/90' },
+  { key: 'team', label: 'ทีม', badgeBg: 'bg-blue-50', badgeText: 'text-blue-800', headerBg: 'bg-blue-50/80' },
+  { key: 'department', label: 'แผนก', badgeBg: 'bg-emerald-50', badgeText: 'text-emerald-800', headerBg: 'bg-emerald-50/80' },
+  { key: 'division', label: 'ฝ่าย', badgeBg: 'bg-purple-50', badgeText: 'text-purple-800', headerBg: 'bg-purple-50/80' },
+  { key: 'organization', label: 'องค์กร', badgeBg: 'bg-amber-50', badgeText: 'text-amber-800', headerBg: 'bg-amber-50/80' },
+];
 
-const ActionSwitch: React.FC<ActionSwitchProps> = ({ checked, onChange, ariaLabel }) => {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={ariaLabel}
-      onClick={(e) => {
-        e.stopPropagation();
-        onChange();
-      }}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 mx-auto ${
-        checked ? 'bg-[#0B2046]' : 'bg-slate-200 hover:bg-slate-300'
-      }`}
-    >
-      <span
-        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-          checked ? 'translate-x-4' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  );
-};
-
-interface ActionSwitchWithScopeProps {
-  checked: boolean;
-  onToggle: () => void;
-  scope?: string;
-  defaultScope: string;
-  onScopeChange: (newScope: string) => void;
-  ariaLabel?: string;
-  actionName: string;
-  openUpwards?: boolean;
-}
-
-const ActionSwitchWithScope: React.FC<ActionSwitchWithScopeProps> = ({
-  checked,
-  onToggle,
-  scope,
-  defaultScope,
-  onScopeChange,
-  ariaLabel,
-  actionName,
-  openUpwards = false,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const currentScope = scope || defaultScope || 'SELF';
-  const isCustom = currentScope !== defaultScope;
-  const scopeObj = SCOPES.find((s) => s.key === currentScope) || SCOPES[0];
-  const defaultScopeObj = SCOPES.find((s) => s.key === defaultScope) || SCOPES[0];
-
-  return (
-    <div className="flex flex-col items-center justify-center relative select-none" ref={popoverRef}>
-      <ActionSwitch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} />
-
-      {/* Scope Pill Badge */}
-      {checked ? (
-        <div className="mt-1 relative">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsOpen((prev) => !prev);
-            }}
-            title={`ขอบเขตสิทธิ์${actionName}: ${scopeObj.label} (คลิกเพื่อเปลี่ยนเฉพาะสิทธิ์นี้)`}
-            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold transition-all border cursor-pointer ${
-              isCustom
-                ? 'bg-amber-500 text-white border-amber-600 shadow-2xs font-bold ring-1 ring-amber-400/50'
-                : 'bg-slate-100 text-slate-600 border-slate-200/80 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <span className="truncate max-w-[42px]">{scopeObj.label}</span>
-            <ChevronDown className="w-2.5 h-2.5 opacity-70 shrink-0" />
-          </button>
-
-          {/* Dropdown Popover */}
-          {isOpen && (
-            <div
-              className={`absolute left-1/2 -translate-x-1/2 z-50 w-32 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-left animate-in fade-in zoom-in-95 duration-100 ${
-                openUpwards ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-              }`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-2.5 py-1 text-[9px] font-bold text-slate-400 border-b border-slate-100 uppercase tracking-wider flex items-center justify-between">
-                <span>ขอบเขต: {actionName}</span>
-                {isCustom && <span className="text-[8px] text-amber-600 font-bold">กำหนดเอง</span>}
-              </div>
-              <div className="py-0.5">
-                {SCOPES.map((sc) => {
-                  const isSelected = currentScope === sc.key;
-                  return (
-                    <button
-                      key={sc.key}
-                      type="button"
-                      onClick={() => {
-                        onScopeChange(sc.key);
-                        setIsOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#0B2046]/10 text-[#0B2046] font-bold'
-                          : 'text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span>{sc.label}</span>
-                      {isSelected && <Check className="w-3 h-3 text-[#0B2046]" />}
-                    </button>
-                  );
-                })}
-              </div>
-              {isCustom && (
-                <div className="pt-1 mt-1 border-t border-slate-100 px-1.5 pb-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onScopeChange(defaultScope);
-                      setIsOpen(false);
-                    }}
-                    className="w-full text-center text-[10px] text-blue-600 hover:text-blue-800 py-0.5 font-medium cursor-pointer"
-                  >
-                    คืนค่าตามแถว ({defaultScopeObj.label})
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="h-4.5 mt-1" />
-      )}
-    </div>
-  );
-};
+const ACTIONS_CONFIG: {
+  key: 'view' | 'create' | 'edit' | 'approve';
+  label: string;
+  title: string;
+  color: string;
+}[] = [
+  { key: 'view', label: 'ดู', title: 'ดูข้อมูล', color: 'text-blue-700' },
+  { key: 'create', label: 'สร้าง', title: 'สร้างข้อมูล', color: 'text-emerald-700' },
+  { key: 'edit', label: 'แก้ไข', title: 'แก้ไขข้อมูล', color: 'text-amber-700' },
+  { key: 'approve', label: 'อนุมัติ', title: 'อนุมัติข้อมูล', color: 'text-purple-700' },
+];
 
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
@@ -241,16 +134,50 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   });
   const lastRoleIdRef = useRef<number | null>(null);
 
-  const normalizeModules = (mods: ModulePermissionScope[]) =>
+  const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] =>
     mods.map((m) => {
-      const defScope = m.dataScope || 'SELF';
+      const defaultPerms = () => ({
+        view: false,
+        create: false,
+        edit: false,
+        approve: false,
+      });
+
+      const self = m.self ? { ...m.self } : defaultPerms();
+      const team = m.team ? { ...m.team } : defaultPerms();
+      const department = m.department ? { ...m.department } : defaultPerms();
+      const division = m.division ? { ...m.division } : defaultPerms();
+      const organization = m.organization ? { ...m.organization } : defaultPerms();
+
+      // Legacy fallback: if all scopes are false but legacy canView/Create/Edit/Approve was true
+      const hasAny =
+        self.view || self.create || self.edit || self.approve ||
+        team.view || team.create || team.edit || team.approve ||
+        department.view || department.create || department.edit || department.approve ||
+        division.view || division.create || division.edit || division.approve ||
+        organization.view || organization.create || organization.edit || organization.approve;
+
+      if (!hasAny) {
+        const scStr = (m.dataScope || 'SELF').toUpperCase();
+        const target =
+          scStr === 'ORGANIZATION' ? organization :
+          scStr === 'DIVISION' ? division :
+          scStr === 'DEPARTMENT' ? department :
+          scStr === 'TEAM' ? team : self;
+
+        if (m.canView) target.view = true;
+        if (m.canCreate) target.create = true;
+        if (m.canEdit) target.edit = true;
+        if (m.canApprove) target.approve = true;
+      }
+
       return {
         ...m,
-        dataScope: defScope,
-        viewScope: m.viewScope || defScope,
-        createScope: m.createScope || defScope,
-        editScope: m.editScope || defScope,
-        approveScope: m.approveScope || defScope,
+        self,
+        team,
+        department,
+        division,
+        organization,
       };
     });
 
@@ -312,52 +239,66 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setExpandedCategories(all);
   };
 
-  // Handle Action Switch Toggle with Hierarchy Enforcement
-  const handleToggleAction = (
+  // Toggle individual checkbox for a specific module, scope, and action
+  const handleToggleCheckbox = (
     moduleCode: string,
-    action: 'canView' | 'canCreate' | 'canEdit' | 'canApprove'
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
+    actionKey: 'view' | 'create' | 'edit' | 'approve'
   ) => {
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-
-        const updated = { ...mod };
-        const nextVal = !updated[action];
-        updated[action] = nextVal;
-
-        // Hierarchy Logic:
-        // 1. If turning OFF View -> Create, Edit, Approve must also be turned OFF
-        if (action === 'canView' && !nextVal) {
-          updated.canCreate = false;
-          updated.canEdit = false;
-          updated.canApprove = false;
-        }
-
-        // 2. If turning ON Create, Edit, or Approve -> View must automatically be turned ON
-        if (action !== 'canView' && nextVal) {
-          updated.canView = true;
-        }
-
-        const defSc = updated.dataScope || 'SELF';
-        if (!updated.viewScope) updated.viewScope = defSc;
-        if (!updated.createScope) updated.createScope = defSc;
-        if (!updated.editScope) updated.editScope = defSc;
-        if (!updated.approveScope) updated.approveScope = defSc;
-
-        return updated;
+        const currentScopeObj = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
+        return {
+          ...mod,
+          [scopeKey]: {
+            ...currentScopeObj,
+            [actionKey]: !currentScopeObj[actionKey],
+          },
+        };
       })
     );
     setIsDirty(true);
   };
 
-  // Category Master Action Toggle (applies to all sub-modules in category)
-  const handleToggleCategoryAction = (
+  // Toggle category master checkbox for a specific scope and action
+  const handleToggleCategoryCheckbox = (
     catCode: string,
-    action: 'canView' | 'canCreate' | 'canEdit' | 'canApprove'
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
+    actionKey: 'view' | 'create' | 'edit' | 'approve'
   ) => {
     setLocalModules((prev) => {
       const catMods = prev.filter((m) => (m.categoryCode || m.groupName || 'OTHER') === catCode);
-      const allOn = catMods.length > 0 && catMods.every((m) => m[action]);
+      const allChecked = catMods.length > 0 && catMods.every((m) => m[scopeKey]?.[actionKey]);
+      const nextVal = !allChecked;
+
+      return prev.map((mod) => {
+        const thisCat = mod.categoryCode || mod.groupName || 'OTHER';
+        if (thisCat !== catCode) return mod;
+
+        const currentScopeObj = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
+        return {
+          ...mod,
+          [scopeKey]: {
+            ...currentScopeObj,
+            [actionKey]: nextVal,
+          },
+        };
+      });
+    });
+    setIsDirty(true);
+  };
+
+  // Toggle all checkboxes in an entire category
+  const handleToggleCategoryAll = (catCode: string) => {
+    setLocalModules((prev) => {
+      const catMods = prev.filter((m) => (m.categoryCode || m.groupName || 'OTHER') === catCode);
+      const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
+        'self', 'team', 'department', 'division', 'organization'
+      ];
+      const actions: ('view' | 'create' | 'edit' | 'approve')[] = ['view', 'create', 'edit', 'approve'];
+
+      const allOn = catMods.length > 0 && catMods.every((m) => scopes.every((s) => actions.every((a) => m[s]?.[a])));
       const nextVal = !allOn;
 
       return prev.map((mod) => {
@@ -365,17 +306,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (thisCat !== catCode) return mod;
 
         const updated = { ...mod };
-        updated[action] = nextVal;
-
-        if (action === 'canView' && !nextVal) {
-          updated.canCreate = false;
-          updated.canEdit = false;
-          updated.canApprove = false;
-        }
-
-        if (action !== 'canView' && nextVal) {
-          updated.canView = true;
-        }
+        scopes.forEach((s) => {
+          updated[s] = {
+            view: nextVal,
+            create: nextVal,
+            edit: nextVal,
+            approve: nextVal,
+          };
+        });
 
         return updated;
       });
@@ -383,101 +321,63 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Handle Granular Scope Selection for a specific action (viewScope, createScope, editScope, approveScope)
-  const handleActionScopeChange = (
-    moduleCode: string,
-    actionScopeKey: 'viewScope' | 'createScope' | 'editScope' | 'approveScope',
-    newScope: string
-  ) => {
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (mod.moduleCode !== moduleCode) return mod;
-        return {
-          ...mod,
-          [actionScopeKey]: newScope,
-        };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  // Handle Default Data Scope Selection for a single module (sets row default and all action scopes)
-  const handleSelectScope = (moduleCode: string, scopeKey: string) => {
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (mod.moduleCode !== moduleCode) return mod;
-        return {
-          ...mod,
-          dataScope: scopeKey,
-          viewScope: scopeKey,
-          createScope: scopeKey,
-          editScope: scopeKey,
-          approveScope: scopeKey,
-          canView: true,
-        };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  // Handle Data Scope Selection for an entire category
-  const handleSelectCategoryScope = (catCode: string, scopeKey: string) => {
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        const thisCat = mod.categoryCode || mod.groupName || 'OTHER';
-        if (thisCat !== catCode) return mod;
-        return {
-          ...mod,
-          dataScope: scopeKey,
-          viewScope: scopeKey,
-          createScope: scopeKey,
-          editScope: scopeKey,
-          approveScope: scopeKey,
-          canView: true,
-        };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  // Quick Action: Toggle row all
+  // Toggle all checkboxes in a single row
   const handleToggleAllRow = (moduleCode: string) => {
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-        const allOn = mod.canView && mod.canCreate && mod.canEdit && mod.canApprove;
+        const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
+          'self', 'team', 'department', 'division', 'organization'
+        ];
+        const actions: ('view' | 'create' | 'edit' | 'approve')[] = ['view', 'create', 'edit', 'approve'];
+
+        const allOn = scopes.every((s) => actions.every((a) => mod[s]?.[a]));
+        const nextVal = !allOn;
+
+        const updated = { ...mod };
+        scopes.forEach((s) => {
+          updated[s] = {
+            view: nextVal,
+            create: nextVal,
+            edit: nextVal,
+            approve: nextVal,
+          };
+        });
+
+        return updated;
+      })
+    );
+    setIsDirty(true);
+  };
+
+  // Global Quick Action: Select All Permissions (View, Create, Edit, Approve) across all 22 modules and all scopes
+  const handleSelectAll = () => {
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        const fullPerms = { view: true, create: true, edit: true, approve: true };
         return {
           ...mod,
-          canView: !allOn,
-          canCreate: !allOn,
-          canEdit: !allOn,
-          canApprove: !allOn,
+          self: { ...fullPerms },
+          team: { ...fullPerms },
+          department: { ...fullPerms },
+          division: { ...fullPerms },
+          organization: { ...fullPerms },
         };
       })
     );
     setIsDirty(true);
   };
 
-  // Global Quick Action: Select All Permissions (View, Create, Edit, Approve) across all 22 modules
-  const handleSelectAll = () => {
-    setLocalModules((prev) =>
-      prev.map((mod) => ({
-        ...mod,
-        canView: true,
-        canCreate: true,
-        canEdit: true,
-        canApprove: true,
-      }))
-    );
-    setIsDirty(true);
-  };
-
-  // Global Quick Action: Select All "View" Only across all 22 modules
+  // Global Quick Action: Select All "View" Only across all 22 modules and all scopes
   const handleSelectAllView = () => {
     setLocalModules((prev) =>
       prev.map((mod) => ({
         ...mod,
-        canView: true,
+        self: { ...(mod.self || {}), view: true, create: false, edit: false, approve: false },
+        team: { ...(mod.team || {}), view: true, create: false, edit: false, approve: false },
+        department: { ...(mod.department || {}), view: true, create: false, edit: false, approve: false },
+        division: { ...(mod.division || {}), view: true, create: false, edit: false, approve: false },
+        organization: { ...(mod.organization || {}), view: true, create: false, edit: false, approve: false },
       }))
     );
     setIsDirty(true);
@@ -490,35 +390,37 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     }
 
     setLocalModules((prev) =>
-      prev.map((mod) => ({
-        ...mod,
-        canView: false,
-        canCreate: false,
-        canEdit: false,
-        canApprove: false,
-      }))
+      prev.map((mod) => {
+        const emptyPerms = { view: false, create: false, edit: false, approve: false };
+        return {
+          ...mod,
+          self: { ...emptyPerms },
+          team: { ...emptyPerms },
+          department: { ...emptyPerms },
+          division: { ...emptyPerms },
+          organization: { ...emptyPerms },
+        };
+      })
     );
     setIsDirty(true);
   };
 
-  // Global Column Toggle (View, Create, Edit, Approve)
-  const handleToggleColumn = (action: 'canView' | 'canCreate' | 'canEdit' | 'canApprove') => {
+  // Toggle entire column (all modules for a given scope and action)
+  const handleToggleColumn = (
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
+    actionKey: 'view' | 'create' | 'edit' | 'approve'
+  ) => {
     setLocalModules((prev) => {
-      const allOn = prev.every((m) => m[action]);
+      const allOn = prev.every((m) => m[scopeKey]?.[actionKey]);
       const nextVal = !allOn;
 
-      return prev.map((mod) => {
-        const updated = { ...mod, [action]: nextVal };
-        if (action === 'canView' && !nextVal) {
-          updated.canCreate = false;
-          updated.canEdit = false;
-          updated.canApprove = false;
-        }
-        if (action !== 'canView' && nextVal) {
-          updated.canView = true;
-        }
-        return updated;
-      });
+      return prev.map((mod) => ({
+        ...mod,
+        [scopeKey]: {
+          ...(mod[scopeKey] || { view: false, create: false, edit: false, approve: false }),
+          [actionKey]: nextVal,
+        },
+      }));
     });
     setIsDirty(true);
   };
@@ -533,12 +435,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const handleSave = async () => {
     if (!selectedRoleMatrix) return;
 
-    // Lockout Protection: Cannot revoke all view access for super admins
+    const hasAnyPermission = localModules.some((m) => {
+      const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
+        'self', 'team', 'department', 'division', 'organization'
+      ];
+      return scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve);
+    });
+
+    // Lockout Protection: Cannot revoke all access for super admins
     if (
       (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
-      localModules.every((m) => !m.canView)
+      !hasAnyPermission
     ) {
-      toast.error('ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection) หากต้องการทดสอบการปิดสิทธิ์ทั้งหมด กรุณาเลือกบทบาททั่วไป เช่น General Staff (STAFF)');
+      toast.error('ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)');
       return;
     }
 
@@ -749,76 +658,65 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/80 border border-blue-200/70 rounded-xl text-xs text-blue-900 shadow-2xs">
                 <Info className="w-4 h-4 text-blue-600 shrink-0" />
                 <span className="leading-relaxed">
-                  💡 <strong>ความยืดหยุ่นขอบเขตข้อมูล:</strong> ปุ่มขอบเขตในคอลัมน์กลางคือกำหนดค่าเริ่มต้นทั้งแถว และคุณสามารถคลิกที่ <strong>ป้ายระดับใต้ปุ่มสวิตช์แต่ละสิทธิ์ (ดู, สร้าง, แก้ไข, อนุมัติ)</strong> เพื่อเปลี่ยนระดับขอบเขตแยกเฉพาะการกระทำนั้นได้อย่างอิสระ (เช่น ดูระดับแผนก แต่แก้ไขได้เฉพาะระดับทีม)
+                  💡 <strong>ความยืดหยุ่นขอบเขตข้อมูล:</strong> คุณสามารถติ๊กเลือกสิทธิ์ <strong>ดู, สร้าง, แก้ไข, อนุมัติ</strong> ในแต่ละระดับขอบเขต (ตัวเอง, ทีม, แผนก, ฝ่าย, องค์กร) ได้อย่างอิสระตามต้องการ เช่น ติ๊กแก้ไขได้เฉพาะระดับทีม แต่ระดับแผนกและฝ่ายสามารถติ๊กเลือกเฉพาะดูได้
                 </span>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
-                      <th className="py-3 px-4 min-w-[210px]">ชื่อโมดูล / เมนูย่อย</th>
-                      <th className="py-3 px-4 min-w-[280px] text-center">
-                        <div className="flex flex-col items-center">
-                          <span>ระดับขอบเขตข้อมูล</span>
-                          <span className="text-[10px] font-normal text-slate-400">ค่าเริ่มต้นประจำแถว</span>
-                        </div>
+                    {/* Row 1: Scope Group Headers */}
+                    <tr className="border-b border-slate-200 text-slate-700 font-bold text-[11px]">
+                      <th rowSpan={2} className="py-3 px-4 min-w-[200px] bg-slate-100/90 border-r border-slate-200">
+                        ชื่อโมดูล / เมนูย่อย
                       </th>
-                      <th
-                        onClick={() => handleToggleColumn('canView')}
-                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
-                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'ดู' ทั้งหมด"
-                      >
-                        ดู
+                      {SCOPES_CONFIG.map((sc) => (
+                        <th
+                          key={sc.key}
+                          colSpan={4}
+                          className={`py-2 px-2 text-center border-r border-slate-200 ${sc.headerBg}`}
+                        >
+                          <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${sc.badgeBg} ${sc.badgeText}`}>
+                            {sc.label}
+                          </span>
+                        </th>
+                      ))}
+                      <th rowSpan={2} className="py-3 px-3 min-w-[70px] text-center bg-slate-100/90">
+                        สลับแถว
                       </th>
-                      <th
-                        onClick={() => handleToggleColumn('canCreate')}
-                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
-                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'สร้าง' ทั้งหมด"
-                      >
-                        สร้าง
-                      </th>
-                      <th
-                        onClick={() => handleToggleColumn('canEdit')}
-                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
-                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'แก้ไข' ทั้งหมด"
-                      >
-                        แก้ไข
-                      </th>
-                      <th
-                        onClick={() => handleToggleColumn('canApprove')}
-                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
-                        title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'อนุมัติ' ทั้งหมด"
-                      >
-                        อนุมัติ
-                      </th>
+                    </tr>
+
+                    {/* Row 2: Action Headers under each Scope */}
+                    <tr className="border-b border-slate-200 text-slate-600 font-semibold text-[10px] bg-slate-50/90">
+                      {SCOPES_CONFIG.map((sc) =>
+                        ACTIONS_CONFIG.map((act) => (
+                          <th
+                            key={`${sc.key}-${act.key}`}
+                            onClick={() => handleToggleColumn(sc.key, act.key)}
+                            className="py-2 px-1 text-center cursor-pointer hover:bg-slate-200/80 transition-colors select-none border-r border-slate-100"
+                            title={`คลิกเพื่อสลับเปิด/ปิดทั้งคอลัมน์ (${sc.label} - ${act.label})`}
+                          >
+                            <span className={act.color}>{act.label}</span>
+                          </th>
+                        ))
+                      )}
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                  <tbody className="divide-y divide-slate-150 text-slate-700">
                     {categories.map((cat) => {
                       const isExpanded = expandedCategories[cat.code] ?? true;
                       const IconComponent = CATEGORY_ICONS[cat.code] || Layers;
 
-                      // Category-level action state calculation
-                      const allView = cat.modules.length > 0 && cat.modules.every((m) => m.canView);
-                      const allCreate = cat.modules.length > 0 && cat.modules.every((m) => m.canCreate);
-                      const allEdit = cat.modules.length > 0 && cat.modules.every((m) => m.canEdit);
-                      const allApprove = cat.modules.length > 0 && cat.modules.every((m) => m.canApprove);
-
-                      // Common scope if all match
-                      const firstScope = cat.modules[0]?.dataScope;
-                      const allSameScope = cat.modules.every((m) => m.dataScope === firstScope);
-
                       return (
                         <React.Fragment key={cat.code}>
                           {/* ================= CATEGORY MASTER ROW ================= */}
-                          <tr className="bg-slate-100/90 hover:bg-slate-150 border-t-2 border-slate-200/90 transition-colors">
+                          <tr className="bg-slate-100/90 hover:bg-slate-200/70 border-t-2 border-slate-200 transition-colors font-medium">
                             {/* Category Header & Expand Toggle */}
-                            <td className="py-2.5 px-4">
+                            <td className="py-2 px-3 border-r border-slate-200">
                               <div
                                 onClick={() => toggleCategory(cat.code)}
-                                className="flex items-center gap-2.5 cursor-pointer select-none group"
+                                className="flex items-center gap-2 cursor-pointer select-none group"
                               >
                                 <div className="text-slate-400 group-hover:text-slate-700 transition-colors">
                                   {isExpanded ? (
@@ -839,177 +737,94 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               </div>
                             </td>
 
-                            {/* Category Master Scope Selector */}
-                            <td className="py-2.5 px-4 text-center">
-                              <div className="inline-flex p-0.5 bg-white rounded-lg border border-slate-200 shadow-2xs gap-0.5">
-                                {SCOPES.map((sc) => {
-                                  const isSelected = allSameScope && firstScope === sc.key;
-                                  return (
-                                    <button
-                                      key={sc.key}
-                                      type="button"
-                                      title={`กำหนดขอบเขต "${sc.label}" ให้ทุกเมนูในหมวด${cat.name}`}
-                                      onClick={() => handleSelectCategoryScope(cat.code, sc.key)}
-                                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                                        isSelected
-                                          ? 'bg-[#0B2046] text-white shadow-2xs'
-                                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      {sc.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </td>
+                            {/* 20 Category Master Checkboxes */}
+                            {SCOPES_CONFIG.map((sc) =>
+                              ACTIONS_CONFIG.map((act) => {
+                                const allChecked =
+                                  cat.modules.length > 0 && cat.modules.every((m) => m[sc.key]?.[act.key]);
+                                const someChecked = cat.modules.some((m) => m[sc.key]?.[act.key]);
 
-                            {/* Master ดู (View) */}
-                            <td className="py-2.5 px-3 text-center">
-                              <ActionSwitch
-                                checked={allView}
-                                onChange={() => handleToggleCategoryAction(cat.code, 'canView')}
-                                ariaLabel={`เปิดปิดสิทธิ์ดูทุกเมนูในหมวด ${cat.name}`}
-                              />
-                            </td>
+                                return (
+                                  <td
+                                    key={`${sc.key}-${act.key}`}
+                                    className="py-2 px-1 text-center align-middle border-r border-slate-100"
+                                  >
+                                    <Checkbox
+                                      checked={allChecked}
+                                      indeterminate={someChecked && !allChecked}
+                                      onChange={() => handleToggleCategoryCheckbox(cat.code, sc.key, act.key)}
+                                      title={`เลือก/ยกเลิกทั้งหมวด ${cat.name} (${sc.label} - ${act.label})`}
+                                      ariaLabel={`เลือก/ยกเลิกทั้งหมวด ${cat.name} ${sc.label} ${act.label}`}
+                                    />
+                                  </td>
+                                );
+                              })
+                            )}
 
-                            {/* Master สร้าง (Create) */}
-                            <td className="py-2.5 px-3 text-center">
-                              <ActionSwitch
-                                checked={allCreate}
-                                onChange={() => handleToggleCategoryAction(cat.code, 'canCreate')}
-                                ariaLabel={`เปิดปิดสิทธิ์สร้างทุกเมนูในหมวด ${cat.name}`}
-                              />
-                            </td>
-
-                            {/* Master แก้ไข (Edit) */}
-                            <td className="py-2.5 px-3 text-center">
-                              <ActionSwitch
-                                checked={allEdit}
-                                onChange={() => handleToggleCategoryAction(cat.code, 'canEdit')}
-                                ariaLabel={`เปิดปิดสิทธิ์แก้ไขทุกเมนูในหมวด ${cat.name}`}
-                              />
-                            </td>
-
-                            {/* Master อนุมัติ (Approve) */}
-                            <td className="py-2.5 px-3 text-center">
-                              <ActionSwitch
-                                checked={allApprove}
-                                onChange={() => handleToggleCategoryAction(cat.code, 'canApprove')}
-                                ariaLabel={`เปิดปิดสิทธิ์อนุมัติทุกเมนูในหมวด ${cat.name}`}
-                              />
+                            {/* Category Toggle All Button */}
+                            <td className="py-2 px-2 text-center align-middle">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleCategoryAll(cat.code)}
+                                className="px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:text-[#0B2046] bg-white hover:bg-slate-50 border border-slate-200 rounded shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
+                                title={`สลับเปิด/ปิดทุกสิทธิ์ในหมวด ${cat.name}`}
+                              >
+                                สลับหมวด
+                              </button>
                             </td>
                           </tr>
 
                           {/* ================= SUB-MODULE ROWS ================= */}
                           {isExpanded &&
-                            cat.modules.map((mod, modIdx) => {
-                              const openUpwards = cat.code === 'SETTINGS' || cat.code === 'REPORT' || (cat.code === 'ORGANIZATION' && modIdx >= 2);
-                              return (
-                                <tr
-                                  key={mod.moduleCode}
-                                  className="bg-white hover:bg-slate-50/60 transition-colors border-b border-slate-100"
-                                >
-                                  {/* Sub-module Name */}
-                                  <td className="py-3 px-4 pl-10">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-slate-400 font-mono text-xs select-none">↳</span>
-                                        <span className="font-medium text-slate-800 text-xs truncate">
-                                          {mod.moduleName}
-                                        </span>
-                                      </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleToggleAllRow(mod.moduleCode)}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 font-medium shrink-0 cursor-pointer"
+                            cat.modules.map((mod) => (
+                              <tr
+                                key={mod.moduleCode}
+                                className="bg-white hover:bg-slate-50/70 transition-colors border-b border-slate-100"
+                              >
+                                {/* Sub-module Name */}
+                                <td className="py-2.5 px-3 pl-8 border-r border-slate-200">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-slate-400 font-mono text-xs select-none">↳</span>
+                                    <span className="font-medium text-slate-800 text-xs truncate" title={mod.moduleName}>
+                                      {mod.moduleName}
+                                    </span>
+                                  </div>
+                                </td>
+
+                                {/* 20 Independent Checkboxes */}
+                                {SCOPES_CONFIG.map((sc) =>
+                                  ACTIONS_CONFIG.map((act) => {
+                                    const isChecked = !!mod[sc.key]?.[act.key];
+
+                                    return (
+                                      <td
+                                        key={`${sc.key}-${act.key}`}
+                                        className="py-2 px-1 text-center align-middle border-r border-slate-100"
                                       >
-                                        สลับทั้งหมด
-                                      </button>
-                                    </div>
-                                  </td>
+                                        <Checkbox
+                                          checked={isChecked}
+                                          onChange={() => handleToggleCheckbox(mod.moduleCode, sc.key, act.key)}
+                                          title={`${mod.moduleName} - ${sc.label}: ${act.label}`}
+                                          ariaLabel={`${mod.moduleName} ${sc.label} ${act.label}`}
+                                        />
+                                      </td>
+                                    );
+                                  })
+                                )}
 
-                                  {/* Sub-module Scope Pills (Default for Row) */}
-                                  <td className="py-3 px-4 text-center">
-                                    <div className="inline-flex p-1 bg-slate-100/80 rounded-lg border border-slate-200/60 gap-1">
-                                      {SCOPES.map((sc) => {
-                                        const isSelected = mod.dataScope === sc.key;
-                                        return (
-                                          <button
-                                            key={sc.key}
-                                            type="button"
-                                            title={sc.tip}
-                                            onClick={() => handleSelectScope(mod.moduleCode, sc.key)}
-                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                                              isSelected
-                                                ? 'bg-[#0B2046] text-white shadow-xs'
-                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                                            }`}
-                                          >
-                                            {sc.label}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </td>
-
-                                  {/* Action: ดู (View) */}
-                                  <td className="py-2.5 px-2 text-center align-middle">
-                                    <ActionSwitchWithScope
-                                      checked={mod.canView}
-                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canView')}
-                                      scope={mod.viewScope || mod.dataScope}
-                                      defaultScope={mod.dataScope}
-                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'viewScope', newSc)}
-                                      ariaLabel={`สิทธิ์ดูข้อมูล ${mod.moduleName}`}
-                                      actionName="ดู"
-                                      openUpwards={openUpwards}
-                                    />
-                                  </td>
-
-                                  {/* Action: สร้าง (Create) */}
-                                  <td className="py-2.5 px-2 text-center align-middle">
-                                    <ActionSwitchWithScope
-                                      checked={mod.canCreate}
-                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canCreate')}
-                                      scope={mod.createScope || mod.dataScope}
-                                      defaultScope={mod.dataScope}
-                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'createScope', newSc)}
-                                      ariaLabel={`สิทธิ์สร้างข้อมูล ${mod.moduleName}`}
-                                      actionName="สร้าง"
-                                      openUpwards={openUpwards}
-                                    />
-                                  </td>
-
-                                  {/* Action: แก้ไข (Edit) */}
-                                  <td className="py-2.5 px-2 text-center align-middle">
-                                    <ActionSwitchWithScope
-                                      checked={mod.canEdit}
-                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canEdit')}
-                                      scope={mod.editScope || mod.dataScope}
-                                      defaultScope={mod.dataScope}
-                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'editScope', newSc)}
-                                      ariaLabel={`สิทธิ์แก้ไขข้อมูล ${mod.moduleName}`}
-                                      actionName="แก้ไข"
-                                      openUpwards={openUpwards}
-                                    />
-                                  </td>
-
-                                  {/* Action: อนุมัติ (Approve) */}
-                                  <td className="py-2.5 px-2 text-center align-middle">
-                                    <ActionSwitchWithScope
-                                      checked={mod.canApprove}
-                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canApprove')}
-                                      scope={mod.approveScope || mod.dataScope}
-                                      defaultScope={mod.dataScope}
-                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'approveScope', newSc)}
-                                      ariaLabel={`สิทธิ์อนุมัติข้อมูล ${mod.moduleName}`}
-                                      actionName="อนุมัติ"
-                                      openUpwards={openUpwards}
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                                {/* Row Toggle All Button */}
+                                <td className="py-2 px-2 text-center align-middle">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAllRow(mod.moduleCode)}
+                                    className="px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:text-[#0B2046] hover:bg-slate-100 rounded border border-slate-200 cursor-pointer transition-colors whitespace-nowrap"
+                                    title={`สลับเปิด/ปิดทุกสิทธิ์ในแถว ${mod.moduleName}`}
+                                  >
+                                    สลับแถว
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
                         </React.Fragment>
                       );
                     })}

@@ -105,8 +105,9 @@ public class RoleService : IRoleService
             .Select(rp => rp.Permission.PermissionCode)
             .ToHashSet();
 
-        var scopeMap = role.RoleDataScopes
-            .ToDictionary(rds => rds.Permission.PermissionCode, rds => rds.DataVisibilityScope);
+        var activeScopes = role.RoleDataScopes
+            .Select(rds => (rds.Permission.PermissionCode, rds.DataVisibilityScope))
+            .ToHashSet();
 
         var moduleDtos = new List<ModulePermissionScopeDto>();
 
@@ -117,7 +118,6 @@ public class RoleService : IRoleService
             var editCode = $"{mod.Prefix}_EDIT";
             var approveCode = $"{mod.Prefix}_APPROVE";
 
-            // สิทธิ์จะเปิดหากมีสิทธิ์เมนูย่อยตรงๆ หรือเคยได้สิทธิ์ระดับโมดูลแม่มาก่อน (Legacy fallback)
             bool canView = grantedPermCodes.Contains(viewCode) ||
                            (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_VIEW") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
             bool canCreate = grantedPermCodes.Contains(createCode) ||
@@ -127,24 +127,69 @@ public class RoleService : IRoleService
             bool canApprove = grantedPermCodes.Contains(approveCode) ||
                               (grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_APPROVE") && !grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_")));
 
-            string dataScope = "SELF";
-            if (scopeMap.TryGetValue(viewCode, out var sc))
-            {
-                dataScope = sc;
-            }
-            else if (scopeMap.TryGetValue($"{mod.ParentPermissionPrefix}_VIEW", out var parentSc))
-            {
-                dataScope = parentSc;
-            }
-            else if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER")
-            {
-                dataScope = "ORGANIZATION";
-            }
+            bool HasScope(string permCode, string scopeName) => activeScopes.Contains((permCode, scopeName));
 
-            string viewScope = scopeMap.TryGetValue(viewCode, out var vSc) ? vSc : dataScope;
-            string createScope = scopeMap.TryGetValue(createCode, out var cSc) ? cSc : dataScope;
-            string editScope = scopeMap.TryGetValue(editCode, out var eSc) ? eSc : dataScope;
-            string approveScope = scopeMap.TryGetValue(approveCode, out var aSc) ? aSc : dataScope;
+            var selfPerms = new ScopeActionPermissionsDto
+            {
+                View = HasScope(viewCode, "SELF"),
+                Create = HasScope(createCode, "SELF"),
+                Edit = HasScope(editCode, "SELF"),
+                Approve = HasScope(approveCode, "SELF")
+            };
+
+            var teamPerms = new ScopeActionPermissionsDto
+            {
+                View = HasScope(viewCode, "TEAM"),
+                Create = HasScope(createCode, "TEAM"),
+                Edit = HasScope(editCode, "TEAM"),
+                Approve = HasScope(approveCode, "TEAM")
+            };
+
+            var deptPerms = new ScopeActionPermissionsDto
+            {
+                View = HasScope(viewCode, "DEPARTMENT"),
+                Create = HasScope(createCode, "DEPARTMENT"),
+                Edit = HasScope(editCode, "DEPARTMENT"),
+                Approve = HasScope(approveCode, "DEPARTMENT")
+            };
+
+            var divPerms = new ScopeActionPermissionsDto
+            {
+                View = HasScope(viewCode, "DIVISION"),
+                Create = HasScope(createCode, "DIVISION"),
+                Edit = HasScope(editCode, "DIVISION"),
+                Approve = HasScope(approveCode, "DIVISION")
+            };
+
+            var orgPerms = new ScopeActionPermissionsDto
+            {
+                View = HasScope(viewCode, "ORGANIZATION"),
+                Create = HasScope(createCode, "ORGANIZATION"),
+                Edit = HasScope(editCode, "ORGANIZATION"),
+                Approve = HasScope(approveCode, "ORGANIZATION")
+            };
+
+            // Legacy Fallback: หากใน role_data_scope ยังไม่มีบันทึกเลยแต่มีสิทธิ์ใน role_permission
+            if (!selfPerms.View && !teamPerms.View && !deptPerms.View && !divPerms.View && !orgPerms.View && canView)
+            {
+                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.View = true;
+                else selfPerms.View = true;
+            }
+            if (!selfPerms.Create && !teamPerms.Create && !deptPerms.Create && !divPerms.Create && !orgPerms.Create && canCreate)
+            {
+                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Create = true;
+                else selfPerms.Create = true;
+            }
+            if (!selfPerms.Edit && !teamPerms.Edit && !deptPerms.Edit && !divPerms.Edit && !orgPerms.Edit && canEdit)
+            {
+                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Edit = true;
+                else selfPerms.Edit = true;
+            }
+            if (!selfPerms.Approve && !teamPerms.Approve && !deptPerms.Approve && !divPerms.Approve && !orgPerms.Approve && canApprove)
+            {
+                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Approve = true;
+                else selfPerms.Approve = true;
+            }
 
             moduleDtos.Add(new ModulePermissionScopeDto
             {
@@ -153,15 +198,16 @@ public class RoleService : IRoleService
                 GroupName = mod.CategoryName,
                 CategoryCode = mod.CategoryCode,
                 CategoryName = mod.CategoryName,
-                DataScope = dataScope,
-                ViewScope = viewScope,
-                CreateScope = createScope,
-                EditScope = editScope,
-                ApproveScope = approveScope,
-                CanView = canView,
-                CanCreate = canCreate,
-                CanEdit = canEdit,
-                CanApprove = canApprove
+                Self = selfPerms,
+                Team = teamPerms,
+                Department = deptPerms,
+                Division = divPerms,
+                Organization = orgPerms,
+                CanView = selfPerms.View || teamPerms.View || deptPerms.View || divPerms.View || orgPerms.View,
+                CanCreate = selfPerms.Create || teamPerms.Create || deptPerms.Create || divPerms.Create || orgPerms.Create,
+                CanEdit = selfPerms.Edit || teamPerms.Edit || deptPerms.Edit || divPerms.Edit || orgPerms.Edit,
+                CanApprove = selfPerms.Approve || teamPerms.Approve || deptPerms.Approve || divPerms.Approve || orgPerms.Approve,
+                DataScope = orgPerms.View ? "ORGANIZATION" : divPerms.View ? "DIVISION" : deptPerms.View ? "DEPARTMENT" : teamPerms.View ? "TEAM" : "SELF"
             });
         }
 
@@ -267,8 +313,16 @@ public class RoleService : IRoleService
             throw new NotFoundException("Role", roleId);
         }
 
-        // Lockout protection: Cannot revoke basic access for super admins
-        if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER" && request.Modules.All(m => !m.CanView))
+        // Lockout protection: Cannot revoke all access for super admins
+        bool hasAnyPermission = request.Modules.Any(m =>
+            (m.Self != null && (m.Self.View || m.Self.Create || m.Self.Edit || m.Self.Approve)) ||
+            (m.Team != null && (m.Team.View || m.Team.Create || m.Team.Edit || m.Team.Approve)) ||
+            (m.Department != null && (m.Department.View || m.Department.Create || m.Department.Edit || m.Department.Approve)) ||
+            (m.Division != null && (m.Division.View || m.Division.Create || m.Division.Edit || m.Division.Approve)) ||
+            (m.Organization != null && (m.Organization.View || m.Organization.Create || m.Organization.Edit || m.Organization.Approve)) ||
+            m.CanView);
+
+        if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER" && !hasAnyPermission)
         {
             throw new BusinessRuleException("ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)");
         }
@@ -309,7 +363,21 @@ public class RoleService : IRoleService
             }
         }
 
-        // Re-add based on request
+        var addedScopes = new HashSet<(long PermId, string Scope)>();
+        void AddDataScope(string permCode, string scopeVal)
+        {
+            if (permMap.TryGetValue(permCode, out var permId) && addedScopes.Add((permId, scopeVal)))
+            {
+                _dbContext.RoleDataScopes.Add(new RoleDataScope
+                {
+                    RoleId = role.Id,
+                    PermissionId = permId,
+                    DataVisibilityScope = scopeVal
+                });
+            }
+        }
+
+        // Re-add based on independent checkboxes across 5 scopes
         foreach (var mod in request.Modules)
         {
             var match = StandardModules.FirstOrDefault(m => m.Code == mod.ModuleCode);
@@ -321,54 +389,39 @@ public class RoleService : IRoleService
             var editCode = $"{pref}_EDIT";
             var approveCode = $"{pref}_APPROVE";
 
-            // Hierarchy Rule: If cannot view, cannot create/edit/approve
-            bool canView = mod.CanView;
-            bool canCreate = canView && mod.CanCreate;
-            bool canEdit = canView && mod.CanEdit;
-            bool canApprove = canView && mod.CanApprove;
-
-            string ResolveScope(string? specificScope, string fallbackScope)
+            var scopeList = new (string ScopeName, ScopeActionPermissionsDto? Perms)[]
             {
-                var target = !string.IsNullOrWhiteSpace(specificScope) ? specificScope : fallbackScope;
-                return target is "SELF" or "TEAM" or "DEPARTMENT" or "DIVISION" or "ORGANIZATION"
-                    ? target
-                    : "SELF";
-            }
+                ("SELF", mod.Self),
+                ("TEAM", mod.Team),
+                ("DEPARTMENT", mod.Department),
+                ("DIVISION", mod.Division),
+                ("ORGANIZATION", mod.Organization)
+            };
 
-            void AddDataScope(string permCode, string scopeVal)
+            foreach (var (scopeName, perms) in scopeList)
             {
-                if (permMap.TryGetValue(permCode, out var permId))
+                if (perms == null) continue;
+
+                if (perms.View)
                 {
-                    _dbContext.RoleDataScopes.Add(new RoleDataScope
-                    {
-                        RoleId = role.Id,
-                        PermissionId = permId,
-                        DataVisibilityScope = scopeVal
-                    });
+                    AddPerm(viewCode);
+                    AddDataScope(viewCode, scopeName);
                 }
-            }
-
-            var defaultScope = ResolveScope(mod.DataScope, "SELF");
-
-            if (canView)
-            {
-                AddPerm(viewCode);
-                AddDataScope(viewCode, ResolveScope(mod.ViewScope, defaultScope));
-            }
-            if (canCreate)
-            {
-                AddPerm(createCode);
-                AddDataScope(createCode, ResolveScope(mod.CreateScope, defaultScope));
-            }
-            if (canEdit)
-            {
-                AddPerm(editCode);
-                AddDataScope(editCode, ResolveScope(mod.EditScope, defaultScope));
-            }
-            if (canApprove)
-            {
-                AddPerm(approveCode);
-                AddDataScope(approveCode, ResolveScope(mod.ApproveScope, defaultScope));
+                if (perms.Create)
+                {
+                    AddPerm(createCode);
+                    AddDataScope(createCode, scopeName);
+                }
+                if (perms.Edit)
+                {
+                    AddPerm(editCode);
+                    AddDataScope(editCode, scopeName);
+                }
+                if (perms.Approve)
+                {
+                    AddPerm(approveCode);
+                    AddDataScope(approveCode, scopeName);
+                }
             }
         }
 
@@ -377,7 +430,8 @@ public class RoleService : IRoleService
         {
             var hasAnyChildView = request.Modules.Any(m => {
                 var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);
-                return match != null && match.ParentPermissionPrefix == parentPref && m.CanView;
+                if (match == null || match.ParentPermissionPrefix != parentPref) return false;
+                return (m.Self?.View == true) || (m.Team?.View == true) || (m.Department?.View == true) || (m.Division?.View == true) || (m.Organization?.View == true) || m.CanView;
             });
 
             if (hasAnyChildView)

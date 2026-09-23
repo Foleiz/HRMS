@@ -61,21 +61,33 @@ export interface RoleSummary {
   lastModifiedAt?: string;
 }
 
+export interface ScopeActionPermissions {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  approve: boolean;
+}
+
 export interface ModulePermissionScope {
   moduleCode: string;
   moduleName: string;
   groupName?: string;
   categoryCode?: string;
   categoryName?: string;
-  dataScope: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
-  viewScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
-  createScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
-  editScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
-  approveScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
-  canView: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  canApprove: boolean;
+  self: ScopeActionPermissions;
+  team: ScopeActionPermissions;
+  department: ScopeActionPermissions;
+  division: ScopeActionPermissions;
+  organization: ScopeActionPermissions;
+  dataScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
+  viewScope?: string;
+  createScope?: string;
+  editScope?: string;
+  approveScope?: string;
+  canView?: boolean;
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canApprove?: boolean;
 }
 
 export interface RoleDetail {

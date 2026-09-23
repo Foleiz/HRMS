@@ -31,6 +31,17 @@ public class RoleDetailDto
 }
 
 /// <summary>
+/// สิทธิ์การกระทำ 4 ประการ (ดู, สร้าง, แก้ไข, อนุมัติ) ในขอบเขตข้อมูลที่กำหนด
+/// </summary>
+public class ScopeActionPermissionsDto
+{
+    public bool View { get; set; }
+    public bool Create { get; set; }
+    public bool Edit { get; set; }
+    public bool Approve { get; set; }
+}
+
+/// <summary>
 /// การกำหนดสิทธิ์ระดับโมดูล (Scope + Actions: View, Create, Edit, Approve)
 /// </summary>
 public class ModulePermissionScopeDto
@@ -40,7 +51,16 @@ public class ModulePermissionScopeDto
     public string? GroupName { get; set; }
     public string? CategoryCode { get; set; }
     public string? CategoryName { get; set; }
-    public string DataScope { get; set; } = "SELF"; // Default / fallback scope: SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION
+
+    // สิทธิ์การกระทำแยกอิสระตามแต่ละระดับขอบเขตข้อมูล (Independent Checkboxes)
+    public ScopeActionPermissionsDto Self { get; set; } = new();
+    public ScopeActionPermissionsDto Team { get; set; } = new();
+    public ScopeActionPermissionsDto Department { get; set; } = new();
+    public ScopeActionPermissionsDto Division { get; set; } = new();
+    public ScopeActionPermissionsDto Organization { get; set; } = new();
+
+    // Backward compatibility properties
+    public string DataScope { get; set; } = "SELF";
     public string? ViewScope { get; set; }
     public string? CreateScope { get; set; }
     public string? EditScope { get; set; }
