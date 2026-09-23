@@ -54,7 +54,7 @@ public class LeaveRequestService : ILeaveRequestService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var requests = await query
-            .OrderByDescending(r => r.StartDatetime)
+            .OrderByDescending(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

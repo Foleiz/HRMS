@@ -96,11 +96,16 @@ export default function ApprovalHistoryPage() {
         statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))
       );
 
-      // Flatten และ sort ตาม updatedAt (ล่าสุดก่อน)
+      // Flatten และ sort ให้คำขอล่าสุดอยู่บนสุดเสมอ
       const all = results.flat().sort((a, b) => {
-        const da = new Date(a.updatedAt ?? a.createdAt ?? '').getTime();
-        const db = new Date(b.updatedAt ?? b.createdAt ?? '').getTime();
-        return db - da;
+        const dateA = a.approvedAt || a.cancelledAt || a.submittedAt || a.updatedAt || a.createdAt || '';
+        const dateB = b.approvedAt || b.cancelledAt || b.submittedAt || b.updatedAt || b.createdAt || '';
+        const timeA = dateA ? new Date(dateA).getTime() : 0;
+        const timeB = dateB ? new Date(dateB).getTime() : 0;
+        if (timeA !== timeB) {
+          return timeB - timeA;
+        }
+        return (b.id ?? 0) - (a.id ?? 0);
       });
 
       setHistory(all);
@@ -255,7 +260,7 @@ export default function ApprovalHistoryPage() {
 
                       {/* วันที่ดำเนินการ */}
                       <td className="px-4 py-4 text-gray-500 text-xs whitespace-nowrap">
-                        {formatDateTime(req.updatedAt ?? req.createdAt)}
+                        {formatDateTime(req.approvedAt ?? req.cancelledAt ?? req.submittedAt ?? req.updatedAt ?? req.createdAt)}
                       </td>
 
                       {/* สายอนุมัติ */}
