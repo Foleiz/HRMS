@@ -21,6 +21,7 @@ import {
   CheckSquare,
   Eye,
   X,
+  Info,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -90,6 +91,129 @@ const ActionSwitch: React.FC<ActionSwitchProps> = ({ checked, onChange, ariaLabe
   );
 };
 
+interface ActionSwitchWithScopeProps {
+  checked: boolean;
+  onToggle: () => void;
+  scope?: string;
+  defaultScope: string;
+  onScopeChange: (newScope: string) => void;
+  ariaLabel?: string;
+  actionName: string;
+  openUpwards?: boolean;
+}
+
+const ActionSwitchWithScope: React.FC<ActionSwitchWithScopeProps> = ({
+  checked,
+  onToggle,
+  scope,
+  defaultScope,
+  onScopeChange,
+  ariaLabel,
+  actionName,
+  openUpwards = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const currentScope = scope || defaultScope || 'SELF';
+  const isCustom = currentScope !== defaultScope;
+  const scopeObj = SCOPES.find((s) => s.key === currentScope) || SCOPES[0];
+  const defaultScopeObj = SCOPES.find((s) => s.key === defaultScope) || SCOPES[0];
+
+  return (
+    <div className="flex flex-col items-center justify-center relative select-none" ref={popoverRef}>
+      <ActionSwitch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} />
+
+      {/* Scope Pill Badge */}
+      {checked ? (
+        <div className="mt-1 relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen((prev) => !prev);
+            }}
+            title={`ขอบเขตสิทธิ์${actionName}: ${scopeObj.label} (คลิกเพื่อเปลี่ยนเฉพาะสิทธิ์นี้)`}
+            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold transition-all border cursor-pointer ${
+              isCustom
+                ? 'bg-amber-500 text-white border-amber-600 shadow-2xs font-bold ring-1 ring-amber-400/50'
+                : 'bg-slate-100 text-slate-600 border-slate-200/80 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <span className="truncate max-w-[42px]">{scopeObj.label}</span>
+            <ChevronDown className="w-2.5 h-2.5 opacity-70 shrink-0" />
+          </button>
+
+          {/* Dropdown Popover */}
+          {isOpen && (
+            <div
+              className={`absolute left-1/2 -translate-x-1/2 z-50 w-32 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-left animate-in fade-in zoom-in-95 duration-100 ${
+                openUpwards ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-2.5 py-1 text-[9px] font-bold text-slate-400 border-b border-slate-100 uppercase tracking-wider flex items-center justify-between">
+                <span>ขอบเขต: {actionName}</span>
+                {isCustom && <span className="text-[8px] text-amber-600 font-bold">กำหนดเอง</span>}
+              </div>
+              <div className="py-0.5">
+                {SCOPES.map((sc) => {
+                  const isSelected = currentScope === sc.key;
+                  return (
+                    <button
+                      key={sc.key}
+                      type="button"
+                      onClick={() => {
+                        onScopeChange(sc.key);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#0B2046]/10 text-[#0B2046] font-bold'
+                          : 'text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{sc.label}</span>
+                      {isSelected && <Check className="w-3 h-3 text-[#0B2046]" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {isCustom && (
+                <div className="pt-1 mt-1 border-t border-slate-100 px-1.5 pb-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onScopeChange(defaultScope);
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-center text-[10px] text-blue-600 hover:text-blue-800 py-0.5 font-medium cursor-pointer"
+                  >
+                    คืนค่าตามแถว ({defaultScopeObj.label})
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="h-4.5 mt-1" />
+      )}
+    </div>
+  );
+};
+
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
   selectedRoleMatrix,
@@ -117,16 +241,29 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   });
   const lastRoleIdRef = useRef<number | null>(null);
 
+  const normalizeModules = (mods: ModulePermissionScope[]) =>
+    mods.map((m) => {
+      const defScope = m.dataScope || 'SELF';
+      return {
+        ...m,
+        dataScope: defScope,
+        viewScope: m.viewScope || defScope,
+        createScope: m.createScope || defScope,
+        editScope: m.editScope || defScope,
+        approveScope: m.approveScope || defScope,
+      };
+    });
+
   // Sync local matrix state when selected role changes or after save refetch
   useEffect(() => {
     if (selectedRoleMatrix) {
       if (lastRoleIdRef.current !== selectedRoleMatrix.id) {
-        setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
+        setLocalModules(normalizeModules(selectedRoleMatrix.modules));
         setIsDirty(false);
         setSaveSuccessMsg(false);
         lastRoleIdRef.current = selectedRoleMatrix.id;
       } else if (!isDirty) {
-        setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
+        setLocalModules(normalizeModules(selectedRoleMatrix.modules));
       }
     }
   }, [selectedRoleMatrix, isDirty]);
@@ -201,6 +338,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           updated.canView = true;
         }
 
+        const defSc = updated.dataScope || 'SELF';
+        if (!updated.viewScope) updated.viewScope = defSc;
+        if (!updated.createScope) updated.createScope = defSc;
+        if (!updated.editScope) updated.editScope = defSc;
+        if (!updated.approveScope) updated.approveScope = defSc;
+
         return updated;
       })
     );
@@ -240,12 +383,38 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Handle Data Scope Selection for a single module
+  // Handle Granular Scope Selection for a specific action (viewScope, createScope, editScope, approveScope)
+  const handleActionScopeChange = (
+    moduleCode: string,
+    actionScopeKey: 'viewScope' | 'createScope' | 'editScope' | 'approveScope',
+    newScope: string
+  ) => {
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        if (mod.moduleCode !== moduleCode) return mod;
+        return {
+          ...mod,
+          [actionScopeKey]: newScope,
+        };
+      })
+    );
+    setIsDirty(true);
+  };
+
+  // Handle Default Data Scope Selection for a single module (sets row default and all action scopes)
   const handleSelectScope = (moduleCode: string, scopeKey: string) => {
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-        return { ...mod, dataScope: scopeKey, canView: true };
+        return {
+          ...mod,
+          dataScope: scopeKey,
+          viewScope: scopeKey,
+          createScope: scopeKey,
+          editScope: scopeKey,
+          approveScope: scopeKey,
+          canView: true,
+        };
       })
     );
     setIsDirty(true);
@@ -257,7 +426,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       prev.map((mod) => {
         const thisCat = mod.categoryCode || mod.groupName || 'OTHER';
         if (thisCat !== catCode) return mod;
-        return { ...mod, dataScope: scopeKey, canView: true };
+        return {
+          ...mod,
+          dataScope: scopeKey,
+          viewScope: scopeKey,
+          createScope: scopeKey,
+          editScope: scopeKey,
+          approveScope: scopeKey,
+          canView: true,
+        };
       })
     );
     setIsDirty(true);
@@ -348,7 +525,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   const handleReset = () => {
     if (selectedRoleMatrix) {
-      setLocalModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules)));
+      setLocalModules(normalizeModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules))));
       setIsDirty(false);
     }
   };
@@ -568,36 +745,49 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 </div>
               </div>
 
+              {/* Informative Tip on Granular Action Scopes */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/80 border border-blue-200/70 rounded-xl text-xs text-blue-900 shadow-2xs">
+                <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="leading-relaxed">
+                  💡 <strong>ความยืดหยุ่นขอบเขตข้อมูล:</strong> ปุ่มขอบเขตในคอลัมน์กลางคือกำหนดค่าเริ่มต้นทั้งแถว และคุณสามารถคลิกที่ <strong>ป้ายระดับใต้ปุ่มสวิตช์แต่ละสิทธิ์ (ดู, สร้าง, แก้ไข, อนุมัติ)</strong> เพื่อเปลี่ยนระดับขอบเขตแยกเฉพาะการกระทำนั้นได้อย่างอิสระ (เช่น ดูระดับแผนก แต่แก้ไขได้เฉพาะระดับทีม)
+                </span>
+              </div>
+
               <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
                       <th className="py-3 px-4 min-w-[210px]">ชื่อโมดูล / เมนูย่อย</th>
-                      <th className="py-3 px-4 min-w-[280px] text-center">ระดับขอบเขตข้อมูล</th>
+                      <th className="py-3 px-4 min-w-[280px] text-center">
+                        <div className="flex flex-col items-center">
+                          <span>ระดับขอบเขตข้อมูล</span>
+                          <span className="text-[10px] font-normal text-slate-400">ค่าเริ่มต้นประจำแถว</span>
+                        </div>
+                      </th>
                       <th
                         onClick={() => handleToggleColumn('canView')}
-                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
                         title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'ดู' ทั้งหมด"
                       >
                         ดู
                       </th>
                       <th
                         onClick={() => handleToggleColumn('canCreate')}
-                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
                         title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'สร้าง' ทั้งหมด"
                       >
                         สร้าง
                       </th>
                       <th
                         onClick={() => handleToggleColumn('canEdit')}
-                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
                         title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'แก้ไข' ทั้งหมด"
                       >
                         แก้ไข
                       </th>
                       <th
                         onClick={() => handleToggleColumn('canApprove')}
-                        className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
+                        className="py-3 px-2 w-20 text-center cursor-pointer hover:bg-slate-200/80 select-none transition-colors"
                         title="คลิกเพื่อสลับเปิด/ปิดสิทธิ์ 'อนุมัติ' ทั้งหมด"
                       >
                         อนุมัติ
@@ -712,91 +902,114 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                           {/* ================= SUB-MODULE ROWS ================= */}
                           {isExpanded &&
-                            cat.modules.map((mod) => (
-                              <tr
-                                key={mod.moduleCode}
-                                className="bg-white hover:bg-slate-50/60 transition-colors border-b border-slate-100"
-                              >
-                                {/* Sub-module Name */}
-                                <td className="py-3 px-4 pl-10">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="text-slate-400 font-mono text-xs select-none">↳</span>
-                                      <span className="font-medium text-slate-800 text-xs truncate">
-                                        {mod.moduleName}
-                                      </span>
+                            cat.modules.map((mod, modIdx) => {
+                              const openUpwards = cat.code === 'SETTINGS' || cat.code === 'REPORT' || (cat.code === 'ORGANIZATION' && modIdx >= 2);
+                              return (
+                                <tr
+                                  key={mod.moduleCode}
+                                  className="bg-white hover:bg-slate-50/60 transition-colors border-b border-slate-100"
+                                >
+                                  {/* Sub-module Name */}
+                                  <td className="py-3 px-4 pl-10">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-slate-400 font-mono text-xs select-none">↳</span>
+                                        <span className="font-medium text-slate-800 text-xs truncate">
+                                          {mod.moduleName}
+                                        </span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleAllRow(mod.moduleCode)}
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 font-medium shrink-0 cursor-pointer"
+                                      >
+                                        สลับทั้งหมด
+                                      </button>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleToggleAllRow(mod.moduleCode)}
-                                      className="text-[10px] text-blue-600 hover:text-blue-800 font-medium shrink-0 cursor-pointer"
-                                    >
-                                      สลับทั้งหมด
-                                    </button>
-                                  </div>
-                                </td>
+                                  </td>
 
-                                {/* Sub-module Scope Pills */}
-                                <td className="py-3 px-4 text-center">
-                                  <div className="inline-flex p-1 bg-slate-100/80 rounded-lg border border-slate-200/60 gap-1">
-                                    {SCOPES.map((sc) => {
-                                      const isSelected = mod.dataScope === sc.key;
-                                      return (
-                                        <button
-                                          key={sc.key}
-                                          type="button"
-                                          title={sc.tip}
-                                          onClick={() => handleSelectScope(mod.moduleCode, sc.key)}
-                                          className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                                            isSelected
-                                              ? 'bg-[#0B2046] text-white shadow-xs'
-                                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                                          }`}
-                                        >
-                                          {sc.label}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </td>
+                                  {/* Sub-module Scope Pills (Default for Row) */}
+                                  <td className="py-3 px-4 text-center">
+                                    <div className="inline-flex p-1 bg-slate-100/80 rounded-lg border border-slate-200/60 gap-1">
+                                      {SCOPES.map((sc) => {
+                                        const isSelected = mod.dataScope === sc.key;
+                                        return (
+                                          <button
+                                            key={sc.key}
+                                            type="button"
+                                            title={sc.tip}
+                                            onClick={() => handleSelectScope(mod.moduleCode, sc.key)}
+                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                              isSelected
+                                                ? 'bg-[#0B2046] text-white shadow-xs'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                            }`}
+                                          >
+                                            {sc.label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </td>
 
-                                {/* Action: ดู (View) */}
-                                <td className="py-3 px-3 text-center">
-                                  <ActionSwitch
-                                    checked={mod.canView}
-                                    onChange={() => handleToggleAction(mod.moduleCode, 'canView')}
-                                    ariaLabel={`สิทธิ์ดูข้อมูล ${mod.moduleName}`}
-                                  />
-                                </td>
+                                  {/* Action: ดู (View) */}
+                                  <td className="py-2.5 px-2 text-center align-middle">
+                                    <ActionSwitchWithScope
+                                      checked={mod.canView}
+                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canView')}
+                                      scope={mod.viewScope || mod.dataScope}
+                                      defaultScope={mod.dataScope}
+                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'viewScope', newSc)}
+                                      ariaLabel={`สิทธิ์ดูข้อมูล ${mod.moduleName}`}
+                                      actionName="ดู"
+                                      openUpwards={openUpwards}
+                                    />
+                                  </td>
 
-                                {/* Action: สร้าง (Create) */}
-                                <td className="py-3 px-3 text-center">
-                                  <ActionSwitch
-                                    checked={mod.canCreate}
-                                    onChange={() => handleToggleAction(mod.moduleCode, 'canCreate')}
-                                    ariaLabel={`สิทธิ์สร้างข้อมูล ${mod.moduleName}`}
-                                  />
-                                </td>
+                                  {/* Action: สร้าง (Create) */}
+                                  <td className="py-2.5 px-2 text-center align-middle">
+                                    <ActionSwitchWithScope
+                                      checked={mod.canCreate}
+                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canCreate')}
+                                      scope={mod.createScope || mod.dataScope}
+                                      defaultScope={mod.dataScope}
+                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'createScope', newSc)}
+                                      ariaLabel={`สิทธิ์สร้างข้อมูล ${mod.moduleName}`}
+                                      actionName="สร้าง"
+                                      openUpwards={openUpwards}
+                                    />
+                                  </td>
 
-                                {/* Action: แก้ไข (Edit) */}
-                                <td className="py-3 px-3 text-center">
-                                  <ActionSwitch
-                                    checked={mod.canEdit}
-                                    onChange={() => handleToggleAction(mod.moduleCode, 'canEdit')}
-                                    ariaLabel={`สิทธิ์แก้ไขข้อมูล ${mod.moduleName}`}
-                                  />
-                                </td>
+                                  {/* Action: แก้ไข (Edit) */}
+                                  <td className="py-2.5 px-2 text-center align-middle">
+                                    <ActionSwitchWithScope
+                                      checked={mod.canEdit}
+                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canEdit')}
+                                      scope={mod.editScope || mod.dataScope}
+                                      defaultScope={mod.dataScope}
+                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'editScope', newSc)}
+                                      ariaLabel={`สิทธิ์แก้ไขข้อมูล ${mod.moduleName}`}
+                                      actionName="แก้ไข"
+                                      openUpwards={openUpwards}
+                                    />
+                                  </td>
 
-                                {/* Action: อนุมัติ (Approve) */}
-                                <td className="py-3 px-3 text-center">
-                                  <ActionSwitch
-                                    checked={mod.canApprove}
-                                    onChange={() => handleToggleAction(mod.moduleCode, 'canApprove')}
-                                    ariaLabel={`สิทธิ์อนุมัติข้อมูล ${mod.moduleName}`}
-                                  />
-                                </td>
-                              </tr>
-                            ))}
+                                  {/* Action: อนุมัติ (Approve) */}
+                                  <td className="py-2.5 px-2 text-center align-middle">
+                                    <ActionSwitchWithScope
+                                      checked={mod.canApprove}
+                                      onToggle={() => handleToggleAction(mod.moduleCode, 'canApprove')}
+                                      scope={mod.approveScope || mod.dataScope}
+                                      defaultScope={mod.dataScope}
+                                      onScopeChange={(newSc) => handleActionScopeChange(mod.moduleCode, 'approveScope', newSc)}
+                                      ariaLabel={`สิทธิ์อนุมัติข้อมูล ${mod.moduleName}`}
+                                      actionName="อนุมัติ"
+                                      openUpwards={openUpwards}
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
                         </React.Fragment>
                       );
                     })}

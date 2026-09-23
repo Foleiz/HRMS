@@ -141,6 +141,11 @@ public class RoleService : IRoleService
                 dataScope = "ORGANIZATION";
             }
 
+            string viewScope = scopeMap.TryGetValue(viewCode, out var vSc) ? vSc : dataScope;
+            string createScope = scopeMap.TryGetValue(createCode, out var cSc) ? cSc : dataScope;
+            string editScope = scopeMap.TryGetValue(editCode, out var eSc) ? eSc : dataScope;
+            string approveScope = scopeMap.TryGetValue(approveCode, out var aSc) ? aSc : dataScope;
+
             moduleDtos.Add(new ModulePermissionScopeDto
             {
                 ModuleCode = mod.Code,
@@ -149,6 +154,10 @@ public class RoleService : IRoleService
                 CategoryCode = mod.CategoryCode,
                 CategoryName = mod.CategoryName,
                 DataScope = dataScope,
+                ViewScope = viewScope,
+                CreateScope = createScope,
+                EditScope = editScope,
+                ApproveScope = approveScope,
                 CanView = canView,
                 CanCreate = canCreate,
                 CanEdit = canEdit,
@@ -318,24 +327,48 @@ public class RoleService : IRoleService
             bool canEdit = canView && mod.CanEdit;
             bool canApprove = canView && mod.CanApprove;
 
-            if (canView) AddPerm(viewCode);
-            if (canCreate) AddPerm(createCode);
-            if (canEdit) AddPerm(editCode);
-            if (canApprove) AddPerm(approveCode);
-
-            // Scope applies to View permission
-            if (permMap.TryGetValue(viewCode, out var viewPermId))
+            string ResolveScope(string? specificScope, string fallbackScope)
             {
-                var validScope = mod.DataScope is "SELF" or "TEAM" or "DEPARTMENT" or "DIVISION" or "ORGANIZATION"
-                    ? mod.DataScope
+                var target = !string.IsNullOrWhiteSpace(specificScope) ? specificScope : fallbackScope;
+                return target is "SELF" or "TEAM" or "DEPARTMENT" or "DIVISION" or "ORGANIZATION"
+                    ? target
                     : "SELF";
+            }
 
-                _dbContext.RoleDataScopes.Add(new RoleDataScope
+            void AddDataScope(string permCode, string scopeVal)
+            {
+                if (permMap.TryGetValue(permCode, out var permId))
                 {
-                    RoleId = role.Id,
-                    PermissionId = viewPermId,
-                    DataVisibilityScope = validScope
-                });
+                    _dbContext.RoleDataScopes.Add(new RoleDataScope
+                    {
+                        RoleId = role.Id,
+                        PermissionId = permId,
+                        DataVisibilityScope = scopeVal
+                    });
+                }
+            }
+
+            var defaultScope = ResolveScope(mod.DataScope, "SELF");
+
+            if (canView)
+            {
+                AddPerm(viewCode);
+                AddDataScope(viewCode, ResolveScope(mod.ViewScope, defaultScope));
+            }
+            if (canCreate)
+            {
+                AddPerm(createCode);
+                AddDataScope(createCode, ResolveScope(mod.CreateScope, defaultScope));
+            }
+            if (canEdit)
+            {
+                AddPerm(editCode);
+                AddDataScope(editCode, ResolveScope(mod.EditScope, defaultScope));
+            }
+            if (canApprove)
+            {
+                AddPerm(approveCode);
+                AddDataScope(approveCode, ResolveScope(mod.ApproveScope, defaultScope));
             }
         }
 

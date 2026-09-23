@@ -68,6 +68,10 @@ export interface ModulePermissionScope {
   categoryCode?: string;
   categoryName?: string;
   dataScope: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
+  viewScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
+  createScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
+  editScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
+  approveScope?: 'SELF' | 'TEAM' | 'DEPARTMENT' | 'DIVISION' | 'ORGANIZATION' | string;
   canView: boolean;
   canCreate: boolean;
   canEdit: boolean;

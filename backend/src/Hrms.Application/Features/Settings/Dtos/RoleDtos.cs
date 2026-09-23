@@ -40,7 +40,11 @@ public class ModulePermissionScopeDto
     public string? GroupName { get; set; }
     public string? CategoryCode { get; set; }
     public string? CategoryName { get; set; }
-    public string DataScope { get; set; } = "SELF"; // SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION
+    public string DataScope { get; set; } = "SELF"; // Default / fallback scope: SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION
+    public string? ViewScope { get; set; }
+    public string? CreateScope { get; set; }
+    public string? EditScope { get; set; }
+    public string? ApproveScope { get; set; }
     public bool CanView { get; set; }
     public bool CanCreate { get; set; }
     public bool CanEdit { get; set; }
