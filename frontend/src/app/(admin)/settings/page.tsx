@@ -132,7 +132,7 @@ export default function SettingsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [auditLogTotalCount, setAuditLogTotalCount] = useState(0);
   const [auditLogPage, setAuditLogPage] = useState(1);
-  const [auditLogPageSize] = useState(15);
+  const [auditLogPageSize, setAuditLogPageSize] = useState(15);
   const [auditLogFilters, setAuditLogFilters] = useState<{
     startDate?: string;
     endDate?: string;
@@ -543,6 +543,10 @@ export default function SettingsPage() {
               totalCount={auditLogTotalCount}
               currentPage={auditLogPage}
               pageSize={auditLogPageSize}
+              onPageSizeChange={(newSize) => {
+                setAuditLogPageSize(newSize);
+                setAuditLogPage(1);
+              }}
               users={users}
               onPageChange={setAuditLogPage}
               onFilterChange={(f) => {

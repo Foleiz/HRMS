@@ -18,6 +18,7 @@ interface AuditLogTabProps {
   totalCount: number;
   currentPage: number;
   pageSize: number;
+  onPageSizeChange?: (size: number) => void;
   users: UserAccount[];
   onPageChange: (page: number) => void;
   onFilterChange: (filters: {
@@ -108,6 +109,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   totalCount,
   currentPage,
   pageSize,
+  onPageSizeChange,
   users,
   onPageChange,
   onFilterChange,
@@ -160,6 +162,23 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Dynamic visible page numbers (max 5 buttons centered around current page)
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + 4);
+    if (end - start < 4) {
+      start = Math.max(1, end - 4);
+    }
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   const formatLogDate = (isoString?: string) => {
     if (!isoString) return '-';
@@ -458,42 +477,69 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
           </table>
         </div>
 
-        {/* 3. Pagination Bar (ตรงตามรูปแบบ Figma) */}
-        <div className="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
-          <div>
-            แสดง <span className="font-semibold text-slate-800">{logs.length}</span> ของทั้งหมด{' '}
-            <span className="font-semibold text-slate-800">{totalCount.toLocaleString()}</span> รายการการบันทึกระบบ
+        {/* 3. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
+        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
+          {/* ซ้ายล่าง: Rows per page selector */}
+          <div className="flex items-center gap-2 text-slate-600">
+            <span>แสดง</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                if (onPageSizeChange) {
+                  onPageSizeChange(newSize);
+                }
+                onPageChange(1);
+              }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+            >
+              <option value={8}>8</option>
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>แถวต่อหน้า</span>
+            <span className="text-slate-400 text-[11px] ml-1">
+              (ทั้งหมด {totalCount.toLocaleString()} รายการ)
+            </span>
           </div>
 
+          {/* ขวาล่าง: Pagination Buttons */}
           <div className="flex items-center gap-1.5">
+            {/* Previous Page Button */}
             <button
-              onClick={() => onPageChange(currentPage - 1)}
+              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage <= 1}
-              className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าก่อนหน้า"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            {/* Dynamic Page Numbers */}
+            {getPageNumbers().map((p) => (
               <button
                 key={p}
                 onClick={() => onPageChange(p)}
-                className={`w-8 h-8 rounded-lg font-semibold transition-all cursor-pointer ${
-                  p === currentPage
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
+                  currentPage === p
                     ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {p}
               </button>
             ))}
 
+            {/* Next Page Button */}
             <button
-              onClick={() => onPageChange(currentPage + 1)}
+              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage >= totalPages}
-              className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="หน้าถัดไป"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
