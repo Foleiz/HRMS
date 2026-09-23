@@ -313,7 +313,7 @@ public class UserService : IUserService
 
     public async Task<bool> DeleteUserAsync(long id, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default)
     {
-        var user = await _dbContext.UserAccounts.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        var user = await _dbContext.UserAccounts.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
         {
             throw new NotFoundException("UserAccount", id);
@@ -324,29 +324,10 @@ public class UserService : IUserService
             throw new BusinessRuleException("ไม่อนุญาตให้ลบบัญชีผู้ดูแลระบบสูงสุด (admin)");
         }
 
-        // 1. ปลดการผูก AuditLogs ของผู้ใช้รายนี้เป็น null เพื่อเก็บประวัติ Audit Trail ไว้ตามมาตรฐาน PDPA
-        var auditLogs = await _dbContext.AuditLogs.Where(a => a.UserId == id).ToListAsync(cancellationToken);
-        foreach (var log in auditLogs)
-        {
-            log.UserId = null;
-        }
-
-        // 2. ปลดการผูก AttendanceImportBatches (ถ้ามี)
-        var importBatches = await _dbContext.AttendanceImportBatches.Where(b => b.ImportedByUserId == id).ToListAsync(cancellationToken);
-        foreach (var batch in importBatches)
-        {
-            batch.ImportedByUserId = null;
-        }
-
-        // 3. ลบ UserRoles ของผู้ใช้
-        var userRoles = await _dbContext.UserRoles.Where(ur => ur.UserId == id).ToListAsync(cancellationToken);
-        if (userRoles.Any())
-        {
-            _dbContext.UserRoles.RemoveRange(userRoles);
-        }
-
-        _dbContext.UserAccounts.Remove(user);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        // ยิงคำสั่ง DELETE ไปยัง PostgreSQL โดยตรง เพื่อให้ Database Constraints
+        // (ON DELETE CASCADE สำหรับ user_role/notification และ ON DELETE SET NULL สำหรับ audit_log/attendance_import_batch)
+        // ทำงานในระดับฐานข้อมูลได้อย่างสมบูรณ์ โดยไม่เกิด DbUpdateConcurrencyException จาก ChangeTracker ของ EF Core
+        await _dbContext.UserAccounts.Where(u => u.Id == id).ExecuteDeleteAsync(cancellationToken);
 
         await _auditLogService.LogAsync(
             "DELETE", "USER_ACCOUNT", user.Id, "Username",
