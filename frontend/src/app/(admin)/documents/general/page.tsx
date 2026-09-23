@@ -23,6 +23,7 @@ import { leaveService } from '@/services/leaveService';
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { COMMON_DOCUMENT_TYPES } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 200;
@@ -253,7 +254,8 @@ export default function GeneralDocumentPage() {
       setPurpose('');
       setNotes('');
       setSelectedFile(null);
-      setShowSuccessModal(true);
+      toast.success('ยื่นคำร้องเอกสารทั่วไปสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting general document request:', err);
       setFormError(err?.message || 'เกิดข้อผิดพลาดในการยื่นคำร้องเอกสารทั่วไป');
