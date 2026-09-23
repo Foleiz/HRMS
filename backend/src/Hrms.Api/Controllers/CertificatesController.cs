@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Certificates.DTOs;
 using Hrms.Application.Features.Certificates.Services;
@@ -15,10 +17,14 @@ namespace Hrms.Api.Controllers;
 public class CertificatesController : ControllerBase
 {
     private readonly ICertificateService _certificateService;
+    private readonly ICurrentUserService _currentUser;
 
-    public CertificatesController(ICertificateService certificateService)
+    public CertificatesController(
+        ICertificateService certificateService,
+        ICurrentUserService currentUser)
     {
         _certificateService = certificateService;
+        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -76,6 +82,82 @@ public class CertificatesController : ControllerBase
     {
         var result = await _certificateService.CancelRequestAsync(id, reason, cancellationToken);
         return Ok(ApiResponse<bool>.Ok(result, "ยกเลิกคำขอหนังสือรับรองสำเร็จ"));
+    }
+
+    /// <summary>
+    /// อนุมัติคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
+    /// </summary>
+    [HttpPut("requests/{id:long}/approve")]
+    public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Approve(
+        long id,
+        [FromBody] ApproveCertificateRequestPayload? payload,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var approverId = _currentUser.EmployeeId;
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (long.TryParse(empIdStr, out var parsedId))
+                {
+                    approverId = parsedId;
+                }
+            }
+
+            var result = await _certificateService.ApproveRequestAsync(id, approverId ?? 1, payload?.Comment, cancellationToken);
+            return Ok(ApiResponse<CertificateRequestDto>.Ok(result, "อนุมัติคำขอหนังสือรับรองสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// ปฏิเสธคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
+    /// </summary>
+    [HttpPut("requests/{id:long}/reject")]
+    public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Reject(
+        long id,
+        [FromBody] RejectCertificateRequestPayload payload,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var approverId = _currentUser.EmployeeId;
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (long.TryParse(empIdStr, out var parsedId))
+                {
+                    approverId = parsedId;
+                }
+            }
+
+            var result = await _certificateService.RejectRequestAsync(id, approverId ?? 1, payload.Reason, cancellationToken);
+            return Ok(ApiResponse<CertificateRequestDto>.Ok(result, "ปฏิเสธคำขอหนังสือรับรองสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
+        }
     }
 
     /// <summary>

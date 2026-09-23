@@ -55,6 +55,26 @@ export const certificateService = {
   },
 
   /**
+   * อนุมัติคำขอหนังสือรับรอง (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
+   */
+  async approveRequest(id: number, comment?: string): Promise<CertificateRequest> {
+    const res = await apiClient.put<ApiResponse<CertificateRequest>>(`/certificates/requests/${id}/approve`, {
+      comment,
+    });
+    return res.data.data;
+  },
+
+  /**
+   * ปฏิเสธคำขอหนังสือรับรอง (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
+   */
+  async rejectRequest(id: number, reason: string): Promise<CertificateRequest> {
+    const res = await apiClient.put<ApiResponse<CertificateRequest>>(`/certificates/requests/${id}/reject`, {
+      reason,
+    });
+    return res.data.data;
+  },
+
+  /**
    * ดึงข้อมูลเอกสารหนังสือรับรองทางการเพื่อดูตัวอย่างและพิมพ์ (Preview & Print Document)
    */
   async getDocument(id: number, lang: string = 'TH'): Promise<CertificateDocument> {

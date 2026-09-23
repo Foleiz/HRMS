@@ -117,6 +117,20 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
             requesterId = leaveReq?.EmployeeId;
         }
+        else if (instance.DocumentType == "CERTIFICATE_REQUEST")
+        {
+            var certReq = await _context.CertificateRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = certReq?.EmployeeId;
+        }
+        else if (instance.DocumentType == "RESIGNATION_REQUEST")
+        {
+            var resignReq = await _context.ResignationRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = resignReq?.EmployeeId;
+        }
 
         var requesterAssignment = requesterId.HasValue
             ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)

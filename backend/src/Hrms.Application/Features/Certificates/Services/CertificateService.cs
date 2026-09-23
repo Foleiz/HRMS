@@ -54,13 +54,105 @@ public class CertificateService : ICertificateService
         return await GetRequestsInternalAsync(null, status, cancellationToken);
     }
 
+    public async Task<CertificateRequestDto?> GetRequestByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var list = await GetRequestsInternalAsync(null, null, cancellationToken);
+        return list.FirstOrDefault(x => x.Id == id);
+    }
+
+    public async Task<CertificateRequestDto> ApproveRequestAsync(
+        long id,
+        long approverId,
+        string? comment = null,
+        CancellationToken cancellationToken = default)
+    {
+        var request = await _context.CertificateRequests
+            .Include(r => r.CertificateType)
+            .Include(r => r.ApprovalInstance)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอหนังสือรับรองรหัส {id}");
+        }
+
+        if (request.Status == "APPROVED" || request.Status == "ISSUED")
+        {
+            return (await GetRequestByIdAsync(id, cancellationToken))!;
+        }
+
+        bool finalizeApproval = false;
+
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            var workflowResult = await _approvalWorkflow.ProcessActionAsync(
+                request.ApprovalInstanceId.Value,
+                approverId,
+                "APPROVE",
+                comment,
+                cancellationToken);
+
+            if (workflowResult.IsCompleted && workflowResult.Status == "APPROVED")
+            {
+                finalizeApproval = true;
+            }
+        }
+        else
+        {
+            finalizeApproval = true;
+        }
+
+        if (finalizeApproval)
+        {
+            request.Status = "APPROVED";
+            request.IssuedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        return (await GetRequestByIdAsync(id, cancellationToken))!;
+    }
+
+    public async Task<CertificateRequestDto> RejectRequestAsync(
+        long id,
+        long approverId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        var request = await _context.CertificateRequests
+            .Include(r => r.CertificateType)
+            .Include(r => r.ApprovalInstance)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอหนังสือรับรองรหัส {id}");
+        }
+
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            await _approvalWorkflow.ProcessActionAsync(
+                request.ApprovalInstanceId.Value,
+                approverId,
+                "REJECT",
+                reason,
+                cancellationToken);
+        }
+
+        request.Status = "REJECTED";
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return (await GetRequestByIdAsync(id, cancellationToken))!;
+    }
+
     private async Task<List<CertificateRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var query = _context.CertificateRequests
             .AsNoTracking()
             .Include(r => r.CertificateType)
             .Include(r => r.Employee)
-            .Include(r => r.ApprovalInstance)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .AsQueryable();
 
         if (employeeId.HasValue)
@@ -74,7 +166,7 @@ public class CertificateService : ICertificateService
         }
 
         var requests = await query
-            .OrderByDescending(r => r.RequestedAt)
+            .OrderByDescending(r => r.Id)
             .ToListAsync(cancellationToken);
 
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
@@ -89,10 +181,12 @@ public class CertificateService : ICertificateService
         var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
                           _currentUserService.HasRole("HR_ADMIN") ||
                           _currentUserService.HasRole("HR") ||
+                          _currentUserService.HasRole("ADMIN") ||
                           _currentUserService.HasRole("SUPER_ADMIN") ||
                           _currentUserService.HasRole("SYS_ADMIN");
 
-        return requests.Select(r =>
+        var items = new List<CertificateRequestDto>();
+        foreach (var r in requests)
         {
             assignments.TryGetValue(r.EmployeeId, out var assign);
             var effectiveStatus = r.Status;
@@ -101,7 +195,45 @@ public class CertificateService : ICertificateService
                 effectiveStatus = r.ApprovalInstance.Status;
             }
 
-            return new CertificateRequestDto
+            var instance = r.ApprovalInstance;
+            var currentStepNo = instance?.CurrentStepNo;
+            var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
+            string? currentApproverDisplay = null;
+            bool isMyTurn = false;
+
+            if (instance != null && instance.Status == "PENDING" && currentStepNo.HasValue)
+            {
+                var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == currentStepNo.Value);
+                if (step != null)
+                {
+                    currentApproverDisplay = step.ApproverType switch
+                    {
+                        "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
+                        "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
+                        "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
+                        "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
+                        "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
+                        "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
+                        "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+                        _ => step.ApproverType
+                    };
+                }
+
+                if (currentEmpId.HasValue)
+                {
+                    isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+                }
+            }
+
+            var hasAlreadyApproved = instance != null && currentEmpId.HasValue &&
+                instance.Actions.Any(a => a.ApproverEmployeeId == currentEmpId.Value && a.ActionDecision == "APPROVE");
+
+            var finalApproveAction = instance?.Actions
+                .Where(a => a.ActionDecision == "APPROVE")
+                .OrderByDescending(a => a.ActionAt)
+                .FirstOrDefault();
+
+            items.Add(new CertificateRequestDto
             {
                 Id = r.Id,
                 EmployeeId = r.EmployeeId,
@@ -117,10 +249,19 @@ public class CertificateService : ICertificateService
                 RequestedAt = r.RequestedAt,
                 IssuedAt = r.IssuedAt,
                 ApprovalInstanceId = r.ApprovalInstanceId,
+                CurrentStepNo = currentStepNo,
+                TotalSteps = totalSteps,
+                CurrentApproverDisplay = currentApproverDisplay,
+                IsMyTurnToApprove = isMyTurn,
+                HasAlreadyApproved = hasAlreadyApproved,
+                ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
+                ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
                 CanCancel = (effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin)),
                 CanDownload = (effectiveStatus == "APPROVED" || effectiveStatus == "ISSUED")
-            };
-        }).ToList();
+            });
+        }
+
+        return items;
     }
 
     public async Task<CertificateRequestDto> CreateRequestAsync(CreateCertificateRequestDto dto, CancellationToken cancellationToken = default)
