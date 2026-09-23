@@ -1,4 +1,4 @@
-﻿using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
@@ -43,14 +43,39 @@ public class LeaveRequestService : ILeaveRequestService
 
         if (scopeToManagerEmployeeId.HasValue)
         {
-            // กรองให้หัวหน้างาน (ที่ไม่ใช่ ADMIN) เห็นเฉพาะคำขอลาของลูกทีมสายตรงของตัวเองเท่านั้น
+            var managerId = scopeToManagerEmployeeId.Value;
+
+            // 1. หาแผนกและฝ่ายที่ผู้ใช้นี้เป็นหัวหน้าตามโครงสร้างองค์กร (Head of Department / Head of Division)
+            var managedDeptIds = await _context.Departments
+                .AsNoTracking()
+                .Where(d => d.HeadEmployeeId == managerId)
+                .Select(d => d.Id)
+                .ToListAsync(cancellationToken);
+
+            var managedDivIds = await _context.Divisions
+                .AsNoTracking()
+                .Where(d => d.HeadEmployeeId == managerId)
+                .Select(d => d.Id)
+                .ToListAsync(cancellationToken);
+
+            // 2. พนักงานใต้บังคับบัญชา:
+            // - สายตรง (ManagerEmployeeId == managerId)
+            // - พนักงานในแผนกที่ตนเป็นหัวหน้าแผนก (DepartmentId IN managedDeptIds)
+            // - พนักงานในฝ่ายที่ตนเป็นหัวหน้าฝ่าย (DivisionId IN managedDivIds)
             var teamEmployeeIds = await _context.EmployeeAssignments
                 .AsNoTracking()
-                .Where(a => a.IsCurrent && a.ManagerEmployeeId == scopeToManagerEmployeeId.Value)
+                .Where(a => a.IsCurrent && (
+                    a.ManagerEmployeeId == managerId ||
+                    managedDeptIds.Contains(a.DepartmentId) ||
+                    managedDivIds.Contains(a.DivisionId)
+                ))
                 .Select(a => a.EmployeeId)
                 .ToListAsync(cancellationToken);
 
-            query = query.Where(r => teamEmployeeIds.Contains(r.EmployeeId));
+            // 3. รวมเอกสารที่อยู่ในสายการอนุมัติ ที่ถึงคิวผู้ใช้คนนี้มีสิทธิ์อนุมัติ (Approval Workflow)
+            var pendingInstanceIds = await _approvalWorkflow.GetPendingInstanceIdsForUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
+
+            query = query.Where(r => teamEmployeeIds.Contains(r.EmployeeId) || (r.ApprovalInstanceId.HasValue && pendingInstanceIds.Contains(r.ApprovalInstanceId.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

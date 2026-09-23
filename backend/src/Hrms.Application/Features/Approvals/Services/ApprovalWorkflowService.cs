@@ -138,10 +138,19 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 return requesterAssignment?.ManagerEmployeeId == employeeId;
 
             case "DEPARTMENT_HEAD":
-                // ถ้าเป็นหัวหน้าแผนก หรือมี Role DEPT_MGR
+                if (requesterAssignment != null)
+                {
+                    var dept = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DepartmentId, cancellationToken);
+                    if (dept?.HeadEmployeeId == employeeId) return true;
+                }
                 return userRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR");
 
             case "DIVISION_HEAD":
+                if (requesterAssignment != null)
+                {
+                    var div = await _context.Divisions.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DivisionId, cancellationToken);
+                    if (div?.HeadEmployeeId == employeeId) return true;
+                }
                 return userRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR" || ur.Role.RoleCode == "DEPT_MGR");
 
             case "HR":
