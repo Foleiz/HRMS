@@ -212,6 +212,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>('');
   const [selectedModuleCode, setSelectedModuleCode] = useState<string>('');
 
+  // Dropdown popover
+  const [openCategoryCode, setOpenCategoryCode] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const lastRoleIdRef = useRef<number | null>(null);
 
   /* ── Normalize legacy data ── */
@@ -309,6 +314,29 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setSelectedModuleCode(newMod.moduleCode);
     setSelectedCategoryCode(newMod.categoryCode || newMod.groupName || 'OTHER');
   };
+
+  /* ── Category Dropdown Popover ── */
+  const handleCategoryClick = (catCode: string, buttonEl: HTMLButtonElement) => {
+    if (openCategoryCode === catCode) {
+      setOpenCategoryCode(null);
+      return;
+    }
+    const rect = buttonEl.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+    setSelectedCategoryCode(catCode);
+    setOpenCategoryCode(catCode);
+  };
+
+  useEffect(() => {
+    if (!openCategoryCode) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenCategoryCode(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openCategoryCode]);
 
   /* ── Toggle handlers ── */
   const handleToggleCheckbox = (
@@ -572,58 +600,103 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </div>
             </div>
 
-            {/* ── Category Tab Bar ── */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => {
-                const IconComp = CATEGORY_ICONS[cat.code] || Layers;
-                const isActive = selectedCategoryCode === cat.code;
-                return (
-                  <button
-                    key={cat.code}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategoryCode(cat.code);
-                      setSelectedModuleCode(cat.modules[0]?.moduleCode || '');
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
-                      isActive
-                        ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-md'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <IconComp className="w-3.5 h-3.5" />
-                    {cat.name}
-                    <span
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+            {/* ── Category Tab Bar (single row, scrollable) ── */}
+            <div className="relative">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {categories.map((cat) => {
+                  const IconComp = CATEGORY_ICONS[cat.code] || Layers;
+                  const isActive = selectedCategoryCode === cat.code;
+                  const isOpen = openCategoryCode === cat.code;
+                  return (
+                    <button
+                      key={cat.code}
+                      type="button"
+                      onClick={(e) => handleCategoryClick(cat.code, e.currentTarget)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer border ${
+                        isActive
+                          ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-md'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      {cat.modules.length}
-                    </span>
-                  </button>
-                );
-              })}
+                      <IconComp className="w-3.5 h-3.5" />
+                      {cat.name}
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {cat.modules.length}
+                      </span>
+                      <ChevronDown
+                        className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
+                          isActive ? 'text-white/70' : 'text-slate-400'
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* ── Sub-module Chip Bar ── */}
-            {selectedCategory && (
-              <div className="flex flex-wrap gap-2">
-                {selectedCategory.modules.map((mod) => (
-                  <button
-                    key={mod.moduleCode}
-                    type="button"
-                    onClick={() => setSelectedModuleCode(mod.moduleCode)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
-                      selectedModuleCode === mod.moduleCode
-                        ? 'bg-[#0B2046]/10 text-[#0B2046] border-[#0B2046]/30 font-semibold'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-                    }`}
-                  >
-                    ↳ {mod.moduleName}
-                  </button>
-                ))}
+            {/* ── Breadcrumb: current module path ── */}
+            {selectedModule && (
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
+                <span className="font-medium text-slate-600">{selectedCategory?.name}</span>
+                <ChevronRight className="w-3 h-3 text-slate-300" />
+                <span className="font-semibold text-[#0B2046]">{selectedModule.moduleName}</span>
+                <span className="ml-1 text-slate-300">·</span>
+                <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
               </div>
             )}
+
+            {/* ── Dropdown Popover (fixed, rendered via portal pattern) ── */}
+            {openCategoryCode && (() => {
+              const openCat = categories.find((c) => c.code === openCategoryCode);
+              if (!openCat) return null;
+              const IconComp = CATEGORY_ICONS[openCat.code] || Layers;
+              return (
+                <div
+                  ref={dropdownRef}
+                  style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999 }}
+                  className="w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+                >
+                  {/* Dropdown Header */}
+                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[#0B2046]/8 text-[#0B2046]">
+                        <IconComp className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-sm text-slate-900">{openCat.name}</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">{openCat.modules.length} เมนู</span>
+                  </div>
+                  {/* Sub-module List */}
+                  <div className="py-1.5 max-h-72 overflow-y-auto">
+                    {openCat.modules.map((mod) => {
+                      const isSelected = selectedModuleCode === mod.moduleCode;
+                      return (
+                        <button
+                          key={mod.moduleCode}
+                          type="button"
+                          onClick={() => {
+                            setSelectedModuleCode(mod.moduleCode);
+                            setOpenCategoryCode(null);
+                          }}
+                          className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors cursor-pointer border-l-4 ${
+                            isSelected
+                              ? 'bg-[#0B2046]/5 border-[#0B2046] text-[#0B2046] font-semibold'
+                              : 'border-transparent text-slate-700 hover:bg-slate-50 font-medium'
+                          }`}
+                        >
+                          <span className="leading-snug">{mod.moduleName}</span>
+                          {isSelected && <ChevronRight className="w-3.5 h-3.5 shrink-0 text-[#0B2046]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── Permission Card ── */}
             {selectedModule ? (
