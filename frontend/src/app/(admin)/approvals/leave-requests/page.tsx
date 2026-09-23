@@ -241,11 +241,22 @@ export default function LeaveRequestsApprovalPage() {
       )}
 
       {/* Filters & Control Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
         <div className="flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex flex-wrap gap-3 items-center flex-1">
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
+            <div className="relative w-72 sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อพนักงาน, รหัสคำขอ, ประเภทลา..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
+              />
+            </div>
 
-            {/* Status filter */}
+            {/* Status filter (ปุ่มกรองสถานะ) */}
             <div className="relative">
               <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
@@ -260,18 +271,6 @@ export default function LeaveRequestsApprovalPage() {
                 <option value="CANCELLED">ยกเลิกแล้ว</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Search */}
-            <div className="relative flex-1 min-w-48">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="ค้นหาชื่อพนักงาน, รหัสคำขอ, ประเภทลา..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
-              />
             </div>
           </div>
 
