@@ -5,9 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { employeeService } from '@/services/employeeService';
+import { bankService } from '@/services/bankService';
 import { authService } from '@/services/authService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
+import { Bank } from '@/types/api';
 import {
   User,
   UserCheck,
@@ -85,6 +87,26 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+
+  // Bank Master Data State
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [isLoadingBanks, setIsLoadingBanks] = useState<boolean>(false);
+
+  // Load Banks Master Data
+  useEffect(() => {
+    const loadBanks = async () => {
+      setIsLoadingBanks(true);
+      try {
+        const data = await bankService.getAll();
+        setBanks(data.filter((b) => b.status === 'ACTIVE'));
+      } catch (err) {
+        console.error('Failed to load banks:', err);
+      } finally {
+        setIsLoadingBanks(false);
+      }
+    };
+    loadBanks();
+  }, []);
 
   // Sync breadcrumb with active tab
   useEffect(() => {
@@ -848,13 +870,22 @@ export default function ProfilePage() {
                   {/* ธนาคาร */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">ธนาคาร</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.bankName}
                       onChange={(e) => handleInputChange('bankName', e.target.value)}
-                      placeholder="เช่น ธนาคารกสิกรไทย"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
+                      disabled={isLoadingBanks}
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
+                    >
+                      <option value="">-- เลือกธนาคาร --</option>
+                      {banks.map((b) => (
+                        <option key={b.id} value={b.bankName}>
+                          {b.bankName}
+                        </option>
+                      ))}
+                      {formData.bankName && !banks.some((b) => b.bankName === formData.bankName) && (
+                        <option value={formData.bankName}>{formData.bankName}</option>
+                      )}
+                    </select>
                   </div>
 
                   {/* เลขที่บัญชี */}

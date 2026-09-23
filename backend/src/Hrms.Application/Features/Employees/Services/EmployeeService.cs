@@ -553,16 +553,19 @@ public class EmployeeService : IEmployeeService
                 }
             }
         }
-        else if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        else if (!string.IsNullOrWhiteSpace(request.AccountNumber) || !string.IsNullOrWhiteSpace(request.BankName))
         {
             var bank = await _dbContext.Banks
-                .FirstOrDefaultAsync(b => b.BankName.Contains(request.BankName ?? "") || b.BankCode == (request.BankName ?? ""), cancellationToken);
+                .FirstOrDefaultAsync(b => b.BankName == (request.BankName ?? "") 
+                                       || b.BankName.Contains(request.BankName ?? "") 
+                                       || b.BankCode == (request.BankName ?? "")
+                                       || (request.BankName != null && request.BankName.Contains(b.BankName)), cancellationToken);
 
             var primaryBank = employee.BankAccounts.FirstOrDefault(b => b.IsPrimary) ?? employee.BankAccounts.FirstOrDefault();
             if (primaryBank != null)
             {
-                primaryBank.BankId = bank?.Id ?? 1;
-                primaryBank.AccountNumber = request.AccountNumber.Trim();
+                if (bank != null) primaryBank.BankId = bank.Id;
+                if (!string.IsNullOrWhiteSpace(request.AccountNumber)) primaryBank.AccountNumber = request.AccountNumber.Trim();
                 primaryBank.AccountName = employee.FullName;
             }
             else
@@ -570,7 +573,7 @@ public class EmployeeService : IEmployeeService
                 employee.BankAccounts.Add(new EmployeeBankAccount
                 {
                     BankId = bank?.Id ?? 1,
-                    AccountNumber = request.AccountNumber.Trim(),
+                    AccountNumber = request.AccountNumber?.Trim() ?? string.Empty,
                     AccountType = "SAVINGS",
                     AccountName = employee.FullName,
                     IsPrimary = true,

@@ -207,12 +207,18 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                         entityId = id;
                     }
 
+                    var fieldName = string.Join(", ", changedColumns);
+                    if (fieldName.Length > 500)
+                    {
+                        fieldName = fieldName.Substring(0, 497) + "...";
+                    }
+
                     var log = new AuditLog
                     {
                         Action = "UPDATE",
                         EntityType = tableName,
                         EntityId = entityId,
-                        FieldName = string.Join(", ", changedColumns),
+                        FieldName = fieldName,
                         OldValue = JsonSerializer.Serialize(oldValues),
                         NewValue = JsonSerializer.Serialize(newValues),
                         UserId = currentUserId,
