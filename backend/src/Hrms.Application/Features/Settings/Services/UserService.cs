@@ -324,6 +324,27 @@ public class UserService : IUserService
             throw new BusinessRuleException("ไม่อนุญาตให้ลบบัญชีผู้ดูแลระบบสูงสุด (admin)");
         }
 
+        // 1. ปลดการผูก AuditLogs ของผู้ใช้รายนี้เป็น null เพื่อเก็บประวัติ Audit Trail ไว้ตามมาตรฐาน PDPA
+        var auditLogs = await _dbContext.AuditLogs.Where(a => a.UserId == id).ToListAsync(cancellationToken);
+        foreach (var log in auditLogs)
+        {
+            log.UserId = null;
+        }
+
+        // 2. ปลดการผูก AttendanceImportBatches (ถ้ามี)
+        var importBatches = await _dbContext.AttendanceImportBatches.Where(b => b.ImportedByUserId == id).ToListAsync(cancellationToken);
+        foreach (var batch in importBatches)
+        {
+            batch.ImportedByUserId = null;
+        }
+
+        // 3. ลบ UserRoles ของผู้ใช้
+        var userRoles = await _dbContext.UserRoles.Where(ur => ur.UserId == id).ToListAsync(cancellationToken);
+        if (userRoles.Any())
+        {
+            _dbContext.UserRoles.RemoveRange(userRoles);
+        }
+
         _dbContext.UserAccounts.Remove(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
