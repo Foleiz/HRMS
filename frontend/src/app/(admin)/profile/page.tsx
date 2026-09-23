@@ -43,7 +43,7 @@ import {
 export default function ProfilePage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
-  const { success, error, warning } = useToast();
+  const { success, error, warning, info } = useToast();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -82,6 +82,7 @@ export default function ProfilePage() {
 
   // Password Change Modal State for Tab 2 (Account Management)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
+  const [showAccountPassword, setShowAccountPassword] = useState<boolean>(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -1088,15 +1089,19 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                           <input
-                            type="password"
+                            type={showAccountPassword ? 'text' : 'password'}
                             disabled
-                            value="••••••••••••"
+                            value={showAccountPassword ? '••••••••••••' : '••••••••••••'}
                             className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-600 font-mono tracking-widest cursor-not-allowed"
                           />
                           <button
                             type="button"
-                            onClick={() => setIsPasswordModalOpen(true)}
-                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                            onClick={() => {
+                              info('รหัสผ่านถูกเข้ารหัสความปลอดภัยไว้ หากต้องการดูหรือเปลี่ยนรหัสผ่าน กรุณากดปุ่มแก้ไข');
+                              setIsPasswordModalOpen(true);
+                            }}
+                            title="แก้ไข / เปลี่ยนรหัสผ่าน"
+                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
