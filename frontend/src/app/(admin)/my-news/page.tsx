@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -68,6 +67,20 @@ const CATEGORY_STYLES: Record<string, {
     dotColor: 'bg-purple-500',
     badgeBg: 'bg-purple-50 text-purple-800 border-purple-200',
   },
+  MEETING: {
+    label: 'ประชุมทีมและการนำเสนอ',
+    pillBg: 'bg-[#E0E7FF]/80 hover:bg-[#C7D2FE]',
+    pillText: 'text-[#3730A3]',
+    dotColor: 'bg-indigo-500',
+    badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+  },
+  DEFAULT: {
+    label: 'ข่าวสารทั่วไป',
+    pillBg: 'bg-slate-100 hover:bg-slate-200',
+    pillText: 'text-slate-700',
+    dotColor: 'bg-slate-400',
+    badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+  },
 };
 
 const THAI_MONTHS = [
@@ -87,13 +100,12 @@ const WEEKDAYS = [
 ];
 
 export default function MyNewsCalendarPage() {
-  const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
 
   // Active Date for Calendar Navigation
   const [currentDate, setCurrentDate] = useState(() => new Date());
-  // View mode: 'MONTH' | 'WEEK'
-  const [viewMode, setViewMode] = useState<'MONTH' | 'WEEK'>('MONTH');
+  // View mode: 'DAY' | 'WEEK' | 'MONTH'
+  const [viewMode, setViewMode] = useState<'DAY' | 'WEEK' | 'MONTH'>('MONTH');
 
   // Announcements Data
   const [feedItems, setFeedItems] = useState<Announcement[]>([]);
@@ -101,6 +113,12 @@ export default function MyNewsCalendarPage() {
 
   // Modal Reading State
   const [readingItem, setReadingItem] = useState<Announcement | null>(null);
+
+  // Modal for all announcements on a selected day (when clicking "+N รายการเพิ่มเติม")
+  const [selectedDayModal, setSelectedDayModal] = useState<{
+    date: Date;
+    items: Announcement[];
+  } | null>(null);
 
   // Set Breadcrumb
   useEffect(() => {
@@ -127,17 +145,30 @@ export default function MyNewsCalendarPage() {
     fetchFeed();
   }, [fetchFeed]);
 
-  // Navigate Months
-  const handlePrevMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  // Navigate Days, Weeks, or Months
+  const handlePrev = () => {
+    if (viewMode === 'DAY') {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 1));
+    } else if (viewMode === 'WEEK') {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 7));
+    } else {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    }
   };
 
-  const handleNextMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const handleNext = () => {
+    if (viewMode === 'DAY') {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 1));
+    } else if (viewMode === 'WEEK') {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 7));
+    } else {
+      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    }
   };
 
   const handleGoToday = () => {
     setCurrentDate(new Date());
+    setViewMode('DAY');
   };
 
   // Open Reading Modal and Mark Read
@@ -159,10 +190,24 @@ export default function MyNewsCalendarPage() {
     }
   };
 
-  // Thai Date formatting
-  const thaiYear = currentDate.getFullYear() + 543;
-  const monthName = THAI_MONTHS[currentDate.getMonth()];
-  const displayMonthYear = `${monthName} ${thaiYear}`;
+  // Dynamic Date Navigator Title depending on View Mode
+  const displayNavTitle = useMemo(() => {
+    const thaiYear = currentDate.getFullYear() + 543;
+    if (viewMode === 'DAY') {
+      const dayName = WEEKDAYS[currentDate.getDay()]?.label || '';
+      return `${dayName}ที่ ${currentDate.getDate()} ${THAI_MONTHS[currentDate.getMonth()]} ${thaiYear}`;
+    }
+    if (viewMode === 'WEEK') {
+      const curr = new Date(currentDate);
+      const day = curr.getDay();
+      const diff = curr.getDate() - day;
+      const startOfWeek = new Date(curr.setDate(diff));
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      return `${startOfWeek.getDate()} ${THAI_MONTHS[startOfWeek.getMonth()].slice(0, 3)} - ${endOfWeek.getDate()} ${THAI_MONTHS[endOfWeek.getMonth()].slice(0, 3)} ${thaiYear}`;
+    }
+    return `${THAI_MONTHS[currentDate.getMonth()]} ${thaiYear}`;
+  }, [currentDate, viewMode]);
 
   // Build Calendar Matrix (Month View)
   const calendarDays = useMemo(() => {
@@ -269,46 +314,26 @@ export default function MyNewsCalendarPage() {
 
   return (
     <div className="space-y-5 pb-16">
-      {/* Top Header Row */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-full bg-[#0B2046] text-white flex items-center justify-center hover:bg-[#0B2046]/90 transition-all shadow-sm cursor-pointer shrink-0"
-          title="ย้อนกลับ"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            ตารางการทำงานและข่าวสารสำหรับฉัน
-          </h1>
-          <p className="text-xs text-slate-500">
-            ปฏิทินแสดงกำหนดการ ข่าวสารประกาศ กิจกรรม และนโยบายที่เกี่ยวข้องกับคุณในแต่ละวัน
-          </p>
-        </div>
-      </div>
-
       {/* Main Navigation Controls Card (Identical to mockup) */}
       <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Month Navigator with Arrows */}
+        {/* Month / Week / Day Navigator with Arrows */}
         <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-xl px-2 py-1 shadow-2xs">
           <button
             type="button"
-            onClick={handlePrevMonth}
+            onClick={handlePrev}
             className="p-1.5 hover:bg-slate-200/80 text-slate-600 rounded-lg transition-colors cursor-pointer"
-            title="เดือนก่อนหน้า"
+            title={viewMode === 'DAY' ? 'วันก่อนหน้า' : viewMode === 'WEEK' ? 'สัปดาห์ก่อนหน้า' : 'เดือนก่อนหน้า'}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-bold text-sm text-slate-800 min-w-[130px] text-center select-none">
-            {displayMonthYear}
+          <span className="font-bold text-sm text-slate-800 min-w-[140px] sm:min-w-[170px] text-center select-none">
+            {displayNavTitle}
           </span>
           <button
             type="button"
-            onClick={handleNextMonth}
+            onClick={handleNext}
             className="p-1.5 hover:bg-slate-200/80 text-slate-600 rounded-lg transition-colors cursor-pointer"
-            title="เดือนถัดไป"
+            title={viewMode === 'DAY' ? 'วันถัดไป' : viewMode === 'WEEK' ? 'สัปดาห์ถัดไป' : 'เดือนถัดไป'}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -319,7 +344,11 @@ export default function MyNewsCalendarPage() {
           <button
             type="button"
             onClick={handleGoToday}
-            className="px-4 py-1.5 rounded-lg text-slate-700 hover:bg-white/80 transition-all cursor-pointer"
+            className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
+              viewMode === 'DAY'
+                ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                : 'text-slate-700 hover:bg-white/80'
+            }`}
           >
             วันนี้
           </button>
@@ -350,17 +379,167 @@ export default function MyNewsCalendarPage() {
 
       {/* Calendar View Container */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        {/* Weekday Headers */}
-        <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-50/50">
-          {WEEKDAYS.map((wd) => (
-            <div key={wd.key} className="py-3 px-1 text-xs font-bold uppercase tracking-wider">
-              <span className={wd.color}>{wd.label}</span>
-            </div>
-          ))}
-        </div>
+        {/* Weekday Headers (Month & Week views only) */}
+        {viewMode !== 'DAY' && (
+          <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-50/50">
+            {WEEKDAYS.map((wd) => (
+              <div key={wd.key} className="py-3 px-1 text-xs font-bold uppercase tracking-wider">
+                <span className={wd.color}>{wd.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Month View Grid */}
-        {viewMode === 'MONTH' ? (
+        {/* View Mode Router: DAY | MONTH | WEEK */}
+        {viewMode === 'DAY' ? (
+          /* Day View */
+          <div className="p-4 sm:p-6 space-y-4 min-h-[420px]">
+            {/* Day Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B2046] flex flex-col items-center justify-center font-bold border border-blue-100 shadow-2xs">
+                  <span className="text-[11px] font-medium text-slate-500 uppercase leading-none">
+                    {WEEKDAYS[currentDate.getDay()]?.label}
+                  </span>
+                  <span className="text-xl font-extrabold leading-none mt-0.5">
+                    {currentDate.getDate()}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                      {WEEKDAYS[currentDate.getDay()]?.label}ที่ {currentDate.getDate()} {THAI_MONTHS[currentDate.getMonth()]} พ.ศ. {currentDate.getFullYear() + 543}
+                    </h2>
+                    {isToday(currentDate) && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                        วันนี้
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {getAnnouncementsForDate(currentDate).length > 0
+                      ? `พบกิจกรรมและประกาศทั้งหมด ${getAnnouncementsForDate(currentDate).length} รายการ`
+                      : 'ไม่มีกิจกรรมหรือประกาศในวันนี้'}
+                  </p>
+                </div>
+              </div>
+
+              {!isToday(currentDate) && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentDate(new Date())}
+                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  กลับไปวันปัจจุบัน
+                </button>
+              )}
+            </div>
+
+            {/* Announcements List for this Day */}
+            {getAnnouncementsForDate(currentDate).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                  <CalendarIcon className="w-7 h-7" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-700 mb-1">
+                  ไม่มีประกาศหรือกิจกรรมในวันนี้
+                </h3>
+                <p className="text-xs text-slate-400 max-w-sm mb-4">
+                  ไม่มีกำหนดการหรือข่าวสารที่ประกาศไว้ในวันที่เลือก คุณสามารถเลือกดูวันอื่นผ่านปุ่มลูกศร หรือสลับเป็นมุมมองสัปดาห์หรือเดือน
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('WEEK')}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    ดูมุมมองสัปดาห์
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('MONTH')}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    ดูมุมมองเดือน
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                {getAnnouncementsForDate(currentDate).map((item, idx) => {
+                  const style = CATEGORY_STYLES[item.category] || CATEGORY_STYLES.GENERAL;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleOpenReading(item)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs hover:shadow-md hover:border-blue-400 group ${
+                        !item.isReadByCurrentUser
+                          ? 'bg-amber-50/20 border-amber-200/70'
+                          : 'bg-white border-slate-200/80 hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${style.badgeBg}`}>
+                              {style.label}
+                            </span>
+                            {item.isPinned && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                                <Pin className="w-2.5 h-2.5 fill-current" />
+                                ปักหมุด
+                              </span>
+                            )}
+                            {!item.isReadByCurrentUser && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                ยังไม่ได้อ่าน
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-blue-600 group-hover:text-blue-700 font-medium flex items-center gap-1 shrink-0">
+                            <Eye className="w-3.5 h-3.5" />
+                            เปิดอ่าน
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#0B2046] transition-colors leading-snug">
+                          {idx + 1}. {item.title}
+                        </h4>
+
+                        {item.content && (
+                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                            {item.content}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                        {item.createdByEmployeeName ? (
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3 text-slate-400" />
+                            <span>{item.createdByEmployeeName}</span>
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>
+                            {new Date(item.publishedAt || item.createdAt).toLocaleTimeString('th-TH', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })} น.
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : viewMode === 'MONTH' ? (
           <div className="grid grid-cols-7 divide-x divide-y divide-slate-200 border-b border-slate-200">
             {calendarDays.map((dayItem, idx) => {
               const dayOfWeek = dayItem.date.getDay();
@@ -427,12 +606,18 @@ export default function MyNewsCalendarPage() {
                     })}
 
                     {itemsOnDay.length > 3 && (
-                      <div
-                        onClick={() => handleOpenReading(itemsOnDay[3])}
-                        className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer pl-1"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedDayModal({
+                            date: dayItem.date,
+                            items: itemsOnDay,
+                          })
+                        }
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer pl-1 text-left"
                       >
                         +{itemsOnDay.length - 3} รายการเพิ่มเติม
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -611,6 +796,110 @@ export default function MyNewsCalendarPage() {
                 className="px-5 py-2 rounded-xl bg-[#0B2046] text-white font-semibold text-xs hover:bg-[#0B2046]/90 transition-all cursor-pointer"
               >
                 ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal แสดงรายการประกาศทั้งหมดในวันที่เลือก (เมื่อกด +N รายการเพิ่มเติม) */}
+      {selectedDayModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#0B2046]/5 text-[#0B2046] border border-[#0B2046]/10 flex flex-col items-center justify-center">
+                  <span className="text-[10px] font-medium leading-none text-slate-400">วันที่</span>
+                  <span className="text-base font-extrabold leading-none">{selectedDayModal.date.getDate()}</span>
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    รายการประกาศวันที่ {selectedDayModal.date.toLocaleDateString('th-TH', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    พบทั้งหมด {selectedDayModal.items.length} รายการ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDayModal(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: รายการประกาศทั้งหมด */}
+            <div className="p-4 overflow-y-auto space-y-2 flex-1 divide-y divide-slate-100">
+              {selectedDayModal.items.map((item, idx) => {
+                const style = CATEGORY_STYLES[item.category] || CATEGORY_STYLES.GENERAL;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedDayModal(null);
+                      handleOpenReading(item);
+                    }}
+                    className={`pt-2.5 first:pt-0 group p-3 rounded-xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col gap-1.5 ${
+                      !item.isReadByCurrentUser ? 'bg-amber-50/20' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${style.badgeBg}`}>
+                          {style.label}
+                        </span>
+                        {item.isPinned && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            <Pin className="w-2.5 h-2.5 fill-current" />
+                            ปักหมุด
+                          </span>
+                        )}
+                        {!item.isReadByCurrentUser && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            ยังไม่ได้อ่าน
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-blue-600 group-hover:text-blue-700 font-medium flex items-center gap-1 shrink-0">
+                        <Eye className="w-3 h-3" />
+                        เปิดอ่าน
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-[#0B2046] transition-colors leading-snug">
+                      {idx + 1}. {item.title}
+                    </h4>
+
+                    {item.content && (
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        {item.content}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                คลิกรายการเพื่อเปิดอ่านเนื้อหาฉบับเต็ม
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedDayModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-300 transition-all cursor-pointer"
+              >
+                ปิด
               </button>
             </div>
           </div>
