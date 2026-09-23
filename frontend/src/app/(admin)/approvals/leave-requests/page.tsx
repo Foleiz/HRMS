@@ -451,9 +451,16 @@ export default function LeaveRequestsApprovalPage() {
                             </span>
 
                             {req.isMyTurnToApprove && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">
-                                <Sparkles className="w-2.5 h-2.5 text-amber-200" />
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-white animate-pulse shadow-xs">
+                                <Sparkles className="w-3 h-3 text-amber-200" />
                                 ถึงคิวคุณพิจารณา
+                              </span>
+                            )}
+
+                            {req.hasAlreadyApproved && isPending && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                คุณอนุมัติแล้ว
                               </span>
                             )}
                           </div>
@@ -514,28 +521,48 @@ export default function LeaveRequestsApprovalPage() {
                       {/* ดำเนินการ */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {isPending && (
+                          {/* 1. กรณีเป็นคิวของผู้ใช้นี้ในการพิจารณา */}
+                          {isPending && req.isMyTurnToApprove && (
                             <>
                               <button
                                 onClick={() => openApproveDialog(req)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer ${
-                                  req.isMyTurnToApprove
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300 ring-offset-1'
-                                    : 'bg-emerald-600 hover:bg-emerald-700'
-                                }`}
-                                title={req.isMyTurnToApprove ? 'ถึงคิวพิจารณาของคุณ' : 'อนุมัติ'}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300 ring-offset-1 transition-all shadow-sm cursor-pointer"
+                                title="อนุมัติเอกสารคำขอลา"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 อนุมัติ
                               </button>
                               <button
                                 onClick={() => openRejectDialog(req)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                                title="ปฏิเสธคำขอลา"
                               >
                                 <XCircle className="w-3.5 h-3.5" />
                                 ปฏิเสธ
                               </button>
                             </>
+                          )}
+
+                          {/* 2. กรณีผู้ใช้นี้ได้อนุมัติขั้นตอนนี้ไปแล้ว */}
+                          {isPending && !req.isMyTurnToApprove && req.hasAlreadyApproved && (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              title="คุณได้ทำการอนุมัติในขั้นตอนนี้เรียบร้อยแล้ว กำลังรอขั้นตอนถัดไป"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              คุณอนุมัติแล้ว
+                            </span>
+                          )}
+
+                          {/* 3. กรณีเอกสารรออนุมัติ แต่ยังไม่ถึงคิวของผู้ใช้นี้ (เช่น รอหัวหน้าแผนกก่อนหน้า) */}
+                          {isPending && !req.isMyTurnToApprove && !req.hasAlreadyApproved && (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200"
+                              title={`กำลังรอการพิจารณาจาก ${req.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}`}
+                            >
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              รอ{req.currentApproverDisplay ? ` (${req.currentApproverDisplay})` : 'คิวก่อนหน้า'}
+                            </span>
                           )}
                           {(req.status === 'PENDING' || req.status === 'APPROVED') && (
                             <button

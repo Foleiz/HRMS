@@ -596,6 +596,9 @@ public class LeaveRequestService : ILeaveRequestService
             }
         }
 
+        var hasAlreadyApproved = instance != null && currentViewerEmployeeId.HasValue &&
+            instance.Actions.Any(a => a.ApproverEmployeeId == currentViewerEmployeeId.Value && a.ActionDecision == "APPROVE");
+
         var finalApproveAction = instance?.Actions
             .Where(a => a.ActionDecision == "APPROVE")
             .OrderByDescending(a => a.ActionAt)
@@ -628,6 +631,7 @@ public class LeaveRequestService : ILeaveRequestService
             TotalSteps = totalSteps,
             CurrentApproverDisplay = currentApproverDisplay,
             IsMyTurnToApprove = isMyTurn,
+            HasAlreadyApproved = hasAlreadyApproved,
             ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
             ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
             Documents = r.Documents.Select(d => new LeaveRequestDocumentDto

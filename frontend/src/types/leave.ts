@@ -204,6 +204,7 @@ export interface LeaveRequest {
   totalSteps?: number;
   currentApproverDisplay?: string | null;
   isMyTurnToApprove?: boolean;
+  hasAlreadyApproved?: boolean;
   documents?: {
     id: number;
     leaveRequestId: number;
