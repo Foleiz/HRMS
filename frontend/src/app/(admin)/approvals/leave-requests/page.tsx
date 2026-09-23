@@ -346,9 +346,12 @@ export default function LeaveRequestsApprovalPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
+                <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    เอกสาร / พนักงาน
+                    เลขที่เอกสาร
+                  </th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    พนักงาน
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     ประเภทการลา
@@ -385,131 +388,95 @@ export default function LeaveRequestsApprovalPage() {
                           : 'hover:bg-gray-50/50'
                       }`}
                     >
-                      {/* เอกสาร / พนักงาน */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 text-[#0B2046] font-bold text-xs flex items-center justify-center flex-shrink-0">
+                      {/* 1. เลขที่เอกสาร (บรรทัดเดียว) */}
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-[#0B2046]">
+                        {req.requestNo}
+                      </td>
+
+                      {/* 2. พนักงาน (บรรทัดเดียว) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] font-bold text-xs flex items-center justify-center shrink-0">
                             {req.employeeName ? req.employeeName.charAt(0) : 'E'}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-900 text-xs">{req.employeeName}</span>
-                              <span className="text-[11px] font-mono text-slate-400">{req.employeeCode}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                              <span className="font-medium text-[#0B2046]">{req.requestNo}</span>
-                              <span>•</span>
-                              <span>{req.departmentName}</span>
-                            </div>
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="font-semibold text-slate-900">{req.employeeName}</span>
+                            {req.employeeCode && (
+                              <span className="text-[11px] font-mono text-slate-400">({req.employeeCode})</span>
+                            )}
+                            {req.departmentName && req.departmentName !== '-' && (
+                              <span className="text-[11px] text-slate-500">• {req.departmentName}</span>
+                            )}
                           </div>
                         </div>
                       </td>
 
-                      {/* ประเภทลา */}
-                      <td className="px-4 py-4">
+                      {/* 3. ประเภทการลา (บรรทัดเดียว) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
                           {req.leaveTypeName}
                         </span>
-                        {req.reason && (
-                          <p className="text-xs text-slate-400 mt-1 line-clamp-1 max-w-48" title={req.reason}>
-                            {req.reason}
-                          </p>
-                        )}
                       </td>
 
-                      {/* วันที่ลา */}
-                      <td className="px-4 py-4 text-xs text-slate-600">
-                        <div>
-                          {formatDate(req.startDate ?? req.startDatetime)}
-                          {(req.endDate ?? req.endDatetime) &&
-                            (req.endDate ?? req.endDatetime) !== (req.startDate ?? req.startDatetime) && (
-                              <span> - {formatDate(req.endDate ?? req.endDatetime)}</span>
-                            )}
-                        </div>
-                        {req.contactDuringLeave && (
-                          <div className="text-[11px] text-slate-400 mt-0.5">
-                            ติดต่อ: {req.contactDuringLeave}
-                          </div>
-                        )}
+                      {/* 4. ช่วงวันที่ลา (บรรทัดเดียว) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-600">
+                        {formatDate(req.startDate ?? req.startDatetime)}
+                        {(req.endDate ?? req.endDatetime) &&
+                          (req.endDate ?? req.endDatetime) !== (req.startDate ?? req.startDatetime) && (
+                            <span> - {formatDate(req.endDate ?? req.endDatetime)}</span>
+                          )}
                       </td>
 
-                      {/* จำนวนวัน */}
-                      <td className="px-4 py-4 text-center">
+                      {/* 5. จำนวนวัน (บรรทัดเดียว) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
                         <span className="font-bold text-slate-900 text-xs">{req.leaveDays}</span>
                         <span className="text-[11px] text-slate-400 ml-1">วัน</span>
                       </td>
 
-                      {/* สถานะ & ขั้นตอนสายอนุมัติ */}
-                      <td className="px-4 py-4">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 flex-wrap">
+                      {/* 6. สถานะ & ขั้นตอนสายอนุมัติ (บรรทัดเดียว โชว์แค่ขั้นที่ X/Y ตัดคุณอนุมัติแล้วออก) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}
+                          >
+                            {statusConf.icon}
+                            {statusConf.label}
+                          </span>
+
+                          {isPending && hasSteps && (
                             <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}
+                              className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-semibold border border-slate-200"
+                              title={req.currentApproverDisplay ? `รอการอนุมัติจาก: ${req.currentApproverDisplay}` : undefined}
                             >
-                              {statusConf.icon}
-                              {statusConf.label}
+                              ขั้นที่ {req.currentStepNo ?? 1}/{req.totalSteps}
                             </span>
-
-                            {req.isMyTurnToApprove && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-white animate-pulse shadow-xs">
-                                <Sparkles className="w-3 h-3 text-amber-200" />
-                                ถึงคิวคุณพิจารณา
-                              </span>
-                            )}
-
-                            {req.hasAlreadyApproved && isPending && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                คุณอนุมัติแล้ว
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Stepper Pill & Timeline Button */}
-                          {isPending && hasSteps ? (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-medium border border-slate-200">
-                                ขั้นที่ {req.currentStepNo ?? 1}/{req.totalSteps}: {req.currentApproverDisplay ?? ''}
-                              </span>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedForTimeline(req);
-                                  setIsTimelineOpen(true);
-                                }}
-                                className="inline-flex items-center gap-1 text-[11px] text-[#0B2046] hover:underline font-semibold cursor-pointer"
-                              >
-                                <GitPullRequest className="w-3 h-3 text-[#0B2046]" /> ดูผัง
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedForTimeline(req);
-                                setIsTimelineOpen(true);
-                              }}
-                              className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-[#0B2046] hover:underline font-medium cursor-pointer"
-                            >
-                              <GitPullRequest className="w-3 h-3 text-slate-400" /> ดูประวัติขั้นตอน
-                            </button>
                           )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedForTimeline(req);
+                              setIsTimelineOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] text-[#0B2046] hover:underline font-semibold cursor-pointer"
+                          >
+                            <GitPullRequest className="w-3 h-3 text-[#0B2046]" /> ดูผัง
+                          </button>
                         </div>
                       </td>
 
-                      {/* เอกสารแนบ */}
-                      <td className="px-4 py-4">
+                      {/* 7. เอกสารแนบ (บรรทัดเดียว) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs">
                         {req.documents && req.documents.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
                             {req.documents.map((doc) => (
                               <button
                                 key={doc.id}
                                 onClick={() => handleDownloadDoc(req.id, doc.id, doc.fileName || 'document')}
-                                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                               >
                                 <Download className="w-3.5 h-3.5" />
-                                <span className="max-w-32 truncate">{doc.fileName}</span>
+                                <span className="max-w-28 truncate">{doc.fileName}</span>
                               </button>
                             ))}
                           </div>
@@ -518,8 +485,8 @@ export default function LeaveRequestsApprovalPage() {
                         )}
                       </td>
 
-                      {/* ดำเนินการ */}
-                      <td className="px-5 py-4">
+                      {/* 8. ดำเนินการ (บรรทัดเดียว) */}
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* 1. กรณีเป็นคิวของผู้ใช้นี้ในการพิจารณา */}
                           {isPending && req.isMyTurnToApprove && (
@@ -561,9 +528,10 @@ export default function LeaveRequestsApprovalPage() {
                               title={`กำลังรอการพิจารณาจาก ${req.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}`}
                             >
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              รอ{req.currentApproverDisplay ? ` (${req.currentApproverDisplay})` : 'คิวก่อนหน้า'}
+                              รอคิวก่อนหน้า
                             </span>
                           )}
+
                           {(req.status === 'PENDING' || req.status === 'APPROVED') && (
                             <button
                               onClick={() => handleCancel(req)}
