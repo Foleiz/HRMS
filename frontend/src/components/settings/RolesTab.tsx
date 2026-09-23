@@ -116,6 +116,18 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   REPORT: BarChart3,
 };
 
+/** ชื่อหมวดหมู่ที่ตรงกับเมนู Sidebar */
+const CATEGORY_NAMES: Record<string, string> = {
+  EMPLOYEE: 'พนักงาน',
+  ATTENDANCE: 'การเข้างาน / บันทึกเวลา',
+  LEAVE: 'การลา',
+  PAYROLL: 'เงินเดือน',
+  ORGANIZATION: 'โครงสร้างองค์กร',
+  SETTINGS: 'การตั้งค่าระบบ',
+  REPORT: 'รายงาน',
+};
+
+
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
@@ -284,7 +296,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     const map = new Map<string, { code: string; name: string; modules: ModulePermissionScope[] }>();
     localModules.forEach((mod) => {
       const code = mod.categoryCode || mod.groupName || 'OTHER';
-      const name = mod.categoryName || mod.groupName || 'หมวดหมู่อื่นๆ';
+      // ใช้ชื่อจาก CATEGORY_NAMES ก่อน ถ้าไม่มีค่อยใช้จาก API
+      const name = CATEGORY_NAMES[code] || mod.categoryName || mod.groupName || 'หมวดหมู่อื่นๆ';
       if (!map.has(code)) map.set(code, { code, name, modules: [] });
       map.get(code)!.modules.push(mod);
     });
@@ -600,9 +613,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </div>
             </div>
 
-            {/* ── Category Tab Bar (single row, scrollable) ── */}
-            <div className="relative">
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {/* ── Category Tab Bar (wrap แถวใหม่ได้, ไม่มี scrollbar) ── */}
+            <div className="flex flex-wrap gap-2">
                 {categories.map((cat) => {
                   const IconComp = CATEGORY_ICONS[cat.code] || Layers;
                   const isActive = selectedCategoryCode === cat.code;
@@ -635,7 +647,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     </button>
                   );
                 })}
-              </div>
             </div>
 
             {/* ── Breadcrumb: current module path ── */}
