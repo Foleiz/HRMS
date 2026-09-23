@@ -11,6 +11,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Users,
   CalendarCheck,
   CreditCard,
@@ -21,7 +22,6 @@ import {
   CheckSquare,
   Eye,
   X,
-  Info,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -42,6 +42,8 @@ interface RolesTabProps {
   isLoading: boolean;
   isSavingMatrix: boolean;
 }
+
+/* ─── Checkbox (still used by quick-action toolbar area) ─── */
 const Checkbox: React.FC<{
   checked: boolean;
   indeterminate?: boolean;
@@ -52,11 +54,8 @@ const Checkbox: React.FC<{
 }> = ({ checked, indeterminate = false, onChange, title, ariaLabel, disabled }) => {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (ref.current) {
-      ref.current.indeterminate = indeterminate;
-    }
+    if (ref.current) ref.current.indeterminate = indeterminate;
   }, [indeterminate]);
-
   return (
     <input
       ref={ref}
@@ -71,6 +70,42 @@ const Checkbox: React.FC<{
   );
 };
 
+/* ─── iOS-style Toggle Switch ─── */
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: () => void;
+  activeColor: string;
+  label: string;
+  disabled?: boolean;
+}> = ({ checked, onChange, activeColor, label, disabled = false }) => (
+  <div className="flex flex-col items-center gap-1.5">
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 cursor-pointer ${
+        checked ? activeColor : 'bg-slate-200 hover:bg-slate-300'
+      } ${disabled ? 'opacity-40 !cursor-not-allowed' : ''}`}
+    >
+      <span
+        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+    <span
+      className={`text-[11px] font-semibold leading-none ${
+        checked ? 'text-slate-800' : 'text-slate-400'
+      }`}
+    >
+      {label}
+    </span>
+  </div>
+);
+
+/* ─── Constants ─── */
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   EMPLOYEE: Users,
   ATTENDANCE: Clock,
@@ -84,29 +119,76 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
+  description: string;
   badgeBg: string;
   badgeText: string;
-  headerBg: string;
+  rowBg: string;
+  accentBorder: string;
+  toggleOn: string;
 }[] = [
-  { key: 'self', label: 'ตัวเอง', badgeBg: 'bg-slate-100', badgeText: 'text-slate-800', headerBg: 'bg-slate-100/90' },
-  { key: 'team', label: 'ทีม', badgeBg: 'bg-blue-50', badgeText: 'text-blue-800', headerBg: 'bg-blue-50/80' },
-  { key: 'department', label: 'แผนก', badgeBg: 'bg-emerald-50', badgeText: 'text-emerald-800', headerBg: 'bg-emerald-50/80' },
-  { key: 'division', label: 'ฝ่าย', badgeBg: 'bg-purple-50', badgeText: 'text-purple-800', headerBg: 'bg-purple-50/80' },
-  { key: 'organization', label: 'องค์กร', badgeBg: 'bg-amber-50', badgeText: 'text-amber-800', headerBg: 'bg-amber-50/80' },
+  {
+    key: 'self',
+    label: 'ตัวเอง',
+    description: 'มองเห็นเฉพาะข้อมูลของตัวเองเท่านั้น',
+    badgeBg: 'bg-slate-100',
+    badgeText: 'text-slate-700',
+    rowBg: 'bg-slate-50/60',
+    accentBorder: 'border-slate-400',
+    toggleOn: 'bg-slate-600',
+  },
+  {
+    key: 'team',
+    label: 'ทีม',
+    description: 'มองเห็นข้อมูลสมาชิกทีมภายใต้บังคับบัญชา',
+    badgeBg: 'bg-blue-50',
+    badgeText: 'text-blue-700',
+    rowBg: 'bg-blue-50/40',
+    accentBorder: 'border-blue-500',
+    toggleOn: 'bg-blue-500',
+  },
+  {
+    key: 'department',
+    label: 'แผนก',
+    description: 'มองเห็นข้อมูลพนักงานในแผนกเดียวกัน',
+    badgeBg: 'bg-emerald-50',
+    badgeText: 'text-emerald-700',
+    rowBg: 'bg-emerald-50/40',
+    accentBorder: 'border-emerald-500',
+    toggleOn: 'bg-emerald-500',
+  },
+  {
+    key: 'division',
+    label: 'ฝ่าย',
+    description: 'มองเห็นข้อมูลพนักงานในฝ่ายงานเดียวกัน',
+    badgeBg: 'bg-purple-50',
+    badgeText: 'text-purple-700',
+    rowBg: 'bg-purple-50/40',
+    accentBorder: 'border-purple-400',
+    toggleOn: 'bg-purple-500',
+  },
+  {
+    key: 'organization',
+    label: 'องค์กร',
+    description: 'มองเห็นข้อมูลพนักงานทั้งองค์กร',
+    badgeBg: 'bg-amber-50',
+    badgeText: 'text-amber-700',
+    rowBg: 'bg-amber-50/40',
+    accentBorder: 'border-amber-500',
+    toggleOn: 'bg-amber-500',
+  },
 ];
 
 const ACTIONS_CONFIG: {
   key: 'view' | 'create' | 'edit' | 'approve';
   label: string;
-  title: string;
-  color: string;
 }[] = [
-  { key: 'view', label: 'ดู', title: 'ดูข้อมูล', color: 'text-blue-700' },
-  { key: 'create', label: 'สร้าง', title: 'สร้างข้อมูล', color: 'text-emerald-700' },
-  { key: 'edit', label: 'แก้ไข', title: 'แก้ไขข้อมูล', color: 'text-amber-700' },
-  { key: 'approve', label: 'อนุมัติ', title: 'อนุมัติข้อมูล', color: 'text-purple-700' },
+  { key: 'view', label: 'ดู' },
+  { key: 'create', label: 'สร้าง' },
+  { key: 'edit', label: 'แก้ไข' },
+  { key: 'approve', label: 'อนุมัติ' },
 ];
 
+/* ─── Main Component ─── */
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
   selectedRoleMatrix,
@@ -119,37 +201,29 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   isSavingMatrix,
 }) => {
   const toast = useToast();
+
+  /* ── State ── */
   const [searchRole, setSearchRole] = useState('');
   const [localModules, setLocalModules] = useState<ModulePermissionScope[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    EMPLOYEE: true,
-    ATTENDANCE: true,
-    LEAVE: true,
-    PAYROLL: true,
-    ORGANIZATION: true,
-    SETTINGS: true,
-    REPORT: true,
-  });
+
+  // Toggle UI navigation
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>('');
+  const [selectedModuleCode, setSelectedModuleCode] = useState<string>('');
+
   const lastRoleIdRef = useRef<number | null>(null);
 
+  /* ── Normalize legacy data ── */
   const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] =>
     mods.map((m) => {
-      const defaultPerms = () => ({
-        view: false,
-        create: false,
-        edit: false,
-        approve: false,
-      });
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      const self = m.self ? { ...m.self } : def();
+      const team = m.team ? { ...m.team } : def();
+      const department = m.department ? { ...m.department } : def();
+      const division = m.division ? { ...m.division } : def();
+      const organization = m.organization ? { ...m.organization } : def();
 
-      const self = m.self ? { ...m.self } : defaultPerms();
-      const team = m.team ? { ...m.team } : defaultPerms();
-      const department = m.department ? { ...m.department } : defaultPerms();
-      const division = m.division ? { ...m.division } : defaultPerms();
-      const organization = m.organization ? { ...m.organization } : defaultPerms();
-
-      // Legacy fallback: if all scopes are false but legacy canView/Create/Edit/Approve was true
       const hasAny =
         self.view || self.create || self.edit || self.approve ||
         team.view || team.create || team.edit || team.approve ||
@@ -164,82 +238,79 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           scStr === 'DIVISION' ? division :
           scStr === 'DEPARTMENT' ? department :
           scStr === 'TEAM' ? team : self;
-
         if (m.canView) target.view = true;
         if (m.canCreate) target.create = true;
         if (m.canEdit) target.edit = true;
         if (m.canApprove) target.approve = true;
       }
 
-      return {
-        ...m,
-        self,
-        team,
-        department,
-        division,
-        organization,
-      };
+      return { ...m, self, team, department, division, organization };
     });
 
-  // Sync local matrix state when selected role changes or after save refetch
+  /* ── Sync matrix state when selected role changes ── */
   useEffect(() => {
     if (selectedRoleMatrix) {
       if (lastRoleIdRef.current !== selectedRoleMatrix.id) {
-        setLocalModules(normalizeModules(selectedRoleMatrix.modules));
+        const normalized = normalizeModules(selectedRoleMatrix.modules);
+        setLocalModules(normalized);
         setIsDirty(false);
         setSaveSuccessMsg(false);
         lastRoleIdRef.current = selectedRoleMatrix.id;
+        // Auto-select first module
+        if (normalized.length > 0) {
+          const first = normalized[0];
+          setSelectedCategoryCode(first.categoryCode || first.groupName || 'OTHER');
+          setSelectedModuleCode(first.moduleCode);
+        }
       } else if (!isDirty) {
         setLocalModules(normalizeModules(selectedRoleMatrix.modules));
       }
     }
   }, [selectedRoleMatrix, isDirty]);
 
+  /* ── Derived ── */
   const filteredRoles = roles.filter(
     (r) =>
       r.roleCode.toLowerCase().includes(searchRole.toLowerCase().trim()) ||
       r.roleName.toLowerCase().includes(searchRole.toLowerCase().trim())
   );
 
-  // Group modules by Category
   const categories = React.useMemo(() => {
     const map = new Map<string, { code: string; name: string; modules: ModulePermissionScope[] }>();
     localModules.forEach((mod) => {
       const code = mod.categoryCode || mod.groupName || 'OTHER';
       const name = mod.categoryName || mod.groupName || 'หมวดหมู่อื่นๆ';
-      if (!map.has(code)) {
-        map.set(code, { code, name, modules: [] });
-      }
+      if (!map.has(code)) map.set(code, { code, name, modules: [] });
       map.get(code)!.modules.push(mod);
     });
     return Array.from(map.values());
   }, [localModules]);
 
-  // Accordion Expand / Collapse controls
-  const toggleCategory = (catCode: string) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [catCode]: prev[catCode] !== undefined ? !prev[catCode] : false,
-    }));
+  const selectedCategory = React.useMemo(
+    () => categories.find((c) => c.code === selectedCategoryCode) || null,
+    [categories, selectedCategoryCode]
+  );
+
+  const selectedModule = React.useMemo(
+    () => localModules.find((m) => m.moduleCode === selectedModuleCode) || null,
+    [localModules, selectedModuleCode]
+  );
+
+  const currentOverallIdx = React.useMemo(
+    () => localModules.findIndex((m) => m.moduleCode === selectedModuleCode),
+    [localModules, selectedModuleCode]
+  );
+
+  /* ── Navigation ── */
+  const navigateModule = (dir: 'prev' | 'next') => {
+    const newIdx = currentOverallIdx + (dir === 'next' ? 1 : -1);
+    if (newIdx < 0 || newIdx >= localModules.length) return;
+    const newMod = localModules[newIdx];
+    setSelectedModuleCode(newMod.moduleCode);
+    setSelectedCategoryCode(newMod.categoryCode || newMod.groupName || 'OTHER');
   };
 
-  const expandAll = () => {
-    const all: Record<string, boolean> = {};
-    categories.forEach((c) => {
-      all[c.code] = true;
-    });
-    setExpandedCategories(all);
-  };
-
-  const collapseAll = () => {
-    const all: Record<string, boolean> = {};
-    categories.forEach((c) => {
-      all[c.code] = false;
-    });
-    setExpandedCategories(all);
-  };
-
-  // Toggle individual checkbox for a specific module, scope, and action
+  /* ── Toggle handlers ── */
   const handleToggleCheckbox = (
     moduleCode: string,
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
@@ -248,127 +319,41 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-        const currentScopeObj = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
-        return {
-          ...mod,
-          [scopeKey]: {
-            ...currentScopeObj,
-            [actionKey]: !currentScopeObj[actionKey],
-          },
-        };
+        const cur = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
+        return { ...mod, [scopeKey]: { ...cur, [actionKey]: !cur[actionKey] } };
       })
     );
     setIsDirty(true);
   };
 
-  // Toggle category master checkbox for a specific scope and action
-  const handleToggleCategoryCheckbox = (
-    catCode: string,
-    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
-    actionKey: 'view' | 'create' | 'edit' | 'approve'
-  ) => {
-    setLocalModules((prev) => {
-      const catMods = prev.filter((m) => (m.categoryCode || m.groupName || 'OTHER') === catCode);
-      const allChecked = catMods.length > 0 && catMods.every((m) => m[scopeKey]?.[actionKey]);
-      const nextVal = !allChecked;
-
-      return prev.map((mod) => {
-        const thisCat = mod.categoryCode || mod.groupName || 'OTHER';
-        if (thisCat !== catCode) return mod;
-
-        const currentScopeObj = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
-        return {
-          ...mod,
-          [scopeKey]: {
-            ...currentScopeObj,
-            [actionKey]: nextVal,
-          },
-        };
-      });
-    });
-    setIsDirty(true);
-  };
-
-  // Toggle all checkboxes in an entire category
-  const handleToggleCategoryAll = (catCode: string) => {
-    setLocalModules((prev) => {
-      const catMods = prev.filter((m) => (m.categoryCode || m.groupName || 'OTHER') === catCode);
-      const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
-        'self', 'team', 'department', 'division', 'organization'
-      ];
-      const actions: ('view' | 'create' | 'edit' | 'approve')[] = ['view', 'create', 'edit', 'approve'];
-
-      const allOn = catMods.length > 0 && catMods.every((m) => scopes.every((s) => actions.every((a) => m[s]?.[a])));
-      const nextVal = !allOn;
-
-      return prev.map((mod) => {
-        const thisCat = mod.categoryCode || mod.groupName || 'OTHER';
-        if (thisCat !== catCode) return mod;
-
-        const updated = { ...mod };
-        scopes.forEach((s) => {
-          updated[s] = {
-            view: nextVal,
-            create: nextVal,
-            edit: nextVal,
-            approve: nextVal,
-          };
-        });
-
-        return updated;
-      });
-    });
-    setIsDirty(true);
-  };
-
-  // Toggle all checkboxes in a single row
   const handleToggleAllRow = (moduleCode: string) => {
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (mod.moduleCode !== moduleCode) return mod;
-        const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
-          'self', 'team', 'department', 'division', 'organization'
-        ];
-        const actions: ('view' | 'create' | 'edit' | 'approve')[] = ['view', 'create', 'edit', 'approve'];
-
+        const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
+        const actions = ['view', 'create', 'edit', 'approve'] as const;
         const allOn = scopes.every((s) => actions.every((a) => mod[s]?.[a]));
         const nextVal = !allOn;
-
         const updated = { ...mod };
         scopes.forEach((s) => {
-          updated[s] = {
-            view: nextVal,
-            create: nextVal,
-            edit: nextVal,
-            approve: nextVal,
-          };
+          updated[s] = { view: nextVal, create: nextVal, edit: nextVal, approve: nextVal };
         });
-
         return updated;
       })
     );
     setIsDirty(true);
   };
 
-  // Global Quick Action: Select All Permissions (View, Create, Edit, Approve) across all 22 modules and all scopes
   const handleSelectAll = () => {
     setLocalModules((prev) =>
       prev.map((mod) => {
-        const fullPerms = { view: true, create: true, edit: true, approve: true };
-        return {
-          ...mod,
-          self: { ...fullPerms },
-          team: { ...fullPerms },
-          department: { ...fullPerms },
-          division: { ...fullPerms },
-          organization: { ...fullPerms },
-        };
+        const full = { view: true, create: true, edit: true, approve: true };
+        return { ...mod, self: { ...full }, team: { ...full }, department: { ...full }, division: { ...full }, organization: { ...full } };
       })
     );
     setIsDirty(true);
   };
 
-  // Global Quick Action: Select All "View" Only across all 22 modules and all scopes
   const handleSelectAllView = () => {
     setLocalModules((prev) =>
       prev.map((mod) => ({
@@ -383,45 +368,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Global Quick Action: Deselect All Permissions across all 22 modules
   const handleDeselectAll = () => {
     if (selectedRoleMatrix?.roleCode === 'ADMIN' || selectedRoleMatrix?.roleCode === 'SYSTEM_SUPER') {
       toast.warning('บทบาทผู้ดูแลระบบสูงสุดจำเป็นต้องมีสิทธิ์เข้าถึงระบบอย่างน้อย 1 สิทธิ์ (Lockout Protection)');
     }
-
     setLocalModules((prev) =>
       prev.map((mod) => {
-        const emptyPerms = { view: false, create: false, edit: false, approve: false };
-        return {
-          ...mod,
-          self: { ...emptyPerms },
-          team: { ...emptyPerms },
-          department: { ...emptyPerms },
-          division: { ...emptyPerms },
-          organization: { ...emptyPerms },
-        };
+        const empty = { view: false, create: false, edit: false, approve: false };
+        return { ...mod, self: { ...empty }, team: { ...empty }, department: { ...empty }, division: { ...empty }, organization: { ...empty } };
       })
     );
-    setIsDirty(true);
-  };
-
-  // Toggle entire column (all modules for a given scope and action)
-  const handleToggleColumn = (
-    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
-    actionKey: 'view' | 'create' | 'edit' | 'approve'
-  ) => {
-    setLocalModules((prev) => {
-      const allOn = prev.every((m) => m[scopeKey]?.[actionKey]);
-      const nextVal = !allOn;
-
-      return prev.map((mod) => ({
-        ...mod,
-        [scopeKey]: {
-          ...(mod[scopeKey] || { view: false, create: false, edit: false, approve: false }),
-          [actionKey]: nextVal,
-        },
-      }));
-    });
     setIsDirty(true);
   };
 
@@ -434,15 +390,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   const handleSave = async () => {
     if (!selectedRoleMatrix) return;
-
-    const hasAnyPermission = localModules.some((m) => {
-      const scopes: ('self' | 'team' | 'department' | 'division' | 'organization')[] = [
-        'self', 'team', 'department', 'division', 'organization'
-      ];
-      return scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve);
-    });
-
-    // Lockout Protection: Cannot revoke all access for super admins
+    const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
+    const hasAnyPermission = localModules.some((m) =>
+      scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve)
+    );
     if (
       (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
       !hasAnyPermission
@@ -450,7 +401,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       toast.error('ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)');
       return;
     }
-
     try {
       await onSaveMatrix(selectedRoleMatrix.id, { modules: localModules });
       setIsDirty(false);
@@ -461,11 +411,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     }
   };
 
+  /* ──────────────────────────────────────────────────────────── */
+  /*  RENDER                                                      */
+  /* ──────────────────────────────────────────────────────────── */
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-      {/* ================= LEFT PANE: ROLES LIST (4 Cols) ================= */}
+
+      {/* =========== LEFT PANE: ROLES LIST (4 cols) =========== */}
       <div className="lg:col-span-4 space-y-3">
-        {/* Search & Add Role Header */}
+        {/* Search & Add */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -477,7 +431,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               className="w-full h-9.5 pl-8 pr-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
             />
           </div>
-
           <button
             onClick={onAddRoleClick}
             className="h-9.5 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
@@ -491,7 +444,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         <div className="space-y-2.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
           {filteredRoles.map((role) => {
             const isSelected = selectedRoleMatrix?.id === role.id;
-
             return (
               <div
                 key={role.id}
@@ -518,8 +470,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       {role.roleName}
                     </div>
                   </div>
-
-                  {/* Status Indicator */}
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     ใช้งานอยู่
@@ -532,28 +482,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   </p>
                 )}
 
-                {/* Edit & Delete actions for custom roles */}
                 {!role.isSystemDefault && (
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-3 text-[11px]">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditRoleClick(role);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
                       className="text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
                     >
-                      <Edit2 className="w-3 h-3" />
-                      <span>แก้ไข</span>
+                      <Edit2 className="w-3 h-3" /><span>แก้ไข</span>
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteRoleClick(role);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); onDeleteRoleClick(role); }}
                       className="text-rose-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
                     >
-                      <Trash2 className="w-3 h-3" />
-                      <span>ลบ</span>
+                      <Trash2 className="w-3 h-3" /><span>ลบ</span>
                     </button>
                   </div>
                 )}
@@ -563,282 +504,256 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         </div>
       </div>
 
-      {/* ================= RIGHT PANE: PERMISSIONS MATRIX (8 Cols) ================= */}
-      <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+      {/* =========== RIGHT PANE: TOGGLE PERMISSION UI (8 cols) =========== */}
+      <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
         {selectedRoleMatrix ? (
           <>
-            {/* Header: Role Details */}
-            <div className="pb-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Header */}
+            <div className="pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-base font-bold text-slate-900">
-                    ตั้งค่าสิทธิ์การเข้าถึงสำหรับ: {selectedRoleMatrix.roleCode}
+                    ตั้งค่าสิทธิ์สำหรับ: {selectedRoleMatrix.roleCode}
                   </h2>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
                   {selectedRoleMatrix.description || selectedRoleMatrix.roleName}
                 </p>
               </div>
-
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 flex items-center gap-1">
                   <Clock className="w-3 h-3 text-slate-400" />
-                  สิทธิ์ระดับละเอียด 22 เมนูย่อย
+                  {localModules.length} เมนูย่อย
                 </span>
               </div>
             </div>
 
-            {/* Matrix Table */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    ขอบเขตการเข้าถึงระดับโมดูลและเมนูย่อย (22 เมนู)
-                  </h3>
-                  {isDirty && (
-                    <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      ยังไม่ได้บันทึก
+            {/* Quick Action Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  สิทธิ์การเข้าถึง
+                </h3>
+                {isDirty && (
+                  <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    ยังไม่ได้บันทึก
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  title="เลือกเปิดสิทธิ์ทั้งหมด ทุกเมนู"
+                  className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                  เลือกทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectAllView}
+                  title="เปิดเฉพาะสิทธิ์ดู ทุกเมนู"
+                  className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                  เลือกเฉพาะดู
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeselectAll}
+                  title="ยกเลิกสิทธิ์ทั้งหมด"
+                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5 text-slate-500" />
+                  ยกเลิกทั้งหมด
+                </button>
+              </div>
+            </div>
+
+            {/* ── Category Tab Bar ── */}
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => {
+                const IconComp = CATEGORY_ICONS[cat.code] || Layers;
+                const isActive = selectedCategoryCode === cat.code;
+                return (
+                  <button
+                    key={cat.code}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategoryCode(cat.code);
+                      setSelectedModuleCode(cat.modules[0]?.moduleCode || '');
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                      isActive
+                        ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-md'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <IconComp className="w-3.5 h-3.5" />
+                    {cat.name}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {cat.modules.length}
                     </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Sub-module Chip Bar ── */}
+            {selectedCategory && (
+              <div className="flex flex-wrap gap-2">
+                {selectedCategory.modules.map((mod) => (
+                  <button
+                    key={mod.moduleCode}
+                    type="button"
+                    onClick={() => setSelectedModuleCode(mod.moduleCode)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                      selectedModuleCode === mod.moduleCode
+                        ? 'bg-[#0B2046]/10 text-[#0B2046] border-[#0B2046]/30 font-semibold'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                    }`}
+                  >
+                    ↳ {mod.moduleName}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ── Permission Card ── */}
+            {selectedModule ? (
+              <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+
+                {/* Card Header */}
+                <div className="px-5 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">{selectedModule.moduleName}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      กำหนดสิทธิ์การเข้าถึงตามระดับขอบเขตข้อมูล
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* สลับทั้งแถว */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAllRow(selectedModule.moduleCode)}
+                      className="text-xs text-[#0B2046] hover:text-[#112d5e] font-semibold cursor-pointer px-3 py-1.5 rounded-lg border border-[#0B2046]/20 hover:bg-[#0B2046]/5 transition-colors"
+                    >
+                      สลับทั้งหมด
+                    </button>
+                    {/* Prev / Next Module */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => navigateModule('prev')}
+                        disabled={currentOverallIdx <= 0}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                        title="เมนูก่อนหน้า"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-[11px] text-slate-500 font-medium min-w-[46px] text-center">
+                        {currentOverallIdx + 1} / {localModules.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigateModule('next')}
+                        disabled={currentOverallIdx >= localModules.length - 1}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                        title="เมนูถัดไป"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── 5 Scope Rows ── */}
+                <div className="divide-y divide-slate-100">
+                  {SCOPES_CONFIG.map((sc) => {
+                    const scopePerms = selectedModule[sc.key] || {
+                      view: false, create: false, edit: false, approve: false,
+                    };
+                    const activeCount = Object.values(scopePerms).filter(Boolean).length;
+
+                    return (
+                      <div
+                        key={sc.key}
+                        className={`flex items-center justify-between gap-4 px-5 py-4 border-l-4 ${sc.accentBorder} ${sc.rowBg} transition-colors`}
+                      >
+                        {/* Left: scope info */}
+                        <div className="flex items-center gap-3 min-w-[160px]">
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sc.badgeBg}`}
+                          >
+                            <span className={`text-sm font-bold ${sc.badgeText}`}>
+                              {sc.label.charAt(0)}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-slate-900">{sc.label}</span>
+                              {activeCount > 0 && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${sc.badgeBg} ${sc.badgeText}`}>
+                                  {activeCount} เปิด
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-tight mt-0.5">{sc.description}</p>
+                          </div>
+                        </div>
+
+                        {/* Right: 4 Toggle Switches */}
+                        <div className="flex items-end gap-5 shrink-0">
+                          {ACTIONS_CONFIG.map((act) => (
+                            <ToggleSwitch
+                              key={act.key}
+                              checked={!!scopePerms[act.key]}
+                              onChange={() =>
+                                handleToggleCheckbox(selectedModule.moduleCode, sc.key, act.key)
+                              }
+                              activeColor={sc.toggleOn}
+                              label={act.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Card Footer: quick nav hint */}
+                <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>
+                    กดปุ่ม ← → เพื่อเปลี่ยนเมนูย่อย หรือคลิกชื่อเมนูด้านบน
+                  </span>
+                  {currentOverallIdx < localModules.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => navigateModule('next')}
+                      className="text-[#0B2046] font-semibold hover:underline cursor-pointer"
+                    >
+                      ถัดไป: {localModules[currentOverallIdx + 1]?.moduleName} →
+                    </button>
                   )}
                 </div>
-
-                {/* Accordion Expand/Collapse & Quick Bulk Select Toolbar */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                    title="เลือกเปิดสิทธิ์ทั้งหมด (ดู, สร้าง, แก้ไข, อนุมัติ) ทุกเมนูย่อย"
-                  >
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>เลือกทั้งหมด</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSelectAllView}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                    title="เลือกเปิดเฉพาะสิทธิ์การดู (View Only) ทุกเมนูย่อย"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-blue-600" />
-                    <span>เลือกเฉพาะดู</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleDeselectAll}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                    title="ยกเลิก/ปิดสิทธิ์ทั้งหมดทุกเมนูย่อย"
-                  >
-                    <X className="w-3.5 h-3.5 text-slate-500" />
-                    <span>ยกเลิกทั้งหมด</span>
-                  </button>
-
-                  <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
-
-                  <button
-                    type="button"
-                    onClick={expandAll}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors cursor-pointer"
-                  >
-                    ขยายทั้งหมด
-                  </button>
-                  <button
-                    type="button"
-                    onClick={collapseAll}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors cursor-pointer"
-                  >
-                    ย่อทั้งหมด
-                  </button>
-                </div>
               </div>
-
-              {/* Informative Tip on Granular Action Scopes */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/80 border border-blue-200/70 rounded-xl text-xs text-blue-900 shadow-2xs">
-                <Info className="w-4 h-4 text-blue-600 shrink-0" />
-                <span className="leading-relaxed">
-                  💡 <strong>ความยืดหยุ่นขอบเขตข้อมูล:</strong> คุณสามารถติ๊กเลือกสิทธิ์ <strong>ดู, สร้าง, แก้ไข, อนุมัติ</strong> ในแต่ละระดับขอบเขต (ตัวเอง, ทีม, แผนก, ฝ่าย, องค์กร) ได้อย่างอิสระตามต้องการ เช่น ติ๊กแก้ไขได้เฉพาะระดับทีม แต่ระดับแผนกและฝ่ายสามารถติ๊กเลือกเฉพาะดูได้
-                </span>
+            ) : (
+              <div className="py-12 text-center text-slate-400 text-sm">
+                เลือกเมนูย่อยด้านบนเพื่อกำหนดสิทธิ์
               </div>
+            )}
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    {/* Row 1: Scope Group Headers */}
-                    <tr className="border-b border-slate-200 text-slate-700 font-bold text-[11px]">
-                      <th rowSpan={2} className="py-3 px-4 min-w-[200px] bg-slate-100/90 border-r border-slate-200">
-                        ชื่อโมดูล / เมนูย่อย
-                      </th>
-                      {SCOPES_CONFIG.map((sc) => (
-                        <th
-                          key={sc.key}
-                          colSpan={4}
-                          className={`py-2 px-2 text-center border-r border-slate-200 ${sc.headerBg}`}
-                        >
-                          <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${sc.badgeBg} ${sc.badgeText}`}>
-                            {sc.label}
-                          </span>
-                        </th>
-                      ))}
-                      <th rowSpan={2} className="py-3 px-3 min-w-[70px] text-center bg-slate-100/90">
-                        สลับแถว
-                      </th>
-                    </tr>
-
-                    {/* Row 2: Action Headers under each Scope */}
-                    <tr className="border-b border-slate-200 text-slate-600 font-semibold text-[10px] bg-slate-50/90">
-                      {SCOPES_CONFIG.map((sc) =>
-                        ACTIONS_CONFIG.map((act) => (
-                          <th
-                            key={`${sc.key}-${act.key}`}
-                            onClick={() => handleToggleColumn(sc.key, act.key)}
-                            className="py-2 px-1 text-center cursor-pointer hover:bg-slate-200/80 transition-colors select-none border-r border-slate-100"
-                            title={`คลิกเพื่อสลับเปิด/ปิดทั้งคอลัมน์ (${sc.label} - ${act.label})`}
-                          >
-                            <span className={act.color}>{act.label}</span>
-                          </th>
-                        ))
-                      )}
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-150 text-slate-700">
-                    {categories.map((cat) => {
-                      const isExpanded = expandedCategories[cat.code] ?? true;
-                      const IconComponent = CATEGORY_ICONS[cat.code] || Layers;
-
-                      return (
-                        <React.Fragment key={cat.code}>
-                          {/* ================= CATEGORY MASTER ROW ================= */}
-                          <tr className="bg-slate-100/90 hover:bg-slate-200/70 border-t-2 border-slate-200 transition-colors font-medium">
-                            {/* Category Header & Expand Toggle */}
-                            <td className="py-2 px-3 border-r border-slate-200">
-                              <div
-                                onClick={() => toggleCategory(cat.code)}
-                                className="flex items-center gap-2 cursor-pointer select-none group"
-                              >
-                                <div className="text-slate-400 group-hover:text-slate-700 transition-colors">
-                                  {isExpanded ? (
-                                    <ChevronDown className="w-4 h-4" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4" />
-                                  )}
-                                </div>
-                                <div className="p-1 rounded-md bg-white border border-slate-200/80 text-[#0B2046] shadow-2xs">
-                                  <IconComponent className="w-3.5 h-3.5" />
-                                </div>
-                                <span className="font-bold text-xs text-slate-900 tracking-tight">
-                                  {cat.name}
-                                </span>
-                                <span className="px-1.5 py-0.5 bg-[#0B2046]/10 text-[#0B2046] rounded-full text-[10px] font-bold">
-                                  {cat.modules.length}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* 20 Category Master Checkboxes */}
-                            {SCOPES_CONFIG.map((sc) =>
-                              ACTIONS_CONFIG.map((act) => {
-                                const allChecked =
-                                  cat.modules.length > 0 && cat.modules.every((m) => m[sc.key]?.[act.key]);
-                                const someChecked = cat.modules.some((m) => m[sc.key]?.[act.key]);
-
-                                return (
-                                  <td
-                                    key={`${sc.key}-${act.key}`}
-                                    className="py-2 px-1 text-center align-middle border-r border-slate-100"
-                                  >
-                                    <Checkbox
-                                      checked={allChecked}
-                                      indeterminate={someChecked && !allChecked}
-                                      onChange={() => handleToggleCategoryCheckbox(cat.code, sc.key, act.key)}
-                                      title={`เลือก/ยกเลิกทั้งหมวด ${cat.name} (${sc.label} - ${act.label})`}
-                                      ariaLabel={`เลือก/ยกเลิกทั้งหมวด ${cat.name} ${sc.label} ${act.label}`}
-                                    />
-                                  </td>
-                                );
-                              })
-                            )}
-
-                            {/* Category Toggle All Button */}
-                            <td className="py-2 px-2 text-center align-middle">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleCategoryAll(cat.code)}
-                                className="px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:text-[#0B2046] bg-white hover:bg-slate-50 border border-slate-200 rounded shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
-                                title={`สลับเปิด/ปิดทุกสิทธิ์ในหมวด ${cat.name}`}
-                              >
-                                สลับหมวด
-                              </button>
-                            </td>
-                          </tr>
-
-                          {/* ================= SUB-MODULE ROWS ================= */}
-                          {isExpanded &&
-                            cat.modules.map((mod) => (
-                              <tr
-                                key={mod.moduleCode}
-                                className="bg-white hover:bg-slate-50/70 transition-colors border-b border-slate-100"
-                              >
-                                {/* Sub-module Name */}
-                                <td className="py-2.5 px-3 pl-8 border-r border-slate-200">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-slate-400 font-mono text-xs select-none">↳</span>
-                                    <span className="font-medium text-slate-800 text-xs truncate" title={mod.moduleName}>
-                                      {mod.moduleName}
-                                    </span>
-                                  </div>
-                                </td>
-
-                                {/* 20 Independent Checkboxes */}
-                                {SCOPES_CONFIG.map((sc) =>
-                                  ACTIONS_CONFIG.map((act) => {
-                                    const isChecked = !!mod[sc.key]?.[act.key];
-
-                                    return (
-                                      <td
-                                        key={`${sc.key}-${act.key}`}
-                                        className="py-2 px-1 text-center align-middle border-r border-slate-100"
-                                      >
-                                        <Checkbox
-                                          checked={isChecked}
-                                          onChange={() => handleToggleCheckbox(mod.moduleCode, sc.key, act.key)}
-                                          title={`${mod.moduleName} - ${sc.label}: ${act.label}`}
-                                          ariaLabel={`${mod.moduleName} ${sc.label} ${act.label}`}
-                                        />
-                                      </td>
-                                    );
-                                  })
-                                )}
-
-                                {/* Row Toggle All Button */}
-                                <td className="py-2 px-2 text-center align-middle">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleAllRow(mod.moduleCode)}
-                                    className="px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:text-[#0B2046] hover:bg-slate-100 rounded border border-slate-200 cursor-pointer transition-colors whitespace-nowrap"
-                                    title={`สลับเปิด/ปิดทุกสิทธิ์ในแถว ${mod.moduleName}`}
-                                  >
-                                    สลับแถว
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Bottom Actions Bar */}
+            {/* Bottom Save Bar */}
             <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <p className="text-slate-400 text-[11px] italic">
                 * การเปลี่ยนสิทธิ์จะมีผลกับผู้ใช้ในบทบาทนี้ทันทีเมื่อทำการบันทึกข้อมูล
               </p>
-
               <div className="flex items-center gap-3">
                 {saveSuccessMsg && (
                   <span className="text-emerald-600 font-semibold flex items-center gap-1 animate-in fade-in">
@@ -873,4 +788,3 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     </div>
   );
 };
-
