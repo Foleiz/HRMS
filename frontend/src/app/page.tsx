@@ -80,11 +80,11 @@ export default function HomePage() {
               </p>
               <div className="pt-2 flex flex-wrap gap-3">
                 <Link
-                  href="/master/banks"
+                  href="/master?tab=banks"
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
                 >
                   <Landmark className="w-4 h-4" />
-                  เปิดดู Reference Feature (ธนาคาร)
+                  เปิดดูข้อมูลหลัก (Master Data)
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
