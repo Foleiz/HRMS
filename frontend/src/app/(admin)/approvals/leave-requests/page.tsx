@@ -17,7 +17,8 @@ import {
   Check,
   MessageSquare,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Eye,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
@@ -363,7 +364,7 @@ export default function LeaveRequestsApprovalPage() {
                     จำนวนวัน
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    สถานะ & ขั้นตอนสายอนุมัติ
+                    สถานะ
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     เอกสารแนบ
@@ -393,7 +394,7 @@ export default function LeaveRequestsApprovalPage() {
                         {req.requestNo}
                       </td>
 
-                      {/* 2. พนักงาน (บรรทัดเดียว) */}
+                      {/* 2. พนักงาน (ชื่อ-นามสกุล และ แผนก) */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] font-bold text-xs flex items-center justify-center shrink-0">
@@ -401,9 +402,6 @@ export default function LeaveRequestsApprovalPage() {
                           </div>
                           <div className="flex items-center gap-1.5 text-xs">
                             <span className="font-semibold text-slate-900">{req.employeeName}</span>
-                            {req.employeeCode && (
-                              <span className="text-[11px] font-mono text-slate-400">({req.employeeCode})</span>
-                            )}
                             {req.departmentName && req.departmentName !== '-' && (
                               <span className="text-[11px] text-slate-500">• {req.departmentName}</span>
                             )}
@@ -433,36 +431,14 @@ export default function LeaveRequestsApprovalPage() {
                         <span className="text-[11px] text-slate-400 ml-1">วัน</span>
                       </td>
 
-                      {/* 6. สถานะ & ขั้นตอนสายอนุมัติ (บรรทัดเดียว โชว์แค่ขั้นที่ X/Y ตัดคุณอนุมัติแล้วออก) */}
+                      {/* 6. สถานะ (ตัด ขั้นที่ 1/3 และ ดูผัง ออกไป) */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}
-                          >
-                            {statusConf.icon}
-                            {statusConf.label}
-                          </span>
-
-                          {isPending && hasSteps && (
-                            <span
-                              className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-semibold border border-slate-200"
-                              title={req.currentApproverDisplay ? `รอการอนุมัติจาก: ${req.currentApproverDisplay}` : undefined}
-                            >
-                              ขั้นที่ {req.currentStepNo ?? 1}/{req.totalSteps}
-                            </span>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedForTimeline(req);
-                              setIsTimelineOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] text-[#0B2046] hover:underline font-semibold cursor-pointer"
-                          >
-                            <GitPullRequest className="w-3 h-3 text-[#0B2046]" /> ดูผัง
-                          </button>
-                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}
+                        >
+                          {statusConf.icon}
+                          {statusConf.label}
+                        </span>
                       </td>
 
                       {/* 7. เอกสารแนบ (บรรทัดเดียว) */}
@@ -532,17 +508,30 @@ export default function LeaveRequestsApprovalPage() {
                             </span>
                           )}
 
-                          {(req.status === 'PENDING' || req.status === 'APPROVED') && (
+                          {/* 4. ดูเอกสาร */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedForTimeline(req);
+                              setIsTimelineOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            title="ดูเอกสาร"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-600" />
+                            ดูเอกสาร
+                          </button>
+
+                          {/* 5. ยกเลิกคำขอ — จะขึ้นก็ต่อเมื่อกดอนุมัติไปแล้ว */}
+                          {(req.status === 'APPROVED' || req.hasAlreadyApproved) && (
                             <button
                               onClick={() => handleCancel(req)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
                               title="ยกเลิกคำขอ"
                             >
                               <Ban className="w-3.5 h-3.5" />
+                              ยกเลิกคำขอ
                             </button>
-                          )}
-                          {req.status !== 'PENDING' && req.status !== 'APPROVED' && (
-                            <span className="text-xs text-gray-300">-</span>
                           )}
                         </div>
                       </td>
