@@ -85,7 +85,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" />
         </button>
@@ -114,7 +114,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 {cancelText}
               </button>
@@ -123,7 +123,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               type="button"
               onClick={handleConfirm}
               disabled={isLoading}
-              className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
                 singleButton ? 'w-full bg-slate-900 hover:bg-slate-800 text-white' : config.confirmBtn
               }`}
             >
