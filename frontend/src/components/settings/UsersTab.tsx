@@ -201,6 +201,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 users.map((user, idx) => {
                   const rowNumber = (currentPage - 1) * pageSize + idx + 1;
                   const isMenuOpen = openActionId === user.id;
+                  const isLastRows = idx >= Math.max(1, users.length - 3);
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
@@ -279,100 +280,106 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 8. จัดการ (3 dots actions menu) */}
-                      <td className="py-3.5 px-4 text-center relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenActionId(isMenuOpen ? null : user.id);
-                          }}
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {/* Dropdown Menu */}
-                        {isMenuOpen && (
-                          <div
-                            ref={menuRef}
-                            className="absolute right-4 top-10 w-44 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-30 animate-in fade-in zoom-in-95 text-xs text-slate-700 divide-y divide-slate-100"
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="relative inline-block text-left">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenActionId(isMenuOpen ? null : user.id);
+                            }}
+                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
                           >
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  setOpenActionId(null);
-                                  onEditUserClick(user);
-                                }}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-slate-400" />
-                                <span>แก้ไขข้อมูล / บทบาท</span>
-                              </button>
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
 
-                              <button
-                                onClick={() => {
-                                  setOpenActionId(null);
-                                  onResetPasswordClick(user);
-                                }}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                                <span>รีเซ็ตรหัสผ่าน</span>
-                              </button>
-                            </div>
-
-                            <div className="py-1">
-                              {user.status === 'ACTIVE' ? (
-                                <button
-                                  onClick={() => {
-                                    setOpenActionId(null);
-                                    onToggleStatusClick(user, 'INACTIVE');
-                                  }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-600 cursor-pointer"
-                                >
-                                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                  <span>ระงับการใช้งาน</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    setOpenActionId(null);
-                                    onToggleStatusClick(user, 'ACTIVE');
-                                  }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-emerald-600 cursor-pointer"
-                                >
-                                  <Unlock className="w-3.5 h-3.5 text-emerald-500" />
-                                  <span>เปิดใช้งานบัญชี</span>
-                                </button>
-                              )}
-
-                              <button
-                                onClick={() => {
-                                  setOpenActionId(null);
-                                  onViewAuditLogForUser(user);
-                                }}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-blue-600 cursor-pointer"
-                              >
-                                <FileSearch className="w-3.5 h-3.5 text-blue-500" />
-                                <span>ดูประวัติการใช้งาน</span>
-                              </button>
-                            </div>
-
-                            {user.username.toLowerCase() !== 'admin' && (
+                          {/* Dropdown Menu */}
+                          {isMenuOpen && (
+                            <div
+                              ref={menuRef}
+                              className={`absolute right-0 w-44 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-30 animate-in fade-in zoom-in-95 text-xs text-slate-700 divide-y divide-slate-100 ${
+                                isLastRows
+                                  ? 'bottom-full mb-1.5 origin-bottom-right'
+                                  : 'top-full mt-1.5 origin-top-right'
+                              }`}
+                            >
                               <div className="py-1">
                                 <button
                                   onClick={() => {
                                     setOpenActionId(null);
-                                    onDeleteUserClick(user);
+                                    onEditUserClick(user);
                                   }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-rose-50 flex items-center gap-2 text-rose-600 cursor-pointer"
+                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                  <span>ลบบัญชีผู้ใช้</span>
+                                  <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>แก้ไขข้อมูล / บทบาท</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setOpenActionId(null);
+                                    onResetPasswordClick(user);
+                                  }}
+                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>รีเซ็ตรหัสผ่าน</span>
                                 </button>
                               </div>
-                            )}
-                          </div>
-                        )}
+
+                              <div className="py-1">
+                                {user.status === 'ACTIVE' ? (
+                                  <button
+                                    onClick={() => {
+                                      setOpenActionId(null);
+                                      onToggleStatusClick(user, 'INACTIVE');
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-600 cursor-pointer"
+                                  >
+                                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>ระงับการใช้งาน</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setOpenActionId(null);
+                                      onToggleStatusClick(user, 'ACTIVE');
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-emerald-600 cursor-pointer"
+                                  >
+                                    <Unlock className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>เปิดใช้งานบัญชี</span>
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => {
+                                    setOpenActionId(null);
+                                    onViewAuditLogForUser(user);
+                                  }}
+                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-blue-600 cursor-pointer"
+                                >
+                                  <FileSearch className="w-3.5 h-3.5 text-blue-500" />
+                                  <span>ดูประวัติการใช้งาน</span>
+                                </button>
+                              </div>
+
+                              {user.username.toLowerCase() !== 'admin' && (
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      setOpenActionId(null);
+                                      onDeleteUserClick(user);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-rose-50 flex items-center gap-2 text-rose-600 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                    <span>ลบบัญชีผู้ใช้</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
