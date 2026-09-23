@@ -16,7 +16,6 @@ import {
   GitPullRequest,
   Check,
   MessageSquare,
-  Sparkles,
   ArrowRight,
   Eye,
 } from 'lucide-react';
@@ -66,7 +65,6 @@ export default function LeaveRequestsApprovalPage() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [searchTerm, setSearchTerm] = useState('');
-  const [quickFilter, setQuickFilter] = useState<'ALL' | 'MY_TURN'>('ALL');
 
   // Approval Modals State
   const [selectedForApprove, setSelectedForApprove] = useState<LeaveRequest | null>(null);
@@ -128,7 +126,6 @@ export default function LeaveRequestsApprovalPage() {
   // ─── Filter ─────────────────────────────────────────────────
 
   const filtered = leaveRequests.filter((r) => {
-    if (quickFilter === 'MY_TURN' && !r.isMyTurnToApprove) return false;
     if (!searchTerm.trim()) return true;
     const q = searchTerm.toLowerCase();
     return (
@@ -138,8 +135,6 @@ export default function LeaveRequestsApprovalPage() {
       r.requestNo?.toLowerCase().includes(q)
     );
   });
-
-  const myTurnCount = leaveRequests.filter((r) => r.status === 'PENDING' && r.isMyTurnToApprove).length;
 
   // ─── Actions ────────────────────────────────────────────────
 
@@ -249,37 +244,6 @@ export default function LeaveRequestsApprovalPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center flex-1">
-            {/* Quick Filter Toggle (All vs My Turn) */}
-            <div className="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setQuickFilter('ALL')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  quickFilter === 'ALL'
-                    ? 'bg-white text-slate-800 shadow-2xs font-bold'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                คำขอทั้งหมด
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuickFilter('MY_TURN')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  quickFilter === 'MY_TURN'
-                    ? 'bg-[#0B2046] text-white shadow-2xs font-bold'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                ถึงคิวอนุมัติของฉัน
-                {myTurnCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
-                    {myTurnCount}
-                  </span>
-                )}
-              </button>
-            </div>
 
             {/* Status filter */}
             <div className="relative">
@@ -338,9 +302,7 @@ export default function LeaveRequestsApprovalPage() {
           <div className="py-20 text-center">
             <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-400 text-sm">
-              {quickFilter === 'MY_TURN'
-                ? 'ไม่มีคำขอที่รอการอนุมัติจากคุณในขณะนี้'
-                : 'ไม่พบคำขอลาสำหรับเงื่อนไขที่เลือก'}
+              ไม่พบคำขอลาสำหรับเงื่อนไขที่เลือก
             </p>
           </div>
         ) : (
@@ -395,17 +357,12 @@ export default function LeaveRequestsApprovalPage() {
                       </td>
 
                       {/* 2. พนักงาน (ชื่อ-นามสกุล และ แผนก) */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] font-bold text-xs flex items-center justify-center shrink-0">
-                            {req.employeeName ? req.employeeName.charAt(0) : 'E'}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <span className="font-semibold text-slate-900">{req.employeeName}</span>
-                            {req.departmentName && req.departmentName !== '-' && (
-                              <span className="text-[11px] text-slate-500">• {req.departmentName}</span>
-                            )}
-                          </div>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-900">{req.employeeName}</span>
+                          {req.departmentName && req.departmentName !== '-' && (
+                            <span className="text-[11px] text-slate-500">• {req.departmentName}</span>
+                          )}
                         </div>
                       </td>
 
