@@ -42,14 +42,11 @@ public class LeaveRequestsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         // หน้ารายการรออนุมัติ/ประวัติฝั่งแอดมินเรียก endpoint นี้โดยไม่ระบุ employeeId มา —
-        // ถ้าผู้เรียกไม่ใช่ ADMIN หรือ HR ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของ "ลูกทีมสายตรง"
+        // ถ้าผู้เรียกไม่ใช่ ADMIN ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของทีมตนเอง หรือรายการที่อยู่ในสายการอนุมัติของผู้ใช้นี้
         long? scopeToManagerId = null;
         if (!employeeId.HasValue && !_currentUser.HasRole("ADMIN"))
         {
-            if (!_currentUser.HasRole("HR_MGR") && !_currentUser.HasRole("HR_ADMIN") && !_currentUser.HasRole("HR"))
-            {
-                scopeToManagerId = _currentUser.EmployeeId;
-            }
+            scopeToManagerId = _currentUser.EmployeeId ?? -1;
         }
 
         var (items, totalCount) = await _requestService.GetAllAsync(
@@ -68,7 +65,13 @@ public class LeaveRequestsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<LeaveStatsDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<LeaveStatsDto>>> GetStats(CancellationToken cancellationToken)
     {
-        var result = await _requestService.GetStatsAsync(cancellationToken);
+        long? scopeToManagerId = null;
+        if (!_currentUser.HasRole("ADMIN"))
+        {
+            scopeToManagerId = _currentUser.EmployeeId ?? -1;
+        }
+
+        var result = await _requestService.GetStatsAsync(scopeToManagerId, cancellationToken);
         return Ok(ApiResponse<LeaveStatsDto>.Ok(result, "ดึงสถิติคำร้องขอลาสำเร็จ"));
     }
 

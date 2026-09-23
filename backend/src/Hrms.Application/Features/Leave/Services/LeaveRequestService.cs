@@ -43,39 +43,7 @@ public class LeaveRequestService : ILeaveRequestService
 
         if (scopeToManagerEmployeeId.HasValue)
         {
-            var managerId = scopeToManagerEmployeeId.Value;
-
-            // 1. หาแผนกและฝ่ายที่ผู้ใช้นี้เป็นหัวหน้าตามโครงสร้างองค์กร (Head of Department / Head of Division)
-            var managedDeptIds = await _context.Departments
-                .AsNoTracking()
-                .Where(d => d.HeadEmployeeId == managerId)
-                .Select(d => d.Id)
-                .ToListAsync(cancellationToken);
-
-            var managedDivIds = await _context.Divisions
-                .AsNoTracking()
-                .Where(d => d.HeadEmployeeId == managerId)
-                .Select(d => d.Id)
-                .ToListAsync(cancellationToken);
-
-            // 2. พนักงานใต้บังคับบัญชา:
-            // - สายตรง (ManagerEmployeeId == managerId)
-            // - พนักงานในแผนกที่ตนเป็นหัวหน้าแผนก (DepartmentId IN managedDeptIds)
-            // - พนักงานในฝ่ายที่ตนเป็นหัวหน้าฝ่าย (DivisionId IN managedDivIds)
-            var teamEmployeeIds = await _context.EmployeeAssignments
-                .AsNoTracking()
-                .Where(a => a.IsCurrent && (
-                    a.ManagerEmployeeId == managerId ||
-                    managedDeptIds.Contains(a.DepartmentId) ||
-                    managedDivIds.Contains(a.DivisionId)
-                ))
-                .Select(a => a.EmployeeId)
-                .ToListAsync(cancellationToken);
-
-            // 3. รวมเอกสารที่อยู่ในสายการอนุมัติ ที่ถึงคิวผู้ใช้คนนี้มีสิทธิ์อนุมัติ (Approval Workflow)
-            var pendingInstanceIds = await _approvalWorkflow.GetPendingInstanceIdsForUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
-
-            query = query.Where(r => teamEmployeeIds.Contains(r.EmployeeId) || (r.ApprovalInstanceId.HasValue && pendingInstanceIds.Contains(r.ApprovalInstanceId.Value)));
+            query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -109,20 +77,27 @@ public class LeaveRequestService : ILeaveRequestService
         return (items, totalCount);
     }
 
-    public async Task<LeaveStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
+    public async Task<LeaveStatsDto> GetStatsAsync(long? scopeToManagerEmployeeId = null, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var endOfMonth = startOfMonth.AddMonths(1);
 
-        var pendingCount = await _context.LeaveRequests
+        var query = _context.LeaveRequests.AsNoTracking().AsQueryable();
+
+        if (scopeToManagerEmployeeId.HasValue)
+        {
+            query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
+        }
+
+        var pendingCount = await query
             .CountAsync(r => r.Status == "PENDING", cancellationToken);
 
-        var approvedThisMonth = await _context.LeaveRequests
+        var approvedThisMonth = await query
             .Where(r => r.Status == "APPROVED" && r.StartDatetime >= startOfMonth && r.StartDatetime < endOfMonth)
             .ToListAsync(cancellationToken);
 
-        var rejectedCount = await _context.LeaveRequests
+        var rejectedCount = await query
             .CountAsync(r => r.Status == "REJECTED" && r.StartDatetime >= startOfMonth && r.StartDatetime < endOfMonth, cancellationToken);
 
         return new LeaveStatsDto
@@ -132,6 +107,52 @@ public class LeaveRequestService : ILeaveRequestService
             RejectedThisMonthCount = rejectedCount,
             TotalLeaveDaysThisMonth = approvedThisMonth.Sum(r => r.LeaveDays)
         };
+    }
+
+    private async Task<IQueryable<LeaveRequest>> ApplyScopeToQueryAsync(
+        IQueryable<LeaveRequest> query,
+        long managerId,
+        CancellationToken cancellationToken)
+    {
+        // 1. หาแผนกและฝ่ายที่ผู้ใช้นี้เป็นหัวหน้าตามโครงสร้างองค์กร (Head of Department / Head of Division)
+        var managedDeptIds = await _context.Departments
+            .AsNoTracking()
+            .Where(d => d.HeadEmployeeId == managerId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        var managedDivIds = await _context.Divisions
+            .AsNoTracking()
+            .Where(d => d.HeadEmployeeId == managerId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        // 2. พนักงานใต้บังคับบัญชา:
+        // - สายตรง (ManagerEmployeeId == managerId)
+        // - พนักงานในแผนกที่ตนเป็นหัวหน้าแผนก (DepartmentId IN managedDeptIds)
+        // - พนักงานในฝ่ายที่ตนเป็นหัวหน้าฝ่าย (DivisionId IN managedDivIds)
+        var teamEmployeeIds = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Where(a => a.IsCurrent && (
+                a.ManagerEmployeeId == managerId ||
+                managedDeptIds.Contains(a.DepartmentId) ||
+                managedDivIds.Contains(a.DivisionId)
+            ))
+            .Select(a => a.EmployeeId)
+            .ToListAsync(cancellationToken);
+
+        // 3. รวมเอกสารที่อยู่ในสายการอนุมัติ ที่ถึงคิวผู้ใช้คนนี้มีสิทธิ์อนุมัติ (Approval Workflow)
+        var pendingInstanceIds = await _approvalWorkflow.GetPendingInstanceIdsForUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
+
+        // 4. รวมเอกสารที่ผู้ใช้คนนี้เคยดำเนินการอนุมัติ/ปฏิเสธไปแล้ว (Actioned instances)
+        var actionedInstanceIds = await _context.ApprovalActions
+            .AsNoTracking()
+            .Where(a => a.ApproverEmployeeId == managerId)
+            .Select(a => a.ApprovalInstanceId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return query.Where(r => teamEmployeeIds.Contains(r.EmployeeId) || (r.ApprovalInstanceId.HasValue && (pendingInstanceIds.Contains(r.ApprovalInstanceId.Value) || actionedInstanceIds.Contains(r.ApprovalInstanceId.Value))));
     }
 
     public async Task<LeaveRequestDto?> GetByIdAsync(long id, long? currentViewerEmployeeId = null, CancellationToken cancellationToken = default)
