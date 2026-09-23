@@ -340,29 +340,6 @@ export default function MySalaryPage() {
   return (
     <div className="space-y-6 font-sans animate-in fade-in duration-200">
       {/* ========================================================= */}
-      {/* TOP HEADER: Back Button + Page Title & Subtitle           */}
-      {/* ========================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            title="ย้อนกลับ"
-            className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              เงินเดือนของฉัน
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              ข้อมูลรายได้รายหักของคุณเท่านั้น
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================= */}
       {/* 4 SUMMARY METRIC CARDS (Matching Figma 1 100%)            */}
       {/* ========================================================= */}
       {isLoading ? (

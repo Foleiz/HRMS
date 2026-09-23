@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { leaveService } from '@/services/leaveService';
 import { MyLeaveSummary } from '@/types/leave';
 import {
-  ChevronLeft,
   Calendar,
   Download,
   Users,
@@ -20,7 +18,6 @@ import {
 } from 'lucide-react';
 
 export default function LeaveBalancesPage() {
-  const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const { error, success } = useToast();
@@ -155,62 +152,40 @@ export default function LeaveBalancesPage() {
   return (
     <div className="space-y-6 font-sans">
       {/* ========================================================= */}
-      {/* TOP HEADER: Back button + Page Title + Year & Export CTA  */}
+      {/* ACTIONS: Year Filter Selector + Export Button             */}
       {/* ========================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        {/* Left: Back button + Title & Subtitle */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            title="ย้อนกลับ"
-            className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              ยอดวันลาคงเหลือ
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              ข้อมูลการบันทึกยอดวันลาประจำตัวของพนักงานรายคน
-            </p>
+      <div className="flex items-center justify-end gap-3">
+        {/* Thai Buddhist Year Dropdown */}
+        <div className="relative inline-block">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 hover:border-slate-300 transition-colors">
+            <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
+            >
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Right: Year Filter Selector + Export Button */}
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          {/* Thai Buddhist Year Dropdown */}
-          <div className="relative inline-block">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 hover:border-slate-300 transition-colors">
-              <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
-              >
-                {availableYears.map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Export Report Button (Mockup Navy button) */}
-          <button
-            onClick={handleExport}
-            disabled={isExporting || isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-          >
-            {isExporting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5" />
-            )}
-            <span>ส่งออกรายงาน (Export)</span>
-          </button>
-        </div>
+        {/* Export Report Button (Mockup Navy button) */}
+        <button
+          onClick={handleExport}
+          disabled={isExporting || isLoading}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+        >
+          {isExporting ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Download className="w-3.5 h-3.5" />
+          )}
+          <span>ส่งออกรายงาน (Export)</span>
+        </button>
       </div>
 
       {/* ========================================================= */}
