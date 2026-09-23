@@ -16,6 +16,9 @@ import {
   X,
   CheckCircle2,
   Ban,
+  GitMerge,
+  Compass,
+  Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { approvalService } from '@/services/approvalService';
@@ -34,6 +37,9 @@ import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { WorkflowSimulatorView } from './WorkflowSimulatorView';
+
+type SubTab = 'flows' | 'simulator';
 
 const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
 const APPROVER_TYPE_OPTIONS = Object.keys(APPROVER_TYPE_LABELS);
@@ -58,23 +64,29 @@ const getDocTypeBadge = (docType: string) => {
   }
 };
 
-// ตัวช่วยแสดงชื่อผู้อนุมัติตามประเภท
-const getApproverDisplay = (step: ApprovalStep) => {
+// ตัวช่วยแสดงชื่อผู้อนุมัติตามประเภท (Pure Thai - Rule #10)
+const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: Employee[], roles: RoleSummary[]) => {
   switch (step.approverType) {
     case 'MANAGER':
-      return 'หัวหน้างานโดยตรง (Direct Manager)';
+      return 'หัวหน้างานโดยตรง';
     case 'DEPARTMENT_HEAD':
-      return 'ผู้จัดการแผนก (Department Head)';
+      return 'หัวหน้าแผนก';
     case 'DIVISION_HEAD':
-      return 'หัวหน้าฝ่าย (Division Head)';
+      return 'หัวหน้าฝ่าย';
     case 'HR':
-      return 'ฝ่ายบุคคล (HR Administrator)';
+      return 'ฝ่ายทรัพยากรบุคคล';
     case 'CEO':
-      return 'ประธานเจ้าหน้าที่บริหาร (CEO)';
-    case 'ROLE':
-      return step.approverRoleName ? step.approverRoleName : 'ระบุตามบทบาท';
-    case 'EMPLOYEE':
-      return step.approverEmployeeName ? step.approverEmployeeName : 'ระบุตัวบุคคล';
+      return 'ผู้บริหารสูงสุด';
+    case 'ROLE': {
+      if ('approverRoleName' in step && step.approverRoleName) return step.approverRoleName;
+      const foundRole = roles.find((r) => r.id === step.approverRoleId);
+      return foundRole ? foundRole.roleName : 'ระบุตามบทบาท';
+    }
+    case 'EMPLOYEE': {
+      if ('approverEmployeeName' in step && step.approverEmployeeName) return step.approverEmployeeName;
+      const foundEmp = employees.find((e) => e.id === step.approverEmployeeId);
+      return foundEmp ? `${foundEmp.firstName} ${foundEmp.lastName}` : 'ระบุตัวบุคคล';
+    }
     default:
       return APPROVER_TYPE_LABELS[step.approverType] ?? step.approverType;
   }
@@ -91,6 +103,9 @@ const emptyStep = (stepNo: number): ApprovalStepInput => ({
 export const ApprovalFlowsTab: React.FC = () => {
   const { success, error } = useToast();
 
+  // Active Sub-Tab
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('flows');
+
   // === Reference Data ===
   const [departments, setDepartments] = useState<Department[]>([]);
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
@@ -99,21 +114,19 @@ export const ApprovalFlowsTab: React.FC = () => {
 
   // === Flows Data ===
   const [flows, setFlows] = useState<ApprovalFlow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // === Filter States ===
+  const [loadingFlows, setLoadingFlows] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [docTypeFilter, setDocTypeFilter] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  // === Drawer Editor State ===
+  // Drawer Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingFlow, setEditingFlow] = useState<ApprovalFlow | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingFlow, setIsSavingFlow] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  // Form State
+  // Flow Form State
   const [form, setForm] = useState<CreateApprovalFlowPayload>({
     flowCode: '',
     flowName: '',
@@ -124,7 +137,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     steps: [emptyStep(1)],
   });
 
-  // Modal State
+  // Common Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -137,7 +150,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     onConfirm: () => {},
   });
 
-  // Load Reference Data
+  // 1. Load Reference Data
   useEffect(() => {
     const loadRefs = async () => {
       try {
@@ -158,17 +171,17 @@ export const ApprovalFlowsTab: React.FC = () => {
     loadRefs();
   }, []);
 
-  // Load Flows
+  // 2. Load Flows
   const loadFlows = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoadingFlows(true);
       const res = await approvalService.getFlows();
       setFlows(res);
     } catch (err: any) {
       console.error('Failed to load flows', err);
       error(err?.response?.data?.message || err.message || 'ไม่สามารถโหลดข้อมูลสายการอนุมัติได้');
     } finally {
-      setLoading(false);
+      setLoadingFlows(false);
     }
   }, [error]);
 
@@ -179,30 +192,20 @@ export const ApprovalFlowsTab: React.FC = () => {
   // Filtered Flows
   const filteredFlows = useMemo(() => {
     return flows.filter((f) => {
-      // Search term
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const matchName = f.flowName.toLowerCase().includes(term);
         const matchCode = f.flowCode.toLowerCase().includes(term);
         if (!matchName && !matchCode) return false;
       }
-      // Document type filter
-      if (docTypeFilter && f.documentType !== docTypeFilter) {
-        return false;
-      }
-      // Department filter
-      if (deptFilter && String(f.departmentId) !== deptFilter) {
-        return false;
-      }
-      // Status filter
-      if (statusFilter && f.status !== statusFilter) {
-        return false;
-      }
+      if (docTypeFilter && f.documentType !== docTypeFilter) return false;
+      if (deptFilter && String(f.departmentId) !== deptFilter) return false;
+      if (statusFilter && f.status !== statusFilter) return false;
       return true;
     });
   }, [flows, searchTerm, docTypeFilter, deptFilter, statusFilter]);
 
-  // Quick Toggle Status
+  // Quick Toggle Status for Flow
   const handleToggleStatus = async (flow: ApprovalFlow) => {
     const nextStatus = flow.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
@@ -230,7 +233,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
   };
 
-  // Open Create Editor
+  // Open Create Flow Editor
   const openCreateEditor = () => {
     setEditingFlow(null);
     setForm({
@@ -245,7 +248,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     setIsEditorOpen(true);
   };
 
-  // Open Edit Editor
+  // Open Edit Flow Editor
   const openEditEditor = (flow: ApprovalFlow) => {
     setEditingFlow(flow);
     setForm({
@@ -305,6 +308,38 @@ export const ApprovalFlowsTab: React.FC = () => {
     });
   };
 
+  // Preset Template Applicator
+  const applyPreset = (presetType: 'TWO_TIER' | 'THREE_TIER' | 'DIRECT_HR') => {
+    if (presetType === 'TWO_TIER') {
+      setForm((f) => ({
+        ...f,
+        steps: [
+          { stepNo: 1, approverType: 'MANAGER', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+          { stepNo: 2, approverType: 'HR', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+        ],
+      }));
+      success('ปรับใช้แม่แบบ 2 ลำดับขั้นสำเร็จ');
+    } else if (presetType === 'THREE_TIER') {
+      setForm((f) => ({
+        ...f,
+        steps: [
+          { stepNo: 1, approverType: 'MANAGER', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+          { stepNo: 2, approverType: 'DEPARTMENT_HEAD', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+          { stepNo: 3, approverType: 'CEO', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+        ],
+      }));
+      success('ปรับใช้แม่แบบ 3 ลำดับขั้นสำเร็จ');
+    } else if (presetType === 'DIRECT_HR') {
+      setForm((f) => ({
+        ...f,
+        steps: [
+          { stepNo: 1, approverType: 'HR', approverEmployeeId: null, approverRoleId: null, isRequired: true },
+        ],
+      }));
+      success('ปรับใช้แม่แบบฝ่ายทรัพยากรบุคคลโดยตรงสำเร็จ');
+    }
+  };
+
   const handleSaveFlow = async () => {
     if (!form.flowName.trim()) {
       error('กรุณาระบุชื่อสายการอนุมัติ');
@@ -319,7 +354,6 @@ export const ApprovalFlowsTab: React.FC = () => {
       return;
     }
 
-    // Validate step selections
     for (const step of form.steps) {
       if (step.approverType === 'EMPLOYEE' && !step.approverEmployeeId) {
         error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกพนักงานผู้มีอำนาจอนุมัติ`);
@@ -332,7 +366,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
 
     try {
-      setIsSaving(true);
+      setIsSavingFlow(true);
       if (editingFlow) {
         await approvalService.updateFlow(editingFlow.id, {
           flowName: form.flowName,
@@ -352,7 +386,7 @@ export const ApprovalFlowsTab: React.FC = () => {
     } catch (err: any) {
       error(err?.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
-      setIsSaving(false);
+      setIsSavingFlow(false);
     }
   };
 
@@ -376,223 +410,269 @@ export const ApprovalFlowsTab: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* 1. Top Filter / Action Bar (Matching Mockup) */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search Box */}
-          <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="ค้นหาสายการอนุมัติ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 transition-all placeholder:text-slate-400"
-            />
-          </div>
-
-          {/* Document Type Filter */}
-          <div className="relative">
-            <select
-              value={docTypeFilter}
-              onChange={(e) => setDocTypeFilter(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
-            >
-              <option value="">ประเภทเอกสารทั้งหมด</option>
-              {DOCUMENT_TYPE_OPTIONS.map((dt) => (
-                <option key={dt} value={dt}>
-                  {DOCUMENT_TYPE_LABELS[dt]}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Department Filter */}
-          <div className="relative">
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
-            >
-              <option value="">ทุกแผนก</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.departmentName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
-            >
-              <option value="">สถานะ: ทั้งหมด</option>
-              <option value="ACTIVE">ใช้งานอยู่</option>
-              <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Add Flow Button */}
+      {/* 1. Sub-Tab Switcher Pills (Rule #10 Pure Thai) */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 shadow-2xs">
         <button
-          onClick={openCreateEditor}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-medium transition-all shadow-xs cursor-pointer"
+          type="button"
+          onClick={() => setActiveSubTab('flows')}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeSubTab === 'flows'
+              ? 'bg-white text-[#0B2046] shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+          }`}
         >
-          <Plus className="w-4 h-4" /> เพิ่มสายการอนุมัติ
+          <GitMerge className="w-4 h-4 text-[#0B2046]" />
+          <span>ผังสายการอนุมัติ</span>
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600">
+            {flows.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('simulator')}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeSubTab === 'simulator'
+              ? 'bg-white text-[#0B2046] shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+          }`}
+        >
+          <Compass className="w-4 h-4 text-[#0B2046]" />
+          <span>ทดสอบจำลองสายการอนุมัติ</span>
         </button>
       </div>
 
-      {/* 2. Cards List */}
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
-          <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
-        </div>
-      ) : filteredFlows.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
-          ยังไม่มีสายการอนุมัติในระบบ
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredFlows.map((flow) => {
-            const badge = getDocTypeBadge(flow.documentType);
-            return (
-              <div
-                key={flow.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition-all space-y-4"
-              >
-                {/* Card Header */}
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-slate-800 text-base">{flow.flowName}</h3>
-                      <span className="text-slate-400 text-xs font-normal">{flow.flowCode}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{flow.departmentName ?? 'ทุกแผนก'}</span>
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{flow.levelName ?? 'ทุกระดับตำแหน่ง'}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Document Type Badge */}
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${badge.color}`}
-                  >
-                    {badge.label}
-                  </span>
-                </div>
-
-                {/* Card Body - ลำดับขั้นตอนการอนุมัติ */}
-                <div>
-                  <div className="text-xs text-slate-400 font-medium mb-2.5">ลำดับขั้นตอนการอนุมัติ</div>
-                  {flow.steps.length === 0 ? (
-                    <div className="text-xs text-slate-400 italic bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3">
-                      ยังไม่มีขั้นตอนการอนุมัติ
-                    </div>
-                  ) : (
-                    <div className="flex items-center flex-wrap gap-2.5">
-                      {flow.steps
-                        .slice()
-                        .sort((a, b) => a.stepNo - b.stepNo)
-                        .map((step, idx, arr) => (
-                          <React.Fragment key={step.id}>
-                            {/* Step Item Box */}
-                            <div className="flex items-center gap-3 bg-slate-50/90 border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
-                              <div className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-                                {step.stepNo}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-xs font-bold text-slate-800 truncate">
-                                  {getApproverDisplay(step)}
-                                </div>
-                                <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                  {step.isRequired ? 'จำเป็นต้องอนุมัติ' : 'ผ่านโดยไม่มีก็ได้'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Arrow Connector */}
-                            {idx < arr.length - 1 && (
-                              <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
-                            )}
-                          </React.Fragment>
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Card Footer */}
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
-                  <div className="text-xs text-slate-400 italic">
-                    * ลำดับการอนุมัติจะดำเนินตามลูกศรชี้อ้างอิงจากซ้ายไปขวา
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    {/* Status Toggle Switch */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(flow)}
-                        disabled={togglingId === flow.id}
-                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          flow.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                            flow.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                      <span
-                        className={`text-xs font-medium cursor-pointer ${
-                          flow.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
-                        }`}
-                        onClick={() => handleToggleStatus(flow)}
-                      >
-                        {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                      </span>
-                    </div>
-
-                    {/* Edit Button */}
-                    <button
-                      onClick={() => openEditEditor(flow)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span>แก้ไข</span>
-                    </button>
-
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDeleteFlow(flow)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>ลบ</span>
-                    </button>
-                  </div>
-                </div>
+      {/* ========================================================================= */}
+      {/* SUB-TAB 1: ผังสายการอนุมัติ (Workflow Templates) */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'flows' && (
+        <div className="space-y-6">
+          {/* Top Filter & Action Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <div className="relative w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาสายการอนุมัติ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 transition-all placeholder:text-slate-400"
+                />
               </div>
-            );
-          })}
+
+              {/* Doc Type Filter */}
+              <div className="relative">
+                <select
+                  value={docTypeFilter}
+                  onChange={(e) => setDocTypeFilter(e.target.value)}
+                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                >
+                  <option value="">ประเภทเอกสารทั้งหมด</option>
+                  {DOCUMENT_TYPE_OPTIONS.map((dt) => (
+                    <option key={dt} value={dt}>
+                      {DOCUMENT_TYPE_LABELS[dt]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Dept Filter */}
+              <div className="relative">
+                <select
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value)}
+                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                >
+                  <option value="">ทุกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Status Filter */}
+              <div className="relative">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                >
+                  <option value="">สถานะ: ทั้งหมด</option>
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ปิดใช้งาน</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Add Flow Button */}
+            <button
+              type="button"
+              onClick={openCreateEditor}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-medium transition-all shadow-xs cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> เพิ่มสายการอนุมัติ
+            </button>
+          </div>
+
+          {/* Flows Cards List */}
+          {loadingFlows ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
+              <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
+            </div>
+          ) : filteredFlows.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
+              ยังไม่มีสายการอนุมัติในระบบ
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredFlows.map((flow) => {
+                const badge = getDocTypeBadge(flow.documentType);
+                return (
+                  <div
+                    key={flow.id}
+                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition-all space-y-4"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-slate-800 text-base">{flow.flowName}</h3>
+                          <span className="text-slate-400 text-xs font-normal">{flow.flowCode}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{flow.departmentName ?? 'ทุกแผนก'}</span>
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="inline-flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{flow.levelName ?? 'ทุกระดับตำแหน่ง'}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${badge.color}`}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    {/* Step Sequence Visualization */}
+                    <div>
+                      <div className="text-xs text-slate-400 font-medium mb-2.5">ลำดับขั้นตอนการอนุมัติ</div>
+                      {flow.steps.length === 0 ? (
+                        <div className="text-xs text-slate-400 italic bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3">
+                          ยังไม่มีขั้นตอนการอนุมัติ
+                        </div>
+                      ) : (
+                        <div className="flex items-center flex-wrap gap-2.5">
+                          {flow.steps
+                            .slice()
+                            .sort((a, b) => a.stepNo - b.stepNo)
+                            .map((step, idx, arr) => (
+                              <React.Fragment key={step.id}>
+                                <div className="flex items-center gap-3 bg-slate-50/90 border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
+                                  <div className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                                    {step.stepNo}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-bold text-slate-800 truncate">
+                                      {getApproverDisplay(step, employees, roles)}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                      {step.isRequired ? 'จำเป็นต้องอนุมัติ' : 'ผ่านโดยไม่มีก็ได้'}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {idx < arr.length - 1 && (
+                                  <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+                                )}
+                              </React.Fragment>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                      <div className="text-xs text-slate-400 italic">
+                        * ลำดับการอนุมัติจะดำเนินตามลูกศรชี้อ้างอิงจากซ้ายไปขวา
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        {/* Toggle Status */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(flow)}
+                            disabled={togglingId === flow.id}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              flow.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                flow.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                          <span
+                            className={`text-xs font-medium cursor-pointer ${
+                              flow.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
+                            }`}
+                            onClick={() => handleToggleStatus(flow)}
+                          >
+                            {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
+                          </span>
+                        </div>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => openEditEditor(flow)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>แก้ไข</span>
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFlow(flow)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>ลบ</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* 3. Slide-Over Drawer สำหรับสร้าง / แก้ไข สายการอนุมัติ */}
+      {/* ========================================================================= */}
+      {/* SUB-TAB 2: ทดสอบจำลองสายการอนุมัติ (Workflow Simulator) */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'simulator' && (
+        <WorkflowSimulatorView employees={employees} />
+      )}
+
+      {/* ========================================================================= */}
+      {/* Slide-Over Drawer สำหรับสร้าง / แก้ไข สายการอนุมัติ (Visual Builder) */}
+      {/* ========================================================================= */}
       {isEditorOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Backdrop */}
@@ -602,7 +682,7 @@ export const ApprovalFlowsTab: React.FC = () => {
           />
 
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-xl bg-white shadow-2xl flex flex-col">
+            <div className="w-screen max-w-2xl bg-white shadow-2xl flex flex-col">
               {/* Drawer Header */}
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
@@ -623,7 +703,99 @@ export const ApprovalFlowsTab: React.FC = () => {
 
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Form General Info */}
+                {/* 1. Quick Presets (แม่แบบสายการอนุมัติสำเร็จรูป) */}
+                {!editingFlow && (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span>แม่แบบสายการอนุมัติสำเร็จรูป (เลือกเพื่อสร้างขั้นตอนรวดเร็ว)</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('TWO_TIER')}
+                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                      >
+                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                          สายอนุมัติ 2 ขั้นตอน
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          หัวหน้างานตรง ➔ ฝ่ายทรัพยากรบุคคล
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('THREE_TIER')}
+                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                      >
+                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                          สายอนุมัติ 3 ขั้นตอน
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          หัวหน้างาน ➔ หัวหน้าแผนก ➔ ผู้บริหารสูงสุด
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('DIRECT_HR')}
+                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                      >
+                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                          ฝ่ายบุคคลตรง
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          ฝ่ายทรัพยากรบุคคลพิจารณาตรง
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Interactive Real-Time Visual Flow Preview */}
+                <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-3 shadow-md">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                      <GitMerge className="w-4 h-4 text-emerald-400" />
+                      <span>ภาพจำลองเส้นทางการอนุมัติจริง</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      รวม {form.steps.length} ขั้นตอน
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                    {/* Start Node */}
+                    <div className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-[11px] text-slate-300 shrink-0">
+                      ผู้ยื่นคำขอ
+                    </div>
+
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+
+                    {/* Steps Nodes */}
+                    {form.steps.map((step, idx) => (
+                      <React.Fragment key={idx}>
+                        <div className="px-3 py-1.5 bg-slate-800/90 border border-emerald-500/40 rounded-xl text-[11px] text-white shrink-0 flex items-center gap-1.5 shadow-2xs">
+                          <span className="w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center">
+                            {step.stepNo}
+                          </span>
+                          <span className="font-medium truncate max-w-[130px]">
+                            {getApproverDisplay(step, employees, roles)}
+                          </span>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      </React.Fragment>
+                    ))}
+
+                    {/* End Node */}
+                    <div className="px-3 py-1.5 bg-emerald-950/80 border border-emerald-700/60 rounded-xl text-[11px] text-emerald-300 font-bold shrink-0">
+                      อนุมัติสำเร็จ
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. General Form Fields */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     ข้อมูลทั่วไป
@@ -737,7 +909,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           onChange={() => setForm({ ...form, status: 'ACTIVE' })}
                           className="text-[#0B2046] focus:ring-[#0B2046]"
                         />
-                        <span className="text-slate-700">เปิดใช้งาน (Active)</span>
+                        <span className="text-slate-700">เปิดใช้งาน</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
@@ -748,13 +920,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                           onChange={() => setForm({ ...form, status: 'INACTIVE' })}
                           className="text-[#0B2046] focus:ring-[#0B2046]"
                         />
-                        <span className="text-slate-700">ปิดการใช้งาน (Inactive)</span>
+                        <span className="text-slate-700">ปิดการใช้งาน</span>
                       </label>
                     </div>
                   </div>
                 </div>
 
-                {/* Form Steps */}
+                {/* 4. Form Steps Builder */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <div>
@@ -866,7 +1038,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 htmlFor={`req-${idx}`}
                                 className="text-xs text-slate-700 cursor-pointer select-none"
                               >
-                                จำเป็นต้องอนุมัติ (Required)
+                                จำเป็นต้องอนุมัติ
                               </label>
                             </div>
                           </div>
@@ -902,7 +1074,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         {step.approverType === 'ROLE' && (
                           <div>
                             <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                              เลือกบทบาท (Role) ผู้มีสิทธิ์อนุมัติ <span className="text-rose-500">*</span>
+                              เลือกบทบาทผู้มีสิทธิ์อนุมัติ <span className="text-rose-500">*</span>
                             </label>
                             <select
                               value={step.approverRoleId ?? ''}
@@ -933,7 +1105,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeEditor}
-                  disabled={isSaving}
+                  disabled={isSavingFlow}
                   className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all cursor-pointer disabled:opacity-50"
                 >
                   ยกเลิก
@@ -941,10 +1113,10 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSaveFlow}
-                  disabled={isSaving}
+                  disabled={isSavingFlow}
                   className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isSavingFlow && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{editingFlow ? 'บันทึกการแก้ไข' : 'สร้างสายการอนุมัติ'}</span>
                 </button>
               </div>
@@ -953,7 +1125,9 @@ export const ApprovalFlowsTab: React.FC = () => {
         </div>
       )}
 
-      {/* 4. Confirm Delete Modal */}
+      {/* ========================================================================= */}
+      {/* Common Confirm Modal */}
+      {/* ========================================================================= */}
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         title={confirmModalConfig.title}

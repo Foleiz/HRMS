@@ -159,6 +159,16 @@ public class AuditLogService : IAuditLogService
         return finalBytes;
     }
 
+    public async Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.AuditLogs
+            .AsNoTracking()
+            .Select(a => a.EntityType)
+            .Distinct()
+            .OrderBy(e => e)
+            .ToListAsync(cancellationToken);
+    }
+
     private static string? EnsureJson(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
@@ -185,17 +195,48 @@ public class AuditLogService : IAuditLogService
 
     private static string FormatDescription(string action, string entityType, long? entityId, string? field)
     {
+        var thaiEntity = TranslateEntityType(entityType);
+        var idStr = entityId.HasValue ? $" #{entityId}" : "";
+
         return action switch
         {
             "LOGIN" => "เข้าสู่ระบบสำเร็จ",
             "LOGOUT" => "ออกจากระบบ",
-            "INSERT" => $"สร้างข้อมูลใหม่ {entityType} #{entityId}",
-            "UPDATE" => $"แก้ไขข้อมูล {entityType} #{entityId}" + (!string.IsNullOrEmpty(field) ? $" (ฟิลด์ {field})" : ""),
-            "DELETE" => $"ลบข้อมูล {entityType} #{entityId}",
-            "APPROVE" => $"อนุมัติรายการ {entityType} #{entityId}",
-            "REJECT" => $"ปฏิเสธรายการ {entityType} #{entityId}",
-            "EXPORT" => $"ส่งออกข้อมูล {entityType}",
-            _ => $"{action} {entityType} #{entityId}"
+            "INSERT" => $"สร้าง{thaiEntity}ใหม่{idStr}",
+            "UPDATE" => $"แก้ไข{thaiEntity}{idStr}" + (!string.IsNullOrEmpty(field) ? $" (ฟิลด์ {field})" : ""),
+            "DELETE" => $"ลบ{thaiEntity}{idStr}",
+            "APPROVE" => $"อนุมัติรายการ {thaiEntity}{idStr}",
+            "REJECT" => $"ปฏิเสธรายการ {thaiEntity}{idStr}",
+            "EXPORT" => $"ส่งออกข้อมูล {thaiEntity}",
+            _ => $"{action} {thaiEntity}{idStr}"
+        };
+    }
+
+    private static string TranslateEntityType(string entityType)
+    {
+        return entityType.ToLowerInvariant() switch
+        {
+            "employee" => "ข้อมูลพนักงาน",
+            "user_account" or "useraccount" => "บัญชีผู้ใช้งาน",
+            "role" => "บทบาทและสิทธิ์",
+            "approval_flow" or "approvalflow" => "สายการอนุมัติ",
+            "approval_instance" or "approvalinstance" => "รายการอนุมัติ",
+            "leave_request" or "leaverequest" => "คำร้องขอลา",
+            "leave_balance" or "leavebalance" => "ยอดวันลาคงเหลือ",
+            "attendance_daily" or "attendancedaily" => "ข้อมูลเวลาทำงาน",
+            "announcement" => "ประกาศองค์กร",
+            "notification" => "การแจ้งเตือน",
+            "certificate_request" or "certificaterequest" => "คำขอหนังสือรับรอง",
+            "resignation_request" or "resignationrequest" => "คำขอลาออก",
+            "employment_contract" or "employmentcontract" => "สัญญาจ้างงาน",
+            "salary_structure" or "salarystructure" => "โครงสร้างเงินเดือน",
+            "department" => "แผนก",
+            "division" => "ฝ่าย",
+            "position" => "ตำแหน่ง",
+            "company" => "บริษัท",
+            "auth" => "ระบบการยืนยันตัวตน",
+            "audit_log" or "audit-logs" => "บันทึกการใช้งานระบบ",
+            _ => entityType
         };
     }
 

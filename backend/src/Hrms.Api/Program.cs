@@ -17,8 +17,11 @@ using Hrms.Application.Features.Leave.Services;
 using Hrms.Application.Features.Settings.Services;
 using Hrms.Application.Features.Transfers.Services;
 using Hrms.Application.Features.WorkCalendar.Services;
+using Hrms.Application.Features.Certificates.Services;
+using Hrms.Application.Features.Resignation.Services;
 using Hrms.Application.Features.Payroll.Services;
 using Hrms.Infrastructure.Persistence;
+using Hrms.Infrastructure.Persistence.Interceptors;
 using Hrms.Infrastructure.Security;
 using Hrms.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,12 +38,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database Connection (PostgreSQL - Schema: hrms)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<HrmsDbContext>(options =>
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<HrmsDbContext>((sp, options) =>
 {
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "hrms");
     });
+    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
 });
 
 builder.Services.AddScoped<IHrmsDbContext>(provider => provider.GetRequiredService<HrmsDbContext>());
@@ -84,6 +89,8 @@ builder.Services.AddScoped<IMySalaryService, MySalaryService>();
 builder.Services.AddScoped<IPayslipService, PayslipService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ICertificateService, CertificateService>();
+builder.Services.AddScoped<IResignationService, ResignationService>();
 
 
 // 4. JWT Authentication
@@ -176,8 +183,8 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 11. Global Audit Log Middleware (PDPA & Enterprise Audit Trail)
-app.UseMiddleware<AuditLogMiddleware>();
+// 11. Audit Logging Middleware (HTTP Level)
+app.UseMiddleware<AuditLoggingMiddleware>();
 
 app.MapControllers();
 

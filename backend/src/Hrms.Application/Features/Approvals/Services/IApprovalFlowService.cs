@@ -9,4 +9,5 @@ public interface IApprovalFlowService
     Task<ApprovalFlowDto> CreateAsync(CreateApprovalFlowRequest request, CancellationToken cancellationToken = default);
     Task<ApprovalFlowDto> UpdateAsync(long id, UpdateApprovalFlowRequest request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default);
+    Task<WorkflowSimulationResultDto> SimulateWorkflowAsync(WorkflowSimulationRequest request, CancellationToken cancellationToken = default);
 }

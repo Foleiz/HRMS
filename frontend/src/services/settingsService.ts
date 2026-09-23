@@ -162,4 +162,13 @@ export const settingsService = {
     });
     return res.data;
   },
+
+  async getAuditLogModules(): Promise<string[]> {
+    try {
+      const res = await apiClient.get<ApiResponse<string[]>>('/audit-logs/modules');
+      return res.data?.data || [];
+    } catch {
+      return [];
+    }
+  },
 };

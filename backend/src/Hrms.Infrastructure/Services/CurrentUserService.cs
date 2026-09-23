@@ -68,4 +68,48 @@ public class CurrentUserService : ICurrentUserService
         string? scope = User?.FindFirstValue($"scope:{permission}");
         return scope ?? "SELF";
     }
+
+    public string? IpAddress
+    {
+        get
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context == null) return null;
+
+            string? ip = null;
+
+            // ตรวจสอบ X-Forwarded-For จาก Load Balancer / Reverse Proxy
+            if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded) && !string.IsNullOrWhiteSpace(forwarded))
+            {
+                ip = forwarded.ToString().Split(',')[0].Trim();
+            }
+            else if (context.Request.Headers.TryGetValue("X-Real-IP", out var realIp) && !string.IsNullOrWhiteSpace(realIp))
+            {
+                ip = realIp.ToString().Trim();
+            }
+            else
+            {
+                ip = context.Connection.RemoteIpAddress?.ToString();
+            }
+
+            if (string.IsNullOrWhiteSpace(ip)) return null;
+
+            // ตัด Port ออกหากมี (เช่น 127.0.0.1:51234)
+            if (ip.Contains(':') && !ip.Contains("::") && ip.IndexOf(':') == ip.LastIndexOf(':'))
+            {
+                ip = ip.Split(':')[0];
+            }
+
+            return ip;
+        }
+    }
+
+    public string? UserAgent
+    {
+        get
+        {
+            var ua = _httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString();
+            return string.IsNullOrWhiteSpace(ua) ? null : ua;
+        }
+    }
 }

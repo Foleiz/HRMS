@@ -69,6 +69,40 @@ export interface UpdateApprovalFlowPayload {
   steps: ApprovalStepInput[];
 }
 
+/** จำลองสายการอนุมัติ (Workflow Simulation) */
+export interface WorkflowSimulationRequest {
+  employeeId: number;
+  documentType: string;
+  effectiveDate?: string;
+}
+
+export interface SimulatedApprover {
+  employeeId: number;
+  employeeCode: string;
+  fullName: string;
+  positionName?: string | null;
+  departmentName?: string | null;
+}
+
+export interface SimulatedStep {
+  stepNo: number;
+  approverType: string;
+  approverTypeLabel: string;
+  isRequired: boolean;
+  approver?: SimulatedApprover | null;
+}
+
+export interface WorkflowSimulationResult {
+  success: boolean;
+  message: string;
+  flowId?: number | null;
+  flowCode?: string | null;
+  flowName?: string | null;
+  documentType: string;
+  requester?: SimulatedApprover | null;
+  steps: SimulatedStep[];
+}
+
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทเอกสาร */
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   ATTENDANCE_ADJUSTMENT: 'คำขอปรับปรุงเวลาเข้า-ออกงาน',
@@ -80,13 +114,13 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   TRANSFER_REQUEST: 'คำขอย้ายแผนก/เลื่อนตำแหน่ง',
 };
 
-/** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ */
+/** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ (Pure Thai - Rule #10) */
 export const APPROVER_TYPE_LABELS: Record<string, string> = {
   EMPLOYEE: 'ระบุตัวบุคคล',
   ROLE: 'ระบุตามบทบาท',
   MANAGER: 'หัวหน้างานตรง',
   DEPARTMENT_HEAD: 'หัวหน้าแผนก',
   DIVISION_HEAD: 'หัวหน้าฝ่าย',
-  HR: 'ฝ่ายบุคคล',
-  CEO: 'ผู้บริหารสูงสุด (CEO)',
+  HR: 'ฝ่ายทรัพยากรบุคคล',
+  CEO: 'ผู้บริหารสูงสุด',
 };

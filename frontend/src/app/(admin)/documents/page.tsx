@@ -33,7 +33,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: LogOut,
     color: 'text-rose-600',
     bg: 'bg-rose-50',
-    available: false,
+    available: true,
   },
   {
     title: 'คำร้องเอกสารทั่วไป',
@@ -42,7 +42,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: FileStack,
     color: 'text-amber-600',
     bg: 'bg-amber-50',
-    available: false,
+    available: true,
   },
   {
     title: 'ขอหนังสือรับรอง',
@@ -51,7 +51,7 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     icon: BadgeCheck,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
-    available: false,
+    available: true,
   },
 ];
 

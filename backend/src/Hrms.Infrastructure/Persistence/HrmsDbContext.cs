@@ -118,6 +118,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // In-App Notifications Engine (Dev 1 Phase 2)
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    // Certificate Requests & Digital Signature (Dev 1 Phase 2)
+    public DbSet<CertificateType> CertificateTypes => Set<CertificateType>();
+    public DbSet<CertificateRequest> CertificateRequests => Set<CertificateRequest>();
+
+    // Resignation Requests (Dev 1 Phase 2)
+    public DbSet<ResignationRequest> ResignationRequests => Set<ResignationRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -1268,7 +1275,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IpAddress)
                 .HasColumnName("ip_address")
                 .HasConversion(
-                    v => string.IsNullOrEmpty(v) ? null : System.Net.IPAddress.Parse(v),
+                    v => ParseIpAddress(v),
                     v => v == null ? null : v.ToString());
             entity.Property(e => e.UserAgent).HasColumnName("user_agent");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
@@ -1744,5 +1751,114 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configuration: CertificateType
+        modelBuilder.Entity<CertificateType>(entity =>
+        {
+            entity.ToTable("certificate_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CertificateCode).HasColumnName("certificate_code").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CertificateName).HasColumnName("certificate_name").HasMaxLength(255).IsRequired();
+        });
+
+        // Configuration: CertificateRequest
+        modelBuilder.Entity<CertificateRequest>(entity =>
+        {
+            entity.ToTable("certificate_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.CertificateTypeId).HasColumnName("certificate_type_id").IsRequired();
+            entity.Property(e => e.Purpose).HasColumnName("purpose");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.RequestedAt).HasColumnName("requested_at").IsRequired();
+            entity.Property(e => e.IssuedFileUrl).HasColumnName("issued_file_url");
+            entity.Property(e => e.IssuedAt).HasColumnName("issued_at");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.CertificateType)
+                .WithMany(t => t.Requests)
+                .HasForeignKey(e => e.CertificateTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeSignature
+        modelBuilder.Entity<EmployeeSignature>(entity =>
+        {
+            entity.ToTable("employee_signature", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.SignatureData).HasColumnName("signature_data").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: ResignationRequest
+        modelBuilder.Entity<ResignationRequest>(entity =>
+        {
+            entity.ToTable("resignation_request", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.RequestedLastWorkingDate).HasColumnName("requested_last_working_date").IsRequired();
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at").IsRequired();
+            entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
+            entity.Property(e => e.CancelReason).HasColumnName("cancel_reason");
+            entity.Property(e => e.ResultingContractId).HasColumnName("resulting_contract_id");
+            entity.Property(e => e.ApprovedByEmployeeId).HasColumnName("approved_by_employee_id");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+
+            entity.HasIndex(e => e.RequestNo).IsUnique();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ResultingContract)
+                .WithMany()
+                .HasForeignKey(e => e.ResultingContractId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static System.Net.IPAddress? ParseIpAddress(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return null;
+        return System.Net.IPAddress.TryParse(v, out var ip) ? ip : null;
     }
 }
