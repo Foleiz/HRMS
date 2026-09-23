@@ -6,6 +6,10 @@ namespace Hrms.Application.Common.Interfaces;
 public interface IHrmsDbContext
 {
     DbSet<Bank> Banks { get; }
+    DbSet<DocumentType> DocumentTypes { get; }
+    DbSet<Nationality> Nationalities { get; }
+    DbSet<Religion> Religions { get; }
+    DbSet<MaritalStatusType> MaritalStatusTypes { get; }
     DbSet<Employee> Employees { get; }
     DbSet<EmployeeContact> EmployeeContacts { get; }
     DbSet<EmployeeAddress> EmployeeAddresses { get; }

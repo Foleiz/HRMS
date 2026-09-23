@@ -59,6 +59,8 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
 // 3. Application Services DI
 builder.Services.AddScoped<IBankService, BankService>();
+builder.Services.AddScoped<IDocumentTypeService, DocumentTypeService>();
+builder.Services.AddScoped<ILookupMasterService, LookupMasterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();

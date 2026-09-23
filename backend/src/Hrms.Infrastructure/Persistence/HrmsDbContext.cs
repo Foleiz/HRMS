@@ -16,6 +16,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Master Data
     public DbSet<Bank> Banks => Set<Bank>();
+    public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
+    public DbSet<Nationality> Nationalities => Set<Nationality>();
+    public DbSet<Religion> Religions => Set<Religion>();
+    public DbSet<MaritalStatusType> MaritalStatusTypes => Set<MaritalStatusType>();
 
     // Authentication & Core Entities
     public DbSet<Employee> Employees => Set<Employee>();
@@ -142,6 +146,46 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.BankName).HasColumnName("bank_name").IsRequired().HasMaxLength(255);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.BankCode).IsUnique();
+        });
+
+        // Configuration: DocumentType
+        modelBuilder.Entity<DocumentType>(entity =>
+        {
+            entity.ToTable("document_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.DocumentCode).HasColumnName("document_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DocumentName).HasColumnName("document_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.IsExpiryRequired).HasColumnName("is_expiry_required").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.HasIndex(e => e.DocumentCode).IsUnique();
+        });
+
+        // Configuration: Nationality
+        modelBuilder.Entity<Nationality>(entity =>
+        {
+            entity.ToTable("nationality", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.NationalityName).HasColumnName("nationality_name").IsRequired().HasMaxLength(100);
+        });
+
+        // Configuration: Religion
+        modelBuilder.Entity<Religion>(entity =>
+        {
+            entity.ToTable("religion", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.ReligionName).HasColumnName("religion_name").IsRequired().HasMaxLength(100);
+        });
+
+        // Configuration: MaritalStatusType
+        modelBuilder.Entity<MaritalStatusType>(entity =>
+        {
+            entity.ToTable("marital_status_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.MaritalStatusName).HasColumnName("marital_status_name").IsRequired().HasMaxLength(100);
         });
 
         // Configuration: Employee

@@ -6,10 +6,12 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
+import { masterDataService } from '@/services/masterDataService';
 import { authService } from '@/services/authService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { Bank } from '@/types/api';
+import { MaritalStatusItem } from '@/types/master';
 import {
   User,
   UserCheck,
@@ -91,21 +93,26 @@ export default function ProfilePage() {
   // Bank Master Data State
   const [banks, setBanks] = useState<Bank[]>([]);
   const [isLoadingBanks, setIsLoadingBanks] = useState<boolean>(false);
+  const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatusItem[]>([]);
 
-  // Load Banks Master Data
+  // Load Banks & Marital Statuses Master Data
   useEffect(() => {
-    const loadBanks = async () => {
+    const loadMasterData = async () => {
       setIsLoadingBanks(true);
       try {
-        const data = await bankService.getAll();
-        setBanks(data.filter((b) => b.status === 'ACTIVE'));
+        const [bankList, msList] = await Promise.all([
+          bankService.getAll().catch(() => []),
+          masterDataService.getMaritalStatuses().catch(() => []),
+        ]);
+        setBanks(bankList.filter((b) => b.status === 'ACTIVE'));
+        setMaritalStatuses(msList);
       } catch (err) {
-        console.error('Failed to load banks:', err);
+        console.error('Failed to load master data:', err);
       } finally {
         setIsLoadingBanks(false);
       }
     };
-    loadBanks();
+    loadMasterData();
   }, []);
 
   // Sync breadcrumb with active tab
@@ -682,10 +689,20 @@ export default function ProfilePage() {
                       onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
                       className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     >
-                      <option value="โสด">โสด</option>
-                      <option value="สมรส">สมรส</option>
-                      <option value="หย่าร้าง">หย่าร้าง</option>
-                      <option value="หม้าย">หม้าย</option>
+                      {maritalStatuses.length > 0 ? (
+                        maritalStatuses.map((m) => (
+                          <option key={m.id} value={m.maritalStatusName}>
+                            {m.maritalStatusName}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="โสด">โสด</option>
+                          <option value="สมรส">สมรส</option>
+                          <option value="หย่าร้าง">หย่าร้าง</option>
+                          <option value="หม้าย">หม้าย</option>
+                        </>
+                      )}
                     </select>
                   </div>
 

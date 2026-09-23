@@ -25,6 +25,7 @@ import {
   Megaphone,
   User,
   Wallet,
+  Database,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -210,6 +211,18 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/announcements',
     icon: Megaphone,
     requiredPermissions: [
+      'SYS_ADMIN',
+      'ORG_VIEW',
+    ],
+    requiredRoles: ['ADMIN', 'HR_MGR', 'HR_ADMIN', 'SYS_ADMIN'],
+  },
+  {
+    title: 'ข้อมูลหลัก (Master Data)',
+    href: '/master',
+    matchPrefix: '/master',
+    icon: Database,
+    requiredPermissions: [
+      'SETTINGS_VIEW',
       'SYS_ADMIN',
       'ORG_VIEW',
     ],
