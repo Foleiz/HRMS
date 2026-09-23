@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -68,6 +67,20 @@ const CATEGORY_STYLES: Record<string, {
     dotColor: 'bg-purple-500',
     badgeBg: 'bg-purple-50 text-purple-800 border-purple-200',
   },
+  MEETING: {
+    label: 'ประชุมทีมและการนำเสนอ',
+    pillBg: 'bg-[#E0E7FF]/80 hover:bg-[#C7D2FE]',
+    pillText: 'text-[#3730A3]',
+    dotColor: 'bg-indigo-500',
+    badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+  },
+  DEFAULT: {
+    label: 'ข่าวสารทั่วไป',
+    pillBg: 'bg-slate-100 hover:bg-slate-200',
+    pillText: 'text-slate-700',
+    dotColor: 'bg-slate-400',
+    badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+  },
 };
 
 const THAI_MONTHS = [
@@ -87,7 +100,6 @@ const WEEKDAYS = [
 ];
 
 export default function MyNewsCalendarPage() {
-  const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
 
   // Active Date for Calendar Navigation
@@ -269,26 +281,6 @@ export default function MyNewsCalendarPage() {
 
   return (
     <div className="space-y-5 pb-16">
-      {/* Top Header Row */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-full bg-[#0B2046] text-white flex items-center justify-center hover:bg-[#0B2046]/90 transition-all shadow-sm cursor-pointer shrink-0"
-          title="ย้อนกลับ"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            ตารางการทำงานและข่าวสารสำหรับฉัน
-          </h1>
-          <p className="text-xs text-slate-500">
-            ปฏิทินแสดงกำหนดการ ข่าวสารประกาศ กิจกรรม และนโยบายที่เกี่ยวข้องกับคุณในแต่ละวัน
-          </p>
-        </div>
-      </div>
-
       {/* Main Navigation Controls Card (Identical to mockup) */}
       <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Month Navigator with Arrows */}
