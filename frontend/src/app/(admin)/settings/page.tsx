@@ -202,13 +202,13 @@ export default function SettingsPage() {
   const selectedRoleIdRef = React.useRef<number | null>(null);
   selectedRoleIdRef.current = selectedRoleId;
 
-  const loadRoles = useCallback(async () => {
+  const loadRoles = useCallback(async (fetchMatrix = true) => {
     setIsRolesLoading(true);
     try {
       const rolesData = await settingsService.getAllRoles();
       setRoles(rolesData);
 
-      if (rolesData.length > 0) {
+      if (rolesData.length > 0 && fetchMatrix) {
         const prevId = selectedRoleIdRef.current;
         const currentExists = prevId && rolesData.some((r) => r.id === prevId);
         const activeId = currentExists ? prevId : rolesData[0].id;
@@ -253,12 +253,13 @@ export default function SettingsPage() {
     if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
       loadEmployees();
+      loadRoles(false);
     } else if (activeTab === 'roles' && canViewRolesTab) {
-      loadRoles();
+      loadRoles(true);
     } else if (activeTab === 'audit-log' && canViewAuditLogTab) {
       loadAuditLogs();
     }
-  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, loadRoles]);
 
   // Fetch users when pagination or filters change while on users tab
   useEffect(() => {
@@ -494,10 +495,14 @@ export default function SettingsPage() {
                 setUserPage(1);
               }}
               onAddUserClick={() => {
+                if (roles.length === 0) loadRoles(false);
+                if (employees.length === 0) loadEmployees();
                 setUserToEdit(null);
                 setIsUserDrawerOpen(true);
               }}
               onEditUserClick={(user) => {
+                if (roles.length === 0) loadRoles(false);
+                if (employees.length === 0) loadEmployees();
                 setUserToEdit(user);
                 setIsUserDrawerOpen(true);
               }}

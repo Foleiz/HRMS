@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Eye, EyeOff, ShieldCheck, User } from 'lucide-react';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { Employee } from '@/types/employee';
@@ -41,34 +41,50 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const prevIsOpenRef = useRef(false);
+
   useEffect(() => {
-    if (userToEdit) {
-      setUsername(userToEdit.username);
-      setPassword('');
-      setSelectedEmployeeId(userToEdit.employeeId);
-      setCorporateEmail(userToEdit.corporateEmail || '');
-      setSelectedRoles(
-        userToEdit.roles.map((r) => ({
-          roleId: r.roleId,
-          isActive: r.isActive,
-        }))
-      );
-    } else {
-      setUsername('');
-      setPassword('');
-      setShowPassword(false);
-      setSelectedEmployeeId('');
-      setCorporateEmail('');
-      // Default with 1 role card
+    // Only reset form when opening the drawer or changing userToEdit
+    if (isOpen && (!prevIsOpenRef.current || userToEdit)) {
+      if (userToEdit) {
+        setUsername(userToEdit.username);
+        setPassword('');
+        setSelectedEmployeeId(userToEdit.employeeId);
+        setCorporateEmail(userToEdit.corporateEmail || '');
+        setSelectedRoles(
+          userToEdit.roles.map((r) => ({
+            roleId: r.roleId,
+            isActive: r.isActive,
+          }))
+        );
+      } else {
+        setUsername('');
+        setPassword('');
+        setShowPassword(false);
+        setSelectedEmployeeId('');
+        setCorporateEmail('');
+        // Default with 1 role card
+        const defaultRole = roles.find((r) => r.roleCode === 'EMPLOYEE') || roles[0];
+        if (defaultRole) {
+          setSelectedRoles([{ roleId: defaultRole.id, isActive: true }]);
+        } else {
+          setSelectedRoles([]);
+        }
+      }
+      setErrorMsg(null);
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [userToEdit, isOpen, roles]);
+
+  // If in create mode and selectedRoles is empty, populate with default role once roles load
+  useEffect(() => {
+    if (isOpen && !userToEdit && selectedRoles.length === 0 && roles.length > 0) {
       const defaultRole = roles.find((r) => r.roleCode === 'EMPLOYEE') || roles[0];
       if (defaultRole) {
         setSelectedRoles([{ roleId: defaultRole.id, isActive: true }]);
-      } else {
-        setSelectedRoles([]);
       }
     }
-    setErrorMsg(null);
-  }, [userToEdit, isOpen, roles]);
+  }, [isOpen, userToEdit, selectedRoles.length, roles]);
 
   // เมื่อเลือกพนักงาน -> Auto-fill อีเมลองค์กร & สร้าง Username แนะนำถ้าว่าง
   const handleEmployeeChange = (empId: number | '') => {
@@ -92,6 +108,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   };
 
   const handleAddRoleCard = () => {
+    if (roles.length === 0) return;
     // หา Role ที่ยังไม่ได้เลือก
     const assignedIds = new Set(selectedRoles.map((r) => r.roleId));
     const availableRole = roles.find((r) => !assignedIds.has(r.id)) || roles[0];
@@ -309,74 +326,88 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 <span className="text-[11px] text-slate-400">กำหนดได้หลายบทบาท</span>
               </div>
 
-              <div className="space-y-3">
-                {selectedRoles.map((roleItem, index) => (
-                  <div
-                    key={index}
-                    className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs space-y-3 hover:border-slate-300 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Badge Number Circle (Navy) */}
-                      <div className="w-7 h-7 rounded-full bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                        {index + 1}
+              {roles.length === 0 ? (
+                <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                  <p className="text-xs text-slate-500">กำลังโหลดรายการบทบาท...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {selectedRoles.length === 0 && (
+                    <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-700">
+                      ยังไม่ได้เลือกบทบาท กรุณากดปุ่ม <strong>+ เพิ่มบทบาท</strong> ด้านล่าง
+                    </div>
+                  )}
+
+                  {selectedRoles.map((roleItem, index) => (
+                    <div
+                      key={index}
+                      className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs space-y-3 hover:border-slate-300 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Badge Number Circle (Navy) */}
+                        <div className="w-7 h-7 rounded-full bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                          {index + 1}
+                        </div>
+
+                        {/* Role Dropdown */}
+                        <select
+                          value={roleItem.roleId}
+                          onChange={(e) => handleRoleChange(index, Number(e.target.value))}
+                          className="flex-1 h-10 px-3 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                        >
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.roleCode} — {r.roleName}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
-                      {/* Role Dropdown */}
-                      <select
-                        value={roleItem.roleId}
-                        onChange={(e) => handleRoleChange(index, Number(e.target.value))}
-                        className="flex-1 h-10 px-3 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                      >
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.roleCode} — {r.roleName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Bottom row: Status toggle and Delete button */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <span className="text-[11px] font-medium text-slate-600">เปิดใช้งาน</span>
-                        <div
-                          onClick={() => handleRoleToggleActive(index)}
-                          className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                            roleItem.isActive ? 'bg-[#0B2046]' : 'bg-slate-200'
-                          }`}
-                        >
+                      {/* Bottom row: Status toggle and Delete button */}
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <span className="text-[11px] font-medium text-slate-600">เปิดใช้งาน</span>
                           <div
-                            className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
-                              roleItem.isActive ? 'left-4.5' : 'left-1'
+                            onClick={() => handleRoleToggleActive(index)}
+                            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                              roleItem.isActive ? 'bg-[#0B2046]' : 'bg-slate-200'
                             }`}
-                          />
-                        </div>
-                      </label>
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform shadow-xs ${
+                                roleItem.isActive ? 'left-4.5' : 'left-1'
+                              }`}
+                            />
+                          </div>
+                        </label>
 
-                      {selectedRoles.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRoleCard(index)}
-                          className="flex items-center gap-1 text-[11px] font-medium text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบ</span>
-                        </button>
-                      )}
+                        {selectedRoles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRoleCard(index)}
+                            className="flex items-center gap-1 text-[11px] font-medium text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>ลบ</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {/* Add Role Button */}
-                <button
-                  type="button"
-                  onClick={handleAddRoleCard}
-                  className="w-full py-2.5 bg-white border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-[#0B2046] hover:border-[#0B2046] hover:bg-slate-50/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>+ เพิ่มบทบาท</span>
-                </button>
-              </div>
+                  {/* Add Role Button */}
+                  {selectedRoles.length < roles.length && (
+                    <button
+                      type="button"
+                      onClick={handleAddRoleCard}
+                      className="w-full py-2.5 bg-white border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-[#0B2046] hover:border-[#0B2046] hover:bg-slate-50/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ เพิ่มบทบาท</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </form>
 
