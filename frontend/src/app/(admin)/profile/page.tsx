@@ -82,7 +82,6 @@ export default function ProfilePage() {
 
   // Password Change Modal State for Tab 2 (Account Management)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
-  const [showAccountPassword, setShowAccountPassword] = useState<boolean>(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -1089,22 +1088,11 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                           <input
-                            type={showAccountPassword ? 'text' : 'password'}
+                            type="password"
                             disabled
-                            value={showAccountPassword ? '••••••••••••' : '••••••••••••'}
+                            value="••••••••••••"
                             className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-600 font-mono tracking-widest cursor-not-allowed"
                           />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              info('รหัสผ่านถูกเข้ารหัสความปลอดภัยไว้ หากต้องการดูหรือเปลี่ยนรหัสผ่าน กรุณากดปุ่มแก้ไข');
-                              setIsPasswordModalOpen(true);
-                            }}
-                            title="แก้ไข / เปลี่ยนรหัสผ่าน"
-                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
                         </div>
 
                         <button
@@ -1112,7 +1100,7 @@ export default function ProfilePage() {
                           onClick={() => setIsPasswordModalOpen(true)}
                           className="px-4 h-9.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer shrink-0"
                         >
-                          แก้ไข
+                          เปลี่ยนรหัสผ่าน
                         </button>
                       </div>
                     </div>
