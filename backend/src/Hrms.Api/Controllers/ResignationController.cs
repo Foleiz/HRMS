@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Resignation.DTOs;
 using Hrms.Application.Features.Resignation.Services;
@@ -15,10 +17,14 @@ namespace Hrms.Api.Controllers;
 public class ResignationController : ControllerBase
 {
     private readonly IResignationService _resignationService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public ResignationController(IResignationService resignationService)
+    public ResignationController(
+        IResignationService resignationService,
+        ICurrentUserService currentUserService)
     {
         _resignationService = resignationService;
+        _currentUserService = currentUserService;
     }
 
     /// <summary>
@@ -84,5 +90,86 @@ public class ResignationController : ControllerBase
         var cancelReason = body?.CancelReason ?? reason;
         var result = await _resignationService.CancelRequestAsync(id, cancelReason, cancellationToken);
         return Ok(ApiResponse<bool>.Ok(result, "ยกเลิกคำขอลาออกสำเร็จ"));
+    }
+
+    /// <summary>
+    /// อนุมัติคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
+    /// </summary>
+    [HttpPut("requests/{id:long}/approve")]
+    public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Approve(
+        long id,
+        [FromBody] ApproveResignationRequestPayload? payload,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var approverId = _currentUserService.EmployeeId;
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                var empIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("employee_id")?.Value;
+                if (long.TryParse(empIdStr, out var parsedId))
+                {
+                    approverId = parsedId;
+                }
+            }
+
+            var result = await _resignationService.ApproveRequestAsync(id, approverId ?? 1, payload?.Comment, cancellationToken);
+            return Ok(ApiResponse<ResignationRequestDto>.Ok(result, "อนุมัติคำขอลาออกสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// ปฏิเสธคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
+    /// </summary>
+    [HttpPut("requests/{id:long}/reject")]
+    public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Reject(
+        long id,
+        [FromBody] RejectResignationRequestPayload payload,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(payload.Reason))
+        {
+            return BadRequest(ApiResponse<ResignationRequestDto>.Fail("กรุณาระบุเหตุผลในการปฏิเสธ"));
+        }
+
+        try
+        {
+            var approverId = _currentUserService.EmployeeId;
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                var empIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("employee_id")?.Value;
+                if (long.TryParse(empIdStr, out var parsedId))
+                {
+                    approverId = parsedId;
+                }
+            }
+
+            var result = await _resignationService.RejectRequestAsync(id, approverId ?? 1, payload.Reason, cancellationToken);
+            return Ok(ApiResponse<ResignationRequestDto>.Ok(result, "ปฏิเสธคำขอลาออกสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<ResignationRequestDto>.Fail(ex.Message));
+        }
     }
 }

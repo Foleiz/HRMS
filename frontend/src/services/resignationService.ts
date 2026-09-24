@@ -51,4 +51,24 @@ export const resignationService = {
     });
     return res.data.data;
   },
+
+  /**
+   * อนุมัติคำขอลาออก (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
+   */
+  async approveRequest(id: number, comment?: string): Promise<ResignationRequest> {
+    const res = await apiClient.put<ApiResponse<ResignationRequest>>(`/resignation/requests/${id}/approve`, {
+      comment,
+    });
+    return res.data.data;
+  },
+
+  /**
+   * ปฏิเสธคำขอลาออก (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
+   */
+  async rejectRequest(id: number, reason: string): Promise<ResignationRequest> {
+    const res = await apiClient.put<ApiResponse<ResignationRequest>>(`/resignation/requests/${id}/reject`, {
+      reason,
+    });
+    return res.data.data;
+  },
 };

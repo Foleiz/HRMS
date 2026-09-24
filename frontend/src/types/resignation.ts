@@ -1,3 +1,5 @@
+import { ApprovalTimeline } from './leave';
+
 export interface CreateResignationRequestPayload {
   requestedLastWorkingDate: string; // 'YYYY-MM-DD'
   reasonCategory: string;
@@ -30,6 +32,14 @@ export interface ResignationRequest {
   approvalInstanceId?: number;
   noticePeriodDays: number;
   canCancel: boolean;
+  currentStepNo?: number;
+  totalSteps?: number;
+  currentApproverDisplay?: string;
+  isMyTurnToApprove?: boolean;
+  canApprove?: boolean;
+  canReject?: boolean;
+  hasAlreadyApproved?: boolean;
+  timeline?: ApprovalTimeline;
 }
 
 export interface CancelResignationRequestPayload {

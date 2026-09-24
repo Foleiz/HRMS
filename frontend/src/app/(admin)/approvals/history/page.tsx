@@ -20,6 +20,12 @@ import { LeaveRequest } from '@/types/leave';
 import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
+import { resignationService } from '@/services/resignationService';
+import { ResignationRequest } from '@/types/resignation';
+import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
+import { generalDocumentService } from '@/services/generalDocumentService';
+import { GeneralDocumentRequest } from '@/types/generalDocument';
+import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -63,8 +69,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 export interface UnifiedHistoryItem {
   id: string;
-  rawId: number;
-  docType: 'LEAVE' | 'CERTIFICATE';
+  rawId: number | string;
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL';
   docTypeName: string;
   requestNo: string;
   employeeName: string;
@@ -77,6 +83,8 @@ export interface UnifiedHistoryItem {
   actionAt?: string | null;
   leaveRaw?: LeaveRequest;
   certRaw?: CertificateRequest;
+  resignationRaw?: ResignationRequest;
+  generalRaw?: GeneralDocumentRequest;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -86,6 +94,8 @@ export default function ApprovalHistoryPage() {
 
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
   const [certHistory, setCertHistory] = useState<CertificateRequest[]>([]);
+  const [resignHistory, setResignHistory] = useState<ResignationRequest[]>([]);
+  const [generalHistory, setGeneralHistory] = useState<GeneralDocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Sync breadcrumb
@@ -96,7 +106,7 @@ export default function ApprovalHistoryPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE'>('ALL');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Timeline Modal State (Leave)
@@ -107,6 +117,14 @@ export default function ApprovalHistoryPage() {
   const [selectedCertForPreview, setSelectedCertForPreview] = useState<CertificateRequest | null>(null);
   const [isCertPreviewOpen, setIsCertPreviewOpen] = useState(false);
 
+  // Preview Modal State (Resignation)
+  const [selectedResignForPreview, setSelectedResignForPreview] = useState<ResignationRequest | null>(null);
+  const [isResignPreviewOpen, setIsResignPreviewOpen] = useState(false);
+
+  // Preview Modal State (General Document)
+  const [selectedGeneralForPreview, setSelectedGeneralForPreview] = useState<GeneralDocumentRequest | null>(null);
+  const [isGeneralPreviewOpen, setIsGeneralPreviewOpen] = useState(false);
+
   // ─── Fetch ────────────────────────────────────────────────
 
   const fetchHistory = useCallback(async () => {
@@ -116,11 +134,19 @@ export default function ApprovalHistoryPage() {
         ? [statusFilter]
         : ['APPROVED', 'REJECTED', 'CANCELLED'];
 
-      const [leaveResults, certResults] = await Promise.all([
+      const [leaveResults, certResults, resignResults, genResults] = await Promise.all([
         Promise.all(statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))),
         certificateService.getAllRequests().catch((err) => {
           console.error('Failed to fetch certificate history', err);
           return [] as CertificateRequest[];
+        }),
+        resignationService.getAllRequests().catch((err) => {
+          console.error('Failed to fetch resignation history', err);
+          return [] as ResignationRequest[];
+        }),
+        generalDocumentService.getAllRequests().catch((err) => {
+          console.error('Failed to fetch general document history', err);
+          return [] as GeneralDocumentRequest[];
         }),
       ]);
 
@@ -133,8 +159,24 @@ export default function ApprovalHistoryPage() {
         return c.status !== 'PENDING';
       });
 
+      const nonPendingResigns = resignResults.filter((r) => {
+        if (statusFilter) {
+          return r.status === statusFilter;
+        }
+        return r.status !== 'PENDING';
+      });
+
+      const nonPendingGeneral = genResults.filter((g) => {
+        if (statusFilter) {
+          return g.status === statusFilter;
+        }
+        return g.status !== 'PENDING';
+      });
+
       setLeaveHistory(allLeave);
       setCertHistory(nonPendingCerts);
+      setResignHistory(nonPendingResigns);
+      setGeneralHistory(nonPendingGeneral);
     } catch (err) {
       console.error('Failed to fetch approval history', err);
     } finally {
@@ -196,14 +238,55 @@ export default function ApprovalHistoryPage() {
       });
     });
 
+    // 3. คำขอลาออก
+    resignHistory.forEach((r) => {
+      const effectiveDateStr = formatDate(r.requestedLastWorkingDate);
+      list.push({
+        id: `RESIGN-${r.id}`,
+        rawId: r.id,
+        docType: 'RESIGNATION',
+        docTypeName: 'คำขอลาออก',
+        requestNo: r.requestNo || `RESIGN-${String(r.id).padStart(4, '0')}`,
+        employeeName: r.employeeName,
+        employeeCode: r.employeeCode,
+        departmentName: r.departmentName || '-',
+        subType: r.reasonCategory || r.reason || 'ลาออก',
+        details: `วันทำงานวันสุดท้าย: ${effectiveDateStr}${r.handoverNotes ? ` • มอบหมายงาน: ${r.handoverNotes}` : ''}`,
+        status: r.status,
+        approvedByName: r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: r.approvedAt ?? r.cancelledAt ?? r.submittedAt ?? null,
+        resignationRaw: r,
+      });
+    });
+
+    // 4. คำร้องเอกสารทั่วไป
+    generalHistory.forEach((g) => {
+      list.push({
+        id: `GEN-${g.id}`,
+        rawId: g.id,
+        docType: 'GENERAL',
+        docTypeName: 'คำร้องเอกสารทั่วไป',
+        requestNo: g.requestNo || `GEN-${String(g.id).padStart(4, '0')}`,
+        employeeName: g.employeeName,
+        employeeCode: g.employeeCode,
+        departmentName: g.departmentName || '-',
+        subType: g.documentType || 'เอกสารทั่วไป',
+        details: g.purpose ? `วัตถุประสงค์: ${g.purpose}` : 'คำร้องเอกสารทั่วไป',
+        status: g.status,
+        approvedByName: g.approvedByName ?? (g.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: g.approvedAt ?? g.submittedAt ?? null,
+        generalRaw: g,
+      });
+    });
+
     // เรียงลำดับ: รายการล่าสุดอยู่บนสุดเสมอ
     return list.sort((a, b) => {
       const timeA = a.actionAt ? new Date(a.actionAt).getTime() : 0;
       const timeB = b.actionAt ? new Date(b.actionAt).getTime() : 0;
       if (timeA !== timeB) return timeB - timeA;
-      return b.rawId - a.rawId;
+      return String(b.rawId).localeCompare(String(a.rawId));
     });
-  }, [leaveHistory, certHistory]);
+  }, [leaveHistory, certHistory, resignHistory, generalHistory]);
 
   const filteredHistory = useMemo(() => {
     return unifiedHistory.filter((item) => {
@@ -259,6 +342,8 @@ export default function ApprovalHistoryPage() {
                 <option value="ALL">ทุกประเภทเอกสาร</option>
                 <option value="LEAVE">คำขอลา</option>
                 <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
+                <option value="RESIGNATION">คำขอลาออก</option>
+                <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -327,15 +412,28 @@ export default function ApprovalHistoryPage() {
 
                       {/* 2. ประเภทเอกสาร */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        {item.docType === 'LEAVE' ? (
+                        {item.docType === 'LEAVE' && (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                             <ClipboardList className="w-3.5 h-3.5 text-indigo-500" />
                             คำขอลา
                           </span>
-                        ) : (
+                        )}
+                        {item.docType === 'CERTIFICATE' && (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                             <FileText className="w-3.5 h-3.5 text-emerald-500" />
                             หนังสือรับรอง
+                          </span>
+                        )}
+                        {item.docType === 'RESIGNATION' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            <FileText className="w-3.5 h-3.5 text-rose-500" />
+                            คำขอลาออก
+                          </span>
+                        )}
+                        {item.docType === 'GENERAL' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                            <FileText className="w-3.5 h-3.5 text-amber-500" />
+                            เอกสารทั่วไป
                           </span>
                         )}
                       </td>
@@ -386,9 +484,15 @@ export default function ApprovalHistoryPage() {
                             if (item.docType === 'LEAVE') {
                               setSelectedForTimeline(item.leaveRaw!);
                               setIsTimelineOpen(true);
-                            } else {
+                            } else if (item.docType === 'CERTIFICATE') {
                               setSelectedCertForPreview(item.certRaw!);
                               setIsCertPreviewOpen(true);
+                            } else if (item.docType === 'RESIGNATION') {
+                              setSelectedResignForPreview(item.resignationRaw!);
+                              setIsResignPreviewOpen(true);
+                            } else if (item.docType === 'GENERAL') {
+                              setSelectedGeneralForPreview(item.generalRaw!);
+                              setIsGeneralPreviewOpen(true);
                             }
                           }}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-all cursor-pointer"
@@ -425,6 +529,49 @@ export default function ApprovalHistoryPage() {
           setSelectedCertForPreview(null);
         }}
         requestId={selectedCertForPreview?.id}
+      />
+
+      {/* Preview Modal (คำขอลาออก) */}
+      <ResignationPreviewModal
+        isOpen={isResignPreviewOpen}
+        onClose={() => {
+          setIsResignPreviewOpen(false);
+          setSelectedResignForPreview(null);
+        }}
+        data={selectedResignForPreview ? {
+          employeeName: selectedResignForPreview.employeeName,
+          employeeCode: selectedResignForPreview.employeeCode,
+          positionTitle: selectedResignForPreview.positionName,
+          departmentName: selectedResignForPreview.departmentName,
+          submissionDate: selectedResignForPreview.submittedAt ? selectedResignForPreview.submittedAt.split('T')[0] : '',
+          requestedLastWorkingDate: selectedResignForPreview.requestedLastWorkingDate,
+          reasonCategoryLabel: selectedResignForPreview.reasonCategory || 'ลาออกจากงาน',
+          reasonDetail: selectedResignForPreview.reasonDetail || selectedResignForPreview.reason || '-',
+          handoverNotes: selectedResignForPreview.handoverNotes,
+          contactAfterResignation: selectedResignForPreview.contactAfterResignation,
+          noticeDays: selectedResignForPreview.noticePeriodDays,
+        } : null}
+      />
+
+      {/* Preview Modal (คำร้องเอกสารทั่วไป) */}
+      <GeneralDocumentPreviewModal
+        isOpen={isGeneralPreviewOpen}
+        onClose={() => {
+          setIsGeneralPreviewOpen(false);
+          setSelectedGeneralForPreview(null);
+        }}
+        data={selectedGeneralForPreview ? {
+          employeeName: selectedGeneralForPreview.employeeName,
+          employeeCode: selectedGeneralForPreview.employeeCode,
+          positionTitle: selectedGeneralForPreview.positionName,
+          departmentName: selectedGeneralForPreview.departmentName,
+          issueDate: selectedGeneralForPreview.issueDate,
+          expiryDate: selectedGeneralForPreview.expiryDate,
+          documentType: selectedGeneralForPreview.documentType,
+          purpose: selectedGeneralForPreview.purpose,
+          notes: selectedGeneralForPreview.notes,
+          fileName: selectedGeneralForPreview.fileName,
+        } : null}
       />
     </div>
   );
