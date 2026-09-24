@@ -32,6 +32,9 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 
+let initialUsersCache: { items: UserAccount[]; totalCount: number } | null = null;
+let initialRolesCache: RoleSummary[] | null = null;
+
 export default function SettingsPage() {
   const { success, error, info } = useToast();
   const { user, hasPermission, hasRole } = useAuth();
@@ -110,17 +113,17 @@ export default function SettingsPage() {
 
   // === 1. Data States ===
   // Users
-  const [users, setUsers] = useState<UserAccount[]>([]);
-  const [userTotalCount, setUserTotalCount] = useState(0);
+  const [users, setUsers] = useState<UserAccount[]>(() => initialUsersCache?.items || []);
+  const [userTotalCount, setUserTotalCount] = useState(() => initialUsersCache?.totalCount || 0);
   const [userPage, setUserPage] = useState(1);
   const [userPageSize, setUserPageSize] = useState(10);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<number | undefined>(undefined);
   const [userStatusFilter, setUserStatusFilter] = useState('ทั้งหมด');
-  const [isUsersLoading, setIsUsersLoading] = useState(false);
+  const [isUsersLoading, setIsUsersLoading] = useState(() => !initialUsersCache);
 
   // Roles
-  const [roles, setRoles] = useState<RoleSummary[]>([]);
+  const [roles, setRoles] = useState<RoleSummary[]>(() => initialRolesCache || []);
   const [selectedRoleMatrix, setSelectedRoleMatrix] = useState<RoleDetail | null>(null);
   const [isRolesLoading, setIsRolesLoading] = useState(false);
   const [isSavingMatrix, setIsSavingMatrix] = useState(false);
@@ -181,6 +184,9 @@ export default function SettingsPage() {
       });
       setUsers(data.items);
       setUserTotalCount(data.totalCount);
+      if (userPage === 1 && !userSearch && !userRoleFilter && userStatusFilter === 'ทั้งหมด') {
+        initialUsersCache = { items: data.items, totalCount: data.totalCount };
+      }
     } catch (err: any) {
       error(err.message || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
     } finally {
@@ -212,8 +218,9 @@ export default function SettingsPage() {
   const loadRoles = useCallback(async (fetchMatrix = true, forceRefresh = false) => {
     setIsRolesLoading(true);
     try {
-      const rolesData = await settingsService.getAllRoles();
+      const rolesData = await settingsService.getAllRoles(forceRefresh);
       setRoles(rolesData);
+      initialRolesCache = rolesData;
 
       if (rolesData.length > 0 && fetchMatrix) {
         const prevId = selectedRoleIdRef.current;
@@ -305,12 +312,16 @@ export default function SettingsPage() {
 
   // === 4. User Actions ===
   const handleCreateUser = async (data: CreateUserRequest) => {
+    initialUsersCache = null;
+    initialRolesCache = null;
     await settingsService.createUser(data);
     success('สร้างบัญชีผู้ใช้งานสำเร็จ');
     loadUsers();
   };
 
   const handleUpdateUser = async (id: number, data: UpdateUserRequest) => {
+    initialUsersCache = null;
+    initialRolesCache = null;
     await settingsService.updateUser(id, data);
     success('อัปเดตข้อมูลผู้ใช้งานสำเร็จ');
     loadUsers();
@@ -323,6 +334,7 @@ export default function SettingsPage() {
 
   const handleToggleUserStatus = async (user: UserAccount, newStatus: string) => {
     try {
+      initialUsersCache = null;
       await settingsService.toggleUserStatus(user.id, newStatus);
       success(`เปลี่ยนสถานะเป็น ${newStatus} สำเร็จ`);
       loadUsers();
@@ -338,6 +350,8 @@ export default function SettingsPage() {
       message: `คุณต้องการลบบัญชีผู้ใช้ "${user.username}" (${user.fullName}) ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
       onConfirm: async () => {
         try {
+          initialUsersCache = null;
+          initialRolesCache = null;
           await settingsService.deleteUser(user.id);
           success('ลบบัญชีผู้ใช้งานสำเร็จ');
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
@@ -371,6 +385,7 @@ export default function SettingsPage() {
   };
 
   const handleCreateRole = async (data: CreateRoleRequest) => {
+    initialRolesCache = null;
     const newRole = await settingsService.createRole(data);
     success(`สร้างบทบาท ${newRole.roleCode} สำเร็จ`);
     roleMatrixCacheRef.current = {};
@@ -379,6 +394,7 @@ export default function SettingsPage() {
   };
 
   const handleUpdateRole = async (id: number, data: UpdateRoleRequest) => {
+    initialRolesCache = null;
     await settingsService.updateRole(id, data);
     success('อัปเดตบทบาทสำเร็จ');
     delete roleMatrixCacheRef.current[id];
@@ -392,6 +408,7 @@ export default function SettingsPage() {
       message: `คุณต้องการลบบทบาท "${role.roleCode}" (${role.roleName}) ใช่หรือไม่?`,
       onConfirm: async () => {
         try {
+          initialRolesCache = null;
           await settingsService.deleteRole(role.id);
           delete roleMatrixCacheRef.current[role.id];
           success('ลบบทบาทสำเร็จ');

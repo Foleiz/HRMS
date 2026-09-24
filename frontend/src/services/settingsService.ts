@@ -16,7 +16,15 @@ import {
   PagedResponse,
 } from '@/types/settings';
 
+let cachedRoles: RoleSummary[] | null = null;
+let rolesCacheTime = 0;
+
 export const settingsService = {
+  clearRolesCache() {
+    cachedRoles = null;
+    rolesCacheTime = 0;
+  },
+
   // === 1. User Accounts ===
   async getUsers(filter?: UserQueryFilter): Promise<PagedResponse<UserAccount>> {
     const params = new URLSearchParams();
@@ -46,6 +54,7 @@ export const settingsService = {
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || 'ไม่สามารถสร้างผู้ใช้งานได้');
     }
+    cachedRoles = null;
     return res.data.data;
   },
 
@@ -54,6 +63,7 @@ export const settingsService = {
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || 'ไม่สามารถอัปเดตผู้ใช้งานได้');
     }
+    cachedRoles = null;
     return res.data.data;
   },
 
@@ -78,15 +88,22 @@ export const settingsService = {
     if (!res.data.success) {
       throw new Error(res.data.message || 'ไม่สามารถลบผู้ใช้งานได้');
     }
+    cachedRoles = null;
     return res.data.data ?? true;
   },
 
   // === 2. Roles & Permissions ===
-  async getAllRoles(): Promise<RoleSummary[]> {
+  async getAllRoles(forceRefresh = false): Promise<RoleSummary[]> {
+    const now = Date.now();
+    if (!forceRefresh && cachedRoles && now - rolesCacheTime < 60_000) {
+      return cachedRoles;
+    }
     const res = await apiClient.get<ApiResponse<RoleSummary[]>>('/roles');
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || 'ไม่สามารถดึงรายการบทบาทได้');
     }
+    cachedRoles = res.data.data;
+    rolesCacheTime = now;
     return res.data.data;
   },
 
@@ -103,6 +120,7 @@ export const settingsService = {
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || 'ไม่สามารถสร้างบทบาทใหม่ได้');
     }
+    cachedRoles = null;
     return res.data.data;
   },
 
@@ -111,6 +129,7 @@ export const settingsService = {
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || 'ไม่สามารถอัปเดตบทบาทได้');
     }
+    cachedRoles = null;
     return res.data.data;
   },
 
@@ -127,6 +146,7 @@ export const settingsService = {
     if (!res.data.success) {
       throw new Error(res.data.message || 'ไม่สามารถลบบทบาทได้');
     }
+    cachedRoles = null;
     return res.data.data ?? true;
   },
 

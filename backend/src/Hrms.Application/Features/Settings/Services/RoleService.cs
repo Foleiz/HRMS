@@ -14,10 +14,12 @@ public class RoleService : IRoleService
 
     // Cache ในหน่วยความจำเพื่อลดการ Query หนักๆ ของ Role Matrix (<10ms)
     private static readonly ConcurrentDictionary<long, (DateTime Expiry, RoleDetailDto Data)> _matrixCache = new();
+    private static (DateTime Expiry, List<RoleSummaryDto> Data)? _allRolesCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
 
     public static void InvalidateMatrixCache(long? roleId = null)
     {
+        _allRolesCache = null;
         if (roleId.HasValue)
         {
             _matrixCache.TryRemove(roleId.Value, out _);
@@ -126,7 +128,12 @@ public class RoleService : IRoleService
 
     public async Task<List<RoleSummaryDto>> GetAllRolesAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Roles
+        if (_allRolesCache.HasValue && _allRolesCache.Value.Expiry > DateTime.UtcNow)
+        {
+            return _allRolesCache.Value.Data;
+        }
+
+        var roles = await _dbContext.Roles
             .AsNoTracking()
             .OrderBy(r => r.Id)
             .Select(r => new RoleSummaryDto
@@ -141,6 +148,9 @@ public class RoleService : IRoleService
                 LastModifiedAt = DateTime.UtcNow.AddHours(-2)
             })
             .ToListAsync(cancellationToken);
+
+        _allRolesCache = (DateTime.UtcNow.Add(CacheTtl), roles);
+        return roles;
     }
 
     public async Task<RoleDetailDto> GetRoleMatrixAsync(long roleId, CancellationToken cancellationToken = default)
