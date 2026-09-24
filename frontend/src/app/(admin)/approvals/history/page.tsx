@@ -1,10 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  History,
   ClipboardList,
   Search,
   Loader2,
@@ -15,11 +12,20 @@ import {
   AlertCircle,
   ChevronDown,
   Filter,
-  Calendar,
-  GitPullRequest,
+  Eye,
+  FileText,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
+import { certificateService } from '@/services/certificateService';
+import { CertificateRequest } from '@/types/certificates';
+import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
+import { resignationService } from '@/services/resignationService';
+import { ResignationRequest } from '@/types/resignation';
+import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
+import { generalDocumentService } from '@/services/generalDocumentService';
+import { GeneralDocumentRequest } from '@/types/generalDocument';
+import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -61,11 +67,35 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
+export interface UnifiedHistoryItem {
+  id: string;
+  rawId: number | string;
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL';
+  docTypeName: string;
+  requestNo: string;
+  employeeName: string;
+  employeeCode?: string;
+  departmentName: string;
+  subType: string;
+  details: string;
+  status: string;
+  approvedByName?: string | null;
+  actionAt?: string | null;
+  leaveRaw?: LeaveRequest;
+  certRaw?: CertificateRequest;
+  resignationRaw?: ResignationRequest;
+  generalRaw?: GeneralDocumentRequest;
+}
+
 // ─── Component ────────────────────────────────────────────────
 
 export default function ApprovalHistoryPage() {
   const { setBreadcrumb } = useBreadcrumb();
-  const [history, setHistory] = useState<LeaveRequest[]>([]);
+
+  const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
+  const [certHistory, setCertHistory] = useState<CertificateRequest[]>([]);
+  const [resignHistory, setResignHistory] = useState<ResignationRequest[]>([]);
+  const [generalHistory, setGeneralHistory] = useState<GeneralDocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Sync breadcrumb
@@ -76,34 +106,77 @@ export default function ApprovalHistoryPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Timeline Modal State
+  // Timeline Modal State (Leave)
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+
+  // Preview Modal State (Certificate)
+  const [selectedCertForPreview, setSelectedCertForPreview] = useState<CertificateRequest | null>(null);
+  const [isCertPreviewOpen, setIsCertPreviewOpen] = useState(false);
+
+  // Preview Modal State (Resignation)
+  const [selectedResignForPreview, setSelectedResignForPreview] = useState<ResignationRequest | null>(null);
+  const [isResignPreviewOpen, setIsResignPreviewOpen] = useState(false);
+
+  // Preview Modal State (General Document)
+  const [selectedGeneralForPreview, setSelectedGeneralForPreview] = useState<GeneralDocumentRequest | null>(null);
+  const [isGeneralPreviewOpen, setIsGeneralPreviewOpen] = useState(false);
 
   // ─── Fetch ────────────────────────────────────────────────
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      // ดึงเฉพาะรายการที่ผ่านการดำเนินการแล้ว (ไม่รวม PENDING)
       const statuses = statusFilter
         ? [statusFilter]
         : ['APPROVED', 'REJECTED', 'CANCELLED'];
 
-      const results = await Promise.all(
-        statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))
-      );
+      const [leaveResults, certResults, resignResults, genResults] = await Promise.all([
+        Promise.all(statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))),
+        certificateService.getAllRequests().catch((err) => {
+          console.error('Failed to fetch certificate history', err);
+          return [] as CertificateRequest[];
+        }),
+        resignationService.getAllRequests().catch((err) => {
+          console.error('Failed to fetch resignation history', err);
+          return [] as ResignationRequest[];
+        }),
+        generalDocumentService.getAllRequests().catch((err) => {
+          console.error('Failed to fetch general document history', err);
+          return [] as GeneralDocumentRequest[];
+        }),
+      ]);
 
-      // Flatten และ sort ตาม updatedAt (ล่าสุดก่อน)
-      const all = results.flat().sort((a, b) => {
-        const da = new Date(a.updatedAt ?? a.createdAt ?? '').getTime();
-        const db = new Date(b.updatedAt ?? b.createdAt ?? '').getTime();
-        return db - da;
+      const allLeave = leaveResults.flat();
+
+      const nonPendingCerts = certResults.filter((c) => {
+        if (statusFilter) {
+          return c.status === statusFilter || (statusFilter === 'APPROVED' && c.status === 'ISSUED');
+        }
+        return c.status !== 'PENDING';
       });
 
-      setHistory(all);
+      const nonPendingResigns = resignResults.filter((r) => {
+        if (statusFilter) {
+          return r.status === statusFilter;
+        }
+        return r.status !== 'PENDING';
+      });
+
+      const nonPendingGeneral = genResults.filter((g) => {
+        if (statusFilter) {
+          return g.status === statusFilter;
+        }
+        return g.status !== 'PENDING';
+      });
+
+      setLeaveHistory(allLeave);
+      setCertHistory(nonPendingCerts);
+      setResignHistory(nonPendingResigns);
+      setGeneralHistory(nonPendingGeneral);
     } catch (err) {
       console.error('Failed to fetch approval history', err);
     } finally {
@@ -115,56 +188,185 @@ export default function ApprovalHistoryPage() {
     fetchHistory();
   }, [fetchHistory]);
 
-  // ─── Filter ───────────────────────────────────────────────
+  // ─── Unified History Transformation ──────────────────────────
 
-  const filtered = history.filter((r) => {
-    if (!searchTerm.trim()) return true;
-    const q = searchTerm.toLowerCase();
-    return (
-      r.employeeName?.toLowerCase().includes(q) ||
-      r.employeeCode?.toLowerCase().includes(q) ||
-      r.leaveTypeName?.toLowerCase().includes(q) ||
-      r.approvedByName?.toLowerCase().includes(q)
-    );
-  });
+  const unifiedHistory = useMemo(() => {
+    const list: UnifiedHistoryItem[] = [];
+
+    // 1. คำขอลา
+    leaveHistory.forEach((r) => {
+      const dateA = r.startDate ?? r.startDatetime;
+      const dateB = r.endDate ?? r.endDatetime;
+      const rangeStr = dateB && dateB !== dateA ? `${formatDate(dateA)} - ${formatDate(dateB)}` : formatDate(dateA);
+      const daysStr = r.leaveDays ? ` (${r.leaveDays} วัน)` : '';
+
+      list.push({
+        id: `LEAVE-${r.id}`,
+        rawId: r.id,
+        docType: 'LEAVE',
+        docTypeName: 'คำขอลา',
+        requestNo: r.requestNo || `LR-${r.id}`,
+        employeeName: r.employeeName,
+        employeeCode: r.employeeCode,
+        departmentName: r.departmentName || '-',
+        subType: r.leaveTypeName || 'การลา',
+        details: `${rangeStr}${daysStr}${r.reason ? ` • ${r.reason}` : ''}`,
+        status: r.status,
+        approvedByName: r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: r.approvedAt ?? r.cancelledAt ?? r.submittedAt ?? r.updatedAt ?? r.createdAt ?? null,
+        leaveRaw: r,
+      });
+    });
+
+    // 2. หนังสือรับรอง
+    certHistory.forEach((c) => {
+      list.push({
+        id: `CERT-${c.id}`,
+        rawId: c.id,
+        docType: 'CERTIFICATE',
+        docTypeName: 'หนังสือรับรอง',
+        requestNo: `CERT-${String(c.id).padStart(4, '0')}`,
+        employeeName: c.employeeName,
+        employeeCode: c.employeeCode,
+        departmentName: c.departmentName || '-',
+        subType: c.certificateName || 'หนังสือรับรอง',
+        details: c.purpose ? `วัตถุประสงค์: ${c.purpose}` : 'ขอหนังสือรับรอง',
+        status: c.status,
+        approvedByName: c.approvedByName ?? (c.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: c.approvedAt ?? c.issuedAt ?? c.requestedAt ?? null,
+        certRaw: c,
+      });
+    });
+
+    // 3. คำขอลาออก
+    resignHistory.forEach((r) => {
+      const effectiveDateStr = formatDate(r.requestedLastWorkingDate);
+      list.push({
+        id: `RESIGN-${r.id}`,
+        rawId: r.id,
+        docType: 'RESIGNATION',
+        docTypeName: 'คำขอลาออก',
+        requestNo: r.requestNo || `RESIGN-${String(r.id).padStart(4, '0')}`,
+        employeeName: r.employeeName,
+        employeeCode: r.employeeCode,
+        departmentName: r.departmentName || '-',
+        subType: r.reasonCategory || r.reason || 'ลาออก',
+        details: `วันทำงานวันสุดท้าย: ${effectiveDateStr}${r.handoverNotes ? ` • มอบหมายงาน: ${r.handoverNotes}` : ''}`,
+        status: r.status,
+        approvedByName: r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: r.approvedAt ?? r.cancelledAt ?? r.submittedAt ?? null,
+        resignationRaw: r,
+      });
+    });
+
+    // 4. คำร้องเอกสารทั่วไป
+    generalHistory.forEach((g) => {
+      list.push({
+        id: `GEN-${g.id}`,
+        rawId: g.id,
+        docType: 'GENERAL',
+        docTypeName: 'คำร้องเอกสารทั่วไป',
+        requestNo: g.requestNo || `GEN-${String(g.id).padStart(4, '0')}`,
+        employeeName: g.employeeName,
+        employeeCode: g.employeeCode,
+        departmentName: g.departmentName || '-',
+        subType: g.documentType || 'เอกสารทั่วไป',
+        details: g.purpose ? `วัตถุประสงค์: ${g.purpose}` : 'คำร้องเอกสารทั่วไป',
+        status: g.status,
+        approvedByName: g.approvedByName ?? (g.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: g.approvedAt ?? g.submittedAt ?? null,
+        generalRaw: g,
+      });
+    });
+
+    // เรียงลำดับ: รายการล่าสุดอยู่บนสุดเสมอ
+    return list.sort((a, b) => {
+      const timeA = a.actionAt ? new Date(a.actionAt).getTime() : 0;
+      const timeB = b.actionAt ? new Date(b.actionAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return String(b.rawId).localeCompare(String(a.rawId));
+    });
+  }, [leaveHistory, certHistory, resignHistory, generalHistory]);
+
+  const filteredHistory = useMemo(() => {
+    return unifiedHistory.filter((item) => {
+      if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
+        return false;
+      }
+      if (!searchTerm.trim()) return true;
+      const q = searchTerm.toLowerCase();
+      return (
+        item.employeeName?.toLowerCase().includes(q) ||
+        item.employeeCode?.toLowerCase().includes(q) ||
+        item.requestNo?.toLowerCase().includes(q) ||
+        item.docTypeName?.toLowerCase().includes(q) ||
+        item.subType?.toLowerCase().includes(q) ||
+        item.details?.toLowerCase().includes(q) ||
+        item.approvedByName?.toLowerCase().includes(q) ||
+        item.departmentName?.toLowerCase().includes(q)
+      );
+    });
+  }, [unifiedHistory, docTypeFilter, searchTerm]);
 
   // ─── Render ───────────────────────────────────────────────
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร | สายการอนุมัติ */}
+      {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
       <ApprovalNavTabs currentSubTitle="ประวัติเอกสาร" />
 
-      {/* Filters */}
+      {/* Filters & Control Bar */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative">
-            <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="">ทุกสถานะ (ยกเว้น รอการอนุมัติ)</option>
-              <option value="APPROVED">อนุมัติแล้ว</option>
-              <option value="REJECTED">ปฏิเสธแล้ว</option>
-              <option value="CANCELLED">ยกเลิกแล้ว</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <div className="flex flex-wrap gap-3 items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
+            <div className="relative w-72 sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ, ผู้อนุมัติ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
+              />
+            </div>
+
+            {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
+            <div className="relative">
+              <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                value={docTypeFilter}
+                onChange={(e) => setDocTypeFilter(e.target.value as any)}
+                className="pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+              >
+                <option value="ALL">ทุกประเภทเอกสาร</option>
+                <option value="LEAVE">คำขอลา</option>
+                <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
+                <option value="RESIGNATION">คำขอลาออก</option>
+                <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Status filter */}
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+              >
+                <option value="">ทุกสถานะ (ที่ดำเนินการแล้ว)</option>
+                <option value="APPROVED">อนุมัติแล้ว</option>
+                <option value="REJECTED">ปฏิเสธแล้ว</option>
+                <option value="CANCELLED">ยกเลิกแล้ว</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
           </div>
 
-          <div className="relative flex-1 min-w-48">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="ค้นหาชื่อพนักงาน, รหัส, ประเภทลา, ผู้อนุมัติ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
-
-          <span className="text-sm text-gray-400 ml-auto">พบ {filtered.length} รายการ</span>
+          <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
+            พบ {filteredHistory.length} รายการ
+          </span>
         </div>
       </div>
 
@@ -173,104 +375,131 @@ export default function ApprovalHistoryPage() {
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              กำลังโหลดประวัติการอนุมัติ...
+              <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
+              กำลังโหลดประวัติเอกสาร...
             </div>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : filteredHistory.length === 0 ? (
           <div className="py-20 text-center">
             <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">ไม่พบประวัติการอนุมัติ</p>
+            <p className="text-gray-400 text-sm">ไม่พบประวัติเอกสารสำหรับเงื่อนไขที่เลือก</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">พนักงาน</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ประเภทลา</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ลา</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">จำนวนวัน</th>
+                <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">เลขที่เอกสาร</th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ประเภทเอกสาร</th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">พนักงาน</th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">รายละเอียดคำขอ</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สถานะ</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ผู้ดำเนินการ</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ดำเนินการ</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สายอนุมัติ</th>
+                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ดำเนินการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((req) => {
-                  const statusConf = STATUS_CONFIG[req.status] ?? STATUS_CONFIG['PENDING'];
+                {filteredHistory.map((item) => {
+                  const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+
                   return (
-                    <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
-                      {/* พนักงาน */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 font-bold text-sm flex items-center justify-center flex-shrink-0">
-                            {req.employeeName?.slice(0, 2) ?? 'EM'}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900 text-sm">{req.employeeName ?? '-'}</div>
-                            <div className="text-xs text-gray-400">{req.employeeCode ?? '-'}</div>
-                          </div>
-                        </div>
+                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                      {/* 1. เลขที่เอกสาร */}
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-[#0B2046]">
+                        {item.requestNo}
                       </td>
 
-                      {/* ประเภทลา */}
-                      <td className="px-4 py-4 font-medium text-gray-700">{req.leaveTypeName ?? '-'}</td>
+                      {/* 2. ประเภทเอกสาร */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {item.docType === 'LEAVE' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <ClipboardList className="w-3.5 h-3.5 text-indigo-500" />
+                            คำขอลา
+                          </span>
+                        )}
+                        {item.docType === 'CERTIFICATE' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <FileText className="w-3.5 h-3.5 text-emerald-500" />
+                            หนังสือรับรอง
+                          </span>
+                        )}
+                        {item.docType === 'RESIGNATION' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            <FileText className="w-3.5 h-3.5 text-rose-500" />
+                            คำขอลาออก
+                          </span>
+                        )}
+                        {item.docType === 'GENERAL' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                            <FileText className="w-3.5 h-3.5 text-amber-500" />
+                            เอกสารทั่วไป
+                          </span>
+                        )}
+                      </td>
 
-                      {/* วันที่ลา */}
-                      <td className="px-4 py-4 text-gray-600 whitespace-nowrap">
+                      {/* 3. พนักงาน (ชื่อ-นามสกุล และ แผนก ไม่มีรูปโปรไฟล์) */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-gray-300" />
-                          <span>{formatDate(req.startDatetime)}</span>
-                          {req.startDatetime !== req.endDatetime && (
-                            <span className="text-gray-400">– {formatDate(req.endDatetime)}</span>
+                          <span className="font-semibold text-slate-900">{item.employeeName}</span>
+                          {item.departmentName && item.departmentName !== '-' && (
+                            <span className="text-[11px] text-slate-500">• {item.departmentName}</span>
                           )}
                         </div>
                       </td>
 
-                      {/* จำนวนวัน */}
-                      <td className="px-4 py-4 text-center">
-                        <span className="font-semibold text-gray-900">{(req.totalDays ?? req.leaveDays) ?? '-'}</span>
-                        <span className="text-gray-400 text-xs ml-1">วัน</span>
+                      {/* 4. รายละเอียดคำขอ */}
+                      <td className="px-4 py-3.5 text-xs">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                            {item.subType}
+                          </span>
+                          <span className="text-slate-600 truncate max-w-xs">{item.details}</span>
+                        </div>
                       </td>
 
-                      {/* สถานะ */}
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                      {/* 5. สถานะ */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
                           {statusConf.icon}
                           {statusConf.label}
                         </span>
-                        {req.rejectReason && (
-                          <div className="text-xs text-red-400 mt-1 max-w-36 truncate" title={req.rejectReason}>
-                            เหตุผล: {req.rejectReason}
-                          </div>
-                        )}
                       </td>
 
-                      {/* ผู้ดำเนินการ */}
-                      <td className="px-4 py-4 text-gray-600 text-sm">
-                        {req.approvedByName ?? (req.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-')}
+                      {/* 6. ผู้ดำเนินการ */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-600">
+                        {item.approvedByName}
                       </td>
 
-                      {/* วันที่ดำเนินการ */}
-                      <td className="px-4 py-4 text-gray-500 text-xs whitespace-nowrap">
-                        {formatDateTime(req.updatedAt ?? req.createdAt)}
+                      {/* 7. วันที่ดำเนินการ */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500">
+                        {formatDateTime(item.actionAt)}
                       </td>
 
-                      {/* สายอนุมัติ */}
-                      <td className="px-4 py-4 text-center">
+                      {/* 8. ดำเนินการ (ดูเอกสาร) */}
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedForTimeline(req);
-                            setIsTimelineOpen(true);
+                            if (item.docType === 'LEAVE') {
+                              setSelectedForTimeline(item.leaveRaw!);
+                              setIsTimelineOpen(true);
+                            } else if (item.docType === 'CERTIFICATE') {
+                              setSelectedCertForPreview(item.certRaw!);
+                              setIsCertPreviewOpen(true);
+                            } else if (item.docType === 'RESIGNATION') {
+                              setSelectedResignForPreview(item.resignationRaw!);
+                              setIsResignPreviewOpen(true);
+                            } else if (item.docType === 'GENERAL') {
+                              setSelectedGeneralForPreview(item.generalRaw!);
+                              setIsGeneralPreviewOpen(true);
+                            }
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-blue-700 bg-blue-50/80 hover:bg-blue-100 hover:text-blue-800 transition-colors border border-blue-200/60 shadow-2xs"
-                          title="ดูผังขั้นตอนและประวัติการพิจารณา"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                          title="ดูเอกสาร"
                         >
-                          <GitPullRequest className="w-3.5 h-3.5" />
-                          <span>ผังอนุมัติ</span>
+                          <Eye className="w-3.5 h-3.5 text-slate-600" />
+                          ดูเอกสาร
                         </button>
                       </td>
                     </tr>
@@ -282,7 +511,7 @@ export default function ApprovalHistoryPage() {
         )}
       </div>
 
-      {/* Timeline Modal */}
+      {/* Timeline Modal (คำขอลา) */}
       <ApprovalTimelineModal
         isOpen={isTimelineOpen}
         onClose={() => {
@@ -291,7 +520,59 @@ export default function ApprovalHistoryPage() {
         }}
         leaveRequest={selectedForTimeline}
       />
+
+      {/* Preview Modal (คำขอหนังสือรับรอง) */}
+      <CertificatePreviewModal
+        isOpen={isCertPreviewOpen}
+        onClose={() => {
+          setIsCertPreviewOpen(false);
+          setSelectedCertForPreview(null);
+        }}
+        requestId={selectedCertForPreview?.id}
+      />
+
+      {/* Preview Modal (คำขอลาออก) */}
+      <ResignationPreviewModal
+        isOpen={isResignPreviewOpen}
+        onClose={() => {
+          setIsResignPreviewOpen(false);
+          setSelectedResignForPreview(null);
+        }}
+        data={selectedResignForPreview ? {
+          employeeName: selectedResignForPreview.employeeName,
+          employeeCode: selectedResignForPreview.employeeCode,
+          positionTitle: selectedResignForPreview.positionName,
+          departmentName: selectedResignForPreview.departmentName,
+          submissionDate: selectedResignForPreview.submittedAt ? selectedResignForPreview.submittedAt.split('T')[0] : '',
+          requestedLastWorkingDate: selectedResignForPreview.requestedLastWorkingDate,
+          reasonCategoryLabel: selectedResignForPreview.reasonCategory || 'ลาออกจากงาน',
+          reasonDetail: selectedResignForPreview.reasonDetail || selectedResignForPreview.reason || '-',
+          handoverNotes: selectedResignForPreview.handoverNotes,
+          contactAfterResignation: selectedResignForPreview.contactAfterResignation,
+          noticeDays: selectedResignForPreview.noticePeriodDays,
+        } : null}
+      />
+
+      {/* Preview Modal (คำร้องเอกสารทั่วไป) */}
+      <GeneralDocumentPreviewModal
+        isOpen={isGeneralPreviewOpen}
+        onClose={() => {
+          setIsGeneralPreviewOpen(false);
+          setSelectedGeneralForPreview(null);
+        }}
+        data={selectedGeneralForPreview ? {
+          employeeName: selectedGeneralForPreview.employeeName,
+          employeeCode: selectedGeneralForPreview.employeeCode,
+          positionTitle: selectedGeneralForPreview.positionName,
+          departmentName: selectedGeneralForPreview.departmentName,
+          issueDate: selectedGeneralForPreview.issueDate,
+          expiryDate: selectedGeneralForPreview.expiryDate,
+          documentType: selectedGeneralForPreview.documentType,
+          purpose: selectedGeneralForPreview.purpose,
+          notes: selectedGeneralForPreview.notes,
+          fileName: selectedGeneralForPreview.fileName,
+        } : null}
+      />
     </div>
   );
 }
-

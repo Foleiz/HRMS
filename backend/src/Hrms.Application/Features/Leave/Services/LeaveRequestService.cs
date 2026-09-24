@@ -1,4 +1,4 @@
-﻿using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
@@ -43,14 +43,7 @@ public class LeaveRequestService : ILeaveRequestService
 
         if (scopeToManagerEmployeeId.HasValue)
         {
-            // กรองให้หัวหน้างาน (ที่ไม่ใช่ ADMIN) เห็นเฉพาะคำขอลาของลูกทีมสายตรงของตัวเองเท่านั้น
-            var teamEmployeeIds = await _context.EmployeeAssignments
-                .AsNoTracking()
-                .Where(a => a.IsCurrent && a.ManagerEmployeeId == scopeToManagerEmployeeId.Value)
-                .Select(a => a.EmployeeId)
-                .ToListAsync(cancellationToken);
-
-            query = query.Where(r => teamEmployeeIds.Contains(r.EmployeeId));
+            query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -61,7 +54,7 @@ public class LeaveRequestService : ILeaveRequestService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var requests = await query
-            .OrderByDescending(r => r.StartDatetime)
+            .OrderByDescending(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -84,20 +77,27 @@ public class LeaveRequestService : ILeaveRequestService
         return (items, totalCount);
     }
 
-    public async Task<LeaveStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
+    public async Task<LeaveStatsDto> GetStatsAsync(long? scopeToManagerEmployeeId = null, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var endOfMonth = startOfMonth.AddMonths(1);
 
-        var pendingCount = await _context.LeaveRequests
+        var query = _context.LeaveRequests.AsNoTracking().AsQueryable();
+
+        if (scopeToManagerEmployeeId.HasValue)
+        {
+            query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
+        }
+
+        var pendingCount = await query
             .CountAsync(r => r.Status == "PENDING", cancellationToken);
 
-        var approvedThisMonth = await _context.LeaveRequests
+        var approvedThisMonth = await query
             .Where(r => r.Status == "APPROVED" && r.StartDatetime >= startOfMonth && r.StartDatetime < endOfMonth)
             .ToListAsync(cancellationToken);
 
-        var rejectedCount = await _context.LeaveRequests
+        var rejectedCount = await query
             .CountAsync(r => r.Status == "REJECTED" && r.StartDatetime >= startOfMonth && r.StartDatetime < endOfMonth, cancellationToken);
 
         return new LeaveStatsDto
@@ -107,6 +107,43 @@ public class LeaveRequestService : ILeaveRequestService
             RejectedThisMonthCount = rejectedCount,
             TotalLeaveDaysThisMonth = approvedThisMonth.Sum(r => r.LeaveDays)
         };
+    }
+
+    private async Task<IQueryable<LeaveRequest>> ApplyScopeToQueryAsync(
+        IQueryable<LeaveRequest> query,
+        long managerId,
+        CancellationToken cancellationToken)
+    {
+        // 1. ดึง Instance IDs ที่ผู้ใช้คนนี้อยู่ในสายการอนุมัติ (Approval Workflow)
+        var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
+
+        // 2. สำหรับคำขอลาแบบเก่าที่ไม่มี ApprovalInstanceId ให้ใช้สายบังคับบัญชา
+        var managedDeptIds = await _context.Departments
+            .AsNoTracking()
+            .Where(d => d.HeadEmployeeId == managerId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        var managedDivIds = await _context.Divisions
+            .AsNoTracking()
+            .Where(d => d.HeadEmployeeId == managerId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        var teamEmployeeIds = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Where(a => a.IsCurrent && (
+                a.ManagerEmployeeId == managerId ||
+                managedDeptIds.Contains(a.DepartmentId) ||
+                managedDivIds.Contains(a.DivisionId)
+            ))
+            .Select(a => a.EmployeeId)
+            .ToListAsync(cancellationToken);
+
+        return query.Where(r => 
+            (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)) ||
+            (!r.ApprovalInstanceId.HasValue && teamEmployeeIds.Contains(r.EmployeeId))
+        );
     }
 
     public async Task<LeaveRequestDto?> GetByIdAsync(long id, long? currentViewerEmployeeId = null, CancellationToken cancellationToken = default)
@@ -571,6 +608,9 @@ public class LeaveRequestService : ILeaveRequestService
             }
         }
 
+        var hasAlreadyApproved = instance != null && currentViewerEmployeeId.HasValue &&
+            instance.Actions.Any(a => a.ApproverEmployeeId == currentViewerEmployeeId.Value && a.ActionDecision == "APPROVE");
+
         var finalApproveAction = instance?.Actions
             .Where(a => a.ActionDecision == "APPROVE")
             .OrderByDescending(a => a.ActionAt)
@@ -603,6 +643,7 @@ public class LeaveRequestService : ILeaveRequestService
             TotalSteps = totalSteps,
             CurrentApproverDisplay = currentApproverDisplay,
             IsMyTurnToApprove = isMyTurn,
+            HasAlreadyApproved = hasAlreadyApproved,
             ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
             ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
             Documents = r.Documents.Select(d => new LeaveRequestDocumentDto

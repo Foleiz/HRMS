@@ -150,6 +150,7 @@ export default function EmployeesPage() {
   // Form State for creating employee
   const initialFormData: CreateEmployeePayload = {
     employeeCode: '',
+    biometricId: '',
     prefix: '',
     firstName: '',
     lastName: '',
@@ -280,6 +281,7 @@ export default function EmployeesPage() {
     const matchSearch =
       !term ||
       emp.employeeCode.toLowerCase().includes(term) ||
+      (emp.biometricId && emp.biometricId.toLowerCase().includes(term)) ||
       emp.fullName.toLowerCase().includes(term) ||
       (emp.citizenIdMasked && emp.citizenIdMasked.toLowerCase().includes(term)) ||
       (emp.contact?.organizationEmail && emp.contact.organizationEmail.toLowerCase().includes(term)) ||
@@ -519,13 +521,31 @@ export default function EmployeesPage() {
     );
   };
 
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateModal = async () => {
     setFormData(initialFormData);
     setFormErrors({});
     setHasAttemptedSubmit(false);
     setActiveModalTab('personal');
     setActiveFamilyIndex(0);
     setIsCreateModalOpen(true);
+
+    // Auto-generate next employee code (fetch from API, fallback to local compute)
+    try {
+      const nextCode = await employeeService.getNextCode();
+      setFormData((prev) => ({ ...prev, employeeCode: nextCode }));
+    } catch {
+      // Fallback: compute from current employees list
+      let maxCode = 0;
+      for (const emp of employees) {
+        const m = emp.employeeCode?.match(/^EMP(\d+)$/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxCode) maxCode = num;
+        }
+      }
+      const nextCode = `EMP${String(maxCode + 1).padStart(4, '0')}`;
+      setFormData((prev) => ({ ...prev, employeeCode: nextCode }));
+    }
   };
 
   const handleCloseCreateModal = () => {
@@ -586,6 +606,7 @@ export default function EmployeesPage() {
       const payload: CreateEmployeePayload = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
+        biometricId: formData.biometricId?.trim() || undefined,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         citizenId: formData.citizenId?.trim() || undefined,
@@ -864,8 +885,14 @@ export default function EmployeesPage() {
                       className="hover:bg-slate-50/70 transition-colors group text-slate-700"
                     >
                       {/* 1. รหัสพนักงาน */}
-                      <td className="py-3 px-3.5 text-slate-500 font-mono whitespace-nowrap">
-                        {emp.employeeCode}
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <div className="font-mono text-slate-700 font-medium text-xs">{emp.employeeCode}</div>
+                        {emp.biometricId && (
+                          <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
+                            <span className="text-[9px] px-1 py-0.2 bg-slate-100 rounded text-slate-500 font-sans font-medium">สแกน:</span>
+                            <span className="font-semibold text-slate-600">{emp.biometricId}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* 2. ชื่อ-นามสกุล + โปรไฟล์ + เครื่องหมาย ! คอมเมนต์ */}
@@ -1357,18 +1384,40 @@ export default function EmployeesPage() {
                         <div>
                           <label className="font-semibold text-slate-700 block mb-1">
                             รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
+                            <span className="ml-2 text-[10px] font-normal text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+                              สร้างรหัสให้อัตโนมัติ
+                            </span>
                           </label>
                           <input
                             type="text"
-                            placeholder="เช่น EMP001"
+                            readOnly
                             value={formData.employeeCode}
-                            onChange={(e) => {
-                              setFormData({ ...formData, employeeCode: e.target.value });
-                              clearFieldError('employeeCode');
-                            }}
-                            className={getFieldClass('employeeCode')}
+                            className="w-full px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-700 font-mono font-semibold cursor-not-allowed select-none"
                           />
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            รหัสพนักงานถูกกำหนดให้อัตโนมัติโดยระบบ ไม่สามารถแก้ไขได้
+                          </p>
                           {renderFieldError('employeeCode')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            รหัสเครื่องสแกนนิ้ว (Biometric ID)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น 100001"
+                            value={formData.biometricId || ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, biometricId: e.target.value });
+                              clearFieldError('biometricId');
+                            }}
+                            className={getFieldClass('biometricId', true)}
+                          />
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            รหัสเครื่องสแกน/ทาบบัตร (สำหรับ Merge ไฟล์เวลาเข้างานอัตโนมัติ)
+                          </p>
+                          {renderFieldError('biometricId')}
                         </div>
 
                         <div>

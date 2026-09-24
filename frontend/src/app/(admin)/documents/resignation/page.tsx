@@ -23,6 +23,7 @@ import { leaveService } from '@/services/leaveService';
 import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
+import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
 const HANDOVER_MAX_LENGTH = 250;
@@ -240,7 +241,8 @@ export default function ResignationPage() {
       setReasonDetail('');
       setHandoverNotes('');
       setContactAfterResignation('');
-      setShowSuccessModal(true);
+      toast.success('ยื่นคำขอลาออกสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting resignation request:', err);
       setFormError(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการยื่นคำขอลาออก');

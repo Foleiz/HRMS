@@ -6,7 +6,8 @@ namespace Hrms.Application.Features.Employees.DTOs;
 /// </summary>
 public class CreateEmployeeRequest
 {
-    public string EmployeeCode { get; set; } = string.Empty;
+    public string? EmployeeCode { get; set; }
+    public string? BiometricId { get; set; }
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

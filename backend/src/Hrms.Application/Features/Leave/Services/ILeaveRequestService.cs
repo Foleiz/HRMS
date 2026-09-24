@@ -19,7 +19,7 @@ public interface ILeaveRequestService
         long? currentViewerEmployeeId = null,
         CancellationToken cancellationToken = default);
 
-    Task<LeaveStatsDto> GetStatsAsync(CancellationToken cancellationToken = default);
+    Task<LeaveStatsDto> GetStatsAsync(long? scopeToManagerEmployeeId = null, CancellationToken cancellationToken = default);
     Task<LeaveRequestDto?> GetByIdAsync(long id, long? currentViewerEmployeeId = null, CancellationToken cancellationToken = default);
     Task<LeaveRequestDto> CreateAsync(CreateLeaveRequestDto request, CancellationToken cancellationToken = default);
 

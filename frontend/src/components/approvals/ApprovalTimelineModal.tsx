@@ -14,7 +14,8 @@ import {
   MessageSquare,
   FileText,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Download,
 } from 'lucide-react';
 import { ApprovalTimeline, LeaveRequest } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
@@ -49,6 +50,19 @@ const formatDateTime = (d?: string | null) => {
   }
 };
 
+const formatDateOnly = (d?: string | null) => {
+  if (!d) return '-';
+  try {
+    return new Date(d).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return d;
+  }
+};
+
 export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
   isOpen,
   onClose,
@@ -58,6 +72,20 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
   const [timeline, setTimeline] = useState<ApprovalTimeline | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDownloadDoc = async (reqId: number, docId: number, fileName: string) => {
+    try {
+      const blob = await leaveService.downloadLeaveDocument(reqId, docId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('ไม่สามารถดาวน์โหลดเอกสารได้');
+    }
+  };
 
   const effectiveRequest: GenericApprovalRequestInfo | null = leaveRequest
     ? {
@@ -108,7 +136,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-800">
-                  ผังขั้นตอนการอนุมัติ (Approval Workflow)
+                  รายละเอียดเอกสารคำขอลา
                 </h3>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 font-medium">
                   {effectiveRequest.requestNo}
@@ -131,6 +159,70 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {/* ข้อมูลเอกสารคำขอลา */}
+          {leaveRequest && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-3">
+              <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5 pb-2 border-b border-slate-200">
+                <FileText className="w-3.5 h-3.5 text-[#0B2046]" /> ข้อมูลคำขอลา
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-slate-600">
+                <div>
+                  <span className="text-slate-400">พนักงานผู้ขอ: </span>
+                  <strong className="text-slate-800">{leaveRequest.employeeName}</strong>
+                  {leaveRequest.departmentName && (
+                    <span className="text-slate-500"> ({leaveRequest.departmentName})</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-slate-400">ประเภทการลา: </span>
+                  <strong className="text-slate-800">{leaveRequest.leaveTypeName}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400">ช่วงวันที่ลา: </span>
+                  <span className="text-slate-800 font-medium">
+                    {formatDateOnly(leaveRequest.startDate ?? leaveRequest.startDatetime)}
+                    {(leaveRequest.endDate ?? leaveRequest.endDatetime) &&
+                      (leaveRequest.endDate ?? leaveRequest.endDatetime) !==
+                        (leaveRequest.startDate ?? leaveRequest.startDatetime) && (
+                        <span> - {formatDateOnly(leaveRequest.endDate ?? leaveRequest.endDatetime)}</span>
+                      )}{' '}
+                    ({leaveRequest.leaveDays} วัน)
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400">ติดต่อระหว่างลา: </span>
+                  <span className="text-slate-800">{leaveRequest.contactDuringLeave || '-'}</span>
+                </div>
+                {leaveRequest.reason && (
+                  <div className="col-span-1 sm:col-span-2">
+                    <span className="text-slate-400">เหตุผลการลา: </span>
+                    <span className="text-slate-800">{leaveRequest.reason}</span>
+                  </div>
+                )}
+                {leaveRequest.documents && leaveRequest.documents.length > 0 && (
+                  <div className="col-span-1 sm:col-span-2 flex items-center gap-2 pt-1 border-t border-slate-200/60">
+                    <span className="text-slate-400">เอกสารแนบ: </span>
+                    <div className="flex flex-wrap gap-2">
+                      {leaveRequest.documents.map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() =>
+                            handleDownloadDoc(leaveRequest.id, doc.id, doc.fileName || 'document')
+                          }
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>{doc.fileName || 'ดาวน์โหลดเอกสาร'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="py-16 text-center text-slate-400 space-y-2">
               <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#0B2046]" />

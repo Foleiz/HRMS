@@ -19,6 +19,7 @@ import { leaveService } from '@/services/leaveService';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
+import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
@@ -257,7 +258,8 @@ export default function CertificatePage() {
       localStorage.removeItem('hrms_cert_draft');
       setPurpose('');
       setNotes('');
-      setShowSuccessModal(true);
+      toast.success('ยื่นขอหนังสือรับรองสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting certificate request:', err);
       setFormError(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการส่งคำขอหนังสือรับรอง');

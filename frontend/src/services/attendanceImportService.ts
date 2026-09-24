@@ -119,7 +119,9 @@ export const attendanceImportService = {
    * ยกเลิกและลบชุดข้อมูลนำเข้า (Revert / Delete Import Batch) พร้อม Rollback ข้อมูลในหน้าตรวจบันทึกเวลา
    */
   async revertBatch(batchId: number): Promise<ApiResponse<RevertBatchResult>> {
-    const res = await apiClient.delete<ApiResponse<RevertBatchResult>>(`/attendance/import/batches/${batchId}`);
+    const res = await apiClient.delete<ApiResponse<RevertBatchResult>>(`/attendance/import/batches/${batchId}`, {
+      timeout: 60000,
+    });
     return res.data;
   },
 };

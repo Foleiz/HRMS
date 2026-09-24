@@ -36,6 +36,7 @@ export interface EmployeeBankAccount {
 export interface Employee {
   id: number;
   employeeCode: string;
+  biometricId?: string | null;
   prefix?: string;
   firstName: string;
   lastName: string;
@@ -112,7 +113,8 @@ export interface EmployeeEducation {
 
 export interface CreateEmployeePayload {
   // ข้อมูลทั่วไป
-  employeeCode: string;
+  employeeCode: string;  // required in UI (auto-filled), optional to backend
+  biometricId?: string;
   prefix?: string;
   firstName: string;
   lastName: string;
