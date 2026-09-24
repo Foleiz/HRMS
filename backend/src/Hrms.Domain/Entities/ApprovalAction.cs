@@ -1,4 +1,4 @@
-﻿using Hrms.Domain.Common;
+using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -11,7 +11,7 @@ public class ApprovalAction : BaseEntity
 {
     public long ApprovalInstanceId { get; set; }
     public long? ApprovalStepId { get; set; }
-    public long ApproverEmployeeId { get; set; }
+    public long? ApproverEmployeeId { get; set; }
     public string ActionDecision { get; set; } = "APPROVE"; // APPROVE, REJECT, RETURN, CANCEL
     public string? Comment { get; set; }
     public DateTime ActionAt { get; set; } = DateTime.UtcNow;

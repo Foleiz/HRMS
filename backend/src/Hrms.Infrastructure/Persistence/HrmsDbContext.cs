@@ -386,7 +386,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.Employee)
                 .WithOne(e => e.UserAccount)
                 .HasForeignKey<UserAccount>(e => e.EmployeeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configuration: Role
@@ -1444,7 +1444,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id").IsRequired();
             entity.Property(e => e.ApprovalStepId).HasColumnName("approval_step_id");
-            entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id").IsRequired();
+            entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id");
             entity.Property(e => e.ActionDecision).HasColumnName("action_decision").HasMaxLength(30).IsRequired();
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.ActionAt).HasColumnName("action_at").IsRequired();
@@ -1465,7 +1465,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.ApproverEmployee)
                 .WithMany()
                 .HasForeignKey(e => e.ApproverEmployeeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(e => e.ActedForEmployee)
                 .WithMany()
