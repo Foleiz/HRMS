@@ -19,44 +19,82 @@ public class RoleService : IRoleService
         string CategoryName,
         string ParentPermissionPrefix);
 
-    // รายการระบบงานและเมนูย่อยมาตรฐาน 22 เมนูย่อย ครอบคลุม 7 หมวดหมู่หลัก
+    // รายการระบบงานและเมนูย่อยมาตรฐาน ตรงตามเมนูใน Sidebar ครบทั้ง 19 เมนู
     private static readonly List<ModuleDefinition> StandardModules = new()
     {
-        // 1. ข้อมูลพนักงาน (EMPLOYEE)
-        new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
-        new("EMP_CONTRACT", "สัญญาจ้างงาน", "EMP_CONTRACT", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
-        new("EMP_TRANSFER", "การโอนย้าย / ปรับตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
-        new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "ข้อมูลพนักงาน", "EMP"),
+        // 1. แดชบอร์ด (DASHBOARD)
+        new("DASHBOARD_MAIN", "แดชบอร์ดภาพรวม", "EMP", "DASHBOARD", "แดชบอร์ด", "EMP"),
 
-        // 2. การเข้างาน / บันทึกเวลา (ATTENDANCE)
-        new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
-        new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
-        new("TIME_IMPORT", "นำเข้าเวลาสแกนนิ้ว / ไฟล์เวลา", "TIME_IMPORT", "ATTENDANCE", "การเข้างาน / บันทึกเวลา", "TIME"),
+        // 2. พนักงาน (EMPLOYEE)
+        new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_CONTRACT", "สัญญาจ้างงาน", "EMP_CONTRACT", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_TRANSFER", "การโอนย้าย / ปรับตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "พนักงาน", "EMP"),
 
-        // 3. การจัดการวันลา (LEAVE)
-        new("LEAVE_BALANCE", "สิทธิ์วันลาคงเหลือ & ธุรกรรมวันลา", "LEAVE_BALANCE", "LEAVE", "การจัดการวันลา", "LEAVE"),
-        new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "การจัดการวันลา", "LEAVE"),
-        new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การจัดการวันลา", "LEAVE"),
+        // 3. เงินเดือนของฉัน (MY_SALARY)
+        new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "PAYROLL_SLIP", "MY_SALARY", "เงินเดือนของฉัน", "PAYROLL"),
 
-        // 4. การจัดการเงินเดือน / รายได้ (PAYROLL)
-        new("PAYROLL_CALC", "ประมวลผลเงินเดือน / ปิดงวด", "PAYROLL_CALC", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
-        new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
-        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม", "PAYROLL_TAX", "PAYROLL", "การจัดการเงินเดือน / รายได้", "PAYROLL"),
+        // 4. โปรไฟล์ของฉัน (ESS) (MY_PROFILE)
+        new("ESS_PROFILE", "ข้อมูลและแก้ไขโปรไฟล์ส่วนบุคคล", "EMP_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน (ESS)", "EMP"),
 
-        // 5. โครงสร้างองค์กร (ORGANIZATION)
+        // 5. ยอดวันลาคงเหลือ (MY_LEAVE)
+        new("ESS_LEAVE", "ยอดวันลาคงเหลือและประวัติการลา", "LEAVE_BALANCE", "MY_LEAVE", "ยอดวันลาคงเหลือ", "LEAVE"),
+
+        // 6. บันทึกเวลาของฉัน (ESS) (MY_ATTENDANCE)
+        new("ESS_TIME", "ประวัติบันทึกเวลาของตนเอง", "TIME_DAILY", "MY_ATTENDANCE", "บันทึกเวลาของฉัน (ESS)", "TIME"),
+
+        // 7. ข่าวสารสำหรับฉัน (MY_NEWS)
+        new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ORG", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ORG"),
+
+        // 8. ยื่นเอกสาร (MY_DOCS)
+        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "SETTINGS", "MY_DOCS", "ยื่นเอกสาร", "SETTINGS"),
+
+        // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
+        new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
+        new("TIME_IMPORT", "นำเข้าเวลาสแกนนิ้ว / ไฟล์เวลา", "TIME_IMPORT", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
+
+        // 10. การจัดตารางงาน (ATTENDANCE_SCHEDULE)
+        new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
+
+        // 11. การลา (LEAVE)
+        new("LEAVE_BALANCE", "สิทธิ์วันลาคงเหลือ & ธุรกรรมวันลา", "LEAVE_BALANCE", "LEAVE", "การลา", "LEAVE"),
+        new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "การลา", "LEAVE"),
+        new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การลา", "LEAVE"),
+
+        // 12. เงินเดือน (PAYROLL)
+        new("PAYROLL_CALC", "ประมวลผลเงินเดือน / ปิดงวด", "PAYROLL_CALC", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม", "PAYROLL_TAX", "PAYROLL", "เงินเดือน", "PAYROLL"),
+
+        // 13. การอนุมัติ (APPROVALS)
+        new("APPROVAL_LEAVE", "อนุมัติคำขอลา", "LEAVE", "APPROVALS", "การอนุมัติ", "LEAVE"),
+        new("APPROVAL_TIME", "อนุมัติเวลาเข้างานและ OT", "TIME", "APPROVALS", "การอนุมัติ", "TIME"),
+        new("APPROVAL_EMP", "อนุมัติการปรับเปลี่ยนข้อมูลพนักงาน", "EMP", "APPROVALS", "การอนุมัติ", "EMP"),
+        new("APPROVAL_PAYROLL", "อนุมัติงวดเงินเดือน", "PAYROLL", "APPROVALS", "การอนุมัติ", "PAYROLL"),
+
+        // 14. โครงสร้างองค์กร (ORGANIZATION)
         new("ORG_STRUCT", "ฝ่ายและแผนก", "ORG_STRUCT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
         new("ORG_POS", "ตำแหน่งและระดับงาน", "ORG_POS", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
         new("ORG_BENEFIT", "สวัสดิการพนักงาน", "ORG_BENEFIT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
         new("ORG_COMP", "ข้อมูลบริษัทและสาขา", "ORG_COMP", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
 
-        // 6. การตั้งค่าระบบ (SETTINGS)
-        new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
-        new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
-        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "การตั้งค่าระบบ", "SETTINGS"),
+        // 15. วันทำงานและวันหยุด (WORK_CALENDAR)
+        new("WORK_CALENDAR", "ปฏิทินวันทำงานและวันหยุดประจำปี", "TIME_SCHEDULE", "WORK_CALENDAR", "วันทำงานและวันหยุด", "TIME"),
 
-        // 7. รายงาน (REPORT)
+        // 16. รายงาน (REPORT)
         new("REPORT_ATT", "รายงานการลงเวลาและวันลา", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
-        new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT")
+        new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT"),
+
+        // 17. จัดการประกาศ (ANNOUNCEMENTS)
+        new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ORG", "ANNOUNCEMENTS", "จัดการประกาศ", "ORG"),
+
+        // 18. ข้อมูลหลัก (Master Data) (MASTER_DATA)
+        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "SETTINGS", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "SETTINGS"),
+
+        // 19. ตั้งค่า (SETTINGS)
+        new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่า", "SETTINGS"),
+        new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "ตั้งค่า", "SETTINGS"),
+        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)

@@ -109,7 +109,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/attendance/daily',
     icon: CalendarDays,
     requiredPermissions: [
-      'TIME_VIEW',
       'TIME_DAILY_VIEW',
       'TIME_IMPORT_VIEW',
     ],
@@ -120,7 +119,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/attendance/schedules',
     icon: CalendarRange,
     requiredPermissions: [
-      'TIME_VIEW',
       'TIME_SCHEDULE_VIEW',
     ],
   },
@@ -189,7 +187,6 @@ const menuItems: MenuItem[] = [
       'TIME_VIEW',
       'TIME_SCHEDULE_VIEW',
       'TIME_DAILY_VIEW',
-      'HR_ADMIN',
       'SYS_ADMIN',
     ],
   },
@@ -213,7 +210,6 @@ const menuItems: MenuItem[] = [
       'SYS_ADMIN',
       'ORG_VIEW',
     ],
-    requiredRoles: ['ADMIN', 'HR_MGR', 'HR_ADMIN', 'SYS_ADMIN'],
   },
   {
     title: 'ข้อมูลหลัก (Master Data)',
@@ -225,7 +221,6 @@ const menuItems: MenuItem[] = [
       'SYS_ADMIN',
       'ORG_VIEW',
     ],
-    requiredRoles: ['ADMIN', 'HR_MGR', 'HR_ADMIN', 'SYS_ADMIN'],
   },
   {
     title: 'ตั้งค่า',

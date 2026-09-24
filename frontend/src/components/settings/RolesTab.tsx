@@ -23,6 +23,15 @@ import {
   Eye,
   X,
   Shield,
+  LayoutDashboard,
+  Wallet,
+  User,
+  CalendarDays,
+  CalendarRange,
+  CheckCircle2,
+  FileText,
+  Megaphone,
+  Database,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -106,26 +115,50 @@ const ToggleSwitch: React.FC<{
   </div>
 );
 
-/* ─── Constants ─── */
+/* ─── Constants: ไอคอนตรงตามเมนูใน Sidebar ครบทั้ง 19 เมนู ─── */
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  DASHBOARD: LayoutDashboard,
   EMPLOYEE: Users,
-  ATTENDANCE: Clock,
+  MY_SALARY: Wallet,
+  MY_PROFILE: User,
+  MY_LEAVE: CalendarCheck,
+  MY_ATTENDANCE: Clock,
+  MY_NEWS: CalendarDays,
+  MY_DOCS: FileText,
+  ATTENDANCE_DAILY: CalendarDays,
+  ATTENDANCE_SCHEDULE: CalendarRange,
   LEAVE: CalendarCheck,
   PAYROLL: CreditCard,
+  APPROVALS: CheckCircle2,
   ORGANIZATION: Building2,
-  SETTINGS: Settings,
+  WORK_CALENDAR: CalendarDays,
   REPORT: BarChart3,
+  ANNOUNCEMENTS: Megaphone,
+  MASTER_DATA: Database,
+  SETTINGS: Settings,
 };
 
-/** ชื่อหมวดหมู่ที่ตรงกับเมนู Sidebar */
+/** ชื่อหมวดหมู่ตรงตามหัวข้อเมนู Sidebar เพื่อให้ตั้งสิทธิ์ครอบคลุมแต่ละหน้า */
 const CATEGORY_NAMES: Record<string, string> = {
+  DASHBOARD: 'แดชบอร์ด',
   EMPLOYEE: 'พนักงาน',
-  ATTENDANCE: 'การเข้างาน / บันทึกเวลา',
+  MY_SALARY: 'เงินเดือนของฉัน',
+  MY_PROFILE: 'โปรไฟล์ของฉัน (ESS)',
+  MY_LEAVE: 'ยอดวันลาคงเหลือ',
+  MY_ATTENDANCE: 'บันทึกเวลาของฉัน (ESS)',
+  MY_NEWS: 'ข่าวสารสำหรับฉัน',
+  MY_DOCS: 'ยื่นเอกสาร',
+  ATTENDANCE_DAILY: 'ตรวจบันทึกเวลา',
+  ATTENDANCE_SCHEDULE: 'การจัดตารางงาน',
   LEAVE: 'การลา',
   PAYROLL: 'เงินเดือน',
+  APPROVALS: 'การอนุมัติ',
   ORGANIZATION: 'โครงสร้างองค์กร',
-  SETTINGS: 'การตั้งค่าระบบ',
+  WORK_CALENDAR: 'วันทำงานและวันหยุด',
   REPORT: 'รายงาน',
+  ANNOUNCEMENTS: 'จัดการประกาศ',
+  MASTER_DATA: 'ข้อมูลหลัก (Master Data)',
+  SETTINGS: 'ตั้งค่า',
 };
 
 
@@ -346,14 +379,30 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   /* ── Category Dropdown Popover ── */
   const handleCategoryClick = (catCode: string, buttonEl: HTMLButtonElement) => {
+    const cat = categories.find((c) => c.code === catCode);
+    if (!cat) return;
+
+    // ถ้ามีโมดูลเดียวในหมวดหมู่นี้ ให้สลับไปที่โมดูลนั้นทันที
+    if (cat.modules.length === 1) {
+      setSelectedCategoryCode(catCode);
+      setSelectedModuleCode(cat.modules[0].moduleCode);
+      setOpenCategoryCode(null);
+      return;
+    }
+
     if (openCategoryCode === catCode) {
       setOpenCategoryCode(null);
       return;
     }
     const rect = buttonEl.getBoundingClientRect();
-    setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 280) });
     setSelectedCategoryCode(catCode);
     setOpenCategoryCode(catCode);
+
+    // หากโมดูลปัจจุบันไม่ได้อยู่ในหมวดนี้ ให้เลือกตัวแรกในหมวดนี้โดยอัตโนมัติ
+    if (!cat.modules.some((m) => m.moduleCode === selectedModuleCode)) {
+      setSelectedModuleCode(cat.modules[0].moduleCode);
+    }
   };
 
   useEffect(() => {
@@ -661,11 +710,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       >
                         {cat.modules.length}
                       </span>
-                      <ChevronDown
-                        className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
-                          isActive ? 'text-white/70' : 'text-slate-400'
-                        }`}
-                      />
+                      {cat.modules.length > 1 && (
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
+                            isActive ? 'text-white/70' : 'text-slate-400'
+                          }`}
+                        />
+                      )}
                     </button>
                   );
                 })}
