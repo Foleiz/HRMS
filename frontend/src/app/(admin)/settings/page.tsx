@@ -113,7 +113,7 @@ export default function SettingsPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [userTotalCount, setUserTotalCount] = useState(0);
   const [userPage, setUserPage] = useState(1);
-  const [userPageSize] = useState(10);
+  const [userPageSize, setUserPageSize] = useState(10);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<number | undefined>(undefined);
   const [userStatusFilter, setUserStatusFilter] = useState('ทั้งหมด');
@@ -480,6 +480,10 @@ export default function SettingsPage() {
               totalCount={userTotalCount}
               currentPage={userPage}
               pageSize={userPageSize}
+              onPageSizeChange={(newSize) => {
+                setUserPageSize(newSize);
+                setUserPage(1);
+              }}
               roles={roles}
               onPageChange={setUserPage}
               onSearchChange={(s) => {
