@@ -53,10 +53,7 @@ export default function HomePage() {
     }
   }, [user]);
 
-  const displayName =
-    activeRole === 'EMPLOYEE'
-      ? (user?.fullName || 'สมชาย')
-      : (user?.fullName || 'แอดมิน');
+  const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
 
   const hasAnyPermission = Boolean(
     (user?.permissions && user.permissions.length > 0) || hasRole('ADMIN')
