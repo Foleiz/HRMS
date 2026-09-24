@@ -73,6 +73,7 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { confirmAction } from '@/lib/sweetalert';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -933,7 +934,14 @@ function DailyAttendanceContent() {
 
   // Cancel Adjustment
   const handleCancelAdjustment = async (id: number) => {
-    if (!confirm('คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ยืนยันการยกเลิกคำขอ',
+      text: 'คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?',
+      confirmButtonText: 'ยกเลิกคำขอ',
+      cancelButtonText: 'ปิด',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
     try {
       await attendanceAdjustmentService.cancelAdjustment(id);
       toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');

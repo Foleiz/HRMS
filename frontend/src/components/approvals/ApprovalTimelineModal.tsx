@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { ApprovalTimeline, LeaveRequest } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
+import { showError } from '@/lib/sweetalert';
 
 export interface GenericApprovalRequestInfo {
   id: number;
@@ -83,7 +84,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert('ไม่สามารถดาวน์โหลดเอกสารได้');
+      showError('ไม่สามารถดาวน์โหลดเอกสารได้');
     }
   };
 

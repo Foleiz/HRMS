@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
+import { confirmDelete } from '@/lib/sweetalert';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
 import { masterDataService } from '@/services/masterDataService';
@@ -351,7 +352,13 @@ export default function ProfilePage() {
   // Handle Signature Delete
   const handleDeleteSignature = async () => {
     if (!employee) return;
-    if (!confirm('คุณต้องการลบลายเซ็นดิจิทัลนี้ใช่หรือไม่?')) return;
+    const isConfirmed = await confirmDelete({
+      title: 'ยืนยันการลบลายเซ็น',
+      text: 'คุณต้องการลบลายเซ็นดิจิทัลนี้ใช่หรือไม่?',
+      confirmButtonText: 'ลบลายเซ็น',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
 
     try {
       await employeeService.deleteSignature(employee.id);

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { employeeService } from '@/services/employeeService';
+import { confirmAction, showError, hrmsSwal } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import { Employee } from '@/types/employee';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
@@ -103,27 +104,50 @@ export default function TransfersPage() {
   };
 
   const handleApprove = async (id: number) => {
-    if (!confirm('ยืนยันการอนุมัติคำขอนี้ใช่หรือไม่? ระบบจะปรับปรุงตำแหน่ง/สังกัดของพนักงานทันที')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ยืนยันการอนุมัติคำขอย้ายงาน',
+      text: 'ยืนยันการอนุมัติคำขอนี้ใช่หรือไม่? ระบบจะปรับปรุงตำแหน่ง/สังกัดของพนักงานทันที',
+      confirmButtonText: 'อนุมัติคำขอ',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
+
     try {
       await transferService.approve(id);
       fetchData();
       setActionMenuOpenId(null);
     } catch (err: any) {
       console.error('Failed to approve transfer:', err);
-      alert(err.response?.data?.message || 'ไม่สามารถอนุมัติคำขอได้');
+      showError('ไม่สามารถอนุมัติคำขอได้', err.response?.data?.message);
     }
   };
 
   const handleReject = async (id: number) => {
-    const reason = prompt('กรุณาระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):');
-    if (reason === null) return;
+    const { value: reason, isConfirmed } = await hrmsSwal.fire({
+      title: 'ระบุเหตุผลที่ไม่อนุมัติ',
+      input: 'textarea',
+      inputPlaceholder: 'กรอกเหตุผลที่ไม่อนุมัติ (ถ้ามี)...',
+      showCancelButton: true,
+      confirmButtonText: 'ปฏิเสธคำขอ',
+      cancelButtonText: 'ยกเลิก',
+      customClass: {
+        popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-900 p-6',
+        title: 'text-lg font-bold text-slate-800 dark:text-slate-100 pt-2',
+        confirmButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all shadow-sm shadow-rose-200',
+        cancelButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 active:scale-95 transition-all mr-3 border border-slate-200',
+        input: 'rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 w-full',
+        actions: 'gap-3 mt-4 w-full flex justify-end',
+      },
+    });
+    if (!isConfirmed) return;
+
     try {
       await transferService.reject(id, reason);
       fetchData();
       setActionMenuOpenId(null);
     } catch (err: any) {
       console.error('Failed to reject transfer:', err);
-      alert(err.response?.data?.message || 'ไม่สามารถปฏิเสธคำขอได้');
+      showError('ไม่สามารถปฏิเสธคำขอได้', err.response?.data?.message);
     }
   };
 
@@ -132,7 +156,7 @@ export default function TransfersPage() {
       await transferService.downloadDocument(transfer.id, transfer.documentName);
     } catch (err: any) {
       console.error('Failed to download transfer document:', err);
-      alert(err.response?.data?.message || 'ไม่พบไฟล์เอกสารหรือเกิดข้อผิดพลาดในการดาวน์โหลด');
+      showError('ไม่สามารถดาวน์โหลดได้', err.response?.data?.message || 'ไม่พบไฟล์เอกสารหรือเกิดข้อผิดพลาดในการดาวน์โหลด');
     }
   };
 

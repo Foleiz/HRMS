@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
+import { confirmAction } from '@/lib/sweetalert';
 import { essAttendanceService } from '@/services/essAttendanceService';
 import { AttendanceDaily, MyAttendanceMonthlySummary } from '@/types/attendance';
 import { AttendanceAdjustment, CreateAttendanceAdjustmentRequest } from '@/types/attendanceAdjustment';
@@ -214,7 +215,14 @@ export default function EssAttendancePage() {
   };
 
   const handleCancelAdjustment = async (id: number) => {
-    if (!confirm('คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ยืนยันการยกเลิกคำขอ',
+      text: 'คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?',
+      confirmButtonText: 'ยกเลิกคำขอ',
+      cancelButtonText: 'ปิด',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
     try {
       await essAttendanceService.cancelAdjustment(id);
       toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');

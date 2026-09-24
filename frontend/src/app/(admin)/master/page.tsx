@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { confirmDelete } from '@/lib/sweetalert';
 import { masterDataService } from '@/services/masterDataService';
 import { bankService } from '@/services/bankService';
 import {
@@ -219,7 +220,13 @@ export default function MasterDataHubPage() {
 
   // Handle Delete
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`คุณต้องการลบข้อมูล "${name}" ใช่หรือไม่?`)) return;
+    const isConfirmed = await confirmDelete({
+      title: 'ยืนยันการลบข้อมูล',
+      text: `คุณต้องการลบข้อมูล "${name}" ใช่หรือไม่?`,
+      confirmButtonText: 'ลบข้อมูล',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
     try {
       if (activeTab === 'document-types') {
         await masterDataService.deleteDocumentType(id);

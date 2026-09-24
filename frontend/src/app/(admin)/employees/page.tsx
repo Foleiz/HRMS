@@ -10,6 +10,7 @@ import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { confirmDelete } from '@/lib/sweetalert';
 import {
   Search,
   Plus,
@@ -658,7 +659,14 @@ export default function EmployeesPage() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลพนักงาน "${name}"?`)) return;
+    const isConfirmed = await confirmDelete({
+      title: 'ยืนยันการลบข้อมูลพนักงาน',
+      text: `คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลพนักงาน "${name}"? การดำเนินการนี้ไม่สามารถยกเลิกได้`,
+      confirmButtonText: 'ลบข้อมูล',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
+
     try {
       await employeeService.delete(id);
       toast.success('ลบข้อมูลพนักงานเรียบร้อย');
