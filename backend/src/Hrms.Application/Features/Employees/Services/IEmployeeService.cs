@@ -13,6 +13,7 @@ public interface IEmployeeService
     Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default);
     Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
+    Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default);
 
     // จัดการรูปโปรไฟล์ (Option 3 - PostgreSQL Binary Storage)
     Task<string> UploadAvatarAsync(long id, Stream stream, string contentType, long length, CancellationToken cancellationToken = default);

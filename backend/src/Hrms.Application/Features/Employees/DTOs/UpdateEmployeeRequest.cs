@@ -8,6 +8,8 @@ public class UpdateEmployeeRequest
 {
     public string? EmployeeCode { get; set; }
     public string? BiometricId { get; set; }
+    /// <summary>สถานะการจ้างงาน: ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>
+    public string? EmploymentStatus { get; set; }
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
