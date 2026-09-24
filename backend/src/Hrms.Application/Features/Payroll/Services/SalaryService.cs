@@ -467,6 +467,37 @@ public class SalaryService : ISalaryService
             throw new BusinessRuleException("จำนวนเงินเดือนต้องมากกว่า 0 บาท");
         }
 
+        var activeAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent) ?? employee.Assignments.FirstOrDefault();
+
+        // ตรวจสอบกรอบอัตราเงินเดือนตามตำแหน่ง (Salary Structure Min / Max)
+        if (activeAssignment?.PositionId != null)
+        {
+            var structures = await _context.SalaryStructures
+                .Where(s => s.Status == "ACTIVE" && s.PositionId == activeAssignment.PositionId)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            SalaryStructure? matchingStructure = null;
+            if (activeAssignment.EmployeeLevelId.HasValue)
+            {
+                matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == activeAssignment.EmployeeLevelId);
+            }
+            matchingStructure ??= structures.FirstOrDefault();
+
+            if (matchingStructure != null)
+            {
+                if (matchingStructure.MinSalary > 0 && request.BaseSalary < matchingStructure.MinSalary)
+                {
+                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง (฿{matchingStructure.MinSalary:N0})");
+                }
+
+                if (matchingStructure.MaxSalary > 0 && request.BaseSalary > matchingStructure.MaxSalary)
+                {
+                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่สูงกว่าเงินเดือนสูงสุดของตำแหน่ง (฿{matchingStructure.MaxSalary:N0})");
+                }
+            }
+        }
+
         // Get existing salaries
         var existingSalaries = await _context.EmployeeSalaries
             .Where(s => s.EmployeeId == employeeId)
@@ -499,8 +530,6 @@ public class SalaryService : ISalaryService
 
         _context.EmployeeSalaries.Add(newSalary);
         await _context.SaveChangesAsync(cancellationToken);
-
-        var activeAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent) ?? employee.Assignments.FirstOrDefault();
 
         string? approverName = null;
         if (request.ApprovedByEmployeeId.HasValue)
