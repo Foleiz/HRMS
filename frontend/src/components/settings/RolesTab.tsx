@@ -368,6 +368,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     [localModules, selectedModuleCode]
   );
 
+  const isViewingAll = selectedModuleCode === 'ALL' || !selectedModuleCode;
+
   /* ── Navigation ── */
   const navigateModule = (dir: 'prev' | 'next') => {
     const newIdx = currentOverallIdx + (dir === 'next' ? 1 : -1);
@@ -395,13 +397,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return;
     }
     const rect = buttonEl.getBoundingClientRect();
-    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 280) });
+    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 290) });
     setSelectedCategoryCode(catCode);
     setOpenCategoryCode(catCode);
 
-    // หากโมดูลปัจจุบันไม่ได้อยู่ในหมวดนี้ ให้เลือกตัวแรกในหมวดนี้โดยอัตโนมัติ
+    // หากโมดูลปัจจุบันไม่ได้อยู่ในหมวดนี้ ให้เลือก 'ALL' เพื่อแสดงทุกหน้าในหมวดนี้โดยอัตโนมัติ
     if (!cat.modules.some((m) => m.moduleCode === selectedModuleCode)) {
-      setSelectedModuleCode(cat.modules[0].moduleCode);
+      setSelectedModuleCode('ALL');
     }
   };
 
@@ -487,6 +489,72 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
+  /* ── Category-level Bulk Actions (เลือกทุกหน้าในหัวข้อนั้นๆ) ── */
+  const handleSelectAllCategory = (catCode: string) => {
+    const cat = categories.find((c) => c.code === catCode);
+    if (!cat) return;
+    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        if (!modCodes.has(mod.moduleCode)) return mod;
+        const full = { view: true, create: true, edit: true, approve: true };
+        return {
+          ...mod,
+          self: { ...full },
+          team: { ...full },
+          department: { ...full },
+          division: { ...full },
+          organization: { ...full },
+        };
+      })
+    );
+    setIsDirty(true);
+    toast.success(`เปิดสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+  };
+
+  const handleSelectAllCategoryView = (catCode: string) => {
+    const cat = categories.find((c) => c.code === catCode);
+    if (!cat) return;
+    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        if (!modCodes.has(mod.moduleCode)) return mod;
+        return {
+          ...mod,
+          self: { ...(mod.self || {}), view: true, create: false, edit: false, approve: false },
+          team: { ...(mod.team || {}), view: true, create: false, edit: false, approve: false },
+          department: { ...(mod.department || {}), view: true, create: false, edit: false, approve: false },
+          division: { ...(mod.division || {}), view: true, create: false, edit: false, approve: false },
+          organization: { ...(mod.organization || {}), view: true, create: false, edit: false, approve: false },
+        };
+      })
+    );
+    setIsDirty(true);
+    toast.info(`เลือกเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+  };
+
+  const handleDeselectCategory = (catCode: string) => {
+    const cat = categories.find((c) => c.code === catCode);
+    if (!cat) return;
+    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        if (!modCodes.has(mod.moduleCode)) return mod;
+        const empty = { view: false, create: false, edit: false, approve: false };
+        return {
+          ...mod,
+          self: { ...empty },
+          team: { ...empty },
+          department: { ...empty },
+          division: { ...empty },
+          organization: { ...empty },
+        };
+      })
+    );
+    setIsDirty(true);
+    toast.info(`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+  };
+
   const handleReset = () => {
     if (selectedRoleMatrix) {
       setLocalModules(normalizeModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules))));
@@ -515,6 +583,143 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     } catch {
       // Error handled by ToastContext / parent
     }
+  };
+
+  /* ── Render single module scope card ── */
+  const renderModuleCard = (mod: ModulePermissionScope, isSingleView: boolean) => {
+    return (
+      <div key={mod.moduleCode} className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs bg-white">
+        {/* Card Header */}
+        <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#0B2046]" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">{mod.moduleName}</h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                กำหนดสิทธิ์การเข้าถึงตามระดับขอบเขตข้อมูล
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* สลับทั้งแถว */}
+            <button
+              type="button"
+              onClick={() => handleToggleAllRow(mod.moduleCode)}
+              className="text-xs text-[#0B2046] hover:text-[#112d5e] font-semibold cursor-pointer px-3 py-1.5 rounded-lg border border-[#0B2046]/20 hover:bg-[#0B2046]/5 transition-colors"
+            >
+              สลับทั้งหมดในหน้านี้
+            </button>
+            {!isSingleView && (
+              <button
+                type="button"
+                onClick={() => setSelectedModuleCode(mod.moduleCode)}
+                className="text-xs text-slate-600 hover:text-slate-900 font-medium cursor-pointer px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors"
+                title="ดูเฉพาะหน้านี้"
+              >
+                โฟกัสหน้านี้
+              </button>
+            )}
+            {isSingleView && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => navigateModule('prev')}
+                  disabled={currentOverallIdx <= 0}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="เมนูก่อนหน้า"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[11px] text-slate-500 font-medium min-w-[46px] text-center">
+                  {currentOverallIdx + 1} / {localModules.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigateModule('next')}
+                  disabled={currentOverallIdx >= localModules.length - 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="เมนูถัดไป"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── 5 Scope Rows ── */}
+        <div className="divide-y divide-slate-100">
+          {SCOPES_CONFIG.map((sc) => {
+            const scopePerms = mod[sc.key] || {
+              view: false, create: false, edit: false, approve: false,
+            };
+            const activeCount = Object.values(scopePerms).filter(Boolean).length;
+
+            return (
+              <div
+                key={sc.key}
+                className={`flex items-center justify-between gap-4 px-5 py-3.5 border-l-4 ${sc.accentBorder} ${sc.rowBg} transition-colors`}
+              >
+                {/* Left: scope info */}
+                <div className="flex items-center gap-3 min-w-[160px]">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${sc.badgeBg}`}
+                  >
+                    <span className={`text-xs font-bold ${sc.badgeText}`}>
+                      {sc.label.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xs text-slate-900">{sc.label}</span>
+                      {activeCount > 0 && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sc.badgeBg} ${sc.badgeText}`}>
+                          {activeCount} เปิด
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">{sc.description}</p>
+                  </div>
+                </div>
+
+                {/* Right: 4 Toggle Switches */}
+                <div className="flex items-end gap-5 shrink-0">
+                  {ACTIONS_CONFIG.map((act) => (
+                    <ToggleSwitch
+                      key={act.key}
+                      checked={!!scopePerms[act.key]}
+                      onChange={() =>
+                        handleToggleCheckbox(mod.moduleCode, sc.key, act.key)
+                      }
+                      activeColor={sc.toggleOn}
+                      label={act.label}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Single View Footer */}
+        {isSingleView && (
+          <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <span>
+              กดปุ่ม ← → เพื่อเปลี่ยนเมนูย่อย หรือคลิกชื่อเมนูด้านบน
+            </span>
+            {currentOverallIdx < localModules.length - 1 && (
+              <button
+                type="button"
+                onClick={() => navigateModule('next')}
+                className="text-[#0B2046] font-semibold hover:underline cursor-pointer"
+              >
+                ถัดไป: {localModules[currentOverallIdx + 1]?.moduleName} →
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   /* ──────────────────────────────────────────────────────────── */
@@ -654,6 +859,17 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
+                {selectedCategory && selectedCategory.modules.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectAllCategory(selectedCategory.code)}
+                    title={`เลือกเปิดสิทธิ์ทุกหน้าในหัวข้อ ${selectedCategory.name}`}
+                    className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>เลือกทุกหน้าใน{selectedCategory.name}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleSelectAll}
@@ -723,13 +939,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
 
             {/* ── Breadcrumb: current module path ── */}
-            {selectedModule && (
+            {selectedCategory && (
               <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
-                <span className="font-medium text-slate-600">{selectedCategory?.name}</span>
+                <span className="font-medium text-slate-600">{selectedCategory.name}</span>
                 <ChevronRight className="w-3 h-3 text-slate-300" />
-                <span className="font-semibold text-[#0B2046]">{selectedModule.moduleName}</span>
-                <span className="ml-1 text-slate-300">·</span>
-                <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
+                {isViewingAll ? (
+                  <span className="font-semibold text-[#0B2046] flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    ทุกหน้าในหัวข้อนี้ ({selectedCategory.modules.length} หน้า)
+                  </span>
+                ) : (
+                  <>
+                    <span className="font-semibold text-[#0B2046]">{selectedModule?.moduleName}</span>
+                    <span className="ml-1 text-slate-300">·</span>
+                    <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
+                  </>
+                )}
               </div>
             )}
 
@@ -742,7 +967,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 <div
                   ref={dropdownRef}
                   style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999 }}
-                  className="w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
                 >
                   {/* Dropdown Header */}
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -754,19 +979,80 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     </div>
                     <span className="text-[11px] text-slate-400 font-medium">{openCat.modules.length} เมนู</span>
                   </div>
+
+                  {/* Action Bar in Dropdown: ปุ่มเลือกทุกหน้าในหัวข้อนั้นๆ */}
+                  <div className="p-2 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSelectAllCategory(openCat.code);
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                      title={`เลือกเปิดสิทธิ์ทั้งหมดทุกหน้าในหัวข้อ ${openCat.name}`}
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      <span>เลือกทุกหน้า</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSelectAllCategoryView(openCat.code);
+                      }}
+                      className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      title={`เปิดเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ ${openCat.name}`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>เฉพาะดู</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDeselectCategory(openCat.code);
+                      }}
+                      className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer"
+                      title={`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ ${openCat.name}`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
                   {/* Sub-module List */}
-                  <div className="py-1.5 max-h-72 overflow-y-auto">
+                  <div className="py-1 max-h-72 overflow-y-auto">
+                    {/* Option: ทุกหน้าในหัวข้อนี้ */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategoryCode(openCat.code);
+                        setSelectedModuleCode('ALL');
+                        setOpenCategoryCode(null);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-xs transition-colors cursor-pointer border-b border-slate-100 ${
+                        selectedCategoryCode === openCat.code && isViewingAll
+                          ? 'bg-[#0B2046]/10 border-l-4 border-l-[#0B2046] text-[#0B2046] font-bold'
+                          : 'text-slate-800 hover:bg-slate-50 font-semibold border-l-4 border-l-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-3.5 h-3.5 text-[#0B2046]" />
+                        <span>ทุกหน้าในหัวข้อนี้ (แสดงทั้งหมด)</span>
+                      </div>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-bold">
+                        {openCat.modules.length} หน้า
+                      </span>
+                    </button>
+
                     {openCat.modules.map((mod) => {
-                      const isSelected = selectedModuleCode === mod.moduleCode;
+                      const isSelected = !isViewingAll && selectedModuleCode === mod.moduleCode;
                       return (
                         <button
                           key={mod.moduleCode}
                           type="button"
                           onClick={() => {
+                            setSelectedCategoryCode(openCat.code);
                             setSelectedModuleCode(mod.moduleCode);
                             setOpenCategoryCode(null);
                           }}
-                          className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors cursor-pointer border-l-4 ${
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-xs transition-colors cursor-pointer border-l-4 ${
                             isSelected
                               ? 'bg-[#0B2046]/5 border-[#0B2046] text-[#0B2046] font-semibold'
                               : 'border-transparent text-slate-700 hover:bg-slate-50 font-medium'
@@ -782,123 +1068,89 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               );
             })()}
 
-            {/* ── Permission Card ── */}
-            {selectedModule ? (
-              <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-
-                {/* Card Header */}
-                <div className="px-5 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">{selectedModule.moduleName}</h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      กำหนดสิทธิ์การเข้าถึงตามระดับขอบเขตข้อมูล
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* สลับทั้งแถว */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleAllRow(selectedModule.moduleCode)}
-                      className="text-xs text-[#0B2046] hover:text-[#112d5e] font-semibold cursor-pointer px-3 py-1.5 rounded-lg border border-[#0B2046]/20 hover:bg-[#0B2046]/5 transition-colors"
-                    >
-                      สลับทั้งหมด
-                    </button>
-                    {/* Prev / Next Module */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => navigateModule('prev')}
-                        disabled={currentOverallIdx <= 0}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="เมนูก่อนหน้า"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <span className="text-[11px] text-slate-500 font-medium min-w-[46px] text-center">
-                        {currentOverallIdx + 1} / {localModules.length}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => navigateModule('next')}
-                        disabled={currentOverallIdx >= localModules.length - 1}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="เมนูถัดไป"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+            {/* ── Main Permission Display (Single or All in Category) ── */}
+            {isViewingAll && selectedCategory ? (
+              <div className="space-y-4">
+                {/* Category Summary Header */}
+                <div className="p-4 bg-gradient-to-r from-slate-50 to-white border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-[#0B2046] text-white shadow-xs">
+                      {React.createElement(CATEGORY_ICONS[selectedCategory.code] || Layers, { className: 'w-5 h-5' })}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-900">
+                          หัวข้อ: {selectedCategory.name}
+                        </h3>
+                        <span className="px-2 py-0.5 bg-[#0B2046]/10 text-[#0B2046] rounded-full text-[11px] font-bold">
+                          {selectedCategory.modules.length} หน้า
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        แสดงและกำหนดสิทธิ์ทุกหน้าในหัวข้อนี้พร้อมกัน
+                      </p>
                     </div>
                   </div>
-                </div>
 
-                {/* ── 5 Scope Rows ── */}
-                <div className="divide-y divide-slate-100">
-                  {SCOPES_CONFIG.map((sc) => {
-                    const scopePerms = selectedModule[sc.key] || {
-                      view: false, create: false, edit: false, approve: false,
-                    };
-                    const activeCount = Object.values(scopePerms).filter(Boolean).length;
-
-                    return (
-                      <div
-                        key={sc.key}
-                        className={`flex items-center justify-between gap-4 px-5 py-4 border-l-4 ${sc.accentBorder} ${sc.rowBg} transition-colors`}
-                      >
-                        {/* Left: scope info */}
-                        <div className="flex items-center gap-3 min-w-[160px]">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sc.badgeBg}`}
-                          >
-                            <span className={`text-sm font-bold ${sc.badgeText}`}>
-                              {sc.label.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-slate-900">{sc.label}</span>
-                              {activeCount > 0 && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${sc.badgeBg} ${sc.badgeText}`}>
-                                  {activeCount} เปิด
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-tight mt-0.5">{sc.description}</p>
-                          </div>
-                        </div>
-
-                        {/* Right: 4 Toggle Switches */}
-                        <div className="flex items-end gap-5 shrink-0">
-                          {ACTIONS_CONFIG.map((act) => (
-                            <ToggleSwitch
-                              key={act.key}
-                              checked={!!scopePerms[act.key]}
-                              onChange={() =>
-                                handleToggleCheckbox(selectedModule.moduleCode, sc.key, act.key)
-                              }
-                              activeColor={sc.toggleOn}
-                              label={act.label}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Card Footer: quick nav hint */}
-                <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>
-                    กดปุ่ม ← → เพื่อเปลี่ยนเมนูย่อย หรือคลิกชื่อเมนูด้านบน
-                  </span>
-                  {currentOverallIdx < localModules.length - 1 && (
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => navigateModule('next')}
-                      className="text-[#0B2046] font-semibold hover:underline cursor-pointer"
+                      onClick={() => handleSelectAllCategory(selectedCategory.code)}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      title={`เปิดสิทธิ์ทั้งหมดทุกหน้าในหัวข้อ ${selectedCategory.name}`}
                     >
-                      ถัดไป: {localModules[currentOverallIdx + 1]?.moduleName} →
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      <span>เลือกทุกหน้าในหัวข้อนี้</span>
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAllCategoryView(selectedCategory.code)}
+                      className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                      title={`เปิดเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ ${selectedCategory.name}`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>เฉพาะดูทุกหน้า</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeselectCategory(selectedCategory.code)}
+                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                      title={`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ ${selectedCategory.name}`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>ยกเลิกทุกหน้า</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Stack of Module Cards in this Category */}
+                <div className="space-y-4">
+                  {selectedCategory.modules.map((mod) => renderModuleCard(mod, false))}
+                </div>
+              </div>
+            ) : selectedModule ? (
+              <div className="space-y-3">
+                {selectedCategory && selectedCategory.modules.length > 1 && (
+                  <div className="flex items-center justify-between text-xs px-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedModuleCode('ALL')}
+                      className="text-[#0B2046] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>ดูทุกหน้าในหัวข้อ {selectedCategory.name} ({selectedCategory.modules.length} หน้า)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAllCategory(selectedCategory.code)}
+                      className="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      <span>เลือกทุกหน้าในหัวข้อนี้</span>
+                    </button>
+                  </div>
+                )}
+                {renderModuleCard(selectedModule, true)}
               </div>
             ) : (
               <div className="py-12 text-center text-slate-400 text-sm">
