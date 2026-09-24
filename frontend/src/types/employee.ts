@@ -77,6 +77,17 @@ export interface Employee {
   educations?: EmployeeEducation[];
   familyMembers?: FamilyMember[];
   emergencyContacts?: EmergencyContact[];
+  userAccount?: EmployeeUserAccount | null;
+}
+
+export interface EmployeeUserAccount {
+  id: number;
+  username: string;
+  status: string;
+  lastLoginAt?: string | null;
+  roles: string[];
+  roleNames: string[];
+  accessScope?: string | null;
 }
 
 export interface FamilyMember {

@@ -113,6 +113,9 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
             .Include(e => e.Signatures)
+            .Include(e => e.UserAccount)
+                .ThenInclude(u => u!.UserRoles)
+                    .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
@@ -1216,7 +1219,21 @@ public class EmployeeService : IEmployeeService
                 Address = ec.Address,
                 PrimaryPhone = FormatPhoneNumber(ec.PrimaryPhone) ?? string.Empty,
                 IsPrimary = ec.IsPrimary
-            }).ToList()
+            }).ToList(),
+            UserAccount = e.UserAccount != null ? new EmployeeUserAccountDto
+            {
+                Id = e.UserAccount.Id,
+                Username = e.UserAccount.Username,
+                Status = e.UserAccount.Status,
+                LastLoginAt = e.UserAccount.LastLoginAt,
+                Roles = e.UserAccount.UserRoles.Select(ur => ur.Role.RoleCode).ToList(),
+                RoleNames = e.UserAccount.UserRoles.Select(ur => ur.Role.RoleName).ToList(),
+                AccessScope = e.UserAccount.UserRoles.Any(ur => ur.Role.RoleCode == "ADMIN" || ur.Role.RoleCode == "CEO")
+                    ? "ALL (เข้าถึงข้อมูลทั้งองค์กร)"
+                    : (e.UserAccount.UserRoles.Any(ur => ur.Role.RoleCode == "HR" || ur.Role.RoleCode == "MANAGER")
+                        ? "DEPARTMENT (เข้าถึงข้อมูลระดับแผนก)"
+                        : "SELF (ดูข้อมูลตนเอง)")
+            } : null
         };
     }
 

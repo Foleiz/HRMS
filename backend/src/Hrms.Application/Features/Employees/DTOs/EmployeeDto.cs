@@ -63,6 +63,18 @@ public class EmployeeDto
     public List<EmployeeEducationDto> Educations { get; set; } = new();
     public List<FamilyMemberDto> FamilyMembers { get; set; } = new();
     public List<EmergencyContactDto> EmergencyContacts { get; set; } = new();
+    public EmployeeUserAccountDto? UserAccount { get; set; }
+}
+
+public class EmployeeUserAccountDto
+{
+    public long Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Status { get; set; } = "ACTIVE";
+    public DateTime? LastLoginAt { get; set; }
+    public List<string> Roles { get; set; } = new();
+    public List<string> RoleNames { get; set; } = new();
+    public string? AccessScope { get; set; }
 }
 
 public class EmployeeContactDto
