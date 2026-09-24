@@ -234,6 +234,75 @@ const ACTIONS_CONFIG: {
   { key: 'approve', label: 'อนุมัติ' },
 ];
 
+/* ─── Dashboard Items Configuration ─── */
+const DASHBOARD_CONFIG: {
+  code: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  badge: string;
+  badgeBg: string;
+  badgeText: string;
+  defaultScope: 'self' | 'team' | 'department' | 'division' | 'organization';
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  {
+    code: 'DASHBOARD_EMPLOYEE',
+    name: 'แดชบอร์ดพนักงาน',
+    subtitle: 'Employee Dashboard',
+    description: 'ข้อมูลส่วนบุคคล สิทธิ์วันลาคงเหลือ ปฏิทินส่วนตัว ข่าวสารประชาสัมพันธ์ และประวัติทำรายการล่าสุด',
+    badge: 'พนักงานทั่วไป (ESS)',
+    badgeBg: 'bg-slate-100',
+    badgeText: 'text-slate-700',
+    defaultScope: 'self',
+    icon: User,
+  },
+  {
+    code: 'DASHBOARD_DEPT',
+    name: 'แดชบอร์ดหัวหน้าแผนก',
+    subtitle: 'Department Head Dashboard',
+    description: 'กำลังพลและสถิติการมาทำงานระดับแผนก รายการรออนุมัติ กราฟสัดส่วนการเข้างานประจำวัน',
+    badge: 'หัวหน้าแผนก (Dept Head)',
+    badgeBg: 'bg-emerald-50',
+    badgeText: 'text-emerald-700',
+    defaultScope: 'department',
+    icon: Users,
+  },
+  {
+    code: 'DASHBOARD_DIV',
+    name: 'แดชบอร์ดผู้จัดการฝ่าย',
+    subtitle: 'Division Head Dashboard',
+    description: 'ภาพรวมกำลังพลระดับฝ่ายงาน สถิติและแนวโน้มการเข้างานทั้งฝ่าย รายการรออนุมัติฝ่าย',
+    badge: 'ผู้จัดการฝ่าย (Div Head)',
+    badgeBg: 'bg-purple-50',
+    badgeText: 'text-purple-700',
+    defaultScope: 'division',
+    icon: Building2,
+  },
+  {
+    code: 'DASHBOARD_CEO',
+    name: 'แดชบอร์ดผู้บริหาร (CEO)',
+    subtitle: 'Executive / CEO Dashboard',
+    description: 'ภาพรวมทั้งองค์กร สถิติกำลังพลรวม ข้อมูลสรุปเชิงบริหาร การลาและภาพรวมการทำงานระดับสูง',
+    badge: 'ผู้บริหารสูงสุด (CEO)',
+    badgeBg: 'bg-amber-50',
+    badgeText: 'text-amber-700',
+    defaultScope: 'organization',
+    icon: BarChart3,
+  },
+  {
+    code: 'DASHBOARD_ADMIN',
+    name: 'แดชบอร์ดผู้ดูแลระบบ (Admin)',
+    subtitle: 'System Admin Dashboard',
+    description: 'ภาพรวมระบบทั้งหมด สถิติระบบทั้งองค์กร การแจ้งเตือนและการบริหารจัดการ',
+    badge: 'ผู้ดูแลระบบ (Admin)',
+    badgeBg: 'bg-blue-50',
+    badgeText: 'text-blue-700',
+    defaultScope: 'organization',
+    icon: Shield,
+  },
+];
+
 /* ─── Main Component ─── */
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
@@ -579,6 +648,57 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     );
     setIsDirty(true);
     toast.info(`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+  };
+
+  /* ── Dashboard Access Helpers ── */
+  const isDashboardModuleGranted = (moduleCode: string): boolean => {
+    const mod = localModules.find((m) => m.moduleCode === moduleCode);
+    if (!mod) return false;
+    return Boolean(
+      mod.self?.view || mod.self?.create || mod.self?.edit || mod.self?.approve ||
+      mod.team?.view || mod.team?.create || mod.team?.edit || mod.team?.approve ||
+      mod.department?.view || mod.department?.create || mod.department?.edit || mod.department?.approve ||
+      mod.division?.view || mod.division?.create || mod.division?.edit || mod.division?.approve ||
+      mod.organization?.view || mod.organization?.create || mod.organization?.edit || mod.organization?.approve ||
+      mod.canView
+    );
+  };
+
+  const handleToggleDashboardAccess = (moduleCode: string, shouldEnable: boolean) => {
+    setLocalModules((prev) =>
+      prev.map((mod) => {
+        if (mod.moduleCode !== moduleCode) return mod;
+        if (!shouldEnable) {
+          const empty = { view: false, create: false, edit: false, approve: false };
+          return {
+            ...mod,
+            canView: false,
+            canCreate: false,
+            canEdit: false,
+            canApprove: false,
+            self: { ...empty },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        }
+        const cfg = DASHBOARD_CONFIG.find((c) => c.code === moduleCode);
+        const targetScope: 'self' | 'team' | 'department' | 'division' | 'organization' = cfg ? cfg.defaultScope : 'self';
+        const empty = { view: false, create: false, edit: false, approve: false };
+        const granted = { view: true, create: false, edit: false, approve: false };
+        return {
+          ...mod,
+          canView: true,
+          self: targetScope === 'self' ? { ...granted } : { ...empty },
+          team: targetScope === 'team' ? { ...granted } : { ...empty },
+          department: targetScope === 'department' ? { ...granted } : { ...empty },
+          division: targetScope === 'division' ? { ...granted } : { ...empty },
+          organization: targetScope === 'organization' ? { ...granted } : { ...empty },
+        };
+      })
+    );
+    setIsDirty(true);
   };
 
   const handleReset = () => {
@@ -954,6 +1074,119 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 </div>
               );
             })()}
+
+            {/* ── Dashboard Quick Access Selector (แสดงเมื่อเลือกหมวดหมู่ แดชบอร์ด) ── */}
+            {selectedCategoryCode === 'DASHBOARD' && (
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50/20 rounded-2xl border border-slate-200/90 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/70">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <LayoutDashboard className="w-4 h-4 text-[#0B2046]" />
+                      <h3 className="text-sm font-bold text-slate-900">
+                        เลือกสิทธิ์การเข้าถึงแดชบอร์ดสำหรับบทบาทนี้
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      กำหนดว่าบทบาท &quot;{selectedRoleMatrix.roleName}&quot; มีสิทธิ์เปิดดูแดชบอร์ดรูปแบบใดบ้าง (สามารถเลือกได้หลายแดชบอร์ด)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-500 font-medium">
+                      ได้รับสิทธิ์แล้ว:
+                    </span>
+                    <span className="text-xs font-bold text-[#0B2046] bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                      {DASHBOARD_CONFIG.filter((c) => isDashboardModuleGranted(c.code)).length} / 5 แดชบอร์ด
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dashboard Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {DASHBOARD_CONFIG.map((dash) => {
+                    const isGranted = isDashboardModuleGranted(dash.code);
+                    const isSelected = selectedModuleCode === dash.code;
+                    const DashIcon = dash.icon;
+                    return (
+                      <div
+                        key={dash.code}
+                        onClick={() => setSelectedModuleCode(dash.code)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 relative ${
+                          isSelected
+                            ? 'bg-white border-[#0B2046] ring-2 ring-[#0B2046]/10 shadow-sm'
+                            : isGranted
+                            ? 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                            : 'bg-slate-50/70 border-slate-200/60 opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                isGranted ? 'bg-[#0B2046] text-white' : 'bg-slate-200 text-slate-500'
+                              }`}
+                            >
+                              <DashIcon className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-slate-900 leading-snug truncate">
+                                {dash.name}
+                              </h4>
+                              <span className="text-[10px] text-slate-400 font-medium block truncate">
+                                {dash.subtitle}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Toggle Switch */}
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="shrink-0 flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isGranted}
+                              onChange={(e) => handleToggleDashboardAccess(dash.code, e.target.checked)}
+                              className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 cursor-pointer"
+                              title={isGranted ? 'คลิกเพื่อยกเลิกสิทธิ์แดชบอร์ดนี้' : 'คลิกเพื่อมอบสิทธิ์แดชบอร์ดนี้'}
+                            />
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                          {dash.description}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px]">
+                          <span className={`px-2 py-0.5 rounded-md font-semibold ${dash.badgeBg} ${dash.badgeText}`}>
+                            {dash.badge}
+                          </span>
+                          <span
+                            className={`font-semibold flex items-center gap-1 ${
+                              isGranted ? 'text-emerald-600' : 'text-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isGranted ? 'bg-emerald-500' : 'bg-slate-300'
+                              }`}
+                            />
+                            {isGranted ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="text-[11px] text-slate-500 flex flex-wrap items-center justify-between pt-1 gap-2">
+                  <span>💡 คลิกที่การ์ดแดชบอร์ดเพื่อปรับแต่งระดับขอบเขตข้อมูล (Scope) อย่างละเอียดในตารางด้านล่าง</span>
+                  {selectedModuleCode && (
+                    <span className="font-semibold text-[#0B2046]">
+                      กำลังแก้ไขละเอียด: {localModules.find((m) => m.moduleCode === selectedModuleCode)?.moduleName}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── Single Permission Card (1 อันเท่านั้น ไม่ซ้อนหลายอัน) ── */}
             {selectedModule ? (

@@ -23,7 +23,11 @@ public class RoleService : IRoleService
     private static readonly List<ModuleDefinition> StandardModules = new()
     {
         // 1. แดชบอร์ด (DASHBOARD)
-        new("DASHBOARD_MAIN", "แดชบอร์ดภาพรวม", "EMP", "DASHBOARD", "แดชบอร์ด", "EMP"),
+        new("DASHBOARD_EMPLOYEE", "แดชบอร์ดพนักงาน", "DASHBOARD_EMP", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_EMP"),
+        new("DASHBOARD_DEPT", "แดชบอร์ดหัวหน้าแผนก", "DASHBOARD_DEPT", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_DEPT"),
+        new("DASHBOARD_DIV", "แดชบอร์ดผู้จัดการฝ่าย", "DASHBOARD_DIV", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_DIV"),
+        new("DASHBOARD_CEO", "แดชบอร์ดผู้บริหาร (CEO)", "DASHBOARD_CEO", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_CEO"),
+        new("DASHBOARD_ADMIN", "แดชบอร์ดผู้ดูแลระบบ (Admin)", "DASHBOARD_ADMIN", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_ADMIN"),
 
         // 2. พนักงาน (EMPLOYEE)
         new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "พนักงาน", "EMP"),

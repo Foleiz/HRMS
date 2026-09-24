@@ -9,6 +9,7 @@ import AccessDenied from '@/components/common/AccessDenied';
 import {
   GreetingBanner,
   DashboardRole,
+  ROLE_LABELS,
 } from '@/components/dashboard/DashboardHeader';
 import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidget';
 import { RecentTransactionsTable } from '@/components/dashboard/RecentTransactionsTable';
@@ -24,34 +25,51 @@ import { NotificationsWidget } from '@/components/dashboard/manager/Notification
 import { AttendancePieChart } from '@/components/dashboard/manager/AttendancePieChart';
 
 export default function HomePage() {
-  const { user, hasRole, logout } = useAuth();
+  const { user, hasRole, hasPermission, logout } = useAuth();
 
-  // กำหนด Default Role จากข้อมูลสิทธิ์จริงของ User
-  const detectDefaultRole = (): DashboardRole => {
-    if (!user) return 'ADMIN';
+  // คำนวณแดชบอร์ดที่ผู้ใช้ได้รับสิทธิ์จริงจากระบบสิทธิ์ (Dashboard Permission Matrix)
+  const allowedDashboards = React.useMemo<DashboardRole[]>(() => {
+    if (!user) return ['EMPLOYEE'];
     const roles = user.roles || [];
-    if (roles.includes('ADMIN') || roles.includes('SYSTEM_SUPER') || roles.includes('HR_ADMIN')) {
-      return 'ADMIN';
+    if (roles.includes('ADMIN') || roles.includes('SYSTEM_SUPER')) {
+      return ['ADMIN', 'CEO', 'DIV_MGR', 'DEPT_MGR', 'EMPLOYEE'];
     }
-    if (roles.includes('CEO') || roles.includes('EXECUTIVE')) {
-      return 'CEO';
+
+    const list: DashboardRole[] = [];
+    if (hasPermission('DASHBOARD_ADMIN_VIEW') || roles.includes('ADMIN') || roles.includes('HR_ADMIN')) {
+      list.push('ADMIN');
     }
-    if (roles.includes('DIV_MGR') || roles.includes('LINE_MANAGER')) {
-      return 'DIV_MGR';
+    if (hasPermission('DASHBOARD_CEO_VIEW') || roles.includes('CEO') || roles.includes('EXECUTIVE')) {
+      list.push('CEO');
     }
-    if (roles.includes('DEPT_MGR')) {
-      return 'DEPT_MGR';
+    if (hasPermission('DASHBOARD_DIV_VIEW') || roles.includes('DIV_MGR') || roles.includes('LINE_MANAGER')) {
+      list.push('DIV_MGR');
     }
-    return 'EMPLOYEE';
-  };
+    if (hasPermission('DASHBOARD_DEPT_VIEW') || roles.includes('DEPT_MGR')) {
+      list.push('DEPT_MGR');
+    }
+    if (
+      hasPermission('DASHBOARD_EMP_VIEW') ||
+      hasPermission('DASHBOARD_EMPLOYEE_VIEW') ||
+      roles.includes('EMPLOYEE') ||
+      roles.includes('STAFF') ||
+      list.length === 0
+    ) {
+      list.push('EMPLOYEE');
+    }
+
+    return list.length > 0 ? list : ['EMPLOYEE'];
+  }, [user, hasPermission]);
 
   const [activeRole, setActiveRole] = useState<DashboardRole>('EMPLOYEE');
 
   useEffect(() => {
-    if (user) {
-      setActiveRole(detectDefaultRole());
+    if (user && allowedDashboards.length > 0) {
+      if (!allowedDashboards.includes(activeRole)) {
+        setActiveRole(allowedDashboards[0]);
+      }
     }
-  }, [user]);
+  }, [user, allowedDashboards, activeRole]);
 
   const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
 
@@ -91,6 +109,39 @@ export default function HomePage() {
             
             {/* Left / Center Main Content (flex-1) */}
             <div className="flex-1 w-full space-y-4 flex flex-col">
+              {/* Quick Switcher for Multi-Dashboard Roles (แสดงเฉพาะเมื่อได้รับสิทธิ์มากกว่า 1 แดชบอร์ด) */}
+              {allowedDashboards.length > 1 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">
+                      มุมมองแดชบอร์ดที่ได้รับสิทธิ์:
+                    </span>
+                    <span className="text-xs font-bold text-[#0B2046] bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
+                      {ROLE_LABELS[activeRole].badge}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+                    {allowedDashboards.map((role) => {
+                      const isActive = activeRole === role;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setActiveRole(role)}
+                          className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-[#0B2046] text-white shadow-xs font-bold'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                          }`}
+                        >
+                          {ROLE_LABELS[role].title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Greeting Banner (ตรงกับหัวข้อปฏิทิน/แจ้งเตือนพอดี) */}
               <GreetingBanner displayName={displayName} />
 
