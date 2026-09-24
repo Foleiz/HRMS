@@ -219,7 +219,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 users.map((user, idx) => {
                   const rowNumber = (currentPage - 1) * pageSize + idx + 1;
                   const isMenuOpen = openActionId === user.id;
-                  const isLastRows = idx >= Math.max(1, users.length - 3);
+                  const isLastRows = users.length >= 6 && idx >= users.length - 2 && idx >= 4;
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
