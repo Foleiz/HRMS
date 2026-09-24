@@ -1355,7 +1355,7 @@ private static string NormalizeHeader(string header)
         CancellationToken cancellationToken = default)
     {
         var batch = await _context.AttendanceImportBatches
-            .Include(b => b.Errors)
+            .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
 
         if (batch == null)
@@ -1363,62 +1363,52 @@ private static string NormalizeHeader(string header)
             throw new KeyNotFoundException($"ไม่พบข้อมูลชุดการนำเข้า ID: {batchId}");
         }
 
-        // 1. Find AttendanceDaily records linked to this batch:
+        var fileName = batch.FileName;
+
+        // 1. Find AttendanceDaily IDs linked to this batch:
         // ค้นหาเฉพาะข้อมูล AttendanceDaily ที่นำเข้าโดยชุดข้อมูลนี้ (ImportBatchId == batchId) เท่านั้น
-        // ห้ามลบข้อมูลที่ ImportBatchId เป็น null เพราะเป็นข้อมูลขาดงาน/ทำงานที่ระบบหรือผู้ใช้สร้างขึ้นเอง
-        var dailyRecordsToDelete = await _context.AttendanceDailies
+        var dailyIds = await _context.AttendanceDailies
             .Where(a => a.ImportBatchId == batchId)
+            .Select(a => a.Id)
             .ToListAsync(cancellationToken);
 
-        int deletedDailyCount = dailyRecordsToDelete.Count;
+        int deletedDailyCount = dailyIds.Count;
 
-        if (dailyRecordsToDelete.Count > 0)
+        if (dailyIds.Count > 0)
         {
-            var dailyIds = dailyRecordsToDelete.Select(d => d.Id).ToList();
-
             // ตรวจสอบและลบคำขอปรับปรุงเวลา (AttendanceAdjustment) ที่อ้างอิงข้อมูลเวลานี้ เพื่อไม่ให้ติด Foreign Key Constraint
-            var linkedAdjustments = await _context.AttendanceAdjustments
-                .Where(adj => dailyIds.Contains(adj.AttendanceId))
+            var linkedApprovalInstanceIds = await _context.AttendanceAdjustments
+                .Where(adj => dailyIds.Contains(adj.AttendanceId) && adj.ApprovalInstanceId.HasValue)
+                .Select(adj => adj.ApprovalInstanceId!.Value)
+                .Distinct()
                 .ToListAsync(cancellationToken);
 
-            if (linkedAdjustments.Count > 0)
+            await _context.AttendanceAdjustments
+                .Where(adj => dailyIds.Contains(adj.AttendanceId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (linkedApprovalInstanceIds.Count > 0)
             {
-                var linkedApprovalInstanceIds = linkedAdjustments
-                    .Where(adj => adj.ApprovalInstanceId.HasValue)
-                    .Select(adj => adj.ApprovalInstanceId!.Value)
-                    .Distinct()
-                    .ToList();
-
-                _context.AttendanceAdjustments.RemoveRange(linkedAdjustments);
-
-                if (linkedApprovalInstanceIds.Count > 0)
-                {
-                    var approvalInstances = await _context.ApprovalInstances
-                        .Where(ai => linkedApprovalInstanceIds.Contains(ai.Id))
-                        .ToListAsync(cancellationToken);
-
-                    if (approvalInstances.Count > 0)
-                    {
-                        _context.ApprovalInstances.RemoveRange(approvalInstances);
-                    }
-                }
+                await _context.ApprovalInstances
+                    .Where(ai => linkedApprovalInstanceIds.Contains(ai.Id))
+                    .ExecuteDeleteAsync(cancellationToken);
             }
 
-            _context.AttendanceDailies.RemoveRange(dailyRecordsToDelete);
+            // ลบข้อมูลเวลา AttendanceDaily ด้วย ExecuteDeleteAsync ใน 1 query ตรงไปยัง DB (รวดเร็ว ไม่ timeout)
+            await _context.AttendanceDailies
+                .Where(a => a.ImportBatchId == batchId)
+                .ExecuteDeleteAsync(cancellationToken);
         }
 
-        // 2. Remove errors associated with this batch
-        int deletedErrorsCount = batch.Errors?.Count ?? 0;
-        if (batch.Errors != null && batch.Errors.Count > 0)
-        {
-            _context.AttendanceImportErrors.RemoveRange(batch.Errors);
-        }
+        // 2. Remove errors associated with this batch (รวดเร็วใน 1 query)
+        int deletedErrorsCount = await _context.AttendanceImportErrors
+            .Where(e => e.ImportBatchId == batchId)
+            .ExecuteDeleteAsync(cancellationToken);
 
         // 3. Remove the batch itself
-        var fileName = batch.FileName;
-        _context.AttendanceImportBatches.Remove(batch);
-
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.AttendanceImportBatches
+            .Where(b => b.Id == batchId)
+            .ExecuteDeleteAsync(cancellationToken);
 
         return new RevertBatchResultDto
         {
