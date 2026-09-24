@@ -42,6 +42,12 @@ export const employeeService = {
     await apiClient.delete<ApiResponse<null>>(`/employees/${id}`);
   },
 
+  // เปลี่ยนสถานะการจ้างงาน (ACTIVE | INACTIVE)
+  async updateStatus(id: number, status: string): Promise<Employee> {
+    const res = await apiClient.patch<ApiResponse<Employee>>(`/employees/${id}/status`, { status });
+    return res.data.data;
+  },
+
   // อัปโหลดรูปโปรไฟล์พนักงาน (เก็บลง PostgreSQL Binary โดยตรง)
   async uploadAvatar(id: number, file: File): Promise<string> {
     const formData = new FormData();

@@ -106,6 +106,23 @@ public class EmployeesController : ControllerBase
     }
 
     /// <summary>
+    /// เปลี่ยนสถานะการจ้างงานพนักงาน (Quick Update — ไม่ต้องส่งข้อมูลอื่น)
+    /// status ที่รองรับ: ACTIVE, INACTIVE
+    /// </summary>
+    [HttpPatch("{id:long}/status")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<EmployeeDto>>> UpdateStatus(
+        long id,
+        [FromBody] UpdateEmployeeStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.UpdateStatusAsync(id, request.Status, cancellationToken);
+        return Ok(ApiResponse<EmployeeDto>.Ok(result, "อัปเดตสถานะพนักงานสำเร็จ"));
+    }
+
+    /// <summary>
     /// ดึงรูปภาพโปรไฟล์ของพนักงานโดยตรงจากฐานข้อมูล PostgreSQL (ส่งคืนเป็น Binary Stream)
     /// </summary>
     [HttpGet("{id:long}/avatar")]
