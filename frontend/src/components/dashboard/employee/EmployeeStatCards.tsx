@@ -1,80 +1,186 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { leaveService } from '@/services/leaveService';
 import { LeaveBalance } from '@/types/leave';
 
+interface LeaveStatsState {
+  sickUsed: number;
+  sickQuota: number;
+  businessUsed: number;
+  businessQuota: number;
+  vacationUsed: number;
+  vacationQuota: number;
+  specialUsed: number;
+  specialQuota: number;
+  otherUsed: number;
+  totalUsed: number;
+}
+
+const INITIAL_STATS: LeaveStatsState = {
+  sickUsed: 0,
+  sickQuota: 30,
+  businessUsed: 0,
+  businessQuota: 3,
+  vacationUsed: 0,
+  vacationQuota: 6,
+  specialUsed: 0,
+  specialQuota: 10,
+  otherUsed: 0,
+  totalUsed: 0,
+};
+
 export const EmployeeStatCards: React.FC = () => {
-  // ค่าเริ่มต้นตรงตามรูปภาพอ้างอิงของแดชบอร์ดพนักงาน (ภาพที่ 1)
-  const [stats, setStats] = useState({
-    sickUsed: 3,
-    sickQuota: 30,
-    businessUsed: 0,
-    businessQuota: 3,
-    vacationUsed: 8,
-    vacationQuota: 7,
-    specialUsed: 3,
-    specialQuota: 10,
-    otherUsed: 10,
-    totalUsed: 24,
-  });
+  const { user } = useAuth();
+  const [stats, setStats] = useState<LeaveStatsState>(INITIAL_STATS);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchBalances = async () => {
+      setLoading(true);
+      const currentYear = new Date().getFullYear();
+
       try {
-        const balances = await leaveService.getLeaveBalances();
-        if (balances && balances.length > 0) {
+        // 1. ดึงสรุปยอดวันลาของพนักงานปัจจุบันจาก backend (คำนวณจาก Leave Balances + คำขอลาที่อนุมัติจริง)
+        const summary = await leaveService.getMyLeaveSummary({
+          year: currentYear,
+          employeeId: user?.employeeId,
+        });
+
+        if (summary) {
+          const sickU = Number(summary.sickLeave?.usedDays ?? 0);
+          const sickQ = Number(summary.sickLeave?.quotaDays ?? 30);
+
+          const bizU = Number(summary.personalLeave?.usedDays ?? 0);
+          const bizQ = Number(summary.personalLeave?.quotaDays ?? 3);
+
+          const vacU = Number(summary.annualLeave?.usedDays ?? 0);
+          const vacQ = Number(summary.annualLeave?.quotaDays ?? 6);
+
+          const specU = Number(summary.specialLeave?.usedDays ?? 0);
+          const specQ = Number(summary.specialLeave?.quotaDays ?? 10);
+
+          // คำนวณวันลาประเภทอื่นๆ จาก allBalances (เช่น ลาคลอด, ลาทำหมัน, ลาบวช, ฯลฯ)
+          const standardCodes = ['SICK', 'PERSONAL', 'ANNUAL', 'SPECIAL', 'TRAVEL'];
+          let othU = 0;
+          let allUsedSum = 0;
+
+          if (Array.isArray(summary.allBalances) && summary.allBalances.length > 0) {
+            summary.allBalances.forEach((b: LeaveBalance) => {
+              const code = (b.leaveTypeCode || '').toUpperCase();
+              const name = b.leaveTypeName || '';
+              const used = Number(b.usedDays) || 0;
+              allUsedSum += used;
+
+              const isStandard =
+                standardCodes.some((sc) => code.includes(sc)) ||
+                name.includes('ป่วย') ||
+                name.includes('กิจ') ||
+                name.includes('พักร้อน') ||
+                name.includes('พิเศษ');
+
+              if (!isStandard) {
+                othU += used;
+              }
+            });
+          } else {
+            allUsedSum = sickU + bizU + vacU + specU;
+          }
+
+          if (isMounted) {
+            setStats({
+              sickUsed: sickU,
+              sickQuota: sickQ,
+              businessUsed: bizU,
+              businessQuota: bizQ,
+              vacationUsed: vacU,
+              vacationQuota: vacQ,
+              specialUsed: specU,
+              specialQuota: specQ,
+              otherUsed: othU,
+              totalUsed: allUsedSum,
+            });
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn('getMyLeaveSummary failed, trying getLeaveBalances fallback:', err);
+      }
+
+      // 2. Fallback: ดึงจากรายการ leave balances โดยตรงตาม employeeId ของผู้ใช้
+      try {
+        const balances = await leaveService.getLeaveBalances({
+          employeeId: user?.employeeId,
+          year: currentYear,
+        });
+
+        if (balances && Array.isArray(balances) && balances.length > 0) {
           let sickU = 0, sickQ = 30;
           let bizU = 0, bizQ = 3;
-          let vacU = 0, vacQ = 7;
+          let vacU = 0, vacQ = 6;
           let specU = 0, specQ = 10;
           let othU = 0;
           let totU = 0;
 
           balances.forEach((b: LeaveBalance) => {
-            const code = b.leaveTypeCode?.toUpperCase() || '';
-            const used = b.usedDays || 0;
-            const quota = b.annualQuotaDays || 0;
+            const code = (b.leaveTypeCode || '').toUpperCase();
+            const name = b.leaveTypeName || '';
+            const used = Number(b.usedDays) || 0;
+            const quota = Number(b.annualQuotaDays) || 0;
             totU += used;
 
-            if (code.includes('SICK')) {
+            if (code.includes('SICK') || name.includes('ป่วย')) {
               sickU = used;
-              sickQ = quota || 30;
-            } else if (code.includes('BUSINESS')) {
+              if (quota > 0) sickQ = quota;
+            } else if (code.includes('PERSONAL') || code.includes('BUSINESS') || name.includes('กิจ')) {
               bizU = used;
-              bizQ = quota || 3;
-            } else if (code.includes('VACATION') || code.includes('ANNUAL')) {
+              if (quota > 0) bizQ = quota;
+            } else if (code.includes('ANNUAL') || code.includes('VACATION') || name.includes('พักร้อน')) {
               vacU = used;
-              vacQ = quota || 7;
-            } else if (code.includes('SPECIAL')) {
+              if (quota > 0) vacQ = quota;
+            } else if (code.includes('SPECIAL') || code.includes('TRAVEL') || name.includes('พิเศษ') || name.includes('เที่ยว')) {
               specU = used;
-              specQ = quota || 10;
+              if (quota > 0) specQ = quota;
             } else {
               othU += used;
             }
           });
 
-          setStats({
-            sickUsed: sickU || 3,
-            sickQuota: sickQ || 30,
-            businessUsed: bizU || 0,
-            businessQuota: bizQ || 3,
-            vacationUsed: vacU || 8,
-            vacationQuota: vacQ || 7,
-            specialUsed: specU || 3,
-            specialQuota: specQ || 10,
-            otherUsed: othU || 10,
-            totalUsed: totU || 24,
-          });
+          if (isMounted) {
+            setStats({
+              sickUsed: sickU,
+              sickQuota: sickQ,
+              businessUsed: bizU,
+              businessQuota: bizQ,
+              vacationUsed: vacU,
+              vacationQuota: vacQ,
+              specialUsed: specU,
+              specialQuota: specQ,
+              otherUsed: othU,
+              totalUsed: totU,
+            });
+          }
         }
-      } catch (err) {
-        // ใช้ค่าตามภาพอ้างอิง
+      } catch (err2) {
+        console.error('Failed to load employee leave balances:', err2);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    fetchBalances();
-  }, []);
 
-  const isOverVacation = stats.vacationUsed > stats.vacationQuota;
+    fetchBalances();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.employeeId]);
+
+  const isOverVacation = stats.vacationQuota > 0 && stats.vacationUsed > stats.vacationQuota;
   const overDays = stats.vacationUsed - stats.vacationQuota;
 
   return (
