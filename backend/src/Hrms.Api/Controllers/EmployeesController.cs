@@ -107,7 +107,7 @@ public class EmployeesController : ControllerBase
 
     /// <summary>
     /// เปลี่ยนสถานะการจ้างงานพนักงาน (Quick Update — ไม่ต้องส่งข้อมูลอื่น)
-    /// status ที่รองรับ: ACTIVE, PROBATION, RESIGNED, INACTIVE
+    /// status ที่รองรับ: ACTIVE, INACTIVE
     /// </summary>
     [HttpPatch("{id:long}/status")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]

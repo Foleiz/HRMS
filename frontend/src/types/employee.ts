@@ -37,7 +37,7 @@ export interface Employee {
   id: number;
   employeeCode: string;
   biometricId?: string | null;
-  /** สถานะการจ้างงาน: ACTIVE | PROBATION | RESIGNED | INACTIVE */
+  /** สถานะการจ้างงาน: ACTIVE | INACTIVE */
   employmentStatus: string;
   prefix?: string;
   firstName: string;

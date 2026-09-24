@@ -475,13 +475,13 @@ public class EmployeeService : IEmployeeService
             employee.BiometricId = cleanBio;
         }
 
-        // อัปเดตสถานะการจ้างงาน (ACTIVE, PROBATION, RESIGNED, INACTIVE)
+        // อัปเดตสถานะการจ้างงาน (ACTIVE, INACTIVE)
         if (!string.IsNullOrWhiteSpace(request.EmploymentStatus))
         {
-            var allowedStatuses = new[] { "ACTIVE", "PROBATION", "RESIGNED", "INACTIVE" };
+            var allowedStatuses = new[] { "ACTIVE", "INACTIVE" };
             var status = request.EmploymentStatus.ToUpper().Trim();
             if (!allowedStatuses.Contains(status))
-                throw new ValidationException($"สถานะการจ้างงาน '{request.EmploymentStatus}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, PROBATION, RESIGNED, INACTIVE");
+                throw new ValidationException($"สถานะการจ้างงาน '{request.EmploymentStatus}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, INACTIVE");
             employee.EmploymentStatus = status;
         }
 
@@ -815,16 +815,16 @@ public class EmployeeService : IEmployeeService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>
+    /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, INACTIVE</summary>
     public async Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default)
     {
         if (!_currentUserService.HasPermission("EMP_MANAGE"))
             throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะพนักงาน");
 
-        var allowedStatuses = new[] { "ACTIVE", "PROBATION", "RESIGNED", "INACTIVE" };
+        var allowedStatuses = new[] { "ACTIVE", "INACTIVE" };
         var normalized = status?.ToUpper().Trim() ?? string.Empty;
         if (!allowedStatuses.Contains(normalized))
-            throw new ValidationException($"สถานะ '{status}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, PROBATION, RESIGNED, INACTIVE");
+            throw new ValidationException($"สถานะ '{status}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, INACTIVE");
 
         var employee = await _dbContext.Employees
             .Include(e => e.Avatar)

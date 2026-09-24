@@ -669,38 +669,22 @@ export default function EmployeesPage() {
     }
   };
 
-  // เปลี่ยนสถานะการจ้างงานพนักงาน (ACTIVE | PROBATION | RESIGNED | INACTIVE)
+  // เปลี่ยนสถานะการจ้างงานพนักงาน (ACTIVE | INACTIVE)
   const handleStatusChange = async (id: number, status: string) => {
     try {
       const updated = await employeeService.updateStatus(id, status);
       // อัปเดต state ใน list โดยตรงโดยไม่ต้อง reload ใหม่ทั้งหมด
       setEmployees((prev) => prev.map((e) => (e.id === updated.id ? { ...e, employmentStatus: updated.employmentStatus } : e)));
-      const labels: Record<string, string> = { ACTIVE: 'ทำงานอยู่', PROBATION: 'ทดลองงาน', RESIGNED: 'ลาออก', INACTIVE: 'ไม่ได้ทำงาน' };
+      const labels: Record<string, string> = { ACTIVE: 'ทำงานอยู่', INACTIVE: 'ไม่ได้ทำงาน' };
       toast.success(`เปลี่ยนสถานะเป็น "${labels[status] ?? status}" เรียบร้อยแล้ว`);
     } catch {
       toast.error('ไม่สามารถเปลี่ยนสถานะพนักงานได้');
     }
   };
 
-  // Status Badge Mapper — ใช้ employmentStatus จาก DB จริง (ACTIVE, PROBATION, RESIGNED, INACTIVE)
+  // Status Badge Mapper — 2 สถานะ: ACTIVE (ทำงานอยู่) / INACTIVE (ไม่ได้ทำงาน)
   const getStatusBadge = (emp: Employee) => {
     const status = emp.employmentStatus?.toUpperCase() ?? 'ACTIVE';
-    if (status === 'PROBATION') {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 font-medium whitespace-nowrap">
-          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-          ทดลองงาน
-        </span>
-      );
-    }
-    if (status === 'RESIGNED') {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-rose-500 font-medium whitespace-nowrap">
-          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-          ลาออก
-        </span>
-      );
-    }
     if (status === 'INACTIVE') {
       return (
         <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium whitespace-nowrap">
@@ -1082,8 +1066,6 @@ export default function EmployeesPage() {
                                   <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wide">เปลี่ยนสถานะ</p>
                                   {[
                                     { value: 'ACTIVE', label: 'ทำงานอยู่', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                                    { value: 'PROBATION', label: 'ทดลองงาน', color: 'text-amber-600', dot: 'bg-amber-500' },
-                                    { value: 'RESIGNED', label: 'ลาออก', color: 'text-rose-600', dot: 'bg-rose-500' },
                                     { value: 'INACTIVE', label: 'ไม่ได้ทำงาน', color: 'text-slate-500', dot: 'bg-slate-300' },
                                   ].map((s) => {
                                     const isCurrentStatus = (emp.employmentStatus?.toUpperCase() ?? 'ACTIVE') === s.value;

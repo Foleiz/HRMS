@@ -42,7 +42,7 @@ export const employeeService = {
     await apiClient.delete<ApiResponse<null>>(`/employees/${id}`);
   },
 
-  // เปลี่ยนสถานะการจ้างงาน (ACTIVE | PROBATION | RESIGNED | INACTIVE)
+  // เปลี่ยนสถานะการจ้างงาน (ACTIVE | INACTIVE)
   async updateStatus(id: number, status: string): Promise<Employee> {
     const res = await apiClient.patch<ApiResponse<Employee>>(`/employees/${id}/status`, { status });
     return res.data.data;
