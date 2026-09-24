@@ -451,10 +451,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     const cat = categories.find((c) => c.code === catCode);
     if (!cat) return;
 
-    // ถ้ามีโมดูลเดียวในหมวดหมู่นี้ ให้สลับไปที่โมดูลนั้นทันที
-    if (cat.modules.length === 1) {
+    // ถ้าเป็นหมวดแดชบอร์ด หรือมีโมดูลเดียวในหมวดหมู่นี้ ให้สลับไปที่หมวดนั้นทันที
+    if (catCode === 'DASHBOARD' || cat.modules.length === 1) {
       setSelectedCategoryCode(catCode);
-      setSelectedModuleCode(cat.modules[0].moduleCode);
+      if (cat.modules.length > 0) setSelectedModuleCode(cat.modules[0].moduleCode);
       setOpenCategoryCode(null);
       return;
     }
@@ -868,7 +868,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {selectedCategory && selectedCategory.modules.length > 1 && (
+                {selectedCategory && selectedCategory.code !== 'DASHBOARD' && selectedCategory.modules.length > 1 && (
                   <button
                     type="button"
                     onClick={() => handleSelectAllCategory(selectedCategory.code)}
@@ -926,7 +926,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       >
                         {cat.modules.length}
                       </span>
-                      {cat.modules.length > 1 && (
+                      {cat.code !== 'DASHBOARD' && cat.modules.length > 1 && (
                         <ChevronDown
                           className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
                             isActive ? 'text-white/70' : 'text-slate-400'
@@ -939,14 +939,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
 
             {/* ── Breadcrumb: current module path ── */}
-            {selectedModule && (
+            {selectedCategoryCode === 'DASHBOARD' ? (
               <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
-                <span className="font-medium text-slate-600">{selectedCategory?.name}</span>
-                <ChevronRight className="w-3 h-3 text-slate-300" />
-                <span className="font-semibold text-[#0B2046]">{selectedModule.moduleName}</span>
+                <span className="font-semibold text-[#0B2046]">{selectedCategory?.name || 'แดชบอร์ด'}</span>
                 <span className="ml-1 text-slate-300">·</span>
-                <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
+                <span className="text-slate-400">กำหนดสิทธิ์การเข้าถึงแดชบอร์ด 5 รูปแบบ</span>
               </div>
+            ) : (
+              selectedModule && (
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
+                  <span className="font-medium text-slate-600">{selectedCategory?.name}</span>
+                  <ChevronRight className="w-3 h-3 text-slate-300" />
+                  <span className="font-semibold text-[#0B2046]">{selectedModule.moduleName}</span>
+                  <span className="ml-1 text-slate-300">·</span>
+                  <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
+                </div>
+              )
             )}
 
             {/* ── Dropdown Popover (fixed, rendered via portal pattern) ── */}
@@ -1109,13 +1117,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     return (
                       <div
                         key={dash.code}
-                        onClick={() => setSelectedModuleCode(dash.code)}
+                        onClick={() => handleToggleDashboardAccess(dash.code, !isGranted)}
                         className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 relative ${
-                          isSelected
-                            ? 'bg-white border-[#0B2046] ring-2 ring-[#0B2046]/10 shadow-sm'
-                            : isGranted
-                            ? 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
-                            : 'bg-slate-50/70 border-slate-200/60 opacity-80 hover:opacity-100'
+                          isGranted
+                            ? 'bg-white border-slate-300 ring-2 ring-[#0B2046]/10 shadow-sm'
+                            : 'bg-slate-50/70 border-slate-200/60 opacity-80 hover:opacity-100 hover:bg-white'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -1177,19 +1183,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   })}
                 </div>
                 
-                <div className="text-[11px] text-slate-500 flex flex-wrap items-center justify-between pt-1 gap-2">
-                  <span>💡 คลิกที่การ์ดแดชบอร์ดเพื่อปรับแต่งระดับขอบเขตข้อมูล (Scope) อย่างละเอียดในตารางด้านล่าง</span>
-                  {selectedModuleCode && (
-                    <span className="font-semibold text-[#0B2046]">
-                      กำลังแก้ไขละเอียด: {localModules.find((m) => m.moduleCode === selectedModuleCode)?.moduleName}
-                    </span>
-                  )}
+                <div className="text-[11px] text-slate-500 pt-1">
+                  <span>💡 คลิกที่การ์ดหรือ Checkbox เพื่อเปิดใช้งานหรือปิดการเข้าถึงแดชบอร์ดแต่ละมุมมองสำหรับบทบาทนี้</span>
                 </div>
               </div>
             )}
 
-            {/* ── Single Permission Card (1 อันเท่านั้น ไม่ซ้อนหลายอัน) ── */}
-            {selectedModule ? (
+            {/* ── Single Permission Card (แสดงเฉพาะหมวดหมู่อื่นๆ ที่ไม่ใช่แดชบอร์ด) ── */}
+            {selectedCategoryCode !== 'DASHBOARD' && (
+              selectedModule ? (
               <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs bg-white">
 
                 {/* Card Header */}
@@ -1322,7 +1324,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div className="py-12 text-center text-slate-400 text-sm">
                 เลือกเมนูย่อยด้านบนเพื่อกำหนดสิทธิ์
               </div>
-            )}
+            )
+          )}
 
             {/* Bottom Save Bar */}
             <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
