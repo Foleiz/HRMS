@@ -43,8 +43,13 @@ public class EmployeeDto
 
     // ข้อมูลการจ้างงาน
     public long? PositionId { get; set; }
+    public string? PositionCode { get; set; }
     public string? PositionName { get; set; }
+    public long? DepartmentId { get; set; }
+    public string? DepartmentCode { get; set; }
     public string? DepartmentName { get; set; }
+    public long? DivisionId { get; set; }
+    public string? DivisionCode { get; set; }
     public string? DivisionName { get; set; }
     public string? EmployeeType { get; set; }
 
