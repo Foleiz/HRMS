@@ -36,6 +36,17 @@ public class EmployeesController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงรหัสพนักงานลำดับถัดไปที่ระบบสร้างให้อัตโนมัติ (เช่น EMP0001, EMP0011)
+    /// </summary>
+    [HttpGet("next-code")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<string>>> GetNextCode(CancellationToken cancellationToken)
+    {
+        var nextCode = await _employeeService.GetNextEmployeeCodeAsync(cancellationToken);
+        return Ok(ApiResponse<string>.Ok(nextCode, "ดึงรหัสพนักงานลำดับถัดไปสำเร็จ"));
+    }
+
+    /// <summary>
     /// ดึงข้อมูลพนักงานตาม ID
     /// </summary>
     [HttpGet("{id:long}")]

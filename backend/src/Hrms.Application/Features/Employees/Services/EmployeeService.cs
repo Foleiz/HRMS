@@ -123,6 +123,31 @@ public class EmployeeService : IEmployeeService
         return MapToDto(employee);
     }
 
+    /// <summary>
+    /// คำนวณรหัสพนักงานลำดับถัดไปแบบอัตโนมัติ (เช่น EMP0001, EMP0011)
+    /// </summary>
+    public async Task<string> GetNextEmployeeCodeAsync(CancellationToken cancellationToken = default)
+    {
+        var codes = await _dbContext.Employees
+            .AsNoTracking()
+            .Select(e => e.EmployeeCode)
+            .ToListAsync(cancellationToken);
+
+        int maxCode = 0;
+        foreach (var code in codes)
+        {
+            if (string.IsNullOrWhiteSpace(code)) continue;
+            var match = System.Text.RegularExpressions.Regex.Match(code.Trim(), @"^EMP(\d+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && int.TryParse(match.Groups[1].Value, out int num))
+            {
+                if (num > maxCode) maxCode = num;
+            }
+        }
+
+        int nextNum = maxCode + 1;
+        return $"EMP{nextNum:D4}";
+    }
+
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
         // 1. ตรวจสอบสิทธิ์สร้างพนักงาน
@@ -131,12 +156,27 @@ public class EmployeeService : IEmployeeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างข้อมูลพนักงาน");
         }
 
-        // 2. ตรวจสอบความซ้ำซ้อนของรหัสพนักงาน
+        // 2. หากไม่ได้ระบุรหัสพนักงาน ให้ระบบ Generate อัตโนมัติ
+        if (string.IsNullOrWhiteSpace(request.EmployeeCode))
+        {
+            request.EmployeeCode = await GetNextEmployeeCodeAsync(cancellationToken);
+        }
+
+        // 3. ตรวจสอบความซ้ำซ้อนของรหัสพนักงาน
         bool codeExists = await _dbContext.Employees
             .AnyAsync(e => e.EmployeeCode == request.EmployeeCode.Trim(), cancellationToken);
         if (codeExists)
         {
-            throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
+            // Auto-resolve race condition by generating true next code
+            string autoCode = await GetNextEmployeeCodeAsync(cancellationToken);
+            if (autoCode != request.EmployeeCode.Trim())
+            {
+                request.EmployeeCode = autoCode;
+            }
+            else
+            {
+                throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
+            }
         }
 
         string? cleanBiometricId = string.IsNullOrWhiteSpace(request.BiometricId) ? null : request.BiometricId.Trim();

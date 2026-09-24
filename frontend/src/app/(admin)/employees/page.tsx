@@ -521,13 +521,31 @@ export default function EmployeesPage() {
     );
   };
 
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateModal = async () => {
     setFormData(initialFormData);
     setFormErrors({});
     setHasAttemptedSubmit(false);
     setActiveModalTab('personal');
     setActiveFamilyIndex(0);
     setIsCreateModalOpen(true);
+
+    // Auto-generate next employee code (fetch from API, fallback to local compute)
+    try {
+      const nextCode = await employeeService.getNextCode();
+      setFormData((prev) => ({ ...prev, employeeCode: nextCode }));
+    } catch {
+      // Fallback: compute from current employees list
+      let maxCode = 0;
+      for (const emp of employees) {
+        const m = emp.employeeCode?.match(/^EMP(\d+)$/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxCode) maxCode = num;
+        }
+      }
+      const nextCode = `EMP${String(maxCode + 1).padStart(4, '0')}`;
+      setFormData((prev) => ({ ...prev, employeeCode: nextCode }));
+    }
   };
 
   const handleCloseCreateModal = () => {
@@ -1366,17 +1384,19 @@ export default function EmployeesPage() {
                         <div>
                           <label className="font-semibold text-slate-700 block mb-1">
                             รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
+                            <span className="ml-2 text-[10px] font-normal text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+                              สร้างรหัสให้อัตโนมัติ
+                            </span>
                           </label>
                           <input
                             type="text"
-                            placeholder="เช่น EMP001"
+                            readOnly
                             value={formData.employeeCode}
-                            onChange={(e) => {
-                              setFormData({ ...formData, employeeCode: e.target.value });
-                              clearFieldError('employeeCode');
-                            }}
-                            className={getFieldClass('employeeCode')}
+                            className="w-full px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-700 font-mono font-semibold cursor-not-allowed select-none"
                           />
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            รหัสพนักงานถูกกำหนดให้อัตโนมัติโดยระบบ ไม่สามารถแก้ไขได้
+                          </p>
                           {renderFieldError('employeeCode')}
                         </div>
 
