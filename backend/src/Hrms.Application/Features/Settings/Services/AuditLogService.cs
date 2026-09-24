@@ -48,43 +48,41 @@ public class AuditLogService : IAuditLogService
 
     public async Task<PagedResult<AuditLogDto>> GetLogsAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.AuditLogs
-            .Include(a => a.User)
-                .ThenInclude(u => u!.Employee)
+        var baseQuery = _dbContext.AuditLogs
             .AsNoTracking()
             .AsQueryable();
 
         if (filter.StartDate.HasValue)
         {
             var startUtc = DateTime.SpecifyKind(filter.StartDate.Value.Date, DateTimeKind.Utc);
-            query = query.Where(a => a.CreatedAt >= startUtc);
+            baseQuery = baseQuery.Where(a => a.CreatedAt >= startUtc);
         }
 
         if (filter.EndDate.HasValue)
         {
             var endUtc = DateTime.SpecifyKind(filter.EndDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
-            query = query.Where(a => a.CreatedAt <= endUtc);
+            baseQuery = baseQuery.Where(a => a.CreatedAt <= endUtc);
         }
 
         if (filter.UserId.HasValue)
         {
-            query = query.Where(a => a.UserId == filter.UserId.Value);
+            baseQuery = baseQuery.Where(a => a.UserId == filter.UserId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Action) && filter.Action != "ทั้งหมด")
         {
-            query = query.Where(a => a.Action == filter.Action.Trim().ToUpperInvariant());
+            baseQuery = baseQuery.Where(a => a.Action == filter.Action.Trim().ToUpperInvariant());
         }
 
         if (!string.IsNullOrWhiteSpace(filter.EntityType) && filter.EntityType != "ทั้งหมด")
         {
-            query = query.Where(a => a.EntityType == filter.EntityType.Trim().ToUpperInvariant());
+            baseQuery = baseQuery.Where(a => a.EntityType == filter.EntityType.Trim().ToUpperInvariant());
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var s = filter.Search.Trim().ToLower();
-            query = query.Where(a =>
+            baseQuery = baseQuery.Where(a =>
                 (a.User != null && a.User.Username.ToLower().Contains(s)) ||
                 (a.User != null && a.User.Employee != null && (a.User.Employee.FirstName.ToLower().Contains(s) || a.User.Employee.LastName.ToLower().Contains(s))) ||
                 (a.FieldName != null && a.FieldName.ToLower().Contains(s)) ||
@@ -93,15 +91,17 @@ public class AuditLogService : IAuditLogService
                 (a.EntityId != null && a.EntityId.ToString()!.Contains(s)));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         int page = filter.Page > 0 ? filter.Page : 1;
         int pageSize = filter.PageSize > 0 ? filter.PageSize : 15;
 
-        var entities = await query
+        var entities = await baseQuery
             .OrderByDescending(a => a.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Include(a => a.User)
+                .ThenInclude(u => u!.Employee)
             .ToListAsync(cancellationToken);
 
         var items = entities.Select(a => new AuditLogDto

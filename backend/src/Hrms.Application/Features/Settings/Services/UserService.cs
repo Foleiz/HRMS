@@ -25,34 +25,24 @@ public class UserService : IUserService
 
     public async Task<PagedResult<UserAccountDto>> GetUsersAsync(UserQueryFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.UserAccounts
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Contact)
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(ea => ea.Department)
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(ea => ea.Position)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+        var baseQuery = _dbContext.UserAccounts
             .AsNoTracking()
             .AsQueryable();
 
         if (filter.RoleId.HasValue)
         {
-            query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
+            baseQuery = baseQuery.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Status) && filter.Status != "ทั้งหมด")
         {
-            query = query.Where(u => u.Status == filter.Status.Trim().ToUpperInvariant());
+            baseQuery = baseQuery.Where(u => u.Status == filter.Status.Trim().ToUpperInvariant());
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var s = filter.Search.Trim().ToLower();
-            query = query.Where(u =>
+            baseQuery = baseQuery.Where(u =>
                 u.Username.ToLower().Contains(s) ||
                 (u.Employee != null && (
                     u.Employee.EmployeeCode.ToLower().Contains(s) ||
@@ -63,15 +53,27 @@ public class UserService : IUserService
             );
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        // Count รวดเร็วโดยไม่ Join ตารางลูกที่ไม่จำเป็น
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         int page = filter.Page > 0 ? filter.Page : 1;
         int pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
 
-        var items = await query
+        // ดึงเฉพาะรายการในหน้านี้
+        var items = await baseQuery
             .OrderBy(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Contact)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Assignments)
+                    .ThenInclude(ea => ea.Department)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Assignments)
+                    .ThenInclude(ea => ea.Position)
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
             .ToListAsync(cancellationToken);
 
         var dtos = items.Select(MapToDto).ToList();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Users, Shield, History, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
@@ -189,10 +189,17 @@ export default function SettingsPage() {
   }, [userPage, userPageSize, userSearch, userRoleFilter, userStatusFilter, error]);
 
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const roleMatrixCacheRef = useRef<Record<number, RoleDetail>>({});
 
-  const loadRoleMatrix = useCallback(async (roleId: number) => {
+  const loadRoleMatrix = useCallback(async (roleId: number, forceRefresh = false) => {
+    setSelectedRoleId(roleId);
+    if (!forceRefresh && roleMatrixCacheRef.current[roleId]) {
+      setSelectedRoleMatrix(roleMatrixCacheRef.current[roleId]);
+      return;
+    }
     try {
       const matrix = await settingsService.getRoleMatrix(roleId);
+      roleMatrixCacheRef.current[roleId] = matrix;
       setSelectedRoleMatrix(matrix);
     } catch (err: any) {
       error(err.message || 'ไม่สามารถโหลดสิทธิ์ของบทบาทนี้ได้');
@@ -202,7 +209,7 @@ export default function SettingsPage() {
   const selectedRoleIdRef = React.useRef<number | null>(null);
   selectedRoleIdRef.current = selectedRoleId;
 
-  const loadRoles = useCallback(async (fetchMatrix = true) => {
+  const loadRoles = useCallback(async (fetchMatrix = true, forceRefresh = false) => {
     setIsRolesLoading(true);
     try {
       const rolesData = await settingsService.getAllRoles();
@@ -213,7 +220,7 @@ export default function SettingsPage() {
         const currentExists = prevId && rolesData.some((r) => r.id === prevId);
         const activeId = currentExists ? prevId : rolesData[0].id;
         setSelectedRoleId(activeId);
-        loadRoleMatrix(activeId);
+        loadRoleMatrix(activeId, forceRefresh);
       }
     } catch (err: any) {
       error(err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้');
@@ -248,28 +255,49 @@ export default function SettingsPage() {
     }
   };
 
+  // Track tabs that have been initialized to avoid redundant refetches on tab switch
+  const loadedTabsRef = useRef<Set<TabType>>(new Set());
+
   // Fetch when active tab changes or permissions become available
   useEffect(() => {
     if (activeTab === 'users' && canViewUsersTab) {
-      loadUsers();
-      loadEmployees();
-      loadRoles(false);
+      if (!loadedTabsRef.current.has('users')) {
+        loadedTabsRef.current.add('users');
+        loadUsers();
+        loadRoles(false);
+      }
     } else if (activeTab === 'roles' && canViewRolesTab) {
-      loadRoles(true);
+      if (!loadedTabsRef.current.has('roles')) {
+        loadedTabsRef.current.add('roles');
+        loadRoles(true);
+      }
     } else if (activeTab === 'audit-log' && canViewAuditLogTab) {
-      loadAuditLogs();
+      if (!loadedTabsRef.current.has('audit-log')) {
+        loadedTabsRef.current.add('audit-log');
+        loadAuditLogs();
+      }
     }
-  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, loadRoles]);
+  }, [activeTab, canViewUsersTab, canViewRolesTab, canViewAuditLogTab, loadRoles, loadUsers, loadAuditLogs]);
 
-  // Fetch users when pagination or filters change while on users tab
+  // Fetch users when pagination or filters change while on users tab (skip mount duplicate)
+  const isFirstUsersRender = useRef(true);
   useEffect(() => {
+    if (isFirstUsersRender.current) {
+      isFirstUsersRender.current = false;
+      return;
+    }
     if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
     }
   }, [userPage, userSearch, userRoleFilter, userStatusFilter]);
 
-  // Fetch audit logs when pagination or filters change while on audit-log tab
+  // Fetch audit logs when pagination or filters change while on audit-log tab (skip mount duplicate)
+  const isFirstAuditRender = useRef(true);
   useEffect(() => {
+    if (isFirstAuditRender.current) {
+      isFirstAuditRender.current = false;
+      return;
+    }
     if (activeTab === 'audit-log' && canViewAuditLogTab) {
       loadAuditLogs();
     }
@@ -331,6 +359,7 @@ export default function SettingsPage() {
     setIsSavingMatrix(true);
     try {
       const updated = await settingsService.updateRoleMatrix(roleId, data);
+      roleMatrixCacheRef.current[roleId] = updated;
       setSelectedRoleMatrix(updated);
       success('บันทึกสิทธิ์การใช้งานของบทบาทสำเร็จ');
     } catch (err: any) {
@@ -344,14 +373,16 @@ export default function SettingsPage() {
   const handleCreateRole = async (data: CreateRoleRequest) => {
     const newRole = await settingsService.createRole(data);
     success(`สร้างบทบาท ${newRole.roleCode} สำเร็จ`);
-    await loadRoles();
-    loadRoleMatrix(newRole.id);
+    roleMatrixCacheRef.current = {};
+    await loadRoles(true, true);
+    loadRoleMatrix(newRole.id, true);
   };
 
   const handleUpdateRole = async (id: number, data: UpdateRoleRequest) => {
     await settingsService.updateRole(id, data);
     success('อัปเดตบทบาทสำเร็จ');
-    loadRoles();
+    delete roleMatrixCacheRef.current[id];
+    loadRoles(false, true);
   };
 
   const handleDeleteRole = (role: RoleSummary) => {
@@ -362,9 +393,10 @@ export default function SettingsPage() {
       onConfirm: async () => {
         try {
           await settingsService.deleteRole(role.id);
+          delete roleMatrixCacheRef.current[role.id];
           success('ลบบทบาทสำเร็จ');
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
-          loadRoles();
+          loadRoles(true, true);
         } catch (err: any) {
           error(err.message || 'ไม่สามารถลบบทบาทได้');
         }
