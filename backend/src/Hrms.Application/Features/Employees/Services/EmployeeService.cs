@@ -65,6 +65,7 @@ public class EmployeeService : IEmployeeService
             string term = search.Trim().ToLower();
             query = query.Where(e =>
                 e.EmployeeCode.ToLower().Contains(term) ||
+                (e.BiometricId != null && e.BiometricId.ToLower().Contains(term)) ||
                 e.FirstName.ToLower().Contains(term) ||
                 e.LastName.ToLower().Contains(term) ||
                 (e.CitizenIdMasked != null && e.CitizenIdMasked.Contains(term)));
@@ -138,6 +139,17 @@ public class EmployeeService : IEmployeeService
             throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
         }
 
+        string? cleanBiometricId = string.IsNullOrWhiteSpace(request.BiometricId) ? null : request.BiometricId.Trim();
+        if (cleanBiometricId != null)
+        {
+            bool bioExists = await _dbContext.Employees
+                .AnyAsync(e => e.BiometricId == cleanBiometricId, cancellationToken);
+            if (bioExists)
+            {
+                throw new ValidationException($"รหัสเครื่องสแกน '{cleanBiometricId}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
+            }
+        }
+
         // 3. จัดการ PDPA สำหรับเลขบัตรประชาชน (Citizen ID)
         byte[]? encryptedCitizenId = null;
         string? maskedCitizenId = null;
@@ -152,6 +164,7 @@ public class EmployeeService : IEmployeeService
         var employee = new Employee
         {
             EmployeeCode = request.EmployeeCode.Trim(),
+            BiometricId = cleanBiometricId,
             Prefix = request.Prefix?.Trim(),
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
@@ -404,6 +417,22 @@ public class EmployeeService : IEmployeeService
                     employee.EmployeeCode = newCode;
                 }
             }
+        }
+
+        // ตรวจสอบและอัปเดตรหัสเครื่องสแกน (Biometric ID)
+        if (request.BiometricId != null)
+        {
+            var cleanBio = string.IsNullOrWhiteSpace(request.BiometricId) ? null : request.BiometricId.Trim();
+            if (cleanBio != null && !string.Equals(employee.BiometricId, cleanBio, StringComparison.OrdinalIgnoreCase))
+            {
+                bool bioExists = await _dbContext.Employees
+                    .AnyAsync(e => e.BiometricId == cleanBio && e.Id != employee.Id, cancellationToken);
+                if (bioExists)
+                {
+                    throw new ValidationException($"รหัสเครื่องสแกน '{cleanBio}' ถูกใช้งานโดยพนักงานคนอื่นแล้ว กรุณาตรวจสอบ");
+                }
+            }
+            employee.BiometricId = cleanBio;
         }
 
         employee.Prefix = request.Prefix?.Trim();
@@ -1005,6 +1034,7 @@ public class EmployeeService : IEmployeeService
         {
             Id = e.Id,
             EmployeeCode = e.EmployeeCode,
+            BiometricId = e.BiometricId,
             Prefix = e.Prefix,
             FirstName = e.FirstName,
             LastName = e.LastName,

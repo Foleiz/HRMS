@@ -482,6 +482,11 @@ export default function EmployeeDetailPage() {
                 </div>
 
                 <div>
+                  <p className="text-slate-800 font-bold mb-1">รหัสเครื่องสแกน (Biometric ID)</p>
+                  <p className="text-slate-600 font-mono">{employee.biometricId || '-'}</p>
+                </div>
+
+                <div>
                   <p className="text-slate-800 font-bold mb-1">คำนำหน้า (Prefix)</p>
                   <p className="text-slate-600">{employee.prefix || '-'}</p>
                 </div>

@@ -150,6 +150,7 @@ export default function EmployeesPage() {
   // Form State for creating employee
   const initialFormData: CreateEmployeePayload = {
     employeeCode: '',
+    biometricId: '',
     prefix: '',
     firstName: '',
     lastName: '',
@@ -280,6 +281,7 @@ export default function EmployeesPage() {
     const matchSearch =
       !term ||
       emp.employeeCode.toLowerCase().includes(term) ||
+      (emp.biometricId && emp.biometricId.toLowerCase().includes(term)) ||
       emp.fullName.toLowerCase().includes(term) ||
       (emp.citizenIdMasked && emp.citizenIdMasked.toLowerCase().includes(term)) ||
       (emp.contact?.organizationEmail && emp.contact.organizationEmail.toLowerCase().includes(term)) ||
@@ -586,6 +588,7 @@ export default function EmployeesPage() {
       const payload: CreateEmployeePayload = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
+        biometricId: formData.biometricId?.trim() || undefined,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         citizenId: formData.citizenId?.trim() || undefined,
@@ -864,8 +867,14 @@ export default function EmployeesPage() {
                       className="hover:bg-slate-50/70 transition-colors group text-slate-700"
                     >
                       {/* 1. รหัสพนักงาน */}
-                      <td className="py-3 px-3.5 text-slate-500 font-mono whitespace-nowrap">
-                        {emp.employeeCode}
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <div className="font-mono text-slate-700 font-medium text-xs">{emp.employeeCode}</div>
+                        {emp.biometricId && (
+                          <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
+                            <span className="text-[9px] px-1 py-0.2 bg-slate-100 rounded text-slate-500 font-sans font-medium">สแกน:</span>
+                            <span className="font-semibold text-slate-600">{emp.biometricId}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* 2. ชื่อ-นามสกุล + โปรไฟล์ + เครื่องหมาย ! คอมเมนต์ */}
@@ -1369,6 +1378,26 @@ export default function EmployeesPage() {
                             className={getFieldClass('employeeCode')}
                           />
                           {renderFieldError('employeeCode')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            รหัสเครื่องสแกนนิ้ว (Biometric ID)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น 100001"
+                            value={formData.biometricId || ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, biometricId: e.target.value });
+                              clearFieldError('biometricId');
+                            }}
+                            className={getFieldClass('biometricId', true)}
+                          />
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            รหัสเครื่องสแกน/ทาบบัตร (สำหรับ Merge ไฟล์เวลาเข้างานอัตโนมัติ)
+                          </p>
+                          {renderFieldError('biometricId')}
                         </div>
 
                         <div>

@@ -338,6 +338,11 @@ public class AttendanceImportService : IAttendanceImportService
                 var c = emp.EmployeeCode.Trim();
                 empByCode[c] = emp;
             }
+            if (!string.IsNullOrWhiteSpace(emp.BiometricId))
+            {
+                var bio = emp.BiometricId.Trim();
+                empByCode[bio] = emp;
+            }
         }
 
         var currentAssignments = await _context.EmployeeAssignments
@@ -484,7 +489,7 @@ public class AttendanceImportService : IAttendanceImportService
             {
                 failedRecords++;
                 AddError(batch.Id, rowNumber, rawRowJson, 
-                    $"รหัสพนักงาน '{empCodeRaw}' ในไฟล์ไม่ตรงกับข้อมูลพนักงานคนใดในระบบ", 
+                    $"รหัสพนักงาน/เครื่องสแกน '{empCodeRaw}' ในไฟล์ไม่ตรงกับรหัสพนักงานหรือรหัสเครื่องสแกน (Biometric ID) ของผู้ใดในระบบ", 
                     "EMPLOYEE_NOT_FOUND", empCodeRaw, empNameRaw ?? "-", deptRaw ?? "-", null, stateRaw, errorsList, errorDtos);
                 continue;
             }

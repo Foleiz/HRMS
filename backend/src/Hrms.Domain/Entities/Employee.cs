@@ -9,6 +9,7 @@ namespace Hrms.Domain.Entities;
 public class Employee : BaseEntity
 {
     public string EmployeeCode { get; set; } = string.Empty;
+    public string? BiometricId { get; set; }
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

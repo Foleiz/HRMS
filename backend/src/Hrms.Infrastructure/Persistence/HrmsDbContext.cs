@@ -195,6 +195,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.EmployeeCode).HasColumnName("employee_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.BiometricId).HasColumnName("biometric_id").HasMaxLength(50);
             entity.Property(e => e.Prefix).HasColumnName("prefix").HasMaxLength(50);
             entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
             entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(150);
