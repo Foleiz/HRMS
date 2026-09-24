@@ -1364,24 +1364,46 @@ private static string NormalizeHeader(string header)
         }
 
         // 1. Find AttendanceDaily records linked to this batch:
-        // Either by direct ImportBatchId OR by WorkDate between DateFrom and DateTo
-        var attendanceQuery = _context.AttendanceDailies.AsQueryable();
-        if (batch.DateFrom.HasValue && batch.DateTo.HasValue)
-        {
-            attendanceQuery = attendanceQuery.Where(a => 
-                a.ImportBatchId == batchId || 
-                (a.ImportBatchId == null && a.WorkDate >= batch.DateFrom.Value && a.WorkDate <= batch.DateTo.Value));
-        }
-        else
-        {
-            attendanceQuery = attendanceQuery.Where(a => a.ImportBatchId == batchId);
-        }
+        // ค้นหาเฉพาะข้อมูล AttendanceDaily ที่นำเข้าโดยชุดข้อมูลนี้ (ImportBatchId == batchId) เท่านั้น
+        // ห้ามลบข้อมูลที่ ImportBatchId เป็น null เพราะเป็นข้อมูลขาดงาน/ทำงานที่ระบบหรือผู้ใช้สร้างขึ้นเอง
+        var dailyRecordsToDelete = await _context.AttendanceDailies
+            .Where(a => a.ImportBatchId == batchId)
+            .ToListAsync(cancellationToken);
 
-        var dailyRecordsToDelete = await attendanceQuery.ToListAsync(cancellationToken);
         int deletedDailyCount = dailyRecordsToDelete.Count;
 
         if (dailyRecordsToDelete.Count > 0)
         {
+            var dailyIds = dailyRecordsToDelete.Select(d => d.Id).ToList();
+
+            // ตรวจสอบและลบคำขอปรับปรุงเวลา (AttendanceAdjustment) ที่อ้างอิงข้อมูลเวลานี้ เพื่อไม่ให้ติด Foreign Key Constraint
+            var linkedAdjustments = await _context.AttendanceAdjustments
+                .Where(adj => dailyIds.Contains(adj.AttendanceId))
+                .ToListAsync(cancellationToken);
+
+            if (linkedAdjustments.Count > 0)
+            {
+                var linkedApprovalInstanceIds = linkedAdjustments
+                    .Where(adj => adj.ApprovalInstanceId.HasValue)
+                    .Select(adj => adj.ApprovalInstanceId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                _context.AttendanceAdjustments.RemoveRange(linkedAdjustments);
+
+                if (linkedApprovalInstanceIds.Count > 0)
+                {
+                    var approvalInstances = await _context.ApprovalInstances
+                        .Where(ai => linkedApprovalInstanceIds.Contains(ai.Id))
+                        .ToListAsync(cancellationToken);
+
+                    if (approvalInstances.Count > 0)
+                    {
+                        _context.ApprovalInstances.RemoveRange(approvalInstances);
+                    }
+                }
+            }
+
             _context.AttendanceDailies.RemoveRange(dailyRecordsToDelete);
         }
 
