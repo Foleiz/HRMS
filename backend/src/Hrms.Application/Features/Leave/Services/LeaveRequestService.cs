@@ -114,7 +114,10 @@ public class LeaveRequestService : ILeaveRequestService
         long managerId,
         CancellationToken cancellationToken)
     {
-        // 1. หาแผนกและฝ่ายที่ผู้ใช้นี้เป็นหัวหน้าตามโครงสร้างองค์กร (Head of Department / Head of Division)
+        // 1. ดึง Instance IDs ที่ผู้ใช้คนนี้อยู่ในสายการอนุมัติ (Approval Workflow)
+        var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
+
+        // 2. สำหรับคำขอลาแบบเก่าที่ไม่มี ApprovalInstanceId ให้ใช้สายบังคับบัญชา
         var managedDeptIds = await _context.Departments
             .AsNoTracking()
             .Where(d => d.HeadEmployeeId == managerId)
@@ -127,10 +130,6 @@ public class LeaveRequestService : ILeaveRequestService
             .Select(d => d.Id)
             .ToListAsync(cancellationToken);
 
-        // 2. พนักงานใต้บังคับบัญชา:
-        // - สายตรง (ManagerEmployeeId == managerId)
-        // - พนักงานในแผนกที่ตนเป็นหัวหน้าแผนก (DepartmentId IN managedDeptIds)
-        // - พนักงานในฝ่ายที่ตนเป็นหัวหน้าฝ่าย (DivisionId IN managedDivIds)
         var teamEmployeeIds = await _context.EmployeeAssignments
             .AsNoTracking()
             .Where(a => a.IsCurrent && (
@@ -141,18 +140,10 @@ public class LeaveRequestService : ILeaveRequestService
             .Select(a => a.EmployeeId)
             .ToListAsync(cancellationToken);
 
-        // 3. รวมเอกสารที่อยู่ในสายการอนุมัติ ที่ถึงคิวผู้ใช้คนนี้มีสิทธิ์อนุมัติ (Approval Workflow)
-        var pendingInstanceIds = await _approvalWorkflow.GetPendingInstanceIdsForUserAsync(managerId, "LEAVE_REQUEST", cancellationToken);
-
-        // 4. รวมเอกสารที่ผู้ใช้คนนี้เคยดำเนินการอนุมัติ/ปฏิเสธไปแล้ว (Actioned instances)
-        var actionedInstanceIds = await _context.ApprovalActions
-            .AsNoTracking()
-            .Where(a => a.ApproverEmployeeId == managerId)
-            .Select(a => a.ApprovalInstanceId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        return query.Where(r => teamEmployeeIds.Contains(r.EmployeeId) || (r.ApprovalInstanceId.HasValue && (pendingInstanceIds.Contains(r.ApprovalInstanceId.Value) || actionedInstanceIds.Contains(r.ApprovalInstanceId.Value))));
+        return query.Where(r => 
+            (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)) ||
+            (!r.ApprovalInstanceId.HasValue && teamEmployeeIds.Contains(r.EmployeeId))
+        );
     }
 
     public async Task<LeaveRequestDto?> GetByIdAsync(long id, long? currentViewerEmployeeId = null, CancellationToken cancellationToken = default)

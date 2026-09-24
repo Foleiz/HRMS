@@ -75,6 +75,92 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         return instance.Id;
     }
 
+    private async Task<EmployeeAssignment?> GetRequesterAssignmentAsync(ApprovalInstance instance, CancellationToken cancellationToken)
+    {
+        long? requesterId = null;
+        if (instance.DocumentType == "LEAVE_REQUEST")
+        {
+            var leaveReq = await _context.LeaveRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = leaveReq?.EmployeeId;
+        }
+        else if (instance.DocumentType == "CERTIFICATE_REQUEST")
+        {
+            var certReq = await _context.CertificateRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = certReq?.EmployeeId;
+        }
+        else if (instance.DocumentType == "RESIGNATION_REQUEST")
+        {
+            var resignReq = await _context.ResignationRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = resignReq?.EmployeeId;
+        }
+
+        return requesterId.HasValue
+            ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)
+            : null;
+    }
+
+    private async Task<bool> IsUserEligibleForStepAsync(
+        ApprovalStep step,
+        long employeeId,
+        EmployeeAssignment? requesterAssignment,
+        IEnumerable<UserRole> userRoles,
+        CancellationToken cancellationToken)
+    {
+        switch (step.ApproverType)
+        {
+            case "EMPLOYEE":
+                return step.ApproverEmployeeId == employeeId;
+
+            case "ROLE":
+                return userRoles.Any(ur => ur.RoleId == step.ApproverRoleId ||
+                                          (step.ApproverRole != null && ur.Role.RoleCode == step.ApproverRole.RoleCode));
+
+            case "MANAGER":
+                return requesterAssignment?.ManagerEmployeeId == employeeId;
+
+            case "DEPARTMENT_HEAD":
+                if (requesterAssignment != null)
+                {
+                    var dept = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DepartmentId, cancellationToken);
+                    if (dept?.HeadEmployeeId == employeeId) return true;
+                }
+                if (requesterAssignment != null && userRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR"))
+                {
+                    var viewerAssign = await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
+                    if (viewerAssign?.DepartmentId == requesterAssignment.DepartmentId) return true;
+                }
+                return false;
+
+            case "DIVISION_HEAD":
+                if (requesterAssignment != null)
+                {
+                    var div = await _context.Divisions.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DivisionId, cancellationToken);
+                    if (div?.HeadEmployeeId == employeeId) return true;
+                }
+                if (requesterAssignment != null && userRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR"))
+                {
+                    var viewerAssign = await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
+                    if (viewerAssign?.DivisionId == requesterAssignment.DivisionId) return true;
+                }
+                return false;
+
+            case "HR":
+                return userRoles.Any(ur => ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR");
+
+            case "CEO":
+                return userRoles.Any(ur => ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE");
+
+            default:
+                return false;
+        }
+    }
+
     public async Task<bool> CanUserApproveStepAsync(long instanceId, long employeeId, CancellationToken cancellationToken = default)
     {
         var instance = await _context.ApprovalInstances
@@ -108,74 +194,11 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             return false;
         }
 
-        // 3. ดึงข้อมูลผู้ยื่นคำขอ
-        long? requesterId = null;
-        if (instance.DocumentType == "LEAVE_REQUEST")
-        {
-            var leaveReq = await _context.LeaveRequests
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
-            requesterId = leaveReq?.EmployeeId;
-        }
-        else if (instance.DocumentType == "CERTIFICATE_REQUEST")
-        {
-            var certReq = await _context.CertificateRequests
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
-            requesterId = certReq?.EmployeeId;
-        }
-        else if (instance.DocumentType == "RESIGNATION_REQUEST")
-        {
-            var resignReq = await _context.ResignationRequests
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
-            requesterId = resignReq?.EmployeeId;
-        }
-
-        var requesterAssignment = requesterId.HasValue
-            ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)
-            : null;
-
+        // 3. ดึงข้อมูลสังกัดของผู้ยื่นคำขอ
+        var requesterAssignment = await GetRequesterAssignmentAsync(instance, cancellationToken);
         var userRoles = userAccount?.UserRoles ?? new List<UserRole>();
 
-        // 4. ตรวจสอบตาม ApproverType
-        switch (step.ApproverType)
-        {
-            case "EMPLOYEE":
-                return step.ApproverEmployeeId == employeeId;
-
-            case "ROLE":
-                return userRoles.Any(ur => ur.RoleId == step.ApproverRoleId ||
-                                          (step.ApproverRole != null && ur.Role.RoleCode == step.ApproverRole.RoleCode));
-
-            case "MANAGER":
-                return requesterAssignment?.ManagerEmployeeId == employeeId;
-
-            case "DEPARTMENT_HEAD":
-                if (requesterAssignment != null)
-                {
-                    var dept = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DepartmentId, cancellationToken);
-                    if (dept?.HeadEmployeeId == employeeId) return true;
-                }
-                return userRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR");
-
-            case "DIVISION_HEAD":
-                if (requesterAssignment != null)
-                {
-                    var div = await _context.Divisions.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DivisionId, cancellationToken);
-                    if (div?.HeadEmployeeId == employeeId) return true;
-                }
-                return userRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR" || ur.Role.RoleCode == "DEPT_MGR");
-
-            case "HR":
-                return userRoles.Any(ur => ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR");
-
-            case "CEO":
-                return userRoles.Any(ur => ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE");
-
-            default:
-                return false;
-        }
+        return await IsUserEligibleForStepAsync(step, employeeId, requesterAssignment, userRoles, cancellationToken);
     }
 
     public async Task<WorkflowActionResult> ProcessActionAsync(
@@ -351,6 +374,91 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         }
 
         return result;
+    }
+
+    public async Task<bool> IsUserInWorkflowAsync(long instanceId, long employeeId, CancellationToken cancellationToken = default)
+    {
+        var instance = await _context.ApprovalInstances
+            .AsNoTracking()
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(i => i.Actions)
+            .FirstOrDefaultAsync(i => i.Id == instanceId, cancellationToken);
+
+        if (instance == null || instance.ApprovalFlow == null)
+        {
+            return false;
+        }
+
+        // 1. ตรวจสอบว่าพนักงานคนนี้มีบทบาท ADMIN หรือไม่
+        var userAccount = await _context.UserAccounts
+            .AsNoTracking()
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.EmployeeId == employeeId && u.Status == "ACTIVE", cancellationToken);
+
+        if (userAccount != null && userAccount.UserRoles.Any(ur => ur.Role.RoleCode == "ADMIN" || ur.RoleId == 1))
+        {
+            return true;
+        }
+
+        // 2. ถ้าผู้ใช้คนนี้เคยดำเนินการ (Actioned) ในคำขอนี้แล้ว ถือว่าอยู่ในสายอนุมัตินี้
+        if (instance.Actions.Any(a => a.ApproverEmployeeId == employeeId))
+        {
+            return true;
+        }
+
+        // 3. ดึงข้อมูลสังกัดของผู้ยื่นคำขอ
+        var requesterAssignment = await GetRequesterAssignmentAsync(instance, cancellationToken);
+        var userRoles = userAccount?.UserRoles ?? new List<UserRole>();
+
+        // 4. ตรวจสอบว่าผู้ใช้นี้ตรงกับขั้นตอนใดขั้นตอนหนึ่งใน ApprovalFlow.Steps หรือไม่
+        foreach (var step in instance.ApprovalFlow.Steps)
+        {
+            if (await IsUserEligibleForStepAsync(step, employeeId, requesterAssignment, userRoles, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async Task<List<long>> GetInstanceIdsForApproverUserAsync(long employeeId, string? documentType = null, CancellationToken cancellationToken = default)
+    {
+        var userAccount = await _context.UserAccounts
+            .AsNoTracking()
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.EmployeeId == employeeId && u.Status == "ACTIVE", cancellationToken);
+
+        var isAdmin = userAccount != null && userAccount.UserRoles.Any(ur => ur.Role.RoleCode == "ADMIN" || ur.RoleId == 1);
+
+        var query = _context.ApprovalInstances
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(documentType))
+        {
+            query = query.Where(i => i.DocumentType == documentType);
+        }
+
+        var instanceIds = await query
+            .Select(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        if (isAdmin)
+        {
+            return instanceIds;
+        }
+
+        var allowed = new List<long>();
+        foreach (var id in instanceIds)
+        {
+            if (await IsUserInWorkflowAsync(id, employeeId, cancellationToken))
+            {
+                allowed.Add(id);
+            }
+        }
+
+        return allowed;
     }
 
     private static ApprovalTimelineDto BuildTimelineDto(ApprovalInstance instance)

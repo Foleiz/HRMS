@@ -56,8 +56,32 @@ public class CertificateService : ICertificateService
 
     public async Task<CertificateRequestDto?> GetRequestByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var list = await GetRequestsInternalAsync(null, null, cancellationToken);
-        return list.FirstOrDefault(x => x.Id == id);
+        var r = await _context.CertificateRequests
+            .AsNoTracking()
+            .Include(x => x.CertificateType)
+            .Include(x => x.Employee)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(x => x.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (r == null) return null;
+
+        var assign = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(a => a.Department)
+            .Include(a => a.Position)
+            .FirstOrDefaultAsync(a => a.EmployeeId == r.EmployeeId && a.IsCurrent, cancellationToken);
+
+        var currentEmpId = _currentUserService.EmployeeId;
+        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
+                          _currentUserService.HasRole("HR_ADMIN") ||
+                          _currentUserService.HasRole("HR") ||
+                          _currentUserService.HasRole("ADMIN") ||
+                          _currentUserService.HasRole("SUPER_ADMIN") ||
+                          _currentUserService.HasRole("SYS_ADMIN");
+
+        return await MapToDtoAsync(r, assign, currentEmpId, isHrOrAdmin, cancellationToken);
     }
 
     public async Task<CertificateRequestDto> ApproveRequestAsync(
@@ -146,6 +170,11 @@ public class CertificateService : ICertificateService
 
     private async Task<List<CertificateRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
+        var currentEmpId = _currentUserService.EmployeeId;
+        var isSystemAdmin = _currentUserService.HasRole("ADMIN") ||
+                            _currentUserService.HasRole("SUPER_ADMIN") ||
+                            _currentUserService.HasRole("SYS_ADMIN");
+
         var query = _context.CertificateRequests
             .AsNoTracking()
             .Include(r => r.CertificateType)
@@ -158,6 +187,22 @@ public class CertificateService : ICertificateService
         if (employeeId.HasValue)
         {
             query = query.Where(r => r.EmployeeId == employeeId.Value);
+        }
+        else if (!isSystemAdmin)
+        {
+            // ถ้าไม่ใช่ Admin และเป็นการดึงรายการคำขอเพื่ออนุมัติ/ประวัติ
+            // ให้แสดงเฉพาะรายการที่ผู้ใช้นี้ "อยู่ในสายการอนุมัติ" (เป็นผู้อนุมัติในขั้นตอนใดขั้นตอนหนึ่ง หรือเคยดำเนินการไปแล้ว) เท่านั้น
+            if (!currentEmpId.HasValue)
+            {
+                return new List<CertificateRequestDto>();
+            }
+
+            var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
+                currentEmpId.Value,
+                "CERTIFICATE_REQUEST",
+                cancellationToken);
+
+            query = query.Where(r => r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -177,91 +222,99 @@ public class CertificateService : ICertificateService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var currentEmpId = _currentUserService.EmployeeId;
         var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
                           _currentUserService.HasRole("HR_ADMIN") ||
                           _currentUserService.HasRole("HR") ||
-                          _currentUserService.HasRole("ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN") ||
-                          _currentUserService.HasRole("SYS_ADMIN");
+                          isSystemAdmin;
 
         var items = new List<CertificateRequestDto>();
         foreach (var r in requests)
         {
             assignments.TryGetValue(r.EmployeeId, out var assign);
-            var effectiveStatus = r.Status;
-            if (r.ApprovalInstance != null && r.ApprovalInstance.Status != "PENDING")
-            {
-                effectiveStatus = r.ApprovalInstance.Status;
-            }
-
-            var instance = r.ApprovalInstance;
-            var currentStepNo = instance?.CurrentStepNo;
-            var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
-            string? currentApproverDisplay = null;
-            bool isMyTurn = false;
-
-            if (instance != null && instance.Status == "PENDING" && currentStepNo.HasValue)
-            {
-                var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == currentStepNo.Value);
-                if (step != null)
-                {
-                    currentApproverDisplay = step.ApproverType switch
-                    {
-                        "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
-                        "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                        "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
-                        "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
-                        "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
-                        "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
-                        "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
-                        _ => step.ApproverType
-                    };
-                }
-
-                if (currentEmpId.HasValue)
-                {
-                    isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
-                }
-            }
-
-            var hasAlreadyApproved = instance != null && currentEmpId.HasValue &&
-                instance.Actions.Any(a => a.ApproverEmployeeId == currentEmpId.Value && a.ActionDecision == "APPROVE");
-
-            var finalApproveAction = instance?.Actions
-                .Where(a => a.ActionDecision == "APPROVE")
-                .OrderByDescending(a => a.ActionAt)
-                .FirstOrDefault();
-
-            items.Add(new CertificateRequestDto
-            {
-                Id = r.Id,
-                EmployeeId = r.EmployeeId,
-                EmployeeCode = r.Employee.EmployeeCode,
-                EmployeeName = $"{r.Employee.FirstName} {r.Employee.LastName}".Trim(),
-                DepartmentName = assign?.Department?.DepartmentName ?? "-",
-                PositionName = assign?.Position?.PositionName ?? "-",
-                CertificateTypeId = r.CertificateTypeId,
-                CertificateCode = r.CertificateType?.CertificateCode ?? string.Empty,
-                CertificateName = r.CertificateType?.CertificateName ?? string.Empty,
-                Purpose = r.Purpose,
-                Status = effectiveStatus,
-                RequestedAt = r.RequestedAt,
-                IssuedAt = r.IssuedAt,
-                ApprovalInstanceId = r.ApprovalInstanceId,
-                CurrentStepNo = currentStepNo,
-                TotalSteps = totalSteps,
-                CurrentApproverDisplay = currentApproverDisplay,
-                IsMyTurnToApprove = isMyTurn,
-                HasAlreadyApproved = hasAlreadyApproved,
-                ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
-                ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
-                CanCancel = (effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin)),
-                CanDownload = (effectiveStatus == "APPROVED" || effectiveStatus == "ISSUED")
-            });
+            var item = await MapToDtoAsync(r, assign, currentEmpId, isHrOrAdmin, cancellationToken);
+            items.Add(item);
         }
 
         return items;
+    }
+
+    private async Task<CertificateRequestDto> MapToDtoAsync(
+        CertificateRequest r,
+        EmployeeAssignment? assign,
+        long? currentEmpId,
+        bool isHrOrAdmin,
+        CancellationToken cancellationToken)
+    {
+        var effectiveStatus = r.Status;
+        if (r.ApprovalInstance != null && r.ApprovalInstance.Status != "PENDING")
+        {
+            effectiveStatus = r.ApprovalInstance.Status;
+        }
+
+        var instance = r.ApprovalInstance;
+        var currentStepNo = instance?.CurrentStepNo;
+        var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
+        string? currentApproverDisplay = null;
+        bool isMyTurn = false;
+
+        if (instance != null && instance.Status == "PENDING" && currentStepNo.HasValue)
+        {
+            var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == currentStepNo.Value);
+            if (step != null)
+            {
+                currentApproverDisplay = step.ApproverType switch
+                {
+                    "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
+                    "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
+                    "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
+                    "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
+                    "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
+                    "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
+                    "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+                    _ => step.ApproverType
+                };
+            }
+
+            if (currentEmpId.HasValue)
+            {
+                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+            }
+        }
+
+        var hasAlreadyApproved = instance != null && currentEmpId.HasValue &&
+            instance.Actions.Any(a => a.ApproverEmployeeId == currentEmpId.Value && a.ActionDecision == "APPROVE");
+
+        var finalApproveAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
+        return new CertificateRequestDto
+        {
+            Id = r.Id,
+            EmployeeId = r.EmployeeId,
+            EmployeeCode = r.Employee.EmployeeCode,
+            EmployeeName = $"{r.Employee.FirstName} {r.Employee.LastName}".Trim(),
+            DepartmentName = assign?.Department?.DepartmentName ?? "-",
+            PositionName = assign?.Position?.PositionName ?? "-",
+            CertificateTypeId = r.CertificateTypeId,
+            CertificateCode = r.CertificateType?.CertificateCode ?? string.Empty,
+            CertificateName = r.CertificateType?.CertificateName ?? string.Empty,
+            Purpose = r.Purpose,
+            Status = effectiveStatus,
+            RequestedAt = r.RequestedAt,
+            IssuedAt = r.IssuedAt,
+            ApprovalInstanceId = r.ApprovalInstanceId,
+            CurrentStepNo = currentStepNo,
+            TotalSteps = totalSteps,
+            CurrentApproverDisplay = currentApproverDisplay,
+            IsMyTurnToApprove = isMyTurn,
+            HasAlreadyApproved = hasAlreadyApproved,
+            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
+            ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
+            CanCancel = (effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin)),
+            CanDownload = (effectiveStatus == "APPROVED" || effectiveStatus == "ISSUED")
+        };
     }
 
     public async Task<CertificateRequestDto> CreateRequestAsync(CreateCertificateRequestDto dto, CancellationToken cancellationToken = default)
