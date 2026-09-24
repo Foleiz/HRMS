@@ -395,7 +395,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return;
     }
     const rect = buttonEl.getBoundingClientRect();
-    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 290) });
+    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 335) });
     setSelectedCategoryCode(catCode);
     setOpenCategoryCode(catCode);
 
@@ -460,19 +460,34 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  const handleSelectAllView = () => {
+  const handleSelectAllAction = (actionKey: 'view' | 'create' | 'edit' | 'approve') => {
+    const actionLabel = ACTIONS_CONFIG.find((a) => a.key === actionKey)?.label || actionKey;
     setLocalModules((prev) =>
-      prev.map((mod) => ({
-        ...mod,
-        self: { ...(mod.self || {}), view: true, create: false, edit: false, approve: false },
-        team: { ...(mod.team || {}), view: true, create: false, edit: false, approve: false },
-        department: { ...(mod.department || {}), view: true, create: false, edit: false, approve: false },
-        division: { ...(mod.division || {}), view: true, create: false, edit: false, approve: false },
-        organization: { ...(mod.organization || {}), view: true, create: false, edit: false, approve: false },
-      }))
+      prev.map((mod) => {
+        const targetState = {
+          view: actionKey === 'view',
+          create: actionKey === 'create',
+          edit: actionKey === 'edit',
+          approve: actionKey === 'approve',
+        };
+        return {
+          ...mod,
+          self: { ...(mod.self || {}), ...targetState },
+          team: { ...(mod.team || {}), ...targetState },
+          department: { ...(mod.department || {}), ...targetState },
+          division: { ...(mod.division || {}), ...targetState },
+          organization: { ...(mod.organization || {}), ...targetState },
+        };
+      })
     );
     setIsDirty(true);
+    toast.info(`เลือกเฉพาะสิทธิ์ "${actionLabel}" ทุกเมนูเรียบร้อยแล้ว`);
   };
+
+  const handleSelectAllView = () => handleSelectAllAction('view');
+  const handleSelectAllCreate = () => handleSelectAllAction('create');
+  const handleSelectAllEdit = () => handleSelectAllAction('edit');
+  const handleSelectAllApprove = () => handleSelectAllAction('approve');
 
   const handleDeselectAll = () => {
     if (selectedRoleMatrix?.roleCode === 'ADMIN' || selectedRoleMatrix?.roleCode === 'SYSTEM_SUPER') {
@@ -510,26 +525,39 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     toast.success(`เปิดสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
   };
 
-  const handleSelectAllCategoryView = (catCode: string) => {
+  const handleSelectCategoryAction = (
+    catCode: string,
+    actionKey: 'view' | 'create' | 'edit' | 'approve'
+  ) => {
     const cat = categories.find((c) => c.code === catCode);
     if (!cat) return;
     const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
+    const actionLabel = ACTIONS_CONFIG.find((a) => a.key === actionKey)?.label || actionKey;
+
     setLocalModules((prev) =>
       prev.map((mod) => {
         if (!modCodes.has(mod.moduleCode)) return mod;
+        const targetState = {
+          view: actionKey === 'view',
+          create: actionKey === 'create',
+          edit: actionKey === 'edit',
+          approve: actionKey === 'approve',
+        };
         return {
           ...mod,
-          self: { ...(mod.self || {}), view: true, create: false, edit: false, approve: false },
-          team: { ...(mod.team || {}), view: true, create: false, edit: false, approve: false },
-          department: { ...(mod.department || {}), view: true, create: false, edit: false, approve: false },
-          division: { ...(mod.division || {}), view: true, create: false, edit: false, approve: false },
-          organization: { ...(mod.organization || {}), view: true, create: false, edit: false, approve: false },
+          self: { ...(mod.self || {}), ...targetState },
+          team: { ...(mod.team || {}), ...targetState },
+          department: { ...(mod.department || {}), ...targetState },
+          division: { ...(mod.division || {}), ...targetState },
+          organization: { ...(mod.organization || {}), ...targetState },
         };
       })
     );
     setIsDirty(true);
-    toast.info(`เลือกเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+    toast.info(`เลือกเฉพาะสิทธิ์ "${actionLabel}" ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
   };
+
+  const handleSelectAllCategoryView = (catCode: string) => handleSelectCategoryAction(catCode, 'view');
 
   const handleDeselectCategory = (catCode: string) => {
     const cat = categories.find((c) => c.code === catCode);
@@ -735,7 +763,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   type="button"
                   onClick={handleSelectAll}
                   title="เลือกเปิดสิทธิ์ทั้งหมด ทุกเมนู"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
                   เลือกทั้งหมด
@@ -744,16 +772,43 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   type="button"
                   onClick={handleSelectAllView}
                   title="เปิดเฉพาะสิทธิ์ดู ทุกเมนู"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <Eye className="w-3.5 h-3.5 text-blue-600" />
-                  เลือกเฉพาะดู
+                  เฉพาะดู
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectAllCreate}
+                  title="เปิดเฉพาะสิทธิ์สร้าง ทุกเมนู"
+                  className="px-2 py-1 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5 text-amber-600" />
+                  เฉพาะสร้าง
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectAllEdit}
+                  title="เปิดเฉพาะสิทธิ์แก้ไข ทุกเมนู"
+                  className="px-2 py-1 text-[11px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-purple-600" />
+                  เฉพาะแก้ไข
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectAllApprove}
+                  title="เปิดเฉพาะสิทธิ์อนุมัติ ทุกเมนู"
+                  className="px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  เฉพาะอนุมัติ
                 </button>
                 <button
                   type="button"
                   onClick={handleDeselectAll}
                   title="ยกเลิกสิทธิ์ทั้งหมด"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <X className="w-3.5 h-3.5 text-slate-500" />
                   ยกเลิกทั้งหมด
@@ -819,7 +874,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 <div
                   ref={dropdownRef}
                   style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999 }}
-                  className="w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
                 >
                   {/* Dropdown Header */}
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -832,40 +887,79 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     <span className="text-[11px] text-slate-400 font-medium">{openCat.modules.length} เมนู</span>
                   </div>
 
-                  {/* Action Bar in Dropdown: ปุ่มเลือกทุกหน้าในหัวข้อนั้นๆ */}
-                  <div className="p-2 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSelectAllCategory(openCat.code);
-                      }}
-                      className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
-                      title={`เลือกเปิดสิทธิ์ทั้งหมดทุกหน้าในหัวข้อ ${openCat.name}`}
-                    >
-                      <CheckSquare className="w-3.5 h-3.5" />
-                      <span>เลือกทุกหน้า</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSelectAllCategoryView(openCat.code);
-                      }}
-                      className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                      title={`เปิดเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ ${openCat.name}`}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>เฉพาะดู</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleDeselectCategory(openCat.code);
-                      }}
-                      className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer"
-                      title={`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ ${openCat.name}`}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                  {/* Action Bar in Dropdown: ปุ่มเลือกทุกหน้า + คีย์ลัดเฉพาะแต่ละสิทธิ์ */}
+                  <div className="p-2.5 bg-slate-50/80 border-b border-slate-100 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSelectAllCategory(openCat.code);
+                        }}
+                        className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                        title={`เลือกเปิดสิทธิ์ทั้งหมดทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <CheckSquare className="w-3.5 h-3.5" />
+                        <span>เลือกทุกหน้า</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleDeselectCategory(openCat.code);
+                        }}
+                        className="py-1.5 px-2.5 bg-slate-200/80 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title={`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>ยกเลิก</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSelectCategoryAction(openCat.code, 'view');
+                        }}
+                        className="py-1 px-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
+                        title={`เปิดเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <Eye className="w-3 h-3 text-blue-600 shrink-0" />
+                        <span>เฉพาะดู</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSelectCategoryAction(openCat.code, 'create');
+                        }}
+                        className="py-1 px-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
+                        title={`เปิดเฉพาะสิทธิ์สร้างทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <Plus className="w-3 h-3 text-amber-600 shrink-0" />
+                        <span>เฉพาะสร้าง</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSelectCategoryAction(openCat.code, 'edit');
+                        }}
+                        className="py-1 px-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
+                        title={`เปิดเฉพาะสิทธิ์แก้ไขทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <Edit2 className="w-3 h-3 text-purple-600 shrink-0" />
+                        <span>เฉพาะแก้ไข</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSelectCategoryAction(openCat.code, 'approve');
+                        }}
+                        className="py-1 px-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
+                        title={`เปิดเฉพาะสิทธิ์อนุมัติทุกหน้าในหัวข้อ ${openCat.name}`}
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span>เฉพาะอนุมัติ</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Sub-module List */}
