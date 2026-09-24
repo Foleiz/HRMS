@@ -7,7 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import AccessDenied from '@/components/common/AccessDenied';
 
 import {
-  RoleSwitcherBar,
   GreetingBanner,
   DashboardRole,
 } from '@/components/dashboard/DashboardHeader';
@@ -89,14 +88,8 @@ export default function HomePage() {
         <Navbar />
 
         {/* Dashboard Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 w-full max-w-[1500px] mx-auto space-y-4">
-          {/* 1. Top Role Switcher Bar (กว้างเต็มแถบด้านบน) */}
-          <RoleSwitcherBar
-            activeRole={activeRole}
-            onRoleChange={setActiveRole}
-          />
-
-          {/* 2. Main 2-Column Responsive Layout (items-stretch ให้สูงเท่ากันพอดีกับ panel ข้างๆ) */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 w-full max-w-[1500px] mx-auto">
+          {/* Main 2-Column Responsive Layout (items-stretch ให้สูงเท่ากันพอดีกับ panel ข้างๆ) */}
           <div className="flex flex-col lg:flex-row gap-5 items-stretch">
             
             {/* Left / Center Main Content (flex-1) */}
