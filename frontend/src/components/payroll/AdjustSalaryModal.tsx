@@ -44,6 +44,13 @@ export const AdjustSalaryModal: React.FC<Props> = ({
     ? ((diff / currentSalaryNum) * 100).toFixed(1)
     : null;
 
+  const minSalary = employee.salaryStructureMin != null && employee.salaryStructureMin > 0 ? employee.salaryStructureMin : null;
+  const maxSalary = employee.salaryStructureMax != null && employee.salaryStructureMax > 0 ? employee.salaryStructureMax : null;
+
+  const isBelowMin = !isNaN(newSalaryNum) && minSalary != null && newSalaryNum < minSalary;
+  const isAboveMax = !isNaN(newSalaryNum) && maxSalary != null && newSalaryNum > maxSalary;
+  const isOutOfRange = isBelowMin || isAboveMax;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -52,6 +59,17 @@ export const AdjustSalaryModal: React.FC<Props> = ({
       setError('กรุณากรอกจำนวนเงินเดือนที่ถูกต้อง (> 0 บาท)');
       return;
     }
+
+    if (isBelowMin) {
+      setError(`เงินเดือนใหม่ (฿${newSalaryNum.toLocaleString()}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง (ขั้นต่ำ ฿${minSalary?.toLocaleString()})`);
+      return;
+    }
+
+    if (isAboveMax) {
+      setError(`เงินเดือนใหม่ (฿${newSalaryNum.toLocaleString()}) ต้องไม่เกินเงินเดือนสูงสุดของตำแหน่ง (สูงสุด ฿${maxSalary?.toLocaleString()})`);
+      return;
+    }
+
     if (!effectiveFrom) {
       setError('กรุณาระบุวันที่มีผลบังคับใช้');
       return;
@@ -121,9 +139,18 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
           {/* Reference Structure Banner */}
           {(employee.salaryStructureMin != null || employee.salaryStructureMax != null) && (
-            <div className="text-[11px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
-              <span>กรอบเงินเดือนตามตำแหน่ง:</span>
-              <span className="font-semibold text-slate-700">
+            <div
+              className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
+                isOutOfRange
+                  ? 'bg-rose-50/90 border-rose-200 text-rose-700'
+                  : 'text-slate-500 bg-white border-slate-200'
+              }`}
+            >
+              <span className="flex items-center gap-1 font-medium">
+                {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                กรอบเงินเดือนตามตำแหน่ง:
+              </span>
+              <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 font-bold' : 'text-slate-700'}`}>
                 ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
               </span>
             </div>
@@ -155,16 +182,36 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               <div className="relative">
                 <input
                   type="number"
-                  min="0"
+                  min={minSalary ?? 0}
+                  max={maxSalary ?? undefined}
                   step="500"
                   required
                   placeholder="เช่น 35000"
                   value={baseSalary}
-                  onChange={(e) => setBaseSalary(e.target.value)}
-                  className="w-full text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all font-semibold text-slate-900"
+                  onChange={(e) => {
+                    setBaseSalary(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  className={`w-full text-sm pl-3.5 pr-8 py-2.5 rounded-xl focus:outline-none transition-all font-semibold ${
+                    isOutOfRange
+                      ? 'border-2 border-rose-500 bg-rose-50/20 text-rose-900 focus:ring-2 focus:ring-rose-400'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-[#0B2046] focus:bg-white'
+                  }`}
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
               </div>
+              {isBelowMin && (
+                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  ต่ำกว่าเงินเดือนขั้นต่ำ (ขั้นต่ำ ฿{minSalary?.toLocaleString()})
+                </p>
+              )}
+              {isAboveMax && (
+                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  สูงกว่าเงินเดือนสูงสุด (สูงสุด ฿{maxSalary?.toLocaleString()})
+                </p>
+              )}
             </div>
           </div>
 
@@ -231,8 +278,9 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-50"
+              disabled={loading || isOutOfRange}
+              title={isOutOfRange ? 'เงินเดือนไม่อยู่ในช่วงกรอบเงินเดือนตามตำแหน่ง' : undefined}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
