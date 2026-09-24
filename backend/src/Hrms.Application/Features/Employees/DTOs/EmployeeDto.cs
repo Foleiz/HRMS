@@ -9,6 +9,8 @@ public class EmployeeDto
     public long Id { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string? BiometricId { get; set; }
+    /// <summary>สถานะการจ้างงาน: ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>
+    public string EmploymentStatus { get; set; } = "ACTIVE";
     public string? Prefix { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

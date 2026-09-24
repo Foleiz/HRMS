@@ -669,9 +669,23 @@ export default function EmployeesPage() {
     }
   };
 
-  // Status Badge Mapper (ตรงตามสีและฟอนต์ใน Figma: ทำงานอยู่, ทดลองงาน, ลาออก, ไม่ได้ทำงาน)
+  // เปลี่ยนสถานะการจ้างงานพนักงาน (ACTIVE | PROBATION | RESIGNED | INACTIVE)
+  const handleStatusChange = async (id: number, status: string) => {
+    try {
+      const updated = await employeeService.updateStatus(id, status);
+      // อัปเดต state ใน list โดยตรงโดยไม่ต้อง reload ใหม่ทั้งหมด
+      setEmployees((prev) => prev.map((e) => (e.id === updated.id ? { ...e, employmentStatus: updated.employmentStatus } : e)));
+      const labels: Record<string, string> = { ACTIVE: 'ทำงานอยู่', PROBATION: 'ทดลองงาน', RESIGNED: 'ลาออก', INACTIVE: 'ไม่ได้ทำงาน' };
+      toast.success(`เปลี่ยนสถานะเป็น "${labels[status] ?? status}" เรียบร้อยแล้ว`);
+    } catch {
+      toast.error('ไม่สามารถเปลี่ยนสถานะพนักงานได้');
+    }
+  };
+
+  // Status Badge Mapper — ใช้ employmentStatus จาก DB จริง (ACTIVE, PROBATION, RESIGNED, INACTIVE)
   const getStatusBadge = (emp: Employee) => {
-    if (emp.id === 3) {
+    const status = emp.employmentStatus?.toUpperCase() ?? 'ACTIVE';
+    if (status === 'PROBATION') {
       return (
         <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 font-medium whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-amber-500"></span>
@@ -679,7 +693,7 @@ export default function EmployeesPage() {
         </span>
       );
     }
-    if (emp.id === 4) {
+    if (status === 'RESIGNED') {
       return (
         <span className="inline-flex items-center gap-1.5 text-xs text-rose-500 font-medium whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-rose-500"></span>
@@ -687,7 +701,7 @@ export default function EmployeesPage() {
         </span>
       );
     }
-    if (emp.id === 2 || emp.id === 7) {
+    if (status === 'INACTIVE') {
       return (
         <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-slate-300"></span>
@@ -1026,7 +1040,7 @@ export default function EmployeesPage() {
                           {actionMenuOpenId === emp.id && (
                             <div
                               ref={actionMenuRef}
-                              className={`absolute right-0 w-40 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${
+                              className={`absolute right-0 w-48 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${
                                 isLastRows
                                   ? 'bottom-full mb-1.5 origin-bottom-right'
                                   : 'top-full mt-1.5 origin-top-right'
@@ -1062,7 +1076,42 @@ export default function EmployeesPage() {
                                 <span>จัดการเงินเดือน</span>
                               </Link>
 
-                              {/* 3. ลบข้อมูล */}
+                              {/* 4. เปลี่ยนสถานะการจ้างงาน */}
+                              {hasPermission('EMP_MANAGE') && (
+                                <div className="border-t border-slate-100 pt-1">
+                                  <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wide">เปลี่ยนสถานะ</p>
+                                  {[
+                                    { value: 'ACTIVE', label: 'ทำงานอยู่', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+                                    { value: 'PROBATION', label: 'ทดลองงาน', color: 'text-amber-600', dot: 'bg-amber-500' },
+                                    { value: 'RESIGNED', label: 'ลาออก', color: 'text-rose-600', dot: 'bg-rose-500' },
+                                    { value: 'INACTIVE', label: 'ไม่ได้ทำงาน', color: 'text-slate-500', dot: 'bg-slate-300' },
+                                  ].map((s) => {
+                                    const isCurrentStatus = (emp.employmentStatus?.toUpperCase() ?? 'ACTIVE') === s.value;
+                                    return (
+                                      <button
+                                        key={s.value}
+                                        type="button"
+                                        disabled={isCurrentStatus}
+                                        onClick={() => {
+                                          handleStatusChange(emp.id, s.value);
+                                          setActionMenuOpenId(null);
+                                        }}
+                                        className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs transition-colors ${
+                                          isCurrentStatus
+                                            ? 'opacity-40 cursor-not-allowed ' + s.color
+                                            : s.color + ' hover:bg-slate-50 cursor-pointer'
+                                        }`}
+                                      >
+                                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`}></span>
+                                        <span>{s.label}</span>
+                                        {isCurrentStatus && <span className="ml-auto text-[10px] font-semibold opacity-70">✓</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* 5. ลบข้อมูล */}
                               {hasPermission('EMP_MANAGE') && (
                                 <button
                                   type="button"

@@ -475,6 +475,16 @@ public class EmployeeService : IEmployeeService
             employee.BiometricId = cleanBio;
         }
 
+        // อัปเดตสถานะการจ้างงาน (ACTIVE, PROBATION, RESIGNED, INACTIVE)
+        if (!string.IsNullOrWhiteSpace(request.EmploymentStatus))
+        {
+            var allowedStatuses = new[] { "ACTIVE", "PROBATION", "RESIGNED", "INACTIVE" };
+            var status = request.EmploymentStatus.ToUpper().Trim();
+            if (!allowedStatuses.Contains(status))
+                throw new ValidationException($"สถานะการจ้างงาน '{request.EmploymentStatus}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, PROBATION, RESIGNED, INACTIVE");
+            employee.EmploymentStatus = status;
+        }
+
         employee.Prefix = request.Prefix?.Trim();
         employee.FirstName = request.FirstName.Trim();
         employee.LastName = request.LastName.Trim();
@@ -805,6 +815,35 @@ public class EmployeeService : IEmployeeService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>
+    public async Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default)
+    {
+        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะพนักงาน");
+
+        var allowedStatuses = new[] { "ACTIVE", "PROBATION", "RESIGNED", "INACTIVE" };
+        var normalized = status?.ToUpper().Trim() ?? string.Empty;
+        if (!allowedStatuses.Contains(normalized))
+            throw new ValidationException($"สถานะ '{status}' ไม่ถูกต้อง กรุณาใช้: ACTIVE, PROBATION, RESIGNED, INACTIVE");
+
+        var employee = await _dbContext.Employees
+            .Include(e => e.Avatar)
+            .Include(e => e.Contact)
+            .Include(e => e.Signatures)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Division)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        if (employee == null)
+            throw new NotFoundException("Employee", id);
+
+        employee.EmploymentStatus = normalized;
+        employee.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(employee);
+    }
+
     public async Task<string> UploadAvatarAsync(
         long id,
         Stream stream,
@@ -1075,6 +1114,7 @@ public class EmployeeService : IEmployeeService
             Id = e.Id,
             EmployeeCode = e.EmployeeCode,
             BiometricId = e.BiometricId,
+            EmploymentStatus = e.EmploymentStatus,
             Prefix = e.Prefix,
             FirstName = e.FirstName,
             LastName = e.LastName,
