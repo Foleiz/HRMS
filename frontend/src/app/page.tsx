@@ -7,7 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import AccessDenied from '@/components/common/AccessDenied';
 
 import {
-  DashboardHeader,
+  RoleSwitcherBar,
+  GreetingBanner,
   DashboardRole,
 } from '@/components/dashboard/DashboardHeader';
 import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidget';
@@ -53,6 +54,11 @@ export default function HomePage() {
     }
   }, [user]);
 
+  const displayName =
+    activeRole === 'EMPLOYEE'
+      ? (user?.fullName || 'สมชาย')
+      : (user?.fullName || 'แอดมิน');
+
   const hasAnyPermission = Boolean(
     (user?.permissions && user.permissions.length > 0) || hasRole('ADMIN')
   );
@@ -83,20 +89,22 @@ export default function HomePage() {
         <Navbar />
 
         {/* Dashboard Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 w-full max-w-[1500px] mx-auto">
-          {/* Main 2-Column Responsive Layout matching images */}
-          <div className="flex flex-col lg:flex-row gap-5 items-start">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 w-full max-w-[1500px] mx-auto space-y-4">
+          {/* 1. Top Role Switcher Bar (กว้างเต็มแถบด้านบน) */}
+          <RoleSwitcherBar
+            activeRole={activeRole}
+            onRoleChange={setActiveRole}
+          />
+
+          {/* 2. Main 2-Column Responsive Layout (items-stretch ให้สูงเท่ากันพอดีกับ panel ข้างๆ) */}
+          <div className="flex flex-col lg:flex-row gap-5 items-stretch">
             
             {/* Left / Center Main Content (flex-1) */}
-            <div className="flex-1 w-full space-y-4">
-              {/* 1. Greeting Banner & Role Switcher */}
-              <DashboardHeader
-                user={user}
-                activeRole={activeRole}
-                onRoleChange={setActiveRole}
-              />
+            <div className="flex-1 w-full space-y-4 flex flex-col">
+              {/* Greeting Banner (ตรงกับหัวข้อปฏิทิน/แจ้งเตือนพอดี) */}
+              <GreetingBanner displayName={displayName} />
 
-              {/* 2. Middle Row: 6 Stat Cards (Left) + Upcoming Events Box (Right) */}
+              {/* Middle Row: 6 Stat Cards (Left) + Upcoming Events Box (Right) */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
                 {/* 6 Stat Cards: spans 2 cols on xl */}
                 <div className="xl:col-span-2">
@@ -113,23 +121,33 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* 3. Bottom Row: Personal Recent Transactions Table (Self Only) */}
-              <RecentTransactionsTable />
+              {/* Bottom Row: Personal Recent Transactions Table (Self Only) */}
+              <div className="flex-1 flex flex-col">
+                <RecentTransactionsTable />
+              </div>
             </div>
 
-            {/* Right Column: Widgets Stack (w-full lg:w-80 shrink-0) */}
-            <div className="w-full lg:w-80 shrink-0 space-y-4">
+            {/* Right Column: Widgets Stack (w-full lg:w-80 shrink-0) ขยายเต็มความสูงเท่ากับ panel ข้างซ้าย */}
+            <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
               {activeRole === 'EMPLOYEE' ? (
                 <>
-                  {/* Employee: Calendar + News */}
-                  <CalendarWidget />
-                  <NewsWidget />
+                  {/* Employee: Calendar (คงที่) + News (ขยายลงมาพอดี panel ข้างๆ) */}
+                  <div className="shrink-0">
+                    <CalendarWidget />
+                  </div>
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <NewsWidget />
+                  </div>
                 </>
               ) : (
                 <>
-                  {/* Management: Notifications + Attendance Pie Chart */}
-                  <NotificationsWidget role={activeRole} />
-                  <AttendancePieChart role={activeRole} />
+                  {/* Management: Notifications (คงที่) + Attendance Pie Chart (ขยายลงมาพอดี panel ข้างๆ) */}
+                  <div className="shrink-0">
+                    <NotificationsWidget role={activeRole} />
+                  </div>
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <AttendancePieChart role={activeRole} />
+                  </div>
                 </>
               )}
             </div>

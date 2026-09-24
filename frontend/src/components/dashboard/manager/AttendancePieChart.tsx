@@ -71,15 +71,15 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
   }).filter(Boolean);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col items-center justify-between min-h-[220px]">
-      <div className="w-full text-left">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col items-center justify-between flex-1 h-full min-h-[220px]">
+      <div className="w-full text-left shrink-0">
         <h4 className="text-xs font-bold text-slate-800">
           สถานะการเข้าทำงานวันนี้
         </h4>
       </div>
 
       {/* SVG Pie Chart (สีน้ำเงิน ฟ้า เขียว เหลือง ตามรูปภาพอ้างอิง) */}
-      <div className="my-2 relative flex items-center justify-center">
+      <div className="my-auto py-3 relative flex items-center justify-center">
         <svg width="160" height="160" viewBox="0 0 160 160" className="transform -rotate-90">
           {slices.map((s, idx) => (
             <path
@@ -95,7 +95,7 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
       </div>
 
       {/* Color Legend */}
-      <div className="w-full space-y-1 pt-2 border-t border-slate-100 text-[11px]">
+      <div className="w-full space-y-1.5 pt-3 border-t border-slate-100 text-[11px] mt-auto shrink-0">
         {data.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between text-slate-600">
             <div className="flex items-center gap-1.5">
