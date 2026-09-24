@@ -133,8 +133,8 @@ export default function TransfersPage() {
       customClass: {
         popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-900 p-6',
         title: 'text-lg font-bold text-slate-800 dark:text-slate-100 pt-2',
-        confirmButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all shadow-sm shadow-rose-200',
-        cancelButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 active:scale-95 transition-all mr-3 border border-slate-200',
+        confirmButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all shadow-sm shadow-blue-200 cursor-pointer',
+        cancelButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 active:scale-95 transition-all mr-3 border border-slate-300 cursor-pointer',
         input: 'rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 w-full',
         actions: 'gap-3 mt-4 w-full flex justify-end',
       },
