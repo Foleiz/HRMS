@@ -9,7 +9,6 @@ import AccessDenied from '@/components/common/AccessDenied';
 import {
   GreetingBanner,
   DashboardRole,
-  ROLE_LABELS,
 } from '@/components/dashboard/DashboardHeader';
 import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidget';
 import { RecentTransactionsTable } from '@/components/dashboard/RecentTransactionsTable';
@@ -109,39 +108,6 @@ export default function HomePage() {
             
             {/* Left / Center Main Content (flex-1) */}
             <div className="flex-1 w-full space-y-4 flex flex-col">
-              {/* Quick Switcher for Multi-Dashboard Roles (แสดงเฉพาะเมื่อได้รับสิทธิ์มากกว่า 1 แดชบอร์ด) */}
-              {allowedDashboards.length > 1 && (
-                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500">
-                      มุมมองแดชบอร์ดที่ได้รับสิทธิ์:
-                    </span>
-                    <span className="text-xs font-bold text-[#0B2046] bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
-                      {ROLE_LABELS[activeRole].badge}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                    {allowedDashboards.map((role) => {
-                      const isActive = activeRole === role;
-                      return (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setActiveRole(role)}
-                          className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                            isActive
-                              ? 'bg-[#0B2046] text-white shadow-xs font-bold'
-                              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                          }`}
-                        >
-                          {ROLE_LABELS[role].title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Greeting Banner (ตรงกับหัวข้อปฏิทิน/แจ้งเตือนพอดี) */}
               <GreetingBanner displayName={displayName} />
 
