@@ -840,7 +840,7 @@ export default function EmployeesPage() {
 
       {/* 4. Figma 1:1 Data Table */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto min-h-[280px]">
+        <div className="overflow-x-auto min-h-[380px]">
           <table className="w-full text-left border-collapse text-[12px]">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
@@ -880,10 +880,8 @@ export default function EmployeesPage() {
                   const hasComment = Boolean(comments[emp.id]);
                   const commentText = comments[emp.id];
                   const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
-                  // แถวท้ายตารางเปิดเมนูขึ้นด้านบน เพื่อป้องกันเมนูล้นตกขอบตาราง
-                  const isLastRows = paginatedEmployees.length >= 5
-                    ? index >= paginatedEmployees.length - 3
-                    : index >= paginatedEmployees.length - 2 && index > 0;
+                  // แถวท้ายตารางเปิดเมนูขึ้นด้านบน เฉพาะเมื่อมีแถวด้านบนเพียงพอ (index >= 4) เพื่อไม่ให้เมนูล้นตกขอบบนตาราง
+                  const isLastRows = paginatedEmployees.length >= 6 && index >= paginatedEmployees.length - 2 && index >= 4;
 
                   return (
                     <tr
