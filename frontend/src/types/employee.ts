@@ -66,8 +66,13 @@ export interface Employee {
   hasSignature?: boolean;
   signatureUrl?: string | null;
   positionId?: number;
+  positionCode?: string;
   positionName?: string;
+  departmentId?: number;
+  departmentCode?: string;
   departmentName?: string;
+  divisionId?: number;
+  divisionCode?: string;
   divisionName?: string;
   employeeType?: string;
   contact?: EmployeeContact;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { employeeService } from '@/services/employeeService';
@@ -28,6 +28,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Phone,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
@@ -138,6 +141,24 @@ export default function EmployeesPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(8);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<string>('employeeCode');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Reset page when search or department filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDepartment]);
 
   // HR Comments State: stored in localStorage { [empId: number]: string }
   const [comments, setComments] = useState<Record<number, string>>({});
@@ -276,20 +297,109 @@ export default function EmployeesPage() {
     loadData();
   }, []);
 
-  // Filter Employees
-  const filteredEmployees = employees.filter((emp) => {
+  // Filter and Sort Employees
+  const filteredEmployees = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    const matchSearch =
-      !term ||
-      emp.employeeCode.toLowerCase().includes(term) ||
-      (emp.biometricId && emp.biometricId.toLowerCase().includes(term)) ||
-      emp.fullName.toLowerCase().includes(term) ||
-      (emp.citizenIdMasked && emp.citizenIdMasked.toLowerCase().includes(term)) ||
-      (emp.contact?.organizationEmail && emp.contact.organizationEmail.toLowerCase().includes(term)) ||
-      (emp.contact?.personalPhone && emp.contact.personalPhone.includes(term));
 
-    return matchSearch;
-  });
+    const filtered = employees.filter((emp) => {
+      // 1. Search filter across all visible fields
+      const matchSearch =
+        !term ||
+        emp.employeeCode?.toLowerCase().includes(term) ||
+        (emp.biometricId && emp.biometricId.toLowerCase().includes(term)) ||
+        emp.fullName?.toLowerCase().includes(term) ||
+        (emp.citizenIdMasked && emp.citizenIdMasked.toLowerCase().includes(term)) ||
+        (emp.divisionName && emp.divisionName.toLowerCase().includes(term)) ||
+        (emp.departmentName && emp.departmentName.toLowerCase().includes(term)) ||
+        (emp.positionName && emp.positionName.toLowerCase().includes(term)) ||
+        (emp.contact?.organizationEmail && emp.contact.organizationEmail.toLowerCase().includes(term)) ||
+        (emp.contact?.personalEmail && emp.contact.personalEmail.toLowerCase().includes(term)) ||
+        (emp.contact?.personalPhone && emp.contact.personalPhone.includes(term));
+
+      // 2. Department filter
+      let matchDept = true;
+      if (selectedDepartment && selectedDepartment !== 'ALL') {
+        const selectedDeptObj = departments.find(
+          (d) =>
+            d.departmentName?.trim() === selectedDepartment.trim() ||
+            d.departmentCode?.trim() === selectedDepartment.trim() ||
+            String(d.id) === selectedDepartment
+        );
+        const targetName = (selectedDeptObj?.departmentName || selectedDepartment).trim().toLowerCase();
+        const targetCode = (selectedDeptObj?.departmentCode || selectedDepartment).trim().toLowerCase();
+
+        const empDeptName = (emp.departmentName || '').trim().toLowerCase();
+        const empDeptCode = (emp.departmentCode || '').trim().toLowerCase();
+
+        matchDept =
+          empDeptName === targetName ||
+          empDeptCode === targetCode ||
+          (emp.departmentId !== undefined && emp.departmentId !== null && String(emp.departmentId) === String(selectedDeptObj?.id));
+      }
+
+      return matchSearch && matchDept;
+    });
+
+    // 3. Sorting
+    return [...filtered].sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
+
+      switch (sortField) {
+        case 'employeeCode':
+          aVal = a.employeeCode || '';
+          bVal = b.employeeCode || '';
+          break;
+        case 'fullName':
+          aVal = a.fullName || `${a.firstName} ${a.lastName}`;
+          bVal = b.fullName || `${b.firstName} ${b.lastName}`;
+          break;
+        case 'citizenId':
+          aVal = a.citizenIdMasked || '';
+          bVal = b.citizenIdMasked || '';
+          break;
+        case 'division':
+          aVal = a.divisionName || '';
+          bVal = b.divisionName || '';
+          break;
+        case 'department':
+          aVal = a.departmentName || '';
+          bVal = b.departmentName || '';
+          break;
+        case 'position':
+          aVal = a.positionName || '';
+          bVal = b.positionName || '';
+          break;
+        case 'birthDate':
+          aVal = a.birthDate || '';
+          bVal = b.birthDate || '';
+          break;
+        case 'gender':
+          aVal = a.gender || '';
+          bVal = b.gender || '';
+          break;
+        case 'email':
+          aVal = a.contact?.organizationEmail || a.contact?.personalEmail || '';
+          bVal = b.contact?.organizationEmail || b.contact?.personalEmail || '';
+          break;
+        case 'phone':
+          aVal = a.contact?.personalPhone || '';
+          bVal = b.contact?.personalPhone || '';
+          break;
+        case 'status':
+          aVal = a.employmentStatus || '';
+          bVal = b.employmentStatus || '';
+          break;
+        default:
+          aVal = a.employeeCode || '';
+          bVal = b.employeeCode || '';
+          break;
+      }
+
+      const comparison = String(aVal).localeCompare(String(bVal), 'th', { numeric: true });
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [employees, searchTerm, selectedDepartment, departments, sortField, sortDirection]);
 
   // Pagination slice
   const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
@@ -709,20 +819,6 @@ export default function EmployeesPage() {
     );
   };
 
-  // Placeholder division / department / position generator if not yet assigned in DB
-  const getMockAssignment = (emp: Employee) => {
-    const list = [
-      { division: 'ทรัพยากรบุคคล', department: 'สรรหาและคัดเลือก', position: 'ผู้จัดการแผนกสรรหา' },
-      { division: 'เทคโนโลยีสารสนเทศ', department: 'พัฒนาซอฟต์แวร์', position: 'หัวหน้าทีมนักพัฒนา' },
-      { division: 'การตลาด', department: 'การตลาดดิจิทัล', position: 'เจ้าหน้าที่ยิงโฆษณาออนไลน์' },
-      { division: 'ขาย', department: 'ลูกค้าองค์กร', position: 'ผู้จัดการลูกค้ารายใหญ่' },
-      { division: 'บัญชีและการเงิน', department: 'บัญชีการเงิน', position: 'สมุห์บัญชี' },
-      { division: 'ซัพพลายเชนและโลจิสติกส์', department: 'คลังสินค้าและจัดส่ง', position: 'ผู้ควบคุมคลังสินค้า' },
-      { division: 'ผลิตและควบคุมคุณภาพ', department: 'ประกันและตรวจสอบ...', position: 'วิศวกรควบคุมคุณภาพ' },
-    ];
-    return list[(emp.id - 1) % list.length];
-  };
-
   // Mock photo avatars matching Figma design
   const mockAvatarImages = [
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', // EMP-001 (ชาย)
@@ -816,7 +912,7 @@ export default function EmployeesPage() {
             >
               <option value="ALL">ทุกแผนก</option>
               {departments.map((dept) => (
-                <option key={dept.id} value={dept.departmentCode}>
+                <option key={dept.id} value={dept.departmentName}>
                   {dept.departmentName}
                 </option>
               ))}
@@ -844,18 +940,161 @@ export default function EmployeesPage() {
           <table className="w-full text-left border-collapse text-[12px]">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
-              <tr className="bg-[#0B2046] text-white font-medium">
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">รหัสพนักงาน</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px]">ชื่อ-นามสกุล</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px]">รหัสบัตรประชาชน</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">ฝ่าย</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">แผนก</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px]">ตำแหน่ง</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">วันเกิด</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">เพศ</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">อีเมล</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">เบอร์โทร</th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium">สถานะ</th>
+              <tr className="bg-[#0B2046] text-white font-medium text-xs">
+                <th
+                  onClick={() => handleSort('employeeCode')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>รหัสพนักงาน</span>
+                    {sortField === 'employeeCode' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('fullName')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>ชื่อ-นามสกุล</span>
+                    {sortField === 'fullName' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('citizenId')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>รหัสบัตรประชาชน</span>
+                    {sortField === 'citizenId' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('division')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>ฝ่าย</span>
+                    {sortField === 'division' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('department')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>แผนก</span>
+                    {sortField === 'department' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('position')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>ตำแหน่ง</span>
+                    {sortField === 'position' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('birthDate')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>วันเกิด</span>
+                    {sortField === 'birthDate' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('gender')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>เพศ</span>
+                    {sortField === 'gender' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('email')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>อีเมล</span>
+                    {sortField === 'email' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('phone')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>เบอร์โทร</span>
+                    {sortField === 'phone' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('status')}
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  title="คลิกเพื่อเรียงลำดับ"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>สถานะ</span>
+                    {sortField === 'status' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                    )}
+                  </div>
+                </th>
                 <th className="py-3 px-3.5 whitespace-nowrap font-medium text-center">จัดการ</th>
               </tr>
             </thead>
@@ -876,7 +1115,6 @@ export default function EmployeesPage() {
                 </tr>
               ) : (
                 paginatedEmployees.map((emp, index) => {
-                  const assignment = getMockAssignment(emp);
                   const hasComment = Boolean(comments[emp.id]);
                   const commentText = comments[emp.id];
                   const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
@@ -974,17 +1212,17 @@ export default function EmployeesPage() {
 
                       {/* 4. ฝ่าย */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.divisionName || assignment?.division || '-'}
+                        {emp.divisionName || '-'}
                       </td>
 
                       {/* 5. แผนก */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.departmentName || assignment?.department || '-'}
+                        {emp.departmentName || '-'}
                       </td>
 
                       {/* 6. ตำแหน่ง */}
                       <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
-                        {emp.positionName || assignment?.position || '-'}
+                        {emp.positionName || '-'}
                       </td>
 
                       {/* 7. วันเกิด */}
