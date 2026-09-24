@@ -19,6 +19,12 @@ export const employeeService = {
     return res.data.data;
   },
 
+  // ดึงรหัสพนักงานลำดับถัดไปที่ระบบสร้างให้อัตโนมัติ
+  async getNextCode(): Promise<string> {
+    const res = await apiClient.get<ApiResponse<string>>('/employees/next-code');
+    return res.data.data;
+  },
+
   // เพิ่มพนักงานใหม่
   async create(data: CreateEmployeePayload): Promise<Employee> {
     const res = await apiClient.post<ApiResponse<Employee>>('/employees', data);

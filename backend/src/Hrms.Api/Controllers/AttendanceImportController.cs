@@ -184,7 +184,8 @@ public class AttendanceImportController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ApiResponse<RevertBatchResultDto>.Fail($"เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล: {ex.Message}"));
+            var detail = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
+            return StatusCode(500, ApiResponse<RevertBatchResultDto>.Fail($"เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล: {detail}"));
         }
     }
 }

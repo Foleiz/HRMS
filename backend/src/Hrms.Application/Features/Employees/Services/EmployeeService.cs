@@ -65,6 +65,7 @@ public class EmployeeService : IEmployeeService
             string term = search.Trim().ToLower();
             query = query.Where(e =>
                 e.EmployeeCode.ToLower().Contains(term) ||
+                (e.BiometricId != null && e.BiometricId.ToLower().Contains(term)) ||
                 e.FirstName.ToLower().Contains(term) ||
                 e.LastName.ToLower().Contains(term) ||
                 (e.CitizenIdMasked != null && e.CitizenIdMasked.Contains(term)));
@@ -122,6 +123,31 @@ public class EmployeeService : IEmployeeService
         return MapToDto(employee);
     }
 
+    /// <summary>
+    /// คำนวณรหัสพนักงานลำดับถัดไปแบบอัตโนมัติ (เช่น EMP0001, EMP0011)
+    /// </summary>
+    public async Task<string> GetNextEmployeeCodeAsync(CancellationToken cancellationToken = default)
+    {
+        var codes = await _dbContext.Employees
+            .AsNoTracking()
+            .Select(e => e.EmployeeCode)
+            .ToListAsync(cancellationToken);
+
+        int maxCode = 0;
+        foreach (var code in codes)
+        {
+            if (string.IsNullOrWhiteSpace(code)) continue;
+            var match = System.Text.RegularExpressions.Regex.Match(code.Trim(), @"^EMP(\d+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && int.TryParse(match.Groups[1].Value, out int num))
+            {
+                if (num > maxCode) maxCode = num;
+            }
+        }
+
+        int nextNum = maxCode + 1;
+        return $"EMP{nextNum:D4}";
+    }
+
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
         // 1. ตรวจสอบสิทธิ์สร้างพนักงาน
@@ -130,12 +156,38 @@ public class EmployeeService : IEmployeeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างข้อมูลพนักงาน");
         }
 
-        // 2. ตรวจสอบความซ้ำซ้อนของรหัสพนักงาน
+        // 2. หากไม่ได้ระบุรหัสพนักงาน ให้ระบบ Generate อัตโนมัติ
+        if (string.IsNullOrWhiteSpace(request.EmployeeCode))
+        {
+            request.EmployeeCode = await GetNextEmployeeCodeAsync(cancellationToken);
+        }
+
+        // 3. ตรวจสอบความซ้ำซ้อนของรหัสพนักงาน
         bool codeExists = await _dbContext.Employees
             .AnyAsync(e => e.EmployeeCode == request.EmployeeCode.Trim(), cancellationToken);
         if (codeExists)
         {
-            throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
+            // Auto-resolve race condition by generating true next code
+            string autoCode = await GetNextEmployeeCodeAsync(cancellationToken);
+            if (autoCode != request.EmployeeCode.Trim())
+            {
+                request.EmployeeCode = autoCode;
+            }
+            else
+            {
+                throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
+            }
+        }
+
+        string? cleanBiometricId = string.IsNullOrWhiteSpace(request.BiometricId) ? null : request.BiometricId.Trim();
+        if (cleanBiometricId != null)
+        {
+            bool bioExists = await _dbContext.Employees
+                .AnyAsync(e => e.BiometricId == cleanBiometricId, cancellationToken);
+            if (bioExists)
+            {
+                throw new ValidationException($"รหัสเครื่องสแกน '{cleanBiometricId}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
+            }
         }
 
         // 3. จัดการ PDPA สำหรับเลขบัตรประชาชน (Citizen ID)
@@ -152,6 +204,7 @@ public class EmployeeService : IEmployeeService
         var employee = new Employee
         {
             EmployeeCode = request.EmployeeCode.Trim(),
+            BiometricId = cleanBiometricId,
             Prefix = request.Prefix?.Trim(),
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
@@ -404,6 +457,22 @@ public class EmployeeService : IEmployeeService
                     employee.EmployeeCode = newCode;
                 }
             }
+        }
+
+        // ตรวจสอบและอัปเดตรหัสเครื่องสแกน (Biometric ID)
+        if (request.BiometricId != null)
+        {
+            var cleanBio = string.IsNullOrWhiteSpace(request.BiometricId) ? null : request.BiometricId.Trim();
+            if (cleanBio != null && !string.Equals(employee.BiometricId, cleanBio, StringComparison.OrdinalIgnoreCase))
+            {
+                bool bioExists = await _dbContext.Employees
+                    .AnyAsync(e => e.BiometricId == cleanBio && e.Id != employee.Id, cancellationToken);
+                if (bioExists)
+                {
+                    throw new ValidationException($"รหัสเครื่องสแกน '{cleanBio}' ถูกใช้งานโดยพนักงานคนอื่นแล้ว กรุณาตรวจสอบ");
+                }
+            }
+            employee.BiometricId = cleanBio;
         }
 
         employee.Prefix = request.Prefix?.Trim();
@@ -1005,6 +1074,7 @@ public class EmployeeService : IEmployeeService
         {
             Id = e.Id,
             EmployeeCode = e.EmployeeCode,
+            BiometricId = e.BiometricId,
             Prefix = e.Prefix,
             FirstName = e.FirstName,
             LastName = e.LastName,

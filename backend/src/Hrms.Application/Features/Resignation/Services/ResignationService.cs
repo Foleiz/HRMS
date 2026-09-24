@@ -54,7 +54,9 @@ public class ResignationService : IResignationService
             .AsNoTracking()
             .Include(r => r.Employee)
             .Include(r => r.ApprovedByEmployee)
-            .Include(r => r.ApprovalInstance)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
         if (request == null)
@@ -68,7 +70,10 @@ public class ResignationService : IResignationService
                           _currentUserService.HasRole("SUPER_ADMIN") ||
                           _currentUserService.HasRole("SYS_ADMIN");
 
-        if (request.EmployeeId != currentEmpId && !isHrOrAdmin)
+        var isApprover = request.ApprovalInstanceId.HasValue && currentEmpId.HasValue &&
+            await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, currentEmpId.Value, cancellationToken);
+
+        if (request.EmployeeId != currentEmpId && !isHrOrAdmin && !isApprover)
         {
             throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์เข้าถึงคำขอลาออกนี้");
         }
@@ -79,7 +84,7 @@ public class ResignationService : IResignationService
             .Include(a => a.Position)
             .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.IsCurrent, cancellationToken);
 
-        return MapToDto(request, assignment, currentEmpId, isHrOrAdmin);
+        return await MapToDtoAsync(request, assignment, currentEmpId, isHrOrAdmin, cancellationToken);
     }
 
     public async Task<ResignationRequestDto> CreateRequestAsync(CreateResignationRequestDto dto, CancellationToken cancellationToken = default)
@@ -175,7 +180,7 @@ public class ResignationService : IResignationService
             .Include(a => a.Position)
             .FirstOrDefaultAsync(a => a.EmployeeId == employeeId.Value && a.IsCurrent, cancellationToken);
 
-        return MapToDto(request, assignment, employeeId.Value, true);
+        return await MapToDtoAsync(request, assignment, employeeId.Value, true, cancellationToken);
     }
 
     public async Task<bool> CancelRequestAsync(long id, string? reason = null, CancellationToken cancellationToken = default)
@@ -229,18 +234,122 @@ public class ResignationService : IResignationService
         return true;
     }
 
+    public async Task<ResignationRequestDto> ApproveRequestAsync(
+        long id,
+        long approverId,
+        string? comment = null,
+        CancellationToken cancellationToken = default)
+    {
+        var request = await _context.ResignationRequests
+            .Include(r => r.ApprovalInstance)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอลาออกรหัส {id}");
+        }
+
+        if (request.Status == "APPROVED")
+        {
+            return (await GetRequestByIdAsync(id, cancellationToken))!;
+        }
+
+        bool finalizeApproval = false;
+
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            var workflowResult = await _approvalWorkflow.ProcessActionAsync(
+                request.ApprovalInstanceId.Value,
+                approverId,
+                "APPROVE",
+                comment,
+                cancellationToken);
+
+            if (workflowResult.IsCompleted && workflowResult.Status == "APPROVED")
+            {
+                finalizeApproval = true;
+            }
+        }
+        else
+        {
+            finalizeApproval = true;
+        }
+
+        if (finalizeApproval)
+        {
+            request.Status = "APPROVED";
+            request.ApprovedAt = DateTime.UtcNow;
+            request.ApprovedByEmployeeId = approverId;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        return (await GetRequestByIdAsync(id, cancellationToken))!;
+    }
+
+    public async Task<ResignationRequestDto> RejectRequestAsync(
+        long id,
+        long approverId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        var request = await _context.ResignationRequests
+            .Include(r => r.ApprovalInstance)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+        {
+            throw new KeyNotFoundException($"ไม่พบคำขอลาออกรหัส {id}");
+        }
+
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            await _approvalWorkflow.ProcessActionAsync(
+                request.ApprovalInstanceId.Value,
+                approverId,
+                "REJECT",
+                reason,
+                cancellationToken);
+        }
+
+        request.Status = "REJECTED";
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return (await GetRequestByIdAsync(id, cancellationToken))!;
+    }
+
     private async Task<List<ResignationRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
+        var currentEmpId = _currentUserService.EmployeeId;
+        var isSystemAdmin = _currentUserService.HasRole("ADMIN") ||
+                            _currentUserService.HasRole("SUPER_ADMIN") ||
+                            _currentUserService.HasRole("SYS_ADMIN");
+
         var query = _context.ResignationRequests
             .AsNoTracking()
             .Include(r => r.Employee)
             .Include(r => r.ApprovedByEmployee)
-            .Include(r => r.ApprovalInstance)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .AsQueryable();
 
         if (employeeId.HasValue)
         {
             query = query.Where(r => r.EmployeeId == employeeId.Value);
+        }
+        else if (!isSystemAdmin)
+        {
+            if (!currentEmpId.HasValue)
+            {
+                return new List<ResignationRequestDto>();
+            }
+
+            var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
+                currentEmpId.Value,
+                "RESIGNATION_REQUEST",
+                cancellationToken);
+
+            query = query.Where(r => r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -260,24 +369,28 @@ public class ResignationService : IResignationService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var currentEmpId = _currentUserService.EmployeeId;
         var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
                           _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN") ||
-                          _currentUserService.HasRole("SYS_ADMIN");
+                          _currentUserService.HasRole("HR") ||
+                          isSystemAdmin;
 
-        return requests.Select(r =>
+        var items = new List<ResignationRequestDto>();
+        foreach (var r in requests)
         {
             assignments.TryGetValue(r.EmployeeId, out var assign);
-            return MapToDto(r, assign, currentEmpId, isHrOrAdmin);
-        }).ToList();
+            var item = await MapToDtoAsync(r, assign, currentEmpId, isHrOrAdmin, cancellationToken);
+            items.Add(item);
+        }
+
+        return items;
     }
 
-    private static ResignationRequestDto MapToDto(
+    private async Task<ResignationRequestDto> MapToDtoAsync(
         ResignationRequest r,
         EmployeeAssignment? assignment,
         long? currentEmpId,
-        bool isHrOrAdmin)
+        bool isHrOrAdmin,
+        CancellationToken cancellationToken)
     {
         string? category = null;
         string? detail = r.Reason;
@@ -315,6 +428,50 @@ public class ResignationService : IResignationService
             effectiveStatus = r.ApprovalInstance.Status;
         }
 
+        var instance = r.ApprovalInstance;
+        var currentStepNo = instance?.CurrentStepNo;
+        var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
+        string? currentApproverDisplay = null;
+        bool isMyTurn = false;
+
+        if (instance != null && instance.Status == "PENDING" && currentStepNo.HasValue)
+        {
+            var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == currentStepNo.Value);
+            if (step != null)
+            {
+                currentApproverDisplay = step.ApproverType switch
+                {
+                    "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
+                    "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
+                    "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
+                    "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
+                    "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
+                    "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
+                    "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+                    _ => step.ApproverType
+                };
+            }
+
+            if (currentEmpId.HasValue)
+            {
+                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+            }
+        }
+
+        var hasAlreadyApproved = instance != null && currentEmpId.HasValue &&
+            instance.Actions.Any(a => a.ApproverEmployeeId == currentEmpId.Value && a.ActionDecision == "APPROVE");
+
+        var finalApproveAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
+        Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? timeline = null;
+        if (instance != null)
+        {
+            timeline = await _approvalWorkflow.GetTimelineAsync(instance.Id, cancellationToken);
+        }
+
         return new ResignationRequestDto
         {
             Id = r.Id,
@@ -335,11 +492,19 @@ public class ResignationService : IResignationService
             CancelledAt = r.CancelledAt,
             CancelReason = r.CancelReason,
             ApprovedByEmployeeId = r.ApprovedByEmployeeId,
-            ApprovedByName = r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null,
-            ApprovedAt = r.ApprovedAt,
+            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null),
+            ApprovedAt = instance?.CompletedAt ?? r.ApprovedAt ?? finalApproveAction?.ActionAt,
             ApprovalInstanceId = r.ApprovalInstanceId,
             NoticePeriodDays = noticeDays > 0 ? noticeDays : 0,
-            CanCancel = effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin)
+            CanCancel = effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin),
+            CurrentStepNo = currentStepNo,
+            TotalSteps = totalSteps,
+            CurrentApproverDisplay = currentApproverDisplay,
+            IsMyTurnToApprove = isMyTurn,
+            CanApprove = isMyTurn,
+            CanReject = isMyTurn,
+            HasAlreadyApproved = hasAlreadyApproved,
+            Timeline = timeline
         };
     }
 }

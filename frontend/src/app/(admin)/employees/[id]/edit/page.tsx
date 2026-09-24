@@ -79,6 +79,7 @@ export default function EmployeeEditPage() {
   // Form State
   const [formData, setFormData] = useState<CreateEmployeePayload>({
     employeeCode: '',
+    biometricId: '',
     prefix: '',
     firstName: '',
     lastName: '',
@@ -147,6 +148,7 @@ export default function EmployeeEditPage() {
 
         setFormData({
           employeeCode: emp.employeeCode || '',
+          biometricId: emp.biometricId || '',
           prefix: emp.prefix || '',
           firstName: emp.firstName || '',
           lastName: emp.lastName || '',
@@ -275,6 +277,7 @@ export default function EmployeeEditPage() {
       const payload: Partial<CreateEmployeePayload> = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
+        biometricId: formData.biometricId?.trim() ? formData.biometricId.trim() : '',
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         citizenId: cleanCitizenId,
@@ -428,6 +431,23 @@ export default function EmployeeEditPage() {
                       onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
+                  </div>
+
+                  {/* รหัสเครื่องสแกนนิ้ว (Biometric ID) */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      รหัสเครื่องสแกนนิ้ว (Biometric ID)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น 100001"
+                      value={formData.biometricId || ''}
+                      onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)
+                    </p>
                   </div>
 
                   {/* คำนำหน้า */}

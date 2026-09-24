@@ -31,8 +31,26 @@ public class CertificateRequestDto
     public DateTime RequestedAt { get; set; }
     public DateTime? IssuedAt { get; set; }
     public long? ApprovalInstanceId { get; set; }
+    public int? CurrentStepNo { get; set; }
+    public int TotalSteps { get; set; }
+    public string? CurrentApproverDisplay { get; set; }
+    public bool IsMyTurnToApprove { get; set; }
+    public bool HasAlreadyApproved { get; set; }
+    public string? ApprovedByName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? RejectReason { get; set; }
     public bool CanCancel { get; set; }
     public bool CanDownload { get; set; }
+}
+
+public class ApproveCertificateRequestPayload
+{
+    public string? Comment { get; set; }
+}
+
+public class RejectCertificateRequestPayload
+{
+    public string Reason { get; set; } = string.Empty;
 }
 
 public class CertificateDocumentDto

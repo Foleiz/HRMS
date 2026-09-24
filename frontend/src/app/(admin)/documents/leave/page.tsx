@@ -9,6 +9,7 @@ import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveReques
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { toast } from '@/context/ToastContext';
 
 // ─── Component ────────────────────────────────────────────────
 
@@ -55,12 +56,6 @@ function MyLeaveRequestPageContent() {
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [toast, setToast] = useState<string | null>(null);
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
 
   // ─── Fetch ────────────────────────────────────────────────
 
@@ -122,16 +117,15 @@ function MyLeaveRequestPageContent() {
     } else {
       await leaveService.createMyLeaveRequest({ ...payload, saveAsDraft: false });
     }
-    showToast('ยื่นคำขอลาสำเร็จ รอการอนุมัติจากฝ่ายบุคคล');
-    router.replace('/documents/leave');
-    fetchData();
+    toast.success('ยื่นคำขอลาสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+    router.push('/documents/history');
   };
 
   const handleSaveDraft = async (payload: CreateMyLeaveRequestPayload, draftId?: number): Promise<LeaveRequest> => {
     const saved = draftId
       ? await leaveService.updateMyLeaveRequest(draftId, { ...payload, saveAsDraft: true })
       : await leaveService.createMyLeaveRequest({ ...payload, saveAsDraft: true });
-    showToast('บันทึกแบบร่างสำเร็จ');
+    toast.success('บันทึกแบบร่างสำเร็จ');
     fetchData();
     return saved;
   };
@@ -160,13 +154,6 @@ function MyLeaveRequestPageContent() {
         </button>
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-slate-900 text-white rounded-xl text-sm shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          {toast}
-        </div>
-      )}
 
       {/* ยื่นคำขอลา — ฟอร์มแบบเต็มหน้าจอ */}
       {loading ? (

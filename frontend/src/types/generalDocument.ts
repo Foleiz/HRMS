@@ -17,6 +17,12 @@ export interface GeneralDocumentRequest {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   submittedAt: string;
   canCancel: boolean;
+  approvedByName?: string;
+  approvedAt?: string;
+  rejectReason?: string;
+  isMyTurnToApprove?: boolean;
+  canApprove?: boolean;
+  canReject?: boolean;
 }
 
 export interface CreateGeneralDocumentPayload {

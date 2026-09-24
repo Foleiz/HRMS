@@ -71,4 +71,53 @@ export const generalDocumentService = {
     }
     return false;
   },
+
+  /**
+   * ดึงรายการคำร้องเอกสารทั่วไปทั้งหมด (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
+   */
+  async getAllRequests(status?: string): Promise<GeneralDocumentRequest[]> {
+    const all = await this.getMyRequests();
+    const filtered = status ? all.filter((r) => r.status === status) : all;
+    return filtered.map((r) => ({
+      ...r,
+      isMyTurnToApprove: r.status === 'PENDING',
+      canApprove: r.status === 'PENDING',
+      canReject: r.status === 'PENDING',
+    }));
+  },
+
+  /**
+   * อนุมัติคำร้องเอกสารทั่วไป
+   */
+  async approveRequest(id: string, approverName: string = 'ฝ่ายทรัพยากรบุคคล'): Promise<boolean> {
+    const requests = await this.getMyRequests();
+    const idx = requests.findIndex((r) => r.id === id);
+    if (idx !== -1) {
+      requests[idx].status = 'APPROVED';
+      requests[idx].approvedByName = approverName;
+      requests[idx].approvedAt = new Date().toISOString();
+      requests[idx].canCancel = true;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * ปฏิเสธคำร้องเอกสารทั่วไป
+   */
+  async rejectRequest(id: string, reason: string, approverName: string = 'ฝ่ายทรัพยากรบุคคล'): Promise<boolean> {
+    const requests = await this.getMyRequests();
+    const idx = requests.findIndex((r) => r.id === id);
+    if (idx !== -1) {
+      requests[idx].status = 'REJECTED';
+      requests[idx].rejectReason = reason;
+      requests[idx].approvedByName = approverName;
+      requests[idx].approvedAt = new Date().toISOString();
+      requests[idx].canCancel = false;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+      return true;
+    }
+    return false;
+  },
 };

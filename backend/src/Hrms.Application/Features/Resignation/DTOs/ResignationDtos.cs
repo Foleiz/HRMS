@@ -34,9 +34,27 @@ public class ResignationRequestDto
     public long? ApprovalInstanceId { get; set; }
     public int NoticePeriodDays { get; set; }
     public bool CanCancel { get; set; }
+    public int? CurrentStepNo { get; set; }
+    public int TotalSteps { get; set; }
+    public string? CurrentApproverDisplay { get; set; }
+    public bool IsMyTurnToApprove { get; set; }
+    public bool CanApprove { get; set; }
+    public bool CanReject { get; set; }
+    public bool HasAlreadyApproved { get; set; }
+    public Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? Timeline { get; set; }
 }
 
 public class CancelResignationRequestDto
 {
     public string? CancelReason { get; set; }
+}
+
+public class ApproveResignationRequestPayload
+{
+    public string? Comment { get; set; }
+}
+
+public class RejectResignationRequestPayload
+{
+    public string Reason { get; set; } = string.Empty;
 }

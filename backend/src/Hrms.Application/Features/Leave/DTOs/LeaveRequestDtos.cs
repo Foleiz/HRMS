@@ -32,6 +32,7 @@ public record LeaveRequestDto
     public int TotalSteps { get; init; }
     public string? CurrentApproverDisplay { get; init; }
     public bool IsMyTurnToApprove { get; init; }
+    public bool HasAlreadyApproved { get; init; }
     public string? ApprovedByName { get; init; }
     public DateTime? ApprovedAt { get; init; }
 

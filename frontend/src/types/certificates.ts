@@ -26,6 +26,14 @@ export interface CertificateRequest {
   requestedAt: string;
   issuedAt?: string;
   approvalInstanceId?: number;
+  currentStepNo?: number | null;
+  totalSteps?: number;
+  currentApproverDisplay?: string | null;
+  isMyTurnToApprove?: boolean;
+  hasAlreadyApproved?: boolean;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  rejectReason?: string | null;
   canCancel: boolean;
   canDownload: boolean;
 }
