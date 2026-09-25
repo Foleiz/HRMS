@@ -365,6 +365,19 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
+    /// ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW)
+    /// </summary>
+    [HttpDelete("periods/{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<object>>> DeletePayrollPeriod(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        await _salaryService.DeletePayrollPeriodAsync(id, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(null!, "ลบรอบเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>
     /// ดึงข้อมูลสรุปการโอนเงินธนาคารประจำรอบ
     /// </summary>
     [HttpGet("periods/{id:long}/bank-transfer")]

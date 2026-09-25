@@ -162,6 +162,10 @@ export const salaryService = {
     return res.data.data;
   },
 
+  async deletePayrollPeriod(periodId: number): Promise<void> {
+    await apiClient.delete(`/salary/periods/${periodId}`);
+  },
+
   // Bank Transfer, Tax/SSO Summary, Bonus
   async getBankTransferSummary(periodId: number, bankCode?: string): Promise<any> {
     const res = await apiClient.get<ApiResponse<any>>(`/salary/periods/${periodId}/bank-transfer`, {

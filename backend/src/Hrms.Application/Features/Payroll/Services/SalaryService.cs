@@ -1347,6 +1347,36 @@ public class SalaryService : ISalaryService
         return await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
     }
 
+    public async Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(p => p.Details)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        // Allow deletion ONLY in DRAFT or REVIEW status
+        if (period.Status != "DRAFT" && period.Status != "REVIEW")
+        {
+            throw new BusinessRuleException(
+                $"ไม่สามารถลบรอบเงินเดือนในสถานะ '{period.Status}' ได้ " +
+                "เนื่องจากรอบเงินเดือนได้ถูกส่งต่อไปยังขั้นตอนตรวจสอบ/อนุมัติ/จ่ายเงินแล้ว (สามารถลบได้เฉพาะสถานะ 'DRAFT' หรือ 'REVIEW' เท่านั้น)");
+        }
+
+        // Clean up payroll details and payroll records
+        foreach (var pr in period.Payrolls)
+        {
+            if (pr.Details.Any())
+            {
+                _context.PayrollDetails.RemoveRange(pr.Details);
+            }
+        }
+        _context.Payrolls.RemoveRange(period.Payrolls);
+        _context.PayrollPeriods.Remove(period);
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default)
     {
         var period = await _context.PayrollPeriods

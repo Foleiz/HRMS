@@ -370,6 +370,8 @@ export default function PayrollPage() {
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [deletePeriodConfirmOpen, setDeletePeriodConfirmOpen] = useState(false);
+  const [isDeletingPeriod, setIsDeletingPeriod] = useState(false);
   const [isPeriodNameCustom, setIsPeriodNameCustom] = useState(false);
   const [newPeriodForm, setNewPeriodForm] = useState(() => ({
     year: 2026,
@@ -1252,6 +1254,33 @@ export default function PayrollPage() {
       setIsRejectModalOpen(false);
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการส่งคืนรอบเงินเดือน');
+    }
+  };
+
+  const handleDeletePeriod = async () => {
+    if (!selectedPeriod) return;
+    try {
+      setIsDeletingPeriod(true);
+      await salaryService.deletePayrollPeriod(selectedPeriod.id);
+      showToast(`ลบรอบเงินเดือน "${selectedPeriod.periodName}" เรียบร้อยแล้ว`);
+      setDeletePeriodConfirmOpen(false);
+
+      const updatedPeriods = await salaryService.getPayrollPeriods();
+      setPeriods(updatedPeriods || []);
+      if (updatedPeriods && updatedPeriods.length > 0) {
+        const nextPeriod = updatedPeriods[0];
+        setSelectedPeriod(nextPeriod);
+        const pRows = await salaryService.getPayrollsByPeriod(nextPeriod.id);
+        setPayrolls(pRows || []);
+      } else {
+        setSelectedPeriod(null);
+        setPayrolls([]);
+      }
+    } catch (err: any) {
+      console.error('Failed to delete payroll period:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการลบรอบเงินเดือน');
+    } finally {
+      setIsDeletingPeriod(false);
     }
   };
 
@@ -2292,6 +2321,18 @@ export default function PayrollPage() {
                         <Plus className="w-3.5 h-3.5 text-slate-500" />
                         <span>สร้างรอบเงินเดือน</span>
                       </button>
+
+                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                        <button
+                          onClick={() => setDeletePeriodConfirmOpen(true)}
+                          disabled={!selectedPeriod || isDeletingPeriod}
+                          className="h-9 inline-flex items-center gap-1.5 px-3 border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          title="ลบรอบเงินเดือนนี้ออกจากระบบ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          <span>ลบรอบเงินเดือน</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={handleCalculatePayroll}
@@ -4356,6 +4397,19 @@ export default function PayrollPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal: ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW) */}
+      <ConfirmModal
+        isOpen={deletePeriodConfirmOpen}
+        onClose={() => setDeletePeriodConfirmOpen(false)}
+        onConfirm={handleDeletePeriod}
+        title="ยืนยันการลบรอบเงินเดือน?"
+        message={`คุณแน่ใจหรือไม่ว่าต้องการลบ "${selectedPeriod?.periodName}" ออกจากระบบ? ข้อมูลเงินเดือน รายการคำนวณ และสลิปทั้งหมดของพนักงานในรอบนี้จะถูกลบทิ้งอย่างถาวร`}
+        confirmText="ลบรอบเงินเดือน"
+        cancelText="ยกเลิก"
+        type="danger"
+        isLoading={isDeletingPeriod}
+      />
     </div>
   );
 }
