@@ -272,15 +272,40 @@ export interface TaxSsoSummary {
 }
 
 export interface EmployeeBonus {
+  id?: number;
   employeeId: number;
   employeeCode: string;
   employeeName: string;
   departmentName?: string | null;
   positionName?: string | null;
+  startDate?: string | null;
+  tenureText?: string;
+  monthsWorkedInYear?: number;
+  isProrated?: boolean;
   baseSalary: number;
   performanceScore?: number | null;
   multiplier: number;
   bonusAmount: number;
+  bankCode?: string | null;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  status?: string;
+  statusText?: string;
+}
+
+export interface CalculateBonusPayload {
+  year: number;
+  defaultMultiplier: number;
+  isProrated: boolean;
+}
+
+export interface ApplyBonusToPeriodPayload {
+  periodId: number;
+  bonuses: {
+    employeeId: number;
+    multiplier: number;
+    bonusAmount: number;
+  }[];
 }
 
 // ===== PAYMENT WORKFLOW TYPES =====

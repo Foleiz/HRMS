@@ -38,6 +38,8 @@ import {
   Download,
   Lock,
   Landmark,
+  ArrowDownToLine,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -59,6 +61,7 @@ import {
   BankTransferSummary,
   TaxSsoSummary,
   EmployeeBonus,
+  ApplyBonusToPeriodPayload,
   PayrollTransferList,
   PayrollTransferItem,
 } from '@/types/payroll';
@@ -460,8 +463,15 @@ export default function PayrollPage() {
 
   // Tab 6: Bonus state
   const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
+  const [bonusYear, setBonusYear] = useState<number>(2026);
   const [bonusMultiplierInput, setBonusMultiplierInput] = useState<number>(1.5);
+  const [bonusIsProrated, setBonusIsProrated] = useState<boolean>(true);
   const [isCalculatingBonus, setIsCalculatingBonus] = useState<boolean>(false);
+  const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
+  const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
+  const [isApplyBonusModalOpen, setIsApplyBonusModalOpen] = useState<boolean>(false);
+  const [selectedTargetPeriodId, setSelectedTargetPeriodId] = useState<number | null>(null);
+  const [isApplyingBonus, setIsApplyingBonus] = useState<boolean>(false);
 
   // Tab 7: Tax & SSO state
   const [taxSsoSummary, setTaxSsoSummary] = useState<TaxSsoSummary | null>(null);
@@ -549,9 +559,9 @@ export default function PayrollPage() {
     } else if (activeTab === 'tax-sso') {
       loadTaxSsoSummary(selectedPeriod.id);
     } else if (activeTab === 'bonus') {
-      loadBonuses(selectedPeriod.year);
+      loadBonuses(bonusYear);
     }
-  }, [activeTab, selectedPeriod]);
+  }, [activeTab, selectedPeriod, bonusYear]);
 
   const loadBankTransfer = async (periodId: number, bankCode?: string) => {
     if (!periodId) return;
@@ -580,7 +590,7 @@ export default function PayrollPage() {
 
   const loadBonuses = async (year?: number) => {
     try {
-      const bonusData = await salaryService.getEmployeeBonuses(year || 2026);
+      const bonusData = await salaryService.getEmployeeBonuses(year || bonusYear || 2026);
       setBonuses(bonusData || []);
     } catch (err) {
       console.error('Failed to load bonuses:', err);
@@ -926,18 +936,135 @@ export default function PayrollPage() {
   const handleCalculateBonusesSubmit = async () => {
     try {
       setIsCalculatingBonus(true);
-      const targetYear = selectedPeriod?.year || 2026;
       const res = await salaryService.calculateEmployeeBonuses({
-        year: targetYear,
+        year: bonusYear,
         defaultMultiplier: bonusMultiplierInput,
+        isProrated: bonusIsProrated,
       });
       setBonuses(res || []);
-      showToast(`คำนวณและจัดสรรโบนัสประจำปี ${targetYear} (ตัวคูณ ${bonusMultiplierInput}x) สำเร็จ`);
-    } catch (err) {
+      showToast(`คำนวณและจัดสรรโบนัสประจำปี ${bonusYear} (ตัวคูณ ${bonusMultiplierInput}x${bonusIsProrated ? ', คิดเฉลี่ยตามอายุงาน' : ''}) สำเร็จ`);
+    } catch (err: any) {
       console.error('Failed to calculate bonuses:', err);
-      showToast('เกิดข้อผิดพลาดในการคำนวณโบนัส');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณโบนัส');
     } finally {
       setIsCalculatingBonus(false);
+    }
+  };
+
+  const handleBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
+    setBonuses(prev => prev.map(b => {
+      if (b.employeeId === employeeId) {
+        const safeMult = isNaN(newMultiplier) ? 0 : Math.max(0, newMultiplier);
+        const prorateFactor = b.isProrated && b.monthsWorkedInYear ? (b.monthsWorkedInYear / 12) : 1;
+        const newBonusAmount = Math.round(b.baseSalary * safeMult * prorateFactor * 100) / 100;
+        return {
+          ...b,
+          multiplier: safeMult,
+          bonusAmount: newBonusAmount,
+        };
+      }
+      return b;
+    }));
+  };
+
+  const handleBonusAmountChange = (employeeId: number, newAmount: number) => {
+    setBonuses(prev => prev.map(b => {
+      if (b.employeeId === employeeId) {
+        const safeAmount = isNaN(newAmount) ? 0 : Math.max(0, newAmount);
+        const prorateFactor = b.isProrated && b.monthsWorkedInYear ? (b.monthsWorkedInYear / 12) : 1;
+        const effectiveBase = b.baseSalary * (prorateFactor > 0 ? prorateFactor : 1);
+        const newMultiplier = effectiveBase > 0 ? Math.round((safeAmount / effectiveBase) * 100) / 100 : 0;
+        return {
+          ...b,
+          bonusAmount: safeAmount,
+          multiplier: newMultiplier,
+        };
+      }
+      return b;
+    }));
+  };
+
+  const handleExportBonusBankFile = () => {
+    if (bonuses.length === 0) {
+      showToast('ไม่มีข้อมูลโบนัสสำหรับส่งออก กรุณากดคำนวณและจัดสรรโบนัสก่อน');
+      return;
+    }
+
+    const csvRows: string[] = [];
+    csvRows.push('ลำดับ,รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,อายุงาน,สัดส่วนอายุงาน,เงินเดือนฐาน(บาท),ตัวคูณ(เท่า),ยอดเงินโบนัส(บาท),ธนาคาร,เลขที่บัญชี');
+
+    bonuses.forEach((b, idx) => {
+      const prorateText = b.isProrated ? `${b.monthsWorkedInYear || 0}/12 เดือน` : 'เต็มปี (12/12)';
+      csvRows.push(
+        [
+          idx + 1,
+          `"${b.employeeCode}"`,
+          `"${b.employeeName}"`,
+          `"${b.departmentName || '-'}"`,
+          `"${b.positionName || '-'}"`,
+          `"${b.tenureText || '-'}"`,
+          `"${prorateText}"`,
+          b.baseSalary.toFixed(2),
+          b.multiplier.toFixed(2),
+          b.bonusAmount.toFixed(2),
+          `"${b.bankName || b.bankCode || '-'}"`,
+          `"${b.accountNumber ? `\t${b.accountNumber}` : '-'}"`,
+        ].join(',')
+      );
+    });
+
+    const csvContent = '\uFEFF' + csvRows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bonus_Bank_Transfer_${bonusYear}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showToast(`ส่งออกไฟล์โอนเงินธนาคารสำหรับโบนัสปี ${bonusYear} สำเร็จ (${bonuses.length} รายการ)`);
+  };
+
+  const handleOpenApplyBonusModal = () => {
+    if (bonuses.length === 0) {
+      showToast('กรุณากดคำนวณและจัดสรรโบนัสก่อนนำเข้าสู่งวดเงินเดือน');
+      return;
+    }
+    const decPeriod = periods.find(p => p.year === bonusYear && p.month === 12);
+    setSelectedTargetPeriodId(decPeriod ? decPeriod.id : (selectedPeriod?.id || (periods[0]?.id ?? null)));
+    setIsApplyBonusModalOpen(true);
+  };
+
+  const handleConfirmApplyBonusToPeriod = async () => {
+    if (!selectedTargetPeriodId) {
+      showToast('กรุณาเลือกงวดเงินเดือนที่ต้องการนำโบนัสไปรวมจ่าย');
+      return;
+    }
+    try {
+      setIsApplyingBonus(true);
+      const targetPeriod = periods.find(p => p.id === selectedTargetPeriodId);
+      const payload: ApplyBonusToPeriodPayload = {
+        periodId: selectedTargetPeriodId,
+        bonuses: bonuses.map(b => ({
+          employeeId: b.employeeId,
+          bonusAmount: b.bonusAmount,
+          multiplier: b.multiplier,
+        })),
+      };
+      const count = await salaryService.applyBonusesToPeriod(payload);
+      showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${count} รายการ) พร้อมคำนวณภาษีและยอดสุทธิเรียบร้อยแล้ว`);
+      setIsApplyBonusModalOpen(false);
+
+      if (selectedPeriod?.id === selectedTargetPeriodId) {
+        const pRows = await salaryService.getPayrollsByPeriod(selectedTargetPeriodId);
+        setPayrolls(pRows || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to apply bonus to period:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกโบนัสเข้างวดเงินเดือน');
+    } finally {
+      setIsApplyingBonus(false);
     }
   };
 
@@ -3415,116 +3542,332 @@ export default function PayrollPage() {
         </div>
       )}
       {/* === TAB 6: โบนัส (Bonus) === */}
-
       {activeTab === 'bonus' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+            {/* Header & Main Actions */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-amber-500" />
                   <span>การจัดสรรโบนัสและเงินรางวัลประจำปี (Annual Bonus Management)</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  คำนวณและอนุมัติโบนัสประจำปีตามฐานเงินเดือนพนักงานและตัวคูณผลการปฏิบัติงาน
+                <p className="text-xs text-slate-500 mt-1">
+                  คำนวณและจัดสรรโบนัสประจำปีตามฐานเงินเดือน อายุงาน และตัวคูณ สามารถปรับแก้รายคน นำส่งเข้างวดเงินเดือน หรือส่งออกไฟล์โอนเงินได้ทันที (ไม่มีขั้นตอนอนุมัติซับซ้อน)
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                  <span>ตัวคูณโบนัสฐาน:</span>
+              {/* Direct Payout Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleOpenApplyBonusModal}
+                  disabled={bonuses.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ArrowDownToLine className="w-4 h-4 text-blue-200" />
+                  <span>📥 บันทึกเข้าสู่งวดเงินเดือน</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportBonusBankFile}
+                  disabled={bonuses.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <Landmark className="w-4 h-4 text-emerald-100" />
+                  <span>🏦 ส่งออกไฟล์โอนเงินธนาคาร</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Top Controls & Calculation Filter Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200/80">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700">
+                {/* Year Selection */}
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-600">ปีประจำรอบ:</span>
+                  <select
+                    value={bonusYear}
+                    onChange={(e) => {
+                      const yr = parseInt(e.target.value) || 2026;
+                      setBonusYear(yr);
+                      loadBonuses(yr);
+                    }}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                  >
+                    {[2024, 2025, 2026, 2027].map((yr) => (
+                      <option key={yr} value={yr}>
+                        ปี {yr + 543} ({yr})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Default Multiplier */}
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-600">ตัวคูณโบนัสฐาน:</span>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     value={bonusMultiplierInput}
                     onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-20 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                   <span>เท่า</span>
                 </div>
 
-                <button
-                  onClick={handleCalculateBonusesSubmit}
-                  disabled={isCalculatingBonus}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                >
-                  {isCalculatingBonus ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Gift className="w-4 h-4" />
-                  )}
-                  <span>คำนวณและจัดสรรโบนัส</span>
-                </button>
+                {/* Prorated Tenure Switch Toggle */}
+                <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={bonusIsProrated}
+                    onChange={(e) => setBonusIsProrated(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded-sm border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="font-semibold text-slate-800">คิดเฉลี่ยตามอายุงาน (Prorated)</span>
+                  <span className="text-[11px] text-slate-500 hidden sm:inline">
+                    (คำนวณตามสัดส่วนเดือนที่ทำงานจริงในปีนั้น)
+                  </span>
+                </label>
               </div>
+
+              {/* Calculate Button */}
+              <button
+                type="button"
+                onClick={handleCalculateBonusesSubmit}
+                disabled={isCalculatingBonus}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isCalculatingBonus ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                <span>คำนวณและจัดสรรโบนัส</span>
+              </button>
             </div>
 
-            {/* Summary Banner */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl border border-amber-100 bg-amber-50/50">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 shadow-xs">
                 <span className="text-xs text-amber-800 font-semibold">ยอดรวมโบนัสที่จัดสรรทั้งหมด</span>
-                <p className="text-xl font-bold text-amber-900 mt-1 font-mono">
-                  ฿{bonuses.reduce((sum, b) => sum + b.bonusAmount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <p className="text-2xl font-bold text-amber-950 mt-1.5 font-mono tracking-tight">
+                  ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
+                <span className="text-[11px] text-amber-700 mt-0.5 block">คำนวณสำหรับปี {bonusYear + 543}</span>
               </div>
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 shadow-xs">
                 <span className="text-xs text-slate-500 font-semibold">จำนวนพนักงานที่ได้รับโบนัส</span>
-                <p className="text-xl font-bold text-slate-900 mt-1">{bonuses.length} คน</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1.5">{bonuses.length} คน</p>
+                <span className="text-[11px] text-slate-500 mt-0.5 block">พนักงานที่มีสัญญาจ้างในปี {bonusYear}</span>
               </div>
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 shadow-xs">
                 <span className="text-xs text-slate-500 font-semibold">โบนัสเฉลี่ยต่อคน</span>
-                <p className="text-xl font-bold text-slate-900 mt-1 font-mono">
+                <p className="text-2xl font-bold text-slate-900 mt-1.5 font-mono">
                   ฿{(bonuses.length > 0
-                    ? bonuses.reduce((sum, b) => sum + b.bonusAmount, 0) / bonuses.length
+                    ? bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0) / bonuses.length
                     : 0
-                  ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
+                <span className="text-[11px] text-slate-500 mt-0.5 block">เฉลี่ยของพนักงานทุกคน</span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/60 shadow-xs">
+                <span className="text-xs text-blue-800 font-semibold">คิดเฉลี่ยอายุงาน / เต็มปี</span>
+                <p className="text-2xl font-bold text-blue-950 mt-1.5">
+                  {bonuses.filter(b => b.isProrated).length}{' '}
+                  <span className="text-sm font-normal text-blue-700">/ {bonuses.filter(b => !b.isProrated).length} คน</span>
+                </p>
+                <span className="text-[11px] text-blue-700 mt-0.5 block">
+                  {bonusIsProrated ? 'เปิดระบบคำนวณเฉลี่ยตามสัดส่วน' : 'คิดเต็มจำนวนทุกคน'}
+                </span>
               </div>
             </div>
 
-            {/* Bonus Table */}
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
+            {/* Search & Department Filter Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                {/* Search */}
+                <div className="relative min-w-[220px] max-w-sm flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาชื่อ, รหัสพนักงาน, หรือตำแหน่ง..."
+                    value={bonusSearchTerm}
+                    onChange={(e) => setBonusSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Department Dropdown */}
+                <select
+                  value={bonusDeptFilter}
+                  onChange={(e) => setBonusDeptFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white transition-all cursor-pointer font-medium"
+                >
+                  <option value="ALL">-- แผนกทั้งหมด --</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.departmentName}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </select>
+
+                {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBonusSearchTerm('');
+                      setBonusDeptFilter('ALL');
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline px-2 py-1"
+                  >
+                    ล้างตัวกรอง
+                  </button>
+                )}
+              </div>
+
+              <div className="text-xs text-slate-500 font-medium">
+                {bonuses.length > 0 && (
+                  <span>
+                    แสดง{' '}
+                    <span className="font-bold text-slate-800">
+                      {
+                        bonuses.filter((b) => {
+                          const matchesSearch =
+                            !bonusSearchTerm ||
+                            b.employeeName.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                            b.employeeCode.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                            (b.departmentName && b.departmentName.toLowerCase().includes(bonusSearchTerm.toLowerCase())) ||
+                            (b.positionName && b.positionName.toLowerCase().includes(bonusSearchTerm.toLowerCase()));
+                          const matchesDept = bonusDeptFilter === 'ALL' || b.departmentName === bonusDeptFilter;
+                          return matchesSearch && matchesDept;
+                        }).length
+                      }
+                    </span>{' '}
+                    จาก {bonuses.length} คน
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Interactive Bonus Table */}
+            <div className="overflow-x-auto border border-slate-200 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                    <th className="py-3.5 px-4">รหัสพนักงาน</th>
-                    <th className="py-3.5 px-4">ชื่อ-นามสกุล</th>
-                    <th className="py-3.5 px-4">แผนก</th>
-                    <th className="py-3.5 px-4">ตำแหน่ง</th>
-                    <th className="py-3.5 px-4 text-right">เงินเดือนฐาน</th>
-                    <th className="py-3.5 px-4 text-center">คะแนน KPI (5.0)</th>
-                    <th className="py-3.5 px-4 text-center">ตัวคูณ (x)</th>
-                    <th className="py-3.5 px-4 text-right font-bold">จำนวนเงินโบนัส (บาท)</th>
+                  <tr className="bg-slate-50/90 border-b border-slate-200 text-xs font-semibold text-slate-600">
+                    <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">ชื่อ-นามสกุล</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">อายุงาน</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">สัดส่วนอายุงาน</th>
+                    <th className="py-3 px-3.5 text-right whitespace-nowrap">ฐานเงินเดือน</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">ตัวคูณ (เท่า)</th>
+                    <th className="py-3 px-3.5 text-right font-bold whitespace-nowrap">ยอดโบนัส (บาท)</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">บัญชีรับเงิน</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {bonuses.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        กดปุ่ม "คำนวณและจัดสรรโบนัส" เพื่อประมวลผลโบนัสตามเงินเดือนฐาน
+                      <td colSpan={9} className="py-14 text-center text-slate-400">
+                        <Gift className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="font-semibold text-slate-600 text-sm">ยังไม่มีข้อมูลโบนัสสำหรับปี {bonusYear + 543}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          กดปุ่ม <span className="font-semibold text-amber-600">"คำนวณและจัดสรรโบนัส"</span> เพื่อประมวลผลโบนัสตามฐานเงินเดือนและอายุงาน
+                        </p>
                       </td>
                     </tr>
                   ) : (
-                    bonuses.map((b) => (
-                      <tr key={b.employeeId} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-900">{b.employeeCode}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-900">{b.employeeName}</td>
-                        <td className="py-3 px-4 text-slate-600">{b.departmentName || '-'}</td>
-                        <td className="py-3 px-4 text-slate-600">{b.positionName || '-'}</td>
-                        <td className="py-3 px-4 text-right font-mono text-slate-700">
-                          ฿{b.baseSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-center font-semibold text-blue-600">
-                          {b.performanceScore ? b.performanceScore.toFixed(1) : '4.0'}
-                        </td>
-                        <td className="py-3 px-4 text-center font-bold text-amber-600">
-                          {b.multiplier.toFixed(2)}x
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold font-mono text-amber-900 text-sm">
-                          ฿{b.bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))
+                    bonuses
+                      .filter((b) => {
+                        const matchesSearch =
+                          !bonusSearchTerm ||
+                          b.employeeName.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          b.employeeCode.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          (b.departmentName && b.departmentName.toLowerCase().includes(bonusSearchTerm.toLowerCase())) ||
+                          (b.positionName && b.positionName.toLowerCase().includes(bonusSearchTerm.toLowerCase()));
+                        const matchesDept = bonusDeptFilter === 'ALL' || b.departmentName === bonusDeptFilter;
+                        return matchesSearch && matchesDept;
+                      })
+                      .map((b) => (
+                        <tr key={b.employeeId} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-3.5 font-mono font-semibold text-slate-900 whitespace-nowrap">
+                            {b.employeeCode}
+                          </td>
+                          <td className="py-3 px-3.5 font-semibold text-slate-900 whitespace-nowrap">
+                            {b.employeeName}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                            <div className="font-medium text-slate-800">{b.departmentName || '-'}</div>
+                            <div className="text-[11px] text-slate-400">{b.positionName || '-'}</div>
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-700 whitespace-nowrap">
+                            <div className="font-medium">{b.tenureText || '-'}</div>
+                            {b.startDate && (
+                              <div className="text-[11px] text-slate-400">
+                                เริ่มงาน {new Date(b.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {b.isProrated ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                                เฉลี่ย {b.monthsWorkedInYear || 0}/12 ด.
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                เต็มปี 12/12 ด.
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-mono text-slate-800 font-medium whitespace-nowrap">
+                            ฿{b.baseSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          {/* Inline Editable Multiplier */}
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
+                            <div className="inline-flex items-center justify-center gap-1">
+                              <input
+                                type="number"
+                                step="0.05"
+                                min="0"
+                                max="100"
+                                value={b.multiplier}
+                                onChange={(e) => handleBonusMultiplierChange(b.employeeId, parseFloat(e.target.value))}
+                                className="w-16 px-2 py-1 bg-white border border-slate-200 focus:border-blue-500 rounded-lg text-center font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                              />
+                              <span className="text-[11px] text-slate-400 font-semibold">x</span>
+                            </div>
+                          </td>
+                          {/* Inline Editable Bonus Amount */}
+                          <td className="py-2 px-3 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <span className="text-slate-400 text-xs">฿</span>
+                              <input
+                                type="number"
+                                step="100"
+                                min="0"
+                                value={b.bonusAmount}
+                                onChange={(e) => handleBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
+                                className="w-28 px-2 py-1 bg-white border border-slate-200 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                            <div className="font-medium text-slate-800 flex items-center gap-1">
+                              <Landmark className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{b.bankName || b.bankCode || '-'}</span>
+                            </div>
+                            <div className="text-[11px] font-mono text-slate-500">
+                              {b.accountNumber || '-'}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -3920,6 +4263,99 @@ export default function PayrollPage() {
         cancelText="ยกเลิก"
         type="danger"
       />
+
+      {/* Modal: บันทึกโบนัสเข้าสู่งวดเงินเดือน (Apply Bonus to Payroll Period) */}
+      {isApplyBonusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                  <ArrowDownToLine className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">บันทึกโบนัสเข้าสู่งวดเงินเดือน</h3>
+                  <p className="text-[11px] text-slate-500">นำยอดโบนัสที่จัดสรรไปรวมจ่ายกับเงินเดือนประจำรอบ</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsApplyBonusModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl text-blue-900 space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  <span>ระบบคำนวณภาษีและเงินได้สุทธิให้อัตโนมัติ</span>
+                </div>
+                <p className="text-[11px] text-blue-700 leading-relaxed">
+                  ยอดโบนัสของพนักงานแต่ละคนจะถูกบันทึกเป็นรายการได้ <strong>"เงินโบนัส (INC_BONUS)"</strong> ในงวดที่เลือก พร้อมทั้งคำนวณภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) ตามฐานรายได้รวม และปรับยอดเงินได้สุทธิ (Net Pay) ให้อัตโนมัติทันที
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1.5">
+                  ใส่งวดเงินเดือนเป้าหมายที่ต้องการนำโบนัสไปรวมจ่าย:
+                </label>
+                <select
+                  value={selectedTargetPeriodId || ''}
+                  onChange={(e) => setSelectedTargetPeriodId(parseInt(e.target.value) || null)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                >
+                  <option value="">-- เลือกงวดเงินเดือน --</option>
+                  {periods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.periodName} ({p.year}) - สถานะ: {p.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>ปีโบนัสที่จัดสรร:</span>
+                  <span className="font-bold text-slate-900 font-mono">ปี {bonusYear + 543} ({bonusYear})</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>จำนวนพนักงานที่จะบันทึก:</span>
+                  <span className="font-bold text-slate-900 font-mono">{bonuses.length} คน</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>ยอดเงินโบนัสรวมที่จะนำส่ง:</span>
+                  <span className="font-bold text-amber-900 font-mono text-sm">
+                    ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsApplyBonusModalOpen(false)}
+                  disabled={isApplyingBonus}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmApplyBonusToPeriod}
+                  disabled={isApplyingBonus || !selectedTargetPeriodId}
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {isApplyingBonus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isApplyingBonus ? 'กำลังบันทึกและคำนวณ...' : 'ยืนยันบันทึกเข้างวดเงินเดือน'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

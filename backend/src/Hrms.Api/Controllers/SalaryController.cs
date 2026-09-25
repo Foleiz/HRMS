@@ -431,6 +431,19 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "คำนวณโบนัสประจำปีสำเร็จ"));
     }
 
+    /// <summary>
+    /// บันทึกและนำยอดโบนัสเข้าสู่งวดเงินเดือน
+    /// </summary>
+    [HttpPost("bonuses/apply-to-period")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<int>>> ApplyBonusesToPeriod(
+        [FromBody] ApplyBonusToPeriodRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.ApplyBonusesToPeriodAsync(request, cancellationToken);
+        return Ok(ApiResponse<int>.Ok(result, $"บันทึกโบนัสเข้าสู่งวดเงินเดือนสำเร็จ ({result} คน)"));
+    }
+
     #endregion
 
     #region Payment Workflow

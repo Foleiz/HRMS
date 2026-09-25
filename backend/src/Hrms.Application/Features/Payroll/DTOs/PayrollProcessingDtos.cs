@@ -157,10 +157,18 @@ public class EmployeeBonusDto
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
+    public string PositionName { get; set; } = string.Empty;
+    public DateOnly? StartDate { get; set; }
+    public string TenureText { get; set; } = string.Empty;
+    public int MonthsWorkedInYear { get; set; } = 12;
+    public bool IsProrated { get; set; } = false;
     public int Year { get; set; }
     public decimal BaseSalary { get; set; }
     public decimal Multiplier { get; set; }
     public decimal BonusAmount { get; set; }
+    public string? BankCode { get; set; }
+    public string? BankName { get; set; }
+    public string? AccountNumber { get; set; }
     public string Status { get; set; } = "DRAFT";
     public string StatusText { get; set; } = "ร่าง";
 }
@@ -169,6 +177,20 @@ public class CalculateBonusRequest
 {
     public int Year { get; set; }
     public decimal DefaultMultiplier { get; set; } = 2.0m;
+    public bool IsProrated { get; set; } = true;
+}
+
+public class ApplyBonusToPeriodRequest
+{
+    public long PeriodId { get; set; }
+    public List<EmployeeBonusItemPayload> Bonuses { get; set; } = new();
+}
+
+public class EmployeeBonusItemPayload
+{
+    public long EmployeeId { get; set; }
+    public decimal Multiplier { get; set; }
+    public decimal BonusAmount { get; set; }
 }
 
 // ===== PAYMENT WORKFLOW DTOs =====
