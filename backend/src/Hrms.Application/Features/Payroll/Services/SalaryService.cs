@@ -1615,8 +1615,19 @@ public class SalaryService : ISalaryService
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var taxItem = await _context.PayrollItems
-            .FirstOrDefaultAsync(i => i.ItemCode == "DED_TAX", cancellationToken);
+        var allPayrollItems = await _context.PayrollItems
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        var earningItemIds = allPayrollItems.Where(i => i.ItemType == "EARNING").Select(i => i.Id).ToHashSet();
+        var deductionItemIds = allPayrollItems.Where(i => i.ItemType == "DEDUCTION").Select(i => i.Id).ToHashSet();
+        earningItemIds.Add(bonusItem.Id);
+
+        var taxItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "DED_TAX");
+        var ssoItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "DED_SSO");
+        var baseItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE_SALARY");
+
+        if (taxItem != null) deductionItemIds.Add(taxItem.Id);
+        if (ssoItem != null) deductionItemIds.Add(ssoItem.Id);
 
         var taxBrackets = await _context.TaxBrackets
             .Where(t => t.Status == "ACTIVE")
@@ -1649,18 +1660,13 @@ public class SalaryService : ISalaryService
                 });
             }
 
-            // Recalculate Gross Income
-            decimal totalGross = payroll.Details
-                .Where(d => d.PayrollItemId == bonusItem.Id || d.PayrollItemId != taxItem?.Id)
-                .Where(d => !d.PayrollItemId.Equals(payroll.Details.FirstOrDefault(x => x.PayrollItem?.ItemType == "DEDUCTION")?.PayrollItemId))
-                .Sum(d => d.Amount);
-
-            // Calculate Base Salary
-            var baseDetail = payroll.Details.FirstOrDefault(d => d.CalculationSource != null && d.CalculationSource.Contains("เงินเดือนประจำ"));
-            decimal baseSal = baseDetail?.Amount ?? Math.Max(0, totalGross - b.BonusAmount);
+            // Calculate Base Salary from base detail
+            var baseDetail = payroll.Details.FirstOrDefault(d => (baseItem != null && d.PayrollItemId == baseItem.Id) || (d.CalculationSource != null && d.CalculationSource.Contains("เงินเดือนประจำ")));
+            decimal baseSal = baseDetail?.Amount ?? (b.Multiplier > 0 ? Math.Round(b.BonusAmount / b.Multiplier, 2) : 0);
 
             // Keep SSO standard deduction
-            decimal ssoAmount = Math.Min(baseSal * 0.05m, 750.0m);
+            var ssoDetail = payroll.Details.FirstOrDefault(d => ssoItem != null && d.PayrollItemId == ssoItem.Id);
+            decimal ssoAmount = ssoDetail?.Amount ?? Math.Min(baseSal * 0.05m, 750.0m);
 
             // Progressive Tax Recalculation with bonus
             decimal annualIncome = (baseSal * 12) + b.BonusAmount;
@@ -1703,7 +1709,15 @@ public class SalaryService : ISalaryService
                 }
             }
 
-            decimal totalDeductions = ssoAmount + monthlyTax;
+            // Recalculate Gross Income (Earnings ONLY) and Deductions (Deductions ONLY)
+            decimal totalGross = payroll.Details
+                .Where(d => earningItemIds.Contains(d.PayrollItemId))
+                .Sum(d => d.Amount);
+
+            decimal totalDeductions = payroll.Details
+                .Where(d => deductionItemIds.Contains(d.PayrollItemId))
+                .Sum(d => d.Amount);
+
             payroll.TotalGrossIncome = totalGross;
             payroll.TotalDeductionAmount = totalDeductions;
             payroll.NetPayableSalary = Math.Max(0, totalGross - totalDeductions);
