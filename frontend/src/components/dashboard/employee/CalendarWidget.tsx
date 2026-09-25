@@ -221,10 +221,10 @@ export const CalendarWidget: React.FC = () => {
         </div>
 
         {/* Date Numbers with Dots */}
-        <div className="grid grid-cols-7 text-center gap-y-1">
+        <div className="grid grid-cols-7 text-center gap-y-0.5">
           {days.map((d, idx) => {
             if (d === null) {
-              return <div key={`empty-${idx}`} className="h-8 w-8 mx-auto" />;
+              return <div key={`empty-${idx}`} className="h-7.5 w-7.5 mx-auto" />;
             }
             const isToday = isCurrentMonth && d === today.getDate();
             const isSelected = selectedDay !== null ? d === selectedDay : isToday;
@@ -242,7 +242,7 @@ export const CalendarWidget: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedDay(d)}
                 title={tooltipText}
-                className={`h-8 w-8 mx-auto rounded-full text-xs font-semibold flex flex-col items-center justify-center transition-all cursor-pointer relative ${
+                className={`h-7.5 w-7.5 mx-auto rounded-full text-xs font-semibold flex flex-col items-center justify-center transition-all cursor-pointer relative ${
                   isSelected
                     ? 'bg-[#F9C5C8] text-[#94292B] font-bold ring-2 ring-[#94292B]/40'
                     : isToday
@@ -252,9 +252,9 @@ export const CalendarWidget: React.FC = () => {
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <span className="leading-none">{d}</span>
+                <span className="leading-none text-[11.5px]">{d}</span>
                 {/* Dots indicator for holidays/events */}
-                <div className="flex items-center justify-center gap-0.5 mt-0.5 h-1.5">
+                <div className="flex items-center justify-center gap-0.5 mt-0.5 h-1">
                   {hasEvents &&
                     dayEvents.slice(0, 2).map((ev, evIdx) => (
                       <span
@@ -269,7 +269,7 @@ export const CalendarWidget: React.FC = () => {
         </div>
 
         {/* Legend: คำอธิบายจุดสี */}
-        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] px-1">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10.5px] px-1">
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1 text-slate-600">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
@@ -282,38 +282,38 @@ export const CalendarWidget: React.FC = () => {
           </div>
           {eventsThisMonth.length > 0 && (
             <span className="text-[10px] text-slate-400 font-medium">
-              {eventsThisMonth.length} วันสำคัญในเดือนนี้
+              {eventsThisMonth.length} วันสำคัญ
             </span>
           )}
         </div>
 
         {/* Event Details Section */}
         {selectedEvents.length > 0 ? (
-          <div className="mt-2.5 bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 space-y-1.5">
+          <div className="mt-1.5 bg-slate-50/90 border border-slate-200/80 rounded-xl p-2 space-y-1 max-h-28 overflow-y-auto">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#94292B]" />
+              <span className="text-[10.5px] font-bold text-slate-800 flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-[#94292B]" />
                 {selectedDay} {monthName} {yearThai}
               </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#94292B]/10 text-[#94292B]">
+              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[#94292B]/10 text-[#94292B]">
                 {selectedEvents.length} รายการ
               </span>
             </div>
             {selectedEvents.map((evt) => (
               <div
                 key={evt.id}
-                className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/60 shadow-xs"
+                className="flex items-start gap-1.5 bg-white p-1.5 rounded-lg border border-slate-200/60 shadow-xs"
               >
-                <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${evt.dotColor}`} />
+                <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${evt.dotColor}`} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <span
-                      className={`text-[9px] font-medium px-1.5 py-0.5 rounded border ${evt.badgeColor}`}
+                      className={`text-[8.5px] font-medium px-1 py-0.2 rounded border ${evt.badgeColor}`}
                     >
                       {evt.typeLabel}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-800 mt-1 leading-snug">
+                  <p className="text-[11px] font-semibold text-slate-800 mt-0.5 leading-snug truncate" title={evt.title}>
                     {evt.title}
                   </p>
                 </div>
@@ -321,17 +321,17 @@ export const CalendarWidget: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="mt-2.5 p-2 rounded-xl bg-slate-50/70 border border-slate-200/60 text-[11px]">
+          <div className="mt-1.5 p-1.5 rounded-xl bg-slate-50/70 border border-slate-200/60 text-[10.5px]">
             <div className="flex items-center justify-between text-slate-500">
               <span className="flex items-center gap-1 font-medium text-slate-600">
-                <Calendar className="w-3 h-3 text-slate-400" />
+                <Calendar className="w-2.5 h-2.5 text-slate-400" />
                 {selectedDay ? `${selectedDay} ${monthName}` : 'ไม่มีวันที่เลือก'}
               </span>
-              <span className="text-[10px] text-slate-400">ไม่มีวันหยุด/กิจกรรม</span>
+              <span className="text-[9.5px] text-slate-400">ไม่มีวันหยุด/กิจกรรม</span>
             </div>
             {nextUpcomingEventThisMonth && (
-              <div className="mt-1.5 pt-1.5 border-t border-slate-200/50 flex items-center gap-1.5 text-[11px]">
-                <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+              <div className="mt-1 pt-1 border-t border-slate-200/50 flex items-center gap-1 text-[10px]">
+                <Sparkles className="w-2.5 h-2.5 text-amber-500 shrink-0" />
                 <span className="text-slate-500 shrink-0">
                   ถัดไป ({nextUpcomingEventThisMonth.day} {monthName}):
                 </span>
