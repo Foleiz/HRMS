@@ -293,7 +293,8 @@ export default function PayrollPage() {
   const isStrictFinanceUser =
     usernameLower.includes('finance') ||
     usernameLower.includes('account') ||
-    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT'));
+    usernameLower.includes('chon') ||
+    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT') || r.includes('PAYROLL'));
   const isStrictCeoUser =
     usernameLower.includes('ceo') ||
     usernameLower.includes('approver') ||
@@ -360,6 +361,19 @@ export default function PayrollPage() {
   // Tab 4: Payroll Processing (ประมวลเงินเดือน)
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
+
+  // Auto-align process subtab when period status changes to match the active workflow stage
+  useEffect(() => {
+    if (selectedPeriod?.status === 'SUBMITTED_TO_FINANCE') {
+      if (isFinance || isStrictFinanceUser) {
+        setProcessSubTab('FINANCE');
+      }
+    } else if (selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') {
+      if (isCEO || isStrictCeoUser) {
+        setProcessSubTab('APPROVER');
+      }
+    }
+  }, [selectedPeriod?.id, selectedPeriod?.status, isFinance, isStrictFinanceUser, isCEO, isStrictCeoUser]);
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
   const [isPeriodLoading, setIsPeriodLoading] = useState(false);
   const [selectedPayrollRecord, setSelectedPayrollRecord] = useState<PayrollRecord | null>(null);
@@ -2176,47 +2190,68 @@ export default function PayrollPage() {
 
               </div>
 
-              {/* 4-Step Workflow Stepper (White Card Theme) */}
+              {/* 4-Step Workflow Stepper (Clickable Interactive Tabs) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100">
                 {[
-                  { step: 1, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลา/OT แล้วกดคำนวณ' },
-                  { step: 2, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
-                  { step: 3, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
-                  { step: 4, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
+                  { step: 1, tabKey: 'HR' as const, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลา/OT แล้วกดคำนวณ' },
+                  { step: 2, tabKey: 'FINANCE' as const, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
+                  { step: 3, tabKey: 'APPROVER' as const, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
+                  { step: 4, tabKey: 'BANK' as const, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
                 ].map((s) => {
                   const isDone = currentStep > s.step;
-                  const isCurrent = currentStep === s.step;
+                  const isPeriodCurrent = currentStep === s.step;
+                  const isViewing = s.tabKey === 'BANK' ? false : processSubTab === s.tabKey;
                   return (
-                    <div
+                    <button
                       key={s.step}
-                      className={`p-3 rounded-xl border transition-all ${
-                        isCurrent
-                          ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/60 shadow-2xs'
+                      type="button"
+                      onClick={() => {
+                        if (s.tabKey === 'BANK') {
+                          setActiveTab('bank-transfer');
+                        } else {
+                          setProcessSubTab(s.tabKey);
+                          setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
+                        }
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        isViewing
+                          ? 'bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/50 shadow-xs'
+                          : isPeriodCurrent
+                          ? 'bg-amber-50/40 border-amber-300 shadow-2xs hover:bg-amber-50/70'
                           : isDone
-                          ? 'bg-emerald-50/70 border-emerald-200'
-                          : 'bg-slate-50/60 border-slate-200/70 opacity-60'
+                          ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50/90'
+                          : 'bg-slate-50/60 border-slate-200/70 hover:bg-slate-100/70'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            isDone
-                              ? 'bg-emerald-500 text-white'
-                              : isCurrent
-                              ? 'bg-amber-500 text-white animate-pulse'
-                              : 'bg-slate-200 text-slate-500'
-                          }`}
-                        >
-                          {isDone ? '✓' : s.step}
-                        </span>
-                        <span className={`text-xs font-bold ${isCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
-                          {s.title}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              isDone
+                                ? 'bg-emerald-500 text-white'
+                                : isPeriodCurrent
+                                ? 'bg-amber-500 text-white animate-pulse'
+                                : isViewing
+                                ? 'bg-[#0B2046] text-white'
+                                : 'bg-slate-200 text-slate-500'
+                            }`}
+                          >
+                            {isDone ? '✓' : s.step}
+                          </span>
+                          <span className={`text-xs font-bold ${isViewing ? 'text-amber-950 font-bold' : isPeriodCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
+                            {s.title}
+                          </span>
+                        </div>
+                        {isViewing && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
+                            กำลังดู
+                          </span>
+                        )}
                       </div>
-                      <p className={`text-[10px] mt-1 pl-7 ${isCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      <p className={`text-[10px] mt-1 pl-7 ${isViewing ? 'text-amber-800' : isPeriodCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
                         {s.desc}
                       </p>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
