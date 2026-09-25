@@ -276,14 +276,22 @@ export default function EmployeeDetailPage() {
               </button>
             </div>
 
-            {/* Badges: Employee Code & Active Status */}
+            {/* Badges: Employee Code & Status (ACTIVE / INACTIVE) */}
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-full">
+              <span className="px-3 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-full font-mono">
                 {employee.employeeCode}
               </span>
-              <span className="px-3 py-0.5 bg-emerald-50 text-emerald-600 text-[11px] font-semibold rounded-full">
-                Active
-              </span>
+              {employee.employmentStatus?.toUpperCase() === 'INACTIVE' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-slate-100 text-slate-500 text-[11px] font-semibold rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                  ไม่ได้ทำงาน
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-emerald-50 text-emerald-600 text-[11px] font-semibold rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  ทำงานอยู่
+                </span>
+              )}
             </div>
 
             {/* Full Name & Position */}
@@ -749,7 +757,7 @@ export default function EmployeeDetailPage() {
           )}
 
           {/* ============================================================ */}
-          {/* TAB 3: ข้อมูลผู้ใช้งาน (User Account)                        */}
+          {/* TAB 4: ข้อมูลผู้ใช้งาน (User Account)                        */}
           {/* ============================================================ */}
           {activeTab === 'user' && (
             <div className="pt-6 flex-1 max-w-xl space-y-5 text-xs animate-in fade-in duration-150">
@@ -758,48 +766,74 @@ export default function EmployeeDetailPage() {
                 <h3 className="font-bold text-slate-800 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-slate-400 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
-                    <p className="font-bold text-slate-800 text-sm font-mono mt-0.5">
-                      {employee.employeeCode.toLowerCase()}
-                    </p>
+              {employee.userAccount ? (
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-slate-400 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
+                      <p className="font-bold text-slate-800 text-sm font-mono mt-0.5">
+                        {employee.userAccount.username}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-slate-400 text-[11px]">สถานะบัญชี</p>
+                      {employee.userAccount.status?.toUpperCase() === 'ACTIVE' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-semibold text-[11px] mt-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          เปิดใช้งาน (Active)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 text-rose-600 rounded-full font-semibold text-[11px] mt-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          ระงับการใช้งาน ({employee.userAccount.status})
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <p className="text-slate-400 text-[11px]">สถานะบัญชี</p>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-semibold text-[11px] mt-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      เปิดใช้งาน (Active)
-                    </span>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
+                    <div>
+                      <p className="text-slate-400 text-[11px]">บทบาทในระบบ (Role)</p>
+                      <p className="font-semibold text-slate-800 mt-0.5">
+                        {employee.userAccount.roleNames && employee.userAccount.roleNames.length > 0
+                          ? employee.userAccount.roleNames.join(', ')
+                          : employee.userAccount.roles && employee.userAccount.roles.length > 0
+                          ? employee.userAccount.roles.join(', ')
+                          : 'พนักงานทั่วไป (Employee)'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-slate-400 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
+                      <p className="font-semibold text-slate-800 mt-0.5">
+                        {employee.userAccount.accessScope || 'SELF (ดูข้อมูลตนเอง)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
+                    <div>
+                      <p className="text-slate-400 text-[11px]">เข้าสู่ระบบล่าสุด</p>
+                      <p className="text-slate-600 mt-0.5">
+                        {employee.userAccount.lastLoginAt
+                          ? formatThaiDate(employee.userAccount.lastLoginAt)
+                          : 'ยังไม่เคยเข้าสู่ระบบ'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-slate-400 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
+                      <p className="text-slate-600 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
-                  <div>
-                    <p className="text-slate-400 text-[11px]">บทบาทในระบบ (Role)</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">พนักงานทั่วไป (Employee)</p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">SELF (ดูข้อมูลตนเอง)</p>
-                  </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="font-medium text-slate-600 mb-1">ยังไม่มีบัญชีผู้ใช้งานในระบบสำหรับพนักงานท่านนี้</p>
+                  <p className="text-[11px] text-slate-400">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
-                  <div>
-                    <p className="text-slate-400 text-[11px]">วันที่สร้างข้อมูล</p>
-                    <p className="text-slate-600 mt-0.5">{formatThaiDate(employee.createdAt)}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
-                    <p className="text-slate-600 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
