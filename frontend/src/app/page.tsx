@@ -107,7 +107,7 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row gap-5 items-stretch">
             
             {/* Left / Center Main Content (flex-1) */}
-            <div className="flex-1 w-full space-y-4 flex flex-col">
+            <div className="flex-1 w-full flex flex-col gap-4 min-w-0">
               {/* Greeting Banner (ตรงกับหัวข้อปฏิทิน/แจ้งเตือนพอดี) */}
               <GreetingBanner displayName={displayName} />
 
@@ -129,7 +129,7 @@ export default function HomePage() {
               </div>
 
               {/* Bottom Row: Personal Recent Transactions Table (Self Only) */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col min-h-0">
                 <RecentTransactionsTable />
               </div>
             </div>

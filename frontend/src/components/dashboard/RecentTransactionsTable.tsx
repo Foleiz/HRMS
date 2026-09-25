@@ -289,9 +289,9 @@ export const RecentTransactionsTable: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full">
       {/* Table Header & Filters */}
-      <div className="p-5 border-b border-slate-100 space-y-3.5">
+      <div className="p-5 border-b border-slate-100 space-y-3.5 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-base font-bold text-slate-900">
             ประวัติการทำรายการล่าสุด
@@ -370,9 +370,9 @@ export const RecentTransactionsTable: React.FC = () => {
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-600">
-          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100">
+      <div className="overflow-x-auto flex-1 flex flex-col justify-between min-h-0">
+        <table className="w-full text-left text-xs text-slate-600 flex-1">
+          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100 shrink-0">
             <tr>
               <th className="py-3 px-5">รหัสเอกสาร</th>
               <th className="py-3 px-5">วันที่กรอกเอกสาร</th>
@@ -381,7 +381,7 @@ export const RecentTransactionsTable: React.FC = () => {
               <th className="py-3 px-5">สถานะเอกสาร</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 flex-1">
             {loading ? (
               <tr>
                 <td colSpan={5} className="py-12 text-center text-slate-400">
@@ -394,7 +394,7 @@ export const RecentTransactionsTable: React.FC = () => {
             ) : paginatedItems.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-12 text-center text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
+                  <div className="flex flex-col items-center justify-center gap-1.5 py-4">
                     <FileText className="w-8 h-8 text-slate-300 stroke-[1.5]" />
                     <p className="text-sm font-medium text-slate-600">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
                     <p className="text-xs text-slate-400">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
@@ -427,7 +427,7 @@ export const RecentTransactionsTable: React.FC = () => {
       </div>
 
       {/* Pagination Bar */}
-      <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 mt-auto shrink-0">
         <div className="flex-1 text-[11px] text-slate-400">
           {!loading && filtered.length > 0 && (
             <span>ทั้งหมด {filtered.length} รายการ</span>

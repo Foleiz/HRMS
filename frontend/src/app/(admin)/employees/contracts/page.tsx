@@ -30,6 +30,7 @@ import { Employee } from '@/types/employee';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -67,9 +68,6 @@ export default function ContractsPage() {
     name: string;
     code: string;
   } | null>(null);
-  const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
@@ -82,17 +80,6 @@ export default function ContractsPage() {
     });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
-
-  // Click outside listener for action menu
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        setActionMenuOpenId(null);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Fetch initial data
   const fetchData = async () => {
@@ -362,64 +349,46 @@ export default function ContractsPage() {
                       )}
                     </td>
 
-                    {/* 3-Dots Action Menu (ข้อเสนอแนะที่ได้รับอนุมัติ) */}
-                    <td className="py-4 px-6 text-right whitespace-nowrap relative">
-                      <div className="inline-block text-left">
-                        <button
-                          type="button"
-                          onClick={() => setActionMenuOpenId(actionMenuOpenId === contract.id ? null : contract.id)}
-                          className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {actionMenuOpenId === contract.id && (
-                          <div
-                            ref={actionMenuRef}
-                            className="absolute right-6 mt-1 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
-                          >
-                            <button
-                              onClick={() => {
-                                setSelectedTimelineEmployee({
-                                  id: contract.employeeId,
-                                  name: contract.employeeName,
-                                  code: contract.employeeCode,
-                                });
-                                setIsTimelineModalOpen(true);
-                                setActionMenuOpenId(null);
-                              }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
-                            >
-                              <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>ประวัติรายบุคคล</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedContract(contract);
-                                setIsDetailModalOpen(true);
-                                setActionMenuOpenId(null);
-                              }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-blue-600" />
-                              <span>ดูรายละเอียด</span>
-                            </button>
-                            {contract.status === 'ACTIVE' && (
-                              <button
-                                onClick={() => {
-                                  setSelectedContract(contract);
-                                  setIsDetailModalOpen(true);
-                                  setActionMenuOpenId(null);
-                                }}
-                                className="w-full px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                              >
-                                <X className="w-3.5 h-3.5 text-rose-500" />
-                                <span>สิ้นสุดสัญญา</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                    {/* 3-Dots Action Menu */}
+                    <td className="py-4 px-6 text-right whitespace-nowrap">
+                      <ActionDropdown
+                        menuClassName="w-40"
+                        items={[
+                          {
+                            label: 'ประวัติรายบุคคล',
+                            icon: <Clock className="w-3.5 h-3.5 text-emerald-600" />,
+                            onClick: () => {
+                              setSelectedTimelineEmployee({
+                                id: contract.employeeId,
+                                name: contract.employeeName,
+                                code: contract.employeeCode,
+                              });
+                              setIsTimelineModalOpen(true);
+                            },
+                          },
+                          {
+                            label: 'ดูรายละเอียด',
+                            icon: <Eye className="w-3.5 h-3.5 text-blue-600" />,
+                            onClick: () => {
+                              setSelectedContract(contract);
+                              setIsDetailModalOpen(true);
+                            },
+                          },
+                          ...(contract.status === 'ACTIVE'
+                            ? [
+                                {
+                                  label: 'สิ้นสุดสัญญา',
+                                  icon: <X className="w-3.5 h-3.5 text-rose-500" />,
+                                  danger: true,
+                                  onClick: () => {
+                                    setSelectedContract(contract);
+                                    setIsDetailModalOpen(true);
+                                  },
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))

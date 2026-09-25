@@ -71,7 +71,7 @@ export const NewsWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full min-h-[220px]">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full min-h-0">
       {/* Header: Soft Blue */}
       <div className="bg-[#6D8EB8] text-white px-4 py-3 flex items-center justify-between shrink-0">
         <h3 className="text-sm font-bold tracking-wide">ข่าวสารและประกาศ</h3>
@@ -79,7 +79,7 @@ export const NewsWidget: React.FC = () => {
       </div>
 
       {/* News Content Area */}
-      <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
+      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
         {loading ? (
           <div className="py-6 text-center text-xs text-slate-400">
             กำลังโหลดข่าวสาร...
@@ -89,7 +89,7 @@ export const NewsWidget: React.FC = () => {
             ยังไม่มีข่าวสารหรือประกาศใหม่ในขณะนี้
           </div>
         ) : (
-          <div className="space-y-2 overflow-y-auto">
+          <div className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
             {newsList.map((item) => {
               const isExpanded = expandedId === item.id;
               return (

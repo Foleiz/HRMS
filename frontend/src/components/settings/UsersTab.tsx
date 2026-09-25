@@ -18,6 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { UserAccount, RoleSummary } from '@/types/settings';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -61,20 +62,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
   const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
-  const [openActionId, setOpenActionId] = useState<number | null>(null);
 
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpenActionId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,8 +206,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               ) : (
                 users.map((user, idx) => {
                   const rowNumber = (currentPage - 1) * pageSize + idx + 1;
-                  const isMenuOpen = openActionId === user.id;
-                  const isLastRows = users.length >= 6 && idx >= users.length - 2 && idx >= 4;
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
@@ -298,106 +284,47 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 8. จัดการ (3 dots actions menu) */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="relative inline-block text-left">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenActionId(isMenuOpen ? null : user.id);
-                            }}
-                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {/* Dropdown Menu */}
-                          {isMenuOpen && (
-                            <div
-                              ref={menuRef}
-                              className={`absolute right-0 w-44 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-30 animate-in fade-in zoom-in-95 text-xs text-slate-700 divide-y divide-slate-100 ${
-                                isLastRows
-                                  ? 'bottom-full mb-1.5 origin-bottom-right'
-                                  : 'top-full mt-1.5 origin-top-right'
-                              }`}
-                            >
-                              <div className="py-1">
-                                <button
-                                  onClick={() => {
-                                    setOpenActionId(null);
-                                    onEditUserClick(user);
-                                  }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5 text-slate-400" />
-                                  <span>แก้ไขข้อมูล / บทบาท</span>
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setOpenActionId(null);
-                                    onResetPasswordClick(user);
-                                  }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                                >
-                                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>รีเซ็ตรหัสผ่าน</span>
-                                </button>
-                              </div>
-
-                              <div className="py-1">
-                                {user.status === 'ACTIVE' ? (
-                                  <button
-                                    onClick={() => {
-                                      setOpenActionId(null);
-                                      onToggleStatusClick(user, 'INACTIVE');
-                                    }}
-                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-600 cursor-pointer"
-                                  >
-                                    <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                    <span>ระงับการใช้งาน</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setOpenActionId(null);
-                                      onToggleStatusClick(user, 'ACTIVE');
-                                    }}
-                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-emerald-600 cursor-pointer"
-                                  >
-                                    <Unlock className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span>เปิดใช้งานบัญชี</span>
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={() => {
-                                    setOpenActionId(null);
-                                    onViewAuditLogForUser(user);
-                                  }}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-blue-600 cursor-pointer"
-                                >
-                                  <FileSearch className="w-3.5 h-3.5 text-blue-500" />
-                                  <span>ดูประวัติการใช้งาน</span>
-                                </button>
-                              </div>
-
-                              {user.username.toLowerCase() !== 'admin' && (
-                                <div className="py-1">
-                                  <button
-                                    onClick={() => {
-                                      setOpenActionId(null);
-                                      onDeleteUserClick(user);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-left hover:bg-rose-50 flex items-center gap-2 text-rose-600 cursor-pointer"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                    <span>ลบบัญชีผู้ใช้</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <ActionDropdown
+                          menuClassName="w-44"
+                          triggerClassName="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
+                          items={[
+                            {
+                              label: 'แก้ไขข้อมูล / บทบาท',
+                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
+                              onClick: () => onEditUserClick(user),
+                            },
+                            {
+                              label: 'รีเซ็ตรหัสผ่าน',
+                              icon: <KeyRound className="w-3.5 h-3.5 text-amber-500" />,
+                              onClick: () => onResetPasswordClick(user),
+                            },
+                            {
+                              divider: true,
+                              label: user.status === 'ACTIVE' ? 'ระงับการใช้งาน' : 'เปิดใช้งานบัญชี',
+                              icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
+                              className: user.status === 'ACTIVE' ? 'text-slate-600' : 'text-emerald-600',
+                              onClick: () => onToggleStatusClick(user, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'),
+                            },
+                            {
+                              label: 'ดูประวัติการใช้งาน',
+                              icon: <FileSearch className="w-3.5 h-3.5 text-blue-500" />,
+                              className: 'text-blue-600',
+                              onClick: () => onViewAuditLogForUser(user),
+                            },
+                            ...(user.username.toLowerCase() !== 'admin'
+                              ? [
+                                  {
+                                    divider: true,
+                                    label: 'ลบบัญชีผู้ใช้',
+                                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                    danger: true,
+                                    onClick: () => onDeleteUserClick(user),
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
                       </td>
                     </tr>
                   );

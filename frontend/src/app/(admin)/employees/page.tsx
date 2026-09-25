@@ -11,6 +11,7 @@ import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { confirmDelete } from '@/lib/sweetalert';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import {
   Search,
   Plus,
@@ -127,9 +128,7 @@ export default function EmployeesPage() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  // Action Menu dropdown state (by employee id)
-  const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
+
 
   // Detail Modal & Create Modal states
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -262,16 +261,7 @@ export default function EmployeesPage() {
     setCommentInput('');
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        setActionMenuOpenId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
 
   // Load Employees and Departments
   const loadData = async () => {
@@ -1117,8 +1107,6 @@ export default function EmployeesPage() {
                   const hasComment = Boolean(comments[emp.id]);
                   const commentText = comments[emp.id];
                   const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
-                  // แถวท้ายตารางเปิดเมนูขึ้นด้านบน เฉพาะเมื่อมีแถวด้านบนเพียงพอ (index >= 4) เพื่อไม่ให้เมนูล้นตกขอบบนตาราง
-                  const isLastRows = paginatedEmployees.length >= 6 && index >= paginatedEmployees.length - 2 && index >= 4;
 
                   return (
                     <tr
@@ -1250,34 +1238,15 @@ export default function EmployeesPage() {
                       </td>
 
                       {/* 12. ปุ่มจัดการ (จุด 3 จุด ⋮ พร้อม Dropdown ตามภาพ 2 ใน Figma) */}
-                      <td className="py-3 px-3.5 text-center relative whitespace-nowrap">
-                        <div className="relative inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionMenuOpenId(actionMenuOpenId === emp.id ? null : emp.id);
-                            }}
-                            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {/* Dropdown Popup Menu (ตรงตามภาพ 2) */}
-                          {actionMenuOpenId === emp.id && (
-                            <div
-                              ref={actionMenuRef}
-                              className={`absolute right-0 w-48 bg-white border border-slate-200/90 rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${
-                                isLastRows
-                                  ? 'bottom-full mb-1.5 origin-bottom-right'
-                                  : 'top-full mt-1.5 origin-top-right'
-                              }`}
-                            >
+                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                        <ActionDropdown menuClassName="w-48">
+                          {(close) => (
+                            <>
                               {/* 1. ดูข้อมูลพนักงาน */}
                               <Link
                                 href={`/employees/${emp.id}`}
-                                onClick={() => setActionMenuOpenId(null)}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                                onClick={close}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                               >
                                 <Eye className="w-3.5 h-3.5 text-slate-500" />
                                 <span>ดูข้อมูลพนักงาน</span>
@@ -1286,8 +1255,8 @@ export default function EmployeesPage() {
                               {/* 2. แก้ไขข้อมูลพนักงาน */}
                               <Link
                                 href={`/employees/${emp.id}/edit`}
-                                onClick={() => setActionMenuOpenId(null)}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                                onClick={close}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                               >
                                 <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                                 <span>แก้ไขข้อมูลพนักงาน</span>
@@ -1309,12 +1278,12 @@ export default function EmployeesPage() {
                                         disabled={isCurrentStatus}
                                         onClick={() => {
                                           handleStatusChange(emp.id, s.value);
-                                          setActionMenuOpenId(null);
+                                          close();
                                         }}
                                         className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs transition-colors ${
                                           isCurrentStatus
                                             ? 'opacity-40 cursor-not-allowed ' + s.color
-                                            : s.color + ' hover:bg-slate-50 cursor-pointer'
+                                            : s.color + ' hover:bg-slate-50 cursor-pointer font-medium'
                                         }`}
                                       >
                                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`}></span>
@@ -1332,17 +1301,17 @@ export default function EmployeesPage() {
                                   type="button"
                                   onClick={() => {
                                     handleDelete(emp.id, emp.fullName);
-                                    setActionMenuOpenId(null);
+                                    close();
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-100"
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-100 font-medium cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                                   <span>ลบข้อมูล</span>
                                 </button>
                               )}
-                            </div>
+                            </>
                           )}
-                        </div>
+                        </ActionDropdown>
                       </td>
                     </tr>
                   );

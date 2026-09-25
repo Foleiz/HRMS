@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
@@ -13,6 +14,15 @@ public class UserService : IUserService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditLogService _auditLogService;
 
+    // Cache ในหน่วยความจำเพื่อลดภาระ Database และ Network Latency
+    private static readonly ConcurrentDictionary<string, (DateTime Expiry, PagedResult<UserAccountDto> Data)> _usersCache = new();
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+
+    public static void InvalidateUsersCache()
+    {
+        _usersCache.Clear();
+    }
+
     public UserService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
@@ -25,34 +35,30 @@ public class UserService : IUserService
 
     public async Task<PagedResult<UserAccountDto>> GetUsersAsync(UserQueryFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.UserAccounts
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Contact)
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(ea => ea.Department)
-            .Include(u => u.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(ea => ea.Position)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+        var cacheKey = $"{filter.RoleId}_{filter.Status}_{filter.Search}_{filter.Page}_{filter.PageSize}";
+        if (_usersCache.TryGetValue(cacheKey, out var cached) && cached.Expiry > DateTime.UtcNow)
+        {
+            return cached.Data;
+        }
+
+        var baseQuery = _dbContext.UserAccounts
             .AsNoTracking()
             .AsQueryable();
 
         if (filter.RoleId.HasValue)
         {
-            query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
+            baseQuery = baseQuery.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Status) && filter.Status != "ทั้งหมด")
         {
-            query = query.Where(u => u.Status == filter.Status.Trim().ToUpperInvariant());
+            baseQuery = baseQuery.Where(u => u.Status == filter.Status.Trim().ToUpperInvariant());
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var s = filter.Search.Trim().ToLower();
-            query = query.Where(u =>
+            baseQuery = baseQuery.Where(u =>
                 u.Username.ToLower().Contains(s) ||
                 (u.Employee != null && (
                     u.Employee.EmployeeCode.ToLower().Contains(s) ||
@@ -63,20 +69,34 @@ public class UserService : IUserService
             );
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        // Count รวดเร็วโดยไม่ Join ตารางลูกที่ไม่จำเป็น
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         int page = filter.Page > 0 ? filter.Page : 1;
         int pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
 
-        var items = await query
+        // ดึงเฉพาะรายการในหน้านี้
+        var items = await baseQuery
             .OrderBy(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Contact)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Assignments)
+                    .ThenInclude(ea => ea.Department)
+            .Include(u => u.Employee)
+                .ThenInclude(e => e!.Assignments)
+                    .ThenInclude(ea => ea.Position)
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
             .ToListAsync(cancellationToken);
 
         var dtos = items.Select(MapToDto).ToList();
+        var result = new PagedResult<UserAccountDto>(dtos, totalCount, page, pageSize);
+        _usersCache[cacheKey] = (DateTime.UtcNow.Add(CacheTtl), result);
 
-        return new PagedResult<UserAccountDto>(dtos, totalCount, page, pageSize);
+        return result;
     }
 
     public async Task<UserAccountDto> GetUserByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -184,6 +204,8 @@ public class UserService : IUserService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateUsersCache();
+        RoleService.InvalidateMatrixCache();
 
         await _auditLogService.LogAsync(
             "INSERT", "USER_ACCOUNT", user.Id, "Username",
@@ -261,6 +283,8 @@ public class UserService : IUserService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateUsersCache();
+        RoleService.InvalidateMatrixCache();
 
         return await GetUserByIdAsync(user.Id, cancellationToken);
     }
@@ -282,6 +306,7 @@ public class UserService : IUserService
         user.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateUsersCache();
 
         await _auditLogService.LogAsync(
             "UPDATE", "USER_ACCOUNT", user.Id, "Password",
@@ -303,6 +328,7 @@ public class UserService : IUserService
         user.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateUsersCache();
 
         await _auditLogService.LogAsync(
             "UPDATE", "USER_ACCOUNT", user.Id, "Status",
@@ -328,6 +354,8 @@ public class UserService : IUserService
         // (ON DELETE CASCADE สำหรับ user_role/notification และ ON DELETE SET NULL สำหรับ audit_log/attendance_import_batch)
         // ทำงานในระดับฐานข้อมูลได้อย่างสมบูรณ์ โดยไม่เกิด DbUpdateConcurrencyException จาก ChangeTracker ของ EF Core
         await _dbContext.UserAccounts.Where(u => u.Id == id).ExecuteDeleteAsync(cancellationToken);
+        InvalidateUsersCache();
+        RoleService.InvalidateMatrixCache();
 
         await _auditLogService.LogAsync(
             "DELETE", "USER_ACCOUNT", user.Id, "Username",

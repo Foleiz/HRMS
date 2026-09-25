@@ -26,6 +26,7 @@ import {
   UpdateEmployeeTypePayload,
 } from '@/types/employeeType';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -54,7 +55,6 @@ export default function EmployeeTypesPage() {
   // Modals & Menu
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTypeForEdit, setSelectedTypeForEdit] = useState<EmployeeType | null>(null);
-  const [activeActionMenuId, setActiveActionMenuId] = useState<number | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -113,18 +113,6 @@ export default function EmployeeTypesPage() {
     });
   }, [searchTerm, statusFilter]);
 
-  // Close 3-dots action menu when clicking outside
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.action-menu-container')) {
-        setActiveActionMenuId(null);
-      }
-    };
-    document.addEventListener('click', handleOutsideClick);
-    return () => document.removeEventListener('click', handleOutsideClick);
-  }, []);
-
   const handleCreateOrUpdate = async (data: CreateEmployeeTypePayload | UpdateEmployeeTypePayload) => {
     if (selectedTypeForEdit) {
       await employeeTypeService.update(selectedTypeForEdit.id, data as UpdateEmployeeTypePayload);
@@ -151,7 +139,6 @@ export default function EmployeeTypesPage() {
       setSuccessMessage(
         `${newStatus === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดการใช้งาน'} ประเภทสัญญา "${type.typeName}" เรียบร้อยแล้ว`
       );
-      setActiveActionMenuId(null);
       loadData();
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -348,7 +335,6 @@ export default function EmployeeTypesPage() {
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {paginatedTypes.map((item) => {
                   const wage = formatWageType(item.wageType);
-                  const isActionOpen = activeActionMenuId === item.id;
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
@@ -456,49 +442,27 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* จัดการ (3 Dots Action Menu) */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap relative">
-                        <div className="action-menu-container inline-block text-left">
-                          <button
-                            onClick={() =>
-                              setActiveActionMenuId(isActionOpen ? null : item.id)
-                            }
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {isActionOpen && (
-                            <div className="absolute right-4 top-10 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 animate-in fade-in text-xs font-sans">
-                              {/* 1. แก้ไขข้อมูล */}
-                              <button
-                                onClick={() => {
-                                  setSelectedTypeForEdit(item);
-                                  setIsCreateModalOpen(true);
-                                  setActiveActionMenuId(null);
-                                }}
-                                className="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-slate-400" />
-                                <span>แก้ไขประเภทสัญญา</span>
-                              </button>
-
-                              {/* 2. สลับสถานะ เปิด/ปิดการใช้งาน */}
-                              <button
-                                onClick={() => handleToggleStatus(item)}
-                                className={`w-full px-3.5 py-2 text-left flex items-center gap-2 cursor-pointer ${
-                                  item.status === 'ACTIVE'
-                                    ? 'text-rose-600 hover:bg-rose-50'
-                                    : 'text-emerald-600 hover:bg-emerald-50'
-                                }`}
-                              >
-                                <Power className="w-3.5 h-3.5" />
-                                <span>
-                                  {item.status === 'ACTIVE' ? 'ปิดการใช้งาน' : 'เปิดใช้งาน'}
-                                </span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <ActionDropdown
+                          menuClassName="w-44"
+                          items={[
+                            {
+                              label: 'แก้ไขประเภทสัญญา',
+                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
+                              onClick: () => {
+                                setSelectedTypeForEdit(item);
+                                setIsCreateModalOpen(true);
+                              },
+                            },
+                            {
+                              label: item.status === 'ACTIVE' ? 'ปิดการใช้งาน' : 'เปิดใช้งาน',
+                              icon: <Power className="w-3.5 h-3.5" />,
+                              danger: item.status === 'ACTIVE',
+                              className: item.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50',
+                              onClick: () => handleToggleStatus(item),
+                            },
+                          ]}
+                        />
                       </td>
                     </tr>
                   );
