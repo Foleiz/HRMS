@@ -21,6 +21,8 @@ import {
   SetPaymentMethodPayload,
   MarkTransferredPayload,
   ConfirmPaymentPayload,
+  EmployeeBonus,
+  SaveEmployeeBonusesPayload,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -61,6 +63,16 @@ export const salaryService = {
 
   async updateTaxBracket(id: number, payload: UpdateTaxBracketPayload): Promise<TaxBracket> {
     const res = await apiClient.put<ApiResponse<TaxBracket>>(`/salary/tax-brackets/${id}`, payload);
+    return res.data.data;
+  },
+
+  async batchUpdateTaxBrackets(brackets: UpdateTaxBracketPayload[]): Promise<TaxBracket[]> {
+    const res = await apiClient.post<ApiResponse<TaxBracket[]>>('/salary/tax-brackets/batch-update', { brackets });
+    return res.data.data;
+  },
+
+  async resetTaxBracketsToDefault(): Promise<TaxBracket[]> {
+    const res = await apiClient.post<ApiResponse<TaxBracket[]>>('/salary/tax-brackets/reset-defaults');
     return res.data.data;
   },
 
@@ -180,15 +192,20 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async getEmployeeBonuses(year?: number): Promise<any[]> {
-    const res = await apiClient.get<ApiResponse<any[]>>('/salary/bonuses', {
+  async getEmployeeBonuses(year?: number): Promise<EmployeeBonus[]> {
+    const res = await apiClient.get<ApiResponse<EmployeeBonus[]>>('/salary/bonuses', {
       params: { year },
     });
     return res.data.data;
   },
 
-  async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<any[]> {
-    const res = await apiClient.post<ApiResponse<any[]>>('/salary/bonuses/calculate', payload);
+  async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<EmployeeBonus[]> {
+    const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/calculate', payload);
+    return res.data.data;
+  },
+
+  async saveEmployeeBonuses(payload: SaveEmployeeBonusesPayload): Promise<EmployeeBonus[]> {
+    const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/save', payload);
     return res.data.data;
   },
 

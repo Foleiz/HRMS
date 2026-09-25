@@ -126,6 +126,32 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<TaxBracketDto>.Ok(result, "อัปเดตขั้นบันไดภาษีสำเร็จ"));
     }
 
+    /// <summary>
+    /// บันทึกโครงสร้างขั้นบันไดภาษีเงินได้บุคคลธรรมดาแบบชุด (Batch Update) พร้อมตรวจสอบความต่อเนื่อง
+    /// </summary>
+    [HttpPost("tax-brackets/batch-update")]
+    [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> BatchUpdateTaxBrackets(
+        [FromBody] BatchUpdateTaxBracketsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.BatchUpdateTaxBracketsAsync(request, cancellationToken);
+        return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result, "อัปเดตโครงสร้างอัตราภาษีสำเร็จ"));
+    }
+
+    /// <summary>
+    /// รีเซ็ตขั้นบันไดภาษีเป็นค่ามาตรฐานตามประมวลรัษฎากร (8 ขั้น)
+    /// </summary>
+    [HttpPost("tax-brackets/reset-defaults")]
+    [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> ResetTaxBracketsToDefault(
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.ResetTaxBracketsToDefaultAsync(cancellationToken);
+        return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result, "รีเซ็ตขั้นบันไดภาษีเป็นค่ามาตรฐานสรรพากร (8 ขั้น) สำเร็จ"));
+    }
+
     #endregion
 
     #region Social Security Rates
@@ -429,6 +455,19 @@ public class SalaryController : ControllerBase
     {
         var result = await _salaryService.CalculateEmployeeBonusesAsync(request, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "คำนวณโบนัสประจำปีสำเร็จ"));
+    }
+
+    /// <summary>
+    /// บันทึกการจัดสรรโบนัสพนักงาน (กำหนดเองรายบุคคล หรือแบบตัวคูณ)
+    /// </summary>
+    [HttpPost("bonuses/save")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> SaveEmployeeBonuses(
+        [FromBody] SaveEmployeeBonusesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.SaveEmployeeBonusesAsync(request, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "บันทึกการจัดสรรโบนัสพนักงานสำเร็จ"));
     }
 
     #endregion

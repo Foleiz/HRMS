@@ -85,9 +85,16 @@ public class RoleService : IRoleService
         new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การลา", "LEAVE"),
 
         // 12. เงินเดือน (PAYROLL)
+        new("PAYROLL_HR", "หน้าต่างเงินเดือนฝ่ายบุคคล (HR)", "PAYROLL_HR", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_FINANCE", "หน้าต่างเงินเดือนฝ่ายการเงิน (Finance)", "PAYROLL_FINANCE", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_ADMIN", "หน้าต่างเงินเดือนผู้ดูแลระบบ/ผู้อนุมัติ (Admin & CEO)", "PAYROLL_ADMIN", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_CALC", "ประมวลผลเงินเดือน / ปิดงวด", "PAYROLL_CALC", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_STRUCTURE", "โครงสร้างเงินเดือน (Salary Structure)", "PAYROLL_STRUCTURE", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_ITEMS", "รายการรายได้และรายหัก (Payroll Items)", "PAYROLL_ITEMS", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_BONUS", "การจัดสรรโบนัสประจำปี (Bonus Management)", "PAYROLL_BONUS", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_BANK", "การโอนเงินธนาคารและแนบสลิป (Bank Transfer)", "PAYROLL_BANK", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม (Tax & SSO)", "PAYROLL_TAX", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม", "PAYROLL_TAX", "PAYROLL", "เงินเดือน", "PAYROLL"),
 
         // 13. การอนุมัติ (APPROVALS)
         new("APPROVAL_LEAVE", "อนุมัติคำขอลา", "LEAVE", "APPROVALS", "การอนุมัติ", "LEAVE"),

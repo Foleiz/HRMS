@@ -272,15 +272,34 @@ export interface TaxSsoSummary {
 }
 
 export interface EmployeeBonus {
+  id?: number;
   employeeId: number;
   employeeCode: string;
   employeeName: string;
   departmentName?: string | null;
   positionName?: string | null;
+  year?: number;
   baseSalary: number;
   performanceScore?: number | null;
   multiplier: number;
   bonusAmount: number;
+  calculationMode?: 'MULTIPLIER' | 'MANUAL';
+  note?: string | null;
+  status?: string;
+  statusText?: string;
+}
+
+export interface UpdateBonusItemPayload {
+  employeeId: number;
+  bonusAmount: number;
+  multiplier?: number;
+  note?: string;
+}
+
+export interface SaveEmployeeBonusesPayload {
+  year: number;
+  calculationMode: 'MULTIPLIER' | 'MANUAL';
+  items: UpdateBonusItemPayload[];
 }
 
 // ===== PAYMENT WORKFLOW TYPES =====

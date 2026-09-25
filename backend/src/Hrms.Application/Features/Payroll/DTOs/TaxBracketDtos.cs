@@ -15,6 +15,7 @@ public class TaxBracketDto
 
 public class UpdateTaxBracketRequest
 {
+    public long? Id { get; set; }
     public string BracketName { get; set; } = string.Empty;
     public decimal IncomeFrom { get; set; }
     public decimal? IncomeTo { get; set; }
@@ -23,4 +24,9 @@ public class UpdateTaxBracketRequest
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
     public string Status { get; set; } = "ACTIVE";
+}
+
+public class BatchUpdateTaxBracketsRequest
+{
+    public List<UpdateTaxBracketRequest> Brackets { get; set; } = new();
 }

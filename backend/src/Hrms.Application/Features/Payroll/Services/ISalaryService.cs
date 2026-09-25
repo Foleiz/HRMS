@@ -14,6 +14,8 @@ public interface ISalaryService
     // Tax Brackets
     Task<List<TaxBracketDto>> GetTaxBracketsAsync(CancellationToken cancellationToken = default);
     Task<TaxBracketDto> UpdateTaxBracketAsync(long id, UpdateTaxBracketRequest request, CancellationToken cancellationToken = default);
+    Task<List<TaxBracketDto>> BatchUpdateTaxBracketsAsync(BatchUpdateTaxBracketsRequest request, CancellationToken cancellationToken = default);
+    Task<List<TaxBracketDto>> ResetTaxBracketsToDefaultAsync(CancellationToken cancellationToken = default);
 
     // Social Security Rates
     Task<List<SocialSecurityRateDto>> GetSocialSecurityRatesAsync(CancellationToken cancellationToken = default);
@@ -46,6 +48,7 @@ public interface ISalaryService
     Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default);
+    Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default);
 
     // ===== PAYMENT WORKFLOW =====
     /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) — ต้องเป็น APPROVED</summary>

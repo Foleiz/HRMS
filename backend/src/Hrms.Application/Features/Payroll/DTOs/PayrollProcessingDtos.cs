@@ -157,10 +157,13 @@ public class EmployeeBonusDto
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
+    public string? PositionName { get; set; }
     public int Year { get; set; }
     public decimal BaseSalary { get; set; }
     public decimal Multiplier { get; set; }
     public decimal BonusAmount { get; set; }
+    public string CalculationMode { get; set; } = "MULTIPLIER";
+    public string? Note { get; set; }
     public string Status { get; set; } = "DRAFT";
     public string StatusText { get; set; } = "ร่าง";
 }
@@ -169,6 +172,21 @@ public class CalculateBonusRequest
 {
     public int Year { get; set; }
     public decimal DefaultMultiplier { get; set; } = 2.0m;
+}
+
+public class UpdateBonusItemDto
+{
+    public long EmployeeId { get; set; }
+    public decimal BonusAmount { get; set; }
+    public decimal? Multiplier { get; set; }
+    public string? Note { get; set; }
+}
+
+public class SaveEmployeeBonusesRequest
+{
+    public int Year { get; set; }
+    public string CalculationMode { get; set; } = "MANUAL";
+    public List<UpdateBonusItemDto> Items { get; set; } = new();
 }
 
 // ===== PAYMENT WORKFLOW DTOs =====

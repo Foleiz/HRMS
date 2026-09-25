@@ -256,6 +256,125 @@ public class SalaryService : ISalaryService
         };
     }
 
+    public async Task<List<TaxBracketDto>> BatchUpdateTaxBracketsAsync(BatchUpdateTaxBracketsRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Brackets == null || request.Brackets.Count == 0)
+        {
+            throw new BusinessRuleException("ต้องมีข้อมูลขั้นบันไดภาษีอย่างน้อย 1 ขั้น");
+        }
+
+        var sorted = request.Brackets.OrderBy(b => b.IncomeFrom).ToList();
+
+        // 1. Validation กฎหมายภาษีและความต่อเนื่อง
+        if (sorted[0].IncomeFrom != 0)
+        {
+            throw new BusinessRuleException("ขั้นแรกต้องเริ่มต้นที่ 0 บาทเสมอ");
+        }
+
+        decimal runningBaseTax = 0;
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            var b = sorted[i];
+
+            // Normalize TaxRate
+            if (b.TaxRate > 1.0m)
+            {
+                b.TaxRate = Math.Round(b.TaxRate / 100.0m, 4);
+            }
+
+            if (b.TaxRate < 0 || b.TaxRate > 1.0m)
+            {
+                throw new BusinessRuleException($"อัตราภาษีของขั้นที่ {i + 1} ต้องอยู่ระหว่าง 0% ถึง 100%");
+            }
+
+            if (i > 0 && b.TaxRate < sorted[i - 1].TaxRate)
+            {
+                throw new BusinessRuleException($"อัตราภาษีแบบก้าวหน้าต้องไม่ลดลง (ขั้นที่ {i + 1} ต่ำกว่าขั้นที่ {i})");
+            }
+
+            // คำนวณ BaseTaxAmount อัตโนมัติเพื่อความถูกต้อง
+            if (i == 0)
+            {
+                b.BaseTaxAmount = 0;
+            }
+            else
+            {
+                var prev = sorted[i - 1];
+                if (!prev.IncomeTo.HasValue)
+                {
+                    throw new BusinessRuleException($"ขั้นก่อนหน้า (ขั้นที่ {i}) ต้องมีเพดานเงินได้สิ้นสุด");
+                }
+
+                decimal prevRange = prev.IncomeTo.Value - Math.Floor(prev.IncomeFrom);
+                runningBaseTax += Math.Round(prevRange * prev.TaxRate, 2);
+                b.BaseTaxAmount = runningBaseTax;
+            }
+
+            if (i < sorted.Count - 1)
+            {
+                if (!b.IncomeTo.HasValue)
+                {
+                    throw new BusinessRuleException($"ขั้นที่ {i + 1} ต้องระบุเพดานเงินได้สิ้นสุด (เฉพาะขั้นสุดท้ายเท่านั้นที่ไม่จำกัดเพดาน)");
+                }
+                if (b.IncomeTo.Value <= b.IncomeFrom)
+                {
+                    throw new BusinessRuleException($"ขั้นที่ {i + 1}: เงินได้สิ้นสุดต้องมากกว่าเงินได้เริ่มต้น");
+                }
+
+                var next = sorted[i + 1];
+                if (Math.Floor(next.IncomeFrom) != Math.Floor(b.IncomeTo.Value))
+                {
+                    throw new BusinessRuleException($"ช่วงเงินได้ต้องต่อเนื่องกัน: ขั้นที่ {i + 2} เริ่มต้น ฿{next.IncomeFrom:N2} ไม่ตรงกับขั้นที่ {i + 1} สิ้นสุด ฿{b.IncomeTo.Value:N2}");
+                }
+            }
+        }
+
+        // 2. ลบขั้นบันไดเดิม แล้วสร้างใหม่ตามที่ผู้ใช้กำหนด
+        var existingEntities = await _context.TaxBrackets.ToListAsync(cancellationToken);
+        _context.TaxBrackets.RemoveRange(existingEntities);
+
+        foreach (var b in sorted)
+        {
+            _context.TaxBrackets.Add(new TaxBracket
+            {
+                BracketName = b.BracketName,
+                IncomeFrom = b.IncomeFrom,
+                IncomeTo = b.IncomeTo,
+                TaxRate = b.TaxRate,
+                BaseTaxAmount = b.BaseTaxAmount,
+                EffectiveFrom = b.EffectiveFrom != default ? b.EffectiveFrom : DateOnly.FromDateTime(DateTime.UtcNow),
+                EffectiveTo = b.EffectiveTo,
+                Status = b.Status ?? "ACTIVE"
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetTaxBracketsAsync(cancellationToken);
+    }
+
+    public async Task<List<TaxBracketDto>> ResetTaxBracketsToDefaultAsync(CancellationToken cancellationToken = default)
+    {
+        var existingEntities = await _context.TaxBrackets.ToListAsync(cancellationToken);
+        _context.TaxBrackets.RemoveRange(existingEntities);
+
+        var defaults = new List<TaxBracket>
+        {
+            new() { BracketName = "ขั้นที่ 1 (0 - 150,000 บาท ยกเว้นภาษี)", IncomeFrom = 0.00m, IncomeTo = 150000.00m, TaxRate = 0.00m, BaseTaxAmount = 0.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 2 (150,001 - 300,000 บาท ภาษี 5%)", IncomeFrom = 150000.01m, IncomeTo = 300000.00m, TaxRate = 0.05m, BaseTaxAmount = 0.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 3 (300,001 - 500,000 บาท ภาษี 10%)", IncomeFrom = 300000.01m, IncomeTo = 500000.00m, TaxRate = 0.10m, BaseTaxAmount = 7500.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 4 (500,001 - 750,000 บาท ภาษี 15%)", IncomeFrom = 500000.01m, IncomeTo = 750000.00m, TaxRate = 0.15m, BaseTaxAmount = 27500.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 5 (750,001 - 1,000,000 บาท ภาษี 20%)", IncomeFrom = 750000.01m, IncomeTo = 1000000.00m, TaxRate = 0.20m, BaseTaxAmount = 65000.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 6 (1,000,001 - 2,000,000 บาท ภาษี 25%)", IncomeFrom = 1000000.01m, IncomeTo = 2000000.00m, TaxRate = 0.25m, BaseTaxAmount = 115000.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 7 (2,000,001 - 5,000,000 บาท ภาษี 30%)", IncomeFrom = 2000000.01m, IncomeTo = 5000000.00m, TaxRate = 0.30m, BaseTaxAmount = 365000.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" },
+            new() { BracketName = "ขั้นที่ 8 (5,000,001 บาทขึ้นไป ภาษี 35%)", IncomeFrom = 5000000.01m, IncomeTo = null, TaxRate = 0.35m, BaseTaxAmount = 1265000.00m, EffectiveFrom = new DateOnly(2024, 1, 1), Status = "ACTIVE" }
+        };
+
+        _context.TaxBrackets.AddRange(defaults);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetTaxBracketsAsync(cancellationToken);
+    }
+
     #endregion
 
     #region Social Security Rates
@@ -1254,10 +1373,11 @@ public class SalaryService : ISalaryService
             {
                 foreach (var bracket in taxBrackets)
                 {
-                    if (taxableIncome > bracket.IncomeFrom)
+                    decimal lower = Math.Floor(bracket.IncomeFrom);
+                    if (taxableIncome > lower)
                     {
                         decimal upper = bracket.IncomeTo ?? taxableIncome;
-                        decimal bracketTaxable = Math.Min(taxableIncome, upper) - bracket.IncomeFrom;
+                        decimal bracketTaxable = Math.Min(taxableIncome, upper) - lower;
                         decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
                         annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
                     }
@@ -1481,37 +1601,70 @@ public class SalaryService : ISalaryService
     public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default)
     {
         int targetYear = year ?? 2026;
+
         var employees = await _context.Employees
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
 
+        // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีนี้
+        var savedBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
+
         var result = new List<EmployeeBonusDto>();
-        long bonusId = 1;
 
         foreach (var emp in employees)
         {
             var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
-            decimal multiplier = 2.0m; // Default 2.0x months bonus
-            decimal bonusAmount = sal * multiplier;
             var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+            var posName = emp.Assignments.FirstOrDefault()?.Position?.PositionName ?? "-";
 
-            result.Add(new EmployeeBonusDto
+            var existing = savedBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
+            if (existing != null)
             {
-                Id = bonusId++,
-                EmployeeId = emp.Id,
-                EmployeeCode = emp.EmployeeCode,
-                EmployeeName = $"{emp.FirstName} {emp.LastName}",
-                DepartmentName = deptName,
-                Year = targetYear,
-                BaseSalary = sal,
-                Multiplier = multiplier,
-                BonusAmount = bonusAmount,
-                Status = "APPROVED",
-                StatusText = "อนุมัติแล้ว"
-            });
+                result.Add(new EmployeeBonusDto
+                {
+                    Id = existing.Id,
+                    EmployeeId = emp.Id,
+                    EmployeeCode = emp.EmployeeCode,
+                    EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                    DepartmentName = deptName,
+                    PositionName = posName,
+                    Year = targetYear,
+                    BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
+                    Multiplier = existing.Multiplier,
+                    BonusAmount = existing.BonusAmount,
+                    CalculationMode = existing.CalculationMode,
+                    Note = existing.Note,
+                    Status = existing.Status,
+                    StatusText = existing.Status == "APPROVED" ? "อนุมัติแล้ว" : "คำนวณแล้ว"
+                });
+            }
+            else
+            {
+                decimal defaultMultiplier = 2.0m;
+                result.Add(new EmployeeBonusDto
+                {
+                    Id = emp.Id,
+                    EmployeeId = emp.Id,
+                    EmployeeCode = emp.EmployeeCode,
+                    EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                    DepartmentName = deptName,
+                    PositionName = posName,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = defaultMultiplier,
+                    BonusAmount = sal * defaultMultiplier,
+                    CalculationMode = "MULTIPLIER",
+                    Note = null,
+                    Status = "CALCULATED",
+                    StatusText = "คำนวณแล้ว"
+                });
+            }
         }
 
         return result.OrderBy(r => r.EmployeeCode).ToList();
@@ -1524,37 +1677,99 @@ public class SalaryService : ISalaryService
 
         var employees = await _context.Employees
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
 
-        var result = new List<EmployeeBonusDto>();
-        long bonusId = 1;
+        var existingBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
 
         foreach (var emp in employees)
         {
             var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
-            decimal bonusAmount = sal * multiplier;
-            var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+            decimal bonusAmount = Math.Round(sal * multiplier, 2);
 
-            result.Add(new EmployeeBonusDto
+            var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
+            if (existing != null)
             {
-                Id = bonusId++,
-                EmployeeId = emp.Id,
-                EmployeeCode = emp.EmployeeCode,
-                EmployeeName = $"{emp.FirstName} {emp.LastName}",
-                DepartmentName = deptName,
-                Year = targetYear,
-                BaseSalary = sal,
-                Multiplier = multiplier,
-                BonusAmount = bonusAmount,
-                Status = "CALCULATED",
-                StatusText = "คำนวณแล้ว"
-            });
+                existing.BaseSalary = sal;
+                existing.Multiplier = multiplier;
+                existing.BonusAmount = bonusAmount;
+                existing.CalculationMode = "MULTIPLIER";
+                existing.Status = "CALCULATED";
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.EmployeeBonuses.Add(new EmployeeBonus
+                {
+                    EmployeeId = emp.Id,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = multiplier,
+                    BonusAmount = bonusAmount,
+                    CalculationMode = "MULTIPLIER",
+                    Status = "CALCULATED",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
         }
 
-        return result.OrderBy(r => r.EmployeeCode).ToList();
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
+    }
+
+    public async Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default)
+    {
+        int targetYear = request.Year <= 0 ? 2026 : request.Year;
+
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+
+        var existingBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in request.Items)
+        {
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == item.EmployeeId)?.BaseSalary ?? 35000.0m;
+            decimal bonusAmount = Math.Max(0, item.BonusAmount);
+            decimal multiplier = item.Multiplier ?? (sal > 0 ? Math.Round(bonusAmount / sal, 2) : 0);
+
+            var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == item.EmployeeId);
+            if (existing != null)
+            {
+                existing.BaseSalary = sal;
+                existing.Multiplier = multiplier;
+                existing.BonusAmount = bonusAmount;
+                existing.CalculationMode = request.CalculationMode ?? "MANUAL";
+                existing.Note = item.Note;
+                existing.Status = "APPROVED";
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.EmployeeBonuses.Add(new EmployeeBonus
+                {
+                    EmployeeId = item.EmployeeId,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = multiplier,
+                    BonusAmount = bonusAmount,
+                    CalculationMode = request.CalculationMode ?? "MANUAL",
+                    Note = item.Note,
+                    Status = "APPROVED",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
     }
 
     #endregion
