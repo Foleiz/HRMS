@@ -29,6 +29,7 @@ import { Employee } from '@/types/employee';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -78,10 +79,6 @@ export default function TransfersPage() {
   const [selectedApprovalInfo, setSelectedApprovalInfo] = useState<GenericApprovalRequestInfo | null>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState<boolean>(false);
 
-  // Row Action Dropdown
-  const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-
   // Load Data
   const fetchData = async () => {
     try {
@@ -115,7 +112,6 @@ export default function TransfersPage() {
     try {
       await transferService.approve(id);
       fetchData();
-      setActionMenuOpenId(null);
     } catch (err: any) {
       console.error('Failed to approve transfer:', err);
       showError('ไม่สามารถอนุมัติคำขอได้', err.response?.data?.message);
@@ -144,7 +140,6 @@ export default function TransfersPage() {
     try {
       await transferService.reject(id, reason);
       fetchData();
-      setActionMenuOpenId(null);
     } catch (err: any) {
       console.error('Failed to reject transfer:', err);
       showError('ไม่สามารถปฏิเสธคำขอได้', err.response?.data?.message);
@@ -169,23 +164,13 @@ export default function TransfersPage() {
       fetchTimeline: (id: number) => transferService.getApprovalTimeline(id),
     });
     setIsApprovalModalOpen(true);
-    setActionMenuOpenId(null);
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Close action menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        setActionMenuOpenId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
 
 
   // Filtered Transfers
@@ -554,84 +539,58 @@ export default function TransfersPage() {
                       </td>
 
                       {/* การจัดการ / Action Menu */}
-                      <td className="py-4 px-6 text-right">
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() =>
-                              setActionMenuOpenId(actionMenuOpenId === item.id ? null : item.id)
-                            }
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {actionMenuOpenId === item.id && (
-                            <div
-                              ref={actionMenuRef}
-                              className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 text-left text-xs"
-                            >
-                              {/* ผังการอนุมัติ */}
-                              {(item.recordType === 'REQUEST' || item.approvalInstanceId) && (
-                                <button
-                                  onClick={() => handleViewApprovalTimeline(item)}
-                                  className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                                >
-                                  <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />
-                                  <span>ดูผังการอนุมัติ (Workflow)</span>
-                                </button>
-                              )}
-
-                              {/* ดาวน์โหลดเอกสารคำสั่ง */}
-                              {item.hasDocument && (
-                                <button
-                                  onClick={() => {
-                                    handleDownloadDocument(item);
-                                    setActionMenuOpenId(null);
-                                  }}
-                                  className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                                >
-                                  <Download className="w-3.5 h-3.5 text-indigo-600" />
-                                  <span>ดาวน์โหลดเอกสารคำสั่ง</span>
-                                </button>
-                              )}
-
-                              <button
-                                onClick={() => {
-                                  setSelectedTimelineEmployee({
-                                    id: item.employeeId,
-                                    name: item.employeeName,
-                                    code: item.employeeCode,
-                                  });
-                                  setIsTimelineModalOpen(true);
-                                  setActionMenuOpenId(null);
-                                }}
-                                className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                              >
-                                <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>ประวัติรายบุคคล</span>
-                              </button>
-
-                              {item.status === 'PENDING' && (
-                                <>
-                                  <button
-                                    onClick={() => handleApprove(item.id)}
-                                    className="w-full px-3 py-2 text-[#16a34a] hover:bg-emerald-50 flex items-center gap-2 font-medium cursor-pointer"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span>อนุมัติคำขอ</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleReject(item.id)}
-                                    className="w-full px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium cursor-pointer"
-                                  >
-                                    <XCircle className="w-3.5 h-3.5 text-rose-500" />
-                                    <span>ไม่อนุมัติคำขอ</span>
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                      <td className="py-4 px-6 text-right whitespace-nowrap">
+                        <ActionDropdown
+                          menuClassName="w-52"
+                          items={[
+                            ...(item.recordType === 'REQUEST' || item.approvalInstanceId
+                              ? [
+                                  {
+                                    label: 'ดูผังการอนุมัติ (Workflow)',
+                                    icon: <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />,
+                                    onClick: () => handleViewApprovalTimeline(item),
+                                  },
+                                ]
+                              : []),
+                            ...(item.hasDocument
+                              ? [
+                                  {
+                                    label: 'ดาวน์โหลดเอกสารคำสั่ง',
+                                    icon: <Download className="w-3.5 h-3.5 text-indigo-600" />,
+                                    onClick: () => handleDownloadDocument(item),
+                                  },
+                                ]
+                              : []),
+                            {
+                              label: 'ประวัติรายบุคคล',
+                              icon: <Clock className="w-3.5 h-3.5 text-emerald-600" />,
+                              onClick: () => {
+                                setSelectedTimelineEmployee({
+                                  id: item.employeeId,
+                                  name: item.employeeName,
+                                  code: item.employeeCode,
+                                });
+                                setIsTimelineModalOpen(true);
+                              },
+                            },
+                            ...(item.status === 'PENDING'
+                              ? [
+                                  {
+                                    label: 'อนุมัติคำขอ',
+                                    icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+                                    className: 'text-[#16a34a] hover:bg-emerald-50',
+                                    onClick: () => handleApprove(item.id),
+                                  },
+                                  {
+                                    label: 'ไม่อนุมัติคำขอ',
+                                    icon: <XCircle className="w-3.5 h-3.5 text-rose-500" />,
+                                    danger: true,
+                                    onClick: () => handleReject(item.id),
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))

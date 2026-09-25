@@ -49,6 +49,7 @@ import {
 import { Shift, CreateShiftRequest } from '@/types/shift';
 import { Department } from '@/types/organization';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -276,7 +277,6 @@ function SchedulesContent() {
   const [shiftSearchQuery, setShiftSearchQuery] = useState('');
   const [shiftFilterType, setShiftFilterType] = useState<string>('ALL'); // ALL, NORMAL, CROSS_DAY
   const [shiftFilterStatus, setShiftFilterStatus] = useState<string>('ALL'); // ALL, ACTIVE, INACTIVE
-  const [activeActionShiftId, setActiveActionShiftId] = useState<number | null>(null);
 
   // Shift Modal (Create / Edit)
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
@@ -394,21 +394,7 @@ function SchedulesContent() {
     }
   }, [activeTab, assignmentViewMode, rosterYear, rosterMonth, assignmentDeptFilter, assignmentSearch, loadRoster]);
 
-  // Close shift action dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.shift-action-menu-container')) {
-        setActiveActionShiftId(null);
-      }
-    }
-    if (activeActionShiftId !== null) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [activeActionShiftId]);
+
 
   // -------------------------------------------------------------
   // Filtered Lists
@@ -1490,82 +1476,44 @@ function SchedulesContent() {
                       {shift.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
                     </span>
 
-                    <div className="relative inline-block shift-action-menu-container">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveActionShiftId(activeActionShiftId === shift.id ? null : shift.id);
-                        }}
-                        className={`p-1.5 rounded-lg transition ${
-                          activeActionShiftId === shift.id
-                            ? 'bg-[#0B2046] text-white shadow-xs'
-                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                        }`}
-                        title="จัดการกะการทำงาน"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {activeActionShiftId === shift.id && (
-                        <div className="absolute right-0 bottom-full mb-1 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 z-30 divide-y divide-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-left">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveActionShiftId(null);
-                              setSelectedShiftForEmployees(shift);
-                              setEmployeeModalOpen(true);
-                            }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                          >
-                            <Users className="w-4 h-4 text-slate-600 shrink-0" />
-                            <span>ดูข้อมูลพนักงาน</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveActionShiftId(null);
-                              handleDuplicateShift(shift);
-                            }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                          >
-                            <Copy className="w-4 h-4 text-slate-600 shrink-0" />
-                            <span>คัดลอกกะการทำงาน</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveActionShiftId(null);
-                              openShiftEdit(shift);
-                            }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                          >
-                            <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />
-                            <span>แก้ไขกะการทำงาน</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveActionShiftId(null);
-                              setItemToDelete({
-                                type: 'shift',
-                                id: shift.id,
-                                title: `ลบกะการทำงาน: ${shift.shiftName}`,
-                                subtitle: `รหัสกะ: ${shift.shiftCode} (${shift.startTime.substring(0, 5)} - ${shift.endTime.substring(0, 5)})`,
-                              });
-                              setDeleteConfirmOpen(true);
-                            }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 text-rose-600 hover:bg-rose-50 transition text-xs font-semibold"
-                          >
-                            <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
-                            <span>ลบข้อมูลกะ</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <ActionDropdown
+                      menuClassName="w-48"
+                      title="จัดการกะการทำงาน"
+                      items={[
+                        {
+                          label: 'ดูข้อมูลพนักงาน',
+                          icon: <Users className="w-4 h-4 text-slate-600 shrink-0" />,
+                          onClick: () => {
+                            setSelectedShiftForEmployees(shift);
+                            setEmployeeModalOpen(true);
+                          },
+                        },
+                        {
+                          label: 'คัดลอกกะการทำงาน',
+                          icon: <Copy className="w-4 h-4 text-slate-600 shrink-0" />,
+                          onClick: () => handleDuplicateShift(shift),
+                        },
+                        {
+                          label: 'แก้ไขกะการทำงาน',
+                          icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />,
+                          onClick: () => openShiftEdit(shift),
+                        },
+                        {
+                          label: 'ลบข้อมูลกะ',
+                          icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                          danger: true,
+                          onClick: () => {
+                            setItemToDelete({
+                              type: 'shift',
+                              id: shift.id,
+                              title: `ลบกะการทำงาน: ${shift.shiftName}`,
+                              subtitle: `รหัสกะ: ${shift.shiftCode} (${shift.startTime.substring(0, 5)} - ${shift.endTime.substring(0, 5)})`,
+                            });
+                            setDeleteConfirmOpen(true);
+                          },
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
               ))}
@@ -1636,89 +1584,45 @@ function SchedulesContent() {
                             {s.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
                           </span>
                         </td>
-                        <td className="p-3.5 text-right">
-                          <div className="relative inline-block shift-action-menu-container">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveActionShiftId(activeActionShiftId === s.id ? null : s.id);
-                              }}
-                              className={`p-2 rounded-xl transition ${
-                                activeActionShiftId === s.id
-                                  ? 'bg-[#0B2046] text-white shadow-xs'
-                                  : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                              }`}
-                              title="จัดการกะการทำงาน"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-
-                            {activeActionShiftId === s.id && (
-                              <div
-                                className={`absolute right-0 ${
-                                  index >= filteredShifts.length - 2 && filteredShifts.length > 2
-                                    ? 'bottom-full mb-1'
-                                    : 'top-full mt-1'
-                                } w-48 bg-white rounded-2xl shadow-xl border border-slate-200 z-30 divide-y divide-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-left`}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveActionShiftId(null);
-                                    setSelectedShiftForEmployees(s);
-                                    setEmployeeModalOpen(true);
-                                  }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                                >
-                                  <Users className="w-4 h-4 text-slate-600 shrink-0" />
-                                  <span>ดูข้อมูลพนักงาน</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveActionShiftId(null);
-                                    handleDuplicateShift(s);
-                                  }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                                >
-                                  <Copy className="w-4 h-4 text-slate-600 shrink-0" />
-                                  <span>คัดลอกกะการทำงาน</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveActionShiftId(null);
-                                    openShiftEdit(s);
-                                  }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold"
-                                >
-                                  <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />
-                                  <span>แก้ไขกะการทำงาน</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveActionShiftId(null);
-                                    setItemToDelete({
-                                      type: 'shift',
-                                      id: s.id,
-                                      title: `ลบกะการทำงาน: ${s.shiftName}`,
-                                      subtitle: `รหัสกะ: ${s.shiftCode}`,
-                                    });
-                                    setDeleteConfirmOpen(true);
-                                  }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-3 text-rose-600 hover:bg-rose-50 transition text-xs font-semibold"
-                                >
-                                  <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
-                                  <span>ลบข้อมูลกะ</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <ActionDropdown
+                            menuClassName="w-48"
+                            title="จัดการกะการทำงาน"
+                            items={[
+                              {
+                                label: 'ดูข้อมูลพนักงาน',
+                                icon: <Users className="w-4 h-4 text-slate-600 shrink-0" />,
+                                onClick: () => {
+                                  setSelectedShiftForEmployees(s);
+                                  setEmployeeModalOpen(true);
+                                },
+                              },
+                              {
+                                label: 'คัดลอกกะการทำงาน',
+                                icon: <Copy className="w-4 h-4 text-slate-600 shrink-0" />,
+                                onClick: () => handleDuplicateShift(s),
+                              },
+                              {
+                                label: 'แก้ไขกะการทำงาน',
+                                icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />,
+                                onClick: () => openShiftEdit(s),
+                              },
+                              {
+                                label: 'ลบข้อมูลกะ',
+                                icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                                danger: true,
+                                onClick: () => {
+                                  setItemToDelete({
+                                    type: 'shift',
+                                    id: s.id,
+                                    title: `ลบกะการทำงาน: ${s.shiftName}`,
+                                    subtitle: `รหัสกะ: ${s.shiftCode}`,
+                                  });
+                                  setDeleteConfirmOpen(true);
+                                },
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     ))}

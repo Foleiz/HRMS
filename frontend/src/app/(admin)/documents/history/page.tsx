@@ -29,6 +29,7 @@ import { CertificateRequest } from '@/types/certificates';
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -109,38 +110,6 @@ export default function DocumentHistoryPage() {
     onConfirm?: () => void | Promise<void>;
   }>({ isOpen: false, title: '', message: '' });
   const closeConfirm = () => setConfirmConfig((p) => ({ ...p, isOpen: false }));
-
-  // ─── เมนู "การจัดการ" แบบจุดสามจุด (dropdown ต่อแถว) ───
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  // เปิดขึ้นด้านบนแทนด้านล่าง เมื่อพื้นที่ใต้ปุ่มเหลือไม่พอ (เช่น แถวใกล้ขอบล่างของจอ)
-  const [menuOpenUpward, setMenuOpenUpward] = useState(false);
-
-  useEffect(() => {
-    if (!openMenuId) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-actions-menu]')) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openMenuId]);
-
-  // ประมาณความสูงของเมนูจากปุ่มที่ถูกกด แล้วตัดสินใจว่าควรเปิดขึ้นบนหรือลงล่าง
-  // ก่อนเปิดเมนูจริง เพื่อไม่ให้เมนูโผล่พ้นขอบล่างของหน้าจอจนต้องเลื่อนดู
-  const handleToggleMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (openMenuId === id) {
-      setOpenMenuId(null);
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const estimatedMenuHeight = 260; // ความสูงโดยประมาณสูงสุดของเมนู (รวม padding และรายการเอกสารแนบ)
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    setMenuOpenUpward(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
-    setOpenMenuId(id);
-  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -460,77 +429,52 @@ export default function DocumentHistoryPage() {
                             const hasCancel = doc.status === 'PENDING';
                             const hasDelete = doc.status === 'DRAFT';
                             const hasAnyAction = hasAttachments || hasEdit || hasCancel || hasDelete;
-                            const isOpen = openMenuId === doc.id;
                             return (
-                              <div className="relative inline-block text-left" data-actions-menu>
-                                <button
-                                  onClick={(e) => handleToggleMenu(doc.id, e)}
-                                  disabled={!hasAnyAction}
-                                  aria-label="การจัดการ"
-                                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {isOpen && hasAnyAction && (
-                                  <div
-                                    className={`absolute right-0 z-20 w-56 bg-white rounded-xl border border-gray-100 shadow-lg py-1.5 text-left ${
-                                      menuOpenUpward ? 'bottom-full mb-1' : 'mt-1'
-                                    }`}
-                                  >
-                                    {hasAttachments &&
-                                      doc.documents!.map((d) => (
-                                        <button
-                                          key={d.id}
-                                          onClick={() => {
-                                            setOpenMenuId(null);
-                                            handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment');
-                                          }}
-                                          className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-gray-600 hover:bg-gray-50"
-                                        >
-                                          <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                          <span className="truncate">{d.fileName ?? 'เอกสารแนบ'}</span>
-                                        </button>
-                                      ))}
-                                    {hasAttachments && (hasEdit || hasCancel || hasDelete) && (
-                                      <div className="my-1 border-t border-gray-100" />
-                                    )}
-                                    {hasEdit && (
-                                      <Link
-                                        href={doc.editUrl!}
-                                        onClick={() => setOpenMenuId(null)}
-                                        className="flex items-center gap-2 px-3.5 py-2 text-xs text-blue-600 hover:bg-blue-50"
-                                      >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                        แก้ไขต่อ
-                                      </Link>
-                                    )}
-                                    {hasCancel && (
-                                      <button
-                                        onClick={() => {
-                                          setOpenMenuId(null);
-                                          handleCancel(doc);
-                                        }}
-                                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-600 hover:bg-red-50"
-                                      >
-                                        <Ban className="w-3.5 h-3.5" />
-                                        ถอนคำขอ
-                                      </button>
-                                    )}
-                                    {hasDelete && (
-                                      <button
-                                        onClick={() => {
-                                          setOpenMenuId(null);
-                                          handleDelete(doc);
-                                        }}
-                                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-600 hover:bg-red-50"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                        ลบ
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                              <ActionDropdown
+                                disabled={!hasAnyAction}
+                                menuClassName="w-56"
+                                triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+                                items={[
+                                  ...(hasAttachments
+                                    ? doc.documents!.map((d) => ({
+                                        label: d.fileName ?? 'เอกสารแนบ',
+                                        icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
+                                        onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
+                                      }))
+                                    : []),
+                                  ...(hasAttachments && (hasEdit || hasCancel || hasDelete) ? [{ divider: true, label: '' }] : []),
+                                  ...(hasEdit
+                                    ? [
+                                        {
+                                          label: 'แก้ไขต่อ',
+                                          icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+                                          href: doc.editUrl!,
+                                          className: 'text-blue-600 hover:bg-blue-50',
+                                        },
+                                      ]
+                                    : []),
+                                  ...(hasCancel
+                                    ? [
+                                        {
+                                          label: 'ถอนคำขอ',
+                                          icon: <Ban className="w-3.5 h-3.5 text-red-600 shrink-0" />,
+                                          danger: true,
+                                          onClick: () => handleCancel(doc),
+                                        },
+                                      ]
+                                    : []),
+                                  ...(hasDelete
+                                    ? [
+                                        {
+                                          label: 'ลบ',
+                                          icon: <Trash2 className="w-3.5 h-3.5 text-red-600 shrink-0" />,
+                                          danger: true,
+                                          onClick: () => handleDelete(doc),
+                                        },
+                                      ]
+                                    : []),
+                                ]}
+                              />
                             );
                           })()}
                         </td>
