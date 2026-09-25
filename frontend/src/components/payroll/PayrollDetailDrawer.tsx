@@ -114,7 +114,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                             )}
                           </div>
                           <div className="font-semibold text-slate-900 font-mono">
-                            ฿-{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       );
