@@ -338,6 +338,7 @@ public class SalaryService : ISalaryService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Position)
+                    .ThenInclude(p => p.EmployeeLevel)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.EmployeeLevel)
             .AsNoTracking()
@@ -381,11 +382,41 @@ public class SalaryService : ISalaryService
             SalaryStructure? matchingStructure = null;
             if (activeAssignment != null)
             {
-                matchingStructure = structures.FirstOrDefault(s =>
-                    s.PositionId == activeAssignment.PositionId &&
-                    s.EmployeeLevelId == activeAssignment.EmployeeLevelId);
+                var levelId = activeAssignment.EmployeeLevelId ?? activeAssignment.Position?.EmployeeLevelId;
 
-                matchingStructure ??= structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
+                if (activeAssignment.PositionId != 0 && levelId.HasValue)
+                {
+                    matchingStructure = structures.FirstOrDefault(s =>
+                        s.PositionId == activeAssignment.PositionId &&
+                        s.EmployeeLevelId == levelId.Value);
+                }
+
+                if (matchingStructure == null && activeAssignment.PositionId != 0)
+                {
+                    matchingStructure = structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
+                }
+
+                if (matchingStructure == null && levelId.HasValue)
+                {
+                    matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == levelId.Value);
+                }
+            }
+
+            // ถ้ากำหนดฐานเงินเดือนปัจจุบันแล้ว แต่ต่ำกว่าโครงสร้างเงินเดือนขั้นต่ำของตำแหน่ง/ระดับ (เช่น เลื่อนตำแหน่ง/เปลี่ยนระดับงาน)
+            // ให้ปรับฐานเงินเดือนปัจจุบันให้เท่ากับขั้นต่ำของโครงสร้างเงินเดือนโดยอัตโนมัติ
+            if (currentSalary != null && matchingStructure != null && matchingStructure.MinSalary > 0 && currentSalary.BaseSalary < matchingStructure.MinSalary)
+            {
+                var newMin = matchingStructure.MinSalary;
+                await _context.EmployeeSalaries
+                    .Where(s => s.Id == currentSalary.Id)
+                    .ExecuteUpdateAsync(setter => setter
+                        .SetProperty(s => s.BaseSalary, newMin)
+                        .SetProperty(s => s.Reason, s => string.IsNullOrEmpty(s.Reason)
+                            ? $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำ ({newMin:N0} บาท)"
+                            : s.Reason + $" (ปรับขั้นต่ำตามตำแหน่ง/ระดับ {newMin:N0} บาท)"),
+                        cancellationToken);
+
+                currentSalary.BaseSalary = newMin;
             }
 
             result.Add(new EmployeeSalaryOverviewDto
@@ -469,31 +500,41 @@ public class SalaryService : ISalaryService
 
         var activeAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent) ?? employee.Assignments.FirstOrDefault();
 
-        // ตรวจสอบกรอบอัตราเงินเดือนตามตำแหน่ง (Salary Structure Min / Max)
-        if (activeAssignment?.PositionId != null)
+        // ตรวจสอบกรอบอัตราเงินเดือนตามตำแหน่ง/ระดับ (Salary Structure Min / Max)
+        if (activeAssignment != null)
         {
             var structures = await _context.SalaryStructures
-                .Where(s => s.Status == "ACTIVE" && s.PositionId == activeAssignment.PositionId)
+                .Where(s => s.Status == "ACTIVE")
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
+            var levelId = activeAssignment.EmployeeLevelId ?? activeAssignment.Position?.EmployeeLevelId;
             SalaryStructure? matchingStructure = null;
-            if (activeAssignment.EmployeeLevelId.HasValue)
+            if (activeAssignment.PositionId != 0 && levelId.HasValue)
             {
-                matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == activeAssignment.EmployeeLevelId);
+                matchingStructure = structures.FirstOrDefault(s =>
+                    s.PositionId == activeAssignment.PositionId &&
+                    s.EmployeeLevelId == levelId.Value);
             }
-            matchingStructure ??= structures.FirstOrDefault();
+            if (matchingStructure == null && activeAssignment.PositionId != 0)
+            {
+                matchingStructure = structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
+            }
+            if (matchingStructure == null && levelId.HasValue)
+            {
+                matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == levelId.Value);
+            }
 
             if (matchingStructure != null)
             {
                 if (matchingStructure.MinSalary > 0 && request.BaseSalary < matchingStructure.MinSalary)
                 {
-                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง (฿{matchingStructure.MinSalary:N0})");
+                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง/ระดับ (฿{matchingStructure.MinSalary:N0})");
                 }
 
                 if (matchingStructure.MaxSalary > 0 && request.BaseSalary > matchingStructure.MaxSalary)
                 {
-                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่สูงกว่าเงินเดือนสูงสุดของตำแหน่ง (฿{matchingStructure.MaxSalary:N0})");
+                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่สูงกว่าเงินเดือนสูงสุดของตำแหน่ง/ระดับ (฿{matchingStructure.MaxSalary:N0})");
                 }
             }
         }

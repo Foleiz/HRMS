@@ -25,12 +25,18 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (employee) {
-      setBaseSalary(employee.currentSalary ? String(employee.currentSalary) : '');
+      const minSal = employee.salaryStructureMin != null && employee.salaryStructureMin > 0 ? employee.salaryStructureMin : null;
+      if (minSal && (!employee.currentSalary || employee.currentSalary < minSal)) {
+        setBaseSalary(String(minSal));
+        setReason('ปรับฐานเงินเดือนตามโครงสร้างเงินเดือนขั้นต่ำ');
+      } else {
+        setBaseSalary(employee.currentSalary ? String(employee.currentSalary) : '');
+        setReason('');
+      }
       // Default to 1st of next month or today
       const today = new Date();
       const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
       setEffectiveFrom(nextMonth.toISOString().split('T')[0]);
-      setReason('');
     }
     setError(null);
   }, [employee, isOpen]);
@@ -200,6 +206,32 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
               </div>
+              {minSalary != null && (
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBaseSalary(String(minSalary));
+                      if (error) setError(null);
+                    }}
+                    className="text-[11px] text-[#0B2046] hover:bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium inline-flex items-center gap-1 transition-colors"
+                  >
+                    <span>⚡ ใช้ขั้นต่ำ: ฿{minSalary.toLocaleString()}</span>
+                  </button>
+                  {maxSalary != null && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBaseSalary(String(maxSalary));
+                        if (error) setError(null);
+                      }}
+                      className="text-[11px] text-slate-500 hover:bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium transition-colors"
+                    >
+                      สูงสุด: ฿{maxSalary.toLocaleString()}
+                    </button>
+                  )}
+                </div>
+              )}
               {isBelowMin && (
                 <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5 animate-in fade-in">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />

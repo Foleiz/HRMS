@@ -792,6 +792,28 @@ public class EmployeeService : IEmployeeService
                     WageType = request.EmployeeType?.Contains("รายวัน") == true ? "DAILY" : "MONTHLY"
                 });
             }
+
+            // ตรวจสอบและปรับฐานเงินเดือนขั้นต่ำตามโครงสร้างเงินเดือนของตำแหน่งใหม่ (Auto-Adjust to Structure Minimum)
+            var toStructure = await _dbContext.SalaryStructures
+                .Where(s => s.Status == "ACTIVE" && s.PositionId == pos.Id)
+                .OrderByDescending(s => s.EffectiveFrom)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (toStructure != null && toStructure.MinSalary > 0)
+            {
+                var activeSalary = await _dbContext.EmployeeSalaries
+                    .Where(s => s.EmployeeId == employee.Id && s.EffectiveTo == null)
+                    .OrderByDescending(s => s.EffectiveFrom)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (activeSalary != null && activeSalary.BaseSalary < toStructure.MinSalary)
+                {
+                    activeSalary.BaseSalary = toStructure.MinSalary;
+                    activeSalary.Reason = string.IsNullOrWhiteSpace(activeSalary.Reason)
+                        ? $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำ ({toStructure.MinSalary:N0} บาท)"
+                        : $"{activeSalary.Reason} (ปรับขั้นต่ำตามตำแหน่ง {toStructure.MinSalary:N0} บาท)";
+                }
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

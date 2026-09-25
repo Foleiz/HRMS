@@ -227,7 +227,7 @@ public class EmployeeTransferService : IEmployeeTransferService
         // กรณีบันทึกย้อนหลัง (ARCHIVE) หรือเปิด AutoApprove ให้ปรับปรุง Assignment ทันที
         if (shouldApproveImmediately)
         {
-            ApplyAssignmentUpdate(currentAssign, transfer);
+            await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
         else
@@ -251,7 +251,7 @@ public class EmployeeTransferService : IEmployeeTransferService
                     // หากไม่ได้ตั้งค่าสายการอนุมัติไว้ ให้มีผลอัตโนมัติ
                     transfer.Status = "APPROVED";
                     transfer.ApprovedAt = DateTime.UtcNow;
-                    ApplyAssignmentUpdate(currentAssign, transfer);
+                    await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
                 }
             }
@@ -260,7 +260,7 @@ public class EmployeeTransferService : IEmployeeTransferService
                 // Fallback ป้องกันระบบค้างหาก workflow service มีปัญหา
                 transfer.Status = "APPROVED";
                 transfer.ApprovedAt = DateTime.UtcNow;
-                ApplyAssignmentUpdate(currentAssign, transfer);
+                await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }
         }
@@ -292,7 +292,7 @@ public class EmployeeTransferService : IEmployeeTransferService
             .OrderByDescending(a => a.EffectiveFrom)
             .FirstOrDefaultAsync(cancellationToken);
 
-        ApplyAssignmentUpdate(currentAssign, transfer);
+        await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -398,7 +398,7 @@ public class EmployeeTransferService : IEmployeeTransferService
                 .OrderByDescending(a => a.EffectiveFrom)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            ApplyAssignmentUpdate(currentAssign, transfer);
+            await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
         else if (result.Status == "REJECTED")
@@ -416,7 +416,7 @@ public class EmployeeTransferService : IEmployeeTransferService
         return await GetByIdAsync(id, cancellationToken);
     }
 
-    private void ApplyAssignmentUpdate(EmployeeAssignment? currentAssign, EmployeeTransferRequest transfer)
+    private async Task ApplyAssignmentUpdateAsync(EmployeeAssignment? currentAssign, EmployeeTransferRequest transfer, CancellationToken cancellationToken)
     {
         // ปิดรอบ assignment เดิม
         if (currentAssign != null)
@@ -441,6 +441,42 @@ public class EmployeeTransferService : IEmployeeTransferService
         };
 
         _context.EmployeeAssignments.Add(newAssignment);
+
+        // ตรวจสอบและปรับฐานเงินเดือนขั้นต่ำตามโครงสร้างเงินเดือนของตำแหน่งใหม่ (Auto-Adjust to Structure Minimum)
+        var toStructure = await _context.SalaryStructures
+            .Where(s => s.Status == "ACTIVE" && s.PositionId == transfer.ToPositionId)
+            .OrderByDescending(s => s.EffectiveFrom)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (toStructure != null && toStructure.MinSalary > 0)
+        {
+            var activeSalary = await _context.EmployeeSalaries
+                .Where(s => s.EmployeeId == transfer.EmployeeId && s.EffectiveTo == null)
+                .OrderByDescending(s => s.EffectiveFrom)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (activeSalary != null && activeSalary.BaseSalary < toStructure.MinSalary)
+            {
+                if (transfer.EffectiveDate > activeSalary.EffectiveFrom)
+                {
+                    activeSalary.EffectiveTo = transfer.EffectiveDate.AddDays(-1);
+                    _context.EmployeeSalaries.Add(new EmployeeSalary
+                    {
+                        EmployeeId = transfer.EmployeeId,
+                        BaseSalary = toStructure.MinSalary,
+                        EffectiveFrom = transfer.EffectiveDate,
+                        EffectiveTo = null,
+                        Reason = $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำจากการเลื่อนตำแหน่ง/โอนย้าย ({transfer.RequestNo})",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    activeSalary.BaseSalary = toStructure.MinSalary;
+                    activeSalary.Reason = $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำจากการเลื่อนตำแหน่ง/โอนย้าย ({transfer.RequestNo})";
+                }
+            }
+        }
     }
 
     private static EmployeeTransferDto MapToDto(EmployeeTransferRequest t)
