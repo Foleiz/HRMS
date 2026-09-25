@@ -1846,6 +1846,10 @@ export default function PayrollPage() {
                       };
                       const templateBadge = item.calculationType === 'FORMULA' ? getTemplateBadge(item.formulaTemplate) : null;
 
+                      const fixedNumber = item.calculationType === 'FIXED' && item.formulaValue && !isNaN(Number(item.formulaValue))
+                        ? Number(item.formulaValue)
+                        : null;
+
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3.5 px-5">
@@ -1855,25 +1859,46 @@ export default function PayrollPage() {
                             )}
                           </td>
                           <td className="py-3.5 px-5">
-                            <div className="flex flex-col items-start gap-1">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                                item.calculationType === 'FORMULA'
-                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                  : item.calculationType === 'FIXED'
-                                  ? 'bg-slate-100 text-slate-700'
-                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
-                              }`}>
-                                {calcTypeLabel}
-                              </span>
-                              {templateBadge && (
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
-                                  {templateBadge.label}
-                                </span>
-                              )}
-                            </div>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                              item.calculationType === 'FORMULA'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : item.calculationType === 'FIXED'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            }`}>
+                              {calcTypeLabel}
+                            </span>
                           </td>
-                          <td className="py-3.5 px-5 text-xs text-slate-700 font-medium">
-                            {item.formulaValue || '-'}
+                          <td className="py-3.5 px-5">
+                            {item.calculationType === 'FORMULA' ? (
+                              <div className="flex flex-col items-start gap-1">
+                                {templateBadge && (
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
+                                    {templateBadge.label}
+                                  </span>
+                                )}
+                                <span className="text-xs text-slate-700 font-medium">
+                                  {item.formulaValue || '-'}
+                                </span>
+                              </div>
+                            ) : item.calculationType === 'FIXED' ? (
+                              <div className="flex items-center gap-1.5">
+                                {fixedNumber !== null ? (
+                                  <span className="text-xs font-bold text-slate-900 font-mono">
+                                    ฿{fixedNumber.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-700 font-medium">
+                                    {item.formulaValue || '-'}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-slate-400 font-normal">(ยอดคงที่)</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500 font-medium italic">
+                                {item.formulaValue || 'กำหนดตามจริงรายงวด'}
+                              </span>
+                            )}
                           </td>
                           <td className="py-3.5 px-5 text-center">
                             {item.isTaxable ? (
