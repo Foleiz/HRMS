@@ -272,7 +272,9 @@ export default function PayrollPage() {
     user?.username?.toLowerCase().includes('account') ||
     user?.roles?.includes('ADMIN') ||
     hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN');
+    hasRole('PAYROLL_ADMIN') ||
+    hasPermission('PAYROLL_TAX_VIEW') ||
+    hasPermission('APPROVAL_PAYROLL_APPROVE');
 
   const isHR =
     user?.roles?.some((r: string) => r.toLowerCase().includes('hr')) ||
@@ -280,28 +282,32 @@ export default function PayrollPage() {
     hasRole('HR_MGR') ||
     hasRole('HR_ADMIN') ||
     user?.roles?.includes('ADMIN') ||
-    hasRole('ADMIN');
+    hasRole('ADMIN') ||
+    hasPermission('PAYROLL_CALC_CREATE');
 
   const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
   const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE' | 'APPROVER'>('HR');
 
-  // Auto-detect role strictly from logged-in user profile
+  // Auto-detect role strictly from logged-in user profile & assigned permissions
   const usernameLower = user?.username?.toLowerCase() || '';
   const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
+  const isAdmin = userRolesList.includes('ADMIN') || userRolesList.includes('SYSTEM_SUPER');
   const isStrictFinanceUser =
     usernameLower.includes('finance') ||
     usernameLower.includes('account') ||
     usernameLower.includes('chon') ||
-    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT') || r.includes('PAYROLL'));
+    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT') || r.includes('PAYROLL')) ||
+    (!isAdmin && (hasPermission('PAYROLL_TAX_VIEW') || hasPermission('APPROVAL_PAYROLL_APPROVE')));
   const isStrictCeoUser =
     usernameLower.includes('ceo') ||
     usernameLower.includes('approver') ||
-    (userRolesList.includes('CEO') && !userRolesList.includes('ADMIN'));
+    (userRolesList.includes('CEO') && !isAdmin);
   const isStrictHrUser =
     usernameLower.includes('hr') ||
-    userRolesList.some(r => r.includes('HR'));
+    userRolesList.some(r => r.includes('HR')) ||
+    (!isAdmin && (hasPermission('PAYROLL_CALC_CREATE') || hasPermission('TIME_DAILY_VIEW')) && !isStrictFinanceUser);
 
   useEffect(() => {
     if (isStrictFinanceUser && !isStrictHrUser) {
