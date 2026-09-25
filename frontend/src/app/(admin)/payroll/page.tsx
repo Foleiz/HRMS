@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -342,6 +342,18 @@ export default function PayrollPage() {
   // Sub-tab in Structure view: 'positions' vs 'employees'
   const [structureSubTab, setStructureSubTab] = useState<'positions' | 'employees'>('positions');
   const [openActionMenuId, setOpenActionMenuId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setOpenActionMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [structurePage, setStructurePage] = useState<number>(1);
   const [structurePageSize, setStructurePageSize] = useState<number>(10);
   const [employeeSalaryPage, setEmployeeSalaryPage] = useState<number>(1);
@@ -1481,10 +1493,15 @@ export default function PayrollPage() {
                           </td>
                         </tr>
                       ) : (
-                        paginatedStructures.map((s) => {
+                        paginatedStructures.map((s, idx) => {
                         const isStructureActive = s.status ? s.status.toUpperCase() === 'ACTIVE' : true;
+                        const isLastRows = idx >= paginatedStructures.length - 2;
                         return (
-                          <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                          <tr
+                            key={s.id}
+                            onDoubleClick={() => handleOpenEditStructure(s)}
+                            className="hover:bg-slate-50/60 transition-colors"
+                          >
                             <td className="py-4 px-5 font-medium text-slate-800">
                               {s.levelName || s.positionName || 'ระดับปฏิบัติการ'}
                             </td>
@@ -1510,52 +1527,73 @@ export default function PayrollPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="py-4 px-5 text-right relative">
-                              <div className="inline-block text-left">
+                            <td className={`py-4 px-5 text-right whitespace-nowrap ${openActionMenuId === s.id ? 'relative z-50' : ''}`}>
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* ปุ่มลัดแก้ไขตรง (Quick Edit) */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setOpenActionMenuId(openActionMenuId === s.id ? null : s.id);
+                                    handleOpenEditStructure(s);
                                   }}
-                                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  title="แก้ไขโครงสร้างเงินเดือน"
+                                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                                 >
-                                  <MoreVertical className="w-4 h-4" />
+                                  <Edit2 className="w-3.5 h-3.5 text-amber-500" />
                                 </button>
 
-                                {openActionMenuId === s.id && (
-                                  <>
+                                {/* ปุ่ม Option Dropdown 3 จุด */}
+                                <div
+                                  className="relative inline-block text-left"
+                                  ref={openActionMenuId === s.id ? actionMenuRef : null}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenActionMenuId(openActionMenuId === s.id ? null : s.id);
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+
+                                  {openActionMenuId === s.id && (
                                     <div
-                                      className="fixed inset-0 z-20"
-                                      onClick={() => setOpenActionMenuId(null)}
-                                    />
-                                    <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-100 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95">
+                                      className={`absolute right-0 w-32 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 ${
+                                        isLastRows
+                                          ? 'bottom-full mb-1.5 origin-bottom-right'
+                                          : 'top-full mt-1.5 origin-top-right'
+                                      }`}
+                                    >
                                       <button
                                         type="button"
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           setOpenActionMenuId(null);
                                           handleOpenEditStructure(s);
                                         }}
-                                        className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                        className="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
                                       >
                                         <Edit2 className="w-3.5 h-3.5 text-amber-500" />
                                         <span>แก้ไข</span>
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           setOpenActionMenuId(null);
                                           setStructureToDelete(s);
                                           setDeleteConfirmOpen(true);
                                         }}
-                                        className="w-full px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                        className="w-full px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
                                       >
                                         <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                                         <span>ลบ</span>
                                       </button>
                                     </div>
-                                  </>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>
