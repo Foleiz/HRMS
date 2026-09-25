@@ -391,9 +391,9 @@ export const PayrollItemModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* If FORMULA is chosen: Show Formula Template selector and Hint */}
+          {/* If FORMULA is chosen: Show Formula Template selector and clean Summary Card */}
           {calculationType === 'FORMULA' ? (
-            <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <div>
                 <label className="block text-xs font-semibold text-slate-800 mb-1.5 flex items-center gap-1.5">
                   <Calculator className="w-3.5 h-3.5 text-blue-700" />
@@ -402,7 +402,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 <select
                   value={formulaTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 font-medium"
+                  className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 font-semibold"
                 >
                   {availableTemplates.map((tpl) => (
                     <option key={tpl.code} value={tpl.code}>
@@ -413,46 +413,63 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
 
               {selectedTemplate && (
-                <div className="p-2.5 bg-blue-50/80 border border-blue-200/70 rounded-xl text-[11px] text-blue-900 flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-blue-700 mt-0.5 shrink-0" />
-                  <span>{selectedTemplate.hint}</span>
+                <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-medium">เกณฑ์ / สูตรคำนวณ:</span>
+                    <span className="font-bold text-[#0B2046] font-mono bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200">
+                      {selectedTemplate.defaultValue}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed pt-2 border-t border-slate-100 flex items-start gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <span>{selectedTemplate.hint}</span>
+                  </p>
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  {selectedTemplate?.parameterLabel || 'ค่าตัวแปร / ตัวคูณ / อัตรา'}
-                </label>
-                <input
-                  type="text"
-                  placeholder={selectedTemplate?.parameterPlaceholder || 'เช่น 5% หรือ 1,000 บาท'}
-                  value={formulaValue}
-                  onChange={(e) => setFormulaValue(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
-                />
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  HR สามารถระบุค่าตัวแปร/เกณฑ์อ้างอิง ระบบจะคำนวณตามตรรกะของสูตรที่เลือกอัตโนมัติ
-                </span>
-              </div>
+              {formulaTemplate === 'CUSTOM_FORMULA' && (
+                <div className="pt-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    ระบุสูตรหรือเกณฑ์กำหนดเอง
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น (ฐานเงินเดือน x 2%) หรือ ตามสัญญาพิเศษ"
+                    value={formulaValue}
+                    onChange={(e) => setFormulaValue(e.target.value)}
+                    className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-800"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1.5">
                 {calculationType === 'FIXED' ? 'จำนวนเงินคงที่ (บาท)' : 'เกณฑ์การคิด / บันทึกช่วยจำ'}
               </label>
-              <input
-                type="text"
-                placeholder={
-                  calculationType === 'FIXED'
-                    ? 'เช่น 500 หรือ ตามสัญญาจ้าง'
-                    : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริงที่เกิดขึ้น'
-                }
-                value={formulaValue}
-                onChange={(e) => setFormulaValue(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
-              />
+              <div className="relative">
+                <input
+                  type={calculationType === 'FIXED' ? 'number' : 'text'}
+                  step={calculationType === 'FIXED' ? '0.01' : undefined}
+                  placeholder={
+                    calculationType === 'FIXED'
+                      ? 'เช่น 500'
+                      : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริงที่เกิดขึ้น'
+                  }
+                  value={formulaValue}
+                  onChange={(e) => setFormulaValue(e.target.value)}
+                  className={`w-full text-xs py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 ${
+                    calculationType === 'FIXED' ? 'pl-7 pr-3 font-semibold' : 'px-3.5'
+                  }`}
+                />
+                {calculationType === 'FIXED' && (
+                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-medium">฿</span>
+                )}
+              </div>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                ระบุเกณฑ์หรือตัวเลขสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน
+                {calculationType === 'FIXED'
+                  ? 'ระบุยอดเงินคงที่ที่จ่ายหรือหักในสลิปเงินเดือน'
+                  : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}
               </span>
             </div>
           )}
