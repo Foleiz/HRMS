@@ -509,18 +509,45 @@ public class RoleService : IRoleService
             }
         }
 
-        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติเพื่อความเข้ากันได้ (Backward Compatibility)
+        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติพร้อม Data Scope สูงสุด เพื่อความเข้ากันได้ (Backward Compatibility)
         foreach (var parentPref in parentPrefixList)
         {
-            var hasAnyChildView = request.Modules.Any(m => {
-                var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);
-                if (match == null || match.ParentPermissionPrefix != parentPref) return false;
-                return (m.Self?.View == true) || (m.Team?.View == true) || (m.Department?.View == true) || (m.Division?.View == true) || (m.Organization?.View == true) || m.CanView;
-            });
+            var childModules = request.Modules
+                .Where(m => {
+                    var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);
+                    return match != null && match.ParentPermissionPrefix == parentPref;
+                })
+                .ToList();
+
+            var hasAnyChildView = childModules.Any(m =>
+                (m.Self?.View == true) || (m.Team?.View == true) || (m.Department?.View == true) || 
+                (m.Division?.View == true) || (m.Organization?.View == true) || m.CanView);
 
             if (hasAnyChildView)
             {
-                AddPerm($"{parentPref}_VIEW");
+                var parentViewCode = $"{parentPref}_VIEW";
+                AddPerm(parentViewCode);
+
+                if (childModules.Any(m => m.Organization?.View == true))
+                {
+                    AddDataScope(parentViewCode, "ORGANIZATION");
+                }
+                else if (childModules.Any(m => m.Division?.View == true))
+                {
+                    AddDataScope(parentViewCode, "DIVISION");
+                }
+                else if (childModules.Any(m => m.Department?.View == true))
+                {
+                    AddDataScope(parentViewCode, "DEPARTMENT");
+                }
+                else if (childModules.Any(m => m.Team?.View == true))
+                {
+                    AddDataScope(parentViewCode, "TEAM");
+                }
+                else if (childModules.Any(m => m.Self?.View == true))
+                {
+                    AddDataScope(parentViewCode, "SELF");
+                }
             }
         }
 

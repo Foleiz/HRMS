@@ -48,17 +48,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
     hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
   },
-  {
-    code: 'OT_STANDARD',
-    name: 'ค่าล่วงเวลา (Overtime - OT 1.5x / 3x)',
-    category: 'EARNING',
-    defaultValue: 'ตาม พ.ร.บ. คุ้มครองแรงงาน (1.5x วันทำงาน / 3x วันหยุด)',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'เรทตัวคูณ / เกณฑ์ OT',
-    parameterPlaceholder: 'เช่น วันทำงาน 1.5 เท่า, วันหยุด 3 เท่า',
-    hint: 'ระบบคำนวณอัตโนมัติจากชั่วโมง OT ในระบบ Time Tracking: (เงินเดือน/30/8) x ชม. x ตัวคูณ',
-  },
+
   {
     code: 'PERCENT_SALES',
     name: 'ค่าคอมมิชชั่นตามยอดขาย (Commission %)',
@@ -235,7 +225,7 @@ export const PayrollItemModal: React.FC<Props> = ({
     setCalculationType(newType);
     if (newType === 'FORMULA') {
       if (!formulaTemplate) {
-        const defaultTpl = itemType === 'EARNING' ? 'OT_STANDARD' : 'SSO_STANDARD';
+        const defaultTpl = itemType === 'EARNING' ? 'BASE_SALARY' : 'SSO_STANDARD';
         setFormulaTemplate(defaultTpl);
         const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
         if (tplObj) {

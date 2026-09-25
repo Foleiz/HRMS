@@ -1818,8 +1818,7 @@ export default function PayrollPage() {
                             return { label: 'ฐานเงินเดือนสัญญาจ้าง', color: 'bg-blue-50 text-blue-700 border-blue-200' };
                           case 'POSITION_ALLOWANCE':
                             return { label: 'เงินประจำตำแหน่ง', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                          case 'OT_STANDARD':
-                            return { label: 'OT 1.5x / 3x กฎหมายแรงงาน', color: 'bg-amber-50 text-amber-800 border-amber-200' };
+
                           case 'PERCENT_SALES':
                             return { label: 'คอมมิชชั่น % ยอดขาย', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
                           case 'DILIGENT_ALLOWANCE':
@@ -1986,7 +1985,7 @@ export default function PayrollPage() {
                     {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
                   </h1>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลา OT และรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
+                    {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
                     {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
                     {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
                   </p>
@@ -1998,7 +1997,7 @@ export default function PayrollPage() {
               {/* 4-Step Workflow Stepper (White Card Theme) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100">
                 {[
-                  { step: 1, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลา/OT แล้วกดคำนวณ' },
+                  { step: 1, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลาและรายการ แล้วกดคำนวณ' },
                   { step: 2, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
                   { step: 3, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
                   { step: 4, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
@@ -2295,13 +2294,13 @@ export default function PayrollPage() {
                     </div>
                     <h2 className="text-base font-bold text-slate-900">เตรียมข้อมูลก่อนคำนวณเงินเดือน</h2>
                     <p className="text-xs text-slate-500">
-                      ตรวจสอบวันลา OT และรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน
+                      ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน
                     </p>
                   </div>
                 </div>
 
-                {/* 4 Stat Cards for HR */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 3 Stat Cards for HR */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">พนักงานในรอบ</span>
                     <div className="text-2xl font-bold text-emerald-700 mt-1">
@@ -2327,16 +2326,6 @@ export default function PayrollPage() {
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">จากคำร้องลาที่ได้รับอนุมัติ</span>
                   </div>
-
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ชั่วโมง OT รวม</span>
-                    <div className="text-2xl font-bold text-emerald-700 mt-1">
-                      {totalOtHours.toFixed(1)} <span className="text-sm font-normal text-slate-500">ชม.</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">
-                      {otCount} คนมี OT ในรอบนี้
-                    </span>
-                  </div>
                 </div>
 
                 {/* Table: HR Data Input Verification */}
@@ -2352,7 +2341,6 @@ export default function PayrollPage() {
                           <th className="py-3.5 px-5">พนักงาน</th>
                           <th className="py-3.5 px-5">แผนก</th>
                           <th className="py-3.5 px-5">วันลา</th>
-                          <th className="py-3.5 px-5 text-center">OT (ชม.)</th>
                           <th className="py-3.5 px-5">รายการปรับ/สวัสดิการ</th>
                           <th className="py-3.5 px-5">สถานะข้อมูล</th>
                           <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
@@ -2378,9 +2366,6 @@ export default function PayrollPage() {
                                 ) : (
                                   <span className="text-slate-400">-</span>
                                 )}
-                              </td>
-                              <td className="py-4 px-5 text-center font-mono font-medium text-slate-700">
-                                {pr.overtimeHours && pr.overtimeHours > 0 ? `${pr.overtimeHours.toFixed(1)}` : '-'}
                               </td>
                               <td className="py-4 px-5 text-slate-600">
                                 {pr.adjustmentsSummary || '-'}

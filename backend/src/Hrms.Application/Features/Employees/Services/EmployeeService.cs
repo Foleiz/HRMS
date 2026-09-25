@@ -28,7 +28,9 @@ public class EmployeeService : IEmployeeService
     public async Task<List<EmployeeDto>> GetAllAsync(string? search = null, CancellationToken cancellationToken = default)
     {
         // 1. ตรวจสอบสิทธิ์ (RBAC)
-        if (!_currentUserService.HasPermission("EMP_VIEW") && !_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_VIEW") && 
+            !_currentUserService.HasPermission("EMP_MANAGE") && 
+            !_currentUserService.HasPermission("EMP_PROFILE_VIEW"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงรายชื่อพนักงาน");
         }
@@ -80,7 +82,9 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_VIEW") && !_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_VIEW") && 
+            !_currentUserService.HasPermission("EMP_MANAGE") && 
+            !_currentUserService.HasPermission("EMP_PROFILE_VIEW"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลพนักงาน");
         }

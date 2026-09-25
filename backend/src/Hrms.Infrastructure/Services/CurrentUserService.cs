@@ -57,16 +57,63 @@ public class CurrentUserService : ICurrentUserService
         // หากเป็น ADMIN ถือว่ามีสิทธิ์ทุกอย่าง (Superuser)
         if (HasRole("ADMIN")) return true;
 
-        return User?.FindAll("permission").Any(p => string.Equals(p.Value, permission, StringComparison.OrdinalIgnoreCase)) ?? false;
+        var perms = User?.FindAll("permission").Select(p => p.Value).ToList();
+        if (perms == null || perms.Count == 0) return false;
+
+        if (perms.Any(p => string.Equals(p, permission, StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        // Alias mapping สำหรับการดูรายชื่อพนักงาน
+        if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase) &&
+            perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
     }
+
+    private static readonly Dictionary<string, int> ScopeHierarchy = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "SELF", 0 },
+        { "TEAM", 1 },
+        { "DEPARTMENT", 2 },
+        { "DIVISION", 3 },
+        { "ORGANIZATION", 4 }
+    };
 
     public string GetDataScope(string permission)
     {
         // หากเป็น ADMIN ให้ Scope สูงสุดคือทั้งบริษัท
         if (HasRole("ADMIN")) return "ORGANIZATION";
 
-        string? scope = User?.FindFirstValue($"scope:{permission}");
-        return scope ?? "SELF";
+        var permsToCheck = new List<string> { permission };
+        if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("EMP_PROFILE_VIEW");
+        }
+        else if (string.Equals(permission, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("EMP_VIEW");
+        }
+
+        var scopes = new List<string>();
+        foreach (var perm in permsToCheck)
+        {
+            var found = User?.FindAll($"scope:{perm}").Select(c => c.Value);
+            if (found != null)
+            {
+                scopes.AddRange(found);
+            }
+        }
+
+        if (scopes.Count == 0)
+            return "SELF";
+
+        // เลือก scope ที่มีลำดับสูงสุด (กว้างสุด)
+        return scopes
+            .OrderByDescending(s => ScopeHierarchy.TryGetValue(s, out int rank) ? rank : -1)
+            .First();
     }
 
     public string? IpAddress
