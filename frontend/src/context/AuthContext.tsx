@@ -1,9 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { LoginRequest, UserProfile } from '@/types/auth';
+import { isPathAccessible } from '@/lib/routePermissions';
+import { hrmsSwal } from '@/lib/sweetalert';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -14,6 +16,7 @@ interface AuthContextType {
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
   getDataScope: (permission: string) => string;
+  refreshProfile: () => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +27,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
+  const isAlertingRef = useRef(false);
+  const lastSyncTimeRef = useRef<number>(0);
+
+  /**
+   * ตรวจสอบว่าหน้าที่เปิดอยู่ยังคงมีสิทธิ์เข้าถึงหรือไม่
+   * หากไม่มีสิทธิ์ จะแจ้งเตือนผู้ใช้งานและนำทางกลับไปยังหน้าหลัก
+   */
+  const checkRoutePermission = useCallback((freshUser: UserProfile | null) => {
+    if (typeof window === 'undefined' || !freshUser) return;
+    const currentPath = window.location.pathname;
+    if (currentPath === '/login' || currentPath === '/') return;
+
+    const access = isPathAccessible(currentPath, freshUser);
+    if (!access.allowed && !isAlertingRef.current) {
+      isAlertingRef.current = true;
+      hrmsSwal.fire({
+        icon: 'warning',
+        title: 'สิทธิ์การเข้าถึงถูกเปลี่ยนแปลง',
+        text: `ผู้ดูแลระบบได้ปรับปรุงสิทธิ์การใช้งานของคุณ ทำให้ไม่สามารถเข้าถึงหน้า "${access.rule?.title || currentPath}" ได้อีกต่อไป ระบบกำลังนำคุณกลับสู่หน้าหลัก`,
+        confirmButtonText: 'ตกลง',
+      }).then(() => {
+        isAlertingRef.current = false;
+        router.push('/');
+      });
+    }
+  }, [router]);
+
+  /**
+   * ดึงโปรไฟล์และสิทธิ์สดใหม่จากเซิร์ฟเวอร์ พร้อมอัปเดต Token และ State
+   */
+  const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem('hrms_token') : null;
+    if (!savedToken) return null;
+
+    try {
+      lastSyncTimeRef.current = Date.now();
+      const freshProfile = await authService.getMe();
+      setUser(freshProfile);
+      localStorage.setItem('hrms_user', JSON.stringify(freshProfile));
+      checkRoutePermission(freshProfile);
+      return freshProfile;
+    } catch {
+      return null;
+    }
+  }, [checkRoutePermission]);
+
+  // Initial Auth Check
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -38,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const freshProfile = await authService.getMe();
             setUser(freshProfile);
             localStorage.setItem('hrms_user', JSON.stringify(freshProfile));
+            checkRoutePermission(freshProfile);
           } catch {
             // หากดึงไม่สำเร็จหรือ token หมดอายุจะถูกเคลียร์ใน interceptor
           }
@@ -50,7 +101,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initAuth();
-  }, []);
+  }, [checkRoutePermission]);
+
+  // 1. Sync เมื่อผู้ใช้สลับหน้าจอ/แท็บกลับมา (Window Focus & Visibility Change)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Throttle: อย่างน้อย 15 วินาทีต่อครั้งเพื่อไม่ให้ยิง Server ถี่เกินไป
+      if (Date.now() - lastSyncTimeRef.current > 15000) {
+        refreshProfile();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [refreshProfile]);
+
+  // 2. ดักจับ Event เมื่อ API คืนค่า 403 Forbidden (สิทธิ์ถูกถอนกลางคัน)
+  useEffect(() => {
+    const handleForbidden = async () => {
+      const fresh = await refreshProfile();
+      if (fresh) {
+        checkRoutePermission(fresh);
+      }
+    };
+
+    window.addEventListener('hrms:permission-revoked', handleForbidden);
+    return () => {
+      window.removeEventListener('hrms:permission-revoked', handleForbidden);
+    };
+  }, [refreshProfile, checkRoutePermission]);
+
+  // 3. Heartbeat ตรวจสอบสิทธิ์เป็นระยะในเบื้องหลังทุกๆ 60 วินาที
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof window !== 'undefined' && localStorage.getItem('hrms_token')) {
+        refreshProfile();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [refreshProfile]);
 
   const login = async (credentials: LoginRequest) => {
     setIsLoading(true);
@@ -76,20 +176,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasRole = (role: string) => {
     if (!user) return false;
-    if (user.roles.includes('ADMIN')) return true;
-    return user.roles.includes(role);
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return true;
+    return user.roles?.includes(role) ?? false;
   };
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    if (user.roles.includes('ADMIN')) return true;
-    return user.permissions.includes(permission);
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return true;
+    return user.permissions?.includes(permission) ?? false;
   };
 
   const getDataScope = (permission: string) => {
     if (!user) return 'SELF';
-    if (user.roles.includes('ADMIN')) return 'ORGANIZATION';
-    const scope = user.dataScopes.find((s) => s.permissionCode === permission);
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return 'ORGANIZATION';
+    const scope = user.dataScopes?.find((s) => s.permissionCode === permission);
     return scope ? scope.dataVisibilityScope : 'SELF';
   };
 
@@ -104,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hasRole,
         hasPermission,
         getDataScope,
+        refreshProfile,
       }}
     >
       {children}
