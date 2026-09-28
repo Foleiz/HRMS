@@ -261,64 +261,13 @@ function DailyAttendanceContent() {
   // -------------------------------------------------------------
   // Attendance Import Date & Period Selection State
   // -------------------------------------------------------------
-  const [importDateMode, setImportDateMode] = useState<'period' | 'single' | 'auto'>('period');
+  const [importDateMode, setImportDateMode] = useState<'period' | 'auto'>('period');
   const [importYear, setImportYear] = useState<number>(() => new Date().getFullYear());
   const [importMonth, setImportMonth] = useState<number>(() => new Date().getMonth() + 1);
-  const [importDatePreset, setImportDatePreset] = useState<'full_month' | 'cutoff_25' | 'custom'>('full_month');
 
   const getDaysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
   const formatIsoDate = (y: number, m: number, d: number) =>
     `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-  const [importDateFrom, setImportDateFrom] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  });
-  const [importDateTo, setImportDateTo] = useState<string>(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const lastDay = new Date(y, m, 0).getDate();
-    return `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  });
-  const [importSingleDate, setImportSingleDate] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  });
-
-  const applyImportPeriodDates = (y: number, m: number, preset: 'full_month' | 'cutoff_25') => {
-    if (preset === 'full_month') {
-      const lastDay = getDaysInMonth(y, m);
-      setImportDateFrom(formatIsoDate(y, m, 1));
-      setImportDateTo(formatIsoDate(y, m, lastDay));
-    } else if (preset === 'cutoff_25') {
-      const prevM = m === 1 ? 12 : m - 1;
-      const prevY = m === 1 ? y - 1 : y;
-      setImportDateFrom(formatIsoDate(prevY, prevM, 26));
-      setImportDateTo(formatIsoDate(y, m, 25));
-    }
-  };
-
-  const handleImportYearChange = (newY: number) => {
-    setImportYear(newY);
-    if (importDatePreset === 'full_month' || importDatePreset === 'cutoff_25') {
-      applyImportPeriodDates(newY, importMonth, importDatePreset);
-    }
-  };
-
-  const handleImportMonthChange = (newM: number) => {
-    setImportMonth(newM);
-    if (importDatePreset === 'full_month' || importDatePreset === 'cutoff_25') {
-      applyImportPeriodDates(importYear, newM, importDatePreset);
-    }
-  };
-
-  const handleImportPresetChange = (preset: 'full_month' | 'cutoff_25' | 'custom') => {
-    setImportDatePreset(preset);
-    if (preset === 'full_month' || preset === 'cutoff_25') {
-      applyImportPeriodDates(importYear, importMonth, preset);
-    }
-  };
 
   // -------------------------------------------------------------
   // Monthly Attendance Summary State
@@ -726,16 +675,11 @@ function DailyAttendanceContent() {
       let finalMonth: number | undefined = undefined;
 
       if (importDateMode === 'period') {
-        finalDateFrom = importDateFrom;
-        finalDateTo = importDateTo;
+        const lastDay = getDaysInMonth(importYear, importMonth);
+        finalDateFrom = formatIsoDate(importYear, importMonth, 1);
+        finalDateTo = formatIsoDate(importYear, importMonth, lastDay);
         finalYear = importYear;
         finalMonth = importMonth;
-      } else if (importDateMode === 'single') {
-        finalDateFrom = importSingleDate;
-        finalDateTo = importSingleDate;
-        const [sy, sm] = importSingleDate.split('-').map(Number);
-        finalYear = sy;
-        finalMonth = sm;
       }
 
       const fileExt = selectedFile.name.toLowerCase().endsWith('.csv') ? 'CSV' : 'EXCEL';
@@ -757,7 +701,7 @@ function DailyAttendanceContent() {
         if (fileInputRef.current) fileInputRef.current.value = '';
 
         const periodLabel = finalDateFrom && finalDateTo
-          ? `รอบวันที่ ${formatDateThai(finalDateFrom)} ถึง ${formatDateThai(finalDateTo)}`
+          ? `รอบประจำเดือน ${THAI_MONTHS[importMonth - 1]} ${importYear + 543} (${formatDateThai(finalDateFrom)} ถึง ${formatDateThai(finalDateTo)})`
           : (res.data.dateFrom && res.data.dateTo
             ? `รอบวันที่ ${formatDateThai(res.data.dateFrom)} ถึง ${formatDateThai(res.data.dateTo)}`
             : '');
@@ -1734,18 +1678,7 @@ function DailyAttendanceContent() {
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }`}
                     >
-                      รอบประจำงวด (เดือน/ปี)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setImportDateMode('single')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                        importDateMode === 'single'
-                          ? 'bg-[#0B2046] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      เฉพาะวันเดียว
+                      ระบุรอบเดือนและปี
                     </button>
                     <button
                       type="button"
@@ -1761,19 +1694,19 @@ function DailyAttendanceContent() {
                   </div>
                 </div>
 
-                {/* MODE 1: Period Selection (Year, Month, Date Range, Presets) */}
-                {importDateMode === 'period' && (
-                  <div className="space-y-4 animate-in fade-in duration-150">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                {/* Month and Year Selection */}
+                {importDateMode === 'period' ? (
+                  <div className="space-y-3 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs max-w-xl">
                       {/* Year */}
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
+                        <label className="block font-semibold text-slate-700 mb-1.5">
                           ปี (พ.ศ. / ค.ศ.)
                         </label>
                         <select
                           value={importYear}
-                          onChange={(e) => handleImportYearChange(Number(e.target.value))}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                          onChange={(e) => setImportYear(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
                         >
                           {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
                             <option key={y} value={y}>
@@ -1785,13 +1718,13 @@ function DailyAttendanceContent() {
 
                       {/* Month */}
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
+                        <label className="block font-semibold text-slate-700 mb-1.5">
                           เดือน
                         </label>
                         <select
                           value={importMonth}
-                          onChange={(e) => handleImportMonthChange(Number(e.target.value))}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                          onChange={(e) => setImportMonth(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
                         >
                           {THAI_MONTHS.map((mName, idx) => (
                             <option key={idx + 1} value={idx + 1}>
@@ -1800,108 +1733,23 @@ function DailyAttendanceContent() {
                           ))}
                         </select>
                       </div>
-
-                      {/* Date From */}
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          วันเริ่มต้นรอบ
-                        </label>
-                        <input
-                          type="date"
-                          value={importDateFrom}
-                          onChange={(e) => {
-                            setImportDateFrom(e.target.value);
-                            setImportDatePreset('custom');
-                          }}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs"
-                        />
-                      </div>
-
-                      {/* Date To */}
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          วันสิ้นสุดรอบ
-                        </label>
-                        <input
-                          type="date"
-                          value={importDateTo}
-                          onChange={(e) => {
-                            setImportDateTo(e.target.value);
-                            setImportDatePreset('custom');
-                          }}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs"
-                        />
-                      </div>
                     </div>
 
-                    {/* Quick Presets & Status Indicator */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">รูปแบบด่วน:</span>
-                        <button
-                          type="button"
-                          onClick={() => handleImportPresetChange('full_month')}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                            importDatePreset === 'full_month'
-                              ? 'bg-blue-600 text-white shadow-2xs'
-                              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          🗓️ เต็มเดือน (1 - วันสิ้นเดือน)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleImportPresetChange('cutoff_25')}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                            importDatePreset === 'cutoff_25'
-                              ? 'bg-blue-600 text-white shadow-2xs'
-                              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          ✂️ ตัดรอบงวด (26 - 25)
-                        </button>
-                      </div>
-
-                      {/* Period preview badge */}
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                    {/* Period preview badge */}
+                    <div className="pt-1">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>
-                          รอบเป้าหมาย: <strong className="font-bold">{THAI_MONTHS[importMonth - 1]} {importYear + 543}</strong> ({formatDateThai(importDateFrom)} - {formatDateThai(importDateTo)})
+                          รอบเงินเดือนเป้าหมาย: <strong className="font-bold">{THAI_MONTHS[importMonth - 1]} {importYear + 543}</strong> (1 {THAI_MONTHS[importMonth - 1]} - {getDaysInMonth(importYear, importMonth)} {THAI_MONTHS[importMonth - 1]} {importYear + 543})
                         </span>
                       </div>
                     </div>
                   </div>
-                )}
-
-                {/* MODE 2: Single Day Selection */}
-                {importDateMode === 'single' && (
-                  <div className="space-y-3 animate-in fade-in duration-150">
-                    <div className="max-w-xs text-xs">
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        เลือกวันที่ต้องการนำเข้า (วัน/เดือน/ปี)
-                      </label>
-                      <input
-                        type="date"
-                        value={importSingleDate}
-                        onChange={(e) => setImportSingleDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs"
-                      />
-                    </div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>
-                        นำเข้าสำหรับวันเดียว: <strong className="font-bold">{formatDateThai(importSingleDate)}</strong>
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* MODE 3: Auto-detect */}
-                {importDateMode === 'auto' && (
+                ) : (
                   <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150">
                     <div className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>
-                      ระบบจะตรวจจับวันที่และรอบจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
+                      ระบบจะตรวจจับเดือนและปีจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
                     </span>
                   </div>
                 )}
