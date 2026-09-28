@@ -334,7 +334,14 @@ export default function PayrollPage() {
   // Auto-detect role strictly from logged-in user profile & assigned permissions
   const usernameLower = user?.username?.toLowerCase() || '';
   const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
-  const isAdmin = userRolesList.includes('ADMIN') || userRolesList.includes('SYSTEM_SUPER');
+  const isAdmin =
+    userRolesList.includes('ADMIN') ||
+    userRolesList.includes('SYSTEM_SUPER') ||
+    userRolesList.includes('SUPER_ADMIN') ||
+    hasRole('ADMIN') ||
+    hasRole('SYSTEM_SUPER') ||
+    hasRole('SUPER_ADMIN') ||
+    usernameLower === 'admin';
   const isStrictFinanceUser =
     usernameLower.includes('finance') ||
     usernameLower.includes('account') ||
@@ -2137,154 +2144,180 @@ export default function PayrollPage() {
 
         return (
           <div className="space-y-4">
-            {/* ── TOP ROLE BANNER (Clean White Style - Auto by Logged-in User) ── */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
-                    <span className="text-xs text-slate-300">•</span>
-                    <span className="text-xs font-bold text-slate-700">รอบเงินเดือน : {selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
+            {/* ── TOP ROLE BANNER (Visible only to Admin to switch perspectives) ── */}
+            {isAdmin && (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
+                      <span className="text-xs text-slate-300">•</span>
+                      <span className="text-xs font-bold text-slate-700">รอบเงินเดือน : {selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
+                    </div>
+                    <h1 className="text-lg font-bold mt-1 text-slate-900 flex items-center gap-2">
+                      {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
+                      {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
+                      {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
+                      {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
+                      {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
+                    </p>
                   </div>
-                  <h1 className="text-lg font-bold mt-1 text-slate-900 flex items-center gap-2">
-                    {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
-                    {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
-                    {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
-                  </h1>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
-                    {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
-                    {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
-                  </p>
+
+                  {/* View Switcher based on Permissions / Role */}
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+                    {canAccessHrView && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProcessSubTab('HR');
+                          setViewMode('HR');
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          processSubTab === 'HR'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5 text-blue-600" />
+                        <span>ฝ่ายบุคคล (HR)</span>
+                      </button>
+                    )}
+                    {canAccessFinanceView && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProcessSubTab('FINANCE');
+                          setViewMode('FINANCE');
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          processSubTab === 'FINANCE'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Landmark className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>ฝ่ายการเงิน (Finance)</span>
+                      </button>
+                    )}
+                    {canAccessApproverView && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProcessSubTab('APPROVER');
+                          setViewMode('ALL');
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          processSubTab === 'APPROVER'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                        <span>ผู้บริหาร / Admin</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* View Switcher based on Permissions / Role */}
-                <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
-                  {canAccessHrView && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProcessSubTab('HR');
-                        setViewMode('HR');
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                        processSubTab === 'HR'
-                          ? 'bg-white text-slate-900 shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Users className="w-3.5 h-3.5 text-blue-600" />
-                      <span>ฝ่ายบุคคล (HR)</span>
-                    </button>
-                  )}
-                  {canAccessFinanceView && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProcessSubTab('FINANCE');
-                        setViewMode('FINANCE');
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                        processSubTab === 'FINANCE'
-                          ? 'bg-white text-slate-900 shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Landmark className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>ฝ่ายการเงิน (Finance)</span>
-                    </button>
-                  )}
-                  {canAccessApproverView && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProcessSubTab('APPROVER');
-                        setViewMode('ALL');
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                        processSubTab === 'APPROVER'
-                          ? 'bg-white text-slate-900 shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                      <span>ผู้บริหาร / Admin</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 4-Step Workflow Stepper (Clickable Interactive Tabs) */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100">
-                {[
-                  { step: 1, tabKey: 'HR' as const, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลาและรายการ แล้วกดคำนวณ' },
-                  { step: 2, tabKey: 'FINANCE' as const, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
-                  { step: 3, tabKey: 'APPROVER' as const, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
-                  { step: 4, tabKey: 'BANK' as const, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
-                ].map((s) => {
-                  const isDone = currentStep > s.step;
-                  const isPeriodCurrent = currentStep === s.step;
-                  const isViewing = s.tabKey === 'BANK' ? false : processSubTab === s.tabKey;
-                  return (
-                    <button
-                      key={s.step}
-                      type="button"
-                      onClick={() => {
-                        if (s.tabKey === 'BANK') {
-                          setActiveTab('bank-transfer');
-                        } else {
-                          setProcessSubTab(s.tabKey);
-                          setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
-                        }
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        isViewing
-                          ? 'bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/50 shadow-xs'
-                          : isPeriodCurrent
-                          ? 'bg-amber-50/40 border-amber-300 shadow-2xs hover:bg-amber-50/70'
-                          : isDone
-                          ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50/90'
-                          : 'bg-slate-50/60 border-slate-200/70 hover:bg-slate-100/70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                              isDone
-                                ? 'bg-emerald-500 text-white'
-                                : isPeriodCurrent
-                                ? 'bg-amber-500 text-white animate-pulse'
-                                : isViewing
-                                ? 'bg-[#0B2046] text-white'
-                                : 'bg-slate-200 text-slate-500'
-                            }`}
-                          >
-                            {isDone ? '✓' : s.step}
-                          </span>
-                          <span className={`text-xs font-bold ${isViewing ? 'text-amber-950 font-bold' : isPeriodCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
-                            {s.title}
-                          </span>
+                {/* 4-Step Workflow Stepper (Clickable Interactive Tabs) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100">
+                  {[
+                    { step: 1, tabKey: 'HR' as const, title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลาและรายการ แล้วกดคำนวณ' },
+                    { step: 2, tabKey: 'FINANCE' as const, title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
+                    { step: 3, tabKey: 'APPROVER' as const, title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
+                    { step: 4, tabKey: 'BANK' as const, title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคารและแนบสลิป' },
+                  ].map((s) => {
+                    const isDone = currentStep > s.step;
+                    const isPeriodCurrent = currentStep === s.step;
+                    const isViewing = s.tabKey === 'BANK' ? false : processSubTab === s.tabKey;
+                    return (
+                      <button
+                        key={s.step}
+                        type="button"
+                        onClick={() => {
+                          if (s.tabKey === 'BANK') {
+                            setActiveTab('bank-transfer');
+                          } else {
+                            setProcessSubTab(s.tabKey);
+                            setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
+                          }
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          isViewing
+                            ? 'bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/50 shadow-xs'
+                            : isPeriodCurrent
+                            ? 'bg-amber-50/40 border-amber-300 shadow-2xs hover:bg-amber-50/70'
+                            : isDone
+                            ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50/90'
+                            : 'bg-slate-50/60 border-slate-200/70 hover:bg-slate-100/70'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                isDone
+                                  ? 'bg-emerald-500 text-white'
+                                  : isPeriodCurrent
+                                  ? 'bg-amber-500 text-white animate-pulse'
+                                  : isViewing
+                                  ? 'bg-[#0B2046] text-white'
+                                  : 'bg-slate-200 text-slate-500'
+                              }`}
+                            >
+                              {isDone ? '✓' : s.step}
+                            </span>
+                            <span className={`text-xs font-bold ${isViewing ? 'text-amber-950 font-bold' : isPeriodCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
+                              {s.title}
+                            </span>
+                          </div>
+                          {isViewing && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
+                              กำลังดู
+                            </span>
+                          )}
                         </div>
-                        {isViewing && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
-                            กำลังดู
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-[10px] mt-1 pl-7 ${isViewing ? 'text-amber-800' : isPeriodCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
-                        {s.desc}
-                      </p>
-                    </button>
-                  );
-                })}
+                        <p className={`text-[10px] mt-1 pl-7 ${isViewing ? 'text-amber-800' : isPeriodCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {s.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ── SUB-HEADER BAR (Dropdown & Actions) ── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
+                  {!isAdmin && (
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
+                        <span className="text-xs text-slate-300">•</span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                          {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
+                          {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
+                          {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
+                        </span>
+                      </div>
+                      <h1 className="text-lg font-bold text-slate-900 mt-1">
+                        {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
+                        {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
+                        {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
+                      </h1>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {processSubTab === 'HR' && 'ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
+                        {processSubTab === 'FINANCE' && 'ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และจัดการการจ่ายเงินเดือน'}
+                        {processSubTab === 'APPROVER' && 'ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติรอบเงินเดือน'}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     {periods.length > 0 ? (
                       <div className="relative inline-block">
