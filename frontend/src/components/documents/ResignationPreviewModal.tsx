@@ -330,57 +330,68 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
 
             {/* Approval Section: ผลการพิจารณา */}
             <div className="mt-8 mb-6">
-              <h3 className="text-center font-bold text-sm text-black mb-1.5">ผลการพิจารณา</h3>
-              <table className="w-full border-collapse border border-black text-xs text-black">
+              <div className="text-center mb-2">
+                <span className="font-bold text-sm text-black underline decoration-black underline-offset-4 tracking-wide">
+                  ผลการพิจารณา
+                </span>
+              </div>
+              <table className="w-full border-collapse text-xs text-black" style={{ borderSpacing: 0 }}>
                 <tbody>
-                  {/* Row 1: ผู้บังคับบัญชาพิจารณาเห็นชอบ */}
+                  {/* Row 1: ผู้บังคับบัญชาพิจารณาเห็นชอบ (Left 50%), Top-Right is EMPTY */}
                   <tr>
-                    <td colSpan={2} className="border border-black p-3.5 text-center">
-                      <div className="font-bold mb-3">ผู้บังคับบัญชาพิจารณาเห็นชอบ</div>
-                      <div className="space-y-2 text-left max-w-sm mx-auto pl-4">
-                        <p>
-                          ลงชื่อ<span className="font-medium underline decoration-dotted underline-offset-4">{data.supervisorName ? `  ${data.supervisorName}  ` : '.............................................................................'}</span>
+                    <td className="w-1/2 border border-black align-top p-0">
+                      <div className="text-center font-bold py-1.5 border-b border-black">
+                        ผู้บังคับบัญชาพิจารณาเห็นชอบ
+                      </div>
+                      <div className="p-3.5 space-y-3.5 text-left">
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ลงชื่อ{data.supervisorName ? <span className="font-medium underline decoration-dotted px-2">{data.supervisorName}</span> : '.............................................................................'}
                         </p>
-                        <p>
-                          ตำแหน่ง<span className="font-medium underline decoration-dotted underline-offset-4">{data.supervisorPosition ? `  ${data.supervisorPosition}  ` : '.........................................................................'}</span>
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ตำแหน่ง{data.supervisorPosition ? <span className="font-medium underline decoration-dotted px-2">{data.supervisorPosition}</span> : '.........................................................................'}
                         </p>
-                        <p>
-                          วันที่<span className="font-medium underline decoration-dotted underline-offset-4">{data.supervisorApprovedAt ? `  ${data.supervisorApprovedAt}  ` : '...............................................................................'}</span>
+                        <p className="whitespace-nowrap overflow-hidden">
+                          วันที่{data.supervisorApprovedAt ? <span className="font-medium underline decoration-dotted px-2">{data.supervisorApprovedAt}</span> : '...............................................................................'}
                         </p>
                       </div>
                     </td>
+                    <td className="w-1/2 border-none bg-transparent p-0" />
                   </tr>
 
-                  {/* Row 2: ฝ่ายบุคคล & กรรมการผู้จัดการ */}
+                  {/* Row 2: ฝ่ายบุคคล (Left 50%) & อนุมัติโดยกรรมการผู้จัดการ (Right 50%) */}
                   <tr>
                     {/* Col 1: ฝ่ายบุคคล */}
-                    <td className="border border-black p-3.5 text-center w-1/2 align-top">
-                      <div className="font-bold mb-3">ฝ่ายบุคคลรับทราบเพื่อดำเนินการ</div>
-                      <div className="space-y-2 text-left pl-3">
-                        <p>
-                          ลงชื่อ<span className="font-medium underline decoration-dotted underline-offset-4">{data.hrName ? `  ${data.hrName}  ` : '.............................................................................'}</span>
+                    <td className="w-1/2 border border-black align-top p-0">
+                      <div className="text-center font-bold py-1.5 border-b border-black">
+                        ฝ่ายบุคคลรับทราบเพื่อดำเนินการ
+                      </div>
+                      <div className="p-3.5 space-y-3.5 text-left">
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ลงชื่อ{data.hrName ? <span className="font-medium underline decoration-dotted px-2">{data.hrName}</span> : '.............................................................................'}
                         </p>
-                        <p>
-                          ตำแหน่ง<span className="font-medium underline decoration-dotted underline-offset-4">{data.hrPosition ? `  ${data.hrPosition}  ` : '.........................................................................'}</span>
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ตำแหน่ง{data.hrPosition ? <span className="font-medium underline decoration-dotted px-2">{data.hrPosition}</span> : '.........................................................................'}
                         </p>
-                        <p>
-                          วันที่<span className="font-medium underline decoration-dotted underline-offset-4">{data.hrApprovedAt ? `  ${data.hrApprovedAt}  ` : '...............................................................................'}</span>
+                        <p className="whitespace-nowrap overflow-hidden">
+                          วันที่{data.hrApprovedAt ? <span className="font-medium underline decoration-dotted px-2">{data.hrApprovedAt}</span> : '...............................................................................'}
                         </p>
                       </div>
                     </td>
 
                     {/* Col 2: กรรมการผู้จัดการ */}
-                    <td className="border border-black p-3.5 text-center w-1/2 align-top">
-                      <div className="font-bold mb-3">อนุมัติโดยกรรมการผู้จัดการ</div>
-                      <div className="space-y-2 text-left pl-3">
-                        <p>
-                          ลงชื่อ<span className="font-medium underline decoration-dotted underline-offset-4">{data.managerName ? `  ${data.managerName}  ` : '.............................................................................'}</span>
+                    <td className="w-1/2 border border-black align-top p-0">
+                      <div className="text-center font-bold py-1.5 border-b border-black">
+                        อนุมัติโดยกรรมการผู้จัดการ
+                      </div>
+                      <div className="p-3.5 space-y-3.5 text-left">
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ลงชื่อ{data.managerName ? <span className="font-medium underline decoration-dotted px-2">{data.managerName}</span> : '.............................................................................'}
                         </p>
-                        <p>
-                          ตำแหน่ง...............กรรมการผู้จัดการ.............................
+                        <p className="whitespace-nowrap overflow-hidden">
+                          ตำแหน่ง{data.managerPosition ? <span className="font-medium underline decoration-dotted px-2">{data.managerPosition}</span> : '...............กรรมการผู้จัดการ.............................'}
                         </p>
-                        <p>
-                          วันที่<span className="font-medium underline decoration-dotted underline-offset-4">{data.managerApprovedAt ? `  ${data.managerApprovedAt}  ` : '...............................................................................'}</span>
+                        <p className="whitespace-nowrap overflow-hidden">
+                          วันที่{data.managerApprovedAt ? <span className="font-medium underline decoration-dotted px-2">{data.managerApprovedAt}</span> : '...............................................................................'}
                         </p>
                       </div>
                     </td>
