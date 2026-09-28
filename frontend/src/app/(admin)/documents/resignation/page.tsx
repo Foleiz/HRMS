@@ -67,7 +67,12 @@ export default function ResignationPage() {
   const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
 
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
-  const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>('นาย');
+  const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>(() => {
+    const fn = user?.fullName || '';
+    if (fn.startsWith('นางสาว')) return 'นางสาว';
+    if (fn.startsWith('นาง')) return 'นาง';
+    return 'นาย';
+  });
 
   // Form Fields
   const [reasonCategory, setReasonCategory] = useState<string>(RESIGNATION_REASON_CATEGORIES[0].value);
@@ -559,7 +564,10 @@ export default function ResignationPage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         data={{
-          employeeName: `${titlePrefix} ${profile.fullName}`,
+          employeeName: profile.fullName.startsWith(titlePrefix)
+            ? profile.fullName
+            : `${titlePrefix} ${profile.fullName.replace(/^(นาย|นางสาว|นาง)\s*/, '')}`,
+          titlePrefix,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,
           departmentName: profile.departmentName,

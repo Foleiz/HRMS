@@ -8,6 +8,7 @@ export interface ResignationPreviewModalProps {
   onClose: () => void;
   data: {
     employeeName: string;
+    titlePrefix?: string;
     employeeCode?: string;
     positionTitle?: string;
     departmentName?: string;
@@ -120,6 +121,54 @@ const parseThaiDateParts = (dateInput?: string): ThaiDateParts => {
   };
 };
 
+interface ExtractedPrefixInfo {
+  prefix: 'นาย' | 'นาง' | 'นางสาว' | null;
+  displayName: string;
+}
+
+const extractPrefixAndName = (fullName?: string, explicitPrefix?: string): ExtractedPrefixInfo => {
+  if (!fullName || fullName.trim() === '') {
+    if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
+      return { prefix: explicitPrefix, displayName: '' };
+    }
+    return { prefix: null, displayName: '' };
+  }
+
+  const trimmed = fullName.trim();
+
+  // 1. If explicit prefix was given and valid
+  if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
+    let clean = trimmed;
+    if (clean.startsWith(explicitPrefix)) {
+      clean = clean.slice(explicitPrefix.length).trim();
+    }
+    clean = clean.replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return {
+      prefix: explicitPrefix,
+      displayName: clean,
+    };
+  }
+
+  // 2. Auto-detect from fullName (Note: check 'นางสาว' before 'นาง')
+  if (trimmed.startsWith('นางสาว')) {
+    const clean = trimmed.slice('นางสาว'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นางสาว', displayName: clean };
+  }
+  if (trimmed.startsWith('นาง')) {
+    const clean = trimmed.slice('นาง'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาง', displayName: clean };
+  }
+  if (trimmed.startsWith('นาย')) {
+    const clean = trimmed.slice('นาย'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาย', displayName: clean };
+  }
+
+  return {
+    prefix: null,
+    displayName: trimmed,
+  };
+};
+
 export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = ({
   isOpen,
   onClose,
@@ -133,6 +182,12 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
 
   const submissionParts = parseThaiDateParts(data.submissionDate);
   const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
+
+  const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
+
+  const fullEmployeeNameForSignature = prefix && displayName
+    ? `${prefix} ${displayName}`
+    : (data.employeeName || '...................................................');
 
   const getReasonText = () => {
     if (!data) return '';
@@ -214,15 +269,27 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
               </div>
             </div>
 
-            {/* Paragraph 1: Employee info & Reason */}
+            {/* Paragraph 1: Employee info with Prefix Strikethrough & Reason */}
             <div className="space-y-4 mb-6 text-sm leading-relaxed">
               <p className="text-justify indent-12">
-                ข้าพเจ้า <span className="font-medium underline decoration-dotted underline-offset-4 px-1">{data.employeeName || 'นาย/ นาง/ นางสาว ............................................................'}</span>{' '}
-                พนักงานตำแหน่ง <span className="font-medium underline decoration-dotted underline-offset-4 px-1">{data.positionTitle || '.........................................'}</span>{' '}
+                ข้าพเจ้า{' '}
+                <span className={prefix && prefix !== 'นาย' ? 'line-through decoration-black decoration-[1.5px]' : ''}>นาย</span>
+                /{' '}
+                <span className={prefix && prefix !== 'นาง' ? 'line-through decoration-black decoration-[1.5px]' : ''}>นาง</span>
+                /{' '}
+                <span className={prefix && prefix !== 'นางสาว' ? 'line-through decoration-black decoration-[1.5px]' : ''}>นางสาว</span>{' '}
+                <span className="font-medium underline decoration-dotted underline-offset-4 px-1">
+                  {displayName || '............................................................'}
+                </span>{' '}
+                พนักงานตำแหน่ง{' '}
+                <span className="font-medium underline decoration-dotted underline-offset-4 px-1">
+                  {data.positionTitle || '.........................................'}
+                </span>{' '}
                 {data.departmentName && (
                   <>สังกัด <span className="font-medium underline decoration-dotted underline-offset-4 px-1">{data.departmentName}</span>{' '}</>
                 )}
-                ของบริษัท ไซอโคว จำกัด มีความประสงค์ขอลาออกจากการเป็นพนักงาน ของบริษัทฯ เนื่องด้วยเหตุผล <span className="font-medium underline decoration-dotted underline-offset-4 px-1">{getReasonText()}</span>
+                ของบริษัท ไซอโคว จำกัด มีความประสงค์ขอลาออกจากการเป็นพนักงาน ของบริษัทฯ เนื่องด้วยเหตุผล{' '}
+                <span className="font-medium underline decoration-dotted underline-offset-4 px-1">{getReasonText()}</span>
               </p>
 
               {/* Paragraph 2: Effective Date */}
@@ -252,7 +319,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                     (ลงชื่อ)...................................................ผู้ลาออก
                   </p>
                   <p className="text-black font-medium">
-                    ( {data.employeeName || '...................................................'} )
+                    ( {fullEmployeeNameForSignature} )
                   </p>
                   <p className="text-black">
                     วันที่.......{submissionParts.day !== '.......' ? submissionParts.day : '.......'}......./.......{submissionParts.monthNum !== '.......' ? submissionParts.monthNum : '.......'}......./.......{submissionParts.year !== '...................' ? submissionParts.year : '.......'}.......
