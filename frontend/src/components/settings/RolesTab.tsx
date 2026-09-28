@@ -264,6 +264,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         setSaveSuccessMsg(false);
         lastRoleIdRef.current = selectedRoleMatrix.id;
         setActivePopover(null);
+        setExpandedCategories(new Set());
       } else if (!isDirty) {
         setLocalModules(normalizeModules(selectedRoleMatrix.modules));
       }
@@ -281,13 +282,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     });
     return Array.from(map.values());
   }, [localModules]);
-
-  // Default expand all categories on initial role load
-  useEffect(() => {
-    if (categories.length > 0 && expandedCategories.size === 0) {
-      setExpandedCategories(new Set(categories.map((c) => c.code)));
-    }
-  }, [categories]);
 
   /* ── Search Filter ── */
   const filteredCategories = useMemo(() => {
