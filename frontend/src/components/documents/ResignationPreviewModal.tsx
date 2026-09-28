@@ -736,47 +736,6 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
             </button>
           </div>
 
-          {/* สถานะการอนุมัติแต่ละขั้น (แสดงบนหน้าจอเท่านั้น ไม่พิมพ์) */}
-          {timelineSlots && (
-            <div className="px-6 py-3 border-b border-gray-100 bg-slate-50 text-xs text-slate-600 space-y-1.5">
-              <div className="flex flex-wrap gap-2">
-                {timelineSlots.map((slot) => {
-                  const done = !!slot.signedDate && !slot.isPreviewSignature;
-                  const rejected = slot.status === 'REJECTED';
-                  const waiting = slot.status === 'WAITING';
-                  return (
-                    <span
-                      key={slot.stepNo}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border ${
-                        rejected
-                          ? 'bg-rose-50 border-rose-200 text-rose-700'
-                          : done
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                            : waiting
-                              ? 'bg-amber-50 border-amber-200 text-amber-700'
-                              : 'bg-white border-slate-200 text-slate-500'
-                      }`}
-                    >
-                      ขั้นที่ {slot.stepNo} · {getSlotHeading(slot)} ·{' '}
-                      {rejected
-                        ? 'ไม่อนุมัติ'
-                        : slot.isPreviewSignature
-                          ? 'รอคุณอนุมัติ (แสดงลายเซ็นของคุณล่วงหน้า)'
-                          : done
-                            ? `อนุมัติแล้ว ${slot.signedDate}`
-                            : waiting
-                              ? 'รออนุมัติ'
-                              : 'ยังไม่ถึงขั้นตอน'}
-                    </span>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-slate-400">
-                ช่องของขั้นตอนที่รอคุณอนุมัติ จะแสดงลายเซ็น ตำแหน่ง และวันที่ของคุณล่วงหน้า · ขั้นตอนอื่นจะแสดงเมื่อผู้อนุมัติขั้นนั้นกด &quot;อนุมัติ&quot;
-              </p>
-            </div>
-          )}
-
           {/* พื้นที่แสดงกระดาษ A4 เต็มหน้า (เลื่อนดูได้) */}
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
             <div className="mx-auto w-fit shadow-md border border-gray-300">
