@@ -43,6 +43,7 @@ import {
   Save,
   Coins,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -446,6 +447,8 @@ export default function PayrollPage() {
   const [bonusPayoutYear, setBonusPayoutYear] = useState<number | null>(null);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
+  const [isDuplicatePeriodAlertOpen, setIsDuplicatePeriodAlertOpen] = useState(false);
+  const [duplicatePeriodTarget, setDuplicatePeriodTarget] = useState<PayrollPeriod | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [deletePeriodConfirmOpen, setDeletePeriodConfirmOpen] = useState(false);
   const [isDeletingPeriod, setIsDeletingPeriod] = useState(false);
@@ -1348,6 +1351,17 @@ export default function PayrollPage() {
   const handleCreatePeriodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isCreatingPeriod) return;
+
+    // 1. ตรวจสอบรอบซ้ำล่วงหน้าจากรายการรอบเงินเดือนในระบบ (Client-side Pre-check)
+    const duplicate = periods.find(
+      p => p.year === newPeriodForm.year && p.month === newPeriodForm.month
+    );
+    if (duplicate) {
+      setDuplicatePeriodTarget(duplicate);
+      setIsDuplicatePeriodAlertOpen(true);
+      return;
+    }
+
     try {
       setIsCreatingPeriod(true);
       const created = await salaryService.createPayrollPeriod(newPeriodForm);
@@ -1360,7 +1374,14 @@ export default function PayrollPage() {
       setPayrolls(pRows || []);
     } catch (err: any) {
       console.error('Failed to create payroll period:', err);
-      showToast(err?.message || err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน');
+      const errorMsg = err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน';
+      if (errorMsg.includes('มีอยู่ในระบบแล้ว')) {
+        const existing = periods.find(p => p.year === newPeriodForm.year && p.month === newPeriodForm.month);
+        setDuplicatePeriodTarget(existing || null);
+        setIsDuplicatePeriodAlertOpen(true);
+      } else {
+        showToast(errorMsg);
+      }
     } finally {
       setIsCreatingPeriod(false);
     }
@@ -4116,6 +4137,43 @@ export default function PayrollPage() {
                 </div>
               </div>
 
+              {/* Real-time Duplicate Period Warning Banner */}
+              {(() => {
+                const duplicate = periods.find(
+                  p => p.year === newPeriodForm.year && p.month === newPeriodForm.month
+                );
+                if (!duplicate) return null;
+                return (
+                  <div className="p-3.5 bg-amber-50/90 border border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in duration-150">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-bold text-amber-900 text-xs">
+                        รอบเงินเดือนประจำเดือน {THAI_MONTH_NAMES[newPeriodForm.month - 1]} {newPeriodForm.year + 543} มีอยู่ในระบบแล้ว!
+                      </div>
+                      <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                        รอบนี้มีบันทึกอยู่ในระบบแล้ว (สถานะปัจจุบัน:{' '}
+                        <span className="font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
+                          {duplicate.status}
+                        </span>
+                        ) ระบบไม่อนุญาตให้สร้างงวดเดือนเดียวกันซ้ำได้
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPeriod(duplicate);
+                          setIsCreatePeriodModalOpen(false);
+                          showToast(`สลับไปยัง ${duplicate.periodName} เรียบร้อยแล้ว`);
+                        }}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                      >
+                        <ArrowRight className="w-3.5 h-3.5" />
+                        <span>เปิดดูรอบเงินเดือนนี้ทันที</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">วันเริ่มคำนวณ</label>
@@ -4157,19 +4215,57 @@ export default function PayrollPage() {
                 >
                   ยกเลิก
                 </button>
-                <button
-                  type="submit"
-                  disabled={isCreatingPeriod}
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
-                >
-                  {isCreatingPeriod && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{isCreatingPeriod ? 'กำลังสร้าง...' : 'สร้างรอบเงินเดือน'}</span>
-                </button>
+                {(() => {
+                  const isDup = periods.some(
+                    p => p.year === newPeriodForm.year && p.month === newPeriodForm.month
+                  );
+                  return (
+                    <button
+                      type="submit"
+                      disabled={isCreatingPeriod}
+                      className={`px-5 py-2 rounded-xl text-white text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-all ${
+                        isDup
+                          ? 'bg-amber-600 hover:bg-amber-700'
+                          : 'bg-[#0B2046] hover:bg-[#112d5e]'
+                      }`}
+                      title={isDup ? 'รอบนี้มีอยู่ในระบบแล้ว (คลิกเพื่อดูการแจ้งเตือน)' : undefined}
+                    >
+                      {isCreatingPeriod && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{isCreatingPeriod ? 'กำลังสร้าง...' : isDup ? 'ตรวจสอบรอบซ้ำ' : 'สร้างรอบเงินเดือน'}</span>
+                    </button>
+                  );
+                })()}
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Alert Popup: แจ้งเตือนเมื่อรอบเงินเดือนมีอยู่ในระบบแล้ว */}
+      <ConfirmModal
+        isOpen={isDuplicatePeriodAlertOpen}
+        onClose={() => setIsDuplicatePeriodAlertOpen(false)}
+        onConfirm={() => {
+          if (duplicatePeriodTarget) {
+            setSelectedPeriod(duplicatePeriodTarget);
+            setIsCreatePeriodModalOpen(false);
+            setIsDuplicatePeriodAlertOpen(false);
+            showToast(`สลับไปยัง ${duplicatePeriodTarget.periodName} เรียบร้อยแล้ว`);
+          } else {
+            setIsDuplicatePeriodAlertOpen(false);
+          }
+        }}
+        type="warning"
+        title="รอบเงินเดือนนี้มีอยู่ในระบบแล้ว"
+        message={`รอบเงินเดือนประจำเดือน ${
+          THAI_MONTH_NAMES[newPeriodForm.month - 1]
+        } ${newPeriodForm.year + 543} (${newPeriodForm.periodName}) มีบันทึกอยู่ในระบบแล้ว ${
+          duplicatePeriodTarget ? `\n(สถานะปัจจุบัน: ${duplicatePeriodTarget.status})` : ''
+        }\n\nระบบไม่อนุญาตให้สร้างรอบเงินเดือนในเดือนและปีเดียวกันซ้ำได้ คุณต้องการเปิดดูรอบเงินเดือนนี้ หรือแก้ไขเดือนในแบบฟอร์ม?`}
+        confirmText="ไปยังรอบเงินเดือนนี้"
+        cancelText="แก้ไขเดือนในฟอร์ม"
+        zIndexClassName="z-[70]"
+      />
 
       {/* Slide-Over Drawer: รายละเอียดสลิปเงินเดือนรายบุคคล (payroll_detail) */}
       <PayrollDetailDrawer
