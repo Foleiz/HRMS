@@ -8,7 +8,7 @@ import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { approvalService } from '@/services/approvalService';
 import type { ApprovalTimeline } from '@/types/leave';
-import { APPROVER_TYPE_LABELS } from '@/types/approval';
+import { APPROVER_TYPE_LABELS, type ApprovalStep } from '@/types/approval';
 
 // ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
 const sarabun = Sarabun({
@@ -579,17 +579,37 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
     let isMounted = true;
     approvalService
       .simulateWorkflow({ employeeId: data.employeeId, documentType: 'RESIGNATION_REQUEST' })
-      .then((res) => {
+      .then(async (res) => {
         if (!isMounted || !res?.success || !res.steps?.length) return;
+
+        // หัวข้อช่องลงนาม = บทบาท / บุคคลที่เลือกไว้ในช่อง "เลือกบทบาทผู้มีสิทธิ์อนุมัติ" ของแต่ละขั้นตอน
+        // ดึงจากตัวสายการอนุมัติโดยตรง เพื่อให้ได้ชื่อบทบาทเสมอ
+        let flowSteps: ApprovalStep[] = [];
+        if (res.flowId) {
+          try {
+            flowSteps = (await approvalService.getFlowById(res.flowId))?.steps ?? [];
+          } catch {
+            flowSteps = [];
+          }
+        }
+        if (!isMounted) return;
+
         setSimulatedSlots(
           [...res.steps]
             .sort((a, b) => a.stepNo - b.stepNo)
-            .map((s) => ({
-              stepNo: s.stepNo,
-              approverType: s.approverType,
-              approverLabel: s.approverType === 'EMPLOYEE' ? s.approver?.fullName : s.approverRoleName,
-              positionHint: s.approver?.positionName || null,
-            }))
+            .map((s) => {
+              const flowStep = flowSteps.find((fs) => fs.stepNo === s.stepNo);
+              const approverLabel =
+                s.approverType === 'EMPLOYEE'
+                  ? flowStep?.approverEmployeeName || s.approver?.fullName
+                  : flowStep?.approverRoleName || s.approverRoleName;
+              return {
+                stepNo: s.stepNo,
+                approverType: s.approverType,
+                approverLabel: approverLabel || null,
+                positionHint: s.approver?.positionName || null,
+              };
+            })
         );
       })
       .catch((err) => console.error('Failed to load resignation approval flow:', err));
