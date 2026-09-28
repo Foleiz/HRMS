@@ -253,7 +253,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/80">
           <div
             id="resignation-print-area"
-            className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] p-8 sm:p-14 text-black text-[13.5px] leading-relaxed shadow-sm border border-gray-200 select-text"
+            className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] px-8 sm:px-14 pt-4 pb-8 sm:pb-14 text-black text-[13.5px] leading-relaxed shadow-sm border border-gray-200 select-text"
             style={{ fontFamily: "'Prompt', 'Sarabun', 'TH Sarabun New', sans-serif" }}
           >
             {/* Company Logo Header */}
