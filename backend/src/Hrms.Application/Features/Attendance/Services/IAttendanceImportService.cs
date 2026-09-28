@@ -11,6 +11,8 @@ public interface IAttendanceImportService
         string? deviceName, 
         bool allowDuplicate, 
         long? importedByUserId = null, 
+        DateOnly? customDateFrom = null,
+        DateOnly? customDateTo = null,
         CancellationToken cancellationToken = default);
 
     Task<PagedImportBatchResult> GetBatchesAsync(

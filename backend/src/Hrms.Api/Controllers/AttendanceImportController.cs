@@ -31,6 +31,10 @@ public class AttendanceImportController : ControllerBase
         [FromForm] string? source,
         [FromForm] string? deviceName,
         [FromForm] bool allowDuplicate = false,
+        [FromForm] string? dateFrom = null,
+        [FromForm] string? dateTo = null,
+        [FromForm] int? targetYear = null,
+        [FromForm] int? targetMonth = null,
         CancellationToken cancellationToken = default)
     {
         if (file == null || file.Length == 0)
@@ -51,6 +55,31 @@ public class AttendanceImportController : ControllerBase
             userId = parsedId;
         }
 
+        DateOnly? parsedDateFrom = null;
+        if (!string.IsNullOrWhiteSpace(dateFrom) && DateOnly.TryParse(dateFrom, out var df))
+        {
+            parsedDateFrom = df;
+        }
+
+        DateOnly? parsedDateTo = null;
+        if (!string.IsNullOrWhiteSpace(dateTo) && DateOnly.TryParse(dateTo, out var dt))
+        {
+            parsedDateTo = dt;
+        }
+
+        if (targetYear.HasValue && targetMonth.HasValue && targetMonth.Value >= 1 && targetMonth.Value <= 12)
+        {
+            var yr = targetYear.Value > 2400 ? targetYear.Value - 543 : targetYear.Value;
+            if (!parsedDateFrom.HasValue)
+            {
+                parsedDateFrom = new DateOnly(yr, targetMonth.Value, 1);
+            }
+            if (!parsedDateTo.HasValue)
+            {
+                parsedDateTo = new DateOnly(yr, targetMonth.Value, DateTime.DaysInMonth(yr, targetMonth.Value));
+            }
+        }
+
         using var stream = file.OpenReadStream();
         var result = await _importService.ImportFileAsync(
             stream, 
@@ -58,7 +87,9 @@ public class AttendanceImportController : ControllerBase
             source, 
             deviceName, 
             allowDuplicate, 
-            userId, 
+            userId,
+            parsedDateFrom,
+            parsedDateTo,
             cancellationToken);
 
         if (result.IsDuplicate)

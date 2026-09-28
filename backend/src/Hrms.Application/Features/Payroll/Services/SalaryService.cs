@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -9,10 +10,12 @@ namespace Hrms.Application.Features.Payroll.Services;
 public class SalaryService : ISalaryService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
-    public SalaryService(IHrmsDbContext context)
+    public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
+        _attendanceDailyService = attendanceDailyService;
     }
 
     #region Salary Structures
@@ -1623,6 +1626,27 @@ public class SalaryService : ISalaryService
             .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        if (attendance.Count == 0)
+        {
+            var hasDailies = await _context.AttendanceDailies
+                .AnyAsync(a => a.WorkDate >= period.StartDate && a.WorkDate <= period.EndDate, cancellationToken);
+            if (hasDailies)
+            {
+                try
+                {
+                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(period.Year, period.Month, cancellationToken);
+                    attendance = await _context.AttendanceMonthlySummaries
+                        .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
+                        .AsNoTracking()
+                        .ToListAsync(cancellationToken);
+                }
+                catch
+                {
+                    // Fallback gracefully if summary calculation encounters an edge case
+                }
+            }
+        }
 
         var periodStartDt = DateTime.SpecifyKind(period.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
         var periodEndDt = DateTime.SpecifyKind(period.EndDate.AddDays(1).ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -4205,6 +4206,28 @@ export default function PayrollPage() {
                   onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
+              </div>
+
+              {/* Attendance Data Integration Info */}
+              <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
+                <Calendar className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-semibold text-blue-900">
+                    ข้อมูลเวลาเข้างานสำหรับการประมวลผล (Attendance Integration)
+                  </div>
+                  <p className="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
+                    ระบบจะเชื่อมโยงข้อมูลเวลาเข้างานและสถิติขาด/ลา/มาสายที่อัปโหลดผ่านไฟล์ Excel ในช่วงวันที่{' '}
+                    <span className="font-bold">{newPeriodForm.startDate || '-'}</span> ถึง{' '}
+                    <span className="font-bold">{newPeriodForm.endDate || '-'}</span> มาใช้คำนวณเบี้ยขยันและรายการหักโดยอัตโนมัติ
+                  </p>
+                  <Link
+                    href="/attendance/daily?tab=import"
+                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-semibold mt-1"
+                  >
+                    <span>อัปโหลดหรือระบุรอบไฟล์บันทึกเวลาที่นี่</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
