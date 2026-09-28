@@ -6,6 +6,8 @@ import { Sarabun } from 'next/font/google';
 import { X, Printer, FileText } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
+import { approvalService } from '@/services/approvalService';
+import type { ApprovalTimeline } from '@/types/leave';
 
 // ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
 const sarabun = Sarabun({
@@ -40,6 +42,8 @@ export interface ResignationPreviewModalProps {
     contactAfterResignation?: string;
     noticeDays?: number;
     addressedTo?: string;
+    /** สายการอนุมัติจริงของคำขอ (มีเมื่อยื่นคำขอแล้ว) ใช้กำหนดจำนวน/หัวข้อช่องลงนาม และชื่อผู้อนุมัติ */
+    timeline?: ApprovalTimeline | null;
     companyAddress?: string | null;
     // Approvers (Optional)
     supervisorName?: string;
@@ -213,23 +217,125 @@ const Fill: React.FC<{ value?: React.ReactNode; minWidth: string; align?: 'cente
   </span>
 );
 
+/** ช่องลงนามหนึ่งช่องในตาราง "ผลการพิจารณา" (สร้างตามขั้นตอนของสายการอนุมัติ) */
+export interface ApprovalSlot {
+  stepNo: number;
+  approverType: string;
+  /** ชื่อบทบาท / ชื่อบุคคล (สำหรับ ROLE / EMPLOYEE) */
+  approverLabel?: string | null;
+  /** ตำแหน่งที่แสดงล่วงหน้า เช่น "กรรมการผู้จัดการ" */
+  positionHint?: string | null;
+  /** ข้อมูลเมื่ออนุมัติแล้ว */
+  signedName?: string | null;
+  signedEmployeeId?: number | null;
+  signedDate?: string | null;
+}
+
+/** หัวข้อช่องลงนามตามประเภทผู้อนุมัติในสายการอนุมัติ */
+const getSlotHeading = (slot: ApprovalSlot, isLast: boolean): string => {
+  switch ((slot.approverType || '').toUpperCase()) {
+    case 'MANAGER':
+      return 'ผู้บังคับบัญชาพิจารณาเห็นชอบ';
+    case 'DEPARTMENT_HEAD':
+      return 'ผู้จัดการแผนกพิจารณาเห็นชอบ';
+    case 'DIVISION_HEAD':
+      return 'ผู้จัดการฝ่ายพิจารณาเห็นชอบ';
+    case 'HR':
+      return 'ฝ่ายบุคคลรับทราบเพื่อดำเนินการ';
+    case 'CEO':
+      return 'อนุมัติโดยกรรมการผู้จัดการ';
+    default: {
+      const label = slot.approverLabel?.trim() || 'ผู้มีอำนาจอนุมัติ';
+      return isLast ? `อนุมัติโดย${label}` : `${label}พิจารณาเห็นชอบ`;
+    }
+  }
+};
+
+/** ช่องลงนามเริ่มต้น (ใช้เมื่อยังไม่พบสายการอนุมัติ) — ตรงกับต้นฉบับ 3 ขั้นตอน */
+const DEFAULT_SLOTS: ApprovalSlot[] = [
+  { stepNo: 1, approverType: 'MANAGER' },
+  { stepNo: 2, approverType: 'HR' },
+  { stepNo: 3, approverType: 'CEO' },
+];
+
+/**
+ * ตำแหน่งช่องในตาราง 2 x 2 (แถว, คอลัมน์) ตามจำนวนขั้นตอน
+ * - 3 ขั้นตอน: ซ้ายบน, ซ้ายล่าง, ขวาล่าง (ขวาบนว่าง) — ตามต้นฉบับ
+ * - 4 ขั้นตอน: ซ้ายบน, ขวาบน, ซ้ายล่าง, ขวาล่าง
+ */
+const getSlotPositions = (count: number): Array<[number, number]> => {
+  if (count <= 1) return [[0, 0]];
+  if (count === 2) return [[0, 0], [1, 0]];
+  if (count === 3) return [[0, 0], [1, 0], [1, 1]];
+  return Array.from({ length: count }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
+};
+
+const toThaiShortDate = (iso?: string | null): string | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
+};
+
+/** รูปลายเซ็นของผู้อนุมัติ (แจ้ง onError เมื่อไม่มีรูป เพื่อแสดงชื่อแทน) */
+const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () => void }> = ({ employeeId, onError }) => {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={getAvatarUrl(`/api/employees/${employeeId}/signature`) || ''}
+      alt="ลายเซ็นผู้อนุมัติ"
+      onError={onError}
+      style={{
+        position: 'absolute',
+        left: '50%',
+        bottom: '0.3mm',
+        transform: 'translateX(-50%)',
+        height: '10mm',
+        maxWidth: '50mm',
+        objectFit: 'contain',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+};
+
 /** กล่องลงนามในตารางผลการพิจารณา */
-const SignatureCell: React.FC<{ title: string; name?: string; position?: string; positionPlaceholder?: string; date?: string }> = ({
-  title,
-  name,
-  position,
-  positionPlaceholder,
-  date,
-}) => (
+const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = ({ slot, heading }) => {
+  // มีรูปลายเซ็น → แสดงรูปบนเส้น, ไม่มีรูป → แสดงชื่อผู้อนุมัติแทน
+  const [signatureFailed, setSignatureFailed] = useState(false);
+  const showSignature = !!slot.signedEmployeeId && !signatureFailed;
+  return (
   <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
-    <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{title}</div>
+    <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
     <div style={{ padding: '4mm 2mm 1mm 2mm' }}>
-      <div>ลงชื่อ<Fill value={name} minWidth="58mm" /></div>
-      <div>ตำแหน่ง<Fill value={position || positionPlaceholder} minWidth="54.5mm" /></div>
-      <div>วันที่<Fill value={date} minWidth="60mm" /></div>
+      <div>
+        ลงชื่อ
+        <span
+          style={{
+            position: 'relative',
+            display: 'inline-block',
+            minWidth: '58mm',
+            borderBottom: '1px dotted #000',
+            lineHeight: 1.15,
+            textAlign: 'center',
+            padding: '0 1.5mm',
+          }}
+        >
+          {showSignature ? '\u00A0' : slot.signedName || '\u00A0'}
+          {showSignature && slot.signedEmployeeId ? (
+            <ApproverSignatureImg employeeId={slot.signedEmployeeId} onError={() => setSignatureFailed(true)} />
+          ) : null}
+        </span>
+      </div>
+      <div>ตำแหน่ง<Fill value={slot.positionHint || (slot.approverType === 'CEO' ? 'กรรมการผู้จัดการ' : '')} minWidth="54.5mm" /></div>
+      <div>วันที่<Fill value={slot.signedDate} minWidth="60mm" /></div>
     </div>
   </td>
-);
+  );
+};
+
+/** ช่องว่างในตาราง (ไม่มีเส้นขอบ ตามต้นฉบับ) */
+const EmptyCell: React.FC = () => <td style={{ width: '50%', border: 'none', padding: 0 }} />;
 
 /**
  * หน้ากระดาษ A4 (210 x 297 มม.) ของใบลาออก — จัดวางตามต้นฉบับ "ใบลาออก-2025-Rev 1.pdf"
@@ -242,7 +348,8 @@ const ResignationPaper: React.FC<{
   companyAddress: string;
   signatureSrc: string | null;
   onSignatureError?: () => void;
-}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError }) => {
+  approvalSlots: ApprovalSlot[];
+}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots }) => {
   const submissionParts = parseThaiDateParts(data.submissionDate);
   const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
   const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
@@ -405,31 +512,27 @@ const ResignationPaper: React.FC<{
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
         <tbody>
-          <tr>
-            <SignatureCell
-              title="ผู้บังคับบัญชาพิจารณาเห็นชอบ"
-              name={data.supervisorName}
-              position={data.supervisorPosition}
-              date={data.supervisorApprovedAt}
-            />
-            {/* ช่องขวาบนว่างและไม่มีเส้นขอบ ตามต้นฉบับ */}
-            <td style={{ width: '50%', border: 'none', borderLeft: '1px solid #000', borderBottom: '1px solid #000', padding: 0 }} />
-          </tr>
-          <tr>
-            <SignatureCell
-              title="ฝ่ายบุคคลรับทราบเพื่อดำเนินการ"
-              name={data.hrName}
-              position={data.hrPosition}
-              date={data.hrApprovedAt}
-            />
-            <SignatureCell
-              title="อนุมัติโดยกรรมการผู้จัดการ"
-              name={data.managerName}
-              position={data.managerPosition}
-              positionPlaceholder="กรรมการผู้จัดการ"
-              date={data.managerApprovedAt}
-            />
-          </tr>
+          {(() => {
+            // จัดช่องลงนามตามจำนวนขั้นตอนของสายการอนุมัติ (สูงสุด 4 ช่อง / ตาราง 2 x 2)
+            const positions = getSlotPositions(approvalSlots.length);
+            const rowCount = Math.max(...positions.map(([r]) => r)) + 1;
+            return Array.from({ length: rowCount }, (_, row) => (
+              <tr key={row}>
+                {[0, 1].map((col) => {
+                  const idx = positions.findIndex(([r, c]) => r === row && c === col);
+                  if (idx < 0) return <EmptyCell key={col} />;
+                  const slot = approvalSlots[idx];
+                  return (
+                    <SignatureCell
+                      key={col}
+                      slot={slot}
+                      heading={getSlotHeading(slot, idx === approvalSlots.length - 1)}
+                    />
+                  );
+                })}
+              </tr>
+            ));
+          })()}
         </tbody>
       </table>
 
@@ -452,6 +555,55 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
   const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
   const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+  const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(null);
+
+  // ช่องลงนามตามสายการอนุมัติ:
+  // 1) คำขอที่ยื่นแล้ว → ใช้ timeline จริง (พร้อมชื่อ/วันที่/ลายเซ็นผู้ที่อนุมัติแล้ว)
+  // 2) ยังไม่ยื่น → จำลองสายการอนุมัติ RESIGNATION_REQUEST ที่ตรงกับพนักงานคนนี้จากหน้าตั้งค่า
+  const timelineSlots: ApprovalSlot[] | null =
+    data?.timeline?.steps && data.timeline.steps.length > 0
+      ? [...data.timeline.steps]
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => {
+            const approved = s.status === 'COMPLETED' && (s.actionDecision === 'APPROVE' || !s.actionDecision);
+            return {
+              stepNo: s.stepNo,
+              approverType: s.approverType,
+              approverLabel: s.approverTitle,
+              signedName: approved ? s.actionByEmployeeName || null : null,
+              signedEmployeeId: approved ? s.actionByEmployeeId || null : null,
+              signedDate: approved ? toThaiShortDate(s.actionAt) : null,
+            };
+          })
+      : null;
+
+  useEffect(() => {
+    if (!isOpen || timelineSlots || !data?.employeeId) {
+      setSimulatedSlots(null);
+      return;
+    }
+    let isMounted = true;
+    approvalService
+      .simulateWorkflow({ employeeId: data.employeeId, documentType: 'RESIGNATION_REQUEST' })
+      .then((res) => {
+        if (!isMounted || !res?.success || !res.steps?.length) return;
+        setSimulatedSlots(
+          [...res.steps]
+            .sort((a, b) => a.stepNo - b.stepNo)
+            .map((s) => ({
+              stepNo: s.stepNo,
+              approverType: s.approverType,
+              approverLabel: s.approverType === 'EMPLOYEE' ? s.approver?.fullName : s.approverRoleName || s.approverTypeLabel,
+              positionHint: s.approver?.positionName || null,
+            }))
+        );
+      })
+      .catch((err) => console.error('Failed to load resignation approval flow:', err));
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, data?.employeeId, !!timelineSlots]);
 
   // รูปลายเซ็นของบัญชีผู้ลาออก (ดึงใหม่ทุกครั้งที่เปิด เพื่อให้ได้ลายเซ็นล่าสุด)
   useEffect(() => {
@@ -498,6 +650,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   if (!isOpen || !data) return null;
 
   const address = companyAddress || DEFAULT_COMPANY_ADDRESS;
+  const approvalSlots = timelineSlots || simulatedSlots || DEFAULT_SLOTS;
 
   return (
     <>
@@ -527,6 +680,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 companyAddress={address}
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
+                approvalSlots={approvalSlots}
               />
             </div>
           </div>
@@ -562,6 +716,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 companyAddress={address}
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
+                approvalSlots={approvalSlots}
               />
           </div>,
           document.body

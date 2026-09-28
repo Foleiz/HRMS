@@ -373,6 +373,7 @@ public class ApprovalFlowService : IApprovalFlowService
                 StepNo = step.StepNo,
                 ApproverType = step.ApproverType,
                 ApproverTypeLabel = GetApproverTypeLabel(step.ApproverType),
+                ApproverRoleName = step.ApproverRole?.RoleName,
                 IsRequired = step.IsRequired,
                 Approver = approver
             });
