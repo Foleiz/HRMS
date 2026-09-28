@@ -278,34 +278,28 @@ export interface EmployeeBonus {
   employeeName: string;
   departmentName?: string | null;
   positionName?: string | null;
-  startDate?: string | null;
-  tenureText?: string;
-  monthsWorkedInYear?: number;
-  isProrated?: boolean;
+  year?: number;
   baseSalary: number;
   performanceScore?: number | null;
   multiplier: number;
   bonusAmount: number;
-  bankCode?: string | null;
-  bankName?: string | null;
-  accountNumber?: string | null;
+  calculationMode?: 'MULTIPLIER' | 'MANUAL';
+  note?: string | null;
   status?: string;
   statusText?: string;
 }
 
-export interface CalculateBonusPayload {
-  year: number;
-  defaultMultiplier: number;
-  isProrated: boolean;
+export interface UpdateBonusItemPayload {
+  employeeId: number;
+  bonusAmount: number;
+  multiplier?: number;
+  note?: string;
 }
 
-export interface ApplyBonusToPeriodPayload {
-  periodId: number;
-  bonuses: {
-    employeeId: number;
-    multiplier: number;
-    bonusAmount: number;
-  }[];
+export interface SaveEmployeeBonusesPayload {
+  year: number;
+  calculationMode: 'MULTIPLIER' | 'MANUAL';
+  items: UpdateBonusItemPayload[];
 }
 
 // ===== PAYMENT WORKFLOW TYPES =====

@@ -1521,7 +1521,74 @@ public class SalaryService : ISalaryService
 
     public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default)
     {
-        return await CalculateEmployeeBonusesAsync(new CalculateBonusRequest { Year = year ?? 2026, DefaultMultiplier = 2.0m, IsProrated = true }, cancellationToken);
+        int targetYear = year ?? 2026;
+
+        var employees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+
+        // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีนี้
+        var savedBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
+
+        var result = new List<EmployeeBonusDto>();
+
+        foreach (var emp in employees)
+        {
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
+            var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+            var posName = emp.Assignments.FirstOrDefault()?.Position?.PositionName ?? "-";
+
+            var existing = savedBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
+            if (existing != null)
+            {
+                result.Add(new EmployeeBonusDto
+                {
+                    Id = existing.Id,
+                    EmployeeId = emp.Id,
+                    EmployeeCode = emp.EmployeeCode,
+                    EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                    DepartmentName = deptName,
+                    PositionName = posName,
+                    Year = targetYear,
+                    BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
+                    Multiplier = existing.Multiplier,
+                    BonusAmount = existing.BonusAmount,
+                    CalculationMode = existing.CalculationMode,
+                    Note = existing.Note,
+                    Status = existing.Status,
+                    StatusText = existing.Status == "APPROVED" ? "อนุมัติแล้ว" : "คำนวณแล้ว"
+                });
+            }
+            else
+            {
+                decimal defaultMultiplier = 2.0m;
+                result.Add(new EmployeeBonusDto
+                {
+                    Id = emp.Id,
+                    EmployeeId = emp.Id,
+                    EmployeeCode = emp.EmployeeCode,
+                    EmployeeName = $"{emp.FirstName} {emp.LastName}",
+                    DepartmentName = deptName,
+                    PositionName = posName,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = defaultMultiplier,
+                    BonusAmount = sal * defaultMultiplier,
+                    CalculationMode = "MULTIPLIER",
+                    Note = null,
+                    Status = "CALCULATED",
+                    StatusText = "คำนวณแล้ว"
+                });
+            }
+        }
+
+        return result.OrderBy(r => r.EmployeeCode).ToList();
     }
 
     public async Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default)
@@ -1532,237 +1599,103 @@ public class SalaryService : ISalaryService
         var employees = await _context.Employees
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
-            .Include(e => e.Contracts)
-            .Include(e => e.BankAccounts.Where(b => b.Status == "ACTIVE")).ThenInclude(b => b.Bank)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var salaries = await _context.EmployeeSalaries
-            .AsNoTracking()
-            .OrderByDescending(s => s.EffectiveFrom)
-            .ToListAsync(cancellationToken);
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
 
-        var result = new List<EmployeeBonusDto>();
-        long bonusId = 1;
+        var existingBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
 
         foreach (var emp in employees)
         {
             var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
-            var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
-            var deptName = curAssign?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
-            var posName = curAssign?.Position?.PositionName ?? "-";
+            decimal bonusAmount = Math.Round(sal * multiplier, 2);
 
-            // Determine Start/Hire Date and Tenure
-            var contract = emp.Contracts.OrderBy(c => c.StartDate).FirstOrDefault();
-            var startDate = contract?.StartDate ?? curAssign?.EffectiveFrom ?? DateOnly.FromDateTime(emp.CreatedAt);
-
-            var cutoffDate = new DateOnly(targetYear, 12, 31);
-            int totalMonths = 0;
-            if (cutoffDate >= startDate)
+            var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
+            if (existing != null)
             {
-                totalMonths = ((cutoffDate.Year - startDate.Year) * 12) + cutoffDate.Month - startDate.Month;
-                if (cutoffDate.Day >= startDate.Day) totalMonths++;
-            }
-            int years = totalMonths / 12;
-            int remMonths = totalMonths % 12;
-            string tenureText = years > 0 ? $"{years} ปี {remMonths} เดือน" : $"{remMonths} เดือน";
-
-            // Months worked in the target bonus year
-            int monthsWorkedInYear = 12;
-            if (startDate.Year == targetYear)
-            {
-                monthsWorkedInYear = Math.Clamp(12 - startDate.Month + 1, 1, 12);
-            }
-            else if (startDate.Year > targetYear)
-            {
-                monthsWorkedInYear = 0;
-            }
-
-            bool isProrated = request.IsProrated && monthsWorkedInYear < 12;
-            decimal effectiveMultiplier = multiplier;
-            if (isProrated)
-            {
-                effectiveMultiplier = Math.Round(multiplier * (monthsWorkedInYear / 12.0m), 2);
-            }
-            decimal bonusAmount = Math.Round(sal * effectiveMultiplier, 2);
-
-            var primaryBank = emp.BankAccounts.FirstOrDefault(b => b.IsPrimary) ?? emp.BankAccounts.FirstOrDefault();
-
-            result.Add(new EmployeeBonusDto
-            {
-                Id = bonusId++,
-                EmployeeId = emp.Id,
-                EmployeeCode = emp.EmployeeCode,
-                EmployeeName = $"{emp.FirstName} {emp.LastName}",
-                DepartmentName = deptName,
-                PositionName = posName,
-                StartDate = startDate,
-                TenureText = tenureText,
-                MonthsWorkedInYear = monthsWorkedInYear,
-                IsProrated = isProrated,
-                Year = targetYear,
-                BaseSalary = sal,
-                Multiplier = effectiveMultiplier,
-                BonusAmount = bonusAmount,
-                BankCode = primaryBank?.Bank?.BankCode,
-                BankName = primaryBank?.Bank?.BankName,
-                AccountNumber = primaryBank?.AccountNumber,
-                Status = "CALCULATED",
-                StatusText = "คำนวณแล้ว"
-            });
-        }
-
-        return result.OrderBy(r => r.EmployeeCode).ToList();
-    }
-
-    public async Task<int> ApplyBonusesToPeriodAsync(ApplyBonusToPeriodRequest request, CancellationToken cancellationToken = default)
-    {
-        var period = await _context.PayrollPeriods
-            .Include(p => p.Payrolls).ThenInclude(p => p.Details)
-            .FirstOrDefaultAsync(p => p.Id == request.PeriodId, cancellationToken);
-
-        if (period == null)
-            throw new NotFoundException("PayrollPeriod", request.PeriodId);
-
-        // Find or create INC_BONUS PayrollItem
-        var bonusItem = await _context.PayrollItems
-            .FirstOrDefaultAsync(i => i.ItemCode == "INC_BONUS", cancellationToken);
-
-        if (bonusItem == null)
-        {
-            bonusItem = new PayrollItem
-            {
-                ItemCode = "INC_BONUS",
-                ItemName = "โบนัสพิเศษ / เงินรางวัลผลงาน (Performance Bonus)",
-                ItemType = "EARNING",
-                CalculationType = "MANUAL",
-                FormulaValue = "ตามเกณฑ์การจัดสรรประจำปี",
-                IsTaxable = true,
-                IsSocialSecurityCalculated = false,
-                Status = "ACTIVE"
-            };
-            _context.PayrollItems.Add(bonusItem);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
-        var allPayrollItems = await _context.PayrollItems
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-        var earningItemIds = allPayrollItems.Where(i => i.ItemType == "EARNING").Select(i => i.Id).ToHashSet();
-        var deductionItemIds = allPayrollItems.Where(i => i.ItemType == "DEDUCTION").Select(i => i.Id).ToHashSet();
-        earningItemIds.Add(bonusItem.Id);
-
-        var taxItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "DED_TAX");
-        var ssoItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "DED_SSO");
-        var baseItem = allPayrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE_SALARY");
-
-        if (taxItem != null) deductionItemIds.Add(taxItem.Id);
-        if (ssoItem != null) deductionItemIds.Add(ssoItem.Id);
-
-        var taxBrackets = await _context.TaxBrackets
-            .Where(t => t.Status == "ACTIVE")
-            .OrderBy(t => t.IncomeFrom)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        int count = 0;
-        foreach (var b in request.Bonuses)
-        {
-            if (b.BonusAmount <= 0) continue;
-
-            var payroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == b.EmployeeId);
-            if (payroll == null) continue;
-
-            // Check if bonus detail already exists
-            var existingDetail = payroll.Details.FirstOrDefault(d => d.PayrollItemId == bonusItem.Id);
-            if (existingDetail != null)
-            {
-                existingDetail.Amount = b.BonusAmount;
-                existingDetail.CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"โบนัสจัดสรร {b.Multiplier:G29}x" });
+                existing.BaseSalary = sal;
+                existing.Multiplier = multiplier;
+                existing.BonusAmount = bonusAmount;
+                existing.CalculationMode = "MULTIPLIER";
+                existing.Status = "CALCULATED";
+                existing.UpdatedAt = DateTime.UtcNow;
             }
             else
             {
-                payroll.Details.Add(new PayrollDetail
+                _context.EmployeeBonuses.Add(new EmployeeBonus
                 {
-                    PayrollItemId = bonusItem.Id,
-                    Amount = b.BonusAmount,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"โบนัสจัดสรร {b.Multiplier:G29}x" })
+                    EmployeeId = emp.Id,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = multiplier,
+                    BonusAmount = bonusAmount,
+                    CalculationMode = "MULTIPLIER",
+                    Status = "CALCULATED",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 });
             }
-
-            // Calculate Base Salary from base detail
-            var baseDetail = payroll.Details.FirstOrDefault(d => (baseItem != null && d.PayrollItemId == baseItem.Id) || (d.CalculationSource != null && d.CalculationSource.Contains("เงินเดือนประจำ")));
-            decimal baseSal = baseDetail?.Amount ?? (b.Multiplier > 0 ? Math.Round(b.BonusAmount / b.Multiplier, 2) : 0);
-
-            // Keep SSO standard deduction
-            var ssoDetail = payroll.Details.FirstOrDefault(d => ssoItem != null && d.PayrollItemId == ssoItem.Id);
-            decimal ssoAmount = ssoDetail?.Amount ?? Math.Min(baseSal * 0.05m, 750.0m);
-
-            // Progressive Tax Recalculation with bonus
-            decimal annualIncome = (baseSal * 12) + b.BonusAmount;
-            decimal standardExpenses = Math.Min(annualIncome * 0.50m, 100000.0m);
-            decimal personalAllowance = 60000.0m;
-            decimal ssoAllowance = ssoAmount * 12;
-            decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - personalAllowance - ssoAllowance);
-
-            decimal annualTax = 0;
-            if (taxableIncome > 0 && taxBrackets.Count > 0)
-            {
-                foreach (var bracket in taxBrackets)
-                {
-                    if (taxableIncome > bracket.IncomeFrom)
-                    {
-                        decimal upper = bracket.IncomeTo ?? taxableIncome;
-                        decimal bracketTaxable = Math.Min(taxableIncome, upper) - bracket.IncomeFrom;
-                        decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
-                        annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
-                    }
-                }
-            }
-            decimal monthlyTax = Math.Round(annualTax / 12.0m, 2);
-
-            if (taxItem != null)
-            {
-                var taxDetail = payroll.Details.FirstOrDefault(d => d.PayrollItemId == taxItem.Id);
-                if (taxDetail != null)
-                {
-                    taxDetail.Amount = monthlyTax;
-                }
-                else if (monthlyTax > 0)
-                {
-                    payroll.Details.Add(new PayrollDetail
-                    {
-                        PayrollItemId = taxItem.Id,
-                        Amount = monthlyTax,
-                        CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = "ภาษีเงินได้หัก ณ ที่จ่ายรวมโบนัส" })
-                    });
-                }
-            }
-
-            // Recalculate Gross Income (Earnings ONLY) and Deductions (Deductions ONLY)
-            decimal totalGross = payroll.Details
-                .Where(d => earningItemIds.Contains(d.PayrollItemId))
-                .Sum(d => d.Amount);
-
-            decimal totalDeductions = payroll.Details
-                .Where(d => deductionItemIds.Contains(d.PayrollItemId))
-                .Sum(d => d.Amount);
-
-            payroll.TotalGrossIncome = totalGross;
-            payroll.TotalDeductionAmount = totalDeductions;
-            payroll.NetPayableSalary = Math.Max(0, totalGross - totalDeductions);
-            payroll.Status = "CALCULATED";
-
-            count++;
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return count;
+        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
+    }
+
+    public async Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default)
+    {
+        int targetYear = request.Year <= 0 ? 2026 : request.Year;
+
+        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+
+        var existingBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear)
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in request.Items)
+        {
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == item.EmployeeId)?.BaseSalary ?? 35000.0m;
+            decimal bonusAmount = Math.Max(0, item.BonusAmount);
+            decimal multiplier = item.Multiplier ?? (sal > 0 ? Math.Round(bonusAmount / sal, 2) : 0);
+
+            var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == item.EmployeeId);
+            if (existing != null)
+            {
+                existing.BaseSalary = sal;
+                existing.Multiplier = multiplier;
+                existing.BonusAmount = bonusAmount;
+                existing.CalculationMode = request.CalculationMode ?? "MANUAL";
+                existing.Note = item.Note;
+                existing.Status = "APPROVED";
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.EmployeeBonuses.Add(new EmployeeBonus
+                {
+                    EmployeeId = item.EmployeeId,
+                    Year = targetYear,
+                    BaseSalary = sal,
+                    Multiplier = multiplier,
+                    BonusAmount = bonusAmount,
+                    CalculationMode = request.CalculationMode ?? "MANUAL",
+                    Note = item.Note,
+                    Status = "APPROVED",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
     }
 
     #endregion
 
-    #region Payment Workflow
+        #region Payment Workflow
 
     public async Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default)
     {

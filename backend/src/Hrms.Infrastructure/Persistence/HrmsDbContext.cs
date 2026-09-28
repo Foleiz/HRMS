@@ -100,6 +100,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<Payroll> Payrolls => Set<Payroll>();
     public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
+    public DbSet<EmployeeBonus> EmployeeBonuses => Set<EmployeeBonus>();
 
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -1558,6 +1559,29 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.ApprovedByEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeBonus
+        modelBuilder.Entity<EmployeeBonus>(entity =>
+        {
+            entity.ToTable("employee_bonus", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.Property(e => e.BaseSalary).HasColumnName("base_salary").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.Multiplier).HasColumnName("multiplier").HasPrecision(5, 2).IsRequired();
+            entity.Property(e => e.BonusAmount).HasColumnName("bonus_amount").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.CalculationMode).HasColumnName("calculation_mode").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configuration: PayrollItem

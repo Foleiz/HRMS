@@ -445,16 +445,16 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
-    /// บันทึกและนำยอดโบนัสเข้าสู่งวดเงินเดือน
+    /// บันทึกการจัดสรรโบนัสพนักงาน (กำหนดเองรายบุคคล หรือแบบตัวคูณ)
     /// </summary>
-    [HttpPost("bonuses/apply-to-period")]
-    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ApiResponse<int>>> ApplyBonusesToPeriod(
-        [FromBody] ApplyBonusToPeriodRequest request,
+    [HttpPost("bonuses/save")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> SaveEmployeeBonuses(
+        [FromBody] SaveEmployeeBonusesRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _salaryService.ApplyBonusesToPeriodAsync(request, cancellationToken);
-        return Ok(ApiResponse<int>.Ok(result, $"บันทึกโบนัสเข้าสู่งวดเงินเดือนสำเร็จ ({result} คน)"));
+        var result = await _salaryService.SaveEmployeeBonusesAsync(request, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "บันทึกการจัดสรรโบนัสพนักงานสำเร็จ"));
     }
 
     #endregion

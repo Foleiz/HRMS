@@ -22,8 +22,7 @@ import {
   MarkTransferredPayload,
   ConfirmPaymentPayload,
   EmployeeBonus,
-  CalculateBonusPayload,
-  ApplyBonusToPeriodPayload,
+  SaveEmployeeBonusesPayload,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -194,13 +193,13 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async calculateEmployeeBonuses(payload: CalculateBonusPayload): Promise<EmployeeBonus[]> {
+  async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<EmployeeBonus[]> {
     const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/calculate', payload);
     return res.data.data;
   },
 
-  async applyBonusesToPeriod(payload: ApplyBonusToPeriodPayload): Promise<number> {
-    const res = await apiClient.post<ApiResponse<number>>('/salary/bonuses/apply-to-period', payload);
+  async saveEmployeeBonuses(payload: SaveEmployeeBonusesPayload): Promise<EmployeeBonus[]> {
+    const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/save', payload);
     return res.data.data;
   },
 
