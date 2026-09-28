@@ -292,8 +292,8 @@ const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () => void }
         left: '50%',
         bottom: '0.3mm',
         transform: 'translateX(-50%)',
-        height: '10mm',
-        maxWidth: '50mm',
+        height: '9mm',
+        maxWidth: '48mm',
         objectFit: 'contain',
         pointerEvents: 'none',
       }}
@@ -309,7 +309,8 @@ const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = ({ slot
   return (
   <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
     <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
-    <div style={{ padding: '4mm 2mm 1mm 2mm' }}>
+    {/* เว้นระยะด้านบนให้พอสำหรับรูปลายเซ็น ไม่ให้ชนเส้นหัวตาราง */}
+    <div style={{ padding: '9mm 2mm 1mm 2mm' }}>
       <div>
         ลงชื่อ
         <span
