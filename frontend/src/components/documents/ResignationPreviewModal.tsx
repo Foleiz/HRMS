@@ -250,11 +250,18 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
         </div>
 
         {/* Paper Document Preview Area (Scrollable in modal) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/80">
+        <div className="flex-1 overflow-y-auto bg-slate-200/70 py-6 flex justify-center">
+          {/* True A4 paper at 96dpi: 210mm = 794px, 297mm = 1123px */}
           <div
             id="resignation-print-area"
-            className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] px-8 sm:px-14 pt-4 pb-8 sm:pb-14 text-black text-[13.5px] leading-relaxed shadow-sm border border-gray-200 select-text"
-            style={{ fontFamily: "'Prompt', 'Sarabun', 'TH Sarabun New', sans-serif" }}
+            className="bg-white text-black text-[13.5px] leading-relaxed shadow-md border border-gray-300 select-text"
+            style={{
+              width: '794px',
+              minHeight: '1123px',
+              padding: '16px 54px 54px 54px',
+              fontFamily: "'Prompt', 'Sarabun', 'TH Sarabun New', sans-serif",
+              boxSizing: 'border-box',
+            }}
           >
             {/* Company Logo Header */}
             <div className="flex flex-col items-center justify-center pb-2">
@@ -466,29 +473,67 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm 15mm;
+            margin: 0;
           }
-          body * {
-            visibility: hidden !important;
+
+          /* Hide everything */
+          html, body {
+            background: white !important;
           }
-          #resignation-print-area,
-          #resignation-print-area * {
-            visibility: visible !important;
+
+          body > *:not(#__next) {
+            display: none !important;
           }
-          #resignation-print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
+
+          /* Hide all modal UI chrome */
+          .no-print {
+            display: none !important;
+          }
+
+          /* The fixed overlay backdrop — hide */
+          .fixed.inset-0.z-50 > div:first-child {
+            display: none !important;
+          }
+
+          /* Make the modal container not clip content */
+          .fixed.inset-0.z-50,
+          .relative.bg-white.rounded-2xl,
+          .flex-1.overflow-y-auto {
+            overflow: visible !important;
+            position: static !important;
+            display: block !important;
+            max-height: none !important;
+            height: auto !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: white !important;
             padding: 0 !important;
+            margin: 0 !important;
+            width: auto !important;
+          }
+
+          /* The actual A4 document */
+          #resignation-print-area {
+            width: 210mm !important;
+            min-height: 297mm !important;
+            margin: 0 !important;
+            padding: 8mm 18mm 18mm 18mm !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
+            box-sizing: border-box !important;
+            font-size: 10.5pt !important;
+            line-height: 1.6 !important;
           }
-          .no-print {
-            display: none !important;
+
+          #resignation-print-area * {
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
+          }
+
+          #resignation-print-area img {
+            max-height: 45pt !important;
           }
         }
       `}</style>
