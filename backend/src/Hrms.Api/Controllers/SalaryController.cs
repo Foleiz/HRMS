@@ -168,6 +168,20 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
+    /// เพิ่มเกณฑ์และอัตราเงินสมทบกองทุนประกันสังคมใหม่
+    /// </summary>
+    [HttpPost("social-security")]
+    [ProducesResponseType(typeof(ApiResponse<SocialSecurityRateDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<SocialSecurityRateDto>>> CreateSocialSecurityRate(
+        [FromBody] CreateSocialSecurityRateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.CreateSocialSecurityRateAsync(request, cancellationToken);
+        return Ok(ApiResponse<SocialSecurityRateDto>.Ok(result, "เพิ่มเกณฑ์และอัตราเงินสมทบประกันสังคมสำเร็จ"));
+    }
+
+    /// <summary>
     /// อัปเดตอัตราเงินสมทบกองทุนประกันสังคม
     /// </summary>
     [HttpPut("social-security/{id:long}")]
@@ -181,6 +195,18 @@ public class SalaryController : ControllerBase
     {
         var result = await _salaryService.UpdateSocialSecurityRateAsync(id, request, cancellationToken);
         return Ok(ApiResponse<SocialSecurityRateDto>.Ok(result, "อัปเดตอัตราประกันสังคมสำเร็จ"));
+    }
+
+    /// <summary>
+    /// รีเซ็ตอัตราเงินสมทบประกันสังคมเป็นค่ามาตรฐานตามกฎหมาย (5% เพดาน 15,000 บาท)
+    /// </summary>
+    [HttpPost("social-security/reset-defaults")]
+    [ProducesResponseType(typeof(ApiResponse<List<SocialSecurityRateDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<SocialSecurityRateDto>>>> ResetSocialSecurityRatesToDefault(
+        CancellationToken cancellationToken)
+    {
+        var result = await _salaryService.ResetSocialSecurityRatesToDefaultAsync(cancellationToken);
+        return Ok(ApiResponse<List<SocialSecurityRateDto>>.Ok(result, "รีเซ็ตอัตราประกันสังคมเป็นค่ามาตรฐานตามกฎหมายสำเร็จ"));
     }
 
     #endregion

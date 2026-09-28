@@ -82,8 +82,18 @@ export const salaryService = {
     return res.data.data;
   },
 
+  async createSocialSecurityRate(payload: UpdateSocialSecurityRatePayload): Promise<SocialSecurityRate> {
+    const res = await apiClient.post<ApiResponse<SocialSecurityRate>>('/salary/social-security', payload);
+    return res.data.data;
+  },
+
   async updateSocialSecurityRate(id: number, payload: UpdateSocialSecurityRatePayload): Promise<SocialSecurityRate> {
     const res = await apiClient.put<ApiResponse<SocialSecurityRate>>(`/salary/social-security/${id}`, payload);
+    return res.data.data;
+  },
+
+  async resetSocialSecurityRatesToDefault(): Promise<SocialSecurityRate[]> {
+    const res = await apiClient.post<ApiResponse<SocialSecurityRate[]>>('/salary/social-security/reset-defaults');
     return res.data.data;
   },
 

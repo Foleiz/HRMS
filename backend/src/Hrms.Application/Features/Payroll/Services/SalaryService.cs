@@ -408,27 +408,43 @@ public class SalaryService : ISalaryService
             throw new NotFoundException("SocialSecurityRate", id);
         }
 
-        if (request.EmployeeContributionPercent < 0 || request.EmployeeContributionPercent > 1)
+        decimal empPercent = request.EmployeeContributionPercent;
+        if (empPercent > 1.0m)
         {
-            throw new BusinessRuleException("อัตราสมทบผู้ประกันตนต้องอยู่ระหว่าง 0 ถึง 1 (เช่น 0.05)");
+            empPercent = Math.Round(empPercent / 100.0m, 4);
         }
-        if (request.EmployerContributionPercent < 0 || request.EmployerContributionPercent > 1)
+
+        decimal compPercent = request.EmployerContributionPercent;
+        if (compPercent > 1.0m)
         {
-            throw new BusinessRuleException("อัตราสมทบนายจ้างต้องอยู่ระหว่าง 0 ถึง 1 (เช่น 0.05)");
+            compPercent = Math.Round(compPercent / 100.0m, 4);
+        }
+
+        if (empPercent < 0 || empPercent > 1.0m)
+        {
+            throw new BusinessRuleException("อัตราสมทบผู้ประกันตนต้องอยู่ระหว่าง 0 ถึง 1 หรือ 0% ถึง 100% (เช่น 5% หรือ 0.05)");
+        }
+        if (compPercent < 0 || compPercent > 1.0m)
+        {
+            throw new BusinessRuleException("อัตราสมทบนายจ้างต้องอยู่ระหว่าง 0 ถึง 1 หรือ 0% ถึง 100% (เช่น 5% หรือ 0.05)");
+        }
+        if (request.MinWageBaseAmount < 0)
+        {
+            throw new BusinessRuleException("ฐานค่าจ้างขั้นต่ำต้องไม่ติดลบ");
         }
         if (request.MaxWageBaseAmount < request.MinWageBaseAmount)
         {
-            throw new BusinessRuleException("เพดานค่าจ้างสูงสุดต้องมากกว่าฐานค่าจ้างต่ำสุด");
+            throw new BusinessRuleException("เพดานค่าจ้างสูงสุดต้องมากกว่าหรือเท่ากับฐานค่าจ้างขั้นต่ำ");
         }
 
-        entity.RateName = request.RateName;
-        entity.EmployeeContributionPercent = request.EmployeeContributionPercent;
-        entity.EmployerContributionPercent = request.EmployerContributionPercent;
+        entity.RateName = string.IsNullOrWhiteSpace(request.RateName) ? "อัตราเงินสมทบกองทุนประกันสังคม" : request.RateName.Trim();
+        entity.EmployeeContributionPercent = empPercent;
+        entity.EmployerContributionPercent = compPercent;
         entity.MinWageBaseAmount = request.MinWageBaseAmount;
         entity.MaxWageBaseAmount = request.MaxWageBaseAmount;
         entity.EffectiveFrom = request.EffectiveFrom;
         entity.EffectiveTo = request.EffectiveTo;
-        entity.Status = request.Status;
+        entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper();
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -444,6 +460,92 @@ public class SalaryService : ISalaryService
             EffectiveTo = entity.EffectiveTo,
             Status = entity.Status
         };
+    }
+
+    public async Task<SocialSecurityRateDto> CreateSocialSecurityRateAsync(CreateSocialSecurityRateRequest request, CancellationToken cancellationToken = default)
+    {
+        decimal empPercent = request.EmployeeContributionPercent;
+        if (empPercent > 1.0m)
+        {
+            empPercent = Math.Round(empPercent / 100.0m, 4);
+        }
+
+        decimal compPercent = request.EmployerContributionPercent;
+        if (compPercent > 1.0m)
+        {
+            compPercent = Math.Round(compPercent / 100.0m, 4);
+        }
+
+        if (empPercent < 0 || empPercent > 1.0m)
+        {
+            throw new BusinessRuleException("อัตราสมทบผู้ประกันตนต้องอยู่ระหว่าง 0 ถึง 1 หรือ 0% ถึง 100% (เช่น 5% หรือ 0.05)");
+        }
+        if (compPercent < 0 || compPercent > 1.0m)
+        {
+            throw new BusinessRuleException("อัตราสมทบนายจ้างต้องอยู่ระหว่าง 0 ถึง 1 หรือ 0% ถึง 100% (เช่น 5% หรือ 0.05)");
+        }
+        if (request.MinWageBaseAmount < 0)
+        {
+            throw new BusinessRuleException("ฐานค่าจ้างขั้นต่ำต้องไม่ติดลบ");
+        }
+        if (request.MaxWageBaseAmount < request.MinWageBaseAmount)
+        {
+            throw new BusinessRuleException("เพดานค่าจ้างสูงสุดต้องมากกว่าหรือเท่ากับฐานค่าจ้างขั้นต่ำ");
+        }
+
+        var entity = new SocialSecurityRate
+        {
+            RateName = string.IsNullOrWhiteSpace(request.RateName) ? "อัตราเงินสมทบกองทุนประกันสังคม" : request.RateName.Trim(),
+            EmployeeContributionPercent = empPercent,
+            EmployerContributionPercent = compPercent,
+            MinWageBaseAmount = request.MinWageBaseAmount,
+            MaxWageBaseAmount = request.MaxWageBaseAmount,
+            EffectiveFrom = request.EffectiveFrom == default ? new DateOnly(DateTime.UtcNow.Year, 1, 1) : request.EffectiveFrom,
+            EffectiveTo = request.EffectiveTo,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper()
+        };
+
+        _context.SocialSecurityRates.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new SocialSecurityRateDto
+        {
+            Id = entity.Id,
+            RateName = entity.RateName,
+            EmployeeContributionPercent = entity.EmployeeContributionPercent,
+            EmployerContributionPercent = entity.EmployerContributionPercent,
+            MinWageBaseAmount = entity.MinWageBaseAmount,
+            MaxWageBaseAmount = entity.MaxWageBaseAmount,
+            EffectiveFrom = entity.EffectiveFrom,
+            EffectiveTo = entity.EffectiveTo,
+            Status = entity.Status
+        };
+    }
+
+    public async Task<List<SocialSecurityRateDto>> ResetSocialSecurityRatesToDefaultAsync(CancellationToken cancellationToken = default)
+    {
+        var existing = await _context.SocialSecurityRates.ToListAsync(cancellationToken);
+        if (existing.Count > 0)
+        {
+            _context.SocialSecurityRates.RemoveRange(existing);
+        }
+
+        var defaultRate = new SocialSecurityRate
+        {
+            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)",
+            EmployeeContributionPercent = 0.0500m,
+            EmployerContributionPercent = 0.0500m,
+            MinWageBaseAmount = 1650.00m,
+            MaxWageBaseAmount = 15000.00m,
+            EffectiveFrom = new DateOnly(2024, 1, 1),
+            EffectiveTo = null,
+            Status = "ACTIVE"
+        };
+
+        _context.SocialSecurityRates.Add(defaultRate);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetSocialSecurityRatesAsync(cancellationToken);
     }
 
     #endregion
