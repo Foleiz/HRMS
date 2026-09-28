@@ -23,6 +23,8 @@ import {
   ConfirmPaymentPayload,
   EmployeeBonus,
   SaveEmployeeBonusesPayload,
+  AddPayrollAdjustmentPayload,
+  BonusPayoutResult,
 } from '@/types/payroll';
 
 export const salaryService = {
@@ -183,6 +185,24 @@ export const salaryService = {
 
   async deletePayrollPeriod(periodId: number): Promise<void> {
     await apiClient.delete(`/salary/periods/${periodId}`);
+  },
+
+  /** เพิ่มรายการรายได้/รายหักแบบระบุเองให้พนักงานรายบุคคล (ระบบคำนวณใหม่ทั้งรอบ) */
+  async addPayrollAdjustment(payrollId: number, payload: AddPayrollAdjustmentPayload): Promise<PayrollDetailItem[]> {
+    const res = await apiClient.post<ApiResponse<PayrollDetailItem[]>>(`/salary/payrolls/${payrollId}/adjustments`, payload);
+    return res.data.data;
+  },
+
+  /** ลบรายการที่ HR เพิ่มเอง (ระบบคำนวณใหม่ทั้งรอบ) */
+  async deletePayrollAdjustment(payrollId: number, detailId: number): Promise<PayrollDetailItem[]> {
+    const res = await apiClient.delete<ApiResponse<PayrollDetailItem[]>>(`/salary/payrolls/${payrollId}/adjustments/${detailId}`);
+    return res.data.data;
+  },
+
+  /** ดึงโบนัสที่อนุมัติแล้วของปีที่เลือกเข้ามาจ่ายพร้อมรอบเงินเดือน */
+  async addBonusPayout(periodId: number, year: number): Promise<BonusPayoutResult> {
+    const res = await apiClient.post<ApiResponse<BonusPayoutResult>>(`/salary/periods/${periodId}/bonus-payout`, { year });
+    return res.data.data;
   },
 
   // Bank Transfer, Tax/SSO Summary, Bonus

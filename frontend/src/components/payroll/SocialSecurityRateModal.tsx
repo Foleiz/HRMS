@@ -37,7 +37,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
   const [employeePercent, setEmployeePercent] = useState<number>(5.0);
   const [employerPercent, setEmployerPercent] = useState<number>(5.0);
   const [minWageBase, setMinWageBase] = useState<number>(1650);
-  const [maxWageBase, setMaxWageBase] = useState<number>(15000);
+  const [maxWageBase, setMaxWageBase] = useState<number>(17500);
   const [effectiveFrom, setEffectiveFrom] = useState<string>('2024-01-01');
   const [effectiveTo, setEffectiveTo] = useState<string>('');
   const [status, setStatus] = useState<string>('ACTIVE');
@@ -60,7 +60,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
             : Number(rate.employerContributionPercent)
         );
         setMinWageBase(Number(rate.minWageBaseAmount) || 1650);
-        setMaxWageBase(Number(rate.maxWageBaseAmount) || 15000);
+        setMaxWageBase(Number(rate.maxWageBaseAmount) || 17500);
         setEffectiveFrom(rate.effectiveFrom || '2024-01-01');
         setEffectiveTo(rate.effectiveTo || '');
         setStatus(rate.status || 'ACTIVE');
@@ -70,7 +70,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
         setEmployeePercent(5.0);
         setEmployerPercent(5.0);
         setMinWageBase(1650);
-        setMaxWageBase(15000);
+        setMaxWageBase(17500);
         setEffectiveFrom(new Date().toISOString().slice(0, 10));
         setEffectiveTo('');
         setStatus('ACTIVE');
@@ -448,11 +448,11 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-sm">ยืนยันรีเซ็ตค่ามาตรฐาน?</h3>
-                <p className="text-xs text-slate-500">คืนค่าเป็นอัตรา 5% เพดาน 15,000 บาท</p>
+                <p className="text-xs text-slate-500">คืนค่าเป็นอัตรา 5% ตามกฎหมาย (เพดาน 17,500 บาท ตั้งแต่ปี 2569)</p>
               </div>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              ระบบจะรีเซ็ตอัตราสมทบผู้ประกันตน 5% นายจ้าง 5% ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท/เดือน) ตามกฎหมายประกันสังคมมาตรฐาน
+              ระบบจะรีเซ็ตอัตราสมทบผู้ประกันตน 5% นายจ้าง 5% โดยเก็บประวัติ 2 ช่วง: ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท) ถึง 31 ธ.ค. 2568 และ 1,650 - 17,500 บาท (สูงสุด 875 บาท) ตั้งแต่ 1 ม.ค. 2569
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button

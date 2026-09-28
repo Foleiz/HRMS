@@ -45,6 +45,11 @@ public interface ISalaryService
     Task<List<PayrollRecordDto>> CalculatePayrollForPeriodAsync(long periodId, CancellationToken cancellationToken = default);
     Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default);
 
+    // Manual adjustments & bonus payout (รายการที่ HR เพิ่มเองรายบุคคล / โบนัสประจำปี)
+    Task<List<PayrollDetailItemDto>> AddPayrollAdjustmentAsync(long payrollId, AddPayrollAdjustmentRequest request, CancellationToken cancellationToken = default);
+    Task<List<PayrollDetailItemDto>> DeletePayrollAdjustmentAsync(long payrollId, long detailId, CancellationToken cancellationToken = default);
+    Task<BonusPayoutResultDto> AddApprovedBonusesToPeriodAsync(long periodId, AddBonusPayoutRequest request, CancellationToken cancellationToken = default);
+
     // Bank Transfer, Tax/SSO Reports, Bonus & Payslip
     Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default);
     Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default);

@@ -48,6 +48,10 @@ public class PayrollRecordDto
     public decimal? TotalGrossIncome { get; set; }
     public decimal? TotalDeductionAmount { get; set; }
     public decimal? NetPayableSalary { get; set; }
+    /// <summary>เงินสมทบประกันสังคมส่วนลูกจ้าง (จากผลคำนวณจริง)</summary>
+    public decimal? SsoAmount { get; set; }
+    /// <summary>ภาษีหัก ณ ที่จ่าย ภ.ง.ด.1 (จากผลคำนวณจริง)</summary>
+    public decimal? TaxAmount { get; set; }
     public string Status { get; set; } = "CALCULATED";
     public string StatusText { get; set; } = "คำนวณแล้ว";
     // Individual Payment Tracking
@@ -62,7 +66,6 @@ public class PayrollRecordDto
     // HR Pre-Payroll Verification Fields
     public decimal LeaveDays { get; set; }
     public string? LeaveSummary { get; set; }
-    public decimal OvertimeHours { get; set; }
     public string? AdjustmentsSummary { get; set; }
     public string InputStatus { get; set; } = "COMPLETE";
     public string InputStatusText { get; set; } = "ครบแล้ว";
@@ -85,6 +88,35 @@ public class PayrollDetailItemDto
     public decimal? Rate { get; set; }
     public decimal Amount { get; set; }
     public string? Subtext { get; set; }
+    /// <summary>true = รายการที่ HR เพิ่มเอง (ลบ/แก้ได้ ในสถานะ DRAFT/REVIEW)</summary>
+    public bool IsManual { get; set; }
+    /// <summary>MANUAL หรือ BONUS</summary>
+    public string? Source { get; set; }
+    public string? Note { get; set; }
+}
+
+/// <summary>เพิ่มรายการรายได้/รายหักแบบระบุเองให้พนักงานรายบุคคลในรอบเงินเดือน</summary>
+public class AddPayrollAdjustmentRequest
+{
+    public long PayrollItemId { get; set; }
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
+}
+
+/// <summary>ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้</summary>
+public class AddBonusPayoutRequest
+{
+    public int Year { get; set; }
+}
+
+public class BonusPayoutResultDto
+{
+    public int AddedCount { get; set; }
+    public decimal AddedAmount { get; set; }
+    public int AlreadyPaidCount { get; set; }
+    /// <summary>รหัสพนักงานที่ไม่อยู่ในรอบนี้ (เช่น ลาออกแล้ว) จึงไม่ได้ใส่โบนัสให้</summary>
+    public List<string> SkippedEmployeeCodes { get; set; } = new();
+    public List<PayrollRecordDto> Payrolls { get; set; } = new();
 }
 
 public class UpdatePeriodStatusRequest

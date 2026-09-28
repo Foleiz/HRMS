@@ -191,6 +191,7 @@ public class SalaryController : ControllerBase
         [FromBody] CreateSocialSecurityRateRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.CreateSocialSecurityRateAsync(request, cancellationToken);
         return Ok(ApiResponse<SocialSecurityRateDto>.Ok(result, "เพิ่มเกณฑ์และอัตราเงินสมทบประกันสังคมสำเร็จ"));
     }
@@ -213,13 +214,14 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
-    /// รีเซ็ตอัตราเงินสมทบประกันสังคมเป็นค่ามาตรฐานตามกฎหมาย (5% เพดาน 15,000 บาท)
+    /// รีเซ็ตอัตราเงินสมทบประกันสังคมเป็นค่ามาตรฐานตามกฎหมาย (5% เพดาน 15,000 บาท ถึงปี 2568 / 17,500 บาท ตั้งแต่ปี 2569)
     /// </summary>
     [HttpPost("social-security/reset-defaults")]
     [ProducesResponseType(typeof(ApiResponse<List<SocialSecurityRateDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<SocialSecurityRateDto>>>> ResetSocialSecurityRatesToDefault(
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.ResetSocialSecurityRatesToDefaultAsync(cancellationToken);
         return Ok(ApiResponse<List<SocialSecurityRateDto>>.Ok(result, "รีเซ็ตอัตราประกันสังคมเป็นค่ามาตรฐานตามกฎหมายสำเร็จ"));
     }
@@ -444,6 +446,51 @@ public class SalaryController : ControllerBase
         EnsureCanSetPeriodStatus(request.Status);
         var result = await _salaryService.UpdatePayrollPeriodStatusAsync(id, request.Status, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "อัปเดตสถานะรอบเงินเดือนสำเร็จ"));
+    }
+
+    /// <summary>
+    /// เพิ่มรายการรายได้/รายหักแบบระบุเอง ให้พนักงานรายบุคคล (เฉพาะรอบ DRAFT/REVIEW) แล้วคำนวณใหม่
+    /// </summary>
+    [HttpPost("payrolls/{id:long}/adjustments")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> AddPayrollAdjustment(
+        long id,
+        [FromBody] AddPayrollAdjustmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.AddPayrollAdjustmentAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "เพิ่มรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ลบรายการที่ HR เพิ่มเอง แล้วคำนวณใหม่
+    /// </summary>
+    [HttpDelete("payrolls/{id:long}/adjustments/{detailId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> DeletePayrollAdjustment(
+        long id,
+        long detailId,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.DeletePayrollAdjustmentAsync(id, detailId, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "ลบรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้ (ป้องกันการจ่ายซ้ำ)
+    /// </summary>
+    [HttpPost("periods/{id:long}/bonus-payout")]
+    [ProducesResponseType(typeof(ApiResponse<BonusPayoutResultDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<BonusPayoutResultDto>>> AddBonusPayout(
+        long id,
+        [FromBody] AddBonusPayoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.AddApprovedBonusesToPeriodAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<BonusPayoutResultDto>.Ok(result, $"เพิ่มโบนัสเข้ารอบเงินเดือน {result.AddedCount} รายการ"));
     }
 
     /// <summary>

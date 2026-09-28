@@ -193,6 +193,10 @@ export interface PayrollRecord {
   totalGrossIncome?: number | null;
   totalDeductionAmount?: number | null;
   netPayableSalary?: number | null;
+  /** เงินสมทบประกันสังคมส่วนลูกจ้าง (จากผลคำนวณจริง) */
+  ssoAmount?: number | null;
+  /** ภาษีหัก ณ ที่จ่าย ภ.ง.ด.1 (จากผลคำนวณจริง) */
+  taxAmount?: number | null;
   status: 'CALCULATED' | 'REVIEW' | 'DRAFT' | string;
   statusText: string;
   // Individual Payment Tracking
@@ -206,7 +210,6 @@ export interface PayrollRecord {
   // HR Pre-Payroll Verification Fields
   leaveDays?: number;
   leaveSummary?: string | null;
-  overtimeHours?: number;
   adjustmentsSummary?: string | null;
   inputStatus?: 'COMPLETE' | 'PENDING_CHECK' | string;
   inputStatusText?: string;
@@ -227,7 +230,28 @@ export interface PayrollDetailItem {
   rate?: number | null;
   amount: number;
   subtext?: string | null;
-}export interface BankTransferItem {
+  /** true = รายการที่ HR เพิ่มเอง (ลบได้ในสถานะ DRAFT/REVIEW) */
+  isManual?: boolean;
+  /** MANUAL หรือ BONUS */
+  source?: 'MANUAL' | 'BONUS' | string | null;
+  note?: string | null;
+}
+
+export interface AddPayrollAdjustmentPayload {
+  payrollItemId: number;
+  amount: number;
+  note?: string;
+}
+
+export interface BonusPayoutResult {
+  addedCount: number;
+  addedAmount: number;
+  alreadyPaidCount: number;
+  skippedEmployeeCodes: string[];
+  payrolls: PayrollRecord[];
+}
+
+export interface BankTransferItem {
   employeeId: number;
   employeeCode: string;
   employeeName: string;

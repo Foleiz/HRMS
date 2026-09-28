@@ -1,23 +1,90 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
-import { PayrollRecord, PayrollDetailItem } from '@/types/payroll';
+import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   record: PayrollRecord | null;
+  /** แก้ไขได้เมื่อรอบอยู่ในสถานะ DRAFT/REVIEW และผู้ใช้เป็น HR */
+  canEdit?: boolean;
+  /** รายการรายได้/รายหักทั้งหมด (ใช้เลือกเพิ่มรายการ manual) */
+  payrollItems?: PayrollItem[];
+  /** เรียกหลังเพิ่ม/ลบรายการสำเร็จ (ระบบคำนวณใหม่ทั้งรอบ) */
+  onChanged?: () => void;
 }
+
+// รายการที่ระบบคำนวณเอง — ไม่ให้เลือกเพิ่มแบบ manual
+const SYSTEM_ITEM_CODES = ['INC_BASE', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
+const CORE_TEMPLATES = ['BASE_SALARY', 'SSO_STANDARD', 'TAX_STANDARD', 'PRORATED_DAYS'];
 
 export const PayrollDetailDrawer: React.FC<Props> = ({
   isOpen,
   onClose,
   record,
+  canEdit = false,
+  payrollItems = [],
+  onChanged,
 }) => {
   const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState<PayrollDetailItem[]>([]);
+  const [newItemId, setNewItemId] = useState<string>('');
+  const [newAmount, setNewAmount] = useState<string>('');
+  const [newNote, setNewNote] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectableItems = payrollItems.filter(
+    (i) =>
+      i.status === 'ACTIVE' &&
+      !SYSTEM_ITEM_CODES.includes(i.itemCode) &&
+      !CORE_TEMPLATES.includes((i.formulaTemplate || '').toUpperCase())
+  );
+
+  const handleAdd = async () => {
+    if (!record) return;
+    const amount = Number(newAmount);
+    if (!newItemId || !Number.isFinite(amount) || amount <= 0) {
+      setError('กรุณาเลือกรายการและระบุจำนวนเงินมากกว่า 0');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await salaryService.addPayrollAdjustment(record.id, {
+        payrollItemId: Number(newItemId),
+        amount,
+        note: newNote.trim() || undefined,
+      });
+      setDetails(updated);
+      setNewItemId('');
+      setNewAmount('');
+      setNewNote('');
+      onChanged?.();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (detailId: number) => {
+    if (!record) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await salaryService.deletePayrollAdjustment(record.id, detailId);
+      setDetails(updated);
+      onChanged?.();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'ลบรายการไม่สำเร็จ');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && record) {
@@ -33,6 +100,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
     } else {
       setDetails([]);
     }
+    setError(null);
   }, [isOpen, record]);
 
   if (!isOpen || !record) return null;
@@ -80,13 +148,21 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     earnings.map((item) => (
                       <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
                         <div>
-                          <div className="font-medium text-slate-800">{item.itemName}</div>
+                          <div className="font-medium text-slate-800">
+                            {item.itemName}
+                            {item.isManual && <ManualBadge source={item.source} />}
+                          </div>
                           {item.subtext && (
                             <div className="text-[11px] text-slate-400 mt-0.5">{item.subtext}</div>
                           )}
                         </div>
-                        <div className="font-semibold text-slate-900 font-mono">
-                          ฿{item.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                        <div className="flex items-center gap-2">
+                          <div className="font-semibold text-slate-900 font-mono">
+                            ฿{item.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          </div>
+                          {canEdit && item.isManual && (
+                            <DeleteButton disabled={saving} onClick={() => handleDelete(item.id)} />
+                          )}
                         </div>
                       </div>
                     ))
@@ -108,13 +184,21 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       return (
                         <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
                           <div>
-                            <div className="font-medium text-slate-800">{item.itemName}</div>
+                            <div className="font-medium text-slate-800">
+                              {item.itemName}
+                              {item.isManual && <ManualBadge source={item.source} />}
+                            </div>
                             {item.subtext && (
                               <div className="text-[11px] text-slate-400 mt-0.5">{item.subtext}</div>
                             )}
                           </div>
-                          <div className="font-semibold text-slate-900 font-mono">
-                            -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-slate-900 font-mono">
+                              -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            </div>
+                            {canEdit && item.isManual && (
+                              <DeleteButton disabled={saving} onClick={() => handleDelete(item.id)} />
+                            )}
                           </div>
                         </div>
                       );
@@ -137,6 +221,65 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                 </span>
               </div>
 
+              {/* เพิ่มรายการรายได้/รายหักแบบระบุเอง (เฉพาะรอบ DRAFT/REVIEW) */}
+              {canEdit && (
+                <div className="border border-dashed border-slate-300 rounded-xl p-4 space-y-3 bg-slate-50/50">
+                  <h4 className="text-xs font-bold text-slate-600">เพิ่มรายการรายได้ / รายหัก (ระบุเอง)</h4>
+                  <select
+                    value={newItemId}
+                    onChange={(e) => setNewItemId(e.target.value)}
+                    disabled={saving}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                  >
+                    <option value="">-- เลือกรายการ --</option>
+                    <optgroup label="รายได้">
+                      {selectableItems.filter((i) => i.itemType === 'EARNING').map((i) => (
+                        <option key={i.id} value={i.id}>{i.itemName} ({i.itemCode})</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="รายการหัก">
+                      {selectableItems.filter((i) => i.itemType === 'DEDUCTION').map((i) => (
+                        <option key={i.id} value={i.id}>{i.itemName} ({i.itemCode})</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="จำนวนเงิน (บาท)"
+                      value={newAmount}
+                      onChange={(e) => setNewAmount(e.target.value)}
+                      disabled={saving}
+                      className="w-36 h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="หมายเหตุ (แสดงบนสลิป)"
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      disabled={saving}
+                      maxLength={200}
+                      className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                    />
+                  </div>
+                  {error && <p className="text-[11px] text-rose-600">{error}</p>}
+                  <button
+                    onClick={handleAdd}
+                    disabled={saving}
+                    className="w-full h-9 inline-flex items-center justify-center gap-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    <span>{saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}</span>
+                  </button>
+                  <p className="text-[10px] text-slate-400">
+                    ประกันสังคม ภาษี และยอดสุทธิ จะถูกคำนวณใหม่ตามการตั้งค่า &quot;คิดภาษี / คิดประกันสังคม&quot; ของรายการที่เลือก
+                  </p>
+                </div>
+              )}
+              {!canEdit && error && <p className="text-[11px] text-rose-600">{error}</p>}
+
 
             </>
           )}
@@ -145,3 +288,20 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
     </div>
   );
 };
+
+const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => (
+  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle">
+    {source === 'BONUS' ? 'โบนัส' : 'ระบุเอง'}
+  </span>
+);
+
+const DeleteButton: React.FC<{ onClick: () => void; disabled?: boolean }> = ({ onClick, disabled }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title="ลบรายการนี้"
+    className="w-6 h-6 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50 cursor-pointer disabled:opacity-40"
+  >
+    <Trash2 className="w-3.5 h-3.5" />
+  </button>
+);
