@@ -42,7 +42,8 @@ import { WorkflowSimulatorView } from './WorkflowSimulatorView';
 type SubTab = 'flows' | 'simulator';
 
 const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
-const APPROVER_TYPE_OPTIONS = Object.keys(APPROVER_TYPE_LABELS);
+/** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
+const APPROVER_TYPE_OPTIONS = ['EMPLOYEE', 'ROLE'];
 
 // ตัวช่วยป้ายชื่อประเภทเอกสารและโทนสี
 const getDocTypeBadge = (docType: string) => {
@@ -97,7 +98,7 @@ const MAX_APPROVAL_STEPS = 4;
 
 const emptyStep = (stepNo: number): ApprovalStepInput => ({
   stepNo,
-  approverType: 'MANAGER',
+  approverType: 'ROLE',
   approverEmployeeId: null,
   approverRoleId: null,
   isRequired: true,
@@ -314,34 +315,29 @@ export const ApprovalFlowsTab: React.FC = () => {
     });
   };
 
-  // Preset Template Applicator
+  // Preset Template Applicator — ทุกขั้นเป็นแบบ "ระบุตามบทบาท" (จับคู่บทบาท HR / CEO ให้อัตโนมัติถ้ามีในระบบ)
+  const findRoleId = (codes: string[]): number | null =>
+    roles.find((r) => codes.includes((r.roleCode || '').toUpperCase()) && r.status !== 'INACTIVE')?.id ?? null;
+
+  const roleStep = (stepNo: number, approverRoleId: number | null): ApprovalStepInput => ({
+    stepNo,
+    approverType: 'ROLE',
+    approverEmployeeId: null,
+    approverRoleId,
+    isRequired: true,
+  });
+
   const applyPreset = (presetType: 'TWO_TIER' | 'THREE_TIER' | 'DIRECT_HR') => {
+    const hrRoleId = findRoleId(['HR_MGR', 'HR_ADMIN', 'HR']);
+    const ceoRoleId = findRoleId(['CEO', 'EXECUTIVE']);
     if (presetType === 'TWO_TIER') {
-      setForm((f) => ({
-        ...f,
-        steps: [
-          { stepNo: 1, approverType: 'MANAGER', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-          { stepNo: 2, approverType: 'HR', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-        ],
-      }));
-      success('ปรับใช้แม่แบบ 2 ลำดับขั้นสำเร็จ');
+      setForm((f) => ({ ...f, steps: [roleStep(1, null), roleStep(2, hrRoleId)] }));
+      success('ปรับใช้แม่แบบ 2 ลำดับขั้นสำเร็จ กรุณาเลือกบทบาทในขั้นที่ยังว่าง');
     } else if (presetType === 'THREE_TIER') {
-      setForm((f) => ({
-        ...f,
-        steps: [
-          { stepNo: 1, approverType: 'MANAGER', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-          { stepNo: 2, approverType: 'DEPARTMENT_HEAD', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-          { stepNo: 3, approverType: 'CEO', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-        ],
-      }));
-      success('ปรับใช้แม่แบบ 3 ลำดับขั้นสำเร็จ');
+      setForm((f) => ({ ...f, steps: [roleStep(1, null), roleStep(2, null), roleStep(3, ceoRoleId)] }));
+      success('ปรับใช้แม่แบบ 3 ลำดับขั้นสำเร็จ กรุณาเลือกบทบาทในขั้นที่ยังว่าง');
     } else if (presetType === 'DIRECT_HR') {
-      setForm((f) => ({
-        ...f,
-        steps: [
-          { stepNo: 1, approverType: 'HR', approverEmployeeId: null, approverRoleId: null, isRequired: true },
-        ],
-      }));
+      setForm((f) => ({ ...f, steps: [roleStep(1, hrRoleId)] }));
       success('ปรับใช้แม่แบบฝ่ายทรัพยากรบุคคลโดยตรงสำเร็จ');
     }
   };
@@ -365,6 +361,10 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
 
     for (const step of form.steps) {
+      if (!APPROVER_TYPE_OPTIONS.includes(step.approverType)) {
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเปลี่ยนประเภทผู้อนุมัติเป็น "ระบุตัวบุคคล" หรือ "ระบุตามบทบาท"`);
+        return;
+      }
       if (step.approverType === 'EMPLOYEE' && !step.approverEmployeeId) {
         error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกพนักงานผู้มีอำนาจอนุมัติ`);
         return;
@@ -730,7 +730,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           สายอนุมัติ 2 ขั้นตอน
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          หัวหน้างานตรง ➔ ฝ่ายทรัพยากรบุคคล
+                          บทบาทหัวหน้างาน ➔ บทบาทฝ่ายบุคคล
                         </div>
                       </button>
 
@@ -743,7 +743,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           สายอนุมัติ 3 ขั้นตอน
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          หัวหน้างาน ➔ หัวหน้าแผนก ➔ ผู้บริหารสูงสุด
+                          บทบาทหัวหน้างาน ➔ บทบาทหัวหน้าแผนก ➔ บทบาทผู้บริหาร
                         </div>
                       </button>
 
@@ -756,7 +756,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           ฝ่ายบุคคลตรง
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          ฝ่ายทรัพยากรบุคคลพิจารณาตรง
+                          บทบาทฝ่ายบุคคลพิจารณาตรง
                         </div>
                       </button>
                     </div>
@@ -1026,6 +1026,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                               }}
                               className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
+                              {!APPROVER_TYPE_OPTIONS.includes(step.approverType) && (
+                                <option value={step.approverType} disabled>
+                                  {APPROVER_TYPE_LABELS[step.approverType] ?? step.approverType} (รูปแบบเดิม — กรุณาเปลี่ยน)
+                                </option>
+                              )}
                               {APPROVER_TYPE_OPTIONS.map((at) => (
                                 <option key={at} value={at}>
                                   {APPROVER_TYPE_LABELS[at]}

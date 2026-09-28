@@ -8,6 +8,7 @@ import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { approvalService } from '@/services/approvalService';
 import type { ApprovalTimeline } from '@/types/leave';
+import { APPROVER_TYPE_LABELS } from '@/types/approval';
 
 // ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
 const sarabun = Sarabun({
@@ -231,31 +232,24 @@ export interface ApprovalSlot {
   signedDate?: string | null;
 }
 
-/** หัวข้อช่องลงนามตามประเภทผู้อนุมัติในสายการอนุมัติ */
-const getSlotHeading = (slot: ApprovalSlot, isLast: boolean): string => {
-  switch ((slot.approverType || '').toUpperCase()) {
-    case 'MANAGER':
-      return 'ผู้บังคับบัญชาพิจารณาเห็นชอบ';
-    case 'DEPARTMENT_HEAD':
-      return 'ผู้จัดการแผนกพิจารณาเห็นชอบ';
-    case 'DIVISION_HEAD':
-      return 'ผู้จัดการฝ่ายพิจารณาเห็นชอบ';
-    case 'HR':
-      return 'ฝ่ายบุคคลรับทราบเพื่อดำเนินการ';
-    case 'CEO':
-      return 'อนุมัติโดยกรรมการผู้จัดการ';
-    default: {
-      const label = slot.approverLabel?.trim() || 'ผู้มีอำนาจอนุมัติ';
-      return isLast ? `อนุมัติโดย${label}` : `${label}พิจารณาเห็นชอบ`;
-    }
+/**
+ * หัวข้อช่องลงนาม = ชื่อตามที่ตั้งค่าในสายการอนุมัติตรง ๆ
+ * - ระบุตามบทบาท → ชื่อบทบาท, ระบุตัวบุคคล → ชื่อพนักงาน
+ * - ประเภทแบบเดิม (หัวหน้าแผนก, หัวหน้าฝ่าย ฯลฯ) → ชื่อประเภทตามหน้าตั้งค่า
+ */
+const getSlotHeading = (slot: ApprovalSlot): string => {
+  const type = (slot.approverType || '').toUpperCase();
+  if (type === 'ROLE' || type === 'EMPLOYEE') {
+    return slot.approverLabel?.trim() || APPROVER_TYPE_LABELS[type] || type;
   }
+  return APPROVER_TYPE_LABELS[type] || slot.approverLabel?.trim() || type;
 };
 
 /** ช่องลงนามเริ่มต้น (ใช้เมื่อยังไม่พบสายการอนุมัติ) — ตรงกับต้นฉบับ 3 ขั้นตอน */
 const DEFAULT_SLOTS: ApprovalSlot[] = [
-  { stepNo: 1, approverType: 'MANAGER' },
-  { stepNo: 2, approverType: 'HR' },
-  { stepNo: 3, approverType: 'CEO' },
+  { stepNo: 1, approverType: 'ROLE', approverLabel: 'ผู้บังคับบัญชาพิจารณาเห็นชอบ' },
+  { stepNo: 2, approverType: 'ROLE', approverLabel: 'ฝ่ายบุคคลรับทราบเพื่อดำเนินการ' },
+  { stepNo: 3, approverType: 'ROLE', approverLabel: 'อนุมัติโดยกรรมการผู้จัดการ', positionHint: 'กรรมการผู้จัดการ' },
 ];
 
 /**
@@ -526,7 +520,7 @@ const ResignationPaper: React.FC<{
                     <SignatureCell
                       key={col}
                       slot={slot}
-                      heading={getSlotHeading(slot, idx === approvalSlots.length - 1)}
+                      heading={getSlotHeading(slot)}
                     />
                   );
                 })}
@@ -593,7 +587,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
             .map((s) => ({
               stepNo: s.stepNo,
               approverType: s.approverType,
-              approverLabel: s.approverType === 'EMPLOYEE' ? s.approver?.fullName : s.approverRoleName || s.approverTypeLabel,
+              approverLabel: s.approverType === 'EMPLOYEE' ? s.approver?.fullName : s.approverRoleName,
               positionHint: s.approver?.positionName || null,
             }))
         );
