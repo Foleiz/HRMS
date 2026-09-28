@@ -409,13 +409,13 @@ public class SalaryService : ISalaryService
         }
 
         decimal empPercent = request.EmployeeContributionPercent;
-        if (empPercent > 1.0m)
+        if (empPercent >= 1.0m) // ค่าตั้งแต่ 1 ขึ้นไปถือเป็นเปอร์เซ็นต์ (เช่น 1 = 1%, 5 = 5%)
         {
             empPercent = Math.Round(empPercent / 100.0m, 4);
         }
 
         decimal compPercent = request.EmployerContributionPercent;
-        if (compPercent > 1.0m)
+        if (compPercent >= 1.0m)
         {
             compPercent = Math.Round(compPercent / 100.0m, 4);
         }
@@ -465,13 +465,13 @@ public class SalaryService : ISalaryService
     public async Task<SocialSecurityRateDto> CreateSocialSecurityRateAsync(CreateSocialSecurityRateRequest request, CancellationToken cancellationToken = default)
     {
         decimal empPercent = request.EmployeeContributionPercent;
-        if (empPercent > 1.0m)
+        if (empPercent >= 1.0m) // ค่าตั้งแต่ 1 ขึ้นไปถือเป็นเปอร์เซ็นต์ (เช่น 1 = 1%, 5 = 5%)
         {
             empPercent = Math.Round(empPercent / 100.0m, 4);
         }
 
         decimal compPercent = request.EmployerContributionPercent;
-        if (compPercent > 1.0m)
+        if (compPercent >= 1.0m)
         {
             compPercent = Math.Round(compPercent / 100.0m, 4);
         }
@@ -530,19 +530,31 @@ public class SalaryService : ISalaryService
             _context.SocialSecurityRates.RemoveRange(existing);
         }
 
-        var defaultRate = new SocialSecurityRate
+        // ค่ามาตรฐานตามกฎหมาย: เก็บประวัติไว้ เพื่อให้รอบเงินเดือนย้อนหลังคำนวณด้วยอัตราที่ถูกต้อง
+        // - ถึง 31 ธ.ค. 2568: ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท)
+        // - ตั้งแต่ 1 ม.ค. 2569: ฐานค่าจ้าง 1,650 - 17,500 บาท (สูงสุด 875 บาท)
+        _context.SocialSecurityRates.Add(new SocialSecurityRate
         {
-            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)",
+            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33) เพดาน 15,000 บาท",
             EmployeeContributionPercent = 0.0500m,
             EmployerContributionPercent = 0.0500m,
             MinWageBaseAmount = 1650.00m,
             MaxWageBaseAmount = 15000.00m,
             EffectiveFrom = new DateOnly(2024, 1, 1),
+            EffectiveTo = new DateOnly(2025, 12, 31),
+            Status = "ACTIVE"
+        });
+        _context.SocialSecurityRates.Add(new SocialSecurityRate
+        {
+            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33) เพดาน 17,500 บาท",
+            EmployeeContributionPercent = 0.0500m,
+            EmployerContributionPercent = 0.0500m,
+            MinWageBaseAmount = 1650.00m,
+            MaxWageBaseAmount = 17500.00m,
+            EffectiveFrom = new DateOnly(2026, 1, 1),
             EffectiveTo = null,
             Status = "ACTIVE"
-        };
-
-        _context.SocialSecurityRates.Add(defaultRate);
+        });
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetSocialSecurityRatesAsync(cancellationToken);
@@ -2122,7 +2134,7 @@ public class SalaryService : ISalaryService
             return new SsoRateInfo(DefaultSsoPercent, DefaultSsoPercent, DefaultSsoMinWage, DefaultSsoMaxWage);
 
         // ค่าในฐานข้อมูลเก็บเป็นทศนิยม (0.05 = 5%) แต่รองรับข้อมูลเก่าที่เก็บเป็นเปอร์เซ็นต์
-        static decimal ToPercent(decimal v) => v <= 1.0m ? v * 100.0m : v;
+        static decimal ToPercent(decimal v) => v < 1.0m ? v * 100.0m : v;
 
         return new SsoRateInfo(
             ToPercent(rate.EmployeeContributionPercent),
