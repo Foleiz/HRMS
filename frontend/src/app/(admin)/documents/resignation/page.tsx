@@ -26,8 +26,6 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
-const HANDOVER_MAX_LENGTH = 250;
-const CONTACT_MAX_LENGTH = 150;
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -77,8 +75,6 @@ export default function ResignationPage() {
   // Form Fields
   const [reasonCategory, setReasonCategory] = useState<string>(RESIGNATION_REASON_CATEGORIES[0].value);
   const [reasonDetail, setReasonDetail] = useState('');
-  const [handoverNotes, setHandoverNotes] = useState('');
-  const [contactAfterResignation, setContactAfterResignation] = useState('');
 
   // วันที่ทำงานวันสุดท้าย (เริ่มต้นแนะนำ 30 วันนับจากวันนี้)
   const [requestedLastWorkingDate, setRequestedLastWorkingDate] = useState(() => {
@@ -119,8 +115,6 @@ export default function ResignationPage() {
         if (parsed.titlePrefix) setTitlePrefix(parsed.titlePrefix);
         if (parsed.reasonCategory) setReasonCategory(parsed.reasonCategory);
         if (parsed.reasonDetail) setReasonDetail(parsed.reasonDetail);
-        if (parsed.handoverNotes) setHandoverNotes(parsed.handoverNotes);
-        if (parsed.contactAfterResignation) setContactAfterResignation(parsed.contactAfterResignation);
         if (parsed.requestedLastWorkingDate) setRequestedLastWorkingDate(parsed.requestedLastWorkingDate);
       }
     } catch {
@@ -170,8 +164,6 @@ export default function ResignationPage() {
     setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
-    setHandoverNotes('');
-    setContactAfterResignation('');
     const d = new Date();
     d.setDate(d.getDate() + 30);
     setRequestedLastWorkingDate(toInputDate(d));
@@ -195,8 +187,6 @@ export default function ResignationPage() {
           titlePrefix,
           reasonCategory,
           reasonDetail: reasonDetail.trim(),
-          handoverNotes: handoverNotes.trim(),
-          contactAfterResignation: contactAfterResignation.trim(),
           requestedLastWorkingDate,
           savedAt: new Date().toISOString(),
         })
@@ -237,15 +227,11 @@ export default function ResignationPage() {
         requestedLastWorkingDate,
         reasonCategory: categoryLabel,
         reason: reasonDetail.trim(),
-        handoverNotes: handoverNotes.trim() || undefined,
-        contactAfterResignation: contactAfterResignation.trim() || undefined,
       });
 
       // Clear draft
       localStorage.removeItem('hrms_resignation_draft');
       setReasonDetail('');
-      setHandoverNotes('');
-      setContactAfterResignation('');
       toast.success('ยื่นคำขอลาออกสำเร็จ ติดตามสถานะได้ที่หน้านี้');
       router.push('/documents/history');
     } catch (err: any) {
@@ -453,37 +439,6 @@ export default function ResignationPage() {
                 />
               </div>
 
-              {/* แผนการส่งมอบงาน & ข้อมูลติดต่อเพิ่มเติม */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-2xs font-medium text-gray-500">แผนส่งมอบงาน (ถ้ามี)</label>
-                    <span className="text-2xs text-gray-400 font-mono">{handoverNotes.length}/{HANDOVER_MAX_LENGTH}</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={handoverNotes}
-                    maxLength={HANDOVER_MAX_LENGTH}
-                    onChange={(e) => setHandoverNotes(e.target.value)}
-                    placeholder="เช่น ส่งมอบโปรเจกต์ให้ทีมงาน"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-2xs font-medium text-gray-500">ข้อมูลติดต่อหลังลาออก</label>
-                    <span className="text-2xs text-gray-400 font-mono">{contactAfterResignation.length}/{CONTACT_MAX_LENGTH}</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={contactAfterResignation}
-                    maxLength={CONTACT_MAX_LENGTH}
-                    onChange={(e) => setContactAfterResignation(e.target.value)}
-                    placeholder="เช่น 081-xxx-xxxx, email@..."
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -576,8 +531,6 @@ export default function ResignationPage() {
           requestedLastWorkingDate: formatThaiShort(requestedLastWorkingDate),
           reasonCategoryLabel: selectedCategoryLabel,
           reasonDetail: reasonDetail || 'ยังไม่ได้ระบุรายละเอียด',
-          handoverNotes: handoverNotes || undefined,
-          contactAfterResignation: contactAfterResignation || undefined,
           noticeDays,
           addressedTo,
         }}
