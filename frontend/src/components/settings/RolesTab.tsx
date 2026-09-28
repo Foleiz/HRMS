@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   Plus,
@@ -40,6 +41,14 @@ import {
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
 import { useToast } from '@/context/ToastContext';
+
+interface ActivePopoverState {
+  moduleCode: string;
+  scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization';
+  top?: number;
+  bottom?: number;
+  left: number;
+}
 
 interface RolesTabProps {
   roles: RoleSummary[];
@@ -179,11 +188,20 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   // Accordion expanded categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Active Scope Popover: { moduleCode, scopeKey }
-  const [activePopover, setActivePopover] = useState<{
-    moduleCode: string;
-    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization';
-  } | null>(null);
+  // Active Scope Popover Portal State
+  const [activePopover, setActivePopover] = useState<ActivePopoverState | null>(null);
+
+  // Close popover when scrolling or resizing
+  useEffect(() => {
+    if (!activePopover) return;
+    const handleDismiss = () => setActivePopover(null);
+    window.addEventListener('scroll', handleDismiss, true);
+    window.addEventListener('resize', handleDismiss);
+    return () => {
+      window.removeEventListener('scroll', handleDismiss, true);
+      window.removeEventListener('resize', handleDismiss);
+    };
+  }, [activePopover]);
 
   const [rightPaneHeight, setRightPaneHeight] = useState<number | null>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -471,6 +489,52 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     );
     setIsDirty(true);
   };
+
+  const handleOpenPopover = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    moduleCode: string,
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
+  ) => {
+    e.stopPropagation();
+    if (activePopover?.moduleCode === moduleCode && activePopover?.scopeKey === scopeKey) {
+      setActivePopover(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverWidth = 288;
+    const popoverHeight = 280;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
+
+    const left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rect.right - popoverWidth));
+
+    if (openUpward) {
+      setActivePopover({
+        moduleCode,
+        scopeKey,
+        bottom: window.innerHeight - rect.top + 6,
+        left,
+      });
+    } else {
+      setActivePopover({
+        moduleCode,
+        scopeKey,
+        top: rect.bottom + 6,
+        left,
+      });
+    }
+  };
+
+  const activeMod = useMemo(() => {
+    if (!activePopover) return null;
+    return localModules.find((m) => m.moduleCode === activePopover.moduleCode) || null;
+  }, [activePopover, localModules]);
+
+  const activeScopeConfig = useMemo(() => {
+    if (!activePopover) return null;
+    return SCOPES_CONFIG.find((s) => s.key === activePopover.scopeKey) || null;
+  }, [activePopover]);
 
   // Global toolbar actions
   const handleSelectAll = () => {
@@ -839,152 +903,28 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                           activePopover?.scopeKey === scope.key;
 
                                         return (
-                                          <div key={scope.key} className="relative inline-block">
-                                            <button
-                                              type="button"
-                                              disabled={!modActive}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (isPopoverOpen) {
-                                                  setActivePopover(null);
-                                                } else {
-                                                  setActivePopover({
-                                                    moduleCode: mod.moduleCode,
-                                                    scopeKey: scope.key,
-                                                  });
-                                                }
-                                              }}
-                                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer select-none ${
-                                                !modActive
-                                                  ? 'bg-slate-100 text-slate-300 border-slate-200/60 cursor-not-allowed'
-                                                  : isScopeActive
-                                                  ? 'bg-[#0B2046] hover:bg-[#112d5e] text-white border-[#0B2046] shadow-2xs'
-                                                  : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
-                                              }`}
-                                            >
-                                              <span>{scope.label}</span>
-                                              {isScopeActive && (
-                                                <span className="ml-1 text-[10px] opacity-90">
-                                                  ({count})
-                                                </span>
-                                              )}
-                                            </button>
-
-                                            {/* Floating Scope Popover */}
-                                            {isPopoverOpen && (
-                                              <>
-                                                {/* Backdrop to close on click outside */}
-                                                <div
-                                                  className="fixed inset-0 z-40"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActivePopover(null);
-                                                  }}
-                                                />
-
-                                                {/* Popover Content */}
-                                                <div
-                                                  onClick={(e) => e.stopPropagation()}
-                                                  className="absolute right-0 top-full mt-2 z-50 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
-                                                >
-                                                  {/* Popover Header */}
-                                                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                                    <div>
-                                                      <span className="text-[10px] font-semibold text-slate-400">
-                                                        กำหนดสิทธิ์ระดับ
-                                                      </span>
-                                                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                                                        <span className="w-2 h-2 rounded-full bg-[#0B2046]" />
-                                                        {scope.label}
-                                                      </div>
-                                                    </div>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => setActivePopover(null)}
-                                                      className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
-                                                    >
-                                                      <X className="w-3.5 h-3.5" />
-                                                    </button>
-                                                  </div>
-
-                                                  {/* 4 Action Checkbox Options */}
-                                                  <div className="space-y-1.5">
-                                                    {ACTIONS_CONFIG.map((action) => {
-                                                      const isChecked = Boolean(
-                                                        mod[scope.key]?.[action.key]
-                                                      );
-                                                      const Icon = action.icon;
-
-                                                      return (
-                                                        <div
-                                                          key={action.key}
-                                                          onClick={() =>
-                                                            handleToggleScopeAction(
-                                                              mod.moduleCode,
-                                                              scope.key,
-                                                              action.key
-                                                            )
-                                                          }
-                                                          className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all select-none ${
-                                                            isChecked
-                                                              ? 'bg-blue-50/70 border-blue-200 text-blue-950 font-semibold'
-                                                              : 'bg-slate-50/50 border-slate-200/70 text-slate-600 hover:bg-slate-100/70'
-                                                          }`}
-                                                        >
-                                                          <div className="flex items-center gap-2">
-                                                            <Icon
-                                                              className={`w-3.5 h-3.5 ${
-                                                                isChecked
-                                                                  ? 'text-blue-600'
-                                                                  : 'text-slate-400'
-                                                              }`}
-                                                            />
-                                                            <span>{action.label}</span>
-                                                          </div>
-                                                          <input
-                                                            type="checkbox"
-                                                            checked={isChecked}
-                                                            readOnly
-                                                            className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 pointer-events-none cursor-pointer"
-                                                          />
-                                                        </div>
-                                                      );
-                                                    })}
-                                                  </div>
-
-                                                  {/* Popover Footer Shortcuts */}
-                                                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                                                    <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                        handleSetAllScopeActions(
-                                                          mod.moduleCode,
-                                                          scope.key,
-                                                          true
-                                                        )
-                                                      }
-                                                      className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-                                                    >
-                                                      เลือกทั้งหมด
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                        handleSetAllScopeActions(
-                                                          mod.moduleCode,
-                                                          scope.key,
-                                                          false
-                                                        )
-                                                      }
-                                                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                                                    >
-                                                      ล้างทั้งหมด
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              </>
+                                          <button
+                                            key={scope.key}
+                                            type="button"
+                                            disabled={!modActive}
+                                            onClick={(e) => handleOpenPopover(e, mod.moduleCode, scope.key)}
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer select-none ${
+                                              !modActive
+                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 cursor-not-allowed'
+                                                : isScopeActive
+                                                ? 'bg-[#0B2046] hover:bg-[#112d5e] text-white border-[#0B2046] shadow-2xs'
+                                                : isPopoverOpen
+                                                ? 'bg-slate-100 text-[#0B2046] border-slate-300 ring-2 ring-[#0B2046]/20'
+                                                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                                            }`}
+                                          >
+                                            <span>{scope.label}</span>
+                                            {isScopeActive && (
+                                              <span className="ml-1 text-[10px] opacity-90">
+                                                ({count})
+                                              </span>
                                             )}
-                                          </div>
+                                          </button>
                                         );
                                       })}
                                     </div>
@@ -1061,6 +1001,126 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           </div>
         )}
       </div>
+
+      {/* Scope Details Popover Portal */}
+      {activePopover && activeMod && activeScopeConfig && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999]">
+          {/* Backdrop to close on click outside */}
+          <div
+            className="fixed inset-0 bg-transparent"
+            onClick={() => setActivePopover(null)}
+          />
+
+          {/* Popover Card */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              left: `${activePopover.left}px`,
+              ...(activePopover.top !== undefined ? { top: `${activePopover.top}px` } : {}),
+              ...(activePopover.bottom !== undefined ? { bottom: `${activePopover.bottom}px` } : {}),
+            }}
+            className="w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 space-y-2.5 z-[100000] animate-in fade-in zoom-in-95 duration-100 select-none"
+          >
+            {/* Popover Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="min-w-0 pr-2">
+                <div className="text-[10px] font-semibold text-slate-400 truncate">
+                  {activeMod.moduleName}
+                </div>
+                <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#0B2046] shrink-0" />
+                  <span>ระดับ: {activeScopeConfig.label}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePopover(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* 4 Action Checkbox Options */}
+            <div className="space-y-1.5">
+              {ACTIONS_CONFIG.map((action) => {
+                const isChecked = Boolean(
+                  activeMod[activePopover.scopeKey]?.[action.key]
+                );
+                const Icon = action.icon;
+
+                return (
+                  <div
+                    key={action.key}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleScopeAction(
+                        activeMod.moduleCode,
+                        activePopover.scopeKey,
+                        action.key
+                      );
+                    }}
+                    className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-blue-50/70 border-blue-200 text-blue-950 font-semibold shadow-2xs'
+                        : 'bg-slate-50/50 border-slate-200/70 text-slate-600 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        className={`w-3.5 h-3.5 ${
+                          isChecked ? 'text-blue-600' : 'text-slate-400'
+                        }`}
+                      />
+                      <span>{action.label}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 pointer-events-none cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Popover Footer Shortcuts */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSetAllScopeActions(
+                    activeMod.moduleCode,
+                    activePopover.scopeKey,
+                    true
+                  );
+                }}
+                className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+              >
+                เลือกทั้งหมด
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSetAllScopeActions(
+                    activeMod.moduleCode,
+                    activePopover.scopeKey,
+                    false
+                  );
+                }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                ล้างทั้งหมด
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
