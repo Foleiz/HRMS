@@ -24,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className={`${prompt.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#F8FAFC] text-slate-800">
+    <html lang="th" className={`${prompt.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-sans bg-[#F8FAFC] text-slate-800" suppressHydrationWarning>
         <AuthProvider>
           <SidebarProvider>
             <BreadcrumbProvider>
