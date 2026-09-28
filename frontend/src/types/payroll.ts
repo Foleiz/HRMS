@@ -229,7 +229,28 @@ export interface PayrollDetailItem {
   rate?: number | null;
   amount: number;
   subtext?: string | null;
-}export interface BankTransferItem {
+  /** true = รายการที่ HR เพิ่มเอง (ลบได้ในสถานะ DRAFT/REVIEW) */
+  isManual?: boolean;
+  /** MANUAL หรือ BONUS */
+  source?: 'MANUAL' | 'BONUS' | string | null;
+  note?: string | null;
+}
+
+export interface AddPayrollAdjustmentPayload {
+  payrollItemId: number;
+  amount: number;
+  note?: string;
+}
+
+export interface BonusPayoutResult {
+  addedCount: number;
+  addedAmount: number;
+  alreadyPaidCount: number;
+  skippedEmployeeCodes: string[];
+  payrolls: PayrollRecord[];
+}
+
+export interface BankTransferItem {
   employeeId: number;
   employeeCode: string;
   employeeName: string;

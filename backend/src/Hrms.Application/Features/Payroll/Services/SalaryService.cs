@@ -1139,24 +1139,7 @@ public class SalaryService : ISalaryService
 
         return details.Select(d =>
         {
-            string? subtext = null;
-            if (!string.IsNullOrWhiteSpace(d.CalculationSource))
-            {
-                try
-                {
-                    using var doc = System.Text.Json.JsonDocument.Parse(d.CalculationSource);
-                    if (doc.RootElement.TryGetProperty("subtext", out var prop))
-                    {
-                        subtext = prop.GetString();
-                    }
-                    else if (doc.RootElement.TryGetProperty("formula", out var fProp))
-                    {
-                        subtext = fProp.GetString();
-                    }
-                }
-                catch { }
-            }
-
+            var source = ReadDetailSource(d.CalculationSource);
             return new PayrollDetailItemDto
             {
                 Id = d.Id,
@@ -1168,9 +1151,176 @@ public class SalaryService : ISalaryService
                 Quantity = d.Quantity,
                 Rate = d.Rate,
                 Amount = d.Amount,
-                Subtext = subtext
+                Subtext = source.Subtext,
+                IsManual = source.IsManual,
+                Source = source.IsManual ? (source.Source ?? "MANUAL") : null,
+                Note = source.Note
             };
         }).ToList();
+    }
+
+    public async Task<List<PayrollDetailItemDto>> AddPayrollAdjustmentAsync(long payrollId, AddPayrollAdjustmentRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Amount <= 0)
+            throw new BusinessRuleException("จำนวนเงินต้องมากกว่า 0 (ประเภทรายได้/รายหักกำหนดจากรายการที่เลือก)");
+        if (request.Amount > 10_000_000m)
+            throw new BusinessRuleException("จำนวนเงินสูงเกินกว่าที่ระบบอนุญาต กรุณาตรวจสอบอีกครั้ง");
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.Period)
+            .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลเงินเดือนพนักงาน");
+
+        EnsurePeriodEditable(payroll.Period);
+
+        var item = await _context.PayrollItems.FirstOrDefaultAsync(i => i.Id == request.PayrollItemId, cancellationToken)
+            ?? throw new NotFoundException("PayrollItem", request.PayrollItemId);
+
+        if (item.Status != "ACTIVE")
+            throw new BusinessRuleException($"รายการ '{item.ItemName}' ถูกปิดใช้งานแล้ว");
+        if (SystemItemCodes.Contains(item.ItemCode) || CoreFormulaTemplates.Contains(item.FormulaTemplate?.ToUpperInvariant() ?? string.Empty))
+            throw new BusinessRuleException($"รายการ '{item.ItemName}' ระบบคำนวณให้อัตโนมัติ ไม่สามารถเพิ่มเองได้ (โบนัสให้ใช้ปุ่มดึงโบนัสที่อนุมัติแล้ว)");
+
+        _context.PayrollDetails.Add(new PayrollDetail
+        {
+            PayrollId = payroll.Id,
+            PayrollItemId = item.Id,
+            Amount = Math.Round(request.Amount, 2, MidpointRounding.AwayFromZero),
+            CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                manual = true,
+                source = "MANUAL",
+                note = request.Note?.Trim(),
+                subtext = string.IsNullOrWhiteSpace(request.Note) ? "รายการที่ HR ระบุเอง" : request.Note.Trim()
+            })
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // คำนวณใหม่ทั้งรอบ เพื่อให้ประกันสังคม/ภาษี/ยอดสุทธิ สอดคล้องกับรายการใหม่
+        await CalculatePayrollForPeriodAsync(payroll.PeriodId, cancellationToken);
+        return await GetPayrollDetailsAsync(payrollId, cancellationToken);
+    }
+
+    public async Task<List<PayrollDetailItemDto>> DeletePayrollAdjustmentAsync(long payrollId, long detailId, CancellationToken cancellationToken = default)
+    {
+        var payroll = await _context.Payrolls
+            .Include(p => p.Period)
+            .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลเงินเดือนพนักงาน");
+
+        EnsurePeriodEditable(payroll.Period);
+
+        var detail = await _context.PayrollDetails.FirstOrDefaultAsync(d => d.Id == detailId && d.PayrollId == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบรายการที่ต้องการลบ");
+
+        if (!IsManualDetail(detail))
+            throw new BusinessRuleException("ลบได้เฉพาะรายการที่ HR เพิ่มเองเท่านั้น (รายการที่ระบบคำนวณจะถูกสร้างใหม่ทุกครั้งที่คำนวณ)");
+
+        _context.PayrollDetails.Remove(detail);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        await CalculatePayrollForPeriodAsync(payroll.PeriodId, cancellationToken);
+        return await GetPayrollDetailsAsync(payrollId, cancellationToken);
+    }
+
+    public async Task<BonusPayoutResultDto> AddApprovedBonusesToPeriodAsync(long periodId, AddBonusPayoutRequest request, CancellationToken cancellationToken = default)
+    {
+        int year = request.Year > 0 ? request.Year : DateTime.Today.Year;
+
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("PayrollPeriod", periodId);
+
+        EnsurePeriodEditable(period);
+
+        var bonusItem = (await EnsureSystemPayrollItemsAsync(cancellationToken))["INC_BONUS"];
+
+        var bonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == year && b.Status == "APPROVED" && b.BonusAmount > 0)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        if (!bonuses.Any())
+            throw new BusinessRuleException($"ไม่พบโบนัสที่อนุมัติแล้วของปี {year + 543}");
+
+        // ป้องกันการจ่ายซ้ำ: โบนัสที่อยู่ในรอบเงินเดือนใด ๆ แล้ว จะไม่ถูกเพิ่มอีก
+        var existingBonusSources = await _context.PayrollDetails
+            .Where(d => d.PayrollItemId == bonusItem.Id)
+            .Select(d => d.CalculationSource)
+            .ToListAsync(cancellationToken);
+        var paidBonusIds = existingBonusSources
+            .Select(s => ReadDetailSource(s).BonusId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
+
+        var bonusEmployeeIds = bonuses.Select(b => b.EmployeeId).Distinct().ToList();
+        var employees = await _context.Employees
+            .Where(e => bonusEmployeeIds.Contains(e.Id))
+            .Include(e => e.Assignments)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        var windows = await LoadEmploymentWindowsAsync(employees, cancellationToken);
+
+        var result = new BonusPayoutResultDto();
+        foreach (var bonus in bonuses)
+        {
+            if (paidBonusIds.Contains(bonus.Id))
+            {
+                result.AlreadyPaidCount++;
+                continue;
+            }
+
+            var emp = employees.FirstOrDefault(e => e.Id == bonus.EmployeeId);
+            var window = emp != null && windows.TryGetValue(emp.Id, out var w) ? w : new EmploymentWindow(null, null);
+            if (emp == null || !IsEligibleForPeriod(emp, window, period))
+            {
+                result.SkippedEmployeeCodes.Add(emp?.EmployeeCode ?? $"#{bonus.EmployeeId}");
+                continue;
+            }
+
+            var payroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
+            if (payroll == null)
+            {
+                payroll = new Domain.Entities.Payroll { PeriodId = period.Id, EmployeeId = emp.Id, Status = "DRAFT" };
+                _context.Payrolls.Add(payroll);
+                period.Payrolls.Add(payroll);
+            }
+
+            payroll.Details.Add(new PayrollDetail
+            {
+                PayrollItemId = bonusItem.Id,
+                Amount = bonus.BonusAmount,
+                Quantity = bonus.Multiplier > 0 ? bonus.Multiplier : null,
+                Rate = bonus.BaseSalary > 0 ? bonus.BaseSalary : null,
+                CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    manual = true,
+                    source = "BONUS",
+                    bonusId = bonus.Id,
+                    year,
+                    subtext = $"โบนัสประจำปี {year + 543}" + (bonus.Multiplier > 0 && bonus.CalculationMode == "MULTIPLIER" ? $" ({bonus.Multiplier:0.##} เท่าของเงินเดือน)" : string.Empty)
+                })
+            });
+
+            result.AddedCount++;
+            result.AddedAmount += bonus.BonusAmount;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // คำนวณใหม่ทั้งรอบ (ภาษีของโบนัสคิดแบบเงินได้ไม่ประจำ)
+        result.Payrolls = await CalculatePayrollForPeriodAsync(periodId, cancellationToken);
+        return result;
+    }
+
+    private static void EnsurePeriodEditable(PayrollPeriod? period)
+    {
+        if (period == null)
+            throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+        if (period.Status != "DRAFT" && period.Status != "REVIEW")
+            throw new BusinessRuleException($"แก้ไขรายการเงินเดือนได้เฉพาะรอบที่อยู่ในสถานะ 'DRAFT' หรือ 'REVIEW' เท่านั้น สถานะปัจจุบัน: '{period.Status}'");
     }
 
     /// <summary>
@@ -1321,6 +1471,7 @@ public class SalaryService : ISalaryService
         var period = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
                 .ThenInclude(p => p.Details)
+                    .ThenInclude(d => d.PayrollItem)
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
 
         if (period == null)
@@ -1353,16 +1504,32 @@ public class SalaryService : ISalaryService
 
         var taxBrackets = await GetEffectiveTaxBracketsAsync(period.StartDate, period.EndDate, cancellationToken);
         var ssoRate = await GetEffectiveSsoRateAsync(period.StartDate, period.EndDate, cancellationToken);
+        var systemItems = await EnsureSystemPayrollItemsAsync(cancellationToken);
+        var systemItemIds = systemItems.Values.Select(i => i.Id).ToHashSet();
 
-        var payrollItems = await _context.PayrollItems
-            .Where(i => i.Status == "ACTIVE")
+        // รายการรายได้/รายหักที่ตั้งค่าไว้ และให้ระบบคำนวณอัตโนมัติได้ (FIXED หรือ FORMULA ที่รองรับ)
+        var autoItems = (await _context.PayrollItems
+                .Where(i => i.Status == "ACTIVE")
+                .AsNoTracking()
+                .ToListAsync(cancellationToken))
+            .Where(i => !systemItemIds.Contains(i.Id) && IsAutoCalculatedItem(i))
+            .ToList();
+
+        var employeeIds = employees.Select(e => e.Id).ToList();
+        var attendance = await _context.AttendanceMonthlySummaries
+            .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var baseItem = payrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE")
-                    ?? payrollItems.FirstOrDefault(i => i.ItemType == "EARNING");
-        var ssoItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_SSO");
-        var taxItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_TAX");
+        var periodStartDt = DateTime.SpecifyKind(period.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+        var periodEndDt = DateTime.SpecifyKind(period.EndDate.AddDays(1).ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+        var unpaidLeaves = await _context.LeaveRequests
+            .Include(r => r.LeaveType)
+            .Where(r => r.Status == "APPROVED"
+                && r.LeaveType != null && !r.LeaveType.IsPaidLeave
+                && r.StartDatetime <= periodEndDt && r.EndDatetime >= periodStartDt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
         var eligibleIds = new HashSet<long>();
@@ -1386,10 +1553,15 @@ public class SalaryService : ISalaryService
                 _context.Payrolls.Add(payroll);
                 period.Payrolls.Add(payroll);
             }
-            else if (payroll.Details.Any())
+            else
             {
-                _context.PayrollDetails.RemoveRange(payroll.Details);
-                payroll.Details.Clear();
+                // ลบเฉพาะรายการที่ระบบคำนวณ — รายการที่ HR เพิ่มเอง (manual / โบนัส) คงไว้
+                var systemGenerated = payroll.Details.Where(d => !IsManualDetail(d)).ToList();
+                if (systemGenerated.Any())
+                {
+                    _context.PayrollDetails.RemoveRange(systemGenerated);
+                    foreach (var d in systemGenerated) payroll.Details.Remove(d);
+                }
             }
 
             // Snapshot ข้อมูล ณ วันที่คำนวณ เพื่อให้ประวัติเงินเดือนไม่เปลี่ยนตามการย้ายแผนก/ตำแหน่งภายหลัง
@@ -1407,69 +1579,112 @@ public class SalaryService : ISalaryService
                 continue;
             }
 
-            // คิดตามสัดส่วนวันทำงานจริง สำหรับพนักงานเข้าใหม่/ลาออกระหว่างรอบ
+            // ===== 1. เงินเดือน (คิดตามสัดส่วนวันทำงานจริง สำหรับพนักงานเข้าใหม่/ลาออกระหว่างรอบ) =====
             var workStart = window.Start.HasValue && window.Start.Value > period.StartDate ? window.Start.Value : period.StartDate;
             var workEnd = window.End.HasValue && window.End.Value < period.EndDate ? window.End.Value : period.EndDate;
             int workedDays = Math.Max(0, workEnd.DayNumber - workStart.DayNumber + 1);
             bool isProrated = workedDays < periodDays;
             decimal factor = isProrated ? (decimal)workedDays / periodDays : 1m;
             decimal baseSalary = isProrated ? Math.Round(fullSalary * factor, 2, MidpointRounding.AwayFromZero) : fullSalary;
+            decimal dailyRate = fullSalary / 30m;
+            decimal hourlyRate = dailyRate / 8m;
 
+            var lines = new List<CalcLine>
+            {
+                new(systemItems["INC_BASE"], baseSalary, isProrated ? (decimal?)workedDays : null, isProrated ? (decimal?)fullSalary : null,
+                    isProrated
+                        ? $"เงินเดือนประจำ (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จากเงินเดือนเต็ม {fullSalary:N2} บาท)"
+                        : "เงินเดือนประจำ",
+                    IsRegular: true)
+            };
+
+            var empAttendance = attendance.FirstOrDefault(a => a.EmployeeId == emp.Id);
+
+            // ===== 2. หักวันลาไม่รับค่าจ้าง (เฉพาะวันลาที่อนุมัติแล้ว และอยู่ในช่วงที่ทำงานในรอบนี้) =====
+            decimal unpaidDays = CalculateUnpaidLeaveDays(unpaidLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
+            if (unpaidDays > 0)
+            {
+                decimal unpaidAmount = Math.Min(baseSalary, Math.Round(dailyRate * unpaidDays, 2, MidpointRounding.AwayFromZero));
+                lines.Add(new CalcLine(systemItems["DED_UNPAID_LEAVE"], unpaidAmount, unpaidDays, Math.Round(dailyRate, 4),
+                    $"ลาไม่รับค่าจ้าง {unpaidDays:0.##} วัน x {dailyRate:N2} บาท/วัน (เงินเดือน ÷ 30)", IsRegular: false));
+            }
+
+            // ===== 3. ค่าล่วงเวลา (OT) จากสรุปเวลาประจำเดือน =====
+            bool hasOvertime = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasOvertime;
+            decimal otHours = empAttendance?.TotalOvertimeHours ?? 0;
+            if (hasOvertime && otHours > 0)
+            {
+                decimal otMultiplier = ParseFirstNumber(systemItems["INC_OT"].FormulaValue) is decimal m && m >= 1m && m <= 3m ? m : 1.5m;
+                decimal otAmount = Math.Round(otHours * hourlyRate * otMultiplier, 2, MidpointRounding.AwayFromZero);
+                lines.Add(new CalcLine(systemItems["INC_OT"], otAmount, otHours, Math.Round(hourlyRate * otMultiplier, 4),
+                    $"OT {otHours:0.##} ชม. x {hourlyRate:N2} บาท/ชม. x {otMultiplier:0.##} เท่า", IsRegular: false));
+            }
+
+            // ===== 4. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
+            foreach (var item in autoItems)
+            {
+                var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance);
+                if (line != null) lines.Add(line);
+            }
+
+            // ===== 5. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
+            var manualDetails = payroll.Details.Where(IsManualDetail).ToList();
+            foreach (var d in manualDetails)
+            {
+                var item = d.PayrollItem ?? await _context.PayrollItems.FindAsync(new object[] { d.PayrollItemId }, cancellationToken);
+                if (item == null) continue;
+                lines.Add(new CalcLine(item, d.Amount, d.Quantity, d.Rate, null, IsRegular: false, Existing: d));
+            }
+
+            // ===== 6. ประกันสังคม: คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" (หักรายการหักที่ติ๊กไว้) =====
+            // เงินเดือน (INC_BASE) นับเป็นค่าจ้างเสมอ ไม่ขึ้นกับการติ๊กในหน้าตั้งค่า
+            long baseItemId = systemItems["INC_BASE"].Id;
+            decimal ssoWage = Math.Max(0,
+                lines.Where(l => l.Item.ItemType == "EARNING" && (l.Item.Id == baseItemId || l.Item.IsSocialSecurityCalculated)).Sum(l => l.Amount)
+                - lines.Where(l => l.Item.ItemType == "DEDUCTION" && l.Item.IsSocialSecurityCalculated).Sum(l => l.Amount));
             bool hasSso = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasSocialSecurity;
+            decimal ssoAmount = hasSso ? CalculateSsoContribution(ssoWage, ssoRate.EmployeePercent, ssoRate) : 0;
 
-            // 1. ประกันสังคม: คิดจากค่าจ้างที่จ่ายจริงในรอบนี้
-            decimal ssoAmount = hasSso ? CalculateSsoContribution(baseSalary, ssoRate.EmployeePercent, ssoRate) : 0;
-
-            // 2. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1): ประมาณการทั้งปีจากเงินเดือนเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
+            // ===== 7. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
+            // เงินได้ประจำ: ประมาณการทั้งปีจากยอดเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
+            // เงินได้ไม่ประจำ (OT, โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในเดือนที่จ่าย
+            decimal regularMonthly = fullSalary + lines.Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable)
+                .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
             decimal fullMonthSso = hasSso ? CalculateSsoContribution(fullSalary, ssoRate.EmployeePercent, ssoRate) : 0;
-            decimal fullMonthTax = CalculateMonthlyWithholdingTax(fullSalary, fullMonthSso, taxBrackets);
-            decimal monthlyTax = isProrated ? Math.Round(fullMonthTax * factor, 2, MidpointRounding.AwayFromZero) : fullMonthTax;
+            decimal regularAnnualTax = CalculateAnnualTax(regularMonthly * 12, fullMonthSso * 12, taxBrackets);
+            decimal regularMonthlyTax = Math.Round(regularAnnualTax / 12m * factor, 2, MidpointRounding.AwayFromZero);
 
-            decimal totalGross = baseSalary;
-            decimal totalDeductions = ssoAmount + monthlyTax;
+            decimal irregularTaxable = lines.Where(l => !l.IsRegular && l.Item.IsTaxable)
+                .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
+            decimal irregularTax = irregularTaxable != 0
+                ? CalculateAnnualTax(regularMonthly * 12 + irregularTaxable, fullMonthSso * 12, taxBrackets) - regularAnnualTax
+                : 0;
+            decimal monthlyTax = Math.Max(0, Math.Round(regularMonthlyTax + irregularTax, 2, MidpointRounding.AwayFromZero));
+
+            if (ssoAmount > 0)
+                lines.Add(new CalcLine(systemItems["DED_SSO"], ssoAmount, null, null,
+                    $"คำนวณ {ssoRate.EmployeePercent:G29}% ของค่าจ้าง {ssoWage:N2} บาท (ขั้นต่ำ {ssoRate.MinWage:N0} / เพดาน {ssoRate.MaxWage:N0} บาท)", IsRegular: false));
+            if (monthlyTax > 0)
+                lines.Add(new CalcLine(systemItems["DED_TAX"], monthlyTax, null, null, "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", IsRegular: false));
+
+            // ===== 8. สรุปยอด & บันทึกรายละเอียด =====
+            decimal totalGross = lines.Where(l => l.Item.ItemType == "EARNING").Sum(l => l.Amount);
+            decimal totalDeductions = lines.Where(l => l.Item.ItemType == "DEDUCTION").Sum(l => l.Amount);
 
             payroll.TotalGrossIncome = totalGross;
             payroll.TotalDeductionAmount = totalDeductions;
             payroll.NetPayableSalary = Math.Max(0, totalGross - totalDeductions);
             payroll.Status = "CALCULATED";
 
-            if (baseItem != null)
+            foreach (var line in lines.Where(l => l.Existing == null))
             {
                 payroll.Details.Add(new PayrollDetail
                 {
-                    PayrollItemId = baseItem.Id,
-                    Quantity = isProrated ? (decimal?)workedDays : null,
-                    Rate = isProrated ? (decimal?)fullSalary : null,
-                    Amount = baseSalary,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        subtext = isProrated
-                            ? $"เงินเดือนประจำ (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จากเงินเดือนเต็ม {fullSalary:N2} บาท)"
-                            : "เงินเดือนประจำ"
-                    })
-                });
-            }
-
-            if (ssoItem != null && ssoAmount > 0)
-            {
-                payroll.Details.Add(new PayrollDetail
-                {
-                    PayrollItemId = ssoItem.Id,
-                    Amount = ssoAmount,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        subtext = $"คำนวณ {ssoRate.EmployeePercent:G29}% ของฐานค่าจ้าง (ขั้นต่ำ {ssoRate.MinWage:N0} / เพดาน {ssoRate.MaxWage:N0} บาท)"
-                    })
-                });
-            }
-
-            if (taxItem != null && monthlyTax > 0)
-            {
-                payroll.Details.Add(new PayrollDetail
-                {
-                    PayrollItemId = taxItem.Id,
-                    Amount = monthlyTax,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)" })
+                    PayrollItemId = line.Item.Id,
+                    Quantity = line.Quantity,
+                    Rate = line.Rate,
+                    Amount = line.Amount,
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = line.Subtext })
                 });
             }
         }
@@ -1491,6 +1706,222 @@ public class SalaryService : ISalaryService
     }
 
     #region Payroll Calculation Helpers
+
+    /// <summary>บรรทัดรายได้/รายหักระหว่างคำนวณ (IsRegular = เงินได้ประจำทุกเดือน ใช้ประมาณการภาษีทั้งปี)</summary>
+    private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null);
+
+    /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
+    private static readonly string[] SystemItemCodes = { "INC_BASE", "DED_SSO", "DED_TAX", "INC_OT", "DED_UNPAID_LEAVE", "INC_BONUS" };
+
+    /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
+    private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS" };
+
+    /// <summary>Template ที่ระบบคำนวณอัตโนมัติได้จากข้อมูลที่มี</summary>
+    private static readonly string[] AutoFormulaTemplates = { "DILIGENT_ALLOWANCE", "LATE_ABSENT", "PERCENT_SALARY" };
+
+    private static bool IsAutoCalculatedItem(PayrollItem item)
+    {
+        if (item.CalculationType == "FIXED") return true;
+        if (item.CalculationType != "FORMULA") return false;
+        var template = item.FormulaTemplate?.ToUpperInvariant();
+        return template != null && !CoreFormulaTemplates.Contains(template) && AutoFormulaTemplates.Contains(template);
+    }
+
+    /// <summary>รายการที่ HR เพิ่มเอง (manual / โบนัส) ซึ่งต้องคงไว้เมื่อคำนวณใหม่</summary>
+    private static bool IsManualDetail(PayrollDetail detail) => ReadDetailSource(detail.CalculationSource).IsManual;
+
+    private static (bool IsManual, string? Source, long? BonusId, string? Subtext, string? Note) ReadDetailSource(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return (false, null, null, null, null);
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object) return (false, null, null, null, null);
+
+            bool isManual = root.TryGetProperty("manual", out var m) && m.ValueKind == System.Text.Json.JsonValueKind.True;
+            string? source = root.TryGetProperty("source", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String ? s.GetString() : null;
+            long? bonusId = root.TryGetProperty("bonusId", out var bId) && bId.ValueKind == System.Text.Json.JsonValueKind.Number ? bId.GetInt64() : null;
+            string? subtext = root.TryGetProperty("subtext", out var st) && st.ValueKind == System.Text.Json.JsonValueKind.String ? st.GetString()
+                : root.TryGetProperty("formula", out var f) && f.ValueKind == System.Text.Json.JsonValueKind.String ? f.GetString() : null;
+            string? note = root.TryGetProperty("note", out var n) && n.ValueKind == System.Text.Json.JsonValueKind.String ? n.GetString() : null;
+            return (isManual, source, bonusId, subtext, note);
+        }
+        catch
+        {
+            return (false, null, null, null, null);
+        }
+    }
+
+    /// <summary>ดึงตัวเลขตัวแรกจากข้อความ เช่น "1,000 บาท (สาย<=1)" → 1000, "5%" → 5</summary>
+    private static decimal? ParseFirstNumber(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"\d[\d,]*(\.\d+)?");
+        if (!match.Success) return null;
+        return decimal.TryParse(match.Value.Replace(",", string.Empty), System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
+    }
+
+    /// <summary>
+    /// คำนวณรายการที่ตั้งค่าไว้ต่อพนักงาน 1 คน
+    /// FIXED = ยอดคงที่ทุกคน, DILIGENT_ALLOWANCE = เบี้ยขยัน (ไม่ขาด / สายไม่เกินเกณฑ์),
+    /// LATE_ABSENT = หักมาสาย/ขาดงาน, PERCENT_SALARY = % ของเงินเดือน
+    /// </summary>
+    private static CalcLine? CalculateConfiguredItem(PayrollItem item, decimal baseSalary, decimal dailyRate, decimal hourlyRate, AttendanceMonthlySummary? attendance)
+    {
+        decimal amount;
+        decimal? quantity = null;
+        decimal? rate = null;
+        string subtext;
+
+        if (item.CalculationType == "FIXED")
+        {
+            amount = ParseFirstNumber(item.FormulaValue) ?? 0;
+            subtext = "ยอดคงที่ประจำเดือน";
+        }
+        else
+        {
+            switch (item.FormulaTemplate?.ToUpperInvariant())
+            {
+                case "DILIGENT_ALLOWANCE":
+                {
+                    if (attendance == null) return null; // ไม่มีข้อมูลเวลา → ยืนยันเงื่อนไขไม่ได้
+                    decimal allowance = ParseFirstNumber(item.FormulaValue) ?? 0;
+                    var lateLimitMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"สาย\s*<=?\s*(\d+)");
+                    int lateLimit = lateLimitMatch.Success ? int.Parse(lateLimitMatch.Groups[1].Value) : 1;
+                    if (attendance.TotalAbsentDays > 0 || attendance.TotalLateDays > lateLimit) return null;
+                    amount = allowance;
+                    subtext = $"เบี้ยขยัน (ไม่ขาดงาน และมาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง)";
+                    break;
+                }
+                case "LATE_ABSENT":
+                {
+                    if (attendance == null) return null;
+                    decimal lateHours = attendance.TotalLateMinutes / 60m;
+                    decimal lateAmount = Math.Round(lateHours * hourlyRate, 2, MidpointRounding.AwayFromZero);
+                    decimal absentAmount = Math.Round(attendance.TotalAbsentDays * dailyRate, 2, MidpointRounding.AwayFromZero);
+                    amount = Math.Min(baseSalary, lateAmount + absentAmount);
+                    subtext = $"สาย {attendance.TotalLateMinutes} นาที ({lateAmount:N2}) + ขาดงาน {attendance.TotalAbsentDays} วัน ({absentAmount:N2})";
+                    break;
+                }
+                case "PERCENT_SALARY":
+                {
+                    decimal percent = ParseFirstNumber(item.FormulaValue) ?? 0;
+                    amount = Math.Round(baseSalary * percent / 100m, 2, MidpointRounding.AwayFromZero);
+                    quantity = percent;
+                    rate = baseSalary;
+                    subtext = $"{percent:0.##}% ของเงินเดือน {baseSalary:N2} บาท";
+                    break;
+                }
+                default:
+                    return null;
+            }
+        }
+
+        if (amount <= 0) return null;
+        return new CalcLine(item, amount, quantity, rate, subtext, IsRegular: item.CalculationType == "FIXED" || item.FormulaTemplate?.ToUpperInvariant() == "PERCENT_SALARY");
+    }
+
+    /// <summary>จำนวนวันลาไม่รับค่าจ้างที่ตกอยู่ในช่วงทำงานของรอบนี้ (เฉลี่ยตามสัดส่วนวันปฏิทินของใบลา)</summary>
+    private static decimal CalculateUnpaidLeaveDays(IEnumerable<LeaveRequest> leaves, DateOnly workStart, DateOnly workEnd)
+    {
+        static DateOnly ToLocalDate(DateTime dt) =>
+            DateOnly.FromDateTime(dt.Kind == DateTimeKind.Utc ? dt.AddHours(7) : dt); // เวลาไทย (UTC+7)
+
+        decimal total = 0;
+        foreach (var leave in leaves)
+        {
+            var leaveStart = ToLocalDate(leave.StartDatetime);
+            var leaveEnd = ToLocalDate(leave.EndDatetime);
+            if (leaveEnd < leaveStart) leaveEnd = leaveStart;
+
+            var overlapStart = leaveStart > workStart ? leaveStart : workStart;
+            var overlapEnd = leaveEnd < workEnd ? leaveEnd : workEnd;
+            if (overlapEnd < overlapStart) continue;
+
+            int spanDays = leaveEnd.DayNumber - leaveStart.DayNumber + 1;
+            int overlapDays = overlapEnd.DayNumber - overlapStart.DayNumber + 1;
+            decimal leaveDays = leave.LeaveDays > 0 ? leave.LeaveDays : spanDays;
+            total += spanDays <= overlapDays ? leaveDays : Math.Round(leaveDays * overlapDays / spanDays, 2);
+        }
+
+        return total;
+    }
+
+    /// <summary>หา/สร้างรายการเงินเดือนของระบบ (เงินเดือน, SSO, ภาษี, OT, หักลาไม่รับค่าจ้าง, โบนัส)</summary>
+    private async Task<Dictionary<string, PayrollItem>> EnsureSystemPayrollItemsAsync(CancellationToken cancellationToken)
+    {
+        var definitions = new (string Code, string Name, string Type, string CalcType, string? Template, bool Taxable, bool Sso)[]
+        {
+            ("INC_BASE", "เงินเดือน", "EARNING", "FORMULA", "BASE_SALARY", true, true),
+            ("DED_SSO", "เงินสมทบประกันสังคม", "DEDUCTION", "FORMULA", "SSO_STANDARD", false, false),
+            ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
+            ("INC_OT", "ค่าล่วงเวลา (OT)", "EARNING", "FORMULA", null, true, false),
+            ("DED_UNPAID_LEAVE", "หักวันลาไม่รับค่าจ้าง", "DEDUCTION", "FORMULA", null, true, true),
+            ("INC_BONUS", "โบนัส", "EARNING", "MANUAL", null, true, false)
+        };
+
+        var allItems = await _context.PayrollItems.ToListAsync(cancellationToken);
+        var result = new Dictionary<string, PayrollItem>();
+        bool added = false;
+
+        foreach (var def in definitions)
+        {
+            var item = allItems.FirstOrDefault(i => i.ItemCode == def.Code)
+                ?? (def.Template != null
+                    ? allItems.FirstOrDefault(i => i.Status == "ACTIVE" && string.Equals(i.FormulaTemplate, def.Template, StringComparison.OrdinalIgnoreCase))
+                    : null);
+
+            if (item == null)
+            {
+                item = new PayrollItem
+                {
+                    ItemCode = def.Code,
+                    ItemName = def.Name,
+                    Description = "รายการระบบ (สร้างอัตโนมัติสำหรับการคำนวณเงินเดือน)",
+                    ItemType = def.Type,
+                    CalculationType = def.CalcType,
+                    FormulaTemplate = def.Template,
+                    FormulaValue = def.Code == "INC_OT" ? "1.5" : null,
+                    IsTaxable = def.Taxable,
+                    IsSocialSecurityCalculated = def.Sso,
+                    Status = "ACTIVE"
+                };
+                _context.PayrollItems.Add(item);
+                allItems.Add(item);
+                added = true;
+            }
+
+            result[def.Code] = item;
+        }
+
+        if (added)
+            await _context.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>ภาษีเงินได้ทั้งปี: หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี แล้วคิดตามขั้นบันได</summary>
+    private static decimal CalculateAnnualTax(decimal annualIncome, decimal annualSso, List<TaxBracket> taxBrackets)
+    {
+        decimal standardExpenses = Math.Min(Math.Max(0, annualIncome) * 0.50m, 100000.0m);
+        decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - 60000.0m - annualSso);
+
+        decimal annualTax = 0;
+        foreach (var bracket in taxBrackets)
+        {
+            decimal lower = Math.Floor(bracket.IncomeFrom);
+            if (taxableIncome > lower)
+            {
+                decimal upper = bracket.IncomeTo ?? taxableIncome;
+                decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
+                annualTax += Math.Round((Math.Min(taxableIncome, upper) - lower) * (ratePercent / 100.0m), 2);
+            }
+        }
+
+        return annualTax;
+    }
 
     /// <summary>เงินเดือนล่าสุดของพนักงานแต่ละคนที่มีผลภายในปีที่กำหนด (ใช้คำนวณโบนัส)</summary>
     private async Task<List<EmployeeSalary>> LoadLatestSalariesForYearAsync(int year, CancellationToken cancellationToken)
@@ -1622,37 +2053,6 @@ public class SalaryService : ISalaryService
         if (wage <= 0 || percent <= 0) return 0;
         decimal wageBase = Math.Min(Math.Max(wage, rate.MinWage), rate.MaxWage);
         return Math.Round(wageBase * (percent / 100.0m), 0, MidpointRounding.AwayFromZero);
-    }
-
-    /// <summary>
-    /// ภาษีหัก ณ ที่จ่ายรายเดือน: ประมาณการเงินได้ทั้งปี (เงินเดือน x 12)
-    /// หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี แล้วคิดตามขั้นบันได หาร 12
-    /// </summary>
-    private static decimal CalculateMonthlyWithholdingTax(decimal monthlySalary, decimal monthlySso, List<TaxBracket> taxBrackets)
-    {
-        decimal annualIncome = monthlySalary * 12;
-        decimal standardExpenses = Math.Min(annualIncome * 0.50m, 100000.0m);
-        decimal personalAllowance = 60000.0m;
-        decimal ssoAllowance = monthlySso * 12;
-        decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - personalAllowance - ssoAllowance);
-
-        decimal annualTax = 0;
-        if (taxableIncome > 0)
-        {
-            foreach (var bracket in taxBrackets)
-            {
-                decimal lower = Math.Floor(bracket.IncomeFrom);
-                if (taxableIncome > lower)
-                {
-                    decimal upper = bracket.IncomeTo ?? taxableIncome;
-                    decimal bracketTaxable = Math.Min(taxableIncome, upper) - lower;
-                    decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
-                    annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
-                }
-            }
-        }
-
-        return Math.Round(annualTax / 12.0m, 2);
     }
 
     #endregion

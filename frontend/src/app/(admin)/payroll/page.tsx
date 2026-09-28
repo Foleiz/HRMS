@@ -17,6 +17,7 @@ import {
   Search,
   Users,
   Scale,
+  Gift,
   Percent,
   CheckCircle,
   CheckCircle2,
@@ -423,6 +424,8 @@ export default function PayrollPage() {
   const [processPage, setProcessPage] = useState<number>(1);
   const [processPageSize, setProcessPageSize] = useState<number>(10);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isAddingBonus, setIsAddingBonus] = useState(false);
+  const [bonusPayoutYear, setBonusPayoutYear] = useState<number | null>(null);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -570,7 +573,9 @@ export default function PayrollPage() {
       setPeriods(periodsData || []);
 
       if (periodsData && periodsData.length > 0) {
-        const targetPeriod = periodsData.find((p) => p.year === 2026 && p.month === 9) || periodsData[0];
+        const today = new Date();
+        const targetPeriod =
+          periodsData.find((p) => p.year === today.getFullYear() && p.month === today.getMonth() + 1) || periodsData[0];
         setSelectedPeriod(targetPeriod);
         const pRows = await salaryService.getPayrollsByPeriod(targetPeriod.id).catch(() => []);
         setPayrolls(pRows || []);
@@ -1236,6 +1241,47 @@ export default function PayrollPage() {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณเงินเดือน');
     } finally {
       setIsCalculating(false);
+    }
+  };
+
+  /** โหลดรายการเงินเดือนและสถานะรอบใหม่ หลังเพิ่ม/ลบรายการ manual หรือโบนัส (backend คำนวณใหม่ทั้งรอบแล้ว) */
+  const refreshSelectedPeriodPayrolls = async () => {
+    if (!selectedPeriod) return;
+    try {
+      const [pRows, updatedPeriods] = await Promise.all([
+        salaryService.getPayrollsByPeriod(selectedPeriod.id),
+        salaryService.getPayrollPeriods(),
+      ]);
+      setPayrolls(pRows || []);
+      setPeriods(updatedPeriods || []);
+      const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
+      if (current) setSelectedPeriod(current);
+    } catch (err) {
+      console.error('Failed to refresh payrolls:', err);
+    }
+  };
+
+  // ปีของโบนัสที่จะดึง: ค่าเริ่มต้น = ปีก่อนหน้า ถ้าเป็นรอบ ม.ค.–มี.ค. (จ่ายโบนัสต้นปี) ไม่เช่นนั้นใช้ปีของรอบ
+  const defaultBonusYear = selectedPeriod
+    ? (selectedPeriod.month <= 3 ? selectedPeriod.year - 1 : selectedPeriod.year)
+    : new Date().getFullYear();
+  const effectiveBonusYear = bonusPayoutYear ?? defaultBonusYear;
+
+  const handleAddBonusPayout = async () => {
+    if (!selectedPeriod) return;
+    try {
+      setIsAddingBonus(true);
+      const result = await salaryService.addBonusPayout(selectedPeriod.id, effectiveBonusYear);
+      setPayrolls(result.payrolls || []);
+      await refreshSelectedPeriodPayrolls();
+      const parts = [`เพิ่มโบนัส ${result.addedCount} คน รวม ฿${(result.addedAmount || 0).toLocaleString()}`];
+      if (result.alreadyPaidCount > 0) parts.push(`จ่ายไปแล้วในรอบอื่น ${result.alreadyPaidCount} คน`);
+      if (result.skippedEmployeeCodes?.length) parts.push(`ข้าม ${result.skippedEmployeeCodes.length} คนที่ไม่อยู่ในรอบนี้ (${result.skippedEmployeeCodes.slice(0, 5).join(', ')})`);
+      showToast(parts.join(' · '));
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการดึงโบนัสเข้ารอบเงินเดือน');
+    } finally {
+      setIsAddingBonus(false);
     }
   };
 
@@ -2357,6 +2403,31 @@ export default function PayrollPage() {
                         )}
                         <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
                       </button>
+
+                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && canAccessHrView && (
+                        <div className="h-9 inline-flex items-center border border-amber-200 rounded-xl overflow-hidden shadow-2xs">
+                          <select
+                            value={effectiveBonusYear}
+                            onChange={(e) => setBonusPayoutYear(Number(e.target.value))}
+                            disabled={isAddingBonus}
+                            className="h-full px-2 text-xs bg-white text-slate-700 border-r border-amber-200"
+                            title="ปีของโบนัสที่อนุมัติแล้ว"
+                          >
+                            {[defaultBonusYear - 1, defaultBonusYear, defaultBonusYear + 1].map((y) => (
+                              <option key={y} value={y}>โบนัสปี {y + 543}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleAddBonusPayout}
+                            disabled={isAddingBonus || !selectedPeriod}
+                            className="h-full inline-flex items-center gap-1.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="ดึงโบนัสที่อนุมัติแล้วเข้ามาจ่ายในรอบนี้ (ไม่จ่ายซ้ำ)"
+                          >
+                            {isAddingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gift className="w-3.5 h-3.5" />}
+                            <span>ดึงโบนัสเข้ารอบนี้</span>
+                          </button>
+                        </div>
+                      )}
 
                       {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
                         payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
@@ -3976,6 +4047,9 @@ export default function PayrollPage() {
         isOpen={isDetailDrawerOpen}
         onClose={() => setIsDetailDrawerOpen(false)}
         record={selectedPayrollRecord}
+        canEdit={canAccessHrView && (selectedPeriod?.status === 'DRAFT' || selectedPeriod?.status === 'REVIEW')}
+        payrollItems={payrollItems}
+        onChanged={refreshSelectedPeriodPayrolls}
       />
 
       {/* Confirm Modal: ไม่อนุมัติและส่งคืนรอบเงินเดือนให้ HR แก้ไข */}

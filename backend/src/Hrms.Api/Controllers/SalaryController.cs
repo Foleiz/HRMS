@@ -421,6 +421,51 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
+    /// เพิ่มรายการรายได้/รายหักแบบระบุเอง ให้พนักงานรายบุคคล (เฉพาะรอบ DRAFT/REVIEW) แล้วคำนวณใหม่
+    /// </summary>
+    [HttpPost("payrolls/{id:long}/adjustments")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> AddPayrollAdjustment(
+        long id,
+        [FromBody] AddPayrollAdjustmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.AddPayrollAdjustmentAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "เพิ่มรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ลบรายการที่ HR เพิ่มเอง แล้วคำนวณใหม่
+    /// </summary>
+    [HttpDelete("payrolls/{id:long}/adjustments/{detailId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> DeletePayrollAdjustment(
+        long id,
+        long detailId,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.DeletePayrollAdjustmentAsync(id, detailId, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "ลบรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้ (ป้องกันการจ่ายซ้ำ)
+    /// </summary>
+    [HttpPost("periods/{id:long}/bonus-payout")]
+    [ProducesResponseType(typeof(ApiResponse<BonusPayoutResultDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<BonusPayoutResultDto>>> AddBonusPayout(
+        long id,
+        [FromBody] AddBonusPayoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.AddApprovedBonusesToPeriodAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<BonusPayoutResultDto>.Ok(result, $"เพิ่มโบนัสเข้ารอบเงินเดือน {result.AddedCount} รายการ"));
+    }
+
+    /// <summary>
     /// ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW)
     /// </summary>
     [HttpDelete("periods/{id:long}")]
