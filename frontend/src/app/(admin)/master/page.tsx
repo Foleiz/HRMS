@@ -81,7 +81,7 @@ export default function MasterDataHubPage() {
       'marital-statuses': 'สถานภาพสมรส',
       banks: 'ข้อมูลธนาคาร',
     };
-    setBreadcrumb({ section: 'Master Data', page: tabNameMap[activeTab] });
+    setBreadcrumb({ section: 'ข้อมูลหลัก', page: tabNameMap[activeTab] });
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
 
@@ -263,7 +263,7 @@ export default function MasterDataHubPage() {
       {/* Top Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">การจัดการข้อมูล Master Data</h1>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">การจัดการข้อมูลหลัก</h1>
           <p className="text-xs text-slate-500 mt-1">
             ศูนย์กลางการกำหนดค่าตัวเลือกอ้างอิงและประเภทเอกสารประกอบในระบบ HRMS
           </p>
@@ -682,7 +682,7 @@ export default function MasterDataHubPage() {
                 <>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      รหัสประเภทเอกสาร (Document Code) *
+                      รหัสประเภทเอกสาร *
                     </label>
                     <input
                       type="text"
@@ -697,7 +697,7 @@ export default function MasterDataHubPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      ชื่อประเภทเอกสาร (Document Name) *
+                      ชื่อประเภทเอกสาร *
                     </label>
                     <input
                       type="text"
@@ -718,7 +718,7 @@ export default function MasterDataHubPage() {
                       className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
                     />
                     <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 cursor-pointer select-none">
-                      เอกสารนี้ต้องระบุวันหมดอายุ (Expiry Date Required)
+                      เอกสารนี้ต้องระบุวันหมดอายุ
                     </label>
                   </div>
 
