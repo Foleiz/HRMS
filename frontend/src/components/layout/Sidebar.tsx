@@ -228,10 +228,10 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/settings',
     icon: Settings,
     requiredPermissions: [
-      'SETTINGS_VIEW',
       'SETTINGS_USERS_VIEW',
       'SETTINGS_ROLES_VIEW',
       'SETTINGS_AUDIT_VIEW',
+      'SETTINGS_APPROVAL_FLOWS_MANAGE',
       'SYS_ADMIN',
     ],
   },

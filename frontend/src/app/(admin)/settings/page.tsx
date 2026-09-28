@@ -29,6 +29,7 @@ import { AuditLogDetailModal } from '@/components/settings/AuditLogDetailModal';
 import { ResetPasswordModal } from '@/components/settings/ResetPasswordModal';
 import { ApprovalFlowsTab } from '@/components/settings/ApprovalFlowsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 
@@ -40,10 +41,9 @@ export default function SettingsPage() {
   const { user, hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  // Permission flags for each sub-tab
+  // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง)
   const canViewUsersTab =
     hasPermission('SETTINGS_USERS_VIEW') ||
-    hasPermission('SETTINGS_VIEW') ||
     hasRole('ADMIN');
 
   const canViewRolesTab =
@@ -56,7 +56,6 @@ export default function SettingsPage() {
 
   const canViewApprovalFlowsTab =
     hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
-    hasPermission('SETTINGS_VIEW') ||
     hasRole('ADMIN');
 
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -518,9 +517,10 @@ export default function SettingsPage() {
 
       {/* 3. Tab Content */}
       {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab && !canViewApprovalFlowsTab ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 font-medium">
-          ขออภัย คุณไม่มีสิทธิ์เข้าถึงเมนูการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน
-        </div>
+        <AccessDenied
+          title="คุณไม่มีสิทธิ์เข้าถึงหน้าตั้งค่าระบบ"
+          message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน"
+        />
       ) : (
         <>
           {activeTab === 'users' && canViewUsersTab && (
