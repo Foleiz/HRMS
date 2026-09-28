@@ -127,10 +127,10 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
             </div>
           )}
 
-          {/* รหัสประเภท (leave_code) */}
+          {/* รหัสประเภท */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              รหัสประเภท (leave_code)
+              รหัสประเภทวันลา *
             </label>
             <input
               type="text"
@@ -145,14 +145,14 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
             />
           </div>
 
-          {/* ชื่อประเภท (leave_name) */}
+          {/* ชื่อประเภท */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              ชื่อประเภท (leave_name)
+              ชื่อประเภทวันลา *
             </label>
             <input
               type="text"
-              placeholder="เช่น ลาพักร้อน (Annual Leave)"
+              placeholder="เช่น ลาพักร้อน"
               value={leaveName}
               onChange={(e) => setLeaveName(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
