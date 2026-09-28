@@ -122,6 +122,8 @@ public class BankTransferSummaryDto
     public string SelectedBankCode { get; set; } = "ALL";
     public decimal TotalTransferAmount { get; set; }
     public int TotalEmployees { get; set; }
+    /// <summary>จำนวนพนักงานที่ต้องได้รับเงินแต่ยังไม่มีข้อมูลบัญชีธนาคาร</summary>
+    public int MissingAccountCount { get; set; }
     public List<BankTransferItemDto> Items { get; set; } = new();
 }
 

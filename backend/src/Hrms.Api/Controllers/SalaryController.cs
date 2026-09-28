@@ -1,4 +1,6 @@
+using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
+using Hrms.Application.Features.Payroll;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Application.Features.Payroll.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +16,13 @@ public class SalaryController : ControllerBase
 {
     private readonly ISalaryService _salaryService;
     private readonly IPayslipService _payslipService;
+    private readonly ICurrentUserService _currentUser;
 
-    public SalaryController(ISalaryService salaryService, IPayslipService payslipService)
+    public SalaryController(ISalaryService salaryService, IPayslipService payslipService, ICurrentUserService currentUser)
     {
         _salaryService = salaryService;
         _payslipService = payslipService;
+        _currentUser = currentUser;
     }
 
     #region Salary Structures
@@ -33,6 +37,7 @@ public class SalaryController : ControllerBase
         [FromQuery] long? levelId,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetAllStructuresAsync(positionId, levelId, cancellationToken);
         return Ok(ApiResponse<List<SalaryStructureDto>>.Ok(result));
     }
@@ -47,6 +52,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetStructureByIdAsync(id, cancellationToken);
         return Ok(ApiResponse<SalaryStructureDto>.Ok(result));
     }
@@ -61,6 +67,7 @@ public class SalaryController : ControllerBase
         [FromBody] CreateSalaryStructureRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_STRUCTURE"), "จัดการโครงสร้างเงินเดือน");
         var result = await _salaryService.CreateStructureAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetStructureById), new { id = result.Id }, ApiResponse<SalaryStructureDto>.Ok(result, "สร้างโครงสร้างเงินเดือนสำเร็จ"));
     }
@@ -77,6 +84,7 @@ public class SalaryController : ControllerBase
         [FromBody] UpdateSalaryStructureRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_STRUCTURE"), "จัดการโครงสร้างเงินเดือน");
         var result = await _salaryService.UpdateStructureAsync(id, request, cancellationToken);
         return Ok(ApiResponse<SalaryStructureDto>.Ok(result, "แก้ไขโครงสร้างเงินเดือนสำเร็จ"));
     }
@@ -91,6 +99,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_STRUCTURE"), "จัดการโครงสร้างเงินเดือน");
         await _salaryService.DeleteStructureAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบโครงสร้างเงินเดือนสำเร็จ"));
     }
@@ -106,6 +115,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> GetTaxBrackets(CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetTaxBracketsAsync(cancellationToken);
         return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result));
     }
@@ -122,6 +132,7 @@ public class SalaryController : ControllerBase
         [FromBody] UpdateTaxBracketRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.UpdateTaxBracketAsync(id, request, cancellationToken);
         return Ok(ApiResponse<TaxBracketDto>.Ok(result, "อัปเดตขั้นบันไดภาษีสำเร็จ"));
     }
@@ -136,6 +147,7 @@ public class SalaryController : ControllerBase
         [FromBody] BatchUpdateTaxBracketsRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.BatchUpdateTaxBracketsAsync(request, cancellationToken);
         return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result, "อัปเดตโครงสร้างอัตราภาษีสำเร็จ"));
     }
@@ -148,6 +160,7 @@ public class SalaryController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> ResetTaxBracketsToDefault(
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.ResetTaxBracketsToDefaultAsync(cancellationToken);
         return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result, "รีเซ็ตขั้นบันไดภาษีเป็นค่ามาตรฐานสรรพากร (8 ขั้น) สำเร็จ"));
     }
@@ -163,6 +176,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<SocialSecurityRateDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<SocialSecurityRateDto>>>> GetSocialSecurityRates(CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetSocialSecurityRatesAsync(cancellationToken);
         return Ok(ApiResponse<List<SocialSecurityRateDto>>.Ok(result));
     }
@@ -179,6 +193,7 @@ public class SalaryController : ControllerBase
         [FromBody] UpdateSocialSecurityRateRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "แก้ไขอัตราภาษีและประกันสังคม");
         var result = await _salaryService.UpdateSocialSecurityRateAsync(id, request, cancellationToken);
         return Ok(ApiResponse<SocialSecurityRateDto>.Ok(result, "อัปเดตอัตราประกันสังคมสำเร็จ"));
     }
@@ -197,6 +212,7 @@ public class SalaryController : ControllerBase
         [FromQuery] long? departmentId,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetEmployeeSalariesOverviewAsync(search, departmentId, cancellationToken);
         return Ok(ApiResponse<List<EmployeeSalaryOverviewDto>>.Ok(result));
     }
@@ -211,6 +227,7 @@ public class SalaryController : ControllerBase
         long employeeId,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetEmployeeSalaryHistoryAsync(employeeId, cancellationToken);
         return Ok(ApiResponse<List<EmployeeSalaryDto>>.Ok(result));
     }
@@ -227,6 +244,7 @@ public class SalaryController : ControllerBase
         [FromBody] AdjustEmployeeSalaryRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         var result = await _salaryService.AdjustEmployeeSalaryAsync(employeeId, request, cancellationToken);
         return Ok(ApiResponse<EmployeeSalaryDto>.Ok(result, "ปรับฐานเงินเดือนพนักงานสำเร็จ"));
     }
@@ -242,6 +260,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PayrollOverviewDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollOverviewDto>>> GetOverview(CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollOverviewAsync(cancellationToken);
         return Ok(ApiResponse<PayrollOverviewDto>.Ok(result));
     }
@@ -255,6 +274,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string? itemType,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollItemsAsync(itemType, cancellationToken);
         return Ok(ApiResponse<List<PayrollItemDto>>.Ok(result));
     }
@@ -268,6 +288,7 @@ public class SalaryController : ControllerBase
         [FromBody] CreatePayrollItemRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_ITEMS"), "จัดการรายการรายได้/รายหัก");
         var result = await _salaryService.CreatePayrollItemAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetPayrollItems), new { itemType = result.ItemType }, ApiResponse<PayrollItemDto>.Ok(result, "เพิ่มรายการสำเร็จ"));
     }
@@ -282,6 +303,7 @@ public class SalaryController : ControllerBase
         [FromBody] UpdatePayrollItemRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_ITEMS"), "จัดการรายการรายได้/รายหัก");
         var result = await _salaryService.UpdatePayrollItemAsync(id, request, cancellationToken);
         return Ok(ApiResponse<PayrollItemDto>.Ok(result, "แก้ไขรายการสำเร็จ"));
     }
@@ -295,6 +317,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_ITEMS"), "จัดการรายการรายได้/รายหัก");
         await _salaryService.DeletePayrollItemAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบรายการสำเร็จ"));
     }
@@ -310,6 +333,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<PayrollPeriodDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollPeriodDto>>>> GetPayrollPeriods(CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollPeriodsAsync(cancellationToken);
         return Ok(ApiResponse<List<PayrollPeriodDto>>.Ok(result));
     }
@@ -322,6 +346,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> GetPayrollPeriodById(long id, CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollPeriodByIdAsync(id, cancellationToken);
         if (result == null)
             return NotFound(ApiResponse<object>.Fail("ไม่พบข้อมูลรอบเงินเดือน"));
@@ -335,6 +360,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<PayrollRecordDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollRecordDto>>>> GetPayrollsByPeriod(long id, CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollsByPeriodIdAsync(id, cancellationToken);
         return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result));
     }
@@ -346,6 +372,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> GetPayrollDetails(long id, CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetPayrollDetailsAsync(id, cancellationToken);
         return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result));
     }
@@ -359,6 +386,7 @@ public class SalaryController : ControllerBase
         [FromBody] CreatePayrollPeriodRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         var result = await _salaryService.CreatePayrollPeriodAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetPayrollPeriodById), new { id = result.Id }, ApiResponse<PayrollPeriodDto>.Ok(result, "สร้างรอบเงินเดือนใหม่สำเร็จ"));
     }
@@ -372,6 +400,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         var result = await _salaryService.CalculatePayrollForPeriodAsync(id, cancellationToken);
         return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result, "ประมวลผลคำนวณเงินเดือนสำเร็จ"));
     }
@@ -386,6 +415,7 @@ public class SalaryController : ControllerBase
         [FromBody] UpdatePeriodStatusRequest request,
         CancellationToken cancellationToken)
     {
+        EnsureCanSetPeriodStatus(request.Status);
         var result = await _salaryService.UpdatePayrollPeriodStatusAsync(id, request.Status, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "อัปเดตสถานะรอบเงินเดือนสำเร็จ"));
     }
@@ -399,6 +429,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         await _salaryService.DeletePayrollPeriodAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบรอบเงินเดือนสำเร็จ"));
     }
@@ -413,6 +444,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string? bankCode,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetBankTransferSummaryAsync(id, bankCode, cancellationToken);
         return Ok(ApiResponse<BankTransferSummaryDto>.Ok(result, "ดึงข้อมูลการโอนเงินธนาคารสำเร็จ"));
     }
@@ -426,6 +458,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string bankCode = "004",
         CancellationToken cancellationToken = default)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "ดำเนินการเงินเดือนฝั่งการเงิน");
         var bytes = await _salaryService.GenerateBankTransferFileAsync(id, bankCode, cancellationToken);
         var filename = $"BankTransfer_Period_{id}_{bankCode}_{DateTime.Now:yyyyMMdd}.csv";
         return File(bytes, "text/csv", filename);
@@ -440,6 +473,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetTaxSsoSummaryAsync(id, cancellationToken);
         return Ok(ApiResponse<TaxSsoSummaryDto>.Ok(result, "ดึงข้อมูลสรุปภาษีและประกันสังคมสำเร็จ"));
     }
@@ -453,6 +487,7 @@ public class SalaryController : ControllerBase
         [FromQuery] int? year,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetEmployeeBonusesAsync(year, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "ดึงข้อมูลโบนัสพนักงานสำเร็จ"));
     }
@@ -466,6 +501,7 @@ public class SalaryController : ControllerBase
         [FromBody] CalculateBonusRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_BONUS"), "จัดการโบนัส");
         var result = await _salaryService.CalculateEmployeeBonusesAsync(request, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "คำนวณโบนัสประจำปีสำเร็จ"));
     }
@@ -479,6 +515,7 @@ public class SalaryController : ControllerBase
         [FromBody] SaveEmployeeBonusesRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_BONUS"), "จัดการโบนัส");
         var result = await _salaryService.SaveEmployeeBonusesAsync(request, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "บันทึกการจัดสรรโบนัสพนักงานสำเร็จ"));
     }
@@ -495,6 +532,7 @@ public class SalaryController : ControllerBase
         [FromBody] SetPaymentMethodRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser), "ดำเนินการโอนเงินเดือน");
         var result = await _salaryService.SetPaymentMethodAsync(id, request, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ตั้งค่าวิธีการจ่ายเงินสำเร็จ"));
     }
@@ -506,6 +544,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var result = await _salaryService.GetTransferListAsync(id, cancellationToken);
         return Ok(ApiResponse<PayrollTransferListDto>.Ok(result));
     }
@@ -520,6 +559,7 @@ public class SalaryController : ControllerBase
         [FromBody] MarkTransferredRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser), "ดำเนินการโอนเงินเดือน");
         var result = await _salaryService.MarkTransferredAsync(periodId, payrollId, request, cancellationToken);
         return Ok(ApiResponse<PayrollTransferItemDto>.Ok(result, "บันทึกการโอนเงินสำเร็จ"));
     }
@@ -534,6 +574,7 @@ public class SalaryController : ControllerBase
         [FromBody] ConfirmPaymentRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsApprover(_currentUser), "อนุมัติ/ยืนยันการจ่ายเงินเดือน");
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == null)
             return Forbid();
@@ -548,6 +589,7 @@ public class SalaryController : ControllerBase
         long payrollId,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var slip = await _salaryService.GetPayrollSlipAsync(payrollId, cancellationToken);
         return File(slip.Data, slip.ContentType, slip.FileName);
     }
@@ -559,6 +601,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string? bankCode,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "ดำเนินการเงินเดือนฝั่งการเงิน");
         var bytes = await _salaryService.GenerateAndMarkBankFileAsync(id, bankCode, cancellationToken);
         var filename = $"BankTransfer_Period_{id}_{bankCode ?? "ALL"}_{DateTime.Now:yyyyMMdd}.csv";
         return File(bytes, "text/csv", filename);
@@ -574,6 +617,7 @@ public class SalaryController : ControllerBase
         [FromBody] ConfirmPaymentRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsApprover(_currentUser), "อนุมัติ/ยืนยันการจ่ายเงินเดือน");
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == null)
             return Forbid();
@@ -589,6 +633,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         var result = await _salaryService.SubmitToFinanceAsync(id, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ส่งเรื่องให้ฝ่ายการเงิน/บัญชีเรียบร้อยแล้ว"));
     }
@@ -600,8 +645,12 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser), "ดำเนินการเงินเดือนฝั่งการเงิน");
         var employeeId = GetCurrentEmployeeId();
-        var result = await _salaryService.VerifyByFinanceAsync(id, employeeId ?? 1, cancellationToken);
+        if (employeeId == null)
+            return Forbid();
+
+        var result = await _salaryService.VerifyByFinanceAsync(id, employeeId.Value, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "ฝ่ายการเงินตรวจสอบเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ"));
     }
 
@@ -613,8 +662,12 @@ public class SalaryController : ControllerBase
         [FromBody] UploadBankReceiptRequest request,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser), "ดำเนินการโอนเงินเดือน");
         var employeeId = GetCurrentEmployeeId();
-        var result = await _salaryService.UploadBankReceiptAndMarkPaidAsync(id, request, employeeId ?? 1, cancellationToken);
+        if (employeeId == null)
+            return Forbid();
+
+        var result = await _salaryService.UploadBankReceiptAndMarkPaidAsync(id, request, employeeId.Value, cancellationToken);
         return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "บันทึกสลิปโอนเงินธนาคารและยืนยันรอบเงินเดือนสำเร็จ"));
     }
 
@@ -624,6 +677,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
         var receipt = await _salaryService.GetBankReceiptAsync(id, cancellationToken);
         return File(receipt.Data, receipt.ContentType, receipt.FileName);
     }
@@ -639,6 +693,27 @@ public class SalaryController : ControllerBase
     }
 
     #endregion
+
+    // ===== HELPER: ตรวจสิทธิ์การเปลี่ยนสถานะรอบเงินเดือนตามบทบาท =====
+    private void EnsureCanSetPeriodStatus(string? status)
+    {
+        var target = (status ?? string.Empty).Trim().ToUpperInvariant();
+        bool isHr = PayrollAccess.IsHr(_currentUser);
+        bool isFinance = PayrollAccess.IsFinance(_currentUser);
+        bool isApprover = PayrollAccess.IsApprover(_currentUser);
+
+        bool allowed = target switch
+        {
+            "PENDING_APPROVAL" or "SUBMITTED_TO_FINANCE" => isHr,
+            "FINANCE_VERIFIED" => isFinance,
+            "APPROVED" => isApprover,
+            "PROCESSING" or "PROCESSING_BANK" or "PAID" => isFinance || isApprover,
+            "REVIEW" or "CLOSED" => isHr || isFinance || isApprover,
+            _ => isHr || isFinance || isApprover // สถานะที่ไม่ถูกต้องจะถูกปฏิเสธใน Service อีกชั้น
+        };
+
+        PayrollAccess.Ensure(allowed, $"เปลี่ยนสถานะรอบเงินเดือนเป็น {target}");
+    }
 
     // ===== HELPER: ดึง Employee ID ของ User ที่ Login อยู่ =====
     private long? GetCurrentEmployeeId()

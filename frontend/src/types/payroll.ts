@@ -233,6 +233,8 @@ export interface PayrollDetailItem {
   bankCode: string;
   accountNumber: string;
   netPayableSalary: number;
+  /** READY = พร้อมโอน, MISSING_ACCOUNT = ยังไม่มีบัญชีธนาคาร */
+  status?: 'READY' | 'MISSING_ACCOUNT';
 }
 
 export interface BankTransferSummary {
@@ -240,6 +242,8 @@ export interface BankTransferSummary {
   periodName: string;
   totalAmount: number;
   totalRecords: number;
+  /** จำนวนพนักงานที่ยังไม่มีข้อมูลบัญชีธนาคาร (ต้องแก้ก่อนสร้างไฟล์ธนาคาร) */
+  missingAccountCount?: number;
   items: BankTransferItem[];
 }
 

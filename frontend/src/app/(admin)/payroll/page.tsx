@@ -866,7 +866,17 @@ export default function PayrollPage() {
       setSelectedPeriod(updatedPeriod);
       showToast('📁 ดาวน์โหลดไฟล์ธนาคารสำเร็จ สถานะเปลี่ยนเป็น PROCESSING');
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างไฟล์ธนาคาร');
+      // responseType เป็น blob → ข้อความ error จาก API อยู่ใน Blob ต้องแปลงเป็น JSON ก่อน
+      let message: string | undefined = err?.response?.data?.message;
+      const data = err?.response?.data;
+      if (!message && data instanceof Blob) {
+        try {
+          message = JSON.parse(await data.text())?.message;
+        } catch {
+          /* ignore parse error */
+        }
+      }
+      showToast(message || 'เกิดข้อผิดพลาดในการสร้างไฟล์ธนาคาร');
     } finally {
       setIsGeneratingBankFile(false);
     }
