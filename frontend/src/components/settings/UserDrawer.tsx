@@ -137,7 +137,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   };
 
   const handleAddRoleCard = () => {
-    if (roles.length === 0) return;
+    if (!roles || roles.length === 0) return;
     // หา Role ที่ยังไม่ได้เลือก
     const assignedIds = new Set(selectedRoles.map((r) => r.roleId));
     const availableRole = roles.find((r) => !assignedIds.has(r.id)) || roles[0];
