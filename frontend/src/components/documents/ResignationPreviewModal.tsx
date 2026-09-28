@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer, FileText } from 'lucide-react';
+import { organizationService } from '@/services/organizationService';
 
 export interface ResignationPreviewModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ export interface ResignationPreviewModalProps {
   data: {
     employeeName: string;
     titlePrefix?: string;
+    companyLogo?: string | null;
+    companyName?: string;
     employeeCode?: string;
     positionTitle?: string;
     departmentName?: string;
@@ -174,6 +177,34 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   onClose,
   data,
 }) => {
+  const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (data?.companyLogo) {
+      setCompanyLogo(data.companyLogo);
+      return;
+    }
+    let isMounted = true;
+    organizationService
+      .getCompany()
+      .then((comp) => {
+        if (isMounted && comp?.logoData) {
+          const src = comp.logoData.startsWith('data:')
+            ? comp.logoData
+            : `data:image/png;base64,${comp.logoData}`;
+          setCompanyLogo(src);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load company logo for resignation preview:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, data?.companyLogo]);
+
   if (!isOpen || !data) return null;
 
   const handlePrint = () => {
@@ -225,12 +256,12 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
             className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] p-8 sm:p-14 text-black text-[13.5px] leading-relaxed shadow-sm border border-gray-200 select-text"
             style={{ fontFamily: "'Prompt', 'Sarabun', 'TH Sarabun New', sans-serif" }}
           >
-            {/* Syaco Logo Header */}
+            {/* Company Logo Header */}
             <div className="flex flex-col items-center justify-center pb-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/syaco-logo.png"
-                alt="SYACO - Systematical & Creative Operator"
+                src={companyLogo || '/syaco-logo.png'}
+                alt="Company Logo"
                 className="h-16 w-auto object-contain"
               />
             </div>
