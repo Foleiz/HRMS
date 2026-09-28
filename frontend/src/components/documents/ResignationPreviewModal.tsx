@@ -7,6 +7,8 @@ import { X, Printer, FileText } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { approvalService } from '@/services/approvalService';
+import { employeeService } from '@/services/employeeService';
+import { useAuth } from '@/context/AuthContext';
 import type { ApprovalTimeline } from '@/types/leave';
 import { APPROVER_TYPE_LABELS, type ApprovalStep } from '@/types/approval';
 
@@ -45,6 +47,8 @@ export interface ResignationPreviewModalProps {
     addressedTo?: string;
     /** สายการอนุมัติจริงของคำขอ (มีเมื่อยื่นคำขอแล้ว) ใช้กำหนดจำนวน/หัวข้อช่องลงนาม และชื่อผู้อนุมัติ */
     timeline?: ApprovalTimeline | null;
+    /** ผู้ใช้ที่เปิดดูเป็นผู้อนุมัติของขั้นตอนปัจจุบัน → แสดงลายเซ็น/ตำแหน่ง/วันที่ของผู้ใช้ในช่องนั้นล่วงหน้า */
+    canApproveCurrentStep?: boolean;
     companyAddress?: string | null;
     // Approvers (Optional)
     supervisorName?: string;
@@ -232,6 +236,8 @@ export interface ApprovalSlot {
   signedDate?: string | null;
   /** สถานะขั้นตอน (จาก timeline): COMPLETED, WAITING, PENDING_FUTURE, REJECTED */
   status?: string | null;
+  /** true = แสดงข้อมูลผู้อนุมัติล่วงหน้า (ยังไม่ได้กดอนุมัติ) */
+  isPreviewSignature?: boolean;
 }
 
 /**
@@ -556,12 +562,52 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   // ช่องลงนามตามสายการอนุมัติ:
   // 1) คำขอที่ยื่นแล้ว → ใช้ timeline จริง (พร้อมชื่อ/วันที่/ลายเซ็นผู้ที่อนุมัติแล้ว)
   // 2) ยังไม่ยื่น → จำลองสายการอนุมัติ RESIGNATION_REQUEST ที่ตรงกับพนักงานคนนี้จากหน้าตั้งค่า
+  // ผู้ใช้ที่กำลังเปิดดู (ใช้แสดงลายเซ็นล่วงหน้าในช่องของขั้นตอนที่รอผู้ใช้อนุมัติ)
+  const { user } = useAuth();
+  const [viewerPosition, setViewerPosition] = useState<string | null>(null);
+  const showViewerPreview = !!(isOpen && data?.canApproveCurrentStep && user?.employeeId);
+
+  useEffect(() => {
+    if (!showViewerPreview || !user?.employeeId) {
+      setViewerPosition(null);
+      return;
+    }
+    let isMounted = true;
+    employeeService
+      .getById(user.employeeId)
+      .then((emp) => {
+        if (isMounted) setViewerPosition(emp?.positionName || null);
+      })
+      .catch(() => {
+        if (isMounted) setViewerPosition(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [showViewerPreview, user?.employeeId]);
+
+  const todayThai = toThaiShortDate(new Date().toISOString());
+
   const timelineSlots: ApprovalSlot[] | null =
     data?.timeline?.steps && data.timeline.steps.length > 0
       ? [...data.timeline.steps]
           .sort((a, b) => a.stepNo - b.stepNo)
           .map((s) => {
             const approved = s.status === 'COMPLETED' && (s.actionDecision === 'APPROVE' || !s.actionDecision);
+            // ขั้นตอนที่รอผู้ใช้คนนี้อนุมัติ → แสดงลายเซ็น ชื่อ ตำแหน่ง และวันที่ปัจจุบันล่วงหน้า
+            if (!approved && s.status === 'WAITING' && showViewerPreview && user) {
+              return {
+                stepNo: s.stepNo,
+                approverType: s.approverType,
+                approverLabel: s.approverTitle,
+                signedName: user.fullName || null,
+                signedEmployeeId: user.employeeId,
+                signedDate: todayThai,
+                positionHint: viewerPosition,
+                status: s.status,
+                isPreviewSignature: true,
+              };
+            }
             return {
               stepNo: s.stepNo,
               approverType: s.approverType,
@@ -694,7 +740,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
             <div className="px-6 py-3 border-b border-gray-100 bg-slate-50 text-xs text-slate-600 space-y-1.5">
               <div className="flex flex-wrap gap-2">
                 {timelineSlots.map((slot) => {
-                  const done = !!slot.signedDate;
+                  const done = !!slot.signedDate && !slot.isPreviewSignature;
                   const rejected = slot.status === 'REJECTED';
                   const waiting = slot.status === 'WAITING';
                   return (
@@ -711,13 +757,21 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                       }`}
                     >
                       ขั้นที่ {slot.stepNo} · {getSlotHeading(slot)} ·{' '}
-                      {rejected ? 'ไม่อนุมัติ' : done ? `อนุมัติแล้ว ${slot.signedDate}` : waiting ? 'รออนุมัติ' : 'ยังไม่ถึงขั้นตอน'}
+                      {rejected
+                        ? 'ไม่อนุมัติ'
+                        : slot.isPreviewSignature
+                          ? 'รอคุณอนุมัติ (แสดงลายเซ็นของคุณล่วงหน้า)'
+                          : done
+                            ? `อนุมัติแล้ว ${slot.signedDate}`
+                            : waiting
+                              ? 'รออนุมัติ'
+                              : 'ยังไม่ถึงขั้นตอน'}
                     </span>
                   );
                 })}
               </div>
               <p className="text-[11px] text-slate-400">
-                ลายเซ็น ตำแหน่ง และวันที่ ของผู้อนุมัติ จะแสดงในเอกสารหลังจากผู้อนุมัติขั้นนั้นกด &quot;อนุมัติ&quot; แล้ว
+                ช่องของขั้นตอนที่รอคุณอนุมัติ จะแสดงลายเซ็น ตำแหน่ง และวันที่ของคุณล่วงหน้า · ขั้นตอนอื่นจะแสดงเมื่อผู้อนุมัติขั้นนั้นกด &quot;อนุมัติ&quot;
               </p>
             </div>
           )}

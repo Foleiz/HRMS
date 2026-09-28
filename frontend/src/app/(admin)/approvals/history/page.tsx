@@ -542,6 +542,7 @@ export default function ApprovalHistoryPage() {
           employeeName: selectedResignForPreview.employeeName,
           employeeId: selectedResignForPreview.employeeId,
           timeline: selectedResignForPreview.timeline,
+          canApproveCurrentStep: !!(selectedResignForPreview.canApprove || selectedResignForPreview.isMyTurnToApprove),
           employeeCode: selectedResignForPreview.employeeCode,
           positionTitle: selectedResignForPreview.positionName,
           departmentName: selectedResignForPreview.departmentName,
