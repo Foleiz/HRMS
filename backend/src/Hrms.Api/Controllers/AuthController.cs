@@ -16,11 +16,16 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ITokenService _tokenService;
 
-    public AuthController(IAuthService authService, ICurrentUserService currentUserService)
+    public AuthController(
+        IAuthService authService,
+        ICurrentUserService currentUserService,
+        ITokenService tokenService)
     {
         _authService = authService;
         _currentUserService = currentUserService;
+        _tokenService = tokenService;
     }
 
     /// <summary>
@@ -37,7 +42,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// ดึงข้อมูลโปรไฟล์ บทบาท และสิทธิ์ของผู้ใช้งานปัจจุบันที่ล็อกอินอยู่
+    /// ดึงข้อมูลโปรไฟล์ บทบาท และสิทธิ์ของผู้ใช้งานปัจจุบันที่ล็อกอินอยู่ (พร้อมออก Token ฉบับอัปเดตสิทธิ์ล่าสุดใน Header)
     /// </summary>
     [HttpGet("me")]
     [Authorize]
@@ -52,6 +57,11 @@ public class AuthController : ControllerBase
         }
 
         var profile = await _authService.GetCurrentUserProfileAsync(userId.Value, cancellationToken);
+        
+        // ออก Token ชุดใหม่ที่อัปเดตสิทธิ์สดล่าสุดจาก Database ส่งกลับไปใน Header
+        var (token, _) = _tokenService.GenerateToken(profile);
+        Response.Headers["X-Refreshed-Token"] = token;
+
         return Ok(ApiResponse<UserInfoDto>.Ok(profile));
     }
 

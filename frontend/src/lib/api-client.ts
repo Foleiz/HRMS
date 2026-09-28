@@ -30,7 +30,14 @@ apiClient.interceptors.request.use(
 
 // Response Interceptor: ดักจับ Error กลาง
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // ซิงค์ Token อัตโนมัติเมื่อ Backend ออก Token ชุดใหม่ให้ (สิทธิ์ล่าสุดที่เปลี่ยนใน DB)
+    const refreshedToken = response.headers?.['x-refreshed-token'];
+    if (refreshedToken && typeof window !== 'undefined') {
+      localStorage.setItem('hrms_token', refreshedToken);
+    }
+    return response;
+  },
   (error) => {
     let errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
 
@@ -66,6 +73,18 @@ apiClient.interceptors.response.use(
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
+    }
+
+    // จัดการกรณี 403 Forbidden: เมื่อสิทธิ์ถูกถอน หรือพยายามเข้าถึงหน้าที่ไม่มีสิทธิ์
+    if (error.response?.status === 403 && typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('hrms:permission-revoked', {
+          detail: {
+            url: error.config?.url,
+            message: errorMessage || 'สิทธิ์การใช้งานของคุณมีการเปลี่ยนแปลงโดยผู้ดูแลระบบ',
+          },
+        })
+      );
     }
 
     return Promise.reject(new Error(errorMessage));

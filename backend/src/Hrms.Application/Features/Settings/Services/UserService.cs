@@ -99,6 +99,15 @@ public class UserService : IUserService
         return result;
     }
 
+    public async Task<List<long>> GetAssignedEmployeeIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.UserAccounts
+            .AsNoTracking()
+            .Select(u => u.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<UserAccountDto> GetUserByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         var user = await _dbContext.UserAccounts

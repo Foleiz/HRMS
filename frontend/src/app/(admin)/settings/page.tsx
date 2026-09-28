@@ -29,6 +29,7 @@ import { AuditLogDetailModal } from '@/components/settings/AuditLogDetailModal';
 import { ResetPasswordModal } from '@/components/settings/ResetPasswordModal';
 import { ApprovalFlowsTab } from '@/components/settings/ApprovalFlowsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 
@@ -40,10 +41,9 @@ export default function SettingsPage() {
   const { user, hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  // Permission flags for each sub-tab
+  // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง)
   const canViewUsersTab =
     hasPermission('SETTINGS_USERS_VIEW') ||
-    hasPermission('SETTINGS_VIEW') ||
     hasRole('ADMIN');
 
   const canViewRolesTab =
@@ -56,7 +56,6 @@ export default function SettingsPage() {
 
   const canViewApprovalFlowsTab =
     hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
-    hasPermission('SETTINGS_VIEW') ||
     hasRole('ADMIN');
 
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -130,6 +129,7 @@ export default function SettingsPage() {
 
   // Employees (for dropdown in drawer)
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [assignedEmployeeIds, setAssignedEmployeeIds] = useState<number[]>([]);
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -262,6 +262,15 @@ export default function SettingsPage() {
     }
   };
 
+  const loadAssignedEmployeeIds = async () => {
+    try {
+      const ids = await settingsService.getAssignedEmployeeIds();
+      setAssignedEmployeeIds(ids);
+    } catch {
+      // Non-blocking fallback
+    }
+  };
+
   // Track tabs that have been initialized to avoid redundant refetches on tab switch
   const loadedTabsRef = useRef<Set<TabType>>(new Set());
 
@@ -272,6 +281,7 @@ export default function SettingsPage() {
         loadedTabsRef.current.add('users');
         loadUsers();
         loadRoles(false);
+        loadAssignedEmployeeIds();
       }
     } else if (activeTab === 'roles' && canViewRolesTab) {
       if (!loadedTabsRef.current.has('roles')) {
@@ -317,6 +327,7 @@ export default function SettingsPage() {
     await settingsService.createUser(data);
     success('สร้างบัญชีผู้ใช้งานสำเร็จ');
     loadUsers();
+    loadAssignedEmployeeIds();
   };
 
   const handleUpdateUser = async (id: number, data: UpdateUserRequest) => {
@@ -356,6 +367,7 @@ export default function SettingsPage() {
           success('ลบบัญชีผู้ใช้งานสำเร็จ');
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
           loadUsers();
+          loadAssignedEmployeeIds();
         } catch (err: any) {
           error(err.message || 'ไม่สามารถลบบัญชีผู้ใช้งานได้');
         }
@@ -518,9 +530,10 @@ export default function SettingsPage() {
 
       {/* 3. Tab Content */}
       {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab && !canViewApprovalFlowsTab ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 font-medium">
-          ขออภัย คุณไม่มีสิทธิ์เข้าถึงเมนูการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน
-        </div>
+        <AccessDenied
+          title="คุณไม่มีสิทธิ์เข้าถึงหน้าตั้งค่าระบบ"
+          message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน"
+        />
       ) : (
         <>
           {activeTab === 'users' && canViewUsersTab && (
@@ -550,12 +563,14 @@ export default function SettingsPage() {
               onAddUserClick={() => {
                 if (roles.length === 0) loadRoles(false);
                 if (employees.length === 0) loadEmployees();
+                loadAssignedEmployeeIds();
                 setUserToEdit(null);
                 setIsUserDrawerOpen(true);
               }}
               onEditUserClick={(user) => {
                 if (roles.length === 0) loadRoles(false);
                 if (employees.length === 0) loadEmployees();
+                loadAssignedEmployeeIds();
                 setUserToEdit(user);
                 setIsUserDrawerOpen(true);
               }}
@@ -629,6 +644,7 @@ export default function SettingsPage() {
         userToEdit={userToEdit}
         employees={employees}
         roles={roles}
+        assignedEmployeeIds={assignedEmployeeIds}
       />
 
       {/* Reset Password Modal */}

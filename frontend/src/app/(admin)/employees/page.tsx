@@ -112,7 +112,7 @@ export const getRequiredBankDigits = (bankName?: string): number => {
 };
 
 export default function EmployeesPage() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission, getDataScope } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -121,6 +121,16 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // ซ่อน Dropdown ตัวกรองแผนกสำหรับ Role หัวหน้าแผนก (DEPT_MGR) เนื่องจากเห็นเฉพาะแผนกของตนเองอยู่แล้ว
+  const isDeptManager = useMemo(() => {
+    if (!user) return false;
+    const roles = user.roles || [];
+    if (roles.includes('ADMIN') || roles.includes('SYSTEM_SUPER') || roles.includes('CEO')) {
+      return false;
+    }
+    return roles.includes('DEPT_MGR') || getDataScope('EMP_VIEW') === 'DEPARTMENT';
+  }, [user, getDataScope]);
 
   // Sync breadcrumb
   useEffect(() => {
@@ -892,21 +902,23 @@ export default function EmployeesPage() {
             />
           </div>
 
-          {/* Department Filter Dropdown */}
-          <div className="shrink-0">
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
-            >
-              <option value="ALL">ทุกแผนก</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.departmentName}>
-                  {dept.departmentName}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Department Filter Dropdown - ซ่อนสำหรับ role หัวหน้าแผนก (DEPT_MGR) */}
+          {!isDeptManager && (
+            <div className="shrink-0">
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              >
+                <option value="ALL">ทุกแผนก</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.departmentName}>
+                    {dept.departmentName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Right Side: + เพิ่มพนักงาน Button */}

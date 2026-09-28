@@ -32,6 +32,14 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<PagedResult<UserAccountDto>>.Ok(result, "ดึงรายการบัญชีผู้ใช้งานสำเร็จ"));
     }
 
+    [HttpGet("assigned-employee-ids")]
+    [ProducesResponseType(typeof(ApiResponse<List<long>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<long>>>> GetAssignedEmployeeIds(CancellationToken cancellationToken)
+    {
+        var result = await _userService.GetAssignedEmployeeIdsAsync(cancellationToken);
+        return Ok(ApiResponse<List<long>>.Ok(result, "ดึงรหัสพนักงานที่มีบัญชีผู้ใช้แล้วสำเร็จ"));
+    }
+
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<UserAccountDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

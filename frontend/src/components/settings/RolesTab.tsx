@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   Plus,
@@ -10,8 +11,8 @@ import {
   Edit2,
   Trash2,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
-  ChevronLeft,
   Users,
   CalendarCheck,
   CreditCard,
@@ -41,6 +42,14 @@ import {
 } from '@/types/settings';
 import { useToast } from '@/context/ToastContext';
 
+interface ActivePopoverState {
+  moduleCode: string;
+  scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization';
+  top?: number;
+  bottom?: number;
+  left: number;
+}
+
 interface RolesTabProps {
   roles: RoleSummary[];
   selectedRoleMatrix: RoleDetail | null;
@@ -53,67 +62,40 @@ interface RolesTabProps {
   isSavingMatrix: boolean;
 }
 
-/* ─── Checkbox (still used by quick-action toolbar area) ─── */
-const Checkbox: React.FC<{
-  checked: boolean;
-  indeterminate?: boolean;
-  onChange: () => void;
-  title?: string;
-  ariaLabel?: string;
-  disabled?: boolean;
-}> = ({ checked, indeterminate = false, onChange, title, ariaLabel, disabled }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.indeterminate = indeterminate;
-  }, [indeterminate]);
-  return (
-    <input
-      ref={ref}
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-      title={title}
-      aria-label={ariaLabel}
-      className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-    />
-  );
-};
-
-/* ─── iOS-style Toggle Switch ─── */
+/* ─── Toggle Switch Component ─── */
 const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: () => void;
-  activeColor: string;
-  label: string;
   disabled?: boolean;
-}> = ({ checked, onChange, activeColor, label, disabled = false }) => (
-  <div className="flex flex-col items-center gap-1.5">
+  size?: 'sm' | 'md';
+}> = ({ checked, onChange, disabled = false, size = 'md' }) => {
+  const isSm = size === 'sm';
+  return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={onChange}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!disabled) onChange();
+      }}
       disabled={disabled}
-      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 cursor-pointer ${
-        checked ? activeColor : 'bg-slate-200 hover:bg-slate-300'
+      className={`relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
+        isSm ? 'h-5 w-9' : 'h-6 w-11'
+      } ${
+        checked ? 'bg-[#0B2046]' : 'bg-slate-300 hover:bg-slate-400'
       } ${disabled ? 'opacity-40 !cursor-not-allowed' : ''}`}
     >
       <span
-        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? 'translate-x-6' : 'translate-x-1'
+        className={`inline-block transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          isSm
+            ? checked ? 'h-3.5 w-3.5 translate-x-4.5' : 'h-3.5 w-3.5 translate-x-1'
+            : checked ? 'h-4.5 w-4.5 translate-x-5.5' : 'h-4.5 w-4.5 translate-x-1'
         }`}
       />
     </button>
-    <span
-      className={`text-[11px] font-semibold leading-none ${
-        checked ? 'text-slate-800' : 'text-slate-400'
-      }`}
-    >
-      {label}
-    </span>
-  </div>
-);
+  );
+};
 
 /* ─── Constants: ไอคอนตรงตามเมนูใน Sidebar ครบทั้ง 19 เมนู ─── */
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -122,8 +104,8 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   MY_SALARY: Wallet,
   MY_PROFILE: User,
   MY_LEAVE: CalendarCheck,
-  MY_ATTENDANCE: Clock,
-  MY_NEWS: CalendarDays,
+  MY_ATTENDANCE: CalendarDays,
+  MY_NEWS: Megaphone,
   MY_DOCS: FileText,
   ATTENDANCE_DAILY: CalendarDays,
   ATTENDANCE_SCHEDULE: CalendarRange,
@@ -138,7 +120,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   SETTINGS: Settings,
 };
 
-/** ชื่อหมวดหมู่ตรงตามหัวข้อเมนู Sidebar เพื่อให้ตั้งสิทธิ์ครอบคลุมแต่ละหน้า */
+/** ชื่อหมวดหมู่ตรงตามหัวข้อเมนู Sidebar */
 const CATEGORY_NAMES: Record<string, string> = {
   DASHBOARD: 'แดชบอร์ด',
   EMPLOYEE: 'พนักงาน',
@@ -161,149 +143,28 @@ const CATEGORY_NAMES: Record<string, string> = {
   SETTINGS: 'ตั้งค่า',
 };
 
-
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
-  description: string;
-  badgeBg: string;
-  badgeText: string;
-  rowBg: string;
-  accentBorder: string;
-  toggleOn: string;
 }[] = [
-  {
-    key: 'self',
-    label: 'ตัวเอง',
-    description: 'มองเห็นเฉพาะข้อมูลของตัวเองเท่านั้น',
-    badgeBg: 'bg-slate-100',
-    badgeText: 'text-slate-700',
-    rowBg: 'bg-slate-50/60',
-    accentBorder: 'border-slate-400',
-    toggleOn: 'bg-slate-600',
-  },
-  {
-    key: 'team',
-    label: 'ทีม',
-    description: 'มองเห็นข้อมูลสมาชิกทีมภายใต้บังคับบัญชา',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
-    rowBg: 'bg-blue-50/40',
-    accentBorder: 'border-blue-500',
-    toggleOn: 'bg-blue-500',
-  },
-  {
-    key: 'department',
-    label: 'แผนก',
-    description: 'มองเห็นข้อมูลพนักงานในแผนกเดียวกัน',
-    badgeBg: 'bg-emerald-50',
-    badgeText: 'text-emerald-700',
-    rowBg: 'bg-emerald-50/40',
-    accentBorder: 'border-emerald-500',
-    toggleOn: 'bg-emerald-500',
-  },
-  {
-    key: 'division',
-    label: 'ฝ่าย',
-    description: 'มองเห็นข้อมูลพนักงานในฝ่ายงานเดียวกัน',
-    badgeBg: 'bg-purple-50',
-    badgeText: 'text-purple-700',
-    rowBg: 'bg-purple-50/40',
-    accentBorder: 'border-purple-400',
-    toggleOn: 'bg-purple-500',
-  },
-  {
-    key: 'organization',
-    label: 'องค์กร',
-    description: 'มองเห็นข้อมูลพนักงานทั้งองค์กร',
-    badgeBg: 'bg-amber-50',
-    badgeText: 'text-amber-700',
-    rowBg: 'bg-amber-50/40',
-    accentBorder: 'border-amber-500',
-    toggleOn: 'bg-amber-500',
-  },
+  { key: 'self', label: 'ตัวเอง' },
+  { key: 'team', label: 'ทีม' },
+  { key: 'department', label: 'แผนก' },
+  { key: 'division', label: 'ฝ่าย' },
+  { key: 'organization', label: 'องค์กร' },
 ];
 
 const ACTIONS_CONFIG: {
   key: 'view' | 'create' | 'edit' | 'approve';
   label: string;
-}[] = [
-  { key: 'view', label: 'ดู' },
-  { key: 'create', label: 'สร้าง' },
-  { key: 'edit', label: 'แก้ไข' },
-  { key: 'approve', label: 'อนุมัติ' },
-];
-
-/* ─── Dashboard Items Configuration ─── */
-const DASHBOARD_CONFIG: {
-  code: string;
-  name: string;
-  subtitle: string;
-  description: string;
-  badge: string;
-  badgeBg: string;
-  badgeText: string;
-  defaultScope: 'self' | 'team' | 'department' | 'division' | 'organization';
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  {
-    code: 'DASHBOARD_EMPLOYEE',
-    name: 'แดชบอร์ดพนักงาน',
-    subtitle: 'Employee Dashboard',
-    description: 'ข้อมูลส่วนบุคคล สิทธิ์วันลาคงเหลือ ปฏิทินส่วนตัว ข่าวสารประชาสัมพันธ์ และประวัติทำรายการล่าสุด',
-    badge: 'พนักงานทั่วไป (ESS)',
-    badgeBg: 'bg-slate-100',
-    badgeText: 'text-slate-700',
-    defaultScope: 'self',
-    icon: User,
-  },
-  {
-    code: 'DASHBOARD_DEPT',
-    name: 'แดชบอร์ดหัวหน้าแผนก',
-    subtitle: 'Department Head Dashboard',
-    description: 'กำลังพลและสถิติการมาทำงานระดับแผนก รายการรออนุมัติ กราฟสัดส่วนการเข้างานประจำวัน',
-    badge: 'หัวหน้าแผนก (Dept Head)',
-    badgeBg: 'bg-emerald-50',
-    badgeText: 'text-emerald-700',
-    defaultScope: 'department',
-    icon: Users,
-  },
-  {
-    code: 'DASHBOARD_DIV',
-    name: 'แดชบอร์ดผู้จัดการฝ่าย',
-    subtitle: 'Division Head Dashboard',
-    description: 'ภาพรวมกำลังพลระดับฝ่ายงาน สถิติและแนวโน้มการเข้างานทั้งฝ่าย รายการรออนุมัติฝ่าย',
-    badge: 'ผู้จัดการฝ่าย (Div Head)',
-    badgeBg: 'bg-purple-50',
-    badgeText: 'text-purple-700',
-    defaultScope: 'division',
-    icon: Building2,
-  },
-  {
-    code: 'DASHBOARD_CEO',
-    name: 'แดชบอร์ดผู้บริหาร (CEO)',
-    subtitle: 'Executive / CEO Dashboard',
-    description: 'ภาพรวมทั้งองค์กร สถิติกำลังพลรวม ข้อมูลสรุปเชิงบริหาร การลาและภาพรวมการทำงานระดับสูง',
-    badge: 'ผู้บริหารสูงสุด (CEO)',
-    badgeBg: 'bg-amber-50',
-    badgeText: 'text-amber-700',
-    defaultScope: 'organization',
-    icon: BarChart3,
-  },
-  {
-    code: 'DASHBOARD_ADMIN',
-    name: 'แดชบอร์ดผู้ดูแลระบบ (Admin)',
-    subtitle: 'System Admin Dashboard',
-    description: 'ภาพรวมระบบทั้งหมด สถิติระบบทั้งองค์กร การแจ้งเตือนและการบริหารจัดการ',
-    badge: 'ผู้ดูแลระบบ (Admin)',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
-    defaultScope: 'organization',
-    icon: Shield,
-  },
+  { key: 'view', label: 'ดูข้อมูล (View)', icon: Eye },
+  { key: 'create', label: 'สร้าง (Create)', icon: Plus },
+  { key: 'edit', label: 'แก้ไข (Edit)', icon: Edit2 },
+  { key: 'approve', label: 'อนุมัติ (Approve)', icon: Shield },
 ];
 
-/* ─── Main Component ─── */
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
   selectedRoleMatrix,
@@ -319,17 +180,28 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   /* ── State ── */
   const [searchRole, setSearchRole] = useState('');
+  const [searchModuleQuery, setSearchModuleQuery] = useState('');
   const [localModules, setLocalModules] = useState<ModulePermissionScope[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
 
-  // Toggle UI navigation
-  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>('');
-  const [selectedModuleCode, setSelectedModuleCode] = useState<string>('');
+  // Accordion expanded categories
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const [openCategoryCode, setOpenCategoryCode] = useState<string | null>(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Active Scope Popover Portal State
+  const [activePopover, setActivePopover] = useState<ActivePopoverState | null>(null);
+
+  // Close popover when scrolling or resizing
+  useEffect(() => {
+    if (!activePopover) return;
+    const handleDismiss = () => setActivePopover(null);
+    window.addEventListener('scroll', handleDismiss, true);
+    window.addEventListener('resize', handleDismiss);
+    return () => {
+      window.removeEventListener('scroll', handleDismiss, true);
+      window.removeEventListener('resize', handleDismiss);
+    };
+  }, [activePopover]);
 
   const [rightPaneHeight, setRightPaneHeight] = useState<number | null>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -345,7 +217,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     const resizeObserver = new ResizeObserver(updateHeight);
     resizeObserver.observe(rightPaneRef.current);
     return () => resizeObserver.disconnect();
-  }, [selectedRoleMatrix, selectedModuleCode, openCategoryCode]);
+  }, [selectedRoleMatrix, expandedCategories]);
 
   const lastRoleIdRef = useRef<number | null>(null);
 
@@ -391,30 +263,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         setIsDirty(false);
         setSaveSuccessMsg(false);
         lastRoleIdRef.current = selectedRoleMatrix.id;
-        // Auto-select first module
-        if (normalized.length > 0) {
-          const first = normalized[0];
-          setSelectedCategoryCode(first.categoryCode || first.groupName || 'OTHER');
-          setSelectedModuleCode(first.moduleCode);
-        }
+        setActivePopover(null);
+        setExpandedCategories(new Set());
       } else if (!isDirty) {
         setLocalModules(normalizeModules(selectedRoleMatrix.modules));
       }
     }
   }, [selectedRoleMatrix, isDirty]);
 
-  /* ── Derived ── */
-  const filteredRoles = roles.filter(
-    (r) =>
-      r.roleCode.toLowerCase().includes(searchRole.toLowerCase().trim()) ||
-      r.roleName.toLowerCase().includes(searchRole.toLowerCase().trim())
-  );
-
-  const categories = React.useMemo(() => {
+  /* ── Derived Categories ── */
+  const categories = useMemo(() => {
     const map = new Map<string, { code: string; name: string; modules: ModulePermissionScope[] }>();
     localModules.forEach((mod) => {
       const code = mod.categoryCode || mod.groupName || 'OTHER';
-      // ใช้ชื่อจาก CATEGORY_NAMES ก่อน ถ้าไม่มีค่อยใช้จาก API
       const name = CATEGORY_NAMES[code] || mod.categoryName || mod.groupName || 'หมวดหมู่อื่นๆ';
       if (!map.has(code)) map.set(code, { code, name, modules: [] });
       map.get(code)!.modules.push(mod);
@@ -422,166 +283,263 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     return Array.from(map.values());
   }, [localModules]);
 
-  const selectedCategory = React.useMemo(
-    () => categories.find((c) => c.code === selectedCategoryCode) || null,
-    [categories, selectedCategoryCode]
+  /* ── Search Filter ── */
+  const filteredCategories = useMemo(() => {
+    if (!searchModuleQuery.trim()) return categories;
+    const q = searchModuleQuery.toLowerCase().trim();
+    return categories
+      .map((cat) => {
+        const matchingModules = cat.modules.filter(
+          (m) =>
+            m.moduleName.toLowerCase().includes(q) ||
+            m.moduleCode.toLowerCase().includes(q) ||
+            cat.name.toLowerCase().includes(q)
+        );
+        return {
+          ...cat,
+          modules: matchingModules,
+        };
+      })
+      .filter((cat) => cat.modules.length > 0);
+  }, [categories, searchModuleQuery]);
+
+  // Auto-expand categories matching search
+  useEffect(() => {
+    if (searchModuleQuery.trim()) {
+      setExpandedCategories(new Set(filteredCategories.map((c) => c.code)));
+    }
+  }, [searchModuleQuery, filteredCategories]);
+
+  /* ── Left Pane Filtered Roles ── */
+  const filteredRoles = roles.filter(
+    (r) =>
+      r.roleCode.toLowerCase().includes(searchRole.toLowerCase().trim()) ||
+      r.roleName.toLowerCase().includes(searchRole.toLowerCase().trim())
   );
 
-  const selectedModule = React.useMemo(
-    () => localModules.find((m) => m.moduleCode === selectedModuleCode) || null,
-    [localModules, selectedModuleCode]
-  );
-
-  const currentOverallIdx = React.useMemo(
-    () => localModules.findIndex((m) => m.moduleCode === selectedModuleCode),
-    [localModules, selectedModuleCode]
-  );
-
-  /* ── Navigation ── */
-  const navigateModule = (dir: 'prev' | 'next') => {
-    const newIdx = currentOverallIdx + (dir === 'next' ? 1 : -1);
-    if (newIdx < 0 || newIdx >= localModules.length) return;
-    const newMod = localModules[newIdx];
-    setSelectedModuleCode(newMod.moduleCode);
-    setSelectedCategoryCode(newMod.categoryCode || newMod.groupName || 'OTHER');
+  /* ── Module Helpers ── */
+  const isModuleActive = (mod: ModulePermissionScope): boolean => {
+    if (mod.categoryCode === 'DASHBOARD' || mod.groupName === 'DASHBOARD') {
+      return Boolean(
+        mod.canView ||
+        mod.self?.view ||
+        mod.team?.view ||
+        mod.department?.view ||
+        mod.division?.view ||
+        mod.organization?.view
+      );
+    }
+    const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
+    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.approve);
   };
 
-  /* ── Category Dropdown Popover ── */
-  const handleCategoryClick = (catCode: string, buttonEl: HTMLButtonElement) => {
+  const getScopeActiveCount = (
+    mod: ModulePermissionScope,
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
+  ): number => {
+    const sc = mod[scopeKey];
+    if (!sc) return 0;
+    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.approve ? 1 : 0);
+  };
+
+  /* ── Toggle Handlers ── */
+  const toggleCategoryExpand = (catCode: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catCode)) {
+        next.delete(catCode);
+      } else {
+        next.add(catCode);
+      }
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    setExpandedCategories(new Set(categories.map((c) => c.code)));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedCategories(new Set());
+  };
+
+  // Master switch per module
+  const handleToggleModule = (moduleCode: string) => {
+    setLocalModules((prev) =>
+      prev.map((m) => {
+        if (m.moduleCode !== moduleCode) return m;
+
+        const active = isModuleActive(m);
+        if (active) {
+          // Turn completely OFF
+          const empty = { view: false, create: false, edit: false, approve: false };
+          return {
+            ...m,
+            canView: false,
+            self: { ...empty },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        } else {
+          // Turn ON (default: self view = true)
+          if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          return {
+            ...m,
+            self: { view: true, create: false, edit: false, approve: false },
+          };
+        }
+      })
+    );
+    setIsDirty(true);
+  };
+
+  // Master switch per category
+  const handleToggleCategory = (catCode: string) => {
     const cat = categories.find((c) => c.code === catCode);
     if (!cat) return;
 
-    // ถ้าเป็นหมวดแดชบอร์ด หรือมีโมดูลเดียวในหมวดหมู่นี้ ให้สลับไปที่หมวดนั้นทันที
-    if (catCode === 'DASHBOARD' || cat.modules.length === 1) {
-      setSelectedCategoryCode(catCode);
-      if (cat.modules.length > 0) setSelectedModuleCode(cat.modules[0].moduleCode);
-      setOpenCategoryCode(null);
-      return;
-    }
+    const anyActive = cat.modules.some((m) => isModuleActive(m));
+    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
 
-    if (openCategoryCode === catCode) {
-      setOpenCategoryCode(null);
-      return;
-    }
-    const rect = buttonEl.getBoundingClientRect();
-    setDropdownPos({ top: rect.bottom + 8, left: Math.min(rect.left, window.innerWidth - 335) });
-    setSelectedCategoryCode(catCode);
-    setOpenCategoryCode(catCode);
-
-    // หากโมดูลปัจจุบันไม่ได้อยู่ในหมวดนี้ ให้เลือกตัวแรกในหมวดนี้โดยอัตโนมัติ
-    if (!cat.modules.some((m) => m.moduleCode === selectedModuleCode)) {
-      setSelectedModuleCode(cat.modules[0].moduleCode);
-    }
+    setLocalModules((prev) =>
+      prev.map((m) => {
+        if (!modCodes.has(m.moduleCode)) return m;
+        if (anyActive) {
+          // Turn all off
+          const empty = { view: false, create: false, edit: false, approve: false };
+          return {
+            ...m,
+            canView: false,
+            self: { ...empty },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        } else {
+          // Turn all on
+          if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          return {
+            ...m,
+            self: { view: true, create: false, edit: false, approve: false },
+          };
+        }
+      })
+    );
+    setIsDirty(true);
   };
 
-  useEffect(() => {
-    if (!openCategoryCode) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenCategoryCode(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openCategoryCode]);
-
-  /* ── Toggle handlers ── */
-  const handleToggleCheckbox = (
+  // Toggle specific action in a scope
+  const handleToggleScopeAction = (
     moduleCode: string,
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
     actionKey: 'view' | 'create' | 'edit' | 'approve'
   ) => {
     setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (mod.moduleCode !== moduleCode) return mod;
-        const cur = mod[scopeKey] || { view: false, create: false, edit: false, approve: false };
-        return { ...mod, [scopeKey]: { ...cur, [actionKey]: !cur[actionKey] } };
+      prev.map((m) => {
+        if (m.moduleCode !== moduleCode) return m;
+        const currentScope = m[scopeKey] || { view: false, create: false, edit: false, approve: false };
+        const updatedScope = {
+          ...currentScope,
+          [actionKey]: !currentScope[actionKey],
+        };
+        return {
+          ...m,
+          [scopeKey]: updatedScope,
+        };
       })
     );
     setIsDirty(true);
   };
 
-  const handleToggleAllRow = (moduleCode: string) => {
+  // Select all or clear all actions for a scope
+  const handleSetAllScopeActions = (
+    moduleCode: string,
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
+    enable: boolean
+  ) => {
     setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (mod.moduleCode !== moduleCode) return mod;
-        const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
-        const actions = ['view', 'create', 'edit', 'approve'] as const;
-        const allOn = scopes.every((s) => actions.every((a) => mod[s]?.[a]));
-        const nextVal = !allOn;
-        const updated = { ...mod };
-        scopes.forEach((s) => {
-          updated[s] = { view: nextVal, create: nextVal, edit: nextVal, approve: nextVal };
-        });
-        return updated;
+      prev.map((m) => {
+        if (m.moduleCode !== moduleCode) return m;
+        return {
+          ...m,
+          [scopeKey]: { view: enable, create: enable, edit: enable, approve: enable },
+        };
       })
     );
     setIsDirty(true);
   };
 
+  const handleOpenPopover = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    moduleCode: string,
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
+  ) => {
+    e.stopPropagation();
+    if (activePopover?.moduleCode === moduleCode && activePopover?.scopeKey === scopeKey) {
+      setActivePopover(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverWidth = 288;
+    const popoverHeight = 280;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
+
+    const left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rect.right - popoverWidth));
+
+    if (openUpward) {
+      setActivePopover({
+        moduleCode,
+        scopeKey,
+        bottom: window.innerHeight - rect.top + 6,
+        left,
+      });
+    } else {
+      setActivePopover({
+        moduleCode,
+        scopeKey,
+        top: rect.bottom + 6,
+        left,
+      });
+    }
+  };
+
+  const activeMod = useMemo(() => {
+    if (!activePopover) return null;
+    return localModules.find((m) => m.moduleCode === activePopover.moduleCode) || null;
+  }, [activePopover, localModules]);
+
+  const activeScopeConfig = useMemo(() => {
+    if (!activePopover) return null;
+    return SCOPES_CONFIG.find((s) => s.key === activePopover.scopeKey) || null;
+  }, [activePopover]);
+
+  // Global toolbar actions
   const handleSelectAll = () => {
     setLocalModules((prev) =>
-      prev.map((mod) => {
-        const full = { view: true, create: true, edit: true, approve: true };
-        return { ...mod, self: { ...full }, team: { ...full }, department: { ...full }, division: { ...full }, organization: { ...full } };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  const handleSelectAllAction = (actionKey: 'view' | 'create' | 'edit' | 'approve') => {
-    const actionLabel = ACTIONS_CONFIG.find((a) => a.key === actionKey)?.label || actionKey;
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        const targetState = {
-          view: actionKey === 'view',
-          create: actionKey === 'create',
-          edit: actionKey === 'edit',
-          approve: actionKey === 'approve',
-        };
-        return {
-          ...mod,
-          self: { ...(mod.self || {}), ...targetState },
-          team: { ...(mod.team || {}), ...targetState },
-          department: { ...(mod.department || {}), ...targetState },
-          division: { ...(mod.division || {}), ...targetState },
-          organization: { ...(mod.organization || {}), ...targetState },
-        };
-      })
-    );
-    setIsDirty(true);
-    toast.info(`เลือกเฉพาะสิทธิ์ "${actionLabel}" ทุกเมนูเรียบร้อยแล้ว`);
-  };
-
-  const handleSelectAllView = () => handleSelectAllAction('view');
-  const handleSelectAllCreate = () => handleSelectAllAction('create');
-  const handleSelectAllEdit = () => handleSelectAllAction('edit');
-  const handleSelectAllApprove = () => handleSelectAllAction('approve');
-
-  const handleDeselectAll = () => {
-    if (selectedRoleMatrix?.roleCode === 'ADMIN' || selectedRoleMatrix?.roleCode === 'SYSTEM_SUPER') {
-      toast.warning('บทบาทผู้ดูแลระบบสูงสุดจำเป็นต้องมีสิทธิ์เข้าถึงระบบอย่างน้อย 1 สิทธิ์ (Lockout Protection)');
-    }
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        const empty = { view: false, create: false, edit: false, approve: false };
-        return { ...mod, self: { ...empty }, team: { ...empty }, department: { ...empty }, division: { ...empty }, organization: { ...empty } };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  /* ── Category-level Bulk Actions (เลือกทุกหน้าในหัวข้อนั้นๆ) ── */
-  const handleSelectAllCategory = (catCode: string) => {
-    const cat = categories.find((c) => c.code === catCode);
-    if (!cat) return;
-    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (!modCodes.has(mod.moduleCode)) return mod;
+      prev.map((m) => {
+        if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
+          return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
+        }
         const full = { view: true, create: true, edit: true, approve: true };
         return {
-          ...mod,
+          ...m,
           self: { ...full },
           team: { ...full },
           department: { ...full },
@@ -591,53 +549,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       })
     );
     setIsDirty(true);
-    toast.success(`เปิดสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+    toast.success('เปิดสิทธิ์ทั้งหมดเรียบร้อยแล้ว');
   };
 
-  const handleSelectCategoryAction = (
-    catCode: string,
-    actionKey: 'view' | 'create' | 'edit' | 'approve'
-  ) => {
-    const cat = categories.find((c) => c.code === catCode);
-    if (!cat) return;
-    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
-    const actionLabel = ACTIONS_CONFIG.find((a) => a.key === actionKey)?.label || actionKey;
-
+  const handleDeselectAll = () => {
     setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (!modCodes.has(mod.moduleCode)) return mod;
-        const targetState = {
-          view: actionKey === 'view',
-          create: actionKey === 'create',
-          edit: actionKey === 'edit',
-          approve: actionKey === 'approve',
-        };
-        return {
-          ...mod,
-          self: { ...(mod.self || {}), ...targetState },
-          team: { ...(mod.team || {}), ...targetState },
-          department: { ...(mod.department || {}), ...targetState },
-          division: { ...(mod.division || {}), ...targetState },
-          organization: { ...(mod.organization || {}), ...targetState },
-        };
-      })
-    );
-    setIsDirty(true);
-    toast.info(`เลือกเฉพาะสิทธิ์ "${actionLabel}" ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
-  };
-
-  const handleSelectAllCategoryView = (catCode: string) => handleSelectCategoryAction(catCode, 'view');
-
-  const handleDeselectCategory = (catCode: string) => {
-    const cat = categories.find((c) => c.code === catCode);
-    if (!cat) return;
-    const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (!modCodes.has(mod.moduleCode)) return mod;
+      prev.map((m) => {
         const empty = { view: false, create: false, edit: false, approve: false };
         return {
-          ...mod,
+          ...m,
+          canView: false,
           self: { ...empty },
           team: { ...empty },
           department: { ...empty },
@@ -647,72 +568,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       })
     );
     setIsDirty(true);
-    toast.info(`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ "${cat.name}" เรียบร้อยแล้ว`);
+    toast.info('ยกเลิกสิทธิ์ทั้งหมดเรียบร้อยแล้ว');
   };
 
-  /* ── Dashboard Access Helpers ── */
-  const isDashboardModuleGranted = (moduleCode: string): boolean => {
-    const mod = localModules.find((m) => m.moduleCode === moduleCode);
-    if (!mod) return false;
-    return Boolean(
-      mod.self?.view || mod.self?.create || mod.self?.edit || mod.self?.approve ||
-      mod.team?.view || mod.team?.create || mod.team?.edit || mod.team?.approve ||
-      mod.department?.view || mod.department?.create || mod.department?.edit || mod.department?.approve ||
-      mod.division?.view || mod.division?.create || mod.division?.edit || mod.division?.approve ||
-      mod.organization?.view || mod.organization?.create || mod.organization?.edit || mod.organization?.approve ||
-      mod.canView
-    );
-  };
-
-  const handleToggleDashboardAccess = (moduleCode: string, shouldEnable: boolean) => {
-    setLocalModules((prev) =>
-      prev.map((mod) => {
-        if (mod.moduleCode !== moduleCode) return mod;
-        if (!shouldEnable) {
-          const empty = { view: false, create: false, edit: false, approve: false };
-          return {
-            ...mod,
-            canView: false,
-            canCreate: false,
-            canEdit: false,
-            canApprove: false,
-            self: { ...empty },
-            team: { ...empty },
-            department: { ...empty },
-            division: { ...empty },
-            organization: { ...empty },
-          };
-        }
-        const cfg = DASHBOARD_CONFIG.find((c) => c.code === moduleCode);
-        const targetScope: 'self' | 'team' | 'department' | 'division' | 'organization' = cfg ? cfg.defaultScope : 'self';
-        const empty = { view: false, create: false, edit: false, approve: false };
-        const granted = { view: true, create: false, edit: false, approve: false };
-        return {
-          ...mod,
-          canView: true,
-          self: targetScope === 'self' ? { ...granted } : { ...empty },
-          team: targetScope === 'team' ? { ...granted } : { ...empty },
-          department: targetScope === 'department' ? { ...granted } : { ...empty },
-          division: targetScope === 'division' ? { ...granted } : { ...empty },
-          organization: targetScope === 'organization' ? { ...granted } : { ...empty },
-        };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  const handleReset = () => {
-    if (selectedRoleMatrix) {
-      setLocalModules(normalizeModules(JSON.parse(JSON.stringify(selectedRoleMatrix.modules))));
-      setIsDirty(false);
-    }
-  };
-
+  /* ── Save ── */
   const handleSave = async () => {
     if (!selectedRoleMatrix) return;
     const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
     const hasAnyPermission = localModules.some((m) =>
-      scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve)
+      m.canView || scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve)
     );
     if (
       (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
@@ -727,13 +591,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       setSaveSuccessMsg(true);
       setTimeout(() => setSaveSuccessMsg(false), 3000);
     } catch {
-      // Error handled by ToastContext / parent
+      // Error handled by parent
     }
   };
 
-  /* ──────────────────────────────────────────────────────────── */
-  /*  RENDER                                                      */
-  /* ──────────────────────────────────────────────────────────── */
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
 
@@ -760,7 +621,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           </button>
         </div>
 
-        {/* Roles List (จำกัดความสูงให้พอดีกับ panel ด้านขวา พร้อม scrollbar) */}
+        {/* Roles List */}
         <div
           style={{ maxHeight: rightPaneHeight ? `${Math.max(380, rightPaneHeight - 52)}px` : 'calc(100vh - 280px)' }}
           className="space-y-2.5 overflow-y-auto pr-1"
@@ -827,63 +688,57 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         </div>
       </div>
 
-      {/* =========== RIGHT PANE: TOGGLE PERMISSION UI (8 cols lg, 9 cols xl) =========== */}
+      {/* =========== RIGHT PANE: ACCORDION PERMISSION MANAGEMENT =========== */}
       <div
         ref={rightPaneRef}
-        className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5"
+        className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4"
       >
         {selectedRoleMatrix ? (
           <>
-            {/* Header */}
-            <div className="pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* 1. Header Information */}
+            <div className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-base font-bold text-slate-900">
-                    ตั้งค่าสิทธิ์สำหรับ: {selectedRoleMatrix.roleCode}
-                  </h2>
-                </div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>ตั้งค่าสิทธิ์สำหรับ:</span>
+                  <span className="text-[#0B2046] px-2 py-0.5 bg-slate-100 rounded-lg">
+                    {selectedRoleMatrix.roleCode}
+                  </span>
+                </h2>
                 <p className="text-xs text-slate-500 mt-1">
                   {selectedRoleMatrix.description || selectedRoleMatrix.roleName}
                 </p>
               </div>
+
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  {localModules.length} เมนูย่อย
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  {localModules.length} โมดูลในระบบ
                 </span>
               </div>
             </div>
 
-            {/* Quick Action Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  สิทธิ์การเข้าถึง
-                </h3>
-                {isDirty && (
-                  <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    ยังไม่ได้บันทึก
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {selectedCategory && selectedCategory.code !== 'DASHBOARD' && selectedCategory.modules.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAllCategory(selectedCategory.code)}
-                    title={`เลือกเปิดสิทธิ์ทุกหน้าในหัวข้อ ${selectedCategory.name}`}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
-                  >
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>เลือกทุกหน้าใน{selectedCategory.name}</span>
-                  </button>
-                )}
+            {/* 2. Top Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCollapseAll}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  หุบทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExpandAll}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  ขยายทั้งหมด
+                </button>
+                <div className="h-4 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  title="เลือกเปิดสิทธิ์ทั้งหมด ทุกเมนู"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
                   เลือกทั้งหมด
@@ -891,478 +746,375 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 <button
                   type="button"
                   onClick={handleDeselectAll}
-                  title="ยกเลิกสิทธิ์ทั้งหมด"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5 text-slate-500" />
                   ยกเลิกทั้งหมด
                 </button>
               </div>
-            </div>
 
-            {/* ── Category Tab Bar (wrap แถวใหม่ได้, ไม่มี scrollbar) ── */}
-            <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => {
-                  const IconComp = CATEGORY_ICONS[cat.code] || Layers;
-                  const isActive = selectedCategoryCode === cat.code;
-                  const isOpen = openCategoryCode === cat.code;
-                  return (
-                    <button
-                      key={cat.code}
-                      type="button"
-                      onClick={(e) => handleCategoryClick(cat.code, e.currentTarget)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer border ${
-                        isActive
-                          ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-md'
-                          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      <IconComp className="w-3.5 h-3.5" />
-                      {cat.name}
-                      <span
-                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {cat.modules.length}
-                      </span>
-                      {cat.code !== 'DASHBOARD' && cat.modules.length > 1 && (
-                        <ChevronDown
-                          className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
-                            isActive ? 'text-white/70' : 'text-slate-400'
-                          }`}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-            </div>
-
-            {/* ── Breadcrumb: current module path ── */}
-            {selectedCategoryCode === 'DASHBOARD' ? (
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
-                <span className="font-semibold text-[#0B2046]">{selectedCategory?.name || 'แดชบอร์ด'}</span>
-                <span className="ml-1 text-slate-300">·</span>
-                <span className="text-slate-400">กำหนดสิทธิ์การเข้าถึงแดชบอร์ด 5 รูปแบบ</span>
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchModuleQuery}
+                  onChange={(e) => setSearchModuleQuery(e.target.value)}
+                  placeholder="ค้นหากลุ่มหรือสิทธิ์..."
+                  className="w-full h-9 pl-8 pr-3 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+                />
+                {searchModuleQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchModuleQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-            ) : (
-              selectedModule && (
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-0.5">
-                  <span className="font-medium text-slate-600">{selectedCategory?.name}</span>
-                  <ChevronRight className="w-3 h-3 text-slate-300" />
-                  <span className="font-semibold text-[#0B2046]">{selectedModule.moduleName}</span>
-                  <span className="ml-1 text-slate-300">·</span>
-                  <span className="text-slate-400">{currentOverallIdx + 1} / {localModules.length} เมนู</span>
+            </div>
+
+            {/* 3. Accordion Group List */}
+            <div className="space-y-3 pt-2">
+              {filteredCategories.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  ไม่พบโมดูลหรือสิทธิ์ที่ค้นหา &quot;{searchModuleQuery}&quot;
                 </div>
-              )
-            )}
+              ) : (
+                filteredCategories.map((cat) => {
+                  const isExpanded = expandedCategories.has(cat.code);
+                  const IconComp = CATEGORY_ICONS[cat.code] || Layers;
+                  const activeModulesCount = cat.modules.filter((m) => isModuleActive(m)).length;
+                  const isCatAllActive = activeModulesCount === cat.modules.length && cat.modules.length > 0;
+                  const isCatPartial = activeModulesCount > 0 && activeModulesCount < cat.modules.length;
 
-            {/* ── Dropdown Popover (fixed, rendered via portal pattern) ── */}
-            {openCategoryCode && (() => {
-              const openCat = categories.find((c) => c.code === openCategoryCode);
-              if (!openCat) return null;
-              const IconComp = CATEGORY_ICONS[openCat.code] || Layers;
-              return (
-                <div
-                  ref={dropdownRef}
-                  style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999 }}
-                  className="w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
-                >
-                  {/* Dropdown Header */}
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-[#0B2046]/8 text-[#0B2046]">
-                        <IconComp className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="font-bold text-sm text-slate-900">{openCat.name}</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-medium">{openCat.modules.length} เมนู</span>
-                  </div>
-
-                  {/* Action Bar in Dropdown: ปุ่มเลือกทุกหน้า + คีย์ลัดเฉพาะแต่ละสิทธิ์ */}
-                  <div className="p-2.5 bg-slate-50/80 border-b border-slate-100 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectAllCategory(openCat.code);
-                        }}
-                        className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
-                        title={`เลือกเปิดสิทธิ์ทั้งหมดทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <CheckSquare className="w-3.5 h-3.5" />
-                        <span>เลือกทุกหน้า</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleDeselectCategory(openCat.code);
-                        }}
-                        className="py-1.5 px-2.5 bg-slate-200/80 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                        title={`ยกเลิกสิทธิ์ทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>ยกเลิก</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectCategoryAction(openCat.code, 'view');
-                        }}
-                        className="py-1 px-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
-                        title={`เปิดเฉพาะสิทธิ์ดูทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <Eye className="w-3 h-3 text-blue-600 shrink-0" />
-                        <span>เฉพาะดู</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectCategoryAction(openCat.code, 'create');
-                        }}
-                        className="py-1 px-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
-                        title={`เปิดเฉพาะสิทธิ์สร้างทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <Plus className="w-3 h-3 text-amber-600 shrink-0" />
-                        <span>เฉพาะสร้าง</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectCategoryAction(openCat.code, 'edit');
-                        }}
-                        className="py-1 px-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
-                        title={`เปิดเฉพาะสิทธิ์แก้ไขทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <Edit2 className="w-3 h-3 text-purple-600 shrink-0" />
-                        <span>เฉพาะแก้ไข</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectCategoryAction(openCat.code, 'approve');
-                        }}
-                        className="py-1 px-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-md text-[11px] font-medium flex items-center justify-center gap-0.5 transition-colors cursor-pointer"
-                        title={`เปิดเฉพาะสิทธิ์อนุมัติทุกหน้าในหัวข้อ ${openCat.name}`}
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>เฉพาะอนุมัติ</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Sub-module List */}
-                  <div className="py-1 max-h-72 overflow-y-auto">
-                    {openCat.modules.map((mod) => {
-                      const isSelected = selectedModuleCode === mod.moduleCode;
-                      return (
-                        <button
-                          key={mod.moduleCode}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCategoryCode(openCat.code);
-                            setSelectedModuleCode(mod.moduleCode);
-                            setOpenCategoryCode(null);
-                          }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-xs transition-colors cursor-pointer border-l-4 ${
-                            isSelected
-                              ? 'bg-[#0B2046]/5 border-[#0B2046] text-[#0B2046] font-semibold'
-                              : 'border-transparent text-slate-700 hover:bg-slate-50 font-medium'
-                          }`}
-                        >
-                          <span className="leading-snug">{mod.moduleName}</span>
-                          {isSelected && <ChevronRight className="w-3.5 h-3.5 shrink-0 text-[#0B2046]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ── Dashboard Quick Access Selector (แสดงเมื่อเลือกหมวดหมู่ แดชบอร์ด) ── */}
-            {selectedCategoryCode === 'DASHBOARD' && (
-              <div className="bg-gradient-to-br from-slate-50 to-blue-50/20 rounded-2xl border border-slate-200/90 p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/70">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <LayoutDashboard className="w-4 h-4 text-[#0B2046]" />
-                      <h3 className="text-sm font-bold text-slate-900">
-                        เลือกสิทธิ์การเข้าถึงแดชบอร์ดสำหรับบทบาทนี้
-                      </h3>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      กำหนดว่าบทบาท &quot;{selectedRoleMatrix.roleName}&quot; มีสิทธิ์เปิดดูแดชบอร์ดรูปแบบใดบ้าง (สามารถเลือกได้หลายแดชบอร์ด)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-slate-500 font-medium">
-                      ได้รับสิทธิ์แล้ว:
-                    </span>
-                    <span className="text-xs font-bold text-[#0B2046] bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
-                      {DASHBOARD_CONFIG.filter((c) => isDashboardModuleGranted(c.code)).length} / 5 แดชบอร์ด
-                    </span>
-                  </div>
-                </div>
-
-                {/* Dashboard Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {DASHBOARD_CONFIG.map((dash) => {
-                    const isGranted = isDashboardModuleGranted(dash.code);
-                    const isSelected = selectedModuleCode === dash.code;
-                    const DashIcon = dash.icon;
-                    return (
+                  return (
+                    <div
+                      key={cat.code}
+                      className="rounded-2xl border border-slate-200/90 overflow-hidden bg-white shadow-2xs transition-all"
+                    >
+                      {/* Group Header */}
                       <div
-                        key={dash.code}
-                        onClick={() => handleToggleDashboardAccess(dash.code, !isGranted)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 relative ${
-                          isGranted
-                            ? 'bg-white border-slate-300 ring-2 ring-[#0B2046]/10 shadow-sm'
-                            : 'bg-slate-50/70 border-slate-200/60 opacity-80 hover:opacity-100 hover:bg-white'
+                        onClick={() => toggleCategoryExpand(cat.code)}
+                        className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                          isExpanded
+                            ? 'bg-slate-50/90 border-b border-slate-200/80'
+                            : 'bg-white hover:bg-slate-50/60'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                                isGranted ? 'bg-[#0B2046] text-white' : 'bg-slate-200 text-slate-500'
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className="text-slate-400 hover:text-slate-700 transition-transform"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-slate-600" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+                          <div className="w-7 h-7 rounded-lg bg-[#0B2046]/5 text-[#0B2046] flex items-center justify-center shrink-0">
+                            <IconComp className="w-4 h-4" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-800 tracking-tight">
+                              {cat.name}
+                            </span>
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                activeModulesCount > 0
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                  : 'bg-slate-100 text-slate-400'
                               }`}
                             >
-                              <DashIcon className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-slate-900 leading-snug truncate">
-                                {dash.name}
-                              </h4>
-                              <span className="text-[10px] text-slate-400 font-medium block truncate">
-                                {dash.subtitle}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Toggle Switch */}
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="shrink-0 flex items-center"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isGranted}
-                              onChange={(e) => handleToggleDashboardAccess(dash.code, e.target.checked)}
-                              className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 cursor-pointer"
-                              title={isGranted ? 'คลิกเพื่อยกเลิกสิทธิ์แดชบอร์ดนี้' : 'คลิกเพื่อมอบสิทธิ์แดชบอร์ดนี้'}
-                            />
-                          </div>
-                        </div>
-
-                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                          {dash.description}
-                        </p>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px]">
-                          <span className={`px-2 py-0.5 rounded-md font-semibold ${dash.badgeBg} ${dash.badgeText}`}>
-                            {dash.badge}
-                          </span>
-                          <span
-                            className={`font-semibold flex items-center gap-1 ${
-                              isGranted ? 'text-emerald-600' : 'text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isGranted ? 'bg-emerald-500' : 'bg-slate-300'
-                              }`}
-                            />
-                            {isGranted ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <div className="text-[11px] text-slate-500 pt-1">
-                  <span>💡 คลิกที่การ์ดหรือ Checkbox เพื่อเปิดใช้งานหรือปิดการเข้าถึงแดชบอร์ดแต่ละมุมมองสำหรับบทบาทนี้</span>
-                </div>
-              </div>
-            )}
-
-            {/* ── Single Permission Card (แสดงเฉพาะหมวดหมู่อื่นๆ ที่ไม่ใช่แดชบอร์ด) ── */}
-            {selectedCategoryCode !== 'DASHBOARD' && (
-              selectedModule ? (
-              <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs bg-white">
-
-                {/* Card Header */}
-                <div className="px-5 py-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">{selectedModule.moduleName}</h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      กำหนดสิทธิ์การเข้าถึงตามระดับขอบเขตข้อมูล
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* ปุ่มเลือกทุกหน้าในหัวข้อนี้ (ถ้ามีมากกว่า 1 เมนูย่อยในหมวดนี้) */}
-                    {selectedCategory && selectedCategory.modules.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleSelectAllCategory(selectedCategory.code)}
-                        className="text-xs text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 font-semibold cursor-pointer px-3 py-1.5 rounded-lg border border-emerald-200/80 transition-colors flex items-center gap-1 shadow-xs"
-                        title={`เปิดสิทธิ์ทุกหน้าในหัวข้อ ${selectedCategory.name}`}
-                      >
-                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>เลือกทุกหน้าในหัวข้อนี้</span>
-                      </button>
-                    )}
-                    {/* สลับทั้งแถว */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleAllRow(selectedModule.moduleCode)}
-                      className="text-xs text-[#0B2046] hover:text-[#112d5e] font-semibold cursor-pointer px-3 py-1.5 rounded-lg border border-[#0B2046]/20 hover:bg-[#0B2046]/5 transition-colors"
-                    >
-                      สลับทั้งหมด
-                    </button>
-                    {/* Prev / Next Module */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => navigateModule('prev')}
-                        disabled={currentOverallIdx <= 0}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="เมนูก่อนหน้า"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <span className="text-[11px] text-slate-500 font-medium min-w-[46px] text-center">
-                        {currentOverallIdx + 1} / {localModules.length}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => navigateModule('next')}
-                        disabled={currentOverallIdx >= localModules.length - 1}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="เมนูถัดไป"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── 5 Scope Rows ── */}
-                <div className="divide-y divide-slate-100">
-                  {SCOPES_CONFIG.map((sc) => {
-                    const scopePerms = selectedModule[sc.key] || {
-                      view: false, create: false, edit: false, approve: false,
-                    };
-                    const activeCount = Object.values(scopePerms).filter(Boolean).length;
-
-                    return (
-                      <div
-                        key={sc.key}
-                        className={`flex items-center justify-between gap-4 px-5 py-4 border-l-4 ${sc.accentBorder} ${sc.rowBg} transition-colors`}
-                      >
-                        {/* Left: scope info */}
-                        <div className="flex items-center gap-3 min-w-[160px]">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sc.badgeBg}`}
-                          >
-                            <span className={`text-sm font-bold ${sc.badgeText}`}>
-                              {sc.label.charAt(0)}
+                              {activeModulesCount}/{cat.modules.length} เปิดใช้
                             </span>
                           </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-slate-900">{sc.label}</span>
-                              {activeCount > 0 && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${sc.badgeBg} ${sc.badgeText}`}>
-                                  {activeCount} เปิด
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-tight mt-0.5">{sc.description}</p>
-                          </div>
                         </div>
 
-                        {/* Right: 4 Toggle Switches */}
-                        <div className="flex items-end gap-5 shrink-0">
-                          {ACTIONS_CONFIG.map((act) => (
-                            <ToggleSwitch
-                              key={act.key}
-                              checked={!!scopePerms[act.key]}
-                              onChange={() =>
-                                handleToggleCheckbox(selectedModule.moduleCode, sc.key, act.key)
-                              }
-                              activeColor={sc.toggleOn}
-                              label={act.label}
-                            />
-                          ))}
+                        {/* Master Category Toggle */}
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            {isCatAllActive ? 'เปิดทั้งหมด' : isCatPartial ? 'เปิดบางส่วน' : 'ปิดทั้งหมด'}
+                          </span>
+                          <ToggleSwitch
+                            checked={isCatAllActive || isCatPartial}
+                            onChange={() => handleToggleCategory(cat.code)}
+                          />
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
 
-                {/* Card Footer: quick nav hint */}
-                <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>
-                    กดปุ่ม ← → เพื่อเปลี่ยนเมนูย่อย หรือคลิกชื่อเมนูด้านบน
+                      {/* Group Content (Modules) */}
+                      {isExpanded && (
+                        <div className="divide-y divide-slate-100">
+                          {cat.modules.map((mod) => {
+                            const modActive = isModuleActive(mod);
+                            const isDashboardCat = cat.code === 'DASHBOARD';
+
+                            return (
+                              <div
+                                key={mod.moduleCode}
+                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
+                                  modActive ? 'bg-white' : 'bg-slate-50/30'
+                                }`}
+                              >
+                                {/* Left: Module Title & Subtitle */}
+                                <div className="flex items-start gap-2.5 min-w-[200px] flex-1">
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
+                                      modActive ? 'bg-emerald-500' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <div>
+                                    <div className="font-semibold text-xs text-slate-800 leading-snug">
+                                      {mod.moduleName}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      {mod.moduleCode}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right: Controls */}
+                                <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
+                                  {/* Master Module Toggle */}
+                                  <ToggleSwitch
+                                    checked={modActive}
+                                    onChange={() => handleToggleModule(mod.moduleCode)}
+                                  />
+
+                                  {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด) */}
+                                  {!isDashboardCat && (
+                                    <div className="flex items-center gap-1.5">
+                                      {SCOPES_CONFIG.map((scope) => {
+                                        const count = getScopeActiveCount(mod, scope.key);
+                                        const isScopeActive = count > 0;
+                                        const isPopoverOpen =
+                                          activePopover?.moduleCode === mod.moduleCode &&
+                                          activePopover?.scopeKey === scope.key;
+
+                                        return (
+                                          <button
+                                            key={scope.key}
+                                            type="button"
+                                            disabled={!modActive}
+                                            onClick={(e) => handleOpenPopover(e, mod.moduleCode, scope.key)}
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer select-none ${
+                                              !modActive
+                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 cursor-not-allowed'
+                                                : isScopeActive
+                                                ? 'bg-[#0B2046] hover:bg-[#112d5e] text-white border-[#0B2046] shadow-2xs'
+                                                : isPopoverOpen
+                                                ? 'bg-slate-100 text-[#0B2046] border-slate-300 ring-2 ring-[#0B2046]/20'
+                                                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                                            }`}
+                                          >
+                                            <span>{scope.label}</span>
+                                            {isScopeActive && (
+                                              <span className="ml-1 text-[10px] opacity-90">
+                                                ({count})
+                                              </span>
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* 4. Bottom Sticky Save Bar */}
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs z-20">
+              <div className="flex items-center gap-2">
+                {isDirty ? (
+                  <span className="flex items-center gap-1.5 text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60">
+                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    มีการเปลี่ยนแปลงสิทธิ์ที่ยังไม่ได้บันทึก
                   </span>
-                  {currentOverallIdx < localModules.length - 1 && (
-                    <button
-                      type="button"
-                      onClick={() => navigateModule('next')}
-                      className="text-[#0B2046] font-semibold hover:underline cursor-pointer"
-                    >
-                      ถัดไป: {localModules[currentOverallIdx + 1]?.moduleName} →
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-slate-400 text-sm">
-                เลือกเมนูย่อยด้านบนเพื่อกำหนดสิทธิ์
-              </div>
-            )
-          )}
-
-            {/* Bottom Save Bar */}
-            <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <p className="text-slate-400 text-[11px] italic">
-                * การเปลี่ยนสิทธิ์จะมีผลกับผู้ใช้ในบทบาทนี้ทันทีเมื่อทำการบันทึกข้อมูล
-              </p>
-              <div className="flex items-center gap-3">
+                ) : (
+                  <span className="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    สิทธิ์การใช้งานเป็นปัจจุบัน
+                  </span>
+                )}
                 {saveSuccessMsg && (
                   <span className="text-emerald-600 font-semibold flex items-center gap-1 animate-in fade-in">
                     <Check className="w-4 h-4" /> บันทึกสิทธิ์สำเร็จ!
                   </span>
                 )}
-                <button
-                  type="button"
-                  disabled={!isDirty || isSavingMatrix}
-                  onClick={handleReset}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                {isDirty && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedRoleMatrix) {
+                        setLocalModules(normalizeModules(selectedRoleMatrix.modules));
+                        setIsDirty(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={!isDirty || isSavingMatrix}
                   onClick={handleSave}
-                  className="px-6 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white font-semibold shadow-md shadow-[#0B2046]/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-6 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
                 >
-                  {isSavingMatrix ? 'กำลังบันทึก...' : 'บันทึกสิทธิ์การใช้งาน'}
+                  {isSavingMatrix ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : (
+                    <span>บันทึกสิทธิ์การใช้งาน</span>
+                  )}
                 </button>
               </div>
             </div>
           </>
         ) : (
-          <div className="py-24 text-center text-slate-400 font-medium">
+          <div className="py-24 text-center text-slate-400 font-medium text-xs">
             เลือกบทบาททางด้านซ้ายเพื่อตั้งค่าสิทธิ์การเข้าถึง
           </div>
         )}
       </div>
+
+      {/* Scope Details Popover Portal */}
+      {activePopover && activeMod && activeScopeConfig && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999]">
+          {/* Backdrop to close on click outside */}
+          <div
+            className="fixed inset-0 bg-transparent"
+            onClick={() => setActivePopover(null)}
+          />
+
+          {/* Popover Card */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              left: `${activePopover.left}px`,
+              ...(activePopover.top !== undefined ? { top: `${activePopover.top}px` } : {}),
+              ...(activePopover.bottom !== undefined ? { bottom: `${activePopover.bottom}px` } : {}),
+            }}
+            className="w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 space-y-2.5 z-[100000] animate-in fade-in zoom-in-95 duration-100 select-none"
+          >
+            {/* Popover Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="min-w-0 pr-2">
+                <div className="text-[10px] font-semibold text-slate-400 truncate">
+                  {activeMod.moduleName}
+                </div>
+                <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#0B2046] shrink-0" />
+                  <span>ระดับ: {activeScopeConfig.label}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePopover(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* 4 Action Checkbox Options */}
+            <div className="space-y-1.5">
+              {ACTIONS_CONFIG.map((action) => {
+                const isChecked = Boolean(
+                  activeMod[activePopover.scopeKey]?.[action.key]
+                );
+                const Icon = action.icon;
+
+                return (
+                  <div
+                    key={action.key}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleScopeAction(
+                        activeMod.moduleCode,
+                        activePopover.scopeKey,
+                        action.key
+                      );
+                    }}
+                    className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-blue-50/70 border-blue-200 text-blue-950 font-semibold shadow-2xs'
+                        : 'bg-slate-50/50 border-slate-200/70 text-slate-600 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        className={`w-3.5 h-3.5 ${
+                          isChecked ? 'text-blue-600' : 'text-slate-400'
+                        }`}
+                      />
+                      <span>{action.label}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]/20 pointer-events-none cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Popover Footer Shortcuts */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSetAllScopeActions(
+                    activeMod.moduleCode,
+                    activePopover.scopeKey,
+                    true
+                  );
+                }}
+                className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+              >
+                เลือกทั้งหมด
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSetAllScopeActions(
+                    activeMod.moduleCode,
+                    activePopover.scopeKey,
+                    false
+                  );
+                }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                ล้างทั้งหมด
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

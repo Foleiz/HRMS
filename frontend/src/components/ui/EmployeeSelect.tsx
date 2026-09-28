@@ -13,6 +13,7 @@ interface EmployeeSelectProps {
   disabled?: boolean;
   hasError?: boolean;
   emptyLabel?: string;
+  excludeEmployeeIds?: number[];
 }
 
 export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -24,6 +25,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   disabled = false,
   hasError = false,
   emptyLabel = 'ไม่ระบุ / คงเดิม',
+  excludeEmployeeIds,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,13 +60,25 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     return employees.find((e) => e.id === value);
   }, [employees, value]);
 
+  // กรองรายการพนักงานที่ยังไม่ถูกเลือก (พนักงานที่ถูกเลือกอยู่ปัจจุบันจะยังคงแสดงได้)
+  const availableEmployees = useMemo(() => {
+    if (!excludeEmployeeIds || excludeEmployeeIds.length === 0) {
+      return employees;
+    }
+    const excludeSet = new Set(excludeEmployeeIds);
+    return employees.filter((emp) => {
+      if (emp.id === value) return true;
+      return !excludeSet.has(emp.id);
+    });
+  }, [employees, excludeEmployeeIds, value]);
+
   // กรองรายการพนักงานตามคำค้นหา (ชื่อ, นามสกุล, หรือรหัสพนักงาน)
   const filteredEmployees = useMemo(() => {
     if (!searchQuery.trim()) {
-      return employees;
+      return availableEmployees;
     }
     const q = searchQuery.toLowerCase().trim();
-    return employees.filter((emp) => {
+    return availableEmployees.filter((emp) => {
       const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
       const code = (emp.employeeCode || '').toLowerCase();
       return (
@@ -74,7 +88,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         code.includes(q)
       );
     });
-  }, [employees, searchQuery]);
+  }, [availableEmployees, searchQuery]);
 
   const handleSelect = (empId: number | '') => {
     onChange(empId);

@@ -70,7 +70,7 @@ public class RoleService : IRoleService
         new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ORG", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ORG"),
 
         // 8. ยื่นเอกสาร (MY_DOCS)
-        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "SETTINGS", "MY_DOCS", "ยื่นเอกสาร", "SETTINGS"),
+        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "SETTINGS", "MY_DOCS", "ยื่นเอกสาร", "DOCS"),
 
         // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
         new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
@@ -119,7 +119,7 @@ public class RoleService : IRoleService
         new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ORG", "ANNOUNCEMENTS", "จัดการประกาศ", "ORG"),
 
         // 18. ข้อมูลหลัก (Master Data) (MASTER_DATA)
-        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "SETTINGS", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "SETTINGS"),
+        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "SETTINGS", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "MASTER_DATA"),
 
         // 19. ตั้งค่า (SETTINGS)
         new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่า", "SETTINGS"),
@@ -519,6 +519,8 @@ public class RoleService : IRoleService
         // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติพร้อม Data Scope สูงสุด เพื่อความเข้ากันได้ (Backward Compatibility)
         foreach (var parentPref in parentPrefixList)
         {
+            if (parentPref is "SETTINGS" or "DOCS" or "MASTER_DATA") continue; // ไม่ auto-add SETTINGS_VIEW เพราะหน้าตั้งค่าระบบต้องควบคุมตามแท็บย่อย (SETTINGS_USERS_VIEW, SETTINGS_ROLES_VIEW, SETTINGS_AUDIT_VIEW)
+
             var childModules = request.Modules
                 .Where(m => {
                     var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);

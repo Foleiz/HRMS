@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Plus, Trash2, Eye, EyeOff, ShieldCheck, User } from 'lucide-react';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { Employee } from '@/types/employee';
 import { RoleSummary, UserAccount, CreateUserRequest, UpdateUserRequest } from '@/types/settings';
+import { settingsService } from '@/services/settingsService';
 
 interface UserDrawerProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface UserDrawerProps {
   userToEdit?: UserAccount | null;
   employees: Employee[];
   roles: RoleSummary[];
+  assignedEmployeeIds?: number[];
 }
 
 interface RoleSelectionState {
@@ -29,6 +31,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   userToEdit,
   employees,
   roles,
+  assignedEmployeeIds = [],
 }) => {
   const isEditMode = !!userToEdit;
 
@@ -40,6 +43,32 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   const [selectedRoles, setSelectedRoles] = useState<RoleSelectionState[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // รายการ Employee ID ที่ถูกผูกกับบัญชีผู้ใช้แล้ว
+  const [internalAssignedIds, setInternalAssignedIds] = useState<number[]>(assignedEmployeeIds);
+
+  useEffect(() => {
+    if (assignedEmployeeIds.length > 0) {
+      setInternalAssignedIds(assignedEmployeeIds);
+    }
+  }, [assignedEmployeeIds]);
+
+  useEffect(() => {
+    if (isOpen && internalAssignedIds.length === 0) {
+      settingsService
+        .getAssignedEmployeeIds()
+        .then((ids) => setInternalAssignedIds(ids))
+        .catch(() => {});
+    }
+  }, [isOpen, internalAssignedIds.length]);
+
+  const excludeEmployeeIds = useMemo(() => {
+    if (userToEdit) {
+      // โหมดแก้ไข: อนุญาตให้เลือกพนักงานคนเดิมของบัญชีนี้ได้ แต่ไม่ให้เลือกพนักงานคนอื่นที่มีบัญชีแล้ว
+      return internalAssignedIds.filter((id) => id !== userToEdit.employeeId);
+    }
+    return internalAssignedIds;
+  }, [internalAssignedIds, userToEdit]);
 
   const prevIsOpenRef = useRef(false);
 
@@ -298,6 +327,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 onChange={handleEmployeeChange}
                 disabled={isEditMode}
                 placeholder="เลือกพนักงาน..."
+                excludeEmployeeIds={excludeEmployeeIds}
                 required
               />
             </div>

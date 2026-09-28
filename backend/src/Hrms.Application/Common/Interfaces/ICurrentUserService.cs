@@ -15,4 +15,8 @@ public interface ICurrentUserService
     string GetDataScope(string permission);
     string? IpAddress { get; }
     string? UserAgent { get; }
+    /// <summary>แผนกปัจจุบันของ User ที่ login (จาก JWT claim department_id)</summary>
+    long? DepartmentId { get; }
+    /// <summary>ฝ่ายปัจจุบันของ User ที่ login (จาก JWT claim division_id)</summary>
+    long? DivisionId { get; }
 }

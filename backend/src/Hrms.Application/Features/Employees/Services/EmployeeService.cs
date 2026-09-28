@@ -49,16 +49,68 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Division)
             .AsNoTracking();
 
-        // 2. Data Scoping
+        // 2. Data Scoping — กรองตามขอบเขตที่ role ของ user กำหนด
         string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
-        if (dataScope == "SELF")
+        switch (dataScope)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue)
+            case "SELF":
             {
-                return new List<EmployeeDto>();
+                long? myEmpId = _currentUserService.EmployeeId;
+                if (!myEmpId.HasValue)
+                    return new List<EmployeeDto>();
+                query = query.Where(e => e.Id == myEmpId.Value);
+                break;
             }
-            query = query.Where(e => e.Id == myEmpId.Value);
+            case "DEPARTMENT":
+            {
+                // เห็นเฉพาะพนักงานในแผนกเดียวกับตัวเอง
+                long? myDeptId = _currentUserService.DepartmentId;
+                if (!myDeptId.HasValue)
+                {
+                    // ถ้าไม่มี department ใน token ให้ fallback เป็นดูแค่ตัวเอง
+                    long? myEmpId = _currentUserService.EmployeeId;
+                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
+                    query = query.Where(e => e.Id == myEmpId.Value);
+                }
+                else
+                {
+                    query = query.Where(e => e.Assignments.Any(a => a.DepartmentId == myDeptId.Value && a.IsCurrent));
+                }
+                break;
+            }
+            case "DIVISION":
+            {
+                // เห็นเฉพาะพนักงานในฝ่ายเดียวกับตัวเอง
+                long? myDivId = _currentUserService.DivisionId;
+                if (!myDivId.HasValue)
+                {
+                    long? myEmpId = _currentUserService.EmployeeId;
+                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
+                    query = query.Where(e => e.Id == myEmpId.Value);
+                }
+                else
+                {
+                    query = query.Where(e => e.Assignments.Any(a => a.DivisionId == myDivId.Value && a.IsCurrent));
+                }
+                break;
+            }
+            case "TEAM":
+            {
+                // เห็นเฉพาะพนักงานในแผนกเดียวกัน (ใช้ department เดียวกับ DEPARTMENT scope)
+                long? myDeptId = _currentUserService.DepartmentId;
+                if (!myDeptId.HasValue)
+                {
+                    long? myEmpId = _currentUserService.EmployeeId;
+                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
+                    query = query.Where(e => e.Id == myEmpId.Value);
+                }
+                else
+                {
+                    query = query.Where(e => e.Assignments.Any(a => a.DepartmentId == myDeptId.Value && a.IsCurrent));
+                }
+                break;
+            }
+            // case "ORGANIZATION": ไม่กรอง — เห็นทุกคน (ADMIN, CEO, HR_MGR)
         }
 
         // 3. กรองคำค้นหา
@@ -89,15 +141,54 @@ public class EmployeeService : IEmployeeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลพนักงาน");
         }
 
-        // Data Scoping
+        // Data Scoping — ตรวจสอบ employee ที่ขอดูก่อนดึงข้อมูล
         string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
-        if (dataScope == "SELF")
+        switch (dataScope)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            case "SELF":
             {
-                throw new ForbiddenException("คุณสามารถดูได้เฉพาะข้อมูลของตนเองเท่านั้น");
+                long? myEmpId = _currentUserService.EmployeeId;
+                if (!myEmpId.HasValue || myEmpId.Value != id)
+                    throw new ForbiddenException("คุณสามารถดูได้เฉพาะข้อมูลของตนเองเท่านั้น");
+                break;
             }
+            case "DEPARTMENT":
+            {
+                long? myDeptId = _currentUserService.DepartmentId;
+                if (myDeptId.HasValue)
+                {
+                    bool inDept = await _dbContext.EmployeeAssignments
+                        .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
+                    if (!inDept)
+                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกแผนกของคุณ");
+                }
+                break;
+            }
+            case "DIVISION":
+            {
+                long? myDivId = _currentUserService.DivisionId;
+                if (myDivId.HasValue)
+                {
+                    bool inDiv = await _dbContext.EmployeeAssignments
+                        .AnyAsync(a => a.EmployeeId == id && a.DivisionId == myDivId.Value && a.IsCurrent, cancellationToken);
+                    if (!inDiv)
+                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกฝ่ายของคุณ");
+                }
+                break;
+            }
+            case "TEAM":
+            {
+                long? myDeptId = _currentUserService.DepartmentId;
+                if (myDeptId.HasValue)
+                {
+                    bool inTeam = await _dbContext.EmployeeAssignments
+                        .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
+                    if (!inTeam)
+                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
+                }
+                break;
+            }
+            // case "ORGANIZATION": เห็นได้ทุกคน
         }
 
         string idStr = id.ToString();
