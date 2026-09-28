@@ -1285,6 +1285,7 @@ public class SalaryService : ISalaryService
         var activeEmployees = await _context.Employees
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .Include(e => e.Assignments).ThenInclude(a => a.EmployeeType)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -1302,7 +1303,9 @@ public class SalaryService : ISalaryService
         var ssoRate = await _context.SocialSecurityRates
             .FirstOrDefaultAsync(s => s.Status == "ACTIVE", cancellationToken);
 
-        decimal ssoPercent = ssoRate?.EmployeeContributionPercent ?? 5.0m;
+        decimal ssoPercent = ssoRate != null
+            ? (ssoRate.EmployeeContributionPercent <= 1.0m ? ssoRate.EmployeeContributionPercent * 100.0m : ssoRate.EmployeeContributionPercent)
+            : 5.0m;
         decimal ssoMinWage = ssoRate?.MinWageBaseAmount ?? 1650.0m;
         decimal ssoMaxWage = ssoRate?.MaxWageBaseAmount ?? 15000.0m;
 
@@ -1356,10 +1359,18 @@ public class SalaryService : ISalaryService
                 continue;
             }
 
+            var curEmpAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
+            bool hasSso = curEmpAssign?.EmployeeType == null || curEmpAssign.EmployeeType.HasSocialSecurity;
+
             // 1. Calculate SSO
-            decimal ssoBase = Math.Min(Math.Max(baseSalary, ssoMinWage), ssoMaxWage);
-            decimal ssoAmount = Math.Round(ssoBase * (ssoPercent / 100.0m), 2);
-            ssoAmount = Math.Min(ssoAmount, 750.0m);
+            decimal ssoAmount = 0;
+            if (hasSso)
+            {
+                decimal ssoBase = Math.Min(Math.Max(baseSalary, ssoMinWage), ssoMaxWage);
+                ssoAmount = Math.Round(ssoBase * (ssoPercent / 100.0m), 2);
+                decimal maxSsoAmount = Math.Round(ssoMaxWage * (ssoPercent / 100.0m), 2);
+                ssoAmount = Math.Min(ssoAmount, maxSsoAmount);
+            }
 
             // 2. Calculate Progressive Tax (ภ.ง.ด.1)
             decimal annualIncome = baseSalary * 12;
@@ -1435,7 +1446,7 @@ public class SalaryService : ISalaryService
                 {
                     PayrollItemId = ssoItem.Id,
                     Amount = ssoAmount,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"คำนวณ {ssoPercent}% ของฐานเงินเดือน" })
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"คำนวณ {ssoPercent:G29}% ของฐานเงินเดือน" })
                 });
             }
 
@@ -1454,6 +1465,36 @@ public class SalaryService : ISalaryService
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
+    }
+
+    public async Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(p => p.Details)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        // Allow deletion ONLY in DRAFT or REVIEW status
+        if (period.Status != "DRAFT" && period.Status != "REVIEW")
+        {
+            throw new BusinessRuleException(
+                $"ไม่สามารถลบรอบเงินเดือนในสถานะ '{period.Status}' ได้ " +
+                "เนื่องจากรอบเงินเดือนได้ถูกส่งต่อไปยังขั้นตอนตรวจสอบ/อนุมัติ/จ่ายเงินแล้ว (สามารถลบได้เฉพาะสถานะ 'DRAFT' หรือ 'REVIEW' เท่านั้น)");
+        }
+
+        // Clean up payroll details and payroll records
+        foreach (var pr in period.Payrolls)
+        {
+            if (pr.Details.Any())
+            {
+                _context.PayrollDetails.RemoveRange(pr.Details);
+            }
+        }
+        _context.Payrolls.RemoveRange(period.Payrolls);
+        _context.PayrollPeriods.Remove(period);
+
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default)
@@ -1774,7 +1815,7 @@ public class SalaryService : ISalaryService
 
     #endregion
 
-    #region Payment Workflow
+        #region Payment Workflow
 
     public async Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default)
     {

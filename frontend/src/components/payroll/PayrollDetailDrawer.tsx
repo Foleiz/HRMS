@@ -40,9 +40,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const earnings = details.filter((d) => d.itemType === 'EARNING');
   const deductions = details.filter((d) => d.itemType === 'DEDUCTION');
 
-  const totalGross = record.totalGrossIncome ?? earnings.reduce((sum, item) => sum + item.amount, 0);
-  const totalDed = record.totalDeductionAmount ?? deductions.reduce((sum, item) => sum + Math.abs(item.amount), 0);
-  const netSalary = record.netPayableSalary ?? (totalGross - totalDed);
+  const totalGross = details.length > 0 ? earnings.reduce((sum, item) => sum + item.amount, 0) : (record.totalGrossIncome ?? 0);
+  const totalDed = details.length > 0 ? deductions.reduce((sum, item) => sum + Math.abs(item.amount), 0) : (record.totalDeductionAmount ?? 0);
+  const netSalary = details.length > 0 ? (totalGross - totalDed) : (record.netPayableSalary ?? (totalGross - totalDed));
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-200">
@@ -114,7 +114,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                             )}
                           </div>
                           <div className="font-semibold text-slate-900 font-mono">
-                            ฿-{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       );
