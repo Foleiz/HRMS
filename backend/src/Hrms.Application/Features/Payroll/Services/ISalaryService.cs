@@ -19,7 +19,9 @@ public interface ISalaryService
 
     // Social Security Rates
     Task<List<SocialSecurityRateDto>> GetSocialSecurityRatesAsync(CancellationToken cancellationToken = default);
+    Task<SocialSecurityRateDto> CreateSocialSecurityRateAsync(CreateSocialSecurityRateRequest request, CancellationToken cancellationToken = default);
     Task<SocialSecurityRateDto> UpdateSocialSecurityRateAsync(long id, UpdateSocialSecurityRateRequest request, CancellationToken cancellationToken = default);
+    Task<List<SocialSecurityRateDto>> ResetSocialSecurityRatesToDefaultAsync(CancellationToken cancellationToken = default);
 
     // Employee Salaries
     Task<List<EmployeeSalaryOverviewDto>> GetEmployeeSalariesOverviewAsync(string? search, long? departmentId, CancellationToken cancellationToken = default);

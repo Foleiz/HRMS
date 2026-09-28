@@ -65,11 +65,13 @@ import {
   PayrollTransferList,
   PayrollTransferItem,
   UpdateTaxBracketPayload,
+  UpdateSocialSecurityRatePayload,
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
 import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
+import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
@@ -315,6 +317,15 @@ export default function PayrollPage() {
     hasRole('PAYROLL_ADMIN') ||
     hasRole('SYSTEM_SUPER');
 
+  const canEditSso =
+    canEditTax ||
+    isFinance ||
+    hasRole('ADMIN') ||
+    hasRole('PAYROLL_ADMIN') ||
+    hasRole('SYSTEM_SUPER') ||
+    hasPermission('PAYROLL_TAX_EDIT') ||
+    hasPermission('PAYROLL_TAX_MANAGE');
+
   const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
@@ -500,6 +511,9 @@ export default function PayrollPage() {
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
   const [isSavingTax, setIsSavingTax] = useState(false);
+  const [isSsoModalOpen, setIsSsoModalOpen] = useState(false);
+  const [selectedSsoRate, setSelectedSsoRate] = useState<SocialSecurityRate | null>(null);
+  const [isSavingSso, setIsSavingSso] = useState(false);
 
   // Tab 5: Payment Workflow state
   const [transferList, setTransferList] = useState<PayrollTransferList | null>(null);
@@ -1107,6 +1121,45 @@ export default function PayrollPage() {
       showToast(err.message || 'เกิดข้อผิดพลาดในการรีเซ็ตอัตราภาษี');
     } finally {
       setIsSavingTax(false);
+    }
+  };
+
+  const handleOpenEditSsoRate = (rate: SocialSecurityRate) => {
+    setSelectedSsoRate(rate);
+    setIsSsoModalOpen(true);
+  };
+
+  const handleSaveSsoRate = async (payload: UpdateSocialSecurityRatePayload, id?: number) => {
+    try {
+      setIsSavingSso(true);
+      if (id) {
+        await salaryService.updateSocialSecurityRate(id, payload);
+        showToast('อัปเดตเกณฑ์และอัตราเงินสมทบกองทุนประกันสังคมสำเร็จ');
+      } else {
+        await salaryService.createSocialSecurityRate(payload);
+        showToast('เพิ่มเกณฑ์และอัตราเงินสมทบกองทุนประกันสังคมสำเร็จ');
+      }
+      const rates = await salaryService.getSocialSecurityRates();
+      setSsoRates(rates);
+      setIsSsoModalOpen(false);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการบันทึกอัตราประกันสังคม');
+    } finally {
+      setIsSavingSso(false);
+    }
+  };
+
+  const handleResetSsoRates = async () => {
+    try {
+      setIsSavingSso(true);
+      const rates = await salaryService.resetSocialSecurityRatesToDefault();
+      setSsoRates(rates);
+      setIsSsoModalOpen(false);
+      showToast('รีเซ็ตอัตราประกันสังคมเป็นค่ามาตรฐานตามกฎหมาย (5% เพดาน 15,000 บาท) สำเร็จ');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการรีเซ็ตอัตราประกันสังคม');
+    } finally {
+      setIsSavingSso(false);
     }
   };
 
@@ -3723,6 +3776,26 @@ export default function PayrollPage() {
                   อัตราเงินสมทบฝ่ายลูกจ้างและนายจ้าง พร้อมฐานเพดานค่าจ้างขั้นต่ำและสูงสุดตามกฎหมาย
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                {canEditSso ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
+                      setIsSsoModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-purple-700 bg-purple-50/70 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>แก้ไขอัตราประกันสังคม</span>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                    <Lock className="w-3 h-3" />
+                    สิทธิ์ดูอย่างเดียว
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto border border-slate-100 rounded-xl">
@@ -3736,6 +3809,7 @@ export default function PayrollPage() {
                     <th className="py-3.5 px-4 text-right">เพดานค่าจ้างสูงสุด</th>
                     <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
                     <th className="py-3.5 px-4 text-center">สถานะ</th>
+                    <th className="py-3.5 px-4 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -3761,6 +3835,21 @@ export default function PayrollPage() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                           {s.status}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {canEditSso ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSsoRate(s)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
+                            title="แก้ไขเกณฑ์นี้"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            <span>แก้ไข</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -3797,6 +3886,15 @@ export default function PayrollPage() {
         onSave={handleSaveTaxBrackets}
         onResetDefault={handleResetTaxBrackets}
         isLoading={isSavingTax}
+      />
+
+      <SocialSecurityRateModal
+        isOpen={isSsoModalOpen}
+        onClose={() => setIsSsoModalOpen(false)}
+        rate={selectedSsoRate}
+        onSave={handleSaveSsoRate}
+        onResetDefault={handleResetSsoRates}
+        isLoading={isSavingSso}
       />
 
       <AdjustSalaryModal
