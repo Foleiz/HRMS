@@ -287,7 +287,8 @@ export default function ResignationPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป + ข้อมูลพนักงาน (ตาม Figma) ─── */}
-          <div className="space-y-6">
+          {/* ใช้ flex-col + การ์ดล่าง flex-1 เพื่อให้ขอบล่างเสมอกับการ์ดฝั่งขวา */}
+          <div className="flex flex-col gap-6">
             {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
@@ -316,7 +317,7 @@ export default function ResignationPage() {
             </div>
 
             {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลพนักงาน</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
@@ -365,8 +366,8 @@ export default function ResignationPage() {
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
-            <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+            <div className="flex-1 flex flex-col space-y-4">
               <h3 className="text-sm font-bold text-gray-900">รายละเอียดการขอลาออก</h3>
 
               {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
@@ -419,7 +420,8 @@ export default function ResignationPage() {
               </div>
 
               {/* เหตุผลการลาออก (Textarea พร้อมตัวนับตาม Figma: สถานที่/เบอร์ติดต่อระหว่างลา หรือเหตุผล) */}
-              <div>
+              {/* ขยายเต็มพื้นที่ที่เหลือ เพื่อให้การ์ดสูงเท่าฝั่งซ้าย */}
+              <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700">
                     เหตุผลการลาออก *
@@ -434,7 +436,7 @@ export default function ResignationPage() {
                   onChange={(e) => setReasonDetail(e.target.value)}
                   rows={4}
                   placeholder="ระบุเหตุผลการลาออก และสถานที่หรือเบอร์ติดต่อระหว่างลา..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  className="flex-1 min-h-[104px] w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                   required
                 />
               </div>
