@@ -147,6 +147,8 @@ export interface ApprovalTimelineStep {
   status: 'COMPLETED' | 'WAITING' | 'PENDING_FUTURE' | 'REJECTED' | 'CANCELLED' | string;
   actionByEmployeeId?: number | null;
   actionByEmployeeName?: string | null;
+  /** ตำแหน่งของผู้ดำเนินการ */
+  actionByPositionName?: string | null;
   actionDecision?: 'APPROVE' | 'REJECT' | 'CANCEL' | string | null;
   actionAt?: string | null;
   comment?: string | null;

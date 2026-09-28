@@ -323,6 +323,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
             .FirstOrDefaultAsync(i => i.Id == instanceId, cancellationToken);
 
         if (instance == null || instance.ApprovalFlow == null)
@@ -340,6 +341,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
             .OrderByDescending(i => i.Id)
             .FirstOrDefaultAsync(i => i.DocumentType == documentType && i.SourceDocumentId == sourceDocumentId, cancellationToken);
 
@@ -522,6 +524,10 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 Status = status,
                 ActionByEmployeeId = action?.ApproverEmployeeId,
                 ActionByEmployeeName = action?.ApproverEmployee?.FullName,
+                ActionByPositionName = action?.ApproverEmployee?.Assignments
+                    .Where(x => x.IsCurrent)
+                    .Select(x => x.Position?.PositionName)
+                    .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)),
                 ActionDecision = action?.ActionDecision,
                 ActionAt = action?.ActionAt,
                 Comment = action?.Comment

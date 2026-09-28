@@ -18,6 +18,8 @@ public record ApprovalTimelineStepDto
     public string Status { get; init; } = "PENDING_FUTURE"; // COMPLETED, WAITING, PENDING_FUTURE, REJECTED
     public long? ActionByEmployeeId { get; init; }
     public string? ActionByEmployeeName { get; init; }
+    /// <summary>ตำแหน่งปัจจุบันของผู้ดำเนินการ (ใช้แสดงในช่องลงนามของเอกสาร)</summary>
+    public string? ActionByPositionName { get; init; }
     public string? ActionDecision { get; init; } // APPROVE, REJECT, CANCEL
     public DateTime? ActionAt { get; init; }
     public string? Comment { get; init; }
