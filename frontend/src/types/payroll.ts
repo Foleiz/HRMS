@@ -86,6 +86,8 @@ export interface UpdateSocialSecurityRatePayload {
   status: string;
 }
 
+export type CreateSocialSecurityRatePayload = UpdateSocialSecurityRatePayload;
+
 export interface EmployeeSalaryOverview {
   employeeId: number;
   employeeCode: string;
