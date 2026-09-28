@@ -9,6 +9,7 @@ namespace Hrms.Application.Features.Settings.Services;
 public interface IUserService
 {
     Task<PagedResult<UserAccountDto>> GetUsersAsync(UserQueryFilter filter, CancellationToken cancellationToken = default);
+    Task<List<long>> GetAssignedEmployeeIdsAsync(CancellationToken cancellationToken = default);
     Task<UserAccountDto> GetUserByIdAsync(long id, CancellationToken cancellationToken = default);
     Task<UserAccountDto> CreateUserAsync(CreateUserRequestDto request, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default);
     Task<UserAccountDto> UpdateUserAsync(long id, UpdateUserRequestDto request, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default);

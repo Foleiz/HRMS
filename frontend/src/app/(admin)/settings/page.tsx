@@ -129,6 +129,7 @@ export default function SettingsPage() {
 
   // Employees (for dropdown in drawer)
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [assignedEmployeeIds, setAssignedEmployeeIds] = useState<number[]>([]);
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -261,6 +262,15 @@ export default function SettingsPage() {
     }
   };
 
+  const loadAssignedEmployeeIds = async () => {
+    try {
+      const ids = await settingsService.getAssignedEmployeeIds();
+      setAssignedEmployeeIds(ids);
+    } catch {
+      // Non-blocking fallback
+    }
+  };
+
   // Track tabs that have been initialized to avoid redundant refetches on tab switch
   const loadedTabsRef = useRef<Set<TabType>>(new Set());
 
@@ -271,6 +281,7 @@ export default function SettingsPage() {
         loadedTabsRef.current.add('users');
         loadUsers();
         loadRoles(false);
+        loadAssignedEmployeeIds();
       }
     } else if (activeTab === 'roles' && canViewRolesTab) {
       if (!loadedTabsRef.current.has('roles')) {
@@ -316,6 +327,7 @@ export default function SettingsPage() {
     await settingsService.createUser(data);
     success('สร้างบัญชีผู้ใช้งานสำเร็จ');
     loadUsers();
+    loadAssignedEmployeeIds();
   };
 
   const handleUpdateUser = async (id: number, data: UpdateUserRequest) => {
@@ -355,6 +367,7 @@ export default function SettingsPage() {
           success('ลบบัญชีผู้ใช้งานสำเร็จ');
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
           loadUsers();
+          loadAssignedEmployeeIds();
         } catch (err: any) {
           error(err.message || 'ไม่สามารถลบบัญชีผู้ใช้งานได้');
         }
@@ -550,12 +563,14 @@ export default function SettingsPage() {
               onAddUserClick={() => {
                 if (roles.length === 0) loadRoles(false);
                 if (employees.length === 0) loadEmployees();
+                loadAssignedEmployeeIds();
                 setUserToEdit(null);
                 setIsUserDrawerOpen(true);
               }}
               onEditUserClick={(user) => {
                 if (roles.length === 0) loadRoles(false);
                 if (employees.length === 0) loadEmployees();
+                loadAssignedEmployeeIds();
                 setUserToEdit(user);
                 setIsUserDrawerOpen(true);
               }}
@@ -629,6 +644,7 @@ export default function SettingsPage() {
         userToEdit={userToEdit}
         employees={employees}
         roles={roles}
+        assignedEmployeeIds={assignedEmployeeIds}
       />
 
       {/* Reset Password Modal */}

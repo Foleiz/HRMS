@@ -49,6 +49,14 @@ export const settingsService = {
     return res.data.data;
   },
 
+  async getAssignedEmployeeIds(): Promise<number[]> {
+    const res = await apiClient.get<ApiResponse<number[]>>('/users/assigned-employee-ids');
+    if (!res.data.success || !res.data.data) {
+      throw new Error(res.data.message || 'ไม่สามารถดึงข้อมูลรหัสพนักงานได้');
+    }
+    return res.data.data;
+  },
+
   async createUser(data: CreateUserRequest): Promise<UserAccount> {
     const res = await apiClient.post<ApiResponse<UserAccount>>('/users', data);
     if (!res.data.success || !res.data.data) {
