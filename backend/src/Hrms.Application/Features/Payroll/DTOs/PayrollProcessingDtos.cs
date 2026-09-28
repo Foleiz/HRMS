@@ -48,6 +48,10 @@ public class PayrollRecordDto
     public decimal? TotalGrossIncome { get; set; }
     public decimal? TotalDeductionAmount { get; set; }
     public decimal? NetPayableSalary { get; set; }
+    /// <summary>เงินสมทบประกันสังคมส่วนลูกจ้าง (จากผลคำนวณจริง)</summary>
+    public decimal? SsoAmount { get; set; }
+    /// <summary>ภาษีหัก ณ ที่จ่าย ภ.ง.ด.1 (จากผลคำนวณจริง)</summary>
+    public decimal? TaxAmount { get; set; }
     public string Status { get; set; } = "CALCULATED";
     public string StatusText { get; set; } = "คำนวณแล้ว";
     // Individual Payment Tracking

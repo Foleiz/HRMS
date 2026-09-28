@@ -191,6 +191,10 @@ export interface PayrollRecord {
   totalGrossIncome?: number | null;
   totalDeductionAmount?: number | null;
   netPayableSalary?: number | null;
+  /** เงินสมทบประกันสังคมส่วนลูกจ้าง (จากผลคำนวณจริง) */
+  ssoAmount?: number | null;
+  /** ภาษีหัก ณ ที่จ่าย ภ.ง.ด.1 (จากผลคำนวณจริง) */
+  taxAmount?: number | null;
   status: 'CALCULATED' | 'REVIEW' | 'DRAFT' | string;
   statusText: string;
   // Individual Payment Tracking

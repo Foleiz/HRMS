@@ -963,6 +963,15 @@ public class SalaryService : ISalaryService
 
         if (missingEmployees.Any() && period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
         {
+            // แสดงเฉพาะพนักงานที่อยู่ในรอบนี้จริง (ไม่รวมคนที่ลาออกไปแล้ว / ยังไม่เริ่มงาน)
+            var windows = await LoadEmploymentWindowsAsync(missingEmployees, cancellationToken);
+            missingEmployees = missingEmployees
+                .Where(e => IsEligibleForPeriod(e, windows.TryGetValue(e.Id, out var w) ? w : new EmploymentWindow(null, null), period))
+                .ToList();
+        }
+
+        if (missingEmployees.Any() && period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
+        {
             var newPayrolls = missingEmployees.Select(emp =>
             {
                 var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
@@ -1059,6 +1068,9 @@ public class SalaryService : ISalaryService
                 ? "⚠️ ยังไม่ระบุฐานเงินเดือน"
                 : (adjustments.Any() ? string.Join(", ", adjustments) : "-");
 
+            decimal ssoAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_SSO").Sum(d => d.Amount);
+            decimal taxAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_TAX").Sum(d => d.Amount);
+
             var empAttendance = attendanceSummaries.FirstOrDefault(a => a.EmployeeId == p.EmployeeId);
             decimal otHours = empAttendance?.TotalOvertimeHours ?? 0.0m;
 
@@ -1087,6 +1099,8 @@ public class SalaryService : ISalaryService
                 TotalGrossIncome = isCalculated ? p.TotalGrossIncome : null,
                 TotalDeductionAmount = isCalculated ? p.TotalDeductionAmount : null,
                 NetPayableSalary = isCalculated ? p.NetPayableSalary : null,
+                SsoAmount = isCalculated ? ssoAmount : null,
+                TaxAmount = isCalculated ? taxAmount : null,
                 Status = p.Status,
                 StatusText = GetPayrollStatusText(p.Status),
                 PaymentStatus = p.PaymentStatus ?? "PENDING",
@@ -1215,7 +1229,8 @@ public class SalaryService : ISalaryService
 
             if (period.PaymentMethod == "DIRECT_TRANSFER")
             {
-                var payrolls = period.Payrolls.ToList();
+                // ต้องแนบสลิปเฉพาะพนักงานที่มียอดต้องโอนจริง (ไม่รวมคนที่ได้ 0 บาท / ยังไม่มีฐานเงินเดือน)
+                var payrolls = period.Payrolls.Where(IsPayableRecord).ToList();
                 var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
                 if (missingSlip.Any())
                 {
@@ -1235,8 +1250,8 @@ public class SalaryService : ISalaryService
         if (normalized == "PAID")
         {
             if (period.PaymentConfirmedAt == null) period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
-            period.TotalTransferredCount = period.Payrolls.Count;
-            foreach (var p in period.Payrolls)
+            period.TotalTransferredCount = period.Payrolls.Count(IsPayableRecord);
+            foreach (var p in period.Payrolls.Where(IsPayableRecord))
             {
                 p.PaymentStatus = "TRANSFERRED";
                 if (p.TransferredAt == null) p.TransferredAt = DateTimeOffset.UtcNow;
@@ -1318,177 +1333,139 @@ public class SalaryService : ISalaryService
                 $"ไม่สามารถคำนวณเงินเดือนใหม่ในสถานะ '{period.Status}' ได้ (คำนวณได้เฉพาะสถานะ 'DRAFT' หรือ 'REVIEW' เท่านั้น) หากต้องการแก้ไข กรุณาส่งคืนรอบเงินเดือนกลับมาที่ HR ก่อน");
         }
 
-        var activeEmployees = await _context.Employees
+        var employees = await _context.Employees
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .Include(e => e.Assignments).ThenInclude(a => a.EmployeeType)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var windows = await LoadEmploymentWindowsAsync(employees, cancellationToken);
+
+        // ใช้เฉพาะเงินเดือนที่มีผลภายในรอบนี้แล้ว (ไม่ดึงรายการที่มีผลในอนาคต)
+        var periodEnd = period.EndDate;
         var allSalaries = await _context.EmployeeSalaries
-            .AsNoTracking()
+            .Where(s => s.EffectiveFrom <= periodEnd)
             .OrderByDescending(s => s.EffectiveFrom)
-            .ToListAsync(cancellationToken);
-
-        var taxBrackets = await _context.TaxBrackets
-            .Where(t => t.Status == "ACTIVE")
-            .OrderBy(t => t.IncomeFrom)
+            .ThenByDescending(s => s.Id)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var ssoRate = await _context.SocialSecurityRates
-            .FirstOrDefaultAsync(s => s.Status == "ACTIVE", cancellationToken);
-
-        decimal ssoPercent = ssoRate != null
-            ? (ssoRate.EmployeeContributionPercent <= 1.0m ? ssoRate.EmployeeContributionPercent * 100.0m : ssoRate.EmployeeContributionPercent)
-            : 5.0m;
-        decimal ssoMinWage = ssoRate?.MinWageBaseAmount ?? 1650.0m;
-        decimal ssoMaxWage = ssoRate?.MaxWageBaseAmount ?? 15000.0m;
+        var taxBrackets = await GetEffectiveTaxBracketsAsync(period.StartDate, period.EndDate, cancellationToken);
+        var ssoRate = await GetEffectiveSsoRateAsync(period.StartDate, period.EndDate, cancellationToken);
 
         var payrollItems = await _context.PayrollItems
             .Where(i => i.Status == "ACTIVE")
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var baseItem = payrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE") 
+        var baseItem = payrollItems.FirstOrDefault(i => i.ItemCode == "INC_BASE")
                     ?? payrollItems.FirstOrDefault(i => i.ItemType == "EARNING");
         var ssoItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_SSO");
         var taxItem = payrollItems.FirstOrDefault(i => i.ItemCode == "DED_TAX");
 
-        foreach (var emp in activeEmployees)
+        int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
+        var eligibleIds = new HashSet<long>();
+
+        foreach (var emp in employees)
         {
+            var window = windows.TryGetValue(emp.Id, out var w) ? w : new EmploymentWindow(null, null);
+            if (!IsEligibleForPeriod(emp, window, period))
+                continue;
+
+            eligibleIds.Add(emp.Id);
+
+            var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.OrderByDescending(a => a.EffectiveFrom).FirstOrDefault();
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == emp.Id);
-            decimal baseSalary = empSalary?.BaseSalary ?? 0;
+            decimal fullSalary = empSalary?.BaseSalary ?? 0;
 
-            var existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
-
-            if (baseSalary <= 0)
+            var payroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
+            if (payroll == null)
             {
-                if (existingPayroll == null)
-                {
-                    var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
-                    existingPayroll = new Domain.Entities.Payroll
-                    {
-                        PeriodId = period.Id,
-                        EmployeeId = emp.Id,
-                        TotalGrossIncome = 0,
-                        TotalDeductionAmount = 0,
-                        NetPayableSalary = 0,
-                        Status = "DRAFT",
-                        SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim(),
-                        SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-"
-                    };
-                    _context.Payrolls.Add(existingPayroll);
-                }
-                else
-                {
-                    existingPayroll.TotalGrossIncome = 0;
-                    existingPayroll.TotalDeductionAmount = 0;
-                    existingPayroll.NetPayableSalary = 0;
-                    existingPayroll.Status = "DRAFT";
-                    if (existingPayroll.Details.Any())
-                    {
-                        _context.PayrollDetails.RemoveRange(existingPayroll.Details);
-                        existingPayroll.Details.Clear();
-                    }
-                }
+                payroll = new Domain.Entities.Payroll { PeriodId = period.Id, EmployeeId = emp.Id };
+                _context.Payrolls.Add(payroll);
+                period.Payrolls.Add(payroll);
+            }
+            else if (payroll.Details.Any())
+            {
+                _context.PayrollDetails.RemoveRange(payroll.Details);
+                payroll.Details.Clear();
+            }
+
+            // Snapshot ข้อมูล ณ วันที่คำนวณ เพื่อให้ประวัติเงินเดือนไม่เปลี่ยนตามการย้ายแผนก/ตำแหน่งภายหลัง
+            payroll.SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim();
+            payroll.SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-";
+            payroll.SnapshotPositionName = curAssign?.Position?.PositionName;
+            payroll.SnapshotWageType = curAssign?.WageType;
+
+            if (fullSalary <= 0)
+            {
+                payroll.TotalGrossIncome = 0;
+                payroll.TotalDeductionAmount = 0;
+                payroll.NetPayableSalary = 0;
+                payroll.Status = "DRAFT";
                 continue;
             }
 
-            var curEmpAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
-            bool hasSso = curEmpAssign?.EmployeeType == null || curEmpAssign.EmployeeType.HasSocialSecurity;
+            // คิดตามสัดส่วนวันทำงานจริง สำหรับพนักงานเข้าใหม่/ลาออกระหว่างรอบ
+            var workStart = window.Start.HasValue && window.Start.Value > period.StartDate ? window.Start.Value : period.StartDate;
+            var workEnd = window.End.HasValue && window.End.Value < period.EndDate ? window.End.Value : period.EndDate;
+            int workedDays = Math.Max(0, workEnd.DayNumber - workStart.DayNumber + 1);
+            bool isProrated = workedDays < periodDays;
+            decimal factor = isProrated ? (decimal)workedDays / periodDays : 1m;
+            decimal baseSalary = isProrated ? Math.Round(fullSalary * factor, 2, MidpointRounding.AwayFromZero) : fullSalary;
 
-            // 1. Calculate SSO
-            decimal ssoAmount = 0;
-            if (hasSso)
-            {
-                decimal ssoBase = Math.Min(Math.Max(baseSalary, ssoMinWage), ssoMaxWage);
-                ssoAmount = Math.Round(ssoBase * (ssoPercent / 100.0m), 2);
-                decimal maxSsoAmount = Math.Round(ssoMaxWage * (ssoPercent / 100.0m), 2);
-                ssoAmount = Math.Min(ssoAmount, maxSsoAmount);
-            }
+            bool hasSso = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasSocialSecurity;
 
-            // 2. Calculate Progressive Tax (ภ.ง.ด.1)
-            decimal annualIncome = baseSalary * 12;
-            decimal standardExpenses = Math.Min(annualIncome * 0.50m, 100000.0m);
-            decimal personalAllowance = 60000.0m;
-            decimal ssoAllowance = ssoAmount * 12;
-            decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - personalAllowance - ssoAllowance);
+            // 1. ประกันสังคม: คิดจากค่าจ้างที่จ่ายจริงในรอบนี้
+            decimal ssoAmount = hasSso ? CalculateSsoContribution(baseSalary, ssoRate.EmployeePercent, ssoRate) : 0;
 
-            decimal annualTax = 0;
-            if (taxableIncome > 0 && taxBrackets.Count > 0)
-            {
-                foreach (var bracket in taxBrackets)
-                {
-                    decimal lower = Math.Floor(bracket.IncomeFrom);
-                    if (taxableIncome > lower)
-                    {
-                        decimal upper = bracket.IncomeTo ?? taxableIncome;
-                        decimal bracketTaxable = Math.Min(taxableIncome, upper) - lower;
-                        decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
-                        annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
-                    }
-                }
-            }
-            decimal monthlyTax = Math.Round(annualTax / 12.0m, 2);
+            // 2. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1): ประมาณการทั้งปีจากเงินเดือนเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
+            decimal fullMonthSso = hasSso ? CalculateSsoContribution(fullSalary, ssoRate.EmployeePercent, ssoRate) : 0;
+            decimal fullMonthTax = CalculateMonthlyWithholdingTax(fullSalary, fullMonthSso, taxBrackets);
+            decimal monthlyTax = isProrated ? Math.Round(fullMonthTax * factor, 2, MidpointRounding.AwayFromZero) : fullMonthTax;
 
-            // Gross & Net Pay
             decimal totalGross = baseSalary;
             decimal totalDeductions = ssoAmount + monthlyTax;
-            decimal netPay = Math.Max(0, totalGross - totalDeductions);
 
-            // Find existing payroll record or create new
-            existingPayroll = period.Payrolls.FirstOrDefault(p => p.EmployeeId == emp.Id);
-            if (existingPayroll == null)
-            {
-                existingPayroll = new Domain.Entities.Payroll
-                {
-                    PeriodId = period.Id,
-                    EmployeeId = emp.Id,
-                    TotalGrossIncome = totalGross,
-                    TotalDeductionAmount = totalDeductions,
-                    NetPayableSalary = netPay,
-                    Status = "CALCULATED"
-                };
-                _context.Payrolls.Add(existingPayroll);
-            }
-            else
-            {
-                existingPayroll.TotalGrossIncome = totalGross;
-                existingPayroll.TotalDeductionAmount = totalDeductions;
-                existingPayroll.NetPayableSalary = netPay;
-                existingPayroll.Status = "CALCULATED";
+            payroll.TotalGrossIncome = totalGross;
+            payroll.TotalDeductionAmount = totalDeductions;
+            payroll.NetPayableSalary = Math.Max(0, totalGross - totalDeductions);
+            payroll.Status = "CALCULATED";
 
-                if (existingPayroll.Details.Any())
-                {
-                    _context.PayrollDetails.RemoveRange(existingPayroll.Details);
-                    existingPayroll.Details.Clear();
-                }
-            }
-
-            if (baseItem != null && baseSalary > 0)
+            if (baseItem != null)
             {
-                existingPayroll.Details.Add(new PayrollDetail
+                payroll.Details.Add(new PayrollDetail
                 {
                     PayrollItemId = baseItem.Id,
+                    Quantity = isProrated ? (decimal?)workedDays : null,
+                    Rate = isProrated ? (decimal?)fullSalary : null,
                     Amount = baseSalary,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = "เงินเดือนประจำ" })
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        subtext = isProrated
+                            ? $"เงินเดือนประจำ (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จากเงินเดือนเต็ม {fullSalary:N2} บาท)"
+                            : "เงินเดือนประจำ"
+                    })
                 });
             }
 
             if (ssoItem != null && ssoAmount > 0)
             {
-                existingPayroll.Details.Add(new PayrollDetail
+                payroll.Details.Add(new PayrollDetail
                 {
                     PayrollItemId = ssoItem.Id,
                     Amount = ssoAmount,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = $"คำนวณ {ssoPercent:G29}% ของฐานเงินเดือน" })
+                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        subtext = $"คำนวณ {ssoRate.EmployeePercent:G29}% ของฐานค่าจ้าง (ขั้นต่ำ {ssoRate.MinWage:N0} / เพดาน {ssoRate.MaxWage:N0} บาท)"
+                    })
                 });
             }
 
             if (taxItem != null && monthlyTax > 0)
             {
-                existingPayroll.Details.Add(new PayrollDetail
+                payroll.Details.Add(new PayrollDetail
                 {
                     PayrollItemId = taxItem.Id,
                     Amount = monthlyTax,
@@ -1497,11 +1474,188 @@ public class SalaryService : ISalaryService
             }
         }
 
+        // ลบรายการของพนักงานที่ไม่อยู่ในรอบนี้แล้ว (เช่น ลาออกก่อนรอบ / ยังไม่เริ่มงาน)
+        var staleRecords = period.Payrolls.Where(p => !eligibleIds.Contains(p.EmployeeId)).ToList();
+        foreach (var stale in staleRecords)
+        {
+            if (stale.Details.Any())
+                _context.PayrollDetails.RemoveRange(stale.Details);
+            _context.Payrolls.Remove(stale);
+            period.Payrolls.Remove(stale);
+        }
+
         period.Status = "REVIEW";
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
     }
+
+    #region Payroll Calculation Helpers
+
+    /// <summary>เงินเดือนล่าสุดของพนักงานแต่ละคนที่มีผลภายในปีที่กำหนด (ใช้คำนวณโบนัส)</summary>
+    private async Task<List<EmployeeSalary>> LoadLatestSalariesForYearAsync(int year, CancellationToken cancellationToken)
+    {
+        var yearEnd = new DateOnly(year, 12, 31);
+        var salaries = await _context.EmployeeSalaries
+            .Where(s => s.EffectiveFrom <= yearEnd)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return salaries
+            .GroupBy(s => s.EmployeeId)
+            .Select(g => g.OrderByDescending(s => s.EffectiveFrom).ThenByDescending(s => s.Id).First())
+            .ToList();
+    }
+
+    /// <summary>ช่วงเวลาการจ้างงาน (วันเริ่มงาน / วันทำงานวันสุดท้าย) ใช้ตัดสินว่าพนักงานอยู่ในรอบเงินเดือนหรือไม่</summary>
+    private sealed record EmploymentWindow(DateOnly? Start, DateOnly? End);
+
+    /// <summary>อัตราประกันสังคมที่ใช้ในการคำนวณ (หน่วยเป็น % เช่น 5 = 5%)</summary>
+    private sealed record SsoRateInfo(decimal EmployeePercent, decimal EmployerPercent, decimal MinWage, decimal MaxWage);
+
+    // ค่าตั้งต้นตามกฎหมาย ปี 2569 (ใช้เมื่อยังไม่มีการตั้งค่าในระบบ): 5% ฐานค่าจ้าง 1,650 - 17,500 บาท
+    private const decimal DefaultSsoPercent = 5.0m;
+    private const decimal DefaultSsoMinWage = 1650.0m;
+    private const decimal DefaultSsoMaxWage = 17500.0m;
+
+    private static bool IsPayableRecord(Domain.Entities.Payroll p) => p.Status == "CALCULATED" && p.NetPayableSalary > 0;
+
+    private async Task<Dictionary<long, EmploymentWindow>> LoadEmploymentWindowsAsync(List<Employee> employees, CancellationToken cancellationToken)
+    {
+        var ids = employees.Select(e => e.Id).ToList();
+        var result = new Dictionary<long, EmploymentWindow>();
+        if (!ids.Any()) return result;
+
+        var contracts = await _context.EmploymentContracts
+            .Where(c => ids.Contains(c.EmployeeId) && c.Status != "CANCELLED")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var exits = await _context.EmployeeStatusHistories
+            .Where(h => ids.Contains(h.EmployeeId) && (h.Status == "RESIGNED" || h.Status == "TERMINATED"))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        foreach (var emp in employees)
+        {
+            var empContracts = contracts.Where(c => c.EmployeeId == emp.Id).ToList();
+
+            DateOnly? start = empContracts.Any()
+                ? empContracts.Min(c => c.StartDate)
+                : (emp.Assignments.Any() ? emp.Assignments.Min(a => a.EffectiveFrom) : (DateOnly?)null);
+
+            // วันทำงานวันสุดท้าย: จากประวัติสถานะลาออก/เลิกจ้าง หรือวันสิ้นสุดสัญญาที่ถูกยกเลิก
+            DateOnly? end = exits.Where(h => h.EmployeeId == emp.Id).Select(h => (DateOnly?)h.EffectiveFrom).Max();
+            var terminationDate = empContracts.Where(c => c.TerminationDate.HasValue).Select(c => c.TerminationDate).Max();
+            if (terminationDate.HasValue && (!end.HasValue || terminationDate.Value > end.Value))
+                end = terminationDate;
+
+            // กรณีกลับเข้ามาทำงานใหม่ (มีสัญญา ACTIVE ที่เริ่มหลังวันออก) ให้ถือว่ายังทำงานอยู่
+            if (end.HasValue && empContracts.Any(c => c.Status == "ACTIVE" && c.StartDate > end.Value))
+                end = null;
+
+            result[emp.Id] = new EmploymentWindow(start, end);
+        }
+
+        return result;
+    }
+
+    private static bool IsEligibleForPeriod(Employee emp, EmploymentWindow window, PayrollPeriod period)
+    {
+        if (window.Start.HasValue && window.Start.Value > period.EndDate) return false; // ยังไม่เริ่มงาน
+        if (window.End.HasValue && window.End.Value < period.StartDate) return false;   // ออกก่อนเริ่มรอบ
+
+        // พนักงานที่ปิดสถานะแล้ว (INACTIVE) โดยไม่ทราบวันออก จะไม่ถูกนำมาคิดเงินเดือน
+        bool isActive = string.Equals(emp.EmploymentStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+        if (!isActive && !window.End.HasValue) return false;
+
+        return true;
+    }
+
+    private async Task<SsoRateInfo> GetEffectiveSsoRateAsync(DateOnly start, DateOnly end, CancellationToken cancellationToken)
+    {
+        var rates = await _context.SocialSecurityRates
+            .Where(s => s.Status == "ACTIVE")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var rate = rates
+                .Where(r => r.EffectiveFrom <= end && (r.EffectiveTo == null || r.EffectiveTo >= start))
+                .OrderByDescending(r => r.EffectiveFrom).ThenByDescending(r => r.Id)
+                .FirstOrDefault()
+            ?? rates.OrderByDescending(r => r.EffectiveFrom).ThenByDescending(r => r.Id).FirstOrDefault();
+
+        if (rate == null)
+            return new SsoRateInfo(DefaultSsoPercent, DefaultSsoPercent, DefaultSsoMinWage, DefaultSsoMaxWage);
+
+        // ค่าในฐานข้อมูลเก็บเป็นทศนิยม (0.05 = 5%) แต่รองรับข้อมูลเก่าที่เก็บเป็นเปอร์เซ็นต์
+        static decimal ToPercent(decimal v) => v <= 1.0m ? v * 100.0m : v;
+
+        return new SsoRateInfo(
+            ToPercent(rate.EmployeeContributionPercent),
+            ToPercent(rate.EmployerContributionPercent),
+            rate.MinWageBaseAmount,
+            rate.MaxWageBaseAmount > 0 ? rate.MaxWageBaseAmount : DefaultSsoMaxWage);
+    }
+
+    private async Task<List<TaxBracket>> GetEffectiveTaxBracketsAsync(DateOnly start, DateOnly end, CancellationToken cancellationToken)
+    {
+        var brackets = await _context.TaxBrackets
+            .Where(t => t.Status == "ACTIVE")
+            .OrderBy(t => t.IncomeFrom)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var effective = brackets
+            .Where(t => t.EffectiveFrom <= end && (t.EffectiveTo == null || t.EffectiveTo >= start))
+            .ToList();
+
+        return effective.Any() ? effective : brackets;
+    }
+
+    /// <summary>
+    /// เงินสมทบประกันสังคม: ฐานค่าจ้างถูกจำกัดระหว่างขั้นต่ำ-เพดาน
+    /// ปัดเศษเป็นบาท (ตั้งแต่ 50 สตางค์ขึ้นไปปัดขึ้น ต่ำกว่านั้นปัดทิ้ง) ตามหลักเกณฑ์ สปส.
+    /// </summary>
+    private static decimal CalculateSsoContribution(decimal wage, decimal percent, SsoRateInfo rate)
+    {
+        if (wage <= 0 || percent <= 0) return 0;
+        decimal wageBase = Math.Min(Math.Max(wage, rate.MinWage), rate.MaxWage);
+        return Math.Round(wageBase * (percent / 100.0m), 0, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// ภาษีหัก ณ ที่จ่ายรายเดือน: ประมาณการเงินได้ทั้งปี (เงินเดือน x 12)
+    /// หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี แล้วคิดตามขั้นบันได หาร 12
+    /// </summary>
+    private static decimal CalculateMonthlyWithholdingTax(decimal monthlySalary, decimal monthlySso, List<TaxBracket> taxBrackets)
+    {
+        decimal annualIncome = monthlySalary * 12;
+        decimal standardExpenses = Math.Min(annualIncome * 0.50m, 100000.0m);
+        decimal personalAllowance = 60000.0m;
+        decimal ssoAllowance = monthlySso * 12;
+        decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - personalAllowance - ssoAllowance);
+
+        decimal annualTax = 0;
+        if (taxableIncome > 0)
+        {
+            foreach (var bracket in taxBrackets)
+            {
+                decimal lower = Math.Floor(bracket.IncomeFrom);
+                if (taxableIncome > lower)
+                {
+                    decimal upper = bracket.IncomeTo ?? taxableIncome;
+                    decimal bracketTaxable = Math.Min(taxableIncome, upper) - lower;
+                    decimal ratePercent = bracket.TaxRate <= 1.0m ? bracket.TaxRate * 100.0m : bracket.TaxRate;
+                    annualTax += Math.Round(bracketTaxable * (ratePercent / 100.0m), 2);
+                }
+            }
+        }
+
+        return Math.Round(annualTax / 12.0m, 2);
+    }
+
+    #endregion
 
     public async Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default)
     {
@@ -1669,13 +1823,17 @@ public class SalaryService : ISalaryService
     {
         var period = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
+                .ThenInclude(pr => pr.Details)
+                    .ThenInclude(d => d.PayrollItem)
+            .Include(p => p.Payrolls)
+                .ThenInclude(pr => pr.Employee)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
 
         if (period == null)
             throw new NotFoundException("PayrollPeriod", periodId);
 
-        var employees = await _context.Employees.AsNoTracking().ToListAsync(cancellationToken);
+        var ssoRate = await GetEffectiveSsoRateAsync(period.StartDate, period.EndDate, cancellationToken);
 
         var items = new List<TaxSsoItemDto>();
         decimal totalGross = 0;
@@ -1683,13 +1841,16 @@ public class SalaryService : ISalaryService
         decimal totalSsoEmployee = 0;
         decimal totalSsoEmployer = 0;
 
-        foreach (var pr in period.Payrolls)
+        // อ่านยอดจากผลการคำนวณจริง (payroll_detail) แทนการคำนวณใหม่ด้วยสูตรตายตัว
+        foreach (var pr in period.Payrolls.Where(p => p.Status == "CALCULATED"))
         {
-            var emp = employees.FirstOrDefault(e => e.Id == pr.EmployeeId);
+            var emp = pr.Employee;
             decimal gross = pr.TotalGrossIncome;
-            decimal ssoEmp = Math.Min(gross * 0.05m, 750.0m);
-            decimal ssoCompany = ssoEmp; // 1:1 match
-            decimal pnd1 = Math.Max(0m, pr.TotalDeductionAmount - ssoEmp);
+            decimal ssoEmp = pr.Details.Where(d => d.PayrollItem?.ItemCode == "DED_SSO").Sum(d => d.Amount);
+            decimal pnd1 = pr.Details.Where(d => d.PayrollItem?.ItemCode == "DED_TAX").Sum(d => d.Amount);
+
+            // นายจ้างสมทบเฉพาะพนักงานที่อยู่ในระบบประกันสังคม (มีการหักส่วนลูกจ้าง)
+            decimal ssoCompany = ssoEmp > 0 ? CalculateSsoContribution(gross, ssoRate.EmployerPercent, ssoRate) : 0;
 
             totalGross += gross;
             totalPnd1 += pnd1;
@@ -1700,8 +1861,8 @@ public class SalaryService : ISalaryService
             {
                 EmployeeId = pr.EmployeeId,
                 EmployeeCode = emp?.EmployeeCode ?? $"EMP{pr.EmployeeId:D3}",
-                EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}" : $"พนักงาน #{pr.EmployeeId}",
-                CitizenId = emp?.CitizenIdMasked ?? "1-1004-xxxxx-xx-1",
+                EmployeeName = pr.SnapshotEmployeeName ?? (emp != null ? $"{emp.FirstName} {emp.LastName}" : $"พนักงาน #{pr.EmployeeId}"),
+                CitizenId = emp?.CitizenIdMasked ?? "-",
                 GrossIncome = gross,
                 Pnd1Tax = pnd1,
                 SsoEmployee = ssoEmp,
@@ -1725,15 +1886,16 @@ public class SalaryService : ISalaryService
 
     public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default)
     {
-        int targetYear = year ?? 2026;
+        int targetYear = year ?? DateTime.Today.Year;
 
         var employees = await _context.Employees
+            .Where(e => e.EmploymentStatus == "ACTIVE")
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
         // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีนี้
         var savedBonuses = await _context.EmployeeBonuses
@@ -1744,7 +1906,7 @@ public class SalaryService : ISalaryService
 
         foreach (var emp in employees)
         {
-            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 0m;
             var deptName = emp.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
             var posName = emp.Assignments.FirstOrDefault()?.Position?.PositionName ?? "-";
 
@@ -1783,7 +1945,7 @@ public class SalaryService : ISalaryService
                     Year = targetYear,
                     BaseSalary = sal,
                     Multiplier = defaultMultiplier,
-                    BonusAmount = sal * defaultMultiplier,
+                    BonusAmount = sal > 0 ? sal * defaultMultiplier : 0,
                     CalculationMode = "MULTIPLIER",
                     Note = null,
                     Status = "CALCULATED",
@@ -1797,16 +1959,17 @@ public class SalaryService : ISalaryService
 
     public async Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default)
     {
-        int targetYear = request.Year <= 0 ? 2026 : request.Year;
+        int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;
         decimal multiplier = request.DefaultMultiplier > 0 ? request.DefaultMultiplier : 2.0m;
 
         var employees = await _context.Employees
+            .Where(e => e.EmploymentStatus == "ACTIVE")
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
             .Where(b => b.Year == targetYear)
@@ -1814,7 +1977,8 @@ public class SalaryService : ISalaryService
 
         foreach (var emp in employees)
         {
-            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 35000.0m;
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 0m;
+            if (sal <= 0) continue; // ยังไม่มีฐานเงินเดือน → ไม่คำนวณโบนัส (ห้ามใช้เงินเดือนสมมติ)
             decimal bonusAmount = Math.Round(sal * multiplier, 2);
 
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
@@ -1850,9 +2014,9 @@ public class SalaryService : ISalaryService
 
     public async Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default)
     {
-        int targetYear = request.Year <= 0 ? 2026 : request.Year;
+        int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;
 
-        var salaries = await _context.EmployeeSalaries.AsNoTracking().ToListAsync(cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
             .Where(b => b.Year == targetYear)
@@ -1860,7 +2024,7 @@ public class SalaryService : ISalaryService
 
         foreach (var item in request.Items)
         {
-            var sal = salaries.FirstOrDefault(s => s.EmployeeId == item.EmployeeId)?.BaseSalary ?? 35000.0m;
+            var sal = salaries.FirstOrDefault(s => s.EmployeeId == item.EmployeeId)?.BaseSalary ?? 0m;
             decimal bonusAmount = Math.Max(0, item.BonusAmount);
             decimal multiplier = item.Multiplier ?? (sal > 0 ? Math.Round(bonusAmount / sal, 2) : 0);
 
@@ -1946,7 +2110,7 @@ public class SalaryService : ISalaryService
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
             ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
 
-        var items = period.Payrolls.Select(payroll =>
+        var items = period.Payrolls.Where(IsPayableRecord).Select(payroll =>
         {
             var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
             bool hasSlip = payroll.SlipData != null && payroll.SlipData.Length > 0;
@@ -2036,6 +2200,9 @@ public class SalaryService : ISalaryService
         if (period.PaymentMethod == "BANK_BATCH")
             throw new BusinessRuleException("รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร (BANK_BATCH) ไม่สามารถบันทึกการโอนรายบุคคลได้");
 
+        if (!IsPayableRecord(payroll))
+            throw new BusinessRuleException("พนักงานคนนี้ไม่มียอดเงินเดือนที่ต้องโอนในรอบนี้");
+
         // Mark payroll record
         payroll.PaymentStatus = "TRANSFERRED";
         payroll.TransferredAt = DateTimeOffset.UtcNow;
@@ -2095,7 +2262,8 @@ public class SalaryService : ISalaryService
             throw new BusinessRuleException("รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร กรุณาใช้ขั้นตอนยืนยันการโอนผ่านธนาคารแทน");
 
         // Business Rule: ทุกคนต้องมี Slip และ TRANSFERRED
-        var payrolls = period.Payrolls.ToList();
+        // เฉพาะพนักงานที่มียอดต้องโอนจริง (คนที่ได้ 0 บาทไม่ต้องแนบสลิป)
+        var payrolls = period.Payrolls.Where(IsPayableRecord).ToList();
         if (!payrolls.Any())
             throw new BusinessRuleException("ไม่มีข้อมูลเงินเดือนในรอบนี้");
 
@@ -2185,7 +2353,7 @@ public class SalaryService : ISalaryService
         }
 
         // Mark all individual payrolls as transferred (bank did it)
-        foreach (var payroll in period.Payrolls)
+        foreach (var payroll in period.Payrolls.Where(IsPayableRecord))
         {
             payroll.PaymentStatus = "TRANSFERRED";
             payroll.TransferredAt = DateTimeOffset.UtcNow;
@@ -2195,7 +2363,7 @@ public class SalaryService : ISalaryService
         period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
         period.PaymentConfirmedBy = confirmedByEmployeeId;
         period.PaymentNote = request.Note?.Trim();
-        period.TotalTransferredCount = period.Payrolls.Count;
+        period.TotalTransferredCount = period.Payrolls.Count(IsPayableRecord);
 
         await _context.SaveChangesAsync(cancellationToken);
         return MapPeriodToDto(period);
@@ -2279,9 +2447,9 @@ public class SalaryService : ISalaryService
             period.PaymentConfirmedBy = employeeId;
             if (!string.IsNullOrWhiteSpace(request.Note))
                 period.PaymentNote = request.Note.Trim();
-            period.TotalTransferredCount = period.Payrolls.Count;
+            period.TotalTransferredCount = period.Payrolls.Count(IsPayableRecord);
 
-            foreach (var p in period.Payrolls)
+            foreach (var p in period.Payrolls.Where(IsPayableRecord))
             {
                 p.PaymentStatus = "TRANSFERRED";
                 if (p.TransferredAt == null)
@@ -2344,8 +2512,9 @@ public class SalaryService : ISalaryService
             _ => null
         };
         var payrolls = period.Payrolls.ToList();
-        bool canConfirm = payrolls.Count > 0
-            && payrolls.All(p => p.PaymentStatus == "TRANSFERRED" && p.SlipData != null);
+        var payableRecords = payrolls.Where(IsPayableRecord).ToList();
+        bool canConfirm = payableRecords.Count > 0
+            && payableRecords.All(p => p.PaymentStatus == "TRANSFERRED" && p.SlipData != null);
 
         return new PayrollPeriodDto
         {

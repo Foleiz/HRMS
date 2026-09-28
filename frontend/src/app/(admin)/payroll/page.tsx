@@ -1917,7 +1917,7 @@ export default function PayrollPage() {
                           case 'MANUAL_BONUS':
                             return { label: 'โบนัสพิเศษ / Incentive', color: 'bg-pink-50 text-pink-800 border-pink-200' };
                           case 'SSO_STANDARD':
-                            return { label: 'ประกันสังคม 5% (สูงสุด 750)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+                            return { label: 'ประกันสังคม 5% (สูงสุด 875)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
                           case 'TAX_STANDARD':
                             return { label: 'ภ.ง.ด. 91 ขั้นบันได 8 ขั้น', color: 'bg-rose-50 text-rose-700 border-rose-200' };
                           case 'LATE_ABSENT':
@@ -2059,8 +2059,9 @@ export default function PayrollPage() {
         const otCount = payrolls.filter(p => (p.overtimeHours || 0) > 0).length;
 
         const totalGross = payrolls.reduce((acc, p) => acc + (p.totalGrossIncome || 0), 0);
-        const totalSso = payrolls.reduce((acc, p) => acc + Math.min((p.totalGrossIncome || 0) * 0.05, 750), 0);
-        const totalTax = payrolls.reduce((acc, p) => acc + Math.max(0, (p.totalDeductionAmount || 0) - Math.min((p.totalGrossIncome || 0) * 0.05, 750)), 0);
+        // ใช้ยอดจากผลคำนวณจริงของ backend (ไม่คำนวณซ้ำด้วยสูตรตายตัว 5% / 750 บาท)
+        const totalSso = payrolls.reduce((acc, p) => acc + (p.ssoAmount || 0), 0);
+        const totalTax = payrolls.reduce((acc, p) => acc + (p.taxAmount || 0), 0);
         const taxAndSso = totalSso + totalTax;
         const totalNet = payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0);
         const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
