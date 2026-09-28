@@ -64,7 +64,7 @@ export default function ResignationPage() {
   const [submissionDate, setSubmissionDate] = useState(() => toInputDate(new Date()));
 
   // ช่อง "เรียน" ตาม Figma
-  const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+  const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
 
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
   const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>('นาย');
@@ -161,7 +161,7 @@ export default function ResignationPage() {
 
   // ล้างฟอร์ม
   const handleResetForm = () => {
-    setAddressedTo('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+    setAddressedTo('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
     setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
@@ -317,7 +317,7 @@ export default function ResignationPage() {
                     type="text"
                     value={addressedTo}
                     onChange={(e) => setAddressedTo(e.target.value)}
-                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด"
+                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไซอโคว จำกัด"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                   />
                 </div>
@@ -570,6 +570,7 @@ export default function ResignationPage() {
           handoverNotes: handoverNotes || undefined,
           contactAfterResignation: contactAfterResignation || undefined,
           noticeDays,
+          addressedTo,
         }}
       />
     </div>
