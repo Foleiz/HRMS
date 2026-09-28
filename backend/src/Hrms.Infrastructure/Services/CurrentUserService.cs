@@ -38,6 +38,24 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public long? DepartmentId
+    {
+        get
+        {
+            string? deptId = User?.FindFirstValue("department_id");
+            return long.TryParse(deptId, out long id) && id > 0 ? id : null;
+        }
+    }
+
+    public long? DivisionId
+    {
+        get
+        {
+            string? divId = User?.FindFirstValue("division_id");
+            return long.TryParse(divId, out long id) && id > 0 ? id : null;
+        }
+    }
+
     public List<string> Roles => (User?.FindAll(ClaimTypes.Role) ?? Enumerable.Empty<Claim>())
         .Concat(User?.FindAll("role") ?? Enumerable.Empty<Claim>())
         .Select(c => c.Value)

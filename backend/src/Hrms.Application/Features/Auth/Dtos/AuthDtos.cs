@@ -33,6 +33,10 @@ public class UserInfoDto
     public List<string> Roles { get; set; } = new();
     public List<string> Permissions { get; set; } = new();
     public List<RoleScopeDto> DataScopes { get; set; } = new();
+    /// <summary>แผนกปัจจุบันของพนักงาน (จาก employee_assignment) ใช้สำหรับ DEPARTMENT scope</summary>
+    public long? DepartmentId { get; set; }
+    /// <summary>ฝ่ายปัจจุบันของพนักงาน (จาก employee_assignment) ใช้สำหรับ DIVISION scope</summary>
+    public long? DivisionId { get; set; }
 }
 
 /// <summary>
