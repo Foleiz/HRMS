@@ -66,7 +66,6 @@ public class PayrollRecordDto
     // HR Pre-Payroll Verification Fields
     public decimal LeaveDays { get; set; }
     public string? LeaveSummary { get; set; }
-    public decimal OvertimeHours { get; set; }
     public string? AdjustmentsSummary { get; set; }
     public string InputStatus { get; set; } = "COMPLETE";
     public string InputStatusText { get; set; } = "ครบแล้ว";

@@ -210,7 +210,6 @@ export interface PayrollRecord {
   // HR Pre-Payroll Verification Fields
   leaveDays?: number;
   leaveSummary?: string | null;
-  overtimeHours?: number;
   adjustmentsSummary?: string | null;
   inputStatus?: 'COMPLETE' | 'PENDING_CHECK' | string;
   inputStatusText?: string;

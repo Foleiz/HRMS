@@ -2154,8 +2154,6 @@ export default function PayrollPage() {
         const totalEmployees = payrolls.length;
         const pendingCheckCount = payrolls.filter(p => p.inputStatus === 'PENDING_CHECK').length;
         const totalLeaveDays = payrolls.reduce((sum, p) => sum + (p.leaveDays || 0), 0);
-        const totalOtHours = payrolls.reduce((sum, p) => sum + (p.overtimeHours || 0), 0);
-        const otCount = payrolls.filter(p => (p.overtimeHours || 0) > 0).length;
 
         const totalGross = payrolls.reduce((acc, p) => acc + (p.totalGrossIncome || 0), 0);
         // ใช้ยอดจากผลคำนวณจริงของ backend (ไม่คำนวณซ้ำด้วยสูตรตายตัว 5% / 750 บาท)

@@ -18,7 +18,7 @@ interface Props {
 }
 
 // รายการที่ระบบคำนวณเอง — ไม่ให้เลือกเพิ่มแบบ manual
-const SYSTEM_ITEM_CODES = ['INC_BASE', 'DED_SSO', 'DED_TAX', 'INC_OT', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
+const SYSTEM_ITEM_CODES = ['INC_BASE', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
 const CORE_TEMPLATES = ['BASE_SALARY', 'SSO_STANDARD', 'TAX_STANDARD', 'PRORATED_DAYS'];
 
 export const PayrollDetailDrawer: React.FC<Props> = ({

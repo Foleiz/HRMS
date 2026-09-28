@@ -1145,13 +1145,6 @@ public class SalaryService : ISalaryService
                 .ToListAsync(cancellationToken)
             : new List<Domain.Entities.LeaveRequest>();
 
-        var attendanceSummaries = (period != null && employeeIds.Any())
-            ? await _context.AttendanceMonthlySummaries
-                .Where(a => employeeIds.Contains(a.EmployeeId) && a.Year == period.Year && a.Month == period.Month)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken)
-            : new List<Domain.Entities.AttendanceMonthlySummary>();
-
         return payrolls.Select(p =>
         {
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == p.EmployeeId);
@@ -1184,9 +1177,6 @@ public class SalaryService : ISalaryService
 
             decimal ssoAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_SSO").Sum(d => d.Amount);
             decimal taxAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_TAX").Sum(d => d.Amount);
-
-            var empAttendance = attendanceSummaries.FirstOrDefault(a => a.EmployeeId == p.EmployeeId);
-            decimal otHours = empAttendance?.TotalOvertimeHours ?? 0.0m;
 
             string inputStatus;
             string inputStatusText;
@@ -1228,7 +1218,6 @@ public class SalaryService : ISalaryService
                 // HR Verification
                 LeaveDays = totalLeaveDays,
                 LeaveSummary = leaveSummary,
-                OvertimeHours = otHours,
                 AdjustmentsSummary = adjustmentsSummary,
                 InputStatus = inputStatus,
                 InputStatusText = inputStatusText,
@@ -1723,25 +1712,14 @@ public class SalaryService : ISalaryService
                     $"ลาไม่รับค่าจ้าง {unpaidDays:0.##} วัน x {dailyRate:N2} บาท/วัน (เงินเดือน ÷ 30)", IsRegular: false));
             }
 
-            // ===== 3. ค่าล่วงเวลา (OT) จากสรุปเวลาประจำเดือน =====
-            bool hasOvertime = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasOvertime;
-            decimal otHours = empAttendance?.TotalOvertimeHours ?? 0;
-            if (hasOvertime && otHours > 0)
-            {
-                decimal otMultiplier = ParseFirstNumber(systemItems["INC_OT"].FormulaValue) is decimal m && m >= 1m && m <= 3m ? m : 1.5m;
-                decimal otAmount = Math.Round(otHours * hourlyRate * otMultiplier, 2, MidpointRounding.AwayFromZero);
-                lines.Add(new CalcLine(systemItems["INC_OT"], otAmount, otHours, Math.Round(hourlyRate * otMultiplier, 4),
-                    $"OT {otHours:0.##} ชม. x {hourlyRate:N2} บาท/ชม. x {otMultiplier:0.##} เท่า", IsRegular: false));
-            }
-
-            // ===== 4. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
+            // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
             foreach (var item in autoItems)
             {
                 var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance);
                 if (line != null) lines.Add(line);
             }
 
-            // ===== 5. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
+            // ===== 4. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
             var manualDetails = payroll.Details.Where(IsManualDetail).ToList();
             foreach (var d in manualDetails)
             {
@@ -1750,7 +1728,7 @@ public class SalaryService : ISalaryService
                 lines.Add(new CalcLine(item, d.Amount, d.Quantity, d.Rate, null, IsRegular: false, Existing: d));
             }
 
-            // ===== 6. ประกันสังคม: คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" (หักรายการหักที่ติ๊กไว้) =====
+            // ===== 5. ประกันสังคม: คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" (หักรายการหักที่ติ๊กไว้) =====
             // เงินเดือน (INC_BASE) นับเป็นค่าจ้างเสมอ ไม่ขึ้นกับการติ๊กในหน้าตั้งค่า
             long baseItemId = systemItems["INC_BASE"].Id;
             decimal ssoWage = Math.Max(0,
@@ -1759,9 +1737,9 @@ public class SalaryService : ISalaryService
             bool hasSso = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasSocialSecurity;
             decimal ssoAmount = hasSso ? CalculateSsoContribution(ssoWage, ssoRate.EmployeePercent, ssoRate) : 0;
 
-            // ===== 7. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
+            // ===== 6. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
             // เงินได้ประจำ: ประมาณการทั้งปีจากยอดเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
-            // เงินได้ไม่ประจำ (OT, โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในเดือนที่จ่าย
+            // เงินได้ไม่ประจำ (โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในเดือนที่จ่าย
             decimal regularMonthly = fullSalary + lines.Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable)
                 .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
             decimal fullMonthSso = hasSso ? CalculateSsoContribution(fullSalary, ssoRate.EmployeePercent, ssoRate) : 0;
@@ -1781,7 +1759,7 @@ public class SalaryService : ISalaryService
             if (monthlyTax > 0)
                 lines.Add(new CalcLine(systemItems["DED_TAX"], monthlyTax, null, null, "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", IsRegular: false));
 
-            // ===== 8. สรุปยอด & บันทึกรายละเอียด =====
+            // ===== 7. สรุปยอด & บันทึกรายละเอียด =====
             decimal totalGross = lines.Where(l => l.Item.ItemType == "EARNING").Sum(l => l.Amount);
             decimal totalDeductions = lines.Where(l => l.Item.ItemType == "DEDUCTION").Sum(l => l.Amount);
 
@@ -1825,7 +1803,7 @@ public class SalaryService : ISalaryService
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
-    private static readonly string[] SystemItemCodes = { "INC_BASE", "DED_SSO", "DED_TAX", "INC_OT", "DED_UNPAID_LEAVE", "INC_BONUS" };
+    private static readonly string[] SystemItemCodes = { "INC_BASE", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
 
     /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
     private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS" };
@@ -1963,7 +1941,7 @@ public class SalaryService : ISalaryService
         return total;
     }
 
-    /// <summary>หา/สร้างรายการเงินเดือนของระบบ (เงินเดือน, SSO, ภาษี, OT, หักลาไม่รับค่าจ้าง, โบนัส)</summary>
+    /// <summary>หา/สร้างรายการเงินเดือนของระบบ (เงินเดือน, SSO, ภาษี, หักลาไม่รับค่าจ้าง, โบนัส)</summary>
     private async Task<Dictionary<string, PayrollItem>> EnsureSystemPayrollItemsAsync(CancellationToken cancellationToken)
     {
         var definitions = new (string Code, string Name, string Type, string CalcType, string? Template, bool Taxable, bool Sso)[]
@@ -1971,7 +1949,6 @@ public class SalaryService : ISalaryService
             ("INC_BASE", "เงินเดือน", "EARNING", "FORMULA", "BASE_SALARY", true, true),
             ("DED_SSO", "เงินสมทบประกันสังคม", "DEDUCTION", "FORMULA", "SSO_STANDARD", false, false),
             ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
-            ("INC_OT", "ค่าล่วงเวลา (OT)", "EARNING", "FORMULA", null, true, false),
             ("DED_UNPAID_LEAVE", "หักวันลาไม่รับค่าจ้าง", "DEDUCTION", "FORMULA", null, true, true),
             ("INC_BONUS", "โบนัส", "EARNING", "MANUAL", null, true, false)
         };
@@ -1997,7 +1974,7 @@ public class SalaryService : ISalaryService
                     ItemType = def.Type,
                     CalculationType = def.CalcType,
                     FormulaTemplate = def.Template,
-                    FormulaValue = def.Code == "INC_OT" ? "1.5" : null,
+                    FormulaValue = null,
                     IsTaxable = def.Taxable,
                     IsSocialSecurityCalculated = def.Sso,
                     Status = "ACTIVE"
