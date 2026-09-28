@@ -21,6 +21,8 @@ public record SimulatedStepDto
     public int StepNo { get; init; }
     public string ApproverType { get; init; } = string.Empty;
     public string ApproverTypeLabel { get; init; } = string.Empty;
+    /// <summary>ชื่อบทบาท (เมื่อ ApproverType = ROLE) ใช้แสดงหัวข้อช่องลงนามในเอกสาร</summary>
+    public string? ApproverRoleName { get; init; }
     public bool IsRequired { get; init; } = true;
     public SimulatedApproverDto? Approver { get; init; }
 }

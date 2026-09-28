@@ -88,6 +88,8 @@ export interface SimulatedStep {
   stepNo: number;
   approverType: string;
   approverTypeLabel: string;
+  /** ชื่อบทบาท (เมื่อ approverType = ROLE) */
+  approverRoleName?: string | null;
   isRequired: boolean;
   approver?: SimulatedApprover | null;
 }

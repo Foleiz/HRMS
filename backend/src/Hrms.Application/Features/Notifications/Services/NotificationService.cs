@@ -180,14 +180,21 @@ public class NotificationService : INotificationService
 
     private static string ResolveTargetUrl(string notificationType, string? referenceType, long? referenceId)
     {
-        var refType = referenceType?.ToUpperInvariant() ?? notificationType.ToUpperInvariant();
+        var type = notificationType.ToUpperInvariant();
+        var refType = referenceType?.ToUpperInvariant() ?? type;
+
+        // คำขอรออนุมัติ → หน้าการอนุมัติ, ผลการอนุมัติ → ประวัติคำขอของผู้ยื่น
+        if (type == "APPROVAL")
+            return refType == "TRANSFER_REQUEST" ? "/employees/transfers" : "/approvals/leave-requests";
+        if (type == "REQUEST_RESULT")
+            return refType == "TRANSFER_REQUEST" ? "/employees/transfers" : "/documents/history";
 
         return refType switch
         {
             "LEAVE_REQUEST" => "/approvals/leave-requests",
             "LEAVE" => "/documents/leave",
             "APPROVAL" => "/approvals/leave-requests",
-            "ANNOUNCEMENT" => "/announcements",
+            "ANNOUNCEMENT" => "/my-news",
             "PAYROLL" => "/payroll",
             "ATTENDANCE" => "/attendance/daily",
             "TIME_ADJUSTMENT" => "/ess/attendance",

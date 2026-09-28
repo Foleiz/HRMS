@@ -14,10 +14,12 @@ namespace Hrms.Application.Features.Attendance.Services;
 public class AttendanceImportService : IAttendanceImportService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
-    public AttendanceImportService(IHrmsDbContext context)
+    public AttendanceImportService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
+        _attendanceDailyService = attendanceDailyService;
     }
 
     public async Task<AttendanceImportResultDto> ImportFileAsync(
@@ -27,6 +29,8 @@ public class AttendanceImportService : IAttendanceImportService
         string? deviceName,
         bool allowDuplicate,
         long? importedByUserId = null,
+        DateOnly? customDateFrom = null,
+        DateOnly? customDateTo = null,
         CancellationToken cancellationToken = default)
     {
         // 1. Read Stream and Compute SHA-256 Hash
@@ -314,8 +318,8 @@ public class AttendanceImportService : IAttendanceImportService
             Source = resolvedSource,
             DeviceName = !string.IsNullOrWhiteSpace(deviceName) ? deviceName.Trim() : extractedUnit,
             UnitName = extractedUnit,
-            DateFrom = metadataDateFrom,
-            DateTo = metadataDateTo,
+            DateFrom = customDateFrom ?? metadataDateFrom,
+            DateTo = customDateTo ?? metadataDateTo,
             ExportedAt = metadataExportedAt,
             ImportedByUserId = importedByUserId,
             ImportedAt = DateTime.UtcNow,
@@ -360,8 +364,8 @@ public class AttendanceImportService : IAttendanceImportService
         int totalRecords = rawRows.Count;
         int successRecords = 0;
         int failedRecords = 0;
-        DateOnly? minDate = metadataDateFrom;
-        DateOnly? maxDate = metadataDateTo;
+        DateOnly? minDate = customDateFrom ?? metadataDateFrom;
+        DateOnly? maxDate = customDateTo ?? metadataDateTo;
 
         var errorsList = new List<AttendanceImportError>();
         var errorDtos = new List<AttendanceImportErrorDto>();
@@ -381,8 +385,8 @@ public class AttendanceImportService : IAttendanceImportService
         // ใช้เวลารวมนานเกิน timeout ฝั่ง Frontend) — ถ้าหาช่วงวันที่ไม่ได้เลย จะไม่ preload
         // และใช้วิธี query ทีละแถว (fallback เดิม) เพื่อความปลอดภัยของข้อมูล
         {
-            DateOnly? preloadFrom = metadataDateFrom;
-            DateOnly? preloadTo = metadataDateTo;
+            DateOnly? preloadFrom = customDateFrom ?? metadataDateFrom;
+            DateOnly? preloadTo = customDateTo ?? metadataDateTo;
 
             if (preloadFrom == null || preloadTo == null)
             {
@@ -535,6 +539,10 @@ public class AttendanceImportService : IAttendanceImportService
                     AddError(batch.Id, rowNumber, rawRowJson, "ไม่สามารถระบุวันที่จากข้อมูลเวลาที่ให้มาได้", "INVALID_DATE", empCodeRaw, empName, deptName, timeRaw.ToString(), stateRaw, errorsList, errorDtos);
                     continue;
                 }
+            }
+            else if (customDateFrom.HasValue && customDateFrom == customDateTo)
+            {
+                workDate = customDateFrom.Value;
             }
             else
             {
@@ -808,11 +816,33 @@ public class AttendanceImportService : IAttendanceImportService
         batch.TotalRecords = totalRecords;
         batch.SuccessRecords = successRecords;
         batch.FailedRecords = failedRecords;
-        batch.DateFrom = minDate;
-        batch.DateTo = maxDate;
+        batch.DateFrom = customDateFrom ?? minDate;
+        batch.DateTo = customDateTo ?? maxDate;
         batch.Status = failedRecords == 0 ? "IMPORTED" : (successRecords > 0 ? "PARTIAL" : "FAILED");
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Recalculate monthly attendance summary for affected months so Payroll can immediately use it
+        var summaryStartDate = customDateFrom ?? minDate;
+        var summaryEndDate = customDateTo ?? maxDate;
+
+        if (summaryStartDate.HasValue && summaryEndDate.HasValue && successRecords > 0)
+        {
+            var cur = new DateOnly(summaryStartDate.Value.Year, summaryStartDate.Value.Month, 1);
+            var end = new DateOnly(summaryEndDate.Value.Year, summaryEndDate.Value.Month, 1);
+            while (cur <= end)
+            {
+                try
+                {
+                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(cur.Year, cur.Month, cancellationToken);
+                }
+                catch
+                {
+                    // Do not fail the whole import if monthly summary calculation encounters an edge case
+                }
+                cur = cur.AddMonths(1);
+            }
+        }
 
         return new AttendanceImportResultDto
         {
@@ -824,8 +854,8 @@ public class AttendanceImportService : IAttendanceImportService
             SuccessRecords = successRecords,
             FailedRecords = failedRecords,
             Status = batch.Status,
-            DateFrom = minDate?.ToString("yyyy-MM-dd"),
-            DateTo = maxDate?.ToString("yyyy-MM-dd"),
+            DateFrom = (customDateFrom ?? minDate)?.ToString("yyyy-MM-dd"),
+            DateTo = (customDateTo ?? maxDate)?.ToString("yyyy-MM-dd"),
             IsDuplicate = false,
             Errors = errorDtos
         };

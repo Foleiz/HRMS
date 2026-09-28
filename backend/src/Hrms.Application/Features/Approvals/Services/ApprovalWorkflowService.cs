@@ -72,10 +72,22 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         _context.ApprovalInstances.Add(instance);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // แจ้งเตือนผู้อนุมัติขั้นตอนแรก
+        await NotifyStepApproversAsync(instance, firstStep, requesterEmployeeId, cancellationToken);
+
         return instance.Id;
     }
 
     private async Task<EmployeeAssignment?> GetRequesterAssignmentAsync(ApprovalInstance instance, CancellationToken cancellationToken)
+    {
+        var requesterId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+        return requesterId.HasValue
+            ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)
+            : null;
+    }
+
+    /// <summary>หา Employee ID ของผู้ยื่นเอกสารต้นทางของ workflow</summary>
+    private async Task<long?> GetRequesterEmployeeIdAsync(ApprovalInstance instance, CancellationToken cancellationToken)
     {
         long? requesterId = null;
         if (instance.DocumentType == "LEAVE_REQUEST")
@@ -99,10 +111,15 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
             requesterId = resignReq?.EmployeeId;
         }
+        else if (instance.DocumentType == "TRANSFER_REQUEST")
+        {
+            var transferReq = await _context.EmployeeTransferRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = transferReq?.EmployeeId;
+        }
 
-        return requesterId.HasValue
-            ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)
-            : null;
+        return requesterId;
     }
 
     private async Task<bool> IsUserEligibleForStepAsync(
@@ -251,6 +268,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             await SyncSourceDocumentStatusAsync(instance, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
+            // แจ้งผู้ยื่นว่าคำขอไม่ได้รับการอนุมัติ
+            await NotifyRequesterResultAsync(instance, approved: false, comment, cancellationToken);
+
             return new WorkflowActionResult
             {
                 Success = true,
@@ -290,6 +310,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             instance.CurrentStepNo = nextStep.StepNo;
             await _context.SaveChangesAsync(cancellationToken);
 
+            // แจ้งผู้อนุมัติขั้นตอนถัดไป
+            await NotifyStepApproversAsync(instance, nextStep, null, cancellationToken);
+
             return new WorkflowActionResult
             {
                 Success = true,
@@ -305,6 +328,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         instance.CompletedAt = DateTime.UtcNow;
         await SyncSourceDocumentStatusAsync(instance, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // แจ้งผู้ยื่นว่าคำขอได้รับการอนุมัติครบทุกขั้นตอนแล้ว
+        await NotifyRequesterResultAsync(instance, approved: true, comment, cancellationToken);
 
         return new WorkflowActionResult
         {
@@ -323,6 +349,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
             .FirstOrDefaultAsync(i => i.Id == instanceId, cancellationToken);
 
         if (instance == null || instance.ApprovalFlow == null)
@@ -340,6 +367,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
             .OrderByDescending(i => i.Id)
             .FirstOrDefaultAsync(i => i.DocumentType == documentType && i.SourceDocumentId == sourceDocumentId, cancellationToken);
 
@@ -522,6 +550,10 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 Status = status,
                 ActionByEmployeeId = action?.ApproverEmployeeId,
                 ActionByEmployeeName = action?.ApproverEmployee?.FullName,
+                ActionByPositionName = action?.ApproverEmployee?.Assignments
+                    .Where(x => x.IsCurrent)
+                    .Select(x => x.Position?.PositionName)
+                    .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)),
                 ActionDecision = action?.ActionDecision,
                 ActionAt = action?.ActionAt,
                 Comment = action?.Comment
@@ -585,6 +617,191 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     resign.CancelledAt ??= DateTime.UtcNow;
                 }
             }
+        }
+    }
+
+    // ===================== In-app Notifications =====================
+
+    private static readonly Dictionary<string, string> DocumentTypeLabels = new()
+    {
+        ["LEAVE_REQUEST"] = "คำขอลา",
+        ["RESIGNATION_REQUEST"] = "คำขอลาออก",
+        ["CERTIFICATE_REQUEST"] = "คำขอหนังสือรับรอง",
+        ["ATTENDANCE_ADJUSTMENT"] = "คำขอปรับปรุงเวลาเข้า-ออกงาน",
+        ["EMPLOYMENT_CONTRACT"] = "สัญญาจ้างงาน",
+        ["PAYROLL_PERIOD"] = "รอบเงินเดือน",
+        ["TRANSFER_REQUEST"] = "คำขอย้ายแผนก/เลื่อนตำแหน่ง",
+    };
+
+    private static string GetDocumentLabel(string documentType) =>
+        DocumentTypeLabels.TryGetValue(documentType, out var label) ? label : "เอกสาร";
+
+    /// <summary>แจ้งเตือนผู้มีสิทธิ์อนุมัติของขั้นตอนที่คำขอเพิ่งเข้ามาถึง</summary>
+    private async Task NotifyStepApproversAsync(ApprovalInstance instance, ApprovalStep step, long? requesterEmployeeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            requesterEmployeeId ??= await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+            var requesterAssignment = requesterEmployeeId.HasValue
+                ? await _context.EmployeeAssignments.AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.EmployeeId == requesterEmployeeId.Value && a.IsCurrent, cancellationToken)
+                : null;
+
+            var approverUserIds = await ResolveStepApproverUserIdsAsync(step, requesterAssignment, cancellationToken);
+
+            // ไม่ต้องแจ้งเตือนผู้ยื่นเอง (กรณีผู้ยื่นมีบทบาทเดียวกับผู้อนุมัติ)
+            if (requesterEmployeeId.HasValue)
+            {
+                var requesterUserIds = await _context.UserAccounts.AsNoTracking()
+                    .Where(u => u.EmployeeId == requesterEmployeeId.Value)
+                    .Select(u => u.Id)
+                    .ToListAsync(cancellationToken);
+                approverUserIds = approverUserIds.Except(requesterUserIds).ToList();
+            }
+
+            var requesterName = requesterEmployeeId.HasValue
+                ? await _context.Employees.AsNoTracking()
+                    .Where(e => e.Id == requesterEmployeeId.Value)
+                    .Select(e => (e.FirstName + " " + e.LastName).Trim())
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var label = GetDocumentLabel(instance.DocumentType);
+            await AddNotificationsAsync(
+                approverUserIds,
+                "APPROVAL",
+                $"มี{label}รอการอนุมัติ",
+                $"{requesterName ?? "พนักงาน"} ยื่น{label} รอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})",
+                instance.DocumentType,
+                instance.SourceDocumentId,
+                cancellationToken);
+        }
+        catch
+        {
+            // การแจ้งเตือนต้องไม่ทำให้ขั้นตอนอนุมัติล้มเหลว
+        }
+    }
+
+    /// <summary>แจ้งผู้ยื่นเมื่อคำขอได้รับการอนุมัติครบ หรือถูกปฏิเสธ</summary>
+    private async Task NotifyRequesterResultAsync(ApprovalInstance instance, bool approved, string? comment, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var requesterEmployeeId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+            if (!requesterEmployeeId.HasValue) return;
+
+            var userIds = await _context.UserAccounts.AsNoTracking()
+                .Where(u => u.EmployeeId == requesterEmployeeId.Value && u.Status == "ACTIVE")
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken);
+
+            var label = GetDocumentLabel(instance.DocumentType);
+            var title = approved ? $"{label}ของคุณได้รับการอนุมัติแล้ว" : $"{label}ของคุณไม่ได้รับการอนุมัติ";
+            var message = approved
+                ? $"{label}ของคุณผ่านการอนุมัติครบทุกขั้นตอนแล้ว"
+                : string.IsNullOrWhiteSpace(comment) ? $"{label}ของคุณถูกปฏิเสธ" : $"เหตุผล: {comment.Trim()}";
+
+            await AddNotificationsAsync(userIds, "REQUEST_RESULT", title, message, instance.DocumentType, instance.SourceDocumentId, cancellationToken);
+        }
+        catch
+        {
+            // การแจ้งเตือนต้องไม่ทำให้ขั้นตอนอนุมัติล้มเหลว
+        }
+    }
+
+    /// <summary>หา User Account ที่มีสิทธิ์อนุมัติขั้นตอนนี้ (สอดคล้องกับ IsUserEligibleForStepAsync)</summary>
+    private async Task<List<long>> ResolveStepApproverUserIdsAsync(ApprovalStep step, EmployeeAssignment? requesterAssignment, CancellationToken cancellationToken)
+    {
+        var users = _context.UserAccounts.AsNoTracking().Where(u => u.Status == "ACTIVE");
+
+        switch (step.ApproverType)
+        {
+            case "EMPLOYEE":
+                if (!step.ApproverEmployeeId.HasValue) return new List<long>();
+                return await users.Where(u => u.EmployeeId == step.ApproverEmployeeId.Value).Select(u => u.Id).ToListAsync(cancellationToken);
+
+            case "ROLE":
+                if (!step.ApproverRoleId.HasValue) return new List<long>();
+                return await users.Where(u => u.UserRoles.Any(ur => ur.RoleId == step.ApproverRoleId.Value)).Select(u => u.Id).ToListAsync(cancellationToken);
+
+            case "MANAGER":
+                if (requesterAssignment?.ManagerEmployeeId == null) return new List<long>();
+                return await users.Where(u => u.EmployeeId == requesterAssignment.ManagerEmployeeId.Value).Select(u => u.Id).ToListAsync(cancellationToken);
+
+            case "DEPARTMENT_HEAD":
+            {
+                if (requesterAssignment == null) return new List<long>();
+                var deptId = requesterAssignment.DepartmentId;
+                var headId = await _context.Departments.AsNoTracking().Where(d => d.Id == deptId).Select(d => d.HeadEmployeeId).FirstOrDefaultAsync(cancellationToken);
+                return await users.Where(u =>
+                        (headId.HasValue && u.EmployeeId == headId.Value) ||
+                        (u.UserRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR") &&
+                         _context.EmployeeAssignments.Any(a => a.EmployeeId == u.EmployeeId && a.IsCurrent && a.DepartmentId == deptId)))
+                    .Select(u => u.Id).ToListAsync(cancellationToken);
+            }
+
+            case "DIVISION_HEAD":
+            {
+                if (requesterAssignment == null) return new List<long>();
+                var divId = requesterAssignment.DivisionId;
+                var headId = await _context.Divisions.AsNoTracking().Where(d => d.Id == divId).Select(d => d.HeadEmployeeId).FirstOrDefaultAsync(cancellationToken);
+                return await users.Where(u =>
+                        (headId.HasValue && u.EmployeeId == headId.Value) ||
+                        (u.UserRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR") &&
+                         _context.EmployeeAssignments.Any(a => a.EmployeeId == u.EmployeeId && a.IsCurrent && a.DivisionId == divId)))
+                    .Select(u => u.Id).ToListAsync(cancellationToken);
+            }
+
+            case "HR":
+                return await users.Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR"))
+                    .Select(u => u.Id).ToListAsync(cancellationToken);
+
+            case "CEO":
+                return await users.Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE"))
+                    .Select(u => u.Id).ToListAsync(cancellationToken);
+
+            default:
+                return new List<long>();
+        }
+    }
+
+    private async Task AddNotificationsAsync(
+        IEnumerable<long> userIds,
+        string type,
+        string title,
+        string? message,
+        string referenceType,
+        long referenceId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+        var notifications = userIds.Distinct().Select(uid => new Notification
+        {
+            UserId = uid,
+            NotificationType = type,
+            Title = title.Length > 255 ? title[..255] : title,
+            Message = message,
+            ReferenceType = referenceType,
+            ReferenceId = referenceId,
+            IsRead = false,
+            CreatedAt = now
+        }).ToList();
+
+        if (!notifications.Any()) return;
+
+        _context.Notifications.AddRange(notifications);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // ถอนรายการที่บันทึกไม่สำเร็จออกจาก context เพื่อไม่ให้กระทบการ SaveChanges ครั้งถัดไปของเอกสารต้นทาง
+            foreach (var n in notifications)
+            {
+                _context.Notifications.Remove(n);
+            }
+            throw;
         }
     }
 }

@@ -259,6 +259,17 @@ function DailyAttendanceContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // -------------------------------------------------------------
+  // Attendance Import Date & Period Selection State
+  // -------------------------------------------------------------
+  const [importDateMode, setImportDateMode] = useState<'period' | 'auto'>('period');
+  const [importYear, setImportYear] = useState<number>(() => new Date().getFullYear());
+  const [importMonth, setImportMonth] = useState<number>(() => new Date().getMonth() + 1);
+
+  const getDaysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
+  const formatIsoDate = (y: number, m: number, d: number) =>
+    `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  // -------------------------------------------------------------
   // Monthly Attendance Summary State
   // -------------------------------------------------------------
   const [monthlyYear, setMonthlyYear] = useState<number>(() => new Date().getFullYear());
@@ -636,6 +647,20 @@ function DailyAttendanceContent() {
     setUploadResult(null);
   };
 
+  const formatDateThai = (dateStr?: string | null) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleUploadSubmit = async () => {
     if (!selectedFile) return;
 
@@ -644,13 +669,30 @@ function DailyAttendanceContent() {
       setUploadProgress(0);
       setImportErrorMessage(null);
 
+      let finalDateFrom: string | undefined = undefined;
+      let finalDateTo: string | undefined = undefined;
+      let finalYear: number | undefined = undefined;
+      let finalMonth: number | undefined = undefined;
+
+      if (importDateMode === 'period') {
+        const lastDay = getDaysInMonth(importYear, importMonth);
+        finalDateFrom = formatIsoDate(importYear, importMonth, 1);
+        finalDateTo = formatIsoDate(importYear, importMonth, lastDay);
+        finalYear = importYear;
+        finalMonth = importMonth;
+      }
+
       const fileExt = selectedFile.name.toLowerCase().endsWith('.csv') ? 'CSV' : 'EXCEL';
       const res = await attendanceImportService.uploadFile(
         selectedFile,
         fileExt,
         undefined,
         false,
-        (percent) => setUploadProgress(percent)
+        (percent) => setUploadProgress(percent),
+        finalDateFrom,
+        finalDateTo,
+        finalYear,
+        finalMonth
       );
 
       if (res.success && res.data) {
@@ -658,12 +700,21 @@ function DailyAttendanceContent() {
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
 
+        const periodLabel = finalDateFrom && finalDateTo
+          ? `รอบประจำเดือน ${THAI_MONTHS[importMonth - 1]} ${importYear + 543} (${formatDateThai(finalDateFrom)} ถึง ${formatDateThai(finalDateTo)})`
+          : (res.data.dateFrom && res.data.dateTo
+            ? `รอบวันที่ ${formatDateThai(res.data.dateFrom)} ถึง ${formatDateThai(res.data.dateTo)}`
+            : '');
+
         if (res.data.failedRecords > 0) {
           const errMsg = `แจ้งเตือนข้อผิดพลาด: พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ (นำเข้าสำเร็จ ${res.data.successRecords} รายการ)`;
           setImportErrorMessage(errMsg);
           toast.warning(`พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานไม่ตรงกับในระบบ (สำเร็จ ${res.data.successRecords} รายการ)`);
         } else {
-          toast.success(`นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`);
+          toast.success(
+            `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`,
+            periodLabel ? `${periodLabel} • ข้อมูลพร้อมใช้คำนวณเงินเดือนทันที` : 'ข้อมูลบันทึกเวลาพร้อมใช้งานทันที'
+          );
         }
 
         if (res.data.status !== 'FAILED' && res.data.dateFrom && res.data.dateTo) {
@@ -1599,6 +1650,111 @@ function DailyAttendanceContent() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Period and Date Selection Card */}
+              <div className="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800">
+                        กำหนดวัน เดือน ปี และรอบการคำนวณ (Target Attendance Period)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        ระบุเพื่อผูกข้อมูลเวลากับรอบเงินเดือน (Payroll) หรือใช้ประมวลผลสถิติประจำเดือนให้อัตโนมัติ
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mode Selector Tabs */}
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto text-xs shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setImportDateMode('period')}
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                        importDateMode === 'period'
+                          ? 'bg-[#0B2046] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      ระบุรอบเดือนและปี
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImportDateMode('auto')}
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                        importDateMode === 'auto'
+                          ? 'bg-slate-700 text-white shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      }`}
+                    >
+                      ตรวจจับอัตโนมัติ
+                    </button>
+                  </div>
+                </div>
+
+                {/* Month and Year Selection */}
+                {importDateMode === 'period' ? (
+                  <div className="space-y-3 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs max-w-xl">
+                      {/* Year */}
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1.5">
+                          ปี (พ.ศ. / ค.ศ.)
+                        </label>
+                        <select
+                          value={importYear}
+                          onChange={(e) => setImportYear(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                        >
+                          {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
+                            <option key={y} value={y}>
+                              {y + 543} (ค.ศ. {y})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Month */}
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1.5">
+                          เดือน
+                        </label>
+                        <select
+                          value={importMonth}
+                          onChange={(e) => setImportMonth(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                        >
+                          {THAI_MONTHS.map((mName, idx) => (
+                            <option key={idx + 1} value={idx + 1}>
+                              {idx + 1} - {mName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Period preview badge */}
+                    <div className="pt-1">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>
+                          รอบเงินเดือนเป้าหมาย: <strong className="font-bold">{THAI_MONTHS[importMonth - 1]} {importYear + 543}</strong> (1 {THAI_MONTHS[importMonth - 1]} - {getDaysInMonth(importYear, importMonth)} {THAI_MONTHS[importMonth - 1]} {importYear + 543})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150">
+                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>
+                      ระบบจะตรวจจับเดือนและปีจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Dropzone */}
               <div
                 onDragOver={handleDragOver}
@@ -1761,6 +1917,14 @@ function DailyAttendanceContent() {
                     ดูข้อมูลที่นำเข้าในหน้าตรวจบันทึกเวลา
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
+
+                  <Link
+                    href="/payroll"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#112d5e] shadow-xs transition-all cursor-pointer"
+                  >
+                    <span>ไปหน้ารอบเงินเดือน (Payroll)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
 
                   <button
                     onClick={() => setUploadResult(null)}

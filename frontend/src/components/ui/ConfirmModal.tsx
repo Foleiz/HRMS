@@ -16,6 +16,7 @@ interface ConfirmModalProps {
   type?: ConfirmType;
   isLoading?: boolean;
   singleButton?: boolean; // When true, behaves like an alert dialog (only OK button)
+  zIndexClassName?: string;
 }
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -29,6 +30,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   type = 'question',
   isLoading = false,
   singleButton = false,
+  zIndexClassName = 'z-50',
 }) => {
   if (!isOpen) return null;
 
@@ -79,7 +81,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const config = getIconConfig();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-in fade-in duration-150`}>
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 p-6 animate-in zoom-in-95 duration-200">
         {/* Close icon button */}
         <button

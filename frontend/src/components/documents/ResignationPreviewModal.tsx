@@ -1,153 +1,835 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Sarabun } from 'next/font/google';
 import { X, Printer, FileText } from 'lucide-react';
+import { organizationService } from '@/services/organizationService';
+import { getAvatarUrl } from '@/lib/api-client';
+import { approvalService } from '@/services/approvalService';
+import { employeeService } from '@/services/employeeService';
+import { useAuth } from '@/context/AuthContext';
+import type { ApprovalTimeline } from '@/types/leave';
+import { APPROVER_TYPE_LABELS, type ApprovalStep } from '@/types/approval';
 
-interface ResignationPreviewModalProps {
+// ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
+const sarabun = Sarabun({
+  weight: ['400', '500', '700'],
+  subsets: ['thai', 'latin'],
+  display: 'swap',
+});
+
+// ที่อยู่บริษัทตามต้นฉบับเอกสาร (ใช้เมื่อยังไม่ได้ตั้งค่าที่อยู่ในหน้าข้อมูลบริษัท)
+const DEFAULT_COMPANY_ADDRESS = '451/14 M.Pantiya Suwinthawong 11, Saensab, Minburi, Bangkok 10510';
+
+export interface ResignationPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: {
     employeeName: string;
-    employeeCode: string;
-    positionTitle: string;
-    departmentName: string;
-    submissionDate: string;
-    requestedLastWorkingDate: string;
-    reasonCategoryLabel: string;
-    reasonDetail: string;
+    /** รหัสพนักงานผู้ลาออก ใช้ดึงรูปลายเซ็นจากบัญชี (GET /api/employees/{id}/signature) */
+    employeeId?: number | null;
+    /** URL รูปลายเซ็น (ถ้ามี จะใช้แทนการดึงจาก employeeId) */
+    signatureUrl?: string | null;
+    titlePrefix?: string;
+    companyLogo?: string | null;
+    companyName?: string;
+    employeeCode?: string;
+    positionTitle?: string;
+    departmentName?: string;
+    submissionDate?: string;
+    requestedLastWorkingDate?: string;
+    reasonCategoryLabel?: string;
+    reasonDetail?: string;
     handoverNotes?: string;
     contactAfterResignation?: string;
-    noticeDays: number;
+    noticeDays?: number;
+    addressedTo?: string;
+    /** สายการอนุมัติจริงของคำขอ (มีเมื่อยื่นคำขอแล้ว) ใช้กำหนดจำนวน/หัวข้อช่องลงนาม และชื่อผู้อนุมัติ */
+    timeline?: ApprovalTimeline | null;
+    /** ผู้ใช้ที่เปิดดูเป็นผู้อนุมัติของขั้นตอนปัจจุบัน → แสดงลายเซ็น/ตำแหน่ง/วันที่ของผู้ใช้ในช่องนั้นล่วงหน้า */
+    canApproveCurrentStep?: boolean;
+    companyAddress?: string | null;
+    // Approvers (Optional)
+    supervisorName?: string;
+    supervisorPosition?: string;
+    supervisorApprovedAt?: string;
+    hrName?: string;
+    hrPosition?: string;
+    hrApprovedAt?: string;
+    managerName?: string;
+    managerPosition?: string;
+    managerApprovedAt?: string;
   } | null;
 }
+
+const THAI_MONTH_NAMES = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
+interface ThaiDateParts {
+  day: string;
+  month: string;
+  monthNum: string;
+  year: string;
+  formatted: string;
+}
+
+const parseThaiDateParts = (dateInput?: string): ThaiDateParts => {
+  if (!dateInput || dateInput === '-' || dateInput.trim() === '') {
+    return {
+      day: '.......',
+      month: '...........................',
+      monthNum: '.......',
+      year: '...................',
+      formatted: '......./......./.......',
+    };
+  }
+
+  const clean = dateInput.trim();
+
+  // Case 1: DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) {
+    const [dStr, mStr, yStr] = clean.split('/');
+    const d = parseInt(dStr, 10);
+    const m = parseInt(mStr, 10);
+    let y = parseInt(yStr, 10);
+    if (y < 2400) y += 543;
+    const monthName = THAI_MONTH_NAMES[m - 1] || mStr;
+    const paddedM = String(m).padStart(2, '0');
+    return {
+      day: String(d),
+      month: monthName,
+      monthNum: paddedM,
+      year: String(y),
+      formatted: `${String(d).padStart(2, '0')}/${paddedM}/${y}`,
+    };
+  }
+
+  // Case 2: YYYY-MM-DD or ISO
+  if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+    const parts = clean.split('T')[0].split('-');
+    let y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (y < 2400) y += 543;
+    const monthName = THAI_MONTH_NAMES[m - 1] || String(m);
+    const paddedM = String(m).padStart(2, '0');
+    return {
+      day: String(d),
+      month: monthName,
+      monthNum: paddedM,
+      year: String(y),
+      formatted: `${String(d).padStart(2, '0')}/${paddedM}/${y}`,
+    };
+  }
+
+  // Fallback: Date object
+  const parsed = new Date(clean);
+  if (!isNaN(parsed.getTime())) {
+    const d = parsed.getDate();
+    const m = parsed.getMonth();
+    let y = parsed.getFullYear();
+    if (y < 2400) y += 543;
+    const paddedM = String(m + 1).padStart(2, '0');
+    return {
+      day: String(d),
+      month: THAI_MONTH_NAMES[m],
+      monthNum: paddedM,
+      year: String(y),
+      formatted: `${String(d).padStart(2, '0')}/${paddedM}/${y}`,
+    };
+  }
+
+  return {
+    day: '.......',
+    month: '...........................',
+    monthNum: '.......',
+    year: '...................',
+    formatted: clean,
+  };
+};
+
+interface ExtractedPrefixInfo {
+  prefix: 'นาย' | 'นาง' | 'นางสาว' | null;
+  displayName: string;
+}
+
+const extractPrefixAndName = (fullName?: string, explicitPrefix?: string): ExtractedPrefixInfo => {
+  if (!fullName || fullName.trim() === '') {
+    if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
+      return { prefix: explicitPrefix, displayName: '' };
+    }
+    return { prefix: null, displayName: '' };
+  }
+
+  const trimmed = fullName.trim();
+
+  // 1. If explicit prefix was given and valid
+  if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
+    let clean = trimmed;
+    if (clean.startsWith(explicitPrefix)) {
+      clean = clean.slice(explicitPrefix.length).trim();
+    }
+    clean = clean.replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return {
+      prefix: explicitPrefix,
+      displayName: clean,
+    };
+  }
+
+  // 2. Auto-detect from fullName (Note: check 'นางสาว' before 'นาง')
+  if (trimmed.startsWith('นางสาว')) {
+    const clean = trimmed.slice('นางสาว'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นางสาว', displayName: clean };
+  }
+  if (trimmed.startsWith('นาง')) {
+    const clean = trimmed.slice('นาง'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาง', displayName: clean };
+  }
+  if (trimmed.startsWith('นาย')) {
+    const clean = trimmed.slice('นาย'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาย', displayName: clean };
+  }
+
+  return {
+    prefix: null,
+    displayName: trimmed,
+  };
+};
+
+type ResignationData = NonNullable<ResignationPreviewModalProps['data']>;
+
+/** ช่องกรอกแบบเส้นประ (เหมือนจุดไข่ปลาในต้นฉบับ) พร้อมข้อความที่กรอกอยู่ด้านบนเส้น */
+const Fill: React.FC<{ value?: React.ReactNode; minWidth: string; align?: 'center' | 'left' }> = ({
+  value,
+  minWidth,
+  align = 'center',
+}) => (
+  <span
+    style={{
+      display: 'inline-block',
+      minWidth,
+      borderBottom: '1px dotted #000',
+      lineHeight: 1.15,
+      textAlign: align,
+      padding: '0 1.5mm',
+      verticalAlign: 'baseline',
+    }}
+  >
+    {value || ' '}
+  </span>
+);
+
+/** ช่องลงนามหนึ่งช่องในตาราง "ผลการพิจารณา" (สร้างตามขั้นตอนของสายการอนุมัติ) */
+export interface ApprovalSlot {
+  stepNo: number;
+  approverType: string;
+  /** ชื่อบทบาท / ชื่อบุคคล (สำหรับ ROLE / EMPLOYEE) */
+  approverLabel?: string | null;
+  /** ตำแหน่งที่แสดงล่วงหน้า เช่น "กรรมการผู้จัดการ" */
+  positionHint?: string | null;
+  /** ข้อมูลเมื่ออนุมัติแล้ว */
+  signedName?: string | null;
+  signedEmployeeId?: number | null;
+  signedDate?: string | null;
+  /** สถานะขั้นตอน (จาก timeline): COMPLETED, WAITING, PENDING_FUTURE, REJECTED */
+  status?: string | null;
+  /** true = แสดงข้อมูลผู้อนุมัติล่วงหน้า (ยังไม่ได้กดอนุมัติ) */
+  isPreviewSignature?: boolean;
+}
+
+/**
+ * หัวข้อช่องลงนาม = ชื่อตามที่ตั้งค่าในสายการอนุมัติตรง ๆ
+ * - ระบุตามบทบาท → ชื่อบทบาท, ระบุตัวบุคคล → ชื่อพนักงาน
+ * - ประเภทแบบเดิม (หัวหน้าแผนก, หัวหน้าฝ่าย ฯลฯ) → ชื่อประเภทตามหน้าตั้งค่า
+ */
+const getSlotHeading = (slot: ApprovalSlot): string => {
+  const type = (slot.approverType || '').toUpperCase();
+  if (type === 'ROLE' || type === 'EMPLOYEE') {
+    return slot.approverLabel?.trim() || APPROVER_TYPE_LABELS[type] || type;
+  }
+  return APPROVER_TYPE_LABELS[type] || slot.approverLabel?.trim() || type;
+};
+
+/** ช่องลงนามเริ่มต้น (ใช้เมื่อยังไม่พบสายการอนุมัติ) — ตรงกับต้นฉบับ 3 ขั้นตอน */
+const DEFAULT_SLOTS: ApprovalSlot[] = [
+  { stepNo: 1, approverType: 'ROLE', approverLabel: 'ผู้บังคับบัญชาพิจารณาเห็นชอบ' },
+  { stepNo: 2, approverType: 'ROLE', approverLabel: 'ฝ่ายบุคคลรับทราบเพื่อดำเนินการ' },
+  { stepNo: 3, approverType: 'ROLE', approverLabel: 'อนุมัติโดยกรรมการผู้จัดการ', positionHint: 'กรรมการผู้จัดการ' },
+];
+
+/**
+ * ตำแหน่งช่องในตาราง 2 x 2 (แถว, คอลัมน์) ตามจำนวนขั้นตอน
+ * - 3 ขั้นตอน: ซ้ายบน, ซ้ายล่าง, ขวาล่าง (ขวาบนว่าง) — ตามต้นฉบับ
+ * - 4 ขั้นตอน: ซ้ายบน, ขวาบน, ซ้ายล่าง, ขวาล่าง
+ */
+const getSlotPositions = (count: number): Array<[number, number]> => {
+  if (count <= 1) return [[0, 0]];
+  if (count === 2) return [[0, 0], [1, 0]];
+  if (count === 3) return [[0, 0], [1, 0], [1, 1]];
+  return Array.from({ length: count }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
+};
+
+const toThaiShortDate = (iso?: string | null): string | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
+};
+
+/** รูปลายเซ็นของผู้อนุมัติ (แจ้ง onError เมื่อไม่มีรูป เพื่อแสดงชื่อแทน) */
+const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () => void }> = ({ employeeId, onError }) => {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={getAvatarUrl(`/api/employees/${employeeId}/signature`) || ''}
+      alt="ลายเซ็นผู้อนุมัติ"
+      onError={onError}
+      style={{
+        position: 'absolute',
+        left: '50%',
+        bottom: '0.3mm',
+        transform: 'translateX(-50%)',
+        height: '9mm',
+        maxWidth: '48mm',
+        objectFit: 'contain',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+};
+
+/** กล่องลงนามในตารางผลการพิจารณา */
+const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = ({ slot, heading }) => {
+  // มีรูปลายเซ็น → แสดงรูปบนเส้น, ไม่มีรูป → แสดงชื่อผู้อนุมัติแทน
+  const [signatureFailed, setSignatureFailed] = useState(false);
+  const showSignature = !!slot.signedEmployeeId && !signatureFailed;
+  return (
+  <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
+    <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
+    {/* เว้นระยะด้านบนให้พอสำหรับรูปลายเซ็น ไม่ให้ชนเส้นหัวตาราง */}
+    <div style={{ padding: '9mm 2mm 1mm 2mm' }}>
+      <div>
+        ลงชื่อ
+        <span
+          style={{
+            position: 'relative',
+            display: 'inline-block',
+            minWidth: '58mm',
+            borderBottom: '1px dotted #000',
+            lineHeight: 1.15,
+            textAlign: 'center',
+            padding: '0 1.5mm',
+          }}
+        >
+          {showSignature ? '\u00A0' : slot.signedName || '\u00A0'}
+          {showSignature && slot.signedEmployeeId ? (
+            <ApproverSignatureImg employeeId={slot.signedEmployeeId} onError={() => setSignatureFailed(true)} />
+          ) : null}
+        </span>
+      </div>
+      <div>ตำแหน่ง<Fill value={slot.positionHint || (slot.approverType === 'CEO' ? 'กรรมการผู้จัดการ' : '')} minWidth="54.5mm" /></div>
+      <div>วันที่<Fill value={slot.signedDate} minWidth="60mm" /></div>
+    </div>
+  </td>
+  );
+};
+
+/** ช่องว่างในตาราง (ไม่มีเส้นขอบ ตามต้นฉบับ) */
+const EmptyCell: React.FC = () => <td style={{ width: '50%', border: 'none', padding: 0 }} />;
+
+/**
+ * หน้ากระดาษ A4 (210 x 297 มม.) ของใบลาออก — จัดวางตามต้นฉบับ "ใบลาออก-2025-Rev 1.pdf"
+ * - หัวกระดาษ: โลโก้กึ่งกลาง มีเส้นคั่นซ้าย/ขวา
+ * - ท้ายกระดาษ: เส้นคั่นเต็มความกว้าง + ที่อยู่บริษัท (สีฟ้า) ชิดขอบล่างของหน้า
+ */
+const ResignationPaper: React.FC<{
+  data: ResignationData;
+  companyLogo: string | null;
+  companyAddress: string;
+  signatureSrc: string | null;
+  onSignatureError?: () => void;
+  approvalSlots: ApprovalSlot[];
+}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots }) => {
+  const submissionParts = parseThaiDateParts(data.submissionDate);
+  const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
+  const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
+  const fullEmployeeNameForSignature = prefix && displayName ? `${prefix} ${displayName}` : data.employeeName || '';
+  const has = (v: string) => !v.startsWith('.');
+
+  const getReasonText = () => {
+    const detail = data.reasonDetail?.trim();
+    const label = data.reasonCategoryLabel?.trim();
+    if (detail && detail !== 'ยังไม่ได้ระบุรายละเอียด' && detail !== '-') return detail;
+    return label || 'ความจำเป็นส่วนบุคคล';
+  };
+
+  const strike = (p: 'นาย' | 'นาง' | 'นางสาว') =>
+    prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
+
+  return (
+    <div
+      className={`resignation-paper ${sarabun.className}`}
+      style={{
+        position: 'relative',
+        width: '210mm',
+        height: '297mm',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        padding: '26mm 23mm 20mm 25mm',
+        background: '#fff',
+        color: '#000',
+        fontSize: '10.5pt',
+        lineHeight: 1.68,
+      }}
+    >
+      {/* ===== หัวกระดาษ: โลโก้กึ่งกลาง + เส้นซ้าย/ขวา ===== */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '6mm',
+          left: '6mm',
+          right: '5mm',
+          height: '15mm',
+          display: 'flex',
+          alignItems: 'flex-end',
+        }}
+      >
+        <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={companyLogo || '/syaco-logo.png'}
+          alt="Company Logo"
+          style={{ height: '15mm', width: 'auto', objectFit: 'contain', margin: '0 2mm' }}
+        />
+        <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
+      </div>
+
+      {/* ===== ชื่อเอกสาร ===== */}
+      <div style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 700, marginBottom: '6mm' }}>ใบลาออก</div>
+
+      {/* ===== เขียนที่ / วันที่ (ชิดขวา) ===== */}
+      <div style={{ marginLeft: '88mm', marginBottom: '5mm', whiteSpace: 'nowrap' }}>
+        <div>เขียนที่<Fill value="บริษัท ไซอโคว จำกัด" minWidth="50mm" /></div>
+        <div>
+          วันที่<Fill value={has(submissionParts.day) ? submissionParts.day : ''} minWidth="8mm" />
+          เดือน<Fill value={has(submissionParts.month) ? submissionParts.month : ''} minWidth="20mm" />
+          พ.ศ.<Fill value={has(submissionParts.year) ? submissionParts.year : ''} minWidth="12mm" />
+        </div>
+      </div>
+
+      {/* ===== เรื่อง / เรียน ===== */}
+      <div style={{ marginBottom: '4mm' }}>
+        <div style={{ display: 'flex' }}>
+          <span style={{ width: '13mm' }}>เรื่อง</span>
+          <span>ขอลาออก</span>
+        </div>
+        <div style={{ display: 'flex' }}>
+          <span style={{ width: '13mm' }}>เรียน</span>
+          <span>{data.addressedTo || 'กรรมการผู้จัดการบริษัท ไซอโคว จำกัด'}</span>
+        </div>
+      </div>
+
+      {/* ===== เนื้อความ ===== */}
+      <p style={{ textIndent: '12.5mm', margin: 0 }}>
+        ข้าพเจ้า <span style={strike('นาย')}>นาย</span>/ <span style={strike('นาง')}>นาง</span>/{' '}
+        <span style={strike('นางสาว')}>นางสาว</span>
+        <Fill value={displayName} minWidth="48mm" /> พนักงานตำแหน่ง
+        <Fill value={data.positionTitle} minWidth="36mm" />
+        {data.departmentName ? (
+          <>
+            {' '}สังกัด<Fill value={data.departmentName} minWidth="20mm" />
+          </>
+        ) : null}{' '}
+        ของบริษัท ไซอโคว จำกัด มีความประสงค์ขอลาออกจากการเป็นพนักงาน ของบริษัทฯ เนื่องด้วยเหตุผล
+        <Fill value={getReasonText()} minWidth="40mm" align="left" />
+      </p>
+      <p style={{ textIndent: '12.5mm', margin: 0 }}>
+        จึงขอสิ้นสุดการทำงานตั้งแต่วันที่<Fill value={has(lastWorkingParts.day) ? lastWorkingParts.day : ''} minWidth="14mm" />
+        เดือน<Fill value={has(lastWorkingParts.month) ? lastWorkingParts.month : ''} minWidth="30mm" />
+        พ.ศ.<Fill value={has(lastWorkingParts.year) ? lastWorkingParts.year : ''} minWidth="18mm" />
+      </p>
+
+      <p style={{ textIndent: '12.5mm', textAlign: 'justify', margin: '3mm 0 0 0' }}>
+        การลาออกนี้ ข้าพเจ้าออกด้วยความสมัครใจมิได้ถูกบังคับ ขู่เข็ญ หรือสั่งให้ออก ในกรณีที่ทรัพย์สินของบริษัทที่ข้าพเจ้าครอบครอง
+        และยังไม่ได้ส่งคืนให้บริษัทโดยครบถ้วน และบรรดาหนี้สินที่ข้าพเจ้ามีต่อบริษัทฯ ข้าพเจ้ายินยอมให้บริษัทเลือกที่จะยึดหน่วง บรรดาค่าจ้าง
+        หรือผลประโยชน์อย่างอื่น หรือเลือกที่จะหักเอาจากค่าจ้าง หรือผลประโยชน์อย่างอื่นที่บริษัทฯ จะจ่ายให้กับข้าพเจ้า อย่างใดอย่างหนึ่งตามที่บริษัทฯ
+        เห็นสมควร และสิทธิอื่นใดอันพึงได้มีมาก่อนหน้านี้ให้เป็นอันระงับสิ้นสุดไป โดยข้าพเจ้าตกลงจะไม่ใช้สิทธิเรียกร้องใดๆ ต่อบริษัทอีกทั้งสิ้น
+      </p>
+
+      <p style={{ textIndent: '12.5mm', margin: '3mm 0 0 0' }}>จึงเรียนมาเพื่อทราบและโปรดพิจารณาอนุมัติ</p>
+
+      {/* ===== ลงนามผู้ลาออก (ชิดขวา) ===== */}
+      <div style={{ marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '5mm', whiteSpace: 'nowrap' }}>
+        <div>ขอแสดงความนับถือ</div>
+        <div style={{ marginTop: '9mm' }}>
+          (ลงชื่อ)
+          {/* ช่องลงชื่อ: วางรูปลายเซ็นของผู้ลาออกไว้เหนือเส้นประ โดยไม่ดันระยะบรรทัด */}
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              minWidth: '42mm',
+              borderBottom: '1px dotted #000',
+              lineHeight: 1.15,
+              verticalAlign: 'baseline',
+            }}
+          >
+            {'\u00A0'}
+            {signatureSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={signatureSrc}
+                alt="ลายเซ็นผู้ลาออก"
+                onError={onSignatureError}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: '0.3mm',
+                  transform: 'translateX(-50%)',
+                  height: '12mm',
+                  maxWidth: '44mm',
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+          </span>
+          ผู้ลาออก
+        </div>
+        <div>
+          (<Fill value={fullEmployeeNameForSignature} minWidth="50mm" />)
+        </div>
+        <div>
+          วันที่<Fill value={has(submissionParts.day) ? submissionParts.day : ''} minWidth="12mm" />/
+          <Fill value={has(submissionParts.monthNum) ? submissionParts.monthNum : ''} minWidth="12mm" />/
+          <Fill value={has(submissionParts.year) ? submissionParts.year : ''} minWidth="14mm" />
+        </div>
+      </div>
+
+      {/* ===== ผลการพิจารณา ===== */}
+      <div style={{ textAlign: 'center', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px', marginTop: '6mm' }}>
+        ผลการพิจารณา
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
+        <tbody>
+          {(() => {
+            // จัดช่องลงนามตามจำนวนขั้นตอนของสายการอนุมัติ (สูงสุด 4 ช่อง / ตาราง 2 x 2)
+            const positions = getSlotPositions(approvalSlots.length);
+            const rowCount = Math.max(...positions.map(([r]) => r)) + 1;
+            return Array.from({ length: rowCount }, (_, row) => (
+              <tr key={row}>
+                {[0, 1].map((col) => {
+                  const idx = positions.findIndex(([r, c]) => r === row && c === col);
+                  if (idx < 0) return <EmptyCell key={col} />;
+                  const slot = approvalSlots[idx];
+                  return (
+                    <SignatureCell
+                      key={col}
+                      slot={slot}
+                      heading={getSlotHeading(slot)}
+                    />
+                  );
+                })}
+              </tr>
+            ));
+          })()}
+        </tbody>
+      </table>
+
+      {/* ===== ท้ายกระดาษ: เส้นคั่น + ที่อยู่บริษัท (ชิดขอบล่างของหน้าเสมอ) ===== */}
+      <div style={{ position: 'absolute', left: '6mm', right: '2mm', top: '284mm' }}>
+        <div style={{ borderTop: '1px solid #1f2937' }} />
+        <div style={{ fontSize: '8.5pt', lineHeight: 1.4, color: '#2E75B6', marginTop: '1mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+          {companyAddress}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = ({
   isOpen,
   onClose,
   data,
 }) => {
+  const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
+  const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
+  const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+  const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(null);
+
+  // ช่องลงนามตามสายการอนุมัติ:
+  // 1) คำขอที่ยื่นแล้ว → ใช้ timeline จริง (พร้อมชื่อ/วันที่/ลายเซ็นผู้ที่อนุมัติแล้ว)
+  // 2) ยังไม่ยื่น → จำลองสายการอนุมัติ RESIGNATION_REQUEST ที่ตรงกับพนักงานคนนี้จากหน้าตั้งค่า
+  // ผู้ใช้ที่กำลังเปิดดู (ใช้แสดงลายเซ็นล่วงหน้าในช่องของขั้นตอนที่รอผู้ใช้อนุมัติ)
+  const { user } = useAuth();
+  const [viewerPosition, setViewerPosition] = useState<string | null>(null);
+  const showViewerPreview = !!(isOpen && data?.canApproveCurrentStep && user?.employeeId);
+
+  useEffect(() => {
+    if (!showViewerPreview || !user?.employeeId) {
+      setViewerPosition(null);
+      return;
+    }
+    let isMounted = true;
+    employeeService
+      .getById(user.employeeId)
+      .then((emp) => {
+        if (isMounted) setViewerPosition(emp?.positionName || null);
+      })
+      .catch(() => {
+        if (isMounted) setViewerPosition(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [showViewerPreview, user?.employeeId]);
+
+  const todayThai = toThaiShortDate(new Date().toISOString());
+
+  const timelineSlots: ApprovalSlot[] | null =
+    data?.timeline?.steps && data.timeline.steps.length > 0
+      ? [...data.timeline.steps]
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => {
+            const approved = s.status === 'COMPLETED' && (s.actionDecision === 'APPROVE' || !s.actionDecision);
+            // ขั้นตอนที่รอผู้ใช้คนนี้อนุมัติ → แสดงลายเซ็น ชื่อ ตำแหน่ง และวันที่ปัจจุบันล่วงหน้า
+            if (!approved && s.status === 'WAITING' && showViewerPreview && user) {
+              return {
+                stepNo: s.stepNo,
+                approverType: s.approverType,
+                approverLabel: s.approverTitle,
+                signedName: user.fullName || null,
+                signedEmployeeId: user.employeeId,
+                signedDate: todayThai,
+                positionHint: viewerPosition,
+                status: s.status,
+                isPreviewSignature: true,
+              };
+            }
+            return {
+              stepNo: s.stepNo,
+              approverType: s.approverType,
+              approverLabel: s.approverTitle,
+              signedName: approved ? s.actionByEmployeeName || null : null,
+              signedEmployeeId: approved ? s.actionByEmployeeId || null : null,
+              signedDate: approved ? toThaiShortDate(s.actionAt) : null,
+              positionHint: approved ? s.actionByPositionName || null : null,
+              status: s.status,
+            };
+          })
+      : null;
+
+  useEffect(() => {
+    if (!isOpen || timelineSlots || !data?.employeeId) {
+      setSimulatedSlots(null);
+      return;
+    }
+    let isMounted = true;
+    approvalService
+      .simulateWorkflow({ employeeId: data.employeeId, documentType: 'RESIGNATION_REQUEST' })
+      .then(async (res) => {
+        if (!isMounted || !res?.success || !res.steps?.length) return;
+
+        // หัวข้อช่องลงนาม = บทบาท / บุคคลที่เลือกไว้ในช่อง "เลือกบทบาทผู้มีสิทธิ์อนุมัติ" ของแต่ละขั้นตอน
+        // ดึงจากตัวสายการอนุมัติโดยตรง เพื่อให้ได้ชื่อบทบาทเสมอ
+        let flowSteps: ApprovalStep[] = [];
+        if (res.flowId) {
+          try {
+            flowSteps = (await approvalService.getFlowById(res.flowId))?.steps ?? [];
+          } catch {
+            flowSteps = [];
+          }
+        }
+        if (!isMounted) return;
+
+        setSimulatedSlots(
+          [...res.steps]
+            .sort((a, b) => a.stepNo - b.stepNo)
+            .map((s) => {
+              const flowStep = flowSteps.find((fs) => fs.stepNo === s.stepNo);
+              const approverLabel =
+                s.approverType === 'EMPLOYEE'
+                  ? flowStep?.approverEmployeeName || s.approver?.fullName
+                  : flowStep?.approverRoleName || s.approverRoleName;
+              return {
+                stepNo: s.stepNo,
+                approverType: s.approverType,
+                approverLabel: approverLabel || null,
+                positionHint: s.approver?.positionName || null,
+              };
+            })
+        );
+      })
+      .catch((err) => console.error('Failed to load resignation approval flow:', err));
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, data?.employeeId, !!timelineSlots]);
+
+  // รูปลายเซ็นของบัญชีผู้ลาออก (ดึงใหม่ทุกครั้งที่เปิด เพื่อให้ได้ลายเซ็นล่าสุด)
+  useEffect(() => {
+    if (!isOpen) {
+      setSignatureSrc(null);
+      return;
+    }
+    if (data?.signatureUrl) {
+      setSignatureSrc(getAvatarUrl(data.signatureUrl));
+    } else if (data?.employeeId) {
+      setSignatureSrc(getAvatarUrl(`/api/employees/${data.employeeId}/signature?v=${Date.now()}`));
+    } else {
+      setSignatureSrc(null);
+    }
+  }, [isOpen, data?.employeeId, data?.signatureUrl]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (data?.companyLogo) setCompanyLogo(data.companyLogo);
+    if (data?.companyAddress) setCompanyAddress(data.companyAddress);
+    if (data?.companyLogo && data?.companyAddress) return;
+
+    let isMounted = true;
+    organizationService
+      .getCompany()
+      .then((comp) => {
+        if (!isMounted || !comp) return;
+        if (!data?.companyLogo && comp.logoData) {
+          setCompanyLogo(comp.logoData.startsWith('data:') ? comp.logoData : `data:image/png;base64,${comp.logoData}`);
+        }
+        if (!data?.companyAddress && comp.address?.trim()) {
+          setCompanyAddress(comp.address.trim());
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load company info for resignation preview:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, data?.companyLogo, data?.companyAddress]);
+
   if (!isOpen || !data) return null;
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const address = companyAddress || DEFAULT_COMPANY_ADDRESS;
+  const approvalSlots = timelineSlots || simulatedSlots || DEFAULT_SLOTS;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Modal Dialog */}
-      <div className="relative bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
-        {/* Header Actions */}
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
-          <div className="flex items-center gap-2 text-slate-800">
-            <FileText className="w-5 h-5 text-[#0B2046]" />
-            <h3 className="text-base font-bold">ตัวอย่างหนังสือแสดงความประสงค์ขอลาออกจากงาน</h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Paper Document Preview */}
-        <div className="border border-gray-200 rounded-2xl p-6 sm:p-8 bg-white shadow-xs space-y-6 text-slate-800 text-sm leading-relaxed">
+    <>
+      <div className="resignation-modal no-print fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           {/* Header */}
-          <div className="text-center pb-4 border-b border-gray-200">
-            <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              บริษัท ฟิวเจอร์ เทค คอร์ปอเรชั่น จำกัด (มหาชน)
-            </p>
-            <h2 className="text-lg font-bold text-gray-900 mt-1">
-              หนังสือแสดงความประสงค์ขอลาออกจากงาน
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">
-              วันที่ยื่นคำขอ: {data.submissionDate}
-            </p>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+            <div className="flex items-center gap-2 text-slate-800">
+              <FileText className="w-5 h-5 text-[#0B2046]" />
+              <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลาออก (ต้นฉบับ PDF)</h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Letter Body */}
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between text-xs text-gray-600 gap-1">
-              <span><strong>เรื่อง:</strong> ขอลาออกจากงานและขอยุติสัญญาจ้าง</span>
-              <span><strong>วันที่ทำงานวันสุดท้าย:</strong> {data.requestedLastWorkingDate}</span>
-            </div>
-            <p className="text-xs text-gray-600">
-              <strong>เรียน:</strong> ผู้บังคับบัญชาตามสายงาน และ ฝ่ายทรัพยากรบุคคล
-            </p>
-
-            <p className="indent-8 text-justify">
-              ข้าพเจ้า <strong>{data.employeeName}</strong> รหัสพนักงาน <strong>{data.employeeCode}</strong> ปัจจุบันดำรงตำแหน่ง <strong>{data.positionTitle}</strong> สังกัด <strong>{data.departmentName}</strong> มีความประสงค์ขอลาออกจากการเป็นพนักงานของบริษัทฯ โดยขอให้มีผลตั้งแต่วันที่ <strong>{data.requestedLastWorkingDate}</strong> เป็นต้นไป (บอกกล่าวล่วงหน้าจำนวน {data.noticeDays} วัน)
-            </p>
-
-            <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100 text-xs">
-              <p>
-                <strong className="text-gray-700">สาเหตุการลาออก:</strong>{' '}
-                <span className="text-gray-900 font-medium">{data.reasonCategoryLabel}</span>
-              </p>
-              <p>
-                <strong className="text-gray-700">รายละเอียดเหตุผล:</strong>{' '}
-                <span className="text-gray-800">{data.reasonDetail}</span>
-              </p>
-              {data.handoverNotes && (
-                <p>
-                  <strong className="text-gray-700">แผนและรายละเอียดการส่งมอบงาน:</strong>{' '}
-                  <span className="text-gray-800">{data.handoverNotes}</span>
-                </p>
-              )}
-              {data.contactAfterResignation && (
-                <p>
-                  <strong className="text-gray-700">ข้อมูลติดต่อหลังพ้นสภาพพนักงาน:</strong>{' '}
-                  <span className="text-gray-800">{data.contactAfterResignation}</span>
-                </p>
-              )}
-            </div>
-
-            <p className="indent-8 text-justify text-xs text-gray-600">
-              ข้าพเจ้าจะดำเนินการส่งมอบงาน ทรัพย์สิน และเอกสารต่าง ๆ ของบริษัทฯ ให้แก่ผู้รับมอบหมายด้วยความเรียบร้อยก่อนถึงวันทำงานวันสุดท้าย และขอขอบพระคุณบริษัทฯ และผู้บังคับบัญชาที่ได้ให้โอกาสและการสนับสนุนที่ดีตลอดระยะเวลาการทำงาน
-            </p>
-          </div>
-
-          {/* Signature Box */}
-          <div className="pt-6 border-t border-gray-100 flex justify-end text-center">
-            <div className="w-56 space-y-2 text-xs">
-              <p className="text-gray-500">ขอแสดงความนับถือ</p>
-              <div className="h-10 flex items-center justify-center">
-                <span className="font-serif italic text-base text-slate-700 underline decoration-slate-300">
-                  {data.employeeName}
-                </span>
-              </div>
-              <p className="font-medium text-gray-800">({data.employeeName})</p>
-              <p className="text-gray-400">ผู้ยื่นคำขอลาออก</p>
+          {/* พื้นที่แสดงกระดาษ A4 เต็มหน้า (เลื่อนดูได้) */}
+          <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
+            <div className="mx-auto w-fit shadow-md border border-gray-300">
+              <ResignationPaper
+                data={data}
+                companyLogo={companyLogo}
+                companyAddress={address}
+                signatureSrc={signatureSrc}
+                onSignatureError={() => setSignatureSrc(null)}
+                approvalSlots={approvalSlots}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            พิมพ์เอกสาร
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            ปิดหน้าต่าง
-          </button>
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              พิมพ์เอกสาร
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* สำเนาสำหรับพิมพ์: แยกออกมาไว้ใต้ <body> โดยตรง เพื่อให้พิมพ์ได้เต็มหน้า A4 ไม่ติดกรอบ modal / sidebar */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div className="resignation-print-root">
+            <ResignationPaper
+                data={data}
+                companyLogo={companyLogo}
+                companyAddress={address}
+                signatureSrc={signatureSrc}
+                onSignatureError={() => setSignatureSrc(null)}
+                approvalSlots={approvalSlots}
+              />
+          </div>,
+          document.body
+        )}
+
+      <style jsx global>{`
+        .resignation-print-root {
+          display: none;
+        }
+
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            min-height: 0 !important;
+            height: auto !important;
+          }
+
+          /* ซ่อนทุกอย่างในหน้า ยกเว้นสำเนาเอกสาร */
+          body > *:not(.resignation-print-root) {
+            display: none !important;
+          }
+
+          .resignation-print-root {
+            display: block !important;
+          }
+
+          .resignation-print-root .resignation-paper {
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            break-inside: avoid;
+            page-break-after: avoid;
+          }
+
+          .resignation-print-root * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
+    </>
   );
 };

@@ -198,6 +198,8 @@ public class AnnouncementService : IAnnouncementService
         _context.Announcements.Add(announcement);
         await _context.SaveChangesAsync(cancellationToken);
 
+        await NotifyAnnouncementPublishedAsync(announcement, cancellationToken);
+
         return (await GetByIdAsync(announcement.Id, creatorEmployeeId, cancellationToken))!;
     }
 
@@ -263,6 +265,8 @@ public class AnnouncementService : IAnnouncementService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        await NotifyAnnouncementPublishedAsync(announcement, cancellationToken);
+
         return (await GetByIdAsync(announcement.Id, null, cancellationToken))!;
     }
 
@@ -303,7 +307,9 @@ public class AnnouncementService : IAnnouncementService
 
     public async Task<bool> SetPublishStatusAsync(long id, bool publish, CancellationToken cancellationToken = default)
     {
-        var announcement = await _context.Announcements.FindAsync([id], cancellationToken);
+        var announcement = await _context.Announcements
+            .Include(a => a.Targets)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         if (announcement == null)
         {
             return false;
@@ -322,7 +328,90 @@ public class AnnouncementService : IAnnouncementService
         announcement.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
+        if (publish)
+        {
+            await NotifyAnnouncementPublishedAsync(announcement, cancellationToken);
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// แจ้งเตือนพนักงานกลุ่มเป้าหมายเมื่อประกาศถูกเผยแพร่ (แจ้งครั้งเดียวต่อประกาศ)
+    /// ประกาศที่ตั้งเวลาเผยแพร่ในอนาคต จะยังไม่ถูกแจ้งเตือนในตอนนี้
+    /// </summary>
+    private async Task NotifyAnnouncementPublishedAsync(Announcement announcement, CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+        if (announcement.Status != "PUBLISHED") return;
+        if (announcement.PublishedAt.HasValue && announcement.PublishedAt.Value > now) return;
+        if (announcement.ExpireAt.HasValue && announcement.ExpireAt.Value < now) return;
+
+        var notifications = new List<Notification>();
+        try
+        {
+            var alreadyNotified = await _context.Notifications
+                .AnyAsync(n => n.ReferenceType == "ANNOUNCEMENT" && n.ReferenceId == announcement.Id, cancellationToken);
+            if (alreadyNotified) return;
+
+            var targets = announcement.Targets.ToList();
+            bool toAll = !targets.Any() || targets.Any(t => t.TargetType == "ALL");
+
+            HashSet<long>? targetEmployeeIds = null;
+            if (!toAll)
+            {
+                var assignments = await _context.EmployeeAssignments.AsNoTracking()
+                    .Where(a => a.IsCurrent)
+                    .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.EmployeeLevelId })
+                    .ToListAsync(cancellationToken);
+
+                targetEmployeeIds = assignments
+                    .Where(a => targets.Any(t =>
+                        (t.TargetType == "DEPARTMENT" && t.TargetEntityId == a.DepartmentId) ||
+                        (t.TargetType == "DIVISION" && t.TargetEntityId == a.DivisionId) ||
+                        (t.TargetType == "EMPLOYEE_LEVEL" && a.EmployeeLevelId.HasValue && t.TargetEntityId == a.EmployeeLevelId)))
+                    .Select(a => a.EmployeeId)
+                    .ToHashSet();
+            }
+
+            var users = await _context.UserAccounts.AsNoTracking()
+                .Where(u => u.Status == "ACTIVE")
+                .Select(u => new { u.Id, u.EmployeeId })
+                .ToListAsync(cancellationToken);
+
+            var recipientIds = users
+                .Where(u => toAll || targetEmployeeIds!.Contains(u.EmployeeId))
+                .Select(u => u.Id)
+                .Distinct()
+                .ToList();
+
+            if (!recipientIds.Any()) return;
+
+            var title = $"ประกาศใหม่: {announcement.Title}";
+            var content = announcement.Content ?? string.Empty;
+            notifications = recipientIds.Select(uid => new Notification
+            {
+                UserId = uid,
+                NotificationType = "ANNOUNCEMENT",
+                Title = title.Length > 255 ? title[..255] : title,
+                Message = content.Length > 150 ? content[..150] + "…" : content,
+                ReferenceType = "ANNOUNCEMENT",
+                ReferenceId = announcement.Id,
+                IsRead = false,
+                CreatedAt = now
+            }).ToList();
+
+            _context.Notifications.AddRange(notifications);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // การแจ้งเตือนต้องไม่ทำให้การเผยแพร่ประกาศล้มเหลว
+            foreach (var n in notifications)
+            {
+                _context.Notifications.Remove(n);
+            }
+        }
     }
 
     public async Task<bool> MarkAsReadAsync(long id, long employeeId, CancellationToken cancellationToken = default)

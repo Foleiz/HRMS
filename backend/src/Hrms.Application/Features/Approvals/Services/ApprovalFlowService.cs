@@ -18,10 +18,8 @@ public class ApprovalFlowService : IApprovalFlowService
         "TRANSFER_REQUEST"
     };
 
-    private static readonly HashSet<string> ValidApproverTypes = new()
-    {
-        "EMPLOYEE", "ROLE", "MANAGER", "DEPARTMENT_HEAD", "DIVISION_HEAD", "HR", "CEO"
-    };
+    /// <summary>ประเภทผู้อนุมัติที่เลือกได้เมื่อสร้าง/แก้ไขสายการอนุมัติ</summary>
+    private static readonly HashSet<string> ConfigurableApproverTypes = new() { "EMPLOYEE", "ROLE" };
 
     public ApprovalFlowService(IHrmsDbContext context)
     {
@@ -147,11 +145,19 @@ public class ApprovalFlowService : IApprovalFlowService
         }
     }
 
+    /// <summary>จำนวนขั้นตอนอนุมัติสูงสุดของทุกสายการอนุมัติ (ต้องตรงกับ frontend: MAX_APPROVAL_STEPS)</summary>
+    public const int MaxApprovalSteps = 4;
+
     private static List<ApprovalStep> ValidateAndBuildSteps(List<ApprovalStepInput> inputs)
     {
         if (inputs == null || inputs.Count == 0)
         {
             throw new InvalidOperationException("สายการอนุมัติต้องมีอย่างน้อย 1 ขั้นตอน");
+        }
+
+        if (inputs.Count > MaxApprovalSteps)
+        {
+            throw new InvalidOperationException($"สายการอนุมัติกำหนดได้สูงสุด {MaxApprovalSteps} ขั้นตอน (ส่งมา {inputs.Count} ขั้นตอน)");
         }
 
         var stepNumbers = new HashSet<int>();
@@ -164,10 +170,12 @@ public class ApprovalFlowService : IApprovalFlowService
                 throw new InvalidOperationException($"ลำดับขั้นตอนที่ {input.StepNo} ซ้ำกัน กรุณาจัดลำดับใหม่");
             }
 
-            if (!ValidApproverTypes.Contains(input.ApproverType))
+            // ตั้งค่าใหม่ได้เฉพาะ "ระบุตัวบุคคล" (EMPLOYEE) และ "ระบุตามบทบาท" (ROLE)
+            // ประเภทอื่นยังรองรับในสายการอนุมัติเดิมที่ทำงานอยู่ แต่ไม่ให้สร้าง/บันทึกใหม่
+            if (!ConfigurableApproverTypes.Contains(input.ApproverType))
             {
                 throw new InvalidOperationException(
-                    $"ประเภทผู้อนุมัติ '{input.ApproverType}' ไม่ถูกต้อง ต้องเป็นหนึ่งใน: {string.Join(", ", ValidApproverTypes)}");
+                    $"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติต้องเป็น 'ระบุตัวบุคคล' (EMPLOYEE) หรือ 'ระบุตามบทบาท' (ROLE) เท่านั้น");
             }
 
             if (input.ApproverType == "EMPLOYEE" && input.ApproverEmployeeId is null)
@@ -365,6 +373,7 @@ public class ApprovalFlowService : IApprovalFlowService
                 StepNo = step.StepNo,
                 ApproverType = step.ApproverType,
                 ApproverTypeLabel = GetApproverTypeLabel(step.ApproverType),
+                ApproverRoleName = step.ApproverRole?.RoleName,
                 IsRequired = step.IsRequired,
                 Approver = approver
             });

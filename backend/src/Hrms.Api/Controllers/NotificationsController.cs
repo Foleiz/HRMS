@@ -134,8 +134,14 @@ public class NotificationsController : ControllerBase
         [FromBody] CreateNotificationRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = request.UserId > 0 ? request.UserId : (_currentUserService.UserId ?? 1L);
-        request.UserId = userId;
+        // ใช้สำหรับทดสอบเท่านั้น: เฉพาะ ADMIN และห้ามสุ่มส่งหาผู้ใช้ id 1 เมื่อไม่ทราบตัวผู้ใช้
+        if (!_currentUserService.HasRole("ADMIN"))
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<NotificationDto>.Fail("เฉพาะผู้ดูแลระบบเท่านั้นที่สร้างการแจ้งเตือนทดสอบได้"));
+
+        var userId = request.UserId > 0 ? request.UserId : _currentUserService.UserId;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<NotificationDto>.Fail("ไม่พบข้อมูลผู้ใช้งาน"));
+        request.UserId = userId.Value;
 
         var result = await _notificationService.CreateNotificationAsync(request, cancellationToken);
         return Ok(ApiResponse<NotificationDto>.Ok(result, "สร้างการแจ้งเตือนสำเร็จ"));

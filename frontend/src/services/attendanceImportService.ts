@@ -19,13 +19,21 @@ export const attendanceImportService = {
     source?: string,
     deviceName?: string,
     allowDuplicate: boolean = false,
-    onProgress?: (progressPercent: number) => void
+    onProgress?: (progressPercent: number) => void,
+    dateFrom?: string,
+    dateTo?: string,
+    targetYear?: number,
+    targetMonth?: number
   ): Promise<ApiResponse<AttendanceImportResult>> {
     const formData = new FormData();
     formData.append('file', file);
     if (source) formData.append('source', source);
     if (deviceName) formData.append('deviceName', deviceName);
     formData.append('allowDuplicate', String(allowDuplicate));
+    if (dateFrom) formData.append('dateFrom', dateFrom);
+    if (dateTo) formData.append('dateTo', dateTo);
+    if (targetYear) formData.append('targetYear', String(targetYear));
+    if (targetMonth) formData.append('targetMonth', String(targetMonth));
 
     const res = await apiClient.post<ApiResponse<AttendanceImportResult>>(
       '/attendance/import/upload',

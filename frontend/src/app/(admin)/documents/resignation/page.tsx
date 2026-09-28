@@ -26,8 +26,6 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
-const HANDOVER_MAX_LENGTH = 250;
-const CONTACT_MAX_LENGTH = 150;
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -64,16 +62,19 @@ export default function ResignationPage() {
   const [submissionDate, setSubmissionDate] = useState(() => toInputDate(new Date()));
 
   // ช่อง "เรียน" ตาม Figma
-  const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+  const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
 
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
-  const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>('นาย');
+  const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>(() => {
+    const fn = user?.fullName || '';
+    if (fn.startsWith('นางสาว')) return 'นางสาว';
+    if (fn.startsWith('นาง')) return 'นาง';
+    return 'นาย';
+  });
 
   // Form Fields
   const [reasonCategory, setReasonCategory] = useState<string>(RESIGNATION_REASON_CATEGORIES[0].value);
   const [reasonDetail, setReasonDetail] = useState('');
-  const [handoverNotes, setHandoverNotes] = useState('');
-  const [contactAfterResignation, setContactAfterResignation] = useState('');
 
   // วันที่ทำงานวันสุดท้าย (เริ่มต้นแนะนำ 30 วันนับจากวันนี้)
   const [requestedLastWorkingDate, setRequestedLastWorkingDate] = useState(() => {
@@ -114,8 +115,6 @@ export default function ResignationPage() {
         if (parsed.titlePrefix) setTitlePrefix(parsed.titlePrefix);
         if (parsed.reasonCategory) setReasonCategory(parsed.reasonCategory);
         if (parsed.reasonDetail) setReasonDetail(parsed.reasonDetail);
-        if (parsed.handoverNotes) setHandoverNotes(parsed.handoverNotes);
-        if (parsed.contactAfterResignation) setContactAfterResignation(parsed.contactAfterResignation);
         if (parsed.requestedLastWorkingDate) setRequestedLastWorkingDate(parsed.requestedLastWorkingDate);
       }
     } catch {
@@ -161,12 +160,10 @@ export default function ResignationPage() {
 
   // ล้างฟอร์ม
   const handleResetForm = () => {
-    setAddressedTo('กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด');
+    setAddressedTo('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
     setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
-    setHandoverNotes('');
-    setContactAfterResignation('');
     const d = new Date();
     d.setDate(d.getDate() + 30);
     setRequestedLastWorkingDate(toInputDate(d));
@@ -190,8 +187,6 @@ export default function ResignationPage() {
           titlePrefix,
           reasonCategory,
           reasonDetail: reasonDetail.trim(),
-          handoverNotes: handoverNotes.trim(),
-          contactAfterResignation: contactAfterResignation.trim(),
           requestedLastWorkingDate,
           savedAt: new Date().toISOString(),
         })
@@ -232,15 +227,11 @@ export default function ResignationPage() {
         requestedLastWorkingDate,
         reasonCategory: categoryLabel,
         reason: reasonDetail.trim(),
-        handoverNotes: handoverNotes.trim() || undefined,
-        contactAfterResignation: contactAfterResignation.trim() || undefined,
       });
 
       // Clear draft
       localStorage.removeItem('hrms_resignation_draft');
       setReasonDetail('');
-      setHandoverNotes('');
-      setContactAfterResignation('');
       toast.success('ยื่นคำขอลาออกสำเร็จ ติดตามสถานะได้ที่หน้านี้');
       router.push('/documents/history');
     } catch (err: any) {
@@ -296,7 +287,8 @@ export default function ResignationPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป + ข้อมูลพนักงาน (ตาม Figma) ─── */}
-          <div className="space-y-6">
+          {/* ใช้ flex-col + การ์ดล่าง flex-1 เพื่อให้ขอบล่างเสมอกับการ์ดฝั่งขวา */}
+          <div className="flex flex-col gap-6">
             {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
@@ -317,7 +309,7 @@ export default function ResignationPage() {
                     type="text"
                     value={addressedTo}
                     onChange={(e) => setAddressedTo(e.target.value)}
-                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไฮอโค่ว จำกัด"
+                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไซอโคว จำกัด"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                   />
                 </div>
@@ -325,7 +317,7 @@ export default function ResignationPage() {
             </div>
 
             {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลพนักงาน</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
@@ -374,8 +366,8 @@ export default function ResignationPage() {
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
-            <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+            <div className="flex-1 flex flex-col space-y-4">
               <h3 className="text-sm font-bold text-gray-900">รายละเอียดการขอลาออก</h3>
 
               {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
@@ -428,7 +420,8 @@ export default function ResignationPage() {
               </div>
 
               {/* เหตุผลการลาออก (Textarea พร้อมตัวนับตาม Figma: สถานที่/เบอร์ติดต่อระหว่างลา หรือเหตุผล) */}
-              <div>
+              {/* ขยายเต็มพื้นที่ที่เหลือ เพื่อให้การ์ดสูงเท่าฝั่งซ้าย */}
+              <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700">
                     เหตุผลการลาออก *
@@ -443,42 +436,11 @@ export default function ResignationPage() {
                   onChange={(e) => setReasonDetail(e.target.value)}
                   rows={4}
                   placeholder="ระบุเหตุผลการลาออก และสถานที่หรือเบอร์ติดต่อระหว่างลา..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  className="flex-1 min-h-[104px] w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                   required
                 />
               </div>
 
-              {/* แผนการส่งมอบงาน & ข้อมูลติดต่อเพิ่มเติม */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-2xs font-medium text-gray-500">แผนส่งมอบงาน (ถ้ามี)</label>
-                    <span className="text-2xs text-gray-400 font-mono">{handoverNotes.length}/{HANDOVER_MAX_LENGTH}</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={handoverNotes}
-                    maxLength={HANDOVER_MAX_LENGTH}
-                    onChange={(e) => setHandoverNotes(e.target.value)}
-                    placeholder="เช่น ส่งมอบโปรเจกต์ให้ทีมงาน"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-2xs font-medium text-gray-500">ข้อมูลติดต่อหลังลาออก</label>
-                    <span className="text-2xs text-gray-400 font-mono">{contactAfterResignation.length}/{CONTACT_MAX_LENGTH}</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={contactAfterResignation}
-                    maxLength={CONTACT_MAX_LENGTH}
-                    onChange={(e) => setContactAfterResignation(e.target.value)}
-                    placeholder="เช่น 081-xxx-xxxx, email@..."
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -559,7 +521,11 @@ export default function ResignationPage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         data={{
-          employeeName: `${titlePrefix} ${profile.fullName}`,
+          employeeName: profile.fullName.startsWith(titlePrefix)
+            ? profile.fullName
+            : `${titlePrefix} ${profile.fullName.replace(/^(นาย|นางสาว|นาง)\s*/, '')}`,
+          titlePrefix,
+          employeeId: user?.employeeId ?? null,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,
           departmentName: profile.departmentName,
@@ -567,9 +533,8 @@ export default function ResignationPage() {
           requestedLastWorkingDate: formatThaiShort(requestedLastWorkingDate),
           reasonCategoryLabel: selectedCategoryLabel,
           reasonDetail: reasonDetail || 'ยังไม่ได้ระบุรายละเอียด',
-          handoverNotes: handoverNotes || undefined,
-          contactAfterResignation: contactAfterResignation || undefined,
           noticeDays,
+          addressedTo,
         }}
       />
     </div>
