@@ -92,6 +92,9 @@ const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: E
   }
 };
 
+/** จำนวนขั้นตอนอนุมัติสูงสุดของทุกสายการอนุมัติ (ต้องตรงกับ backend: ApprovalFlowService.MaxApprovalSteps) */
+const MAX_APPROVAL_STEPS = 4;
+
 const emptyStep = (stepNo: number): ApprovalStepInput => ({
   stepNo,
   approverType: 'MANAGER',
@@ -281,7 +284,10 @@ export const ApprovalFlowsTab: React.FC = () => {
     steps.map((s, idx) => ({ ...s, stepNo: idx + 1 }));
 
   const addStep = () => {
-    setForm((f) => ({ ...f, steps: renumberSteps([...f.steps, emptyStep(f.steps.length + 1)]) }));
+    setForm((f) => {
+      if (f.steps.length >= MAX_APPROVAL_STEPS) return f;
+      return { ...f, steps: renumberSteps([...f.steps, emptyStep(f.steps.length + 1)]) };
+    });
   };
 
   const removeStep = (idx: number) => {
@@ -351,6 +357,10 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
     if (!form.steps || form.steps.length === 0) {
       error('สายการอนุมัติต้องมีอย่างน้อย 1 ขั้นตอน');
+      return;
+    }
+    if (form.steps.length > MAX_APPROVAL_STEPS) {
+      error(`สายการอนุมัติกำหนดได้สูงสุด ${MAX_APPROVAL_STEPS} ขั้นตอน กรุณาลบขั้นตอนที่เกินออก`);
       return;
     }
 
@@ -931,16 +941,18 @@ export const ApprovalFlowsTab: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        ลำดับขั้นตอนการอนุมัติ ({form.steps.length} ขั้นตอน)
+                        ลำดับขั้นตอนการอนุมัติ ({form.steps.length}/{MAX_APPROVAL_STEPS} ขั้นตอน)
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        ระบบจะส่งคำขอตามลำดับ 1 → 2 → 3 เมื่อขั้นตอนก่อนหน้าอนุมัติผ่าน
+                        ระบบจะส่งคำขอตามลำดับ 1 → 2 → 3 → 4 เมื่อขั้นตอนก่อนหน้าอนุมัติผ่าน (กำหนดได้สูงสุด {MAX_APPROVAL_STEPS} ขั้นตอน)
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={addStep}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                      disabled={form.steps.length >= MAX_APPROVAL_STEPS}
+                      title={form.steps.length >= MAX_APPROVAL_STEPS ? `กำหนดได้สูงสุด ${MAX_APPROVAL_STEPS} ขั้นตอน` : 'เพิ่มขั้นตอน'}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-3.5 h-3.5" /> เพิ่มขั้นตอน
                     </button>

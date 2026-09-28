@@ -147,11 +147,19 @@ public class ApprovalFlowService : IApprovalFlowService
         }
     }
 
+    /// <summary>จำนวนขั้นตอนอนุมัติสูงสุดของทุกสายการอนุมัติ (ต้องตรงกับ frontend: MAX_APPROVAL_STEPS)</summary>
+    public const int MaxApprovalSteps = 4;
+
     private static List<ApprovalStep> ValidateAndBuildSteps(List<ApprovalStepInput> inputs)
     {
         if (inputs == null || inputs.Count == 0)
         {
             throw new InvalidOperationException("สายการอนุมัติต้องมีอย่างน้อย 1 ขั้นตอน");
+        }
+
+        if (inputs.Count > MaxApprovalSteps)
+        {
+            throw new InvalidOperationException($"สายการอนุมัติกำหนดได้สูงสุด {MaxApprovalSteps} ขั้นตอน (ส่งมา {inputs.Count} ขั้นตอน)");
         }
 
         var stepNumbers = new HashSet<int>();

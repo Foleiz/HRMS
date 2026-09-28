@@ -568,6 +568,7 @@ export default function ResignationPage() {
             ? profile.fullName
             : `${titlePrefix} ${profile.fullName.replace(/^(นาย|นางสาว|นาง)\s*/, '')}`,
           titlePrefix,
+          employeeId: user?.employeeId ?? null,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,
           departmentName: profile.departmentName,

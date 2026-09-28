@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Sarabun } from 'next/font/google';
 import { X, Printer, FileText } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
+import { getAvatarUrl } from '@/lib/api-client';
 
 // ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
 const sarabun = Sarabun({
@@ -21,6 +22,10 @@ export interface ResignationPreviewModalProps {
   onClose: () => void;
   data: {
     employeeName: string;
+    /** รหัสพนักงานผู้ลาออก ใช้ดึงรูปลายเซ็นจากบัญชี (GET /api/employees/{id}/signature) */
+    employeeId?: number | null;
+    /** URL รูปลายเซ็น (ถ้ามี จะใช้แทนการดึงจาก employeeId) */
+    signatureUrl?: string | null;
     titlePrefix?: string;
     companyLogo?: string | null;
     companyName?: string;
@@ -231,11 +236,13 @@ const SignatureCell: React.FC<{ title: string; name?: string; position?: string;
  * - หัวกระดาษ: โลโก้กึ่งกลาง มีเส้นคั่นซ้าย/ขวา
  * - ท้ายกระดาษ: เส้นคั่นเต็มความกว้าง + ที่อยู่บริษัท (สีฟ้า) ชิดขอบล่างของหน้า
  */
-const ResignationPaper: React.FC<{ data: ResignationData; companyLogo: string | null; companyAddress: string }> = ({
-  data,
-  companyLogo,
-  companyAddress,
-}) => {
+const ResignationPaper: React.FC<{
+  data: ResignationData;
+  companyLogo: string | null;
+  companyAddress: string;
+  signatureSrc: string | null;
+  onSignatureError?: () => void;
+}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError }) => {
   const submissionParts = parseThaiDateParts(data.submissionDate);
   const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
   const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
@@ -347,8 +354,40 @@ const ResignationPaper: React.FC<{ data: ResignationData; companyLogo: string | 
       {/* ===== ลงนามผู้ลาออก (ชิดขวา) ===== */}
       <div style={{ marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '5mm', whiteSpace: 'nowrap' }}>
         <div>ขอแสดงความนับถือ</div>
-        <div style={{ marginTop: '6mm' }}>
-          (ลงชื่อ)<Fill minWidth="42mm" />ผู้ลาออก
+        <div style={{ marginTop: '9mm' }}>
+          (ลงชื่อ)
+          {/* ช่องลงชื่อ: วางรูปลายเซ็นของผู้ลาออกไว้เหนือเส้นประ โดยไม่ดันระยะบรรทัด */}
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              minWidth: '42mm',
+              borderBottom: '1px dotted #000',
+              lineHeight: 1.15,
+              verticalAlign: 'baseline',
+            }}
+          >
+            {'\u00A0'}
+            {signatureSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={signatureSrc}
+                alt="ลายเซ็นผู้ลาออก"
+                onError={onSignatureError}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: '0.3mm',
+                  transform: 'translateX(-50%)',
+                  height: '12mm',
+                  maxWidth: '44mm',
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+          </span>
+          ผู้ลาออก
         </div>
         <div>
           (<Fill value={fullEmployeeNameForSignature} minWidth="50mm" />)
@@ -412,6 +451,22 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
 }) => {
   const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
   const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
+  const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+
+  // รูปลายเซ็นของบัญชีผู้ลาออก (ดึงใหม่ทุกครั้งที่เปิด เพื่อให้ได้ลายเซ็นล่าสุด)
+  useEffect(() => {
+    if (!isOpen) {
+      setSignatureSrc(null);
+      return;
+    }
+    if (data?.signatureUrl) {
+      setSignatureSrc(getAvatarUrl(data.signatureUrl));
+    } else if (data?.employeeId) {
+      setSignatureSrc(getAvatarUrl(`/api/employees/${data.employeeId}/signature?v=${Date.now()}`));
+    } else {
+      setSignatureSrc(null);
+    }
+  }, [isOpen, data?.employeeId, data?.signatureUrl]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -466,7 +521,13 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
           {/* พื้นที่แสดงกระดาษ A4 เต็มหน้า (เลื่อนดูได้) */}
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
             <div className="mx-auto w-fit shadow-md border border-gray-300">
-              <ResignationPaper data={data} companyLogo={companyLogo} companyAddress={address} />
+              <ResignationPaper
+                data={data}
+                companyLogo={companyLogo}
+                companyAddress={address}
+                signatureSrc={signatureSrc}
+                onSignatureError={() => setSignatureSrc(null)}
+              />
             </div>
           </div>
 
@@ -495,7 +556,13 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
       {typeof document !== 'undefined' &&
         createPortal(
           <div className="resignation-print-root">
-            <ResignationPaper data={data} companyLogo={companyLogo} companyAddress={address} />
+            <ResignationPaper
+                data={data}
+                companyLogo={companyLogo}
+                companyAddress={address}
+                signatureSrc={signatureSrc}
+                onSignatureError={() => setSignatureSrc(null)}
+              />
           </div>,
           document.body
         )}

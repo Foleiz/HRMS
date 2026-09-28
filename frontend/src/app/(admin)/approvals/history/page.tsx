@@ -540,6 +540,7 @@ export default function ApprovalHistoryPage() {
         }}
         data={selectedResignForPreview ? {
           employeeName: selectedResignForPreview.employeeName,
+          employeeId: selectedResignForPreview.employeeId,
           employeeCode: selectedResignForPreview.employeeCode,
           positionTitle: selectedResignForPreview.positionName,
           departmentName: selectedResignForPreview.departmentName,
