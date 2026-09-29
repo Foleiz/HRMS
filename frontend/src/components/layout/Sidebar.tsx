@@ -43,6 +43,15 @@ const menuItems: MenuItem[] = [
     title: 'แดชบอร์ด',
     href: '/',
     icon: LayoutDashboard,
+    requiredPermissions: [
+      'DASHBOARD_VIEW',
+      'DASHBOARD_EMPLOYEE_VIEW',
+      'DASHBOARD_EMP_VIEW',
+      'DASHBOARD_DEPT_VIEW',
+      'DASHBOARD_DIV_VIEW',
+      'DASHBOARD_CEO_VIEW',
+      'DASHBOARD_ADMIN_VIEW',
+    ],
   },
   {
     title: 'พนักงาน',
@@ -50,7 +59,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/employees',
     icon: Users,
     requiredPermissions: [
-      'EMP_VIEW',
       'EMP_PROFILE_VIEW',
       'EMP_CONTRACT_VIEW',
       'EMP_TRANSFER_VIEW',
@@ -62,18 +70,21 @@ const menuItems: MenuItem[] = [
     href: '/my-salary',
     matchPrefix: '/my-salary',
     icon: Wallet,
+    requiredPermissions: ['ESS_SALARY_VIEW'],
   },
   {
     title: 'โปรไฟล์ของฉัน (ESS)',
     href: '/profile',
     matchPrefix: '/profile',
     icon: User,
+    requiredPermissions: ['ESS_PROFILE_VIEW'],
   },
   {
     title: 'ยอดวันลาคงเหลือ',
     href: '/leave-balances',
     matchPrefix: '/leave-balances',
     icon: CalendarCheck,
+    requiredPermissions: ['ESS_LEAVE_VIEW'],
   },
 
   {
@@ -81,27 +92,21 @@ const menuItems: MenuItem[] = [
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',
     icon: Clock,
-    requiredPermissions: [
-      'TIME_VIEW',
-      'TIME_DAILY_VIEW',
-      'TIME_SCHEDULE_VIEW',
-      'TIME_IMPORT_VIEW',
-    ],
+    requiredPermissions: ['ESS_TIME_VIEW'],
   },
   {
     title: 'ข่าวสารสำหรับฉัน',
     href: '/my-news',
     matchPrefix: '/my-news',
     icon: CalendarDays,
+    requiredPermissions: ['ESS_NEWS_VIEW'],
   },
   {
     title: 'ยื่นเอกสาร',
     href: '/documents',
     matchPrefix: '/documents',
     icon: FileText,
-    // เมนู ESS ยื่นเอกสาร — รวม "รายการเอกสาร" และ "ประวัติเอกสาร" ไว้ในหมวดเดียวกัน
-    // สลับไปมาระหว่างสองหน้านี้ผ่านแถบเมนูย่อยในตัวหน้า (ดู DocumentsSubNav) เหมือนเมนู "พนักงาน"
-    // ไม่ได้ทำเป็นเมนูย่อยแบบขยาย/ย่อในแถบด้านข้าง — พนักงานทุกคนที่ล็อกอินยื่นคำขอ/ดูประวัติของตนเองได้ ไม่ต้องมีสิทธิ์เฉพาะ
+    requiredPermissions: ['ESS_DOCS_VIEW'],
   },
   {
     title: 'ตรวจบันทึกเวลา',
@@ -128,7 +133,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/leave',
     icon: CalendarCheck,
     requiredPermissions: [
-      'LEAVE_VIEW',
       'LEAVE_BALANCE_VIEW',
       'LEAVE_TYPE_VIEW',
       'LEAVE_POLICY_VIEW',
@@ -140,11 +144,16 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/payroll',
     icon: CreditCard,
     requiredPermissions: [
-      'PAYROLL_VIEW',
+      'PAYROLL_HR_VIEW',
+      'PAYROLL_FINANCE_VIEW',
+      'PAYROLL_ADMIN_VIEW',
       'PAYROLL_CALC_VIEW',
-      'PAYROLL_SLIP_VIEW',
+      'PAYROLL_STRUCTURE_VIEW',
+      'PAYROLL_ITEMS_VIEW',
+      'PAYROLL_BONUS_VIEW',
+      'PAYROLL_BANK_VIEW',
       'PAYROLL_TAX_VIEW',
-      'PAYROLL_RUN',
+      'PAYROLL_SLIP_VIEW',
     ],
   },
   {
@@ -153,15 +162,14 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/approvals',
     icon: CheckCircle2,
     requiredPermissions: [
-      'LEAVE_APPROVE',
-      'TIME_APPROVE',
-      'EMP_APPROVE',
-      'PAYROLL_APPROVE',
-      'TIME_MANAGE',
-      'LEAVE_BALANCE_APPROVE',
-      'TIME_DAILY_APPROVE',
-      'EMP_PROFILE_APPROVE',
-      'PAYROLL_CALC_APPROVE',
+      'APPROVAL_LEAVE_VIEW',
+      'APPROVAL_LEAVE_APPROVE',
+      'APPROVAL_TIME_VIEW',
+      'APPROVAL_TIME_APPROVE',
+      'APPROVAL_EMP_VIEW',
+      'APPROVAL_EMP_APPROVE',
+      'APPROVAL_PAYROLL_VIEW',
+      'APPROVAL_PAYROLL_APPROVE',
     ],
   },
   {
@@ -170,12 +178,10 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/organization',
     icon: Building2,
     requiredPermissions: [
-      'ORG_VIEW',
       'ORG_STRUCT_VIEW',
       'ORG_POS_VIEW',
       'ORG_BENEFIT_VIEW',
       'ORG_COMP_VIEW',
-      'SYS_ADMIN',
     ],
   },
   {
@@ -184,10 +190,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/work-calendar',
     icon: CalendarDays,
     requiredPermissions: [
-      'TIME_VIEW',
-      'TIME_SCHEDULE_VIEW',
-      'TIME_DAILY_VIEW',
-      'SYS_ADMIN',
+      'WORK_CALENDAR_VIEW',
     ],
   },
   {
@@ -196,7 +199,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/reports',
     icon: BarChart3,
     requiredPermissions: [
-      'REPORT_VIEW',
       'REPORT_ATT_VIEW',
       'REPORT_HEADCOUNT_VIEW',
     ],
@@ -207,8 +209,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/announcements',
     icon: Megaphone,
     requiredPermissions: [
-      'SYS_ADMIN',
-      'ORG_VIEW',
+      'ANNOUNCEMENTS_VIEW',
     ],
   },
   {
@@ -217,9 +218,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/master',
     icon: Database,
     requiredPermissions: [
-      'SETTINGS_VIEW',
-      'SYS_ADMIN',
-      'ORG_VIEW',
+      'MASTER_DATA_VIEW',
     ],
   },
   {
@@ -231,8 +230,6 @@ const menuItems: MenuItem[] = [
       'SETTINGS_USERS_VIEW',
       'SETTINGS_ROLES_VIEW',
       'SETTINGS_AUDIT_VIEW',
-      'SETTINGS_APPROVAL_FLOWS_MANAGE',
-      'SYS_ADMIN',
     ],
   },
 ];

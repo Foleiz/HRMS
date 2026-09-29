@@ -23,7 +23,6 @@ import {
   CheckSquare,
   Eye,
   X,
-  Shield,
   LayoutDashboard,
   Wallet,
   User,
@@ -143,6 +142,15 @@ const CATEGORY_NAMES: Record<string, string> = {
   SETTINGS: 'ตั้งค่า',
 };
 
+/** หมวดหมู่ของระบบ ESS ที่จำกัดขอบเขตเฉพาะข้อมูลตนเอง (Self Only) เท่านั้น */
+const ESS_CATEGORY_CODES = new Set<string>([
+  'MY_SALARY',
+  'MY_PROFILE',
+  'MY_LEAVE',
+  'MY_ATTENDANCE',
+  'MY_DOCS',
+]);
+
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
@@ -155,14 +163,13 @@ const SCOPES_CONFIG: {
 ];
 
 const ACTIONS_CONFIG: {
-  key: 'view' | 'create' | 'edit' | 'approve';
+  key: 'view' | 'create' | 'edit';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { key: 'view', label: 'ดูข้อมูล (View)', icon: Eye },
   { key: 'create', label: 'สร้าง (Create)', icon: Plus },
   { key: 'edit', label: 'แก้ไข (Edit)', icon: Edit2 },
-  { key: 'approve', label: 'อนุมัติ (Approve)', icon: Shield },
 ];
 
 export const RolesTab: React.FC<RolesTabProps> = ({
@@ -251,6 +258,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.canApprove) target.approve = true;
       }
 
+      // หากเป็นหมวดหมู่ ESS บังคับให้ขอบเขตข้อมูลเป็น Self Only เสมอ (เคลียร์ team, dept, div, org ออกทั้งหมด)
+      const isEssModule = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
+      if (isEssModule) {
+        return {
+          ...m,
+          self,
+          team: def(),
+          department: def(),
+          division: def(),
+          organization: def(),
+        };
+      }
+
       return { ...m, self, team, department, division, organization };
     });
 
@@ -330,7 +350,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       );
     }
     const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
-    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.approve);
+    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit);
   };
 
   const getScopeActiveCount = (
@@ -339,7 +359,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   ): number => {
     const sc = mod[scopeKey];
     if (!sc) return 0;
-    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.approve ? 1 : 0);
+    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0);
   };
 
   /* ── Toggle Handlers ── */
@@ -447,7 +467,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const handleToggleScopeAction = (
     moduleCode: string,
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
-    actionKey: 'view' | 'create' | 'edit' | 'approve'
+    actionKey: 'view' | 'create' | 'edit'
   ) => {
     setLocalModules((prev) =>
       prev.map((m) => {
@@ -477,7 +497,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.moduleCode !== moduleCode) return m;
         return {
           ...m,
-          [scopeKey]: { view: enable, create: enable, edit: enable, approve: enable },
+          [scopeKey]: { view: enable, create: enable, edit: enable, approve: false },
         };
       })
     );
@@ -497,7 +517,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const popoverWidth = 288;
-    const popoverHeight = 280;
+    const popoverHeight = 220;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
 
@@ -537,7 +557,20 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
           return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
         }
-        const full = { view: true, create: true, edit: true, approve: true };
+        const isEss = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
+        if (isEss) {
+          const full = { view: true, create: true, edit: true, approve: false };
+          const empty = { view: false, create: false, edit: false, approve: false };
+          return {
+            ...m,
+            self: { ...full },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        }
+        const full = { view: true, create: true, edit: true, approve: false };
         return {
           ...m,
           self: { ...full },
@@ -820,6 +853,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             <span className="font-bold text-xs text-slate-800 tracking-tight">
                               {cat.name}
                             </span>
+                            {ESS_CATEGORY_CODES.has(cat.code) && (
+                              <span className="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full hidden sm:inline">
+                                เฉพาะข้อมูลตนเอง (Self Only)
+                              </span>
+                            )}
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 activeModulesCount > 0
@@ -853,6 +891,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           {cat.modules.map((mod) => {
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
+                            const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
+                            const availableScopes = isEssCat
+                              ? SCOPES_CONFIG.filter((s) => s.key === 'self')
+                              : SCOPES_CONFIG;
 
                             return (
                               <div
@@ -889,7 +931,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                   {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด) */}
                                   {!isDashboardCat && (
                                     <div className="flex items-center gap-1.5">
-                                      {SCOPES_CONFIG.map((scope) => {
+                                      {availableScopes.map((scope) => {
                                         const count = getScopeActiveCount(mod, scope.key);
                                         const isScopeActive = count > 0;
                                         const isPopoverOpen =
@@ -1036,7 +1078,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </button>
             </div>
 
-            {/* 4 Action Checkbox Options */}
+            {/* 3 Action Checkbox Options (View, Create, Edit) */}
             <div className="space-y-1.5">
               {ACTIONS_CONFIG.map((action) => {
                 const isChecked = Boolean(

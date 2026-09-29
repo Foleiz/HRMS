@@ -42,11 +42,11 @@ public class RoleService : IRoleService
     private static readonly List<ModuleDefinition> StandardModules = new()
     {
         // 1. แดชบอร์ด (DASHBOARD)
-        new("DASHBOARD_EMPLOYEE", "แดชบอร์ดพนักงาน", "DASHBOARD_EMP", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_EMP"),
-        new("DASHBOARD_DEPT", "แดชบอร์ดหัวหน้าแผนก", "DASHBOARD_DEPT", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_DEPT"),
-        new("DASHBOARD_DIV", "แดชบอร์ดผู้จัดการฝ่าย", "DASHBOARD_DIV", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_DIV"),
-        new("DASHBOARD_CEO", "แดชบอร์ดผู้บริหาร (CEO)", "DASHBOARD_CEO", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_CEO"),
-        new("DASHBOARD_ADMIN", "แดชบอร์ดผู้ดูแลระบบ (Admin)", "DASHBOARD_ADMIN", "DASHBOARD", "แดชบอร์ด", "DASHBOARD_ADMIN"),
+        new("DASHBOARD_EMPLOYEE", "แดชบอร์ดพนักงาน", "DASHBOARD_EMP", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
+        new("DASHBOARD_DEPT", "แดชบอร์ดหัวหน้าแผนก", "DASHBOARD_DEPT", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
+        new("DASHBOARD_DIV", "แดชบอร์ดผู้จัดการฝ่าย", "DASHBOARD_DIV", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
+        new("DASHBOARD_CEO", "แดชบอร์ดผู้บริหาร (CEO)", "DASHBOARD_CEO", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
+        new("DASHBOARD_ADMIN", "แดชบอร์ดผู้ดูแลระบบ (Admin)", "DASHBOARD_ADMIN", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
 
         // 2. พนักงาน (EMPLOYEE)
         new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "พนักงาน", "EMP"),
@@ -55,22 +55,22 @@ public class RoleService : IRoleService
         new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "พนักงาน", "EMP"),
 
         // 3. เงินเดือนของฉัน (MY_SALARY)
-        new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "PAYROLL_SLIP", "MY_SALARY", "เงินเดือนของฉัน", "PAYROLL"),
+        new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
 
         // 4. โปรไฟล์ของฉัน (ESS) (MY_PROFILE)
-        new("ESS_PROFILE", "ข้อมูลและแก้ไขโปรไฟล์ส่วนบุคคล", "EMP_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน (ESS)", "EMP"),
+        new("ESS_PROFILE", "ข้อมูลและแก้ไขโปรไฟล์ส่วนบุคคล", "ESS_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน (ESS)", "ESS_PROFILE"),
 
         // 5. ยอดวันลาคงเหลือ (MY_LEAVE)
-        new("ESS_LEAVE", "ยอดวันลาคงเหลือและประวัติการลา", "LEAVE_BALANCE", "MY_LEAVE", "ยอดวันลาคงเหลือ", "LEAVE"),
+        new("ESS_LEAVE", "ยอดวันลาคงเหลือและประวัติการลา", "ESS_LEAVE", "MY_LEAVE", "ยอดวันลาคงเหลือ", "ESS_LEAVE"),
 
         // 6. บันทึกเวลาของฉัน (ESS) (MY_ATTENDANCE)
-        new("ESS_TIME", "ประวัติบันทึกเวลาของตนเอง", "TIME_DAILY", "MY_ATTENDANCE", "บันทึกเวลาของฉัน (ESS)", "TIME"),
+        new("ESS_TIME", "ประวัติบันทึกเวลาของตนเอง", "ESS_TIME", "MY_ATTENDANCE", "บันทึกเวลาของฉัน (ESS)", "ESS_TIME"),
 
         // 7. ข่าวสารสำหรับฉัน (MY_NEWS)
-        new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ORG", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ORG"),
+        new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ESS_NEWS", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ESS_NEWS"),
 
         // 8. ยื่นเอกสาร (MY_DOCS)
-        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "SETTINGS", "MY_DOCS", "ยื่นเอกสาร", "DOCS"),
+        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
 
         // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
         new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
@@ -97,10 +97,10 @@ public class RoleService : IRoleService
         new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "เงินเดือน", "PAYROLL"),
 
         // 13. การอนุมัติ (APPROVALS)
-        new("APPROVAL_LEAVE", "อนุมัติคำขอลา", "LEAVE", "APPROVALS", "การอนุมัติ", "LEAVE"),
-        new("APPROVAL_TIME", "อนุมัติเวลาเข้างานและ OT", "TIME", "APPROVALS", "การอนุมัติ", "TIME"),
-        new("APPROVAL_EMP", "อนุมัติการปรับเปลี่ยนข้อมูลพนักงาน", "EMP", "APPROVALS", "การอนุมัติ", "EMP"),
-        new("APPROVAL_PAYROLL", "อนุมัติงวดเงินเดือน", "PAYROLL", "APPROVALS", "การอนุมัติ", "PAYROLL"),
+        new("APPROVAL_LEAVE", "อนุมัติคำขอลา", "APPROVAL_LEAVE", "APPROVALS", "การอนุมัติ", "APPROVALS"),
+        new("APPROVAL_TIME", "อนุมัติเวลาเข้างานและ OT", "APPROVAL_TIME", "APPROVALS", "การอนุมัติ", "APPROVALS"),
+        new("APPROVAL_EMP", "อนุมัติการปรับเปลี่ยนข้อมูลพนักงาน", "APPROVAL_EMP", "APPROVALS", "การอนุมัติ", "APPROVALS"),
+        new("APPROVAL_PAYROLL", "อนุมัติงวดเงินเดือน", "APPROVAL_PAYROLL", "APPROVALS", "การอนุมัติ", "APPROVALS"),
 
         // 14. โครงสร้างองค์กร (ORGANIZATION)
         new("ORG_STRUCT", "ฝ่ายและแผนก", "ORG_STRUCT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
@@ -109,17 +109,17 @@ public class RoleService : IRoleService
         new("ORG_COMP", "ข้อมูลบริษัทและสาขา", "ORG_COMP", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
 
         // 15. วันทำงานและวันหยุด (WORK_CALENDAR)
-        new("WORK_CALENDAR", "ปฏิทินวันทำงานและวันหยุดประจำปี", "TIME_SCHEDULE", "WORK_CALENDAR", "วันทำงานและวันหยุด", "TIME"),
+        new("WORK_CALENDAR", "ปฏิทินวันทำงานและวันหยุดประจำปี", "WORK_CALENDAR", "WORK_CALENDAR", "วันทำงานและวันหยุด", "WORK_CALENDAR"),
 
         // 16. รายงาน (REPORT)
         new("REPORT_ATT", "รายงานการลงเวลาและวันลา", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
         new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT"),
 
         // 17. จัดการประกาศ (ANNOUNCEMENTS)
-        new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ORG", "ANNOUNCEMENTS", "จัดการประกาศ", "ORG"),
+        new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ANNOUNCEMENTS", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
 
         // 18. ข้อมูลหลัก (Master Data) (MASTER_DATA)
-        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "SETTINGS", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "MASTER_DATA"),
+        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "MASTER_DATA", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "MASTER_DATA"),
 
         // 19. ตั้งค่า (SETTINGS)
         new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่า", "SETTINGS"),
@@ -160,8 +160,69 @@ public class RoleService : IRoleService
         return roles;
     }
 
+    private async Task EnsureStandardPermissionsAsync(CancellationToken cancellationToken = default)
+    {
+        var existingPerms = await _dbContext.Permissions
+            .Select(p => p.PermissionCode)
+            .ToHashSetAsync(cancellationToken);
+
+        var toAdd = new List<Permission>();
+        var actions = new[] { "VIEW", "CREATE", "EDIT", "APPROVE" };
+
+        foreach (var mod in StandardModules)
+        {
+            foreach (var act in actions)
+            {
+                var code = $"{mod.Prefix}_{act}";
+                if (!existingPerms.Contains(code))
+                {
+                    string actionLabel = act switch
+                    {
+                        "VIEW" => "ดูข้อมูล",
+                        "CREATE" => "สร้าง/เพิ่ม",
+                        "EDIT" => "แก้ไข",
+                        "APPROVE" => "อนุมัติ",
+                        _ => act
+                    };
+
+                    toAdd.Add(new Permission
+                    {
+                        PermissionCode = code,
+                        PermissionName = $"{mod.Name} ({actionLabel})",
+                        Description = $"สิทธิ์ระดับระบบสำหรับ {mod.Name} ({actionLabel})"
+                    });
+                    existingPerms.Add(code);
+                }
+            }
+        }
+
+        // Parent permissions for backward compatibility and broad modules
+        var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW" };
+        foreach (var pCode in parentCodes)
+        {
+            if (!existingPerms.Contains(pCode))
+            {
+                toAdd.Add(new Permission
+                {
+                    PermissionCode = pCode,
+                    PermissionName = $"สิทธิ์ส่วนกลาง ({pCode})",
+                    Description = $"สิทธิ์ส่วนกลางระบบสำหรับ {pCode}"
+                });
+                existingPerms.Add(pCode);
+            }
+        }
+
+        if (toAdd.Count > 0)
+        {
+            _dbContext.Permissions.AddRange(toAdd);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<RoleDetailDto> GetRoleMatrixAsync(long roleId, CancellationToken cancellationToken = default)
     {
+        await EnsureStandardPermissionsAsync(cancellationToken);
+
         if (_matrixCache.TryGetValue(roleId, out var cached) && cached.Expiry > DateTime.UtcNow)
         {
             return cached.Data;
@@ -201,17 +262,6 @@ public class RoleService : IRoleService
             var createCode = $"{mod.Prefix}_CREATE";
             var editCode = $"{mod.Prefix}_EDIT";
             var approveCode = $"{mod.Prefix}_APPROVE";
-
-            bool hasModuleExplicitPerm = grantedPermCodes.Any(p => p.StartsWith(mod.Prefix + "_"));
-            bool hasParentView = grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_VIEW");
-            bool hasParentCreate = grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_CREATE");
-            bool hasParentEdit = grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_EDIT");
-            bool hasParentApprove = grantedPermCodes.Contains($"{mod.ParentPermissionPrefix}_APPROVE");
-
-            bool canView = grantedPermCodes.Contains(viewCode) || (hasParentView && !hasModuleExplicitPerm);
-            bool canCreate = grantedPermCodes.Contains(createCode) || (hasParentCreate && !hasModuleExplicitPerm);
-            bool canEdit = grantedPermCodes.Contains(editCode) || (hasParentEdit && !hasModuleExplicitPerm);
-            bool canApprove = grantedPermCodes.Contains(approveCode) || (hasParentApprove && !hasModuleExplicitPerm);
 
             bool HasScope(string permCode, string scopeName) => activeScopes.Contains((permCode, scopeName));
 
@@ -255,23 +305,23 @@ public class RoleService : IRoleService
                 Approve = HasScope(approveCode, "ORGANIZATION")
             };
 
-            // Legacy Fallback: หากใน role_data_scope ยังไม่มีบันทึกเลยแต่มีสิทธิ์ใน role_permission
-            if (!selfPerms.View && !teamPerms.View && !deptPerms.View && !divPerms.View && !orgPerms.View && canView)
+            // Legacy Fallback: หากใน role_permission มีสิทธิ์รหัสนี้โดยตรงอยู่แล้ว แต่ใน role_data_scope ยังไม่มีบันทึก scope ใดๆ เลย
+            if (!selfPerms.View && !teamPerms.View && !deptPerms.View && !divPerms.View && !orgPerms.View && grantedPermCodes.Contains(viewCode))
             {
                 if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.View = true;
                 else selfPerms.View = true;
             }
-            if (!selfPerms.Create && !teamPerms.Create && !deptPerms.Create && !divPerms.Create && !orgPerms.Create && canCreate)
+            if (!selfPerms.Create && !teamPerms.Create && !deptPerms.Create && !divPerms.Create && !orgPerms.Create && grantedPermCodes.Contains(createCode))
             {
                 if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Create = true;
                 else selfPerms.Create = true;
             }
-            if (!selfPerms.Edit && !teamPerms.Edit && !deptPerms.Edit && !divPerms.Edit && !orgPerms.Edit && canEdit)
+            if (!selfPerms.Edit && !teamPerms.Edit && !deptPerms.Edit && !divPerms.Edit && !orgPerms.Edit && grantedPermCodes.Contains(editCode))
             {
                 if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Edit = true;
                 else selfPerms.Edit = true;
             }
-            if (!selfPerms.Approve && !teamPerms.Approve && !deptPerms.Approve && !divPerms.Approve && !orgPerms.Approve && canApprove)
+            if (!selfPerms.Approve && !teamPerms.Approve && !deptPerms.Approve && !divPerms.Approve && !orgPerms.Approve && grantedPermCodes.Contains(approveCode))
             {
                 if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Approve = true;
                 else selfPerms.Approve = true;
@@ -418,6 +468,8 @@ public class RoleService : IRoleService
             throw new BusinessRuleException("ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)");
         }
 
+        await EnsureStandardPermissionsAsync(cancellationToken);
+
         var allPermissions = await _dbContext.Permissions.ToListAsync(cancellationToken);
         var permMap = allPermissions.ToDictionary(p => p.PermissionCode, p => p.Id);
 
@@ -519,7 +571,7 @@ public class RoleService : IRoleService
         // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติพร้อม Data Scope สูงสุด เพื่อความเข้ากันได้ (Backward Compatibility)
         foreach (var parentPref in parentPrefixList)
         {
-            if (parentPref is "SETTINGS" or "DOCS" or "MASTER_DATA") continue; // ไม่ auto-add SETTINGS_VIEW เพราะหน้าตั้งค่าระบบต้องควบคุมตามแท็บย่อย (SETTINGS_USERS_VIEW, SETTINGS_ROLES_VIEW, SETTINGS_AUDIT_VIEW)
+            if (parentPref is "SETTINGS" or "DOCS" or "MASTER_DATA" || parentPref.StartsWith("ESS_") || parentPref.StartsWith("APPROVAL") || parentPref == "WORK_CALENDAR" || parentPref == "ANNOUNCEMENTS") continue;
 
             var childModules = request.Modules
                 .Where(m => {
