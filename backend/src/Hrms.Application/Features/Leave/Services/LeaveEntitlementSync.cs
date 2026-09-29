@@ -52,9 +52,8 @@ public class LeaveEntitlementSync : ILeaveEntitlementSync
             .GroupBy(p => p.LeaveTypeId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        var assignments = await _context.EmployeeAssignments.AsNoTracking()
-            .Where(a => a.IsCurrent && empIds.Contains(a.EmployeeId))
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+        var onDate = LeavePolicyRules.PolicyDateForYear(year);
+        var groups = await LeaveEmployeeGroups.ResolveAsync(_context, empIds, onDate, cancellationToken);
 
         var hireDates = await _context.EmploymentContracts.AsNoTracking()
             .Where(c => empIds.Contains(c.EmployeeId))
@@ -72,14 +71,13 @@ public class LeaveEntitlementSync : ILeaveEntitlementSync
                 .ToListAsync(cancellationToken))
             .ToDictionary(b => (b.EmployeeId, b.LeaveTypeId));
 
-        var onDate = LeavePolicyRules.PolicyDateForYear(year);
         // ปีที่ผ่านมาแล้วเป็นประวัติ: สร้างยอดที่ขาดได้ แต่ไม่ปรับสิทธิ์ย้อนหลัง
         var allowAdjustExisting = year >= LeavePolicyRules.ThaiToday().Year;
         var changed = false;
 
         foreach (var empId in empIds)
         {
-            assignments.TryGetValue(empId, out var assign);
+            groups.TryGetValue(empId, out var group);
             hireDates.TryGetValue(empId, out var hireDate);
 
             foreach (var lt in leaveTypes)
@@ -99,7 +97,7 @@ public class LeaveEntitlementSync : ILeaveEntitlementSync
                     continue;
                 }
 
-                var policy = LeavePolicyRules.SelectPolicy(typePolicies!, assign?.EmployeeTypeId, assign?.EmployeeLevelId, onDate);
+                var policy = LeavePolicyRules.SelectPolicy(typePolicies!, group.EmployeeTypeId, group.EmployeeLevelId, onDate);
                 var entitlement = policy != null ? LeavePolicyRules.ComputeEntitlement(policy, hireDate, year) : 0m;
 
                 if (balance == null)
