@@ -23,7 +23,6 @@ import {
   CheckSquare,
   Eye,
   X,
-  Shield,
   LayoutDashboard,
   Wallet,
   User,
@@ -164,14 +163,13 @@ const SCOPES_CONFIG: {
 ];
 
 const ACTIONS_CONFIG: {
-  key: 'view' | 'create' | 'edit' | 'approve';
+  key: 'view' | 'create' | 'edit';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { key: 'view', label: 'ดูข้อมูล (View)', icon: Eye },
   { key: 'create', label: 'สร้าง (Create)', icon: Plus },
   { key: 'edit', label: 'แก้ไข (Edit)', icon: Edit2 },
-  { key: 'approve', label: 'อนุมัติ (Approve)', icon: Shield },
 ];
 
 export const RolesTab: React.FC<RolesTabProps> = ({
@@ -352,7 +350,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       );
     }
     const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
-    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.approve);
+    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit);
   };
 
   const getScopeActiveCount = (
@@ -361,7 +359,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   ): number => {
     const sc = mod[scopeKey];
     if (!sc) return 0;
-    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.approve ? 1 : 0);
+    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0);
   };
 
   /* ── Toggle Handlers ── */
@@ -469,7 +467,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const handleToggleScopeAction = (
     moduleCode: string,
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
-    actionKey: 'view' | 'create' | 'edit' | 'approve'
+    actionKey: 'view' | 'create' | 'edit'
   ) => {
     setLocalModules((prev) =>
       prev.map((m) => {
@@ -499,7 +497,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.moduleCode !== moduleCode) return m;
         return {
           ...m,
-          [scopeKey]: { view: enable, create: enable, edit: enable, approve: enable },
+          [scopeKey]: { view: enable, create: enable, edit: enable, approve: false },
         };
       })
     );
@@ -519,7 +517,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const popoverWidth = 288;
-    const popoverHeight = 280;
+    const popoverHeight = 220;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
 
@@ -572,7 +570,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             organization: { ...empty },
           };
         }
-        const full = { view: true, create: true, edit: true, approve: true };
+        const full = { view: true, create: true, edit: true, approve: false };
         return {
           ...m,
           self: { ...full },
@@ -1080,7 +1078,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </button>
             </div>
 
-            {/* 4 Action Checkbox Options */}
+            {/* 3 Action Checkbox Options (View, Create, Edit) */}
             <div className="space-y-1.5">
               {ACTIONS_CONFIG.map((action) => {
                 const isChecked = Boolean(
