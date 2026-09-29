@@ -85,7 +85,7 @@ export default function EmployeeEditPage() {
     lastName: '',
     citizenId: '',
     gender: '',
-    nationality: 'ไทย (Thai)',
+    nationality: 'ไทย',
     religion: 'พุทธ',
     birthDate: '',
     maritalStatus: '',

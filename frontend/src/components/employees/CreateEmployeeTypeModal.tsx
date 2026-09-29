@@ -107,7 +107,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEdit && !typeCode.trim()) {
-      setErrorMessage('กรุณาระบุรหัสประเภท (Type Code)');
+      setErrorMessage('กรุณาระบุรหัสประเภท');
       return;
     }
     if (!typeName.trim()) {
@@ -205,10 +205,10 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* 1. รหัสประเภท (Type Code) */}
+          {/* 1. รหัสประเภท */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              รหัสประเภท (Type Code) <span className="text-rose-500">*</span>
+              รหัสประเภท <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -224,7 +224,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             </span>
           </div>
 
-          {/* 2. ชื่อประเภทสัญญา (Type Name) */}
+          {/* 2. ชื่อประเภทสัญญา */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               ชื่อประเภทสัญญา/การจ้างงาน <span className="text-rose-500">*</span>
@@ -250,10 +250,10 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 onChange={(e) => setWageType(e.target.value)}
                 className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
               >
-                <option value="MONTHLY">รายเดือน (Monthly)</option>
-                <option value="DAILY">รายวัน (Daily)</option>
-                <option value="HOURLY">รายชั่วโมง (Hourly)</option>
-                <option value="STIPEND">เบี้ยเลี้ยง / ค่าตอบแทนพิเศษ (Stipend)</option>
+                <option value="MONTHLY">รายเดือน</option>
+                <option value="DAILY">รายวัน</option>
+                <option value="HOURLY">รายชั่วโมง</option>
+                <option value="STIPEND">เบี้ยเลี้ยง / ค่าตอบแทนพิเศษ</option>
               </select>
             </div>
 
@@ -266,8 +266,8 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
               >
-                <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
+                <option value="ACTIVE">เปิดใช้งาน</option>
+                <option value="INACTIVE">ปิดการใช้งาน</option>
               </select>
             </div>
           </div>
