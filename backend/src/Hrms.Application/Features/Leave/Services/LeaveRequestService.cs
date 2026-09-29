@@ -10,11 +10,13 @@ public partial class LeaveRequestService : ILeaveRequestService
 {
     private readonly IHrmsDbContext _context;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly ILeaveEntitlementSync _entitlementSync;
 
-    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow)
+    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow, ILeaveEntitlementSync entitlementSync)
     {
         _context = context;
         _approvalWorkflow = approvalWorkflow;
+        _entitlementSync = entitlementSync;
     }
 
     public async Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(

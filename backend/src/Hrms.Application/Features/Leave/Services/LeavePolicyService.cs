@@ -8,11 +8,17 @@ namespace Hrms.Application.Features.Leave.Services;
 public class LeavePolicyService : ILeavePolicyService
 {
     private readonly IHrmsDbContext _context;
+    private readonly ILeaveEntitlementSync _sync;
 
-    public LeavePolicyService(IHrmsDbContext context)
+    public LeavePolicyService(IHrmsDbContext context, ILeaveEntitlementSync sync)
     {
         _context = context;
+        _sync = sync;
     }
+
+    /// <summary>สิทธิ์การลาเปลี่ยน → คำนวณสิทธิ์ปีนี้ของยอดวันลาประเภทนั้นใหม่ทันที</summary>
+    private Task SyncCurrentYearAsync(long leaveTypeId, CancellationToken cancellationToken) =>
+        _sync.SyncAsync(LeavePolicyRules.ThaiToday().Year, null, leaveTypeId, cancellationToken);
 
     public async Task<List<LeavePolicyDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -136,7 +142,7 @@ public class LeavePolicyService : ILeavePolicyService
         _context.LeavePolicies.Add(policy);
         await _context.SaveChangesAsync(cancellationToken);
 
-        await ApplyToUnallocatedBalancesAsync(policy.LeaveTypeId, leaveType.LeaveName, cancellationToken);
+        await SyncCurrentYearAsync(policy.LeaveTypeId, cancellationToken);
 
         return (await GetByIdAsync(policy.Id, cancellationToken))!;
     }
@@ -178,9 +184,7 @@ public class LeavePolicyService : ILeavePolicyService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var leaveTypeName = await _context.LeaveTypes.AsNoTracking()
-            .Where(t => t.Id == policy.LeaveTypeId).Select(t => t.LeaveName).FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
-        await ApplyToUnallocatedBalancesAsync(policy.LeaveTypeId, leaveTypeName, cancellationToken);
+        await SyncCurrentYearAsync(policy.LeaveTypeId, cancellationToken);
 
         return (await GetByIdAsync(policy.Id, cancellationToken))!;
     }
@@ -190,8 +194,10 @@ public class LeavePolicyService : ILeavePolicyService
         var policy = await _context.LeavePolicies.FindAsync([id], cancellationToken);
         if (policy == null) return false;
 
+        var leaveTypeId = policy.LeaveTypeId;
         _context.LeavePolicies.Remove(policy);
         await _context.SaveChangesAsync(cancellationToken);
+        await SyncCurrentYearAsync(leaveTypeId, cancellationToken);
         return true;
     }
 
@@ -227,54 +233,6 @@ public class LeavePolicyService : ILeavePolicyService
         if (duplicate)
             throw new InvalidOperationException(
                 "มีสิทธิ์การลาของประเภทการลาและกลุ่มพนักงานนี้อยู่แล้วในช่วงเวลาเดียวกัน กรุณาแก้ไขรายการเดิมแทนการสร้างใหม่");
-    }
-
-    /// <summary>
-    /// จัดสรรโควตาให้ยอดวันลาปีปัจจุบันที่ยังไม่เคยได้รับโควตา (สิทธิ์ 0 และยังไม่เคยใช้)
-    /// โดยเลือกนโยบายที่ตรงกับพนักงานแต่ละคนด้วยกฎเดียวกับการยื่นลา
-    /// </summary>
-    private async Task ApplyToUnallocatedBalancesAsync(long leaveTypeId, string leaveTypeName, CancellationToken cancellationToken)
-    {
-        var year = LeavePolicyRules.ThaiToday().Year;
-        var balances = await _context.LeaveBalances
-            .Where(b => b.LeaveTypeId == leaveTypeId && b.Year == year && b.AnnualQuotaDays == 0 && b.UsedDays == 0)
-            .ToListAsync(cancellationToken);
-        if (balances.Count == 0) return;
-
-        var policies = await _context.LeavePolicies.AsNoTracking()
-            .Where(p => p.LeaveTypeId == leaveTypeId)
-            .ToListAsync(cancellationToken);
-        var empIds = balances.Select(b => b.EmployeeId).Distinct().ToList();
-        var assignments = await _context.EmployeeAssignments.AsNoTracking()
-            .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
-        var hireDates = await _context.EmploymentContracts.AsNoTracking()
-            .Where(c => empIds.Contains(c.EmployeeId))
-            .GroupBy(c => c.EmployeeId)
-            .Select(g => new { EmployeeId = g.Key, HireDate = g.Min(c => c.StartDate) })
-            .ToDictionaryAsync(x => x.EmployeeId, x => (DateOnly?)x.HireDate, cancellationToken);
-        var onDate = LeavePolicyRules.PolicyDateForYear(year);
-
-        foreach (var b in balances)
-        {
-            assignments.TryGetValue(b.EmployeeId, out var assign);
-            var policy = LeavePolicyRules.SelectPolicy(policies, assign?.EmployeeTypeId, assign?.EmployeeLevelId, onDate);
-            if (policy == null) continue;
-            hireDates.TryGetValue(b.EmployeeId, out var hireDate);
-            var entitlement = LeavePolicyRules.ComputeEntitlement(policy, hireDate, year);
-            if (entitlement <= 0) continue;
-
-            b.AnnualQuotaDays = entitlement;
-            b.NetRemainingLeaveDays = b.BroughtForwardDays + entitlement + b.ActiveCarriedForwardDays - b.UsedDays + b.AdjustedDays;
-            b.Transactions.Add(new LeaveBalanceTransaction
-            {
-                TransactionType = "ENTITLEMENT",
-                Amount = entitlement,
-                Note = $"จัดสรรโควตาวันลาอัตโนมัติตามนโยบาย '{leaveTypeName}'",
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
 }

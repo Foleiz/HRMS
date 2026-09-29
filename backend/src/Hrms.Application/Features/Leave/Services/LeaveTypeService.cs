@@ -8,10 +8,12 @@ namespace Hrms.Application.Features.Leave.Services;
 public class LeaveTypeService : ILeaveTypeService
 {
     private readonly IHrmsDbContext _context;
+    private readonly ILeaveEntitlementSync _sync;
 
-    public LeaveTypeService(IHrmsDbContext context)
+    public LeaveTypeService(IHrmsDbContext context, ILeaveEntitlementSync sync)
     {
         _context = context;
+        _sync = sync;
     }
 
     public async Task<List<LeaveTypeDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -79,63 +81,11 @@ public class LeaveTypeService : ILeaveTypeService
         _context.LeaveTypes.Add(leaveType);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Auto-create leave balances for all active employees if status is ACTIVE
+        // สร้างยอดวันลาประเภทนี้ให้พนักงานทุกคน (ปีปัจจุบัน) — สิทธิ์ปีนี้คำนวณจากสิทธิ์การลา
+        // (ไม่ใช้ "โควตาเริ่มต้น" จากฟอร์มประเภทการลาอีกต่อไป ตั้งจำนวนวันที่แท็บสิทธิ์การลาที่เดียว)
         if (leaveType.Status == "ACTIVE")
         {
-            var employees = await _context.Employees
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-
-            if (employees.Count > 0)
-            {
-                var existingYears = await _context.LeaveBalances
-                    .AsNoTracking()
-                    .Select(b => b.Year)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-
-                var currentYear = DateTime.UtcNow.Year;
-                if (!existingYears.Contains(currentYear))
-                {
-                    existingYears.Add(currentYear);
-                }
-
-                var quota = request.DefaultAnnualQuotaDays ?? 0;
-                var balancesToAdd = new List<LeaveBalance>();
-
-                foreach (var y in existingYears)
-                {
-                    foreach (var emp in employees)
-                    {
-                        var bal = new LeaveBalance
-                        {
-                            EmployeeId = emp.Id,
-                            LeaveTypeId = leaveType.Id,
-                            Year = y,
-                            BroughtForwardDays = 0,
-                            AnnualQuotaDays = quota,
-                            ActiveCarriedForwardDays = 0,
-                            UsedDays = 0,
-                            AdjustedDays = 0,
-                            NetRemainingLeaveDays = quota,
-                            Transactions = new List<LeaveBalanceTransaction>
-                            {
-                                new LeaveBalanceTransaction
-                                {
-                                    TransactionType = "ENTITLEMENT",
-                                    Amount = quota,
-                                    Note = $"เพิ่มยอดวันลาอัตโนมัติจากการเพิ่มประเภทการลา '{leaveType.LeaveName}'",
-                                    CreatedAt = DateTime.UtcNow
-                                }
-                            }
-                        };
-                        balancesToAdd.Add(bal);
-                    }
-                }
-
-                _context.LeaveBalances.AddRange(balancesToAdd);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
+            await _sync.SyncAsync(LeavePolicyRules.ThaiToday().Year, null, leaveType.Id, cancellationToken);
         }
 
         return new LeaveTypeDto
@@ -168,6 +118,10 @@ public class LeaveTypeService : ILeaveTypeService
             leaveType.FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory);
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (leaveType.Status == "ACTIVE")
+        {
+            await _sync.SyncAsync(LeavePolicyRules.ThaiToday().Year, null, leaveType.Id, cancellationToken);
+        }
 
         return new LeaveTypeDto
         {
