@@ -258,6 +258,14 @@ public class LeaveBalanceService : ILeaveBalanceService
             .Where(a => a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
+        // วันเริ่มงาน (สัญญาฉบับแรก) — ใช้คิดสิทธิ์ตามสัดส่วนในปีที่เริ่มงาน
+        var hireDates = await _context.EmploymentContracts
+            .AsNoTracking()
+            .GroupBy(c => c.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, HireDate = g.Min(c => c.StartDate) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => (DateOnly?)x.HireDate, cancellationToken);
+        var policyDate = LeavePolicyRules.PolicyDateForYear(targetYear);
+
         var newBalances = new List<LeaveBalance>();
         var upgradedCount = 0;
 
@@ -269,12 +277,11 @@ public class LeaveBalanceService : ILeaveBalanceService
 
             foreach (var lt in leaveTypes)
             {
-                var policy = policies
-                    .Where(p => p.LeaveTypeId == lt.Id && (p.EmployeeTypeId == null || p.EmployeeTypeId == empTypeId))
-                    .OrderByDescending(p => p.EmployeeLevelId == empLevelId)
-                    .FirstOrDefault();
+                var policy = LeavePolicyRules.SelectPolicy(
+                    policies.Where(p => p.LeaveTypeId == lt.Id), empTypeId, empLevelId, policyDate);
 
-                var entitlement = policy?.EntitlementDays ?? 0;
+                hireDates.TryGetValue(emp.Id, out var hireDate);
+                var entitlement = policy != null ? LeavePolicyRules.ComputeEntitlement(policy, hireDate, targetYear) : 0m;
                 decimal carriedDays = 0;
                 DateOnly? carryExpiry = null;
 
@@ -282,10 +289,8 @@ public class LeaveBalanceService : ILeaveBalanceService
                 {
                     if (prevBalances.TryGetValue((emp.Id, lt.Id), out var prevBalance) && prevBalance.NetRemainingLeaveDays > 0)
                     {
-                        var maxCarried = policy.EntitlementDays;
-                        carriedDays = Math.Min(prevBalance.NetRemainingLeaveDays, maxCarried);
-                        var expiryMonths = policy.CarryForwardExpiryMonths ?? policy.CarryForwardMaxMonths ?? 3;
-                        carryExpiry = new DateOnly(targetYear, 1, 1).AddMonths(expiryMonths);
+                        carriedDays = Math.Min(prevBalance.NetRemainingLeaveDays, LeavePolicyRules.CarryForwardMaxDays(policy));
+                        carryExpiry = new DateOnly(targetYear, 1, 1).AddMonths(LeavePolicyRules.CarryForwardExpiryMonths(policy));
                     }
                 }
 

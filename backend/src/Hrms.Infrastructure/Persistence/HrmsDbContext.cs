@@ -1155,6 +1155,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.QuotaUnit).HasColumnName("quota_unit").HasMaxLength(20).IsRequired();
             entity.Property(e => e.IsPaidLeave).HasColumnName("is_paid_leave").IsRequired();
             entity.Property(e => e.DocumentDescription).HasColumnName("document_description");
+            entity.Property(e => e.FormCategory).HasColumnName("form_category").HasMaxLength(20);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
         });
 
@@ -1181,6 +1182,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.MaxLifetimeOccurrences).HasColumnName("max_lifetime_occurrences");
             entity.Property(e => e.MaxDaysPerOccurrence).HasColumnName("max_days_per_occurrence").HasPrecision(8, 2);
             entity.Property(e => e.MaxOccurrencesPerYear).HasColumnName("max_occurrences_per_year");
+            entity.Property(e => e.CarryForwardMaxDays).HasColumnName("carry_forward_max_days").HasPrecision(8, 2);
+            entity.Property(e => e.MaxBackdateDays).HasColumnName("max_backdate_days");
+            entity.Property(e => e.ProrationMethod).HasColumnName("proration_method").HasMaxLength(20).IsRequired();
 
             entity.HasOne(e => e.LeaveType)
                 .WithMany(t => t.LeavePolicies)

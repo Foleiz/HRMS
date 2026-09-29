@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
-import { LeaveType, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
+import { X, Loader2, Info } from 'lucide-react';
+import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -13,6 +13,42 @@ interface LeaveTypeModalProps {
   onSubmitUpdate: (id: number, data: UpdateLeaveTypePayload) => Promise<void>;
 }
 
+/** หมวดในแบบฟอร์มใบลา (ใช้ติ๊กในเอกสารใบลา และเป็นแม่แบบตอนตั้งสิทธิ์การลา) */
+export const LEAVE_FORM_CATEGORIES: { value: LeaveFormCategory; label: string; hint: string }[] = [
+  { value: 'SICK', label: 'ลาป่วย', hint: 'เจ็บป่วย พบแพทย์' },
+  { value: 'PERSONAL', label: 'ลากิจส่วนตัว', hint: 'ธุระส่วนตัวที่จำเป็น' },
+  { value: 'VACATION', label: 'ลาพักร้อน', hint: 'วันหยุดพักผ่อนประจำปี' },
+  { value: 'SPECIAL', label: 'ลาพิเศษ', hint: 'ลาคลอด ลาบวช ลาทหาร ฯลฯ' },
+];
+
+/** เดาหมวดจากรหัส/ชื่อ (ข้อมูลเดิมที่ยังไม่ได้ตั้งหมวด) */
+export const inferFormCategory = (code?: string | null, name?: string | null): LeaveFormCategory => {
+  const c = (code || '').toUpperCase();
+  const n = name || '';
+  if (c.includes('SICK') || n.includes('ป่วย')) return 'SICK';
+  if (c.includes('PERSONAL') || c.includes('BUSINESS') || n.includes('กิจ')) return 'PERSONAL';
+  if (c.includes('ANNUAL') || c.includes('VACATION') || n.includes('พักร้อน') || n.includes('พักผ่อน')) return 'VACATION';
+  return 'SPECIAL';
+};
+
+const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    onClick={() => onChange(!checked)}
+    className={`w-12 h-6 shrink-0 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${
+      checked ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
+    }`}
+  >
+    <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+  </button>
+);
+
+/**
+ * ฟอร์ม "ประเภทการลา" — ตอบคำถามว่า "ลาอะไร" เท่านั้น
+ * จำนวนวันและเงื่อนไขทั้งหมดไปตั้งที่ "สิทธิ์การลา" (ที่เดียว ไม่ซ้ำซ้อน)
+ */
 export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
   isOpen,
   onClose,
@@ -25,8 +61,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   const [leaveCode, setLeaveCode] = useState('');
   const [leaveName, setLeaveName] = useState('');
-  const [quotaUnit, setQuotaUnit] = useState<'HOUR' | 'DAY' | 'MONTH'>('DAY');
-  const [documentDescription, setDocumentDescription] = useState('');
+  const [formCategory, setFormCategory] = useState<LeaveFormCategory>('SPECIAL');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
   const [isActive, setIsActive] = useState(true);
 
@@ -37,18 +72,16 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
     if (leaveTypeToEdit) {
       setLeaveCode(leaveTypeToEdit.leaveCode);
       setLeaveName(leaveTypeToEdit.leaveName);
-      setQuotaUnit(
-        leaveTypeToEdit.quotaUnit === 'HOUR' ? 'HOUR' :
-        leaveTypeToEdit.quotaUnit === 'MONTH' ? 'MONTH' : 'DAY'
+      setFormCategory(
+        (leaveTypeToEdit.formCategory as LeaveFormCategory) ||
+          inferFormCategory(leaveTypeToEdit.leaveCode, leaveTypeToEdit.leaveName)
       );
-      setDocumentDescription(leaveTypeToEdit.documentDescription || '');
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
     } else {
       setLeaveCode('');
       setLeaveName('');
-      setQuotaUnit('DAY');
-      setDocumentDescription('');
+      setFormCategory('SPECIAL');
       setIsPaidLeave(true);
       setIsActive(true);
     }
@@ -59,8 +92,9 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!leaveCode.trim() && !isEditing) {
-      setError('กรุณาระบุรหัสประเภทการลา');
+    const code = leaveCode.trim().toUpperCase();
+    if (!isEditing && !/^[A-Z0-9_]{2,30}$/.test(code)) {
+      setError('รหัสใช้ได้เฉพาะตัวอักษรภาษาอังกฤษพิมพ์ใหญ่ ตัวเลข และ _ (2–30 ตัว) เช่น SICK, ANNUAL');
       return;
     }
     if (!leaveName.trim()) {
@@ -70,30 +104,32 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
     setLoading(true);
     setError(null);
-
     try {
       if (isEditing && leaveTypeToEdit) {
         await onSubmitUpdate(leaveTypeToEdit.id, {
           leaveName: leaveName.trim(),
-          quotaUnit,
+          quotaUnit: 'DAY',
           isPaidLeave,
-          documentDescription: documentDescription.trim() || undefined,
+          // ไม่มีช่องนี้ในฟอร์มแล้ว — ส่งค่าเดิมกลับไปเพื่อไม่ให้ข้อมูลหาย
+          documentDescription: leaveTypeToEdit.documentDescription || undefined,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
+          formCategory,
         });
       } else {
         await onSubmitCreate({
-          leaveCode: leaveCode.trim().toUpperCase(),
+          leaveCode: code,
           leaveName: leaveName.trim(),
-          quotaUnit,
+          quotaUnit: 'DAY',
           isPaidLeave,
-          documentDescription: documentDescription.trim() || undefined,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
+          formCategory,
         });
       }
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } catch (err: unknown) {
+      const e2 = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(e2?.response?.data?.message || e2?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setLoading(false);
     }
@@ -107,155 +143,98 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           <h3 className="text-lg font-semibold text-gray-800 text-center flex-1">
             {isEditing ? 'แก้ไขประเภทการลา' : 'เพิ่มประเภทการลา'}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
-              {error}
+          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>}
+
+          {/* ชื่อ + รหัส */}
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            <div className="sm:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">ชื่อประเภทการลา *</label>
+              <input
+                type="text"
+                placeholder="เช่น ลาพักร้อน"
+                value={leaveName}
+                onChange={(e) => setLeaveName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                required
+              />
             </div>
-          )}
-
-          {/* รหัสประเภท */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              รหัสประเภทวันลา *
-            </label>
-            <input
-              type="text"
-              disabled={isEditing}
-              placeholder="เช่น SICK, ANNUAL, PERSONAL"
-              value={leaveCode}
-              onChange={(e) => setLeaveCode(e.target.value.toUpperCase())}
-              className={`w-full px-3.5 py-2.5 rounded-xl border ${
-                isEditing ? 'bg-gray-50 text-gray-500 border-gray-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-              } text-sm`}
-              required
-            />
-          </div>
-
-          {/* ชื่อประเภท */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              ชื่อประเภทวันลา *
-            </label>
-            <input
-              type="text"
-              placeholder="เช่น ลาพักร้อน"
-              value={leaveName}
-              onChange={(e) => setLeaveName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              required
-            />
-          </div>
-
-          {/* ประเภทการคำนวณ (quota_unit) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              ประเภทการคำนวณ
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setQuotaUnit('HOUR')}
-                className={`py-2 text-sm font-medium rounded-xl border transition-all ${
-                  quotaUnit === 'HOUR'
-                    ? 'bg-blue-100 text-blue-700 border-blue-300 font-semibold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">รหัส *</label>
+              <input
+                type="text"
+                disabled={isEditing}
+                placeholder="เช่น ANNUAL"
+                value={leaveCode}
+                onChange={(e) => setLeaveCode(e.target.value.toUpperCase().replace(/\s/g, '_'))}
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono ${
+                  isEditing ? 'bg-gray-50 text-gray-500 border-gray-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                 }`}
-              >
-                ชั่วโมง
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuotaUnit('DAY')}
-                className={`py-2 text-sm font-medium rounded-xl border transition-all ${
-                  quotaUnit === 'DAY'
-                    ? 'bg-blue-100 text-blue-700 border-blue-300 font-semibold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                วัน
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuotaUnit('MONTH')}
-                className={`py-2 text-sm font-medium rounded-xl border transition-all ${
-                  quotaUnit === 'MONTH'
-                    ? 'bg-blue-100 text-blue-700 border-blue-300 font-semibold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                เดือน
-              </button>
+                required
+              />
             </div>
           </div>
+          <p className="-mt-3 text-xs text-gray-400">รหัสใช้อ้างอิงในระบบ แก้ไขไม่ได้หลังบันทึก</p>
 
-          {/* เอกสารที่ต้องแนบ (ข้อความอ้างอิง) */}
+          {/* หมวดแบบฟอร์ม */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              เอกสารที่ต้องแนบ (ข้อความอ้างอิง)
-            </label>
-            <input
-              type="text"
-              placeholder="เช่น ลา 3 วันขึ้นไปต้องมีใบรับรองแพทย์"
-              value={documentDescription}
-              onChange={(e) => setDocumentDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">หมวดในแบบฟอร์มใบลา</label>
+            <div className="grid grid-cols-2 gap-2">
+              {LEAVE_FORM_CATEGORIES.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setFormCategory(c.value)}
+                  className={`text-left px-3.5 py-2.5 rounded-xl border transition-all ${
+                    formCategory === c.value
+                      ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300'
+                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className={`block text-sm font-medium ${formCategory === c.value ? 'text-blue-700' : 'text-gray-700'}`}>
+                    {c.label}
+                  </span>
+                  <span className="block text-xs text-gray-400">{c.hint}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-gray-400">ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา</p>
           </div>
 
-          {/* Toggles Card */}
+          {/* สวิตช์ */}
           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-            {/* รับค่าจ้างระหว่างลา (paid) */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <span className="text-sm font-medium text-gray-800 block">รับค่าจ้างระหว่างลา (paid)</span>
-                <span className="text-xs text-gray-400">รวมยอดเป็นฐานคำนวณภาษีหัก ณ ที่จ่าย</span>
+                <span className="text-sm font-medium text-gray-800 block">ได้รับค่าจ้างระหว่างลา</span>
+                <span className="text-xs text-gray-400">ปิด = ลาไม่รับค่าจ้าง ระบบเงินเดือนจะหักตามจำนวนวันลา</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsPaidLeave(!isPaidLeave)}
-                className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${
-                  isPaidLeave ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
-              </button>
+              <Toggle checked={isPaidLeave} onChange={setIsPaidLeave} />
             </div>
-
-            {/* เปิดใช้งาน */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200/60">
+            <div className="flex items-center justify-between gap-4 pt-3 border-t border-gray-200/60">
               <div>
                 <span className="text-sm font-medium text-gray-800 block">เปิดใช้งาน</span>
-                <span className="text-xs text-gray-400">ปิดไว้เพื่อระงับการใช้งานชั่วคราวโดยไม่ลบข้อมูล</span>
+                <span className="text-xs text-gray-400">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsActive(!isActive)}
-                className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${
-                  isActive ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
-              </button>
+              <Toggle checked={isActive} onChange={setIsActive} />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-            >
+          {/* ขั้นต่อไป */}
+          <div className="flex gap-2.5 p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 text-xs text-blue-800">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              จำนวนวันลาต่อปีและเงื่อนไขต่าง ๆ (อายุงาน ยื่นล่วงหน้า เอกสารแนบ ยกยอด) ตั้งที่แท็บ <b>สิทธิ์การลา</b>
+              {!isEditing && ' หลังบันทึกประเภทการลานี้'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-1">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
               ยกเลิก
             </button>
             <button

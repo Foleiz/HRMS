@@ -45,6 +45,8 @@ export interface LeavePreviewData {
   positionTitle?: string | null;
   leaveTypeCode?: string | null;
   leaveTypeName?: string | null;
+  /** หมวดแบบฟอร์มที่ตั้งไว้ในประเภทการลา (ถ้ามี ใช้แทนการเดาจากรหัส/ชื่อ) */
+  leaveFormCategory?: string | null;
   reason?: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -183,7 +185,9 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
   approvalSlots,
 }) => {
   const submission = parseDate(data.submissionDate) || new Date();
-  const category = toLeaveCategory(data.leaveTypeCode, data.leaveTypeName);
+  const category =
+    (LEAVE_CATEGORIES.some((c) => c.key === data.leaveFormCategory) ? (data.leaveFormCategory as LeaveCategory) : null) ??
+    toLeaveCategory(data.leaveTypeCode, data.leaveTypeName);
   const last = data.lastLeave;
   const lastCategory = last ? toLeaveCategory(last.leaveTypeCode, last.leaveTypeName) : null;
   const subject = data.leaveTypeName ? `ขอ${data.leaveTypeName.startsWith('ลา') ? '' : 'ลา'}${data.leaveTypeName}` : 'ขอลา';

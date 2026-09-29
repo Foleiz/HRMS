@@ -6,7 +6,15 @@ export interface LeaveType {
   isPaidLeave: boolean;
   documentDescription?: string | null;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  /** หมวดในแบบฟอร์มใบลา */
+  formCategory?: LeaveFormCategory | null;
 }
+
+/** หมวดในแบบฟอร์มใบลา: ป่วย / กิจส่วนตัว / พักร้อน / ลาพิเศษ */
+export type LeaveFormCategory = 'SICK' | 'PERSONAL' | 'VACATION' | 'SPECIAL';
+
+/** วิธีคิดสิทธิ์ปีแรกของพนักงานใหม่ */
+export type LeaveProrationMethod = 'FULL' | 'PRORATA_MONTHLY';
 
 export interface CreateLeaveTypePayload {
   leaveCode: string;
@@ -15,6 +23,8 @@ export interface CreateLeaveTypePayload {
   isPaidLeave: boolean;
   documentDescription?: string;
   status: string;
+  defaultAnnualQuotaDays?: number;
+  formCategory?: LeaveFormCategory | null;
 }
 
 export interface UpdateLeaveTypePayload {
@@ -23,6 +33,7 @@ export interface UpdateLeaveTypePayload {
   isPaidLeave: boolean;
   documentDescription?: string;
   status: string;
+  formCategory?: LeaveFormCategory | null;
 }
 
 export interface LeavePolicy {
@@ -48,6 +59,11 @@ export interface LeavePolicy {
   maxLifetimeOccurrences?: number | null;
   maxDaysPerOccurrence?: number | null;
   maxOccurrencesPerYear?: number | null;
+  /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
+  carryForwardMaxDays?: number | null;
+  /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
+  maxBackdateDays?: number | null;
+  prorationMethod?: LeaveProrationMethod | string;
 }
 
 export interface CreateLeavePolicyPayload {
@@ -68,6 +84,11 @@ export interface CreateLeavePolicyPayload {
   maxLifetimeOccurrences?: number | null;
   maxDaysPerOccurrence?: number | null;
   maxOccurrencesPerYear?: number | null;
+  /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
+  carryForwardMaxDays?: number | null;
+  /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
+  maxBackdateDays?: number | null;
+  prorationMethod?: LeaveProrationMethod | string;
 }
 
 export interface UpdateLeavePolicyPayload {
@@ -82,11 +103,16 @@ export interface UpdateLeavePolicyPayload {
   isDocumentRequired: boolean;
   documentRequiredAfterDays?: number | null;
   isAllowedDuringProbation: boolean;
-  effectiveFrom: string;
+  effectiveFrom?: string | null;
   effectiveTo?: string | null;
   maxLifetimeOccurrences?: number | null;
   maxDaysPerOccurrence?: number | null;
   maxOccurrencesPerYear?: number | null;
+  /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
+  carryForwardMaxDays?: number | null;
+  /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
+  maxBackdateDays?: number | null;
+  prorationMethod?: LeaveProrationMethod | string;
 }
 
 export interface LeaveBalance {
@@ -285,4 +311,13 @@ export interface LeaveDaysCalculation {
   workingDates: string[];
   leaveDays: number;
   leaveHours: number;
+}
+
+/** ผลตรวจกฎการลาล่วงหน้า (dry-run) — ผลเดียวกับที่ server ใช้ตอนยื่นจริง */
+export interface LeaveValidationResult {
+  leaveDays: number;
+  isValid: boolean;
+  errors: string[];
+  requiresDocument: boolean;
+  policySummary?: string | null;
 }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
-import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation } from '@/types/leave';
+import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
@@ -164,6 +164,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       positionTitle: profile.positionTitle,
       leaveTypeCode: selectedType?.leaveCode,
       leaveTypeName: selectedType?.leaveName,
+      leaveFormCategory: selectedType?.formCategory,
       reason,
       startDate,
       endDate: endDate || startDate,
@@ -187,9 +188,41 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return leavePolicies.find((p) => p.leaveTypeId === leaveTypeId) || null;
   }, [leaveTypeId, leavePolicies]);
 
-  const isDocumentRecommended =
-    !!applicablePolicy?.isDocumentRequired &&
-    (applicablePolicy.documentRequiredAfterDays == null || leaveDays >= applicablePolicy.documentRequiredAfterDays);
+  // ตรวจกฎการลาล่วงหน้ากับ server (ผลเดียวกับตอนยื่นจริง): ลาซ้อน, สิทธิ์ตามกลุ่มพนักงาน, ทดลองงาน,
+  // อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ
+  const validationKey =
+    leaveTypeId && calcKey ? `${leaveTypeId}|${calcKey}|${attachment ? 1 : 0}|${draftId ?? ''}` : '';
+  const [validation, setValidation] = useState<{ key: string; data: LeaveValidationResult | null } | null>(null);
+
+  useEffect(() => {
+    if (!validationKey || !leaveTypeId) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      leaveService
+        .validateMyLeaveRequest({
+          leaveTypeId: Number(leaveTypeId),
+          startDatetime: new Date(`${startDate}T00:00:00`).toISOString(),
+          endDatetime: new Date(`${endDate}T23:59:59`).toISOString(),
+          leaveDays: leaveFormat === 'HALF_DAY' ? 0.5 : 1,
+          hasAttachment: !!attachment,
+          draftId,
+        })
+        .then((data) => active && setValidation({ key: validationKey, data }))
+        .catch(() => active && setValidation({ key: validationKey, data: null }));
+    }, 350);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [validationKey, leaveTypeId, startDate, endDate, leaveFormat, attachment, draftId]);
+
+  const currentValidation = validationKey && validation?.key === validationKey ? validation.data : null;
+  const validationErrors = currentValidation?.errors ?? [];
+
+  const isDocumentRecommended = currentValidation
+    ? currentValidation.requiresDocument
+    : !!applicablePolicy?.isDocumentRequired &&
+      (applicablePolicy.documentRequiredAfterDays == null || leaveDays >= applicablePolicy.documentRequiredAfterDays);
 
   const selectedBalance = useMemo(
     () => (leaveTypeId ? balances.find((b) => b.leaveTypeId === leaveTypeId) : undefined),
@@ -536,10 +569,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
           {isDocumentRecommended && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-800 mb-1">ต้องใช้ใบรับรองแพทย์</p>
+              <p className="text-sm font-semibold text-amber-800 mb-1">ต้องแนบเอกสารประกอบ</p>
               <p className="text-xs text-amber-700 mb-3">
-                เนื่องจากลาป่วยตั้งแต่ {applicablePolicy?.documentRequiredAfterDays} วันขึ้นไป กรุณาแนบใบรับรองแพทย์
-                (สามารถแนบได้ตอนนี้หรือแนบทีหลังได้)
+                ตามเงื่อนไขของการลาประเภทนี้ ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์) ก่อนยื่นคำขอ
               </p>
               <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-amber-300 bg-white text-sm text-gray-500 cursor-pointer hover:bg-amber-50/50 transition-colors">
                 <Paperclip className="w-4 h-4 shrink-0" />
@@ -555,6 +587,23 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           )}
         </div>
       </div>
+
+      {/* ─── ผลตรวจเงื่อนไขการลา ─────────────────────── */}
+      {currentValidation?.policySummary && (
+        <p className="mt-6 text-xs text-gray-500">
+          <span className="font-medium text-gray-600">เงื่อนไขของการลาประเภทนี้:</span> {currentValidation.policySummary}
+        </p>
+      )}
+      {validationErrors.length > 0 && (
+        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-700 mb-1.5">ยังยื่นคำขอนี้ไม่ได้</p>
+          <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700">
+            {validationErrors.map((msg) => (
+              <li key={msg}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ─── Actions ─────────────────────────────────── */}
       <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
@@ -578,7 +627,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         </button>
         <button
           type="submit"
-          disabled={loading || savingDraft}
+          disabled={loading || savingDraft || validationErrors.length > 0}
           className="px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors flex items-center gap-2 shadow-sm"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
