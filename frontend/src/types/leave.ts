@@ -275,3 +275,15 @@ export interface MyLeaveSummary {
   allBalances: LeaveBalance[];
 }
 
+/** ผลคำนวณจำนวนวันลาจาก server (นับเฉพาะวันทำงานตาม "วันทำงานประจำสัปดาห์" และไม่นับวันหยุดบริษัท) */
+export interface LeaveDaysCalculation {
+  startDate: string;
+  endDate: string;
+  isHalfDay: boolean;
+  calendarDays: number;
+  nonWorkingDays: number;
+  holidays: { date: string; name: string }[];
+  workingDates: string[];
+  leaveDays: number;
+  leaveHours: number;
+}

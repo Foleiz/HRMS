@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useImperativeHandle, useMemo, useState } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
-import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
+import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation } from '@/types/leave';
+import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 
@@ -112,14 +113,41 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     });
   };
 
+  // จำนวนวันลาคำนวณจาก server: นับเฉพาะวันทำงานตามเมนู "วันทำงานประจำสัปดาห์" และไม่นับวันหยุดบริษัท
+  // (ค่าเดียวกับที่ระบบใช้ตรวจโควตาและตัดยอดจริง)
+  const calcKey = startDate && endDate && endDate >= startDate ? `${startDate}|${endDate}|${leaveFormat}` : '';
+  const [dayCalc, setDayCalc] = useState<{ key: string; data: LeaveDaysCalculation | null } | null>(null);
+
+  useEffect(() => {
+    if (!calcKey) return;
+    let active = true;
+    leaveService
+      .calculateLeaveDays(startDate, endDate, leaveFormat === 'HALF_DAY')
+      .then((data) => active && setDayCalc({ key: calcKey, data }))
+      .catch(() => active && setDayCalc({ key: calcKey, data: null }));
+    return () => {
+      active = false;
+    };
+  }, [calcKey, startDate, endDate, leaveFormat]);
+
+  const currentCalc = calcKey && dayCalc?.key === calcKey ? dayCalc : null;
+  const isCalculatingDays = !!calcKey && !currentCalc;
+
   const leaveDays = useMemo(() => {
-    if (!startDate || !endDate) return 0;
-    if (leaveFormat === 'HALF_DAY') return 0.5;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return diff > 0 ? diff : 0;
-  }, [startDate, endDate, leaveFormat]);
+    if (!calcKey) return 0;
+    if (currentCalc?.data) return currentCalc.data.leaveDays;
+    // สำรองกรณีเรียก server ไม่ได้: นับจันทร์–ศุกร์ (server จะคำนวณซ้ำตอนยื่นจริงเสมอ)
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+    let count = 0;
+    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+    }
+    if (leaveFormat === 'HALF_DAY') return count > 0 ? 0.5 : 0;
+    return count;
+  }, [calcKey, currentCalc, startDate, endDate, leaveFormat]);
+
+  const excludedDays = currentCalc?.data ? currentCalc.data.nonWorkingDays + currentCalc.data.holidays.length : 0;
 
   const leaveHours = leaveDays * 8;
 
@@ -175,8 +203,24 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return requests.filter((r) => r.leaveTypeId === leaveTypeId && r.status !== 'CANCELLED' && r.status !== 'REJECTED').length;
   }, [leaveTypeId, requests]);
 
+  // วันลาที่ "รออนุมัติ" ของใบอื่นในปีเดียวกัน ถูกกันโควตาไว้แล้ว (ระบบตรวจแบบเดียวกันตอนยื่น)
+  const pendingDays = useMemo(() => {
+    if (!leaveTypeId) return 0;
+    const year = startDate ? startDate.slice(0, 4) : String(new Date().getFullYear());
+    return requests
+      .filter(
+        (r) =>
+          r.leaveTypeId === leaveTypeId &&
+          r.status === 'PENDING' &&
+          r.id !== draftId &&
+          String(new Date(r.startDatetime).getFullYear()) === year
+      )
+      .reduce((sum, r) => sum + (r.leaveDays || 0), 0);
+  }, [leaveTypeId, requests, draftId, startDate]);
+
+  const availableDays = selectedBalance ? Math.max(0, selectedBalance.netRemainingLeaveDays - pendingDays) : null;
   const projectedTotalDays = usedDaysSoFar + leaveDays;
-  const withinQuota = selectedBalance ? leaveDays <= selectedBalance.netRemainingLeaveDays : true;
+  const withinQuota = availableDays == null ? true : leaveDays <= availableDays;
 
   const resetForm = () => {
     setForm(emptyState);
@@ -426,8 +470,20 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">มีกำหนด (วัน)</label>
             <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600">
-              {leaveDays > 0 ? `${leaveDays} วัน (คำนวณอัตโนมัติ)` : 'คำนวณอัตโนมัติ'}
+              {isCalculatingDays
+                ? 'กำลังคำนวณ...'
+                : leaveDays > 0
+                  ? `${leaveDays} วัน${excludedDays > 0 ? ` (ไม่นับวันหยุด ${excludedDays} วัน)` : ''}`
+                  : calcKey
+                    ? 'ช่วงที่เลือกเป็นวันหยุดทั้งหมด'
+                    : 'คำนวณอัตโนมัติ'}
             </div>
+            {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
+              <p className="mt-1 text-2xs text-gray-400">
+                วันหยุดบริษัทในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
+              </p>
+            )}
+            <p className="mt-1 text-2xs text-gray-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
           {leaveTypeId !== '' && (
@@ -451,6 +507,13 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   </div>
                 </div>
               </div>
+              {availableDays != null && (
+                <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
+                  ใช้ได้อีก {availableDays} วัน
+                  {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
+                  {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
+                </p>
+              )}
             </div>
           )}
 
