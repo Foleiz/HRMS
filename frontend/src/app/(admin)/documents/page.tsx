@@ -75,8 +75,8 @@ export default function DocumentsHubPage() {
         <p className="text-sm text-gray-500">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
       </div>
 
-      {/* Option Cards — ตาราง 2 x 2 กึ่งกลางหน้า: ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-4xl mx-auto">
+      {/* Option Cards — ตาราง 2 x 2 เต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {DOCUMENT_OPTIONS.map((opt) => {
           const card = (
             <div
