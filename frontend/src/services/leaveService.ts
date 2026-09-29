@@ -14,6 +14,7 @@ import {
   InitializeYearBalanceResult,
   LeaveRequest,
   LeaveDaysCalculation,
+  LeaveValidationResult,
   LeaveStats,
   CreateLeaveRequestPayload,
   CreateMyLeaveRequestPayload,
@@ -168,6 +169,19 @@ export const leaveService = {
     const res = await apiClient.get<ApiResponse<LeaveDaysCalculation>>('/leave-requests/calculate-days', {
       params: { startDate, endDate, halfDay },
     });
+    return res.data.data;
+  },
+
+  /** [ESS] ตรวจกฎการลาล่วงหน้า (ไม่บันทึกข้อมูล) */
+  async validateMyLeaveRequest(data: {
+    leaveTypeId: number;
+    startDatetime: string;
+    endDatetime: string;
+    leaveDays: number;
+    hasAttachment: boolean;
+    draftId?: number;
+  }): Promise<LeaveValidationResult> {
+    const res = await apiClient.post<ApiResponse<LeaveValidationResult>>('/leave-requests/my/validate', data);
     return res.data.data;
   },
 

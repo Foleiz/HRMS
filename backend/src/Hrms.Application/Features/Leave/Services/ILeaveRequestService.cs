@@ -32,6 +32,9 @@ public interface ILeaveRequestService
     /// <summary>คำนวณจำนวนวันลา (นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท)</summary>
     Task<LeaveDaysCalculationDto> CalculateLeaveDaysAsync(DateOnly startDate, DateOnly endDate, bool isHalfDay = false, CancellationToken cancellationToken = default);
 
+    /// <summary>ตรวจกฎการลาล่วงหน้า (dry-run) — ผลเดียวกับที่ใช้ตอนยื่นจริง</summary>
+    Task<LeaveValidationResultDto> ValidateLeaveRequestAsync(long employeeId, long leaveTypeId, DateTime startDatetime, DateTime endDatetime, decimal requestedDays, bool hasAttachment, long? excludeRequestId, CancellationToken cancellationToken = default);
+
     Task<LeaveRequestDto> ApproveAsync(long id, long? approverId = null, string? comment = null, CancellationToken cancellationToken = default);
     Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, CancellationToken cancellationToken = default);
 

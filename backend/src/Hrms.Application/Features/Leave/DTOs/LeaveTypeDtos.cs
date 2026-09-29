@@ -9,6 +9,7 @@ public record LeaveTypeDto
     public bool IsPaidLeave { get; init; } = true;
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
+    public string? FormCategory { get; init; }
 }
 
 public record CreateLeaveTypeRequest
@@ -19,6 +20,7 @@ public record CreateLeaveTypeRequest
     public bool IsPaidLeave { get; init; } = true;
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
+    public string? FormCategory { get; init; }
     public decimal? DefaultAnnualQuotaDays { get; init; } = 0;
 }
 
@@ -29,4 +31,5 @@ public record UpdateLeaveTypeRequest
     public bool IsPaidLeave { get; init; } = true;
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
+    public string? FormCategory { get; init; }
 }
