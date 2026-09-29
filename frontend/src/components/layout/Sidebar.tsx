@@ -187,6 +187,14 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/approvals',
     icon: CheckCircle2,
     requiredPermissions: [
+      'APPROVAL_LEAVE_VIEW',
+      'APPROVAL_LEAVE_APPROVE',
+      'APPROVAL_TIME_VIEW',
+      'APPROVAL_TIME_APPROVE',
+      'APPROVAL_EMP_VIEW',
+      'APPROVAL_EMP_APPROVE',
+      'APPROVAL_PAYROLL_VIEW',
+      'APPROVAL_PAYROLL_APPROVE',
       'LEAVE_APPROVE',
       'TIME_APPROVE',
       'EMP_APPROVE',
@@ -218,6 +226,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/work-calendar',
     icon: CalendarDays,
     requiredPermissions: [
+      'WORK_CALENDAR_VIEW',
       'TIME_VIEW',
       'TIME_SCHEDULE_VIEW',
       'TIME_DAILY_VIEW',
@@ -241,6 +250,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/announcements',
     icon: Megaphone,
     requiredPermissions: [
+      'ANNOUNCEMENTS_VIEW',
       'SYS_ADMIN',
       'ORG_VIEW',
     ],
@@ -251,6 +261,7 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/master',
     icon: Database,
     requiredPermissions: [
+      'MASTER_DATA_VIEW',
       'SETTINGS_VIEW',
       'SYS_ADMIN',
       'ORG_VIEW',

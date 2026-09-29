@@ -67,6 +67,14 @@ export const ROUTE_RULES: RouteRule[] = [
     matchPrefix: '/approvals',
     title: 'การอนุมัติ',
     requiredPermissions: [
+      'APPROVAL_LEAVE_VIEW',
+      'APPROVAL_LEAVE_APPROVE',
+      'APPROVAL_TIME_VIEW',
+      'APPROVAL_TIME_APPROVE',
+      'APPROVAL_EMP_VIEW',
+      'APPROVAL_EMP_APPROVE',
+      'APPROVAL_PAYROLL_VIEW',
+      'APPROVAL_PAYROLL_APPROVE',
       'LEAVE_APPROVE',
       'TIME_APPROVE',
       'EMP_APPROVE',
@@ -86,7 +94,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/work-calendar',
     title: 'วันทำงานและวันหยุด',
-    requiredPermissions: ['TIME_VIEW', 'TIME_SCHEDULE_VIEW', 'TIME_DAILY_VIEW', 'SYS_ADMIN'],
+    requiredPermissions: ['WORK_CALENDAR_VIEW', 'TIME_VIEW', 'TIME_SCHEDULE_VIEW', 'TIME_DAILY_VIEW', 'SYS_ADMIN'],
   },
   {
     matchPrefix: '/reports',
@@ -96,17 +104,17 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/announcements',
     title: 'จัดการประกาศ',
-    requiredPermissions: ['SYS_ADMIN', 'ORG_VIEW'],
+    requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'SYS_ADMIN', 'ORG_VIEW'],
   },
   {
     matchPrefix: '/master',
     title: 'ข้อมูลหลัก (Master Data)',
-    requiredPermissions: ['SETTINGS_VIEW', 'SYS_ADMIN', 'ORG_VIEW'],
+    requiredPermissions: ['MASTER_DATA_VIEW', 'SETTINGS_VIEW', 'SYS_ADMIN', 'ORG_VIEW'],
   },
   {
     matchPrefix: '/settings',
     title: 'ตั้งค่า',
-    requiredPermissions: ['SETTINGS_USERS_VIEW', 'SETTINGS_ROLES_VIEW', 'SETTINGS_AUDIT_VIEW', 'SETTINGS_APPROVAL_FLOWS_MANAGE', 'SYS_ADMIN'],
+    requiredPermissions: ['SETTINGS_USERS_VIEW', 'SETTINGS_ROLES_VIEW', 'SETTINGS_AUDIT_VIEW', 'SETTINGS_APPROVAL_FLOWS_MANAGE', 'SETTINGS_VIEW', 'SYS_ADMIN'],
   },
 ];
 
