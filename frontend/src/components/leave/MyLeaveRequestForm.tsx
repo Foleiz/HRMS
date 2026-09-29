@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Paperclip, Sun, Clock3, Phone, Save } from 'lucide-react';
+import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
+import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -17,6 +18,8 @@ interface MyLeaveRequestFormProps {
   balances: LeaveBalance[];
   requests: LeaveRequest[];
   profile: EmployeeProfileSummary;
+  /** รหัสพนักงานผู้ลา ใช้ดึงรูปลายเซ็นและจำลองสายการอนุมัติในตัวอย่างเอกสาร */
+  employeeId?: number | null;
   /** ถ้ามาจากหน้า "ประวัติเอกสาร" เพื่อแก้ไขแบบร่างเดิมต่อ จะถูกโหลดข้อมูลมาเติมในฟอร์มให้อัตโนมัติ */
   initialDraft?: LeaveRequest;
   /** ยื่นคำขอลาจริง — draftId ถ้ามีคือกำลังยื่นจากแบบร่างเดิม (จะอัปเดตใบเดิมแทนสร้างใหม่) */
@@ -84,6 +87,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   balances,
   requests,
   profile,
+  employeeId,
   initialDraft,
   onSubmit,
   onSaveDraft,
@@ -93,6 +97,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const { leaveTypeId, startDate, endDate, leaveFormat, reason, contactDuringLeave, attachment } = form;
 
@@ -117,6 +122,37 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   }, [startDate, endDate, leaveFormat]);
 
   const leaveHours = leaveDays * 8;
+
+  // ข้อมูลสำหรับตัวอย่างเอกสารใบลา (ใช้ค่าที่กรอกในฟอร์ม ณ ตอนนี้)
+  const previewData = useMemo<LeavePreviewData>(() => {
+    const selectedType = leaveTypes.find((t) => t.id === leaveTypeId);
+    // การลาครั้งสุดท้ายที่ได้รับอนุมัติแล้ว (ไม่นับใบที่กำลังกรอก)
+    const lastApproved = requests
+      .filter((r) => r.status === 'APPROVED' && r.id !== draftId)
+      .sort((a, b) => (b.startDatetime || '').localeCompare(a.startDatetime || ''))[0];
+    return {
+      employeeId,
+      employeeName: profile.fullName,
+      positionTitle: profile.positionTitle,
+      leaveTypeCode: selectedType?.leaveCode,
+      leaveTypeName: selectedType?.leaveName,
+      reason,
+      startDate,
+      endDate: endDate || startDate,
+      leaveDays,
+      isHalfDay: leaveFormat === 'HALF_DAY',
+      contactDuringLeave,
+      lastLeave: lastApproved
+        ? {
+            leaveTypeCode: lastApproved.leaveTypeCode,
+            leaveTypeName: lastApproved.leaveTypeName,
+            startDate: lastApproved.startDatetime || lastApproved.startDate,
+            endDate: lastApproved.endDatetime || lastApproved.endDate,
+            leaveDays: lastApproved.leaveDays ?? lastApproved.totalDays,
+          }
+        : null,
+    };
+  }, [leaveTypes, leaveTypeId, requests, draftId, employeeId, profile.fullName, profile.positionTitle, reason, startDate, endDate, leaveDays, leaveFormat, contactDuringLeave]);
 
   const applicablePolicy = useMemo(() => {
     if (!leaveTypeId) return null;
@@ -461,6 +497,15 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
         <button
           type="button"
+          onClick={() => setShowPreview(true)}
+          disabled={loading || savingDraft}
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          ดูตัวอย่างเอกสาร
+        </button>
+        <button
+          type="button"
           onClick={handleSaveDraft}
           disabled={loading || savingDraft}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
@@ -477,6 +522,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           ยื่นคำขอลา
         </button>
       </div>
+
+      <LeavePreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} data={showPreview ? previewData : null} />
     </form>
   );
 });

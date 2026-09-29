@@ -2,25 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Sarabun } from 'next/font/google';
 import { X, Printer, FileText } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { approvalService } from '@/services/approvalService';
 import { employeeService } from '@/services/employeeService';
 import { useAuth } from '@/context/AuthContext';
+import {
+  sarabun,
+  DEFAULT_COMPANY_ADDRESS,
+  Fill,
+  type ApprovalSlot,
+  getSlotHeading,
+  DEFAULT_SLOTS,
+  getSlotPositions,
+  toThaiShortDate,
+  SignatureCell,
+  EmptyCell,
+} from './documentFormParts';
 import type { ApprovalTimeline } from '@/types/leave';
-import { APPROVER_TYPE_LABELS, type ApprovalStep } from '@/types/approval';
-
-// ฟอนต์เอกสารราชการ/ฟอร์มบริษัท ให้ใกล้เคียงต้นฉบับ Word (TH Sarabun)
-const sarabun = Sarabun({
-  weight: ['400', '500', '700'],
-  subsets: ['thai', 'latin'],
-  display: 'swap',
-});
-
-// ที่อยู่บริษัทตามต้นฉบับเอกสาร (ใช้เมื่อยังไม่ได้ตั้งค่าที่อยู่ในหน้าข้อมูลบริษัท)
-const DEFAULT_COMPANY_ADDRESS = '451/14 M.Pantiya Suwinthawong 11, Saensab, Minburi, Bangkok 10510';
+import { type ApprovalStep } from '@/types/approval';
 
 export interface ResignationPreviewModalProps {
   isOpen: boolean;
@@ -201,144 +202,6 @@ const extractPrefixAndName = (fullName?: string, explicitPrefix?: string): Extra
 
 type ResignationData = NonNullable<ResignationPreviewModalProps['data']>;
 
-/** ช่องกรอกแบบเส้นประ (เหมือนจุดไข่ปลาในต้นฉบับ) พร้อมข้อความที่กรอกอยู่ด้านบนเส้น */
-const Fill: React.FC<{ value?: React.ReactNode; minWidth: string; align?: 'center' | 'left' }> = ({
-  value,
-  minWidth,
-  align = 'center',
-}) => (
-  <span
-    style={{
-      display: 'inline-block',
-      minWidth,
-      borderBottom: '1px dotted #000',
-      lineHeight: 1.15,
-      textAlign: align,
-      padding: '0 1.5mm',
-      verticalAlign: 'baseline',
-    }}
-  >
-    {value || ' '}
-  </span>
-);
-
-/** ช่องลงนามหนึ่งช่องในตาราง "ผลการพิจารณา" (สร้างตามขั้นตอนของสายการอนุมัติ) */
-export interface ApprovalSlot {
-  stepNo: number;
-  approverType: string;
-  /** ชื่อบทบาท / ชื่อบุคคล (สำหรับ ROLE / EMPLOYEE) */
-  approverLabel?: string | null;
-  /** ตำแหน่งที่แสดงล่วงหน้า เช่น "กรรมการผู้จัดการ" */
-  positionHint?: string | null;
-  /** ข้อมูลเมื่ออนุมัติแล้ว */
-  signedName?: string | null;
-  signedEmployeeId?: number | null;
-  signedDate?: string | null;
-  /** สถานะขั้นตอน (จาก timeline): COMPLETED, WAITING, PENDING_FUTURE, REJECTED */
-  status?: string | null;
-  /** true = แสดงข้อมูลผู้อนุมัติล่วงหน้า (ยังไม่ได้กดอนุมัติ) */
-  isPreviewSignature?: boolean;
-}
-
-/**
- * หัวข้อช่องลงนาม = ชื่อตามที่ตั้งค่าในสายการอนุมัติตรง ๆ
- * - ระบุตามบทบาท → ชื่อบทบาท, ระบุตัวบุคคล → ชื่อพนักงาน
- * - ประเภทแบบเดิม (หัวหน้าแผนก, หัวหน้าฝ่าย ฯลฯ) → ชื่อประเภทตามหน้าตั้งค่า
- */
-const getSlotHeading = (slot: ApprovalSlot): string => {
-  const type = (slot.approverType || '').toUpperCase();
-  if (type === 'ROLE' || type === 'EMPLOYEE') {
-    return slot.approverLabel?.trim() || APPROVER_TYPE_LABELS[type] || type;
-  }
-  return APPROVER_TYPE_LABELS[type] || slot.approverLabel?.trim() || type;
-};
-
-/** ช่องลงนามเริ่มต้น (ใช้เมื่อยังไม่พบสายการอนุมัติ) — ตรงกับต้นฉบับ 3 ขั้นตอน */
-const DEFAULT_SLOTS: ApprovalSlot[] = [
-  { stepNo: 1, approverType: 'ROLE', approverLabel: 'ผู้บังคับบัญชาพิจารณาเห็นชอบ' },
-  { stepNo: 2, approverType: 'ROLE', approverLabel: 'ฝ่ายบุคคลรับทราบเพื่อดำเนินการ' },
-  { stepNo: 3, approverType: 'ROLE', approverLabel: 'อนุมัติโดยกรรมการผู้จัดการ', positionHint: 'กรรมการผู้จัดการ' },
-];
-
-/**
- * ตำแหน่งช่องในตาราง 2 x 2 (แถว, คอลัมน์) ตามจำนวนขั้นตอน
- * - 3 ขั้นตอน: ซ้ายบน, ซ้ายล่าง, ขวาล่าง (ขวาบนว่าง) — ตามต้นฉบับ
- * - 4 ขั้นตอน: ซ้ายบน, ขวาบน, ซ้ายล่าง, ขวาล่าง
- */
-const getSlotPositions = (count: number): Array<[number, number]> => {
-  if (count <= 1) return [[0, 0]];
-  if (count === 2) return [[0, 0], [1, 0]];
-  if (count === 3) return [[0, 0], [1, 0], [1, 1]];
-  return Array.from({ length: count }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
-};
-
-const toThaiShortDate = (iso?: string | null): string | null => {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
-};
-
-/** รูปลายเซ็นของผู้อนุมัติ (แจ้ง onError เมื่อไม่มีรูป เพื่อแสดงชื่อแทน) */
-const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () => void }> = ({ employeeId, onError }) => {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={getAvatarUrl(`/api/employees/${employeeId}/signature`) || ''}
-      alt="ลายเซ็นผู้อนุมัติ"
-      onError={onError}
-      style={{
-        position: 'absolute',
-        left: '50%',
-        bottom: '0.3mm',
-        transform: 'translateX(-50%)',
-        height: '9mm',
-        maxWidth: '48mm',
-        objectFit: 'contain',
-        pointerEvents: 'none',
-      }}
-    />
-  );
-};
-
-/** กล่องลงนามในตารางผลการพิจารณา */
-const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = ({ slot, heading }) => {
-  // มีรูปลายเซ็น → แสดงรูปบนเส้น, ไม่มีรูป → แสดงชื่อผู้อนุมัติแทน
-  const [signatureFailed, setSignatureFailed] = useState(false);
-  const showSignature = !!slot.signedEmployeeId && !signatureFailed;
-  return (
-  <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
-    <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
-    {/* เว้นระยะด้านบนให้พอสำหรับรูปลายเซ็น ไม่ให้ชนเส้นหัวตาราง */}
-    <div style={{ padding: '9mm 2mm 1mm 2mm' }}>
-      <div>
-        ลงชื่อ
-        <span
-          style={{
-            position: 'relative',
-            display: 'inline-block',
-            minWidth: '58mm',
-            borderBottom: '1px dotted #000',
-            lineHeight: 1.15,
-            textAlign: 'center',
-            padding: '0 1.5mm',
-          }}
-        >
-          {showSignature ? '\u00A0' : slot.signedName || '\u00A0'}
-          {showSignature && slot.signedEmployeeId ? (
-            <ApproverSignatureImg employeeId={slot.signedEmployeeId} onError={() => setSignatureFailed(true)} />
-          ) : null}
-        </span>
-      </div>
-      <div>ตำแหน่ง<Fill value={slot.positionHint || (slot.approverType === 'CEO' ? 'กรรมการผู้จัดการ' : '')} minWidth="54.5mm" /></div>
-      <div>วันที่<Fill value={slot.signedDate} minWidth="60mm" /></div>
-    </div>
-  </td>
-  );
-};
-
-/** ช่องว่างในตาราง (ไม่มีเส้นขอบ ตามต้นฉบับ) */
-const EmptyCell: React.FC = () => <td style={{ width: '50%', border: 'none', padding: 0 }} />;
 
 /**
  * หน้ากระดาษ A4 (210 x 297 มม.) ของใบลาออก — จัดวางตามต้นฉบับ "ใบลาออก-2025-Rev 1.pdf"
