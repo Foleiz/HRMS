@@ -189,6 +189,10 @@ public partial class LeaveRequestService : ILeaveRequestService
         // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
         if (!request.IsDraft)
         {
+            // กฎการลาตามนโยบาย (ลาซ้อน, ทดลองงาน, อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ)
+            await EnsureLeaveRulesAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
+                request.LeaveDays, request.AttachmentData is { Length: > 0 }, null, cancellationToken);
+
             var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(request.EmployeeId, request.LeaveTypeId, year, request.EmployeeId, cancellationToken);
             await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: null, cancellationToken);
         }
@@ -268,6 +272,11 @@ public partial class LeaveRequestService : ILeaveRequestService
         if (!request.IsDraft)
         {
             var year = ToThaiDate(request.StartDatetime).Year;
+            var hasAttachment = request.AttachmentData is { Length: > 0 }
+                || await _context.LeaveRequestDocuments.AnyAsync(d => d.LeaveRequestId == leaveRequest.Id, cancellationToken);
+            await EnsureLeaveRulesAsync(leaveRequest.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
+                request.LeaveDays, hasAttachment, leaveRequest.Id, cancellationToken);
+
             var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(leaveRequest.EmployeeId, request.LeaveTypeId, year, leaveRequest.EmployeeId, cancellationToken);
             await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: leaveRequest.Id, cancellationToken);
         }

@@ -27,7 +27,8 @@ public class LeaveTypeService : ILeaveTypeService
                 QuotaUnit = t.QuotaUnit,
                 IsPaidLeave = t.IsPaidLeave,
                 DocumentDescription = t.DocumentDescription,
-                Status = t.Status
+                Status = t.Status,
+                FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName)
             })
             .ToListAsync(cancellationToken);
     }
@@ -48,7 +49,8 @@ public class LeaveTypeService : ILeaveTypeService
             QuotaUnit = t.QuotaUnit,
             IsPaidLeave = t.IsPaidLeave,
             DocumentDescription = t.DocumentDescription,
-            Status = t.Status
+            Status = t.Status,
+            FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName)
         };
     }
 
@@ -69,7 +71,9 @@ public class LeaveTypeService : ILeaveTypeService
             QuotaUnit = request.QuotaUnit.ToUpper(),
             IsPaidLeave = request.IsPaidLeave,
             DocumentDescription = string.IsNullOrWhiteSpace(request.DocumentDescription) ? null : request.DocumentDescription.Trim(),
-            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper()
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper(),
+            FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory)
+                           ?? LeavePolicyRules.InferFormCategory(request.LeaveCode, request.LeaveName)
         };
 
         _context.LeaveTypes.Add(leaveType);
@@ -142,7 +146,8 @@ public class LeaveTypeService : ILeaveTypeService
             QuotaUnit = leaveType.QuotaUnit,
             IsPaidLeave = leaveType.IsPaidLeave,
             DocumentDescription = leaveType.DocumentDescription,
-            Status = leaveType.Status
+            Status = leaveType.Status,
+            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName)
         };
     }
 
@@ -159,6 +164,8 @@ public class LeaveTypeService : ILeaveTypeService
         leaveType.IsPaidLeave = request.IsPaidLeave;
         leaveType.DocumentDescription = string.IsNullOrWhiteSpace(request.DocumentDescription) ? null : request.DocumentDescription.Trim();
         leaveType.Status = request.Status.ToUpper();
+        if (!string.IsNullOrWhiteSpace(request.FormCategory))
+            leaveType.FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory);
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -170,7 +177,8 @@ public class LeaveTypeService : ILeaveTypeService
             QuotaUnit = leaveType.QuotaUnit,
             IsPaidLeave = leaveType.IsPaidLeave,
             DocumentDescription = leaveType.DocumentDescription,
-            Status = leaveType.Status
+            Status = leaveType.Status,
+            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName)
         };
     }
 

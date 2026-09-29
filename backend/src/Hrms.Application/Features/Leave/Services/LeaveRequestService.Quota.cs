@@ -151,12 +151,12 @@ public partial class LeaveRequestService
         var assign = await _context.EmployeeAssignments
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
-        var policy = policies
-            .Where(p => p.EmployeeTypeId == null || p.EmployeeTypeId == assign?.EmployeeTypeId)
-            .OrderByDescending(p => p.EmployeeLevelId == assign?.EmployeeLevelId)
-            .FirstOrDefault();
+        var policy = LeavePolicyRules.SelectPolicy(
+            policies, assign?.EmployeeTypeId, assign?.EmployeeLevelId, LeavePolicyRules.PolicyDateForYear(year));
 
-        var entitlement = policy?.EntitlementDays ?? 0m;
+        // ปีที่เริ่มงาน: คิดสิทธิ์ตามสัดส่วน (ถ้านโยบายกำหนด)
+        var hireDate = await GetHireDateAsync(employeeId, cancellationToken);
+        var entitlement = policy != null ? LeavePolicyRules.ComputeEntitlement(policy, hireDate, year) : 0m;
         decimal carriedDays = 0m;
         DateOnly? carryExpiry = null;
         if (policy != null && policy.IsCarryForwardAllowed)
@@ -166,9 +166,8 @@ public partial class LeaveRequestService
                 .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year - 1, cancellationToken);
             if (prev != null && prev.NetRemainingLeaveDays > 0)
             {
-                carriedDays = Math.Min(prev.NetRemainingLeaveDays, policy.EntitlementDays);
-                var expiryMonths = policy.CarryForwardExpiryMonths ?? policy.CarryForwardMaxMonths ?? 3;
-                carryExpiry = new DateOnly(year, 1, 1).AddMonths(expiryMonths);
+                carriedDays = Math.Min(prev.NetRemainingLeaveDays, LeavePolicyRules.CarryForwardMaxDays(policy));
+                carryExpiry = new DateOnly(year, 1, 1).AddMonths(LeavePolicyRules.CarryForwardExpiryMonths(policy));
             }
         }
 
@@ -219,6 +218,13 @@ public partial class LeaveRequestService
         RecalculateNetRemaining(balance);
         return (balance, isQuotaControlled);
     }
+
+    /// <summary>วันเริ่มงาน = วันเริ่มสัญญาจ้างฉบับแรก (null = ไม่มีข้อมูลสัญญา)</summary>
+    private async Task<DateOnly?> GetHireDateAsync(long employeeId, CancellationToken cancellationToken) =>
+        await _context.EmploymentContracts.AsNoTracking()
+            .Where(c => c.EmployeeId == employeeId)
+            .Select(c => (DateOnly?)c.StartDate)
+            .MinAsync(cancellationToken);
 
     private static void RecalculateNetRemaining(LeaveBalance balance)
     {

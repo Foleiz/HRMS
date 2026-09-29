@@ -297,6 +297,26 @@ public class LeaveRequestsController : ControllerBase
     /// <summary>
     /// [ESS] ยื่นคำขอลาใหม่ด้วยตนเอง (แนบไฟล์หลักฐาน/ใบรับรองแพทย์ได้)
     /// </summary>
+    /// <summary>
+    /// [ESS] ตรวจกฎการลาล่วงหน้า (ไม่บันทึกข้อมูล) — หน้าฟอร์มใช้แสดงข้อผิดพลาดก่อนกดยื่น
+    /// ผลเดียวกับที่ระบบตรวจตอนยื่นจริง (ลาซ้อน, สิทธิ์ตามกลุ่มพนักงาน, ทดลองงาน, อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ)
+    /// </summary>
+    [HttpPost("my/validate")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveValidationResultDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ValidateMyRequest(
+        [FromBody] ValidateMyLeaveRequestModel model,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<LeaveValidationResultDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var result = await _requestService.ValidateLeaveRequestAsync(
+            employeeId, model.LeaveTypeId, model.StartDatetime, model.EndDatetime, model.LeaveDays,
+            model.HasAttachment, model.DraftId, cancellationToken);
+        return Ok(ApiResponse<LeaveValidationResultDto>.Ok(result, result.IsValid ? "ผ่านเงื่อนไขการลา" : "ไม่ผ่านเงื่อนไขการลา"));
+    }
+
     [HttpPost("my")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -511,6 +531,18 @@ public class CancelLeaveRequestModel
 /// Model รับข้อมูลยื่นคำขอลาด้วยตนเอง (ESS) — ไม่มี EmployeeId เพราะอ่านจาก JWT Token เท่านั้น
 /// ป้องกันไม่ให้พนักงานยื่นคำขอแทนคนอื่นได้
 /// </summary>
+/// <summary>ข้อมูลสำหรับตรวจกฎการลาล่วงหน้า</summary>
+public class ValidateMyLeaveRequestModel
+{
+    public long LeaveTypeId { get; set; }
+    public DateTime StartDatetime { get; set; }
+    public DateTime EndDatetime { get; set; }
+    public decimal LeaveDays { get; set; }
+    public bool HasAttachment { get; set; }
+    /// <summary>กำลังยื่นจากแบบร่างใบเดิม (ไม่นับใบนี้ตอนตรวจลาซ้อน/จำนวนครั้ง)</summary>
+    public long? DraftId { get; set; }
+}
+
 public class CreateMyLeaveRequestModel
 {
     public long LeaveTypeId { get; set; }

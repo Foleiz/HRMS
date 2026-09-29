@@ -34,7 +34,7 @@ import {
   LeaveBalanceAdjustmentPayload,
 } from '@/types/leave';
 import { Employee } from '@/types/employee';
-import { LeaveTypeModal } from '@/components/leave/LeaveTypeModal';
+import { LeaveTypeModal, LEAVE_FORM_CATEGORIES, inferFormCategory } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
@@ -418,16 +418,9 @@ export default function LeaveManagementPage() {
     return Array.from(map.values());
   }, [filteredBalances]);
 
-  const quotaUnitDisplay = (unit: string) => {
-    switch (unit) {
-      case 'HOUR':
-        return 'ชั่วโมง';
-      case 'MONTH':
-        return 'เดือน';
-      case 'DAY':
-      default:
-        return 'วัน';
-    }
+  const formCategoryDisplay = (type: LeaveType) => {
+    const cat = type.formCategory || inferFormCategory(type.leaveCode, type.leaveName);
+    return LEAVE_FORM_CATEGORIES.find((c) => c.value === cat)?.label || '-';
   };
 
   if (!canViewAnyLeave) {
@@ -514,9 +507,9 @@ export default function LeaveManagementPage() {
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
-                    <th className="py-3.5 px-4 text-center">หน่วยนับ</th>
+                    <th className="py-3.5 px-4 text-center">หมวดในใบลา</th>
                     <th className="py-3.5 px-4 text-center">รับค่าจ้าง</th>
-                    <th className="py-3.5 px-4">เอกสารที่ต้องแนบ</th>
+                    <th className="py-3.5 px-4">สิทธิ์การลาที่ตั้งไว้</th>
                     <th className="py-3.5 px-4 text-center">สถานะ</th>
                     <th className="py-3.5 px-4 text-center">จัดการ</th>
                   </tr>
@@ -544,7 +537,7 @@ export default function LeaveManagementPage() {
                           <div className="text-xs text-gray-400 uppercase tracking-wide">{type.leaveCode}</div>
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600">
-                          {quotaUnitDisplay(type.quotaUnit)}
+                          {formCategoryDisplay(type)}
                         </td>
                         <td className="py-4 px-4 text-center">
                           <span
@@ -558,7 +551,14 @@ export default function LeaveManagementPage() {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-gray-600">
-                          {type.documentDescription || '-'}
+                          {(() => {
+                            const count = leavePolicies.filter((p) => p.leaveTypeId === type.id).length;
+                            return count > 0 ? (
+                              <span className="text-gray-700">{count} รายการ</span>
+                            ) : (
+                              <span className="text-amber-600 text-xs">ยังไม่ตั้ง — พนักงานยังไม่มีโควตา</span>
+                            );
+                          })()}
                         </td>
                         <td className="py-4 px-4 text-center">
                           <span
@@ -652,7 +652,8 @@ export default function LeaveManagementPage() {
                           <span className="font-semibold text-gray-800">{policy.leaveTypeName}</span>
                         </td>
                         <td className="py-4 px-4 text-gray-600">
-                          {policy.employeeLevelName || 'ทุกระดับ'}
+                          <span className="block text-gray-700">{policy.employeeTypeName || 'ทุกประเภทพนักงาน'}</span>
+                          <span className="block text-xs text-gray-400">{policy.employeeLevelName || 'ทุกระดับ'}</span>
                         </td>
                         <td className="py-4 px-4 text-center font-bold text-gray-900">
                           {policy.entitlementDays} วัน
@@ -661,12 +662,12 @@ export default function LeaveManagementPage() {
                           {policy.minimumServiceDays > 0 ? `${policy.minimumServiceDays} วัน` : 'ไม่กำหนด'}
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600">
-                          {policy.advanceRequestDays > 0 ? `${policy.advanceRequestDays} วัน` : 'ไม่กำหนด'}
+                          {policy.advanceRequestDays > 0 ? `${policy.advanceRequestDays} วัน` : 'วันเดียวกันได้'}
                         </td>
                         <td className="py-4 px-4 text-center">
                           {policy.isDocumentRequired ? (
                             <span className="text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full text-xs font-medium border border-amber-200">
-                              ใช่ {policy.documentRequiredAfterDays !== null ? `(≥${policy.documentRequiredAfterDays} วัน)` : ''}
+                              {policy.documentRequiredAfterDays ? `ลา ≥ ${policy.documentRequiredAfterDays} วัน` : 'ทุกครั้ง'}
                             </span>
                           ) : (
                             <span className="text-gray-400 text-xs">ไม่ต้อง</span>
@@ -675,7 +676,7 @@ export default function LeaveManagementPage() {
                         <td className="py-4 px-4">
                           {policy.isCarryForwardAllowed ? (
                             <span className="text-blue-700 font-medium text-xs">
-                              สูงสุด {policy.carryForwardMaxMonths || policy.entitlementDays} วัน · หมดอายุ {policy.carryForwardExpiryMonths ? `${policy.carryForwardExpiryMonths * 30} วัน` : '-'}
+                              สูงสุด {policy.carryForwardMaxDays ?? policy.entitlementDays} วัน · ใช้ภายใน {policy.carryForwardExpiryMonths || 3} เดือน
                             </span>
                           ) : (
                             <span className="text-gray-400 text-xs">ไม่ยกยอด</span>

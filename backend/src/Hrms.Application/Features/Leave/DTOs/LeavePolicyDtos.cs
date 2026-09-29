@@ -27,6 +27,9 @@ public record LeavePolicyDto
     public int? MaxLifetimeOccurrences { get; init; }
     public decimal? MaxDaysPerOccurrence { get; init; }
     public int? MaxOccurrencesPerYear { get; init; }
+    public decimal? CarryForwardMaxDays { get; init; }
+    public int? MaxBackdateDays { get; init; }
+    public string ProrationMethod { get; init; } = "FULL";
 }
 
 public record CreateLeavePolicyRequest
@@ -48,6 +51,9 @@ public record CreateLeavePolicyRequest
     public int? MaxLifetimeOccurrences { get; init; }
     public decimal? MaxDaysPerOccurrence { get; init; }
     public int? MaxOccurrencesPerYear { get; init; }
+    public decimal? CarryForwardMaxDays { get; init; }
+    public int? MaxBackdateDays { get; init; }
+    public string ProrationMethod { get; init; } = "FULL";
 }
 
 public record UpdateLeavePolicyRequest
@@ -63,9 +69,13 @@ public record UpdateLeavePolicyRequest
     public bool IsDocumentRequired { get; init; }
     public decimal? DocumentRequiredAfterDays { get; init; }
     public bool IsAllowedDuringProbation { get; init; }
-    public DateOnly EffectiveFrom { get; init; }
+    /// <summary>null = คงวันที่มีผลเดิมไว้</summary>
+    public DateOnly? EffectiveFrom { get; init; }
     public DateOnly? EffectiveTo { get; init; }
     public int? MaxLifetimeOccurrences { get; init; }
     public decimal? MaxDaysPerOccurrence { get; init; }
     public int? MaxOccurrencesPerYear { get; init; }
+    public decimal? CarryForwardMaxDays { get; init; }
+    public int? MaxBackdateDays { get; init; }
+    public string ProrationMethod { get; init; } = "FULL";
 }

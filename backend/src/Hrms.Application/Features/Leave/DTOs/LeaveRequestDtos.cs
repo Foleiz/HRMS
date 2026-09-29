@@ -103,3 +103,15 @@ public class LeaveHolidayDto
     public string Date { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 }
+
+/// <summary>ผลตรวจกฎการลาก่อนยื่น (ใช้ทั้งหน้าฟอร์ม และตอนยื่นจริงฝั่ง server)</summary>
+public class LeaveValidationResultDto
+{
+    public decimal LeaveDays { get; set; }
+    public bool IsValid => Errors.Count == 0;
+    public List<string> Errors { get; set; } = new();
+    /// <summary>ต้องแนบเอกสารประกอบสำหรับคำขอนี้หรือไม่ (ตามนโยบาย)</summary>
+    public bool RequiresDocument { get; set; }
+    /// <summary>สรุปนโยบายที่ใช้กับพนักงาน (แสดงในฟอร์ม)</summary>
+    public string? PolicySummary { get; set; }
+}
