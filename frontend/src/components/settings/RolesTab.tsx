@@ -143,6 +143,15 @@ const CATEGORY_NAMES: Record<string, string> = {
   SETTINGS: 'ตั้งค่า',
 };
 
+/** หมวดหมู่ของระบบ ESS ที่จำกัดขอบเขตเฉพาะข้อมูลตนเอง (Self Only) เท่านั้น */
+const ESS_CATEGORY_CODES = new Set<string>([
+  'MY_SALARY',
+  'MY_PROFILE',
+  'MY_LEAVE',
+  'MY_ATTENDANCE',
+  'MY_DOCS',
+]);
+
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
@@ -249,6 +258,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.canCreate) target.create = true;
         if (m.canEdit) target.edit = true;
         if (m.canApprove) target.approve = true;
+      }
+
+      // หากเป็นหมวดหมู่ ESS บังคับให้ขอบเขตข้อมูลเป็น Self Only เสมอ (เคลียร์ team, dept, div, org ออกทั้งหมด)
+      const isEssModule = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
+      if (isEssModule) {
+        return {
+          ...m,
+          self,
+          team: def(),
+          department: def(),
+          division: def(),
+          organization: def(),
+        };
       }
 
       return { ...m, self, team, department, division, organization };
@@ -537,6 +559,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
           return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
         }
+        const isEss = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
+        if (isEss) {
+          const full = { view: true, create: true, edit: true, approve: false };
+          const empty = { view: false, create: false, edit: false, approve: false };
+          return {
+            ...m,
+            self: { ...full },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        }
         const full = { view: true, create: true, edit: true, approve: true };
         return {
           ...m,
@@ -820,6 +855,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             <span className="font-bold text-xs text-slate-800 tracking-tight">
                               {cat.name}
                             </span>
+                            {ESS_CATEGORY_CODES.has(cat.code) && (
+                              <span className="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full hidden sm:inline">
+                                เฉพาะข้อมูลตนเอง (Self Only)
+                              </span>
+                            )}
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 activeModulesCount > 0
@@ -853,6 +893,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           {cat.modules.map((mod) => {
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
+                            const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
+                            const availableScopes = isEssCat
+                              ? SCOPES_CONFIG.filter((s) => s.key === 'self')
+                              : SCOPES_CONFIG;
 
                             return (
                               <div
@@ -889,7 +933,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                   {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด) */}
                                   {!isDashboardCat && (
                                     <div className="flex items-center gap-1.5">
-                                      {SCOPES_CONFIG.map((scope) => {
+                                      {availableScopes.map((scope) => {
                                         const count = getScopeActiveCount(mod, scope.key);
                                         const isScopeActive = count > 0;
                                         const isPopoverOpen =
