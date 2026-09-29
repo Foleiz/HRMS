@@ -171,6 +171,7 @@ function MyLeaveRequestPageContent() {
           leavePolicies={leavePolicies}
           balances={balances}
           requests={requests}
+          employeeId={user?.employeeId}
           profile={{
             fullName: user?.fullName ?? '-',
             positionTitle: balances[0]?.positionTitle,
