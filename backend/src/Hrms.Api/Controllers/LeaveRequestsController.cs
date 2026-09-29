@@ -111,6 +111,36 @@ public class LeaveRequestsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// คำนวณจำนวนวันลาจากช่วงวันที่ (นับเฉพาะวันทำงานตามเมนู "วันทำงานประจำสัปดาห์" และไม่นับวันหยุดบริษัท)
+    /// ใช้แสดงผลในฟอร์มยื่นลา — ค่าเดียวกับที่ระบบใช้ตรวจโควตาและตัดยอดจริง
+    /// </summary>
+    [HttpGet("calculate-days")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveDaysCalculationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<LeaveDaysCalculationDto>>> CalculateDays(
+        [FromQuery] string startDate,
+        [FromQuery] string endDate,
+        [FromQuery] bool halfDay = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out var start) ||
+            !DateOnly.TryParseExact(endDate, "yyyy-MM-dd", out var end))
+        {
+            return BadRequest(ApiResponse<LeaveDaysCalculationDto>.Fail("รูปแบบวันที่ไม่ถูกต้อง (ต้องเป็น yyyy-MM-dd)"));
+        }
+
+        try
+        {
+            var result = await _requestService.CalculateLeaveDaysAsync(start, end, halfDay, cancellationToken);
+            return Ok(ApiResponse<LeaveDaysCalculationDto>.Ok(result, "คำนวณจำนวนวันลาสำเร็จ"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<LeaveDaysCalculationDto>.Fail(ex.Message));
+        }
+    }
+
     [HttpPut("{id:long}/approve")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

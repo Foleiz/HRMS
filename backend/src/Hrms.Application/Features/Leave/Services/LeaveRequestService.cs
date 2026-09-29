@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.Application.Features.Leave.Services;
 
-public class LeaveRequestService : ILeaveRequestService
+public partial class LeaveRequestService : ILeaveRequestService
 {
     private readonly IHrmsDbContext _context;
     private readonly IApprovalWorkflowService _approvalWorkflow;
@@ -170,7 +170,6 @@ public class LeaveRequestService : ILeaveRequestService
 
     public async Task<LeaveRequestDto> CreateAsync(CreateLeaveRequestDto request, CancellationToken cancellationToken = default)
     {
-        var year = request.StartDatetime.Year;
         var leaveType = await _context.LeaveTypes.FindAsync([request.LeaveTypeId], cancellationToken);
         if (leaveType == null)
         {
@@ -183,13 +182,15 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบพนักงานรหัส ID {request.EmployeeId}");
         }
 
-        // Validate Leave Balance — ข้ามการตรวจสอบถ้าเป็นการบันทึกแบบร่าง
-        var balance = await _context.LeaveBalances
-            .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+        // คำนวณวันลาใหม่ฝั่ง server — นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท
+        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
+        var year = ToThaiDate(request.StartDatetime).Year;
 
-        if (!request.IsDraft && balance != null && balance.NetRemainingLeaveDays < request.LeaveDays)
+        // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
+        if (!request.IsDraft)
         {
-            throw new InvalidOperationException($"วันลาคงเหลือไม่เพียงพอ (คงเหลือ {balance.NetRemainingLeaveDays} วัน, ขอลา {request.LeaveDays} วัน)");
+            var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(request.EmployeeId, request.LeaveTypeId, year, request.EmployeeId, cancellationToken);
+            await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: null, cancellationToken);
         }
 
         // Generate Request No: LR-YYYYMM-XXXX
@@ -205,8 +206,8 @@ public class LeaveRequestService : ILeaveRequestService
             LeaveTypeId = request.LeaveTypeId,
             StartDatetime = request.StartDatetime,
             EndDatetime = request.EndDatetime,
-            LeaveHours = request.LeaveHours,
-            LeaveDays = request.LeaveDays,
+            LeaveHours = calc.LeaveHours,
+            LeaveDays = calc.LeaveDays,
             Reason = request.Reason,
             ContactDuringLeave = request.ContactDuringLeave,
             Status = request.IsDraft ? "DRAFT" : "PENDING",
@@ -261,23 +262,21 @@ public class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบประเภทการลารหัส ID {request.LeaveTypeId}");
         }
 
+        // คำนวณวันลาใหม่ฝั่ง server (ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท)
+        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
+
         if (!request.IsDraft)
         {
-            var year = request.StartDatetime.Year;
-            var balance = await _context.LeaveBalances
-                .FirstOrDefaultAsync(b => b.EmployeeId == leaveRequest.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
-
-            if (balance != null && balance.NetRemainingLeaveDays < request.LeaveDays)
-            {
-                throw new InvalidOperationException($"วันลาคงเหลือไม่เพียงพอ (คงเหลือ {balance.NetRemainingLeaveDays} วัน, ขอลา {request.LeaveDays} วัน)");
-            }
+            var year = ToThaiDate(request.StartDatetime).Year;
+            var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(leaveRequest.EmployeeId, request.LeaveTypeId, year, leaveRequest.EmployeeId, cancellationToken);
+            await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: leaveRequest.Id, cancellationToken);
         }
 
         leaveRequest.LeaveTypeId = request.LeaveTypeId;
         leaveRequest.StartDatetime = request.StartDatetime;
         leaveRequest.EndDatetime = request.EndDatetime;
-        leaveRequest.LeaveHours = request.LeaveHours;
-        leaveRequest.LeaveDays = request.LeaveDays;
+        leaveRequest.LeaveHours = calc.LeaveHours;
+        leaveRequest.LeaveDays = calc.LeaveDays;
         leaveRequest.Reason = request.Reason;
         leaveRequest.ContactDuringLeave = request.ContactDuringLeave;
 
@@ -324,6 +323,16 @@ public class LeaveRequestService : ILeaveRequestService
             return (await GetByIdAsync(id, approverId, cancellationToken))!;
         }
 
+        // คำนวณวันลาใหม่ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท (แก้ค่าที่อาจนับเสาร์–อาทิตย์มาจากหน้าเว็บเดิม)
+        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, allowZero: true, cancellationToken);
+        request.LeaveDays = calc.LeaveDays;
+        request.LeaveHours = calc.LeaveHours;
+
+        // ตรวจโควตาซ้ำก่อนอนุมัติ — กันกรณีอนุมัติหลายใบจนยอดคงเหลือติดลบ
+        var leaveYear = ToThaiDate(request.StartDatetime).Year;
+        var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(request.EmployeeId, request.LeaveTypeId, leaveYear, approverId, cancellationToken);
+        await EnsureQuotaAvailableAsync(balance, isQuotaControlled, request.LeaveDays, includePending: false, excludeRequestId: request.Id, cancellationToken);
+
         bool finalizeApproval = false;
 
         // 1. ตรวจสอบว่ามี ApprovalInstance ผูกอยู่หรือไม่
@@ -350,37 +359,24 @@ public class LeaveRequestService : ILeaveRequestService
 
         if (finalizeApproval)
         {
-            var year = request.StartDatetime.Year;
-            var balance = await _context.LeaveBalances
-                .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+            // ยอดวันลาถูกสร้าง/ดึงไว้แล้วด้านบน (EnsureLeaveBalanceAsync) — ตัดยอดเสมอ
+            // (เพิ่มรายการผ่าน navigation เพื่อให้ใช้ได้กับยอดที่เพิ่งสร้างใหม่ซึ่งยังไม่มี Id)
+            balance.UsedDays += request.LeaveDays;
+            RecalculateNetRemaining(balance);
 
-            if (balance != null)
+            balance.Transactions.Add(new LeaveBalanceTransaction
             {
-                balance.UsedDays += request.LeaveDays;
-                balance.NetRemainingLeaveDays = balance.BroughtForwardDays 
-                                              + balance.AnnualQuotaDays 
-                                              + balance.ActiveCarriedForwardDays 
-                                              - balance.UsedDays 
-                                              + balance.AdjustedDays;
+                TransactionType = "USED",
+                Amount = -request.LeaveDays,
+                ReferenceType = "leave_request",
+                ReferenceId = request.Id,
+                Note = $"อนุมัติคำร้องขอลาเลขที่ {request.RequestNo} ({FormatDays(request.LeaveDays)} วัน)" + (string.IsNullOrWhiteSpace(comment) ? "" : $" [ความเห็น: {comment}]"),
+                CreatedAt = DateTime.UtcNow,
+                CreatedByEmployeeId = approverId
+            });
 
-                _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
-                {
-                    LeaveBalanceId = balance.Id,
-                    TransactionType = "USED",
-                    Amount = -request.LeaveDays,
-                    ReferenceType = "leave_request",
-                    ReferenceId = request.Id,
-                    Note = $"อนุมัติคำร้องขอลาเลขที่ {request.RequestNo} ({request.LeaveDays} วัน)" + (string.IsNullOrWhiteSpace(comment) ? "" : $" [ความเห็น: {comment}]"),
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByEmployeeId = approverId
-                });
-            }
-
-            // ซิงค์สถานะวันลาไปยัง AttendanceDaily
-            var startDate = DateOnly.FromDateTime(request.StartDatetime);
-            var endDate = DateOnly.FromDateTime(request.EndDatetime);
-
-            for (var d = startDate; d <= endDate; d = d.AddDays(1))
+            // ซิงค์สถานะวันลาไปยัง AttendanceDaily — เฉพาะวันทำงาน (ไม่ลงวันหยุด) และใช้วันที่ตามเวลาไทย
+            foreach (var d in calc.WorkingDates.Select(x => DateOnly.ParseExact(x, "yyyy-MM-dd")))
             {
                 var daily = await _context.AttendanceDailies
                     .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.WorkDate == d, cancellationToken);
@@ -404,8 +400,10 @@ public class LeaveRequestService : ILeaveRequestService
             }
 
             request.Status = "APPROVED";
-            await _context.SaveChangesAsync(cancellationToken);
         }
+
+        // บันทึกเสมอ (รวมกรณียังไม่ถึงขั้นสุดท้าย: จำนวนวันที่คำนวณใหม่ / ยอดวันลาที่สร้างอัตโนมัติ)
+        await _context.SaveChangesAsync(cancellationToken);
 
         return (await GetByIdAsync(id, approverId, cancellationToken))!;
     }
@@ -474,37 +472,48 @@ public class LeaveRequestService : ILeaveRequestService
             return (await GetByIdAsync(id, cancelledBy, cancellationToken))!;
         }
 
-        // ถ้าเคย APPROVED แล้ว ต้องคืนยอดวันลา
+        // ถ้าเคย APPROVED แล้ว ต้องคืนยอดวันลา — คืนเข้ายอดเดียวกับที่เคยตัด (อ้างอิงจากรายการ USED ของคำขอนี้)
         if (request.Status == "APPROVED")
         {
-            var year = request.StartDatetime.Year;
-            var balance = await _context.LeaveBalances
-                .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+            var usedTx = await _context.LeaveBalanceTransactions
+                .AsNoTracking()
+                .Where(t => t.ReferenceType == "leave_request" && t.ReferenceId == request.Id && t.TransactionType == "USED")
+                .OrderByDescending(t => t.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            LeaveBalance? balance;
+            if (usedTx != null)
+            {
+                balance = await _context.LeaveBalances.FirstOrDefaultAsync(b => b.Id == usedTx.LeaveBalanceId, cancellationToken);
+            }
+            else
+            {
+                var year = ToThaiDate(request.StartDatetime).Year;
+                balance = await _context.LeaveBalances
+                    .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
+            }
 
             if (balance != null)
             {
-                balance.UsedDays = Math.Max(0, balance.UsedDays - request.LeaveDays);
-                balance.NetRemainingLeaveDays = balance.BroughtForwardDays 
-                                              + balance.AnnualQuotaDays 
-                                              + balance.ActiveCarriedForwardDays 
-                                              - balance.UsedDays 
-                                              + balance.AdjustedDays;
+                var refundDays = usedTx != null ? Math.Abs(usedTx.Amount) : request.LeaveDays;
+                balance.UsedDays = Math.Max(0, balance.UsedDays - refundDays);
+                RecalculateNetRemaining(balance);
 
                 _context.LeaveBalanceTransactions.Add(new LeaveBalanceTransaction
                 {
                     LeaveBalanceId = balance.Id,
                     TransactionType = "REVERSAL",
-                    Amount = request.LeaveDays,
+                    Amount = refundDays,
                     ReferenceType = "leave_request",
                     ReferenceId = request.Id,
-                    Note = $"ยกเลิกคำร้องขอลาเลขที่ {request.RequestNo} - คืนสิทธิ์ ({request.LeaveDays} วัน)",
+                    Note = $"ยกเลิกคำร้องขอลาเลขที่ {request.RequestNo} - คืนสิทธิ์ ({FormatDays(refundDays)} วัน)",
                     CreatedAt = DateTime.UtcNow,
                     CreatedByEmployeeId = cancelledBy
                 });
             }
 
-            var startDate = DateOnly.FromDateTime(request.StartDatetime);
-            var endDate = DateOnly.FromDateTime(request.EndDatetime);
+            var startDate = ToThaiDate(request.StartDatetime);
+            var endDate = ToThaiDate(request.EndDatetime);
 
             var dailies = await _context.AttendanceDailies
                 .Where(a => a.EmployeeId == request.EmployeeId && a.WorkDate >= startDate && a.WorkDate <= endDate && a.Status == "LEAVE")
