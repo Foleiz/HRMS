@@ -79,3 +79,27 @@ public record LeaveStatsDto
     public int RejectedThisMonthCount { get; init; }
     public decimal TotalLeaveDaysThisMonth { get; init; }
 }
+
+/// <summary>ผลการคำนวณจำนวนวันลา (นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท)</summary>
+public class LeaveDaysCalculationDto
+{
+    public string StartDate { get; set; } = string.Empty;
+    public string EndDate { get; set; } = string.Empty;
+    public bool IsHalfDay { get; set; }
+    /// <summary>จำนวนวันตามปฏิทิน (รวมวันหยุด)</summary>
+    public int CalendarDays { get; set; }
+    /// <summary>จำนวนวันที่ไม่ใช่วันทำงานตามวันทำงานประจำสัปดาห์ (เช่น เสาร์–อาทิตย์)</summary>
+    public int NonWorkingDays { get; set; }
+    /// <summary>วันหยุดบริษัท/นักขัตฤกษ์ที่อยู่ในช่วงลา (ไม่นับเป็นวันลา)</summary>
+    public List<LeaveHolidayDto> Holidays { get; set; } = new();
+    /// <summary>วันที่ที่นับเป็นวันลา (yyyy-MM-dd)</summary>
+    public List<string> WorkingDates { get; set; } = new();
+    public decimal LeaveDays { get; set; }
+    public decimal LeaveHours { get; set; }
+}
+
+public class LeaveHolidayDto
+{
+    public string Date { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}

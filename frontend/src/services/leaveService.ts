@@ -13,6 +13,7 @@ import {
   InitializeYearBalancePayload,
   InitializeYearBalanceResult,
   LeaveRequest,
+  LeaveDaysCalculation,
   LeaveStats,
   CreateLeaveRequestPayload,
   CreateMyLeaveRequestPayload,
@@ -161,6 +162,14 @@ export const leaveService = {
 
   // === 5. ESS (Employee Self-Service) — ยื่นคำขอลาด้วยตนเอง ===
   // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ ไม่ต้องส่ง employeeId มาเอง
+
+  /** คำนวณจำนวนวันลา (ไม่นับวันหยุดตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท) — ค่าเดียวกับที่ใช้ตัดโควตาจริง */
+  async calculateLeaveDays(startDate: string, endDate: string, halfDay = false): Promise<LeaveDaysCalculation> {
+    const res = await apiClient.get<ApiResponse<LeaveDaysCalculation>>('/leave-requests/calculate-days', {
+      params: { startDate, endDate, halfDay },
+    });
+    return res.data.data;
+  },
 
   /** [ESS] ดึงรายการคำขอลาของตนเอง */
   async getMyLeaveRequests(params?: { status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
