@@ -14,9 +14,34 @@ export const ROUTE_RULES: RouteRule[] = [
     requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE', 'EMP_PROFILE_VIEW'],
   },
   {
+    matchPrefix: '/my-salary',
+    title: 'เงินเดือนของฉัน',
+    requiredPermissions: ['ESS_SALARY_VIEW', 'PAYROLL_SLIP_VIEW', 'PAYROLL_VIEW'],
+  },
+  {
+    matchPrefix: '/profile',
+    title: 'โปรไฟล์ของฉัน (ESS)',
+    requiredPermissions: ['ESS_PROFILE_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
+  },
+  {
+    matchPrefix: '/leave-balances',
+    title: 'ยอดวันลาคงเหลือ',
+    requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW', 'LEAVE_VIEW'],
+  },
+  {
+    matchPrefix: '/my-news',
+    title: 'ข่าวสารสำหรับฉัน',
+    requiredPermissions: ['ESS_NEWS_VIEW', 'ANNOUNCEMENTS_VIEW', 'ORG_VIEW'],
+  },
+  {
+    matchPrefix: '/documents',
+    title: 'ยื่นเอกสาร',
+    requiredPermissions: ['ESS_DOCS_VIEW', 'LEAVE_VIEW', 'TIME_VIEW', 'CERTIFICATE_VIEW', 'RESIGNATION_VIEW'],
+  },
+  {
     matchPrefix: '/ess/attendance',
     title: 'บันทึกเวลาของฉัน (ESS)',
-    requiredPermissions: ['TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_SCHEDULE_VIEW', 'TIME_IMPORT_VIEW'],
+    requiredPermissions: ['ESS_TIME_VIEW', 'TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_SCHEDULE_VIEW', 'TIME_IMPORT_VIEW'],
   },
   {
     matchPrefix: '/attendance/daily',
