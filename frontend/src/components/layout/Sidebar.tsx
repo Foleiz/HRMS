@@ -71,33 +71,21 @@ const menuItems: MenuItem[] = [
     href: '/my-salary',
     matchPrefix: '/my-salary',
     icon: Wallet,
-    requiredPermissions: [
-      'ESS_SALARY_VIEW',
-      'PAYROLL_SLIP_VIEW',
-      'PAYROLL_VIEW',
-    ],
+    requiredPermissions: ['ESS_SALARY_VIEW'],
   },
   {
     title: 'โปรไฟล์ของฉัน (ESS)',
     href: '/profile',
     matchPrefix: '/profile',
     icon: User,
-    requiredPermissions: [
-      'ESS_PROFILE_VIEW',
-      'EMP_PROFILE_VIEW',
-      'EMP_VIEW',
-    ],
+    requiredPermissions: ['ESS_PROFILE_VIEW'],
   },
   {
     title: 'ยอดวันลาคงเหลือ',
     href: '/leave-balances',
     matchPrefix: '/leave-balances',
     icon: CalendarCheck,
-    requiredPermissions: [
-      'ESS_LEAVE_VIEW',
-      'LEAVE_BALANCE_VIEW',
-      'LEAVE_VIEW',
-    ],
+    requiredPermissions: ['ESS_LEAVE_VIEW'],
   },
 
   {
@@ -105,37 +93,21 @@ const menuItems: MenuItem[] = [
     href: '/ess/attendance',
     matchPrefix: '/ess/attendance',
     icon: Clock,
-    requiredPermissions: [
-      'ESS_TIME_VIEW',
-      'TIME_VIEW',
-      'TIME_DAILY_VIEW',
-      'TIME_SCHEDULE_VIEW',
-      'TIME_IMPORT_VIEW',
-    ],
+    requiredPermissions: ['ESS_TIME_VIEW'],
   },
   {
     title: 'ข่าวสารสำหรับฉัน',
     href: '/my-news',
     matchPrefix: '/my-news',
     icon: CalendarDays,
-    requiredPermissions: [
-      'ESS_NEWS_VIEW',
-      'ANNOUNCEMENTS_VIEW',
-      'ORG_VIEW',
-    ],
+    requiredPermissions: ['ESS_NEWS_VIEW'],
   },
   {
     title: 'ยื่นเอกสาร',
     href: '/documents',
     matchPrefix: '/documents',
     icon: FileText,
-    requiredPermissions: [
-      'ESS_DOCS_VIEW',
-      'LEAVE_VIEW',
-      'TIME_VIEW',
-      'CERTIFICATE_VIEW',
-      'RESIGNATION_VIEW',
-    ],
+    requiredPermissions: ['ESS_DOCS_VIEW'],
   },
   {
     title: 'ตรวจบันทึกเวลา',
