@@ -59,7 +59,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/employees',
     icon: Users,
     requiredPermissions: [
-      'EMP_VIEW',
       'EMP_PROFILE_VIEW',
       'EMP_CONTRACT_VIEW',
       'EMP_TRANSFER_VIEW',
@@ -134,7 +133,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/leave',
     icon: CalendarCheck,
     requiredPermissions: [
-      'LEAVE_VIEW',
       'LEAVE_BALANCE_VIEW',
       'LEAVE_TYPE_VIEW',
       'LEAVE_POLICY_VIEW',
@@ -146,11 +144,16 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/payroll',
     icon: CreditCard,
     requiredPermissions: [
-      'PAYROLL_VIEW',
+      'PAYROLL_HR_VIEW',
+      'PAYROLL_FINANCE_VIEW',
+      'PAYROLL_ADMIN_VIEW',
       'PAYROLL_CALC_VIEW',
-      'PAYROLL_SLIP_VIEW',
+      'PAYROLL_STRUCTURE_VIEW',
+      'PAYROLL_ITEMS_VIEW',
+      'PAYROLL_BONUS_VIEW',
+      'PAYROLL_BANK_VIEW',
       'PAYROLL_TAX_VIEW',
-      'PAYROLL_RUN',
+      'PAYROLL_SLIP_VIEW',
     ],
   },
   {
@@ -167,15 +170,6 @@ const menuItems: MenuItem[] = [
       'APPROVAL_EMP_APPROVE',
       'APPROVAL_PAYROLL_VIEW',
       'APPROVAL_PAYROLL_APPROVE',
-      'LEAVE_APPROVE',
-      'TIME_APPROVE',
-      'EMP_APPROVE',
-      'PAYROLL_APPROVE',
-      'TIME_MANAGE',
-      'LEAVE_BALANCE_APPROVE',
-      'TIME_DAILY_APPROVE',
-      'EMP_PROFILE_APPROVE',
-      'PAYROLL_CALC_APPROVE',
     ],
   },
   {
@@ -184,12 +178,10 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/organization',
     icon: Building2,
     requiredPermissions: [
-      'ORG_VIEW',
       'ORG_STRUCT_VIEW',
       'ORG_POS_VIEW',
       'ORG_BENEFIT_VIEW',
       'ORG_COMP_VIEW',
-      'SYS_ADMIN',
     ],
   },
   {
@@ -199,10 +191,6 @@ const menuItems: MenuItem[] = [
     icon: CalendarDays,
     requiredPermissions: [
       'WORK_CALENDAR_VIEW',
-      'TIME_VIEW',
-      'TIME_SCHEDULE_VIEW',
-      'TIME_DAILY_VIEW',
-      'SYS_ADMIN',
     ],
   },
   {
@@ -211,7 +199,6 @@ const menuItems: MenuItem[] = [
     matchPrefix: '/reports',
     icon: BarChart3,
     requiredPermissions: [
-      'REPORT_VIEW',
       'REPORT_ATT_VIEW',
       'REPORT_HEADCOUNT_VIEW',
     ],
@@ -223,8 +210,6 @@ const menuItems: MenuItem[] = [
     icon: Megaphone,
     requiredPermissions: [
       'ANNOUNCEMENTS_VIEW',
-      'SYS_ADMIN',
-      'ORG_VIEW',
     ],
   },
   {
@@ -234,9 +219,6 @@ const menuItems: MenuItem[] = [
     icon: Database,
     requiredPermissions: [
       'MASTER_DATA_VIEW',
-      'SETTINGS_VIEW',
-      'SYS_ADMIN',
-      'ORG_VIEW',
     ],
   },
   {
@@ -248,8 +230,6 @@ const menuItems: MenuItem[] = [
       'SETTINGS_USERS_VIEW',
       'SETTINGS_ROLES_VIEW',
       'SETTINGS_AUDIT_VIEW',
-      'SETTINGS_APPROVAL_FLOWS_MANAGE',
-      'SYS_ADMIN',
     ],
   },
 ];
