@@ -13,6 +13,8 @@ public class GeneralRequest : BaseEntity
     public long EmployeeId { get; set; }
     /// <summary>ประเภทคำขอ (ข้อความ เช่น "ขอแก้ไขข้อมูลส่วนตัว")</summary>
     public string RequestType { get; set; } = string.Empty;
+    /// <summary>ประเภทเอกสารใน Master (hrms.document_type) — null เมื่อพนักงานระบุประเภทเอง</summary>
+    public long? DocumentTypeId { get; set; }
     /// <summary>รายละเอียด/วัตถุประสงค์ของคำขอ</summary>
     public string Purpose { get; set; } = string.Empty;
     public string? Notes { get; set; }
@@ -34,4 +36,5 @@ public class GeneralRequest : BaseEntity
     // Navigation Properties
     public virtual Employee Employee { get; set; } = null!;
     public virtual ApprovalInstance? ApprovalInstance { get; set; }
+    public virtual DocumentType? DocumentType { get; set; }
 }

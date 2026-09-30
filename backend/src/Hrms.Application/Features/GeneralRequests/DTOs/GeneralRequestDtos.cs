@@ -11,6 +11,8 @@ public class GeneralRequestDto
     public string PositionName { get; set; } = string.Empty;
     /// <summary>ประเภทคำขอ (ชื่อฟิลด์เดิมฝั่งหน้าเว็บคือ documentType)</summary>
     public string DocumentType { get; set; } = string.Empty;
+    /// <summary>ประเภทเอกสารใน Master (null เมื่อระบุประเภทเอง)</summary>
+    public long? DocumentTypeId { get; set; }
     public string Purpose { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string? IssueDate { get; set; }
@@ -36,6 +38,8 @@ public class GeneralRequestDto
 public class CreateGeneralRequestDto
 {
     public string DocumentType { get; set; } = string.Empty;
+    /// <summary>ประเภทเอกสารใน Master (null เมื่อระบุประเภทเอง)</summary>
+    public long? DocumentTypeId { get; set; }
     public string Purpose { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string? IssueDate { get; set; }

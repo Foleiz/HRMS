@@ -1,5 +1,4 @@
 using Hrms.Application.Common.Interfaces;
-using Hrms.Application.Common.Utilities;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +10,11 @@ namespace Hrms.Application.Features.EmployeeDocuments.Services;
 /// </summary>
 public static class EmployeeDocumentArchiver
 {
-    // ชื่อประเภทในฟอร์มคำขอเอกสารทั่วไป → รหัสประเภทเอกสารใน Master ที่มีอยู่แล้ว
+    /// <summary>ประเภทสำหรับเอกสารที่พนักงานระบุประเภทเอง (ไม่ได้เลือกจาก Master)</summary>
+    public const string OtherDocumentCode = "DOC_OTHER";
+    public const string OtherDocumentName = "เอกสารทั่วไปอื่น ๆ";
+
+    // ชื่อประเภทแบบเดิม (ก่อนผูกกับ Master) → รหัสประเภทเอกสารใน Master — รองรับคำขอเก่า
     private static readonly Dictionary<string, string> RequestTypeToDocumentCode = new(StringComparer.OrdinalIgnoreCase)
     {
         ["สำเนาบัตรประจำตัวประชาชน"] = "DOC_ID_CARD",
@@ -43,13 +46,14 @@ public static class EmployeeDocumentArchiver
             FileData = request.FileData,
             IssuedDate = request.IssueDate,
             ExpiryDate = request.ExpiryDate is { } exp && request.IssueDate is { } iss && exp < iss ? null : request.ExpiryDate,
-            Remarks = BuildRemarks(request),
+            Remarks = null,
             UploadedAt = DateTime.UtcNow,
             UploadedByEmployeeId = archivedByEmployeeId,
             SourceGeneralRequestId = request.Id
         };
 
         var type = await ResolveDocumentTypeAsync(context, request, cancellationToken);
+        document.Remarks = BuildRemarks(request, type);
         if (type.Id > 0) document.DocumentTypeId = type.Id;
         else document.DocumentType = type;
 
@@ -59,8 +63,15 @@ public static class EmployeeDocumentArchiver
     private static async Task<DocumentType> ResolveDocumentTypeAsync(
         IHrmsDbContext context, GeneralRequest request, CancellationToken cancellationToken)
     {
+        // 1) เลือกจาก Master ไว้ตอนยื่น
+        if (request.DocumentTypeId is { } typeId)
+        {
+            var byId = await context.DocumentTypes.FirstOrDefaultAsync(d => d.Id == typeId, cancellationToken);
+            if (byId != null) return byId;
+        }
+
+        // 2) คำขอเก่า/ระบุเอง — จับคู่จากชื่อ
         var name = (request.RequestType ?? string.Empty).Trim();
-        if (name.Length == 0) name = "เอกสารทั่วไปอื่น ๆ";
 
         if (RequestTypeToDocumentCode.TryGetValue(name, out var code))
         {
@@ -68,14 +79,21 @@ public static class EmployeeDocumentArchiver
             if (byCode != null) return byCode;
         }
 
-        var byName = await context.DocumentTypes.FirstOrDefaultAsync(d => d.DocumentName == name, cancellationToken);
-        if (byName != null) return byName;
+        if (name.Length > 0)
+        {
+            var byName = await context.DocumentTypes.FirstOrDefaultAsync(d => d.DocumentName == name, cancellationToken);
+            if (byName != null) return byName;
+        }
 
-        // ยังไม่มีใน Master → สร้างประเภทใหม่ให้อัตโนมัติ
+        // 3) ไม่ตรงกับ Master → เก็บไว้ในหมวด "เอกสารทั่วไปอื่น ๆ" (สร้างให้ถ้ายังไม่มี)
+        var other = await context.DocumentTypes.FirstOrDefaultAsync(
+            d => d.DocumentCode == OtherDocumentCode || d.DocumentName == OtherDocumentName, cancellationToken);
+        if (other != null) return other;
+
         var newType = new DocumentType
         {
-            DocumentCode = await CodeGenerator.NextAsync(context.DocumentTypes.Select(d => d.DocumentCode), "DOC", 3, cancellationToken),
-            DocumentName = name.Length > 255 ? name[..255] : name,
+            DocumentCode = OtherDocumentCode,
+            DocumentName = OtherDocumentName,
             IsExpiryRequired = false,
             Status = "ACTIVE"
         };
@@ -83,10 +101,17 @@ public static class EmployeeDocumentArchiver
         return newType;
     }
 
-    private static string BuildRemarks(GeneralRequest request)
+    private static string BuildRemarks(GeneralRequest request, DocumentType type)
     {
         var no = string.IsNullOrEmpty(request.RequestNo) ? $"GR-{request.Id:D4}" : request.RequestNo;
+        var parts = new List<string> { $"จากคำขอ {no}" };
+        // ประเภทที่พนักงานระบุเองไม่ตรงกับหมวดที่เก็บ → บันทึกชื่อที่ระบุไว้
+        var requested = (request.RequestType ?? string.Empty).Trim();
+        if (requested.Length > 0 && !string.Equals(requested, type.DocumentName, StringComparison.OrdinalIgnoreCase)
+            && !RequestTypeToDocumentCode.ContainsKey(requested))
+            parts.Add($"ประเภทที่ระบุ: {requested}");
         var purpose = (request.Purpose ?? string.Empty).Trim();
-        return purpose.Length == 0 ? $"จากคำขอ {no}" : $"จากคำขอ {no}: {purpose}";
+        if (purpose.Length > 0) parts.Add(purpose);
+        return string.Join(" · ", parts);
     }
 }

@@ -1915,6 +1915,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(30).IsRequired();
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
             entity.Property(e => e.RequestType).HasColumnName("request_type").HasMaxLength(150).IsRequired();
+            entity.Property(e => e.DocumentTypeId).HasColumnName("document_type_id");
             entity.Property(e => e.Purpose).HasColumnName("purpose").IsRequired();
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.IssueDate).HasColumnName("issue_date");
@@ -1937,6 +1938,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.ApprovalInstance)
                 .WithMany()
                 .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.DocumentType)
+                .WithMany()
+                .HasForeignKey(e => e.DocumentTypeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

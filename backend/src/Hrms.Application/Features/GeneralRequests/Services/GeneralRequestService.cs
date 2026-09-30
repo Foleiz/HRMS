@@ -82,15 +82,28 @@ public class GeneralRequestService : IGeneralRequestService
         var me = _currentUser.EmployeeId
             ?? throw new UnauthorizedAccessException("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน");
 
-        if (string.IsNullOrWhiteSpace(dto.DocumentType))
+        // เลือกจาก Master ประเภทเอกสาร (hrms.document_type) หรือระบุประเภทเองเป็นข้อความ
+        DocumentType? masterType = null;
+        if (dto.DocumentTypeId.HasValue)
+        {
+            masterType = await _context.DocumentTypes.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == dto.DocumentTypeId.Value, cancellationToken)
+                ?? throw new ValidationException("ไม่พบประเภทเอกสารที่เลือก");
+            if (masterType.Status != "ACTIVE")
+                throw new ValidationException("ประเภทเอกสารนี้ถูกปิดใช้งานแล้ว");
+        }
+        else if (string.IsNullOrWhiteSpace(dto.DocumentType))
+        {
             throw new ValidationException("กรุณาเลือกประเภทคำขอ");
+        }
         if (string.IsNullOrWhiteSpace(dto.Purpose))
             throw new ValidationException("กรุณาระบุรายละเอียดของคำขอ");
 
         var request = new GeneralRequest
         {
             EmployeeId = me,
-            RequestType = dto.DocumentType.Trim(),
+            RequestType = masterType?.DocumentName ?? dto.DocumentType.Trim(),
+            DocumentTypeId = masterType?.Id,
             Purpose = dto.Purpose.Trim(),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             IssueDate = ParseDate(dto.IssueDate),
@@ -98,6 +111,11 @@ public class GeneralRequestService : IGeneralRequestService
             Status = "PENDING",
             RequestedAt = DateTime.UtcNow
         };
+
+        if (masterType is { IsExpiryRequired: true } && !request.ExpiryDate.HasValue)
+            throw new ValidationException($"เอกสารประเภท \"{masterType.DocumentName}\" ต้องระบุวันหมดอายุ");
+        if (request.IssueDate.HasValue && request.ExpiryDate.HasValue && request.ExpiryDate < request.IssueDate)
+            throw new ValidationException("วันหมดอายุต้องไม่ก่อนวันที่ออกเอกสาร");
 
         if (!string.IsNullOrWhiteSpace(dto.FileData))
         {
@@ -312,6 +330,7 @@ public class GeneralRequestService : IGeneralRequestService
                 DepartmentName = assign?.Department?.DepartmentName ?? "-",
                 PositionName = assign?.Position?.PositionName ?? "-",
                 DocumentType = r.RequestType,
+                DocumentTypeId = r.DocumentTypeId,
                 Purpose = r.Purpose,
                 Notes = r.Notes,
                 IssueDate = r.IssueDate?.ToString("yyyy-MM-dd"),
