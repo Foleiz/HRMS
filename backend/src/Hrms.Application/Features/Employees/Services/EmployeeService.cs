@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Employees.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -468,7 +469,7 @@ public class EmployeeService : IEmployeeService
                 pos = new Position
                 {
                     DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = "POS_" + Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
                     PositionName = request.PositionName.Trim(),
                     Status = "ACTIVE"
                 };
@@ -850,7 +851,7 @@ public class EmployeeService : IEmployeeService
                 pos = new Position
                 {
                     DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = "POS_" + Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
                     PositionName = request.PositionName.Trim(),
                     Status = "ACTIVE"
                 };

@@ -12,7 +12,8 @@ public class DocumentTypeDto
 
 public class CreateDocumentTypeDto
 {
-    public string DocumentCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? DocumentCode { get; set; }
     public string DocumentName { get; set; } = string.Empty;
     public bool IsExpiryRequired { get; set; } = false;
     public string Status { get; set; } = "ACTIVE";

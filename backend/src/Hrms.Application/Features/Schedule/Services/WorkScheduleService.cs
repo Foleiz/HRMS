@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Schedule.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -107,13 +108,13 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task<WorkScheduleDto> CreateWorkScheduleAsync(CreateWorkScheduleRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.ScheduleCode))
-            throw new ArgumentException("กรุณาระบุรหัสตารางการทำงาน");
-
         if (string.IsNullOrWhiteSpace(request.ScheduleName))
             throw new ArgumentException("กรุณาระบุชื่อตารางการทำงาน");
 
-        var normalizedCode = request.ScheduleCode.Trim().ToUpperInvariant();
+        // รหัสรันอัตโนมัติ (WS001, WS002, ...) ถ้าไม่ได้ระบุมา
+        var normalizedCode = string.IsNullOrWhiteSpace(request.ScheduleCode)
+            ? await CodeGenerator.NextAsync(_context.WorkSchedules.Select(ws => ws.ScheduleCode), "WS", 3)
+            : request.ScheduleCode.Trim().ToUpperInvariant();
 
         var exists = await _context.WorkSchedules.AnyAsync(ws => ws.ScheduleCode == normalizedCode);
         if (exists)

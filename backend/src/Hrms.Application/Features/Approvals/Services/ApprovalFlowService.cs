@@ -1,4 +1,5 @@
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Approvals.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +65,10 @@ public class ApprovalFlowService : IApprovalFlowService
 
     public async Task<ApprovalFlowDto> CreateAsync(CreateApprovalFlowRequest request, CancellationToken cancellationToken = default)
     {
-        var flowCode = request.FlowCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (AF001, AF002, ...) ถ้าไม่ได้ระบุมา
+        var flowCode = string.IsNullOrWhiteSpace(request.FlowCode)
+            ? await CodeGenerator.NextAsync(_context.ApprovalFlows.Select(f => f.FlowCode), "AF", 3, cancellationToken)
+            : request.FlowCode.Trim().ToUpper();
         var exists = await _context.ApprovalFlows.AnyAsync(f => f.FlowCode == flowCode, cancellationToken);
         if (exists)
         {

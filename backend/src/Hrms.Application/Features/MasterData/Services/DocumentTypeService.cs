@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -58,12 +59,15 @@ public class DocumentTypeService : IDocumentTypeService
 
     public async Task<DocumentTypeDto> CreateAsync(CreateDocumentTypeDto dto, CancellationToken cancellationToken = default)
     {
-        var code = dto.DocumentCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (DOC001, DOC002, ...) ถ้าไม่ได้ระบุมา
+        var code = string.IsNullOrWhiteSpace(dto.DocumentCode)
+            ? await CodeGenerator.NextAsync(_context.DocumentTypes.Select(d => d.DocumentCode), "DOC", 3, cancellationToken)
+            : dto.DocumentCode.Trim().ToUpper();
         var exists = await _context.DocumentTypes
             .AnyAsync(d => d.DocumentCode.ToUpper() == code, cancellationToken);
 
         if (exists)
-            throw new BusinessRuleException($"รหัสประเภทเอกสาร '{dto.DocumentCode}' มีอยู่ในระบบแล้ว");
+            throw new BusinessRuleException($"รหัสประเภทเอกสาร '{code}' มีอยู่ในระบบแล้ว");
 
         var doc = new DocumentType
         {

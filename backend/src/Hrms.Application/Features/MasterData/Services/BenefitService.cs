@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -87,13 +88,13 @@ public class BenefitService : IBenefitService
 
     public async Task<BenefitItemDto> CreateAsync(CreateBenefitItemRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.BenefitCode))
-            throw new ValidationException("กรุณาระบุรหัสสิทธิประโยชน์ (Benefit Code)");
-
         if (string.IsNullOrWhiteSpace(request.BenefitName))
             throw new ValidationException("กรุณาระบุชื่อสิทธิประโยชน์/สวัสดิการ");
 
-        var normalizedCode = request.BenefitCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (BNF001, BNF002, ...) ถ้าไม่ได้ระบุมา
+        var normalizedCode = string.IsNullOrWhiteSpace(request.BenefitCode)
+            ? await CodeGenerator.NextAsync(_context.BenefitItems.Select(b => b.BenefitCode), "BNF", 3, cancellationToken)
+            : request.BenefitCode.Trim().ToUpper();
 
         var exists = await _context.BenefitItems
             .AnyAsync(b => b.BenefitCode == normalizedCode, cancellationToken);
