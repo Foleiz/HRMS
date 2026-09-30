@@ -265,19 +265,19 @@ export default function ApprovalHistoryPage() {
       });
     });
 
-    // 4. คำขออื่นๆ
+    // 4. คำร้องเอกสารทั่วไป
     generalHistory.forEach((g) => {
       list.push({
         id: `GEN-${g.id}`,
         rawId: g.id,
         docType: 'GENERAL',
-        docTypeName: 'คำขออื่นๆ',
+        docTypeName: 'คำร้องเอกสารทั่วไป',
         requestNo: g.requestNo || `GEN-${String(g.id).padStart(4, '0')}`,
         employeeName: g.employeeName,
         employeeCode: g.employeeCode,
         departmentName: g.departmentName || '-',
-        subType: g.documentType || 'คำขออื่นๆ',
-        details: g.purpose ? `วัตถุประสงค์: ${g.purpose}` : 'คำขออื่นๆ',
+        subType: g.documentType || 'เอกสารทั่วไป',
+        details: g.purpose ? `วัตถุประสงค์: ${g.purpose}` : 'คำร้องเอกสารทั่วไป',
         status: g.status,
         approvedByName: g.approvedByName ?? (g.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
         actionAt: g.approvedAt ?? g.submittedAt ?? null,
@@ -404,7 +404,7 @@ export default function ApprovalHistoryPage() {
                 <option value="LEAVE">คำขอลา</option>
                 <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
                 <option value="RESIGNATION">คำขอลาออก</option>
-                <option value="GENERAL">คำขออื่นๆ</option>
+                <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -494,7 +494,7 @@ export default function ApprovalHistoryPage() {
                         {item.docType === 'GENERAL' && (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
                             <FileText className="w-3.5 h-3.5 text-amber-500" />
-                            คำขออื่นๆ
+                            เอกสารทั่วไป
                           </span>
                         )}
                       </td>
@@ -626,7 +626,7 @@ export default function ApprovalHistoryPage() {
         } : null}
       />
 
-      {/* Preview Modal (คำขออื่นๆ) */}
+      {/* Preview Modal (คำร้องเอกสารทั่วไป) */}
       <GeneralDocumentPreviewModal
         isOpen={isGeneralPreviewOpen}
         onClose={() => {

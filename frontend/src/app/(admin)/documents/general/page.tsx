@@ -87,7 +87,7 @@ export default function GeneralDocumentPage() {
 
   // Sync breadcrumb & Load saved draft
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'คำขออื่นๆ' });
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'เอกสารทั่วไป' });
 
     try {
       const savedDraft = localStorage.getItem('hrms_general_doc_draft');
@@ -193,7 +193,7 @@ export default function GeneralDocumentPage() {
     }
     setSavingDraft(true);
     try {
-      const finalDocType = isCustomType ? customDocumentType.trim() || 'คำขออื่นๆ' : documentType;
+      const finalDocType = isCustomType ? customDocumentType.trim() || 'เอกสารทั่วไป' : documentType;
       localStorage.setItem(
         'hrms_general_doc_draft',
         JSON.stringify({
@@ -214,12 +214,12 @@ export default function GeneralDocumentPage() {
     }
   };
 
-  // ยื่นคำขออื่นๆ
+  // ยื่นคำร้องเอกสารทั่วไป
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalDocType = isCustomType ? customDocumentType.trim() : documentType;
     if (!finalDocType) {
-      setFormError('กรุณาระบุประเภทคำขอ');
+      setFormError('กรุณาระบุประเภทเอกสาร');
       return;
     }
     if (!purpose.trim()) {
@@ -256,7 +256,7 @@ export default function GeneralDocumentPage() {
       setPurpose('');
       setNotes('');
       setSelectedFile(null);
-      toast.success('ยื่นคำขอสำเร็จ ติดตามสถานะได้ที่หน้าประวัติเอกสาร');
+      toast.success('ยื่นคำร้องเอกสารทั่วไปสำเร็จ ติดตามสถานะได้ที่หน้านี้');
       router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting general document request:', err);
@@ -267,7 +267,7 @@ export default function GeneralDocumentPage() {
   };
 
   const finalDocumentTypeDisplay = isCustomType
-    ? customDocumentType || 'คำขออื่นๆ'
+    ? customDocumentType || 'เอกสารทั่วไป'
     : documentType;
 
   return (
@@ -278,7 +278,7 @@ export default function GeneralDocumentPage() {
       {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">คำขออื่นๆ</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารทั่วไป</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             ยื่นคำขอถึงฝ่ายบุคคล เช่น ขอแก้ไขข้อมูล ขอบัตรพนักงาน หรือส่งเอกสาร — คำขอจะผ่านสายการอนุมัติที่ตั้งไว้
           </p>
@@ -342,7 +342,7 @@ export default function GeneralDocumentPage() {
 
               {/* ประเภทเอกสาร (เช่น สำเนาบัตรประชาชน ตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ประเภทคำขอ *</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">ประเภทเอกสาร *</label>
                 {!isCustomType ? (
                   <select
                     value={documentType}
@@ -449,13 +449,13 @@ export default function GeneralDocumentPage() {
           {/* ─── ฝั่งขวา: รายละเอียดของเอกสาร (ตาม Figma) ─── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">รายละเอียดคำขอ</h3>
+              <h3 className="text-sm font-bold text-gray-900">รายละเอียดของเอกสาร</h3>
 
               {/* เอกสารนี้ใช้สำหรับ * (Textarea ตาม Figma พร้อม counter 0/160) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700">
-                    รายละเอียดคำขอ *
+                    เอกสารนี้ใช้สำหรับ *
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {purpose.length}/{REASON_MAX_LENGTH}
@@ -538,10 +538,10 @@ export default function GeneralDocumentPage() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-base font-bold text-slate-900 mb-1">
-              ยื่นคำขออื่นๆสำเร็จ!
+              ยื่นคำร้องเอกสารทั่วไปสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              คำขอขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
+              คำร้องขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
               <button

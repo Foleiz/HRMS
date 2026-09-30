@@ -127,7 +127,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<CertificateType> CertificateTypes => Set<CertificateType>();
     public DbSet<CertificateRequest> CertificateRequests => Set<CertificateRequest>();
 
-    // คำขออื่นๆ (General Requests)
+    // คำขอเอกสารทั่วไป (General Requests)
     public DbSet<GeneralRequest> GeneralRequests => Set<GeneralRequest>();
 
     // Resignation Requests (Dev 1 Phase 2)
@@ -1870,7 +1870,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
         });
 
 
-        // Configuration: GeneralRequest (คำขออื่นๆ)
+        // Configuration: GeneralRequest (คำขอเอกสารทั่วไป)
         modelBuilder.Entity<GeneralRequest>(entity =>
         {
             entity.ToTable("general_request", "hrms");

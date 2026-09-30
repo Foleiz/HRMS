@@ -45,7 +45,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-slate-800">
             <FileText className="w-5 h-5 text-[#0B2046]" />
-            <h3 className="text-base font-bold">ตัวอย่างคำขออื่นๆ</h3>
+            <h3 className="text-base font-bold">ตัวอย่างคำร้องขอเอกสารทั่วไป</h3>
           </div>
           <button
             type="button"
@@ -64,7 +64,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
               บริษัท ฟิวเจอร์ เทค คอร์ปอเรชั่น จำกัด (มหาชน)
             </p>
             <h2 className="text-lg font-bold text-gray-900 mt-1">
-              แบบคำขออื่นๆ (General Request)
+              แบบคำร้องขอเอกสารทั่วไป (General Document Request)
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               วันที่เอกสาร: {data.issueDate}
@@ -75,7 +75,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
           <div className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div>
-                <p className="text-gray-500 font-medium">ชื่อ-นามสกุล ผู้ยื่นคำขอ:</p>
+                <p className="text-gray-500 font-medium">ชื่อ-นามสกุล ผู้ยื่นคำร้อง:</p>
                 <p className="text-gray-900 font-bold mt-0.5">{data.employeeName}</p>
               </div>
               <div>
@@ -129,7 +129,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
           {/* Signature Box */}
           <div className="pt-4 border-t border-gray-100 flex justify-end text-center">
             <div className="w-52 space-y-1.5 text-xs">
-              <p className="text-gray-500">ลงชื่อผู้ยื่นคำขอ</p>
+              <p className="text-gray-500">ลงชื่อผู้ยื่นคำร้อง</p>
               <div className="h-8 flex items-center justify-center">
                 <span className="font-serif italic text-sm text-slate-700 underline decoration-slate-300">
                   {data.employeeName}

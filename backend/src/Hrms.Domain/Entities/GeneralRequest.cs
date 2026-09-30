@@ -3,7 +3,7 @@ using Hrms.Domain.Common;
 namespace Hrms.Domain.Entities;
 
 /// <summary>
-/// คำขออื่นๆ (General Request) — คำขอทั่วไปถึงฝ่ายบุคคลที่ต้องผ่านสายการอนุมัติ
+/// คำขอเอกสารทั่วไป (General Request) — คำขอทั่วไปถึงฝ่ายบุคคลที่ต้องผ่านสายการอนุมัติ
 /// เช่น ขอแก้ไขข้อมูลส่วนตัว ขอบัตรพนักงาน ส่งเอกสารให้ฝ่ายบุคคล
 /// แมปกับตาราง hrms.general_request
 /// </summary>

@@ -649,7 +649,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         ["EMPLOYMENT_CONTRACT"] = "สัญญาจ้างงาน",
         ["PAYROLL_PERIOD"] = "รอบเงินเดือน",
         ["TRANSFER_REQUEST"] = "คำขอย้ายแผนก/เลื่อนตำแหน่ง",
-        ["GENERAL_REQUEST"] = "คำขออื่นๆ",
+        ["GENERAL_REQUEST"] = "คำขอเอกสารทั่วไป",
     };
 
     private static string GetDocumentLabel(string documentType) =>

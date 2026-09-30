@@ -42,7 +42,20 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 // ไม่แสดง "คำขอย้ายแผนก/เลื่อนตำแหน่ง" — HR บันทึกการย้าย/เลื่อนตำแหน่งเอง (ไม่มีสายการอนุมัติ → มีผลทันที)
 // ยังเก็บป้ายชื่อไว้ใน DOCUMENT_TYPE_LABELS เพื่อแสดงสายการอนุมัติเดิมที่มีอยู่แล้วได้ถูกต้อง
 const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
-const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS).filter((t) => !HIDDEN_DOCUMENT_TYPES.has(t));
+// ลำดับการแสดงประเภทเอกสารในตัวเลือก (แสดงพร้อมเลขกำกับ) — ประเภทที่ไม่อยู่ในรายการนี้จะต่อท้าย
+const DOCUMENT_TYPE_ORDER = [
+  'LEAVE_REQUEST',
+  'RESIGNATION_REQUEST',
+  'GENERAL_REQUEST',
+  'CERTIFICATE_REQUEST',
+  'ATTENDANCE_ADJUSTMENT',
+  'EMPLOYMENT_CONTRACT',
+  'PAYROLL_PERIOD',
+];
+const DOCUMENT_TYPE_OPTIONS = [
+  ...DOCUMENT_TYPE_ORDER.filter((t) => t in DOCUMENT_TYPE_LABELS),
+  ...Object.keys(DOCUMENT_TYPE_LABELS).filter((t) => !DOCUMENT_TYPE_ORDER.includes(t)),
+].filter((t) => !HIDDEN_DOCUMENT_TYPES.has(t));
 /** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
 const APPROVER_TYPE_OPTIONS = ['EMPLOYEE', 'ROLE'];
 
@@ -797,9 +810,9 @@ export const ApprovalFlowsTab: React.FC = () => {
                         onChange={(e) => setForm({ ...form, documentType: e.target.value })}
                         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none cursor-pointer"
                       >
-                        {DOCUMENT_TYPE_OPTIONS.map((dt) => (
+                        {DOCUMENT_TYPE_OPTIONS.map((dt, idx) => (
                           <option key={dt} value={dt}>
-                            {DOCUMENT_TYPE_LABELS[dt]}
+                            {idx + 1}. {DOCUMENT_TYPE_LABELS[dt]}
                           </option>
                         ))}
                       </select>

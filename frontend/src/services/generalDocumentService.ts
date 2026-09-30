@@ -9,7 +9,7 @@ import {
 type ApiGeneralRequest = Omit<GeneralDocumentRequest, 'id'> & { id: number };
 const toModel = (r: ApiGeneralRequest): GeneralDocumentRequest => ({ ...r, id: String(r.id) });
 
-/** คำขออื่นๆ (General Requests) — ผ่านสายการอนุมัติประเภท GENERAL_REQUEST */
+/** คำขอเอกสารทั่วไป (General Requests) — ผ่านสายการอนุมัติประเภท GENERAL_REQUEST */
 export const generalDocumentService = {
   /** คำขอของพนักงานที่ล็อกอินอยู่ */
   async getMyRequests(): Promise<GeneralDocumentRequest[]> {
