@@ -1,4 +1,5 @@
 using Hrms.Application.Common.Models;
+using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Employees.DTOs;
 using Hrms.Application.Features.Employees.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -69,10 +70,13 @@ public class EmployeesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> Create(
         [FromBody] CreateEmployeeRequest request,
+        [FromServices] IAttendanceImportService attendanceImport,
+        [FromServices] ILogger<EmployeesController> logger,
         CancellationToken cancellationToken)
     {
         var result = await _employeeService.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, ApiResponse<EmployeeDto>.Ok(result, "บันทึกข้อมูลพนักงานสำเร็จ"));
+        result.AttendanceRowsLinked = await LinkImportedAttendanceAsync(attendanceImport, logger, result.Id, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, ApiResponse<EmployeeDto>.Ok(result, WithLinkedMessage("บันทึกข้อมูลพนักงานสำเร็จ", result.AttendanceRowsLinked)));
     }
 
     /// <summary>
@@ -85,11 +89,35 @@ public class EmployeesController : ControllerBase
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> Update(
         long id,
         [FromBody] UpdateEmployeeRequest request,
+        [FromServices] IAttendanceImportService attendanceImport,
+        [FromServices] ILogger<EmployeesController> logger,
         CancellationToken cancellationToken)
     {
         var result = await _employeeService.UpdateAsync(id, request, cancellationToken);
-        return Ok(ApiResponse<EmployeeDto>.Ok(result, "อัปเดตข้อมูลพนักงานสำเร็จ"));
+        result.AttendanceRowsLinked = await LinkImportedAttendanceAsync(attendanceImport, logger, result.Id, cancellationToken);
+        return Ok(ApiResponse<EmployeeDto>.Ok(result, WithLinkedMessage("อัปเดตข้อมูลพนักงานสำเร็จ", result.AttendanceRowsLinked)));
     }
+
+    /// <summary>
+    /// หลังบันทึกพนักงาน: จับคู่เวลาจากไฟล์ลงเวลาที่นำเข้าไว้แล้วแต่ยังหาพนักงานไม่เจอ (ตามรหัสพนักงาน/รหัสเครื่องสแกนปัจจุบัน)
+    /// ถ้าจับคู่ไม่สำเร็จ ไม่ทำให้การบันทึกพนักงานล้ม
+    /// </summary>
+    private static async Task<int> LinkImportedAttendanceAsync(
+        IAttendanceImportService attendanceImport, ILogger logger, long employeeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await attendanceImport.RematchUnmatchedRowsAsync(employeeId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "จับคู่เวลาจากไฟล์ที่นำเข้าไว้ให้พนักงาน {EmployeeId} ไม่สำเร็จ", employeeId);
+            return 0;
+        }
+    }
+
+    private static string WithLinkedMessage(string message, int? linked) =>
+        linked > 0 ? $"{message} และเชื่อมเวลาเข้างานจากไฟล์ที่นำเข้าไว้แล้ว {linked} รายการ" : message;
 
     /// <summary>
     /// ลบข้อมูลพนักงาน

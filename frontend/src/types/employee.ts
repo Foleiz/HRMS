@@ -36,6 +36,8 @@ export interface EmployeeBankAccount {
 export interface Employee {
   id: number;
   employeeCode: string;
+  /** จำนวนแถวลงเวลาจากไฟล์ที่นำเข้าไว้แล้ว ที่ระบบจับคู่ให้อัตโนมัติหลังบันทึก (มีเฉพาะผลของการสร้าง/แก้ไข) */
+  attendanceRowsLinked?: number | null;
   biometricId?: string | null;
   /** สถานะการจ้างงาน: ACTIVE | INACTIVE */
   employmentStatus: string;

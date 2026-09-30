@@ -365,8 +365,13 @@ export default function EmployeeEditPage() {
           : undefined,
       };
 
-      await employeeService.update(employeeId, payload);
-      toast.success('บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ');
+      const updated = await employeeService.update(employeeId, payload);
+      const linked = updated?.attendanceRowsLinked ?? 0;
+      toast.success(
+        linked > 0
+          ? `บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ และเชื่อมเวลาเข้างานจากไฟล์ที่นำเข้าไว้แล้ว ${linked} รายการ`
+          : 'บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ'
+      );
 
       // รอ 800ms แล้วนำทางกลับไปยังหน้ารายละเอียดพนักงาน
       setTimeout(() => {
