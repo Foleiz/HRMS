@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
   Download,
@@ -43,6 +43,12 @@ const EXPIRY_BADGE: Record<DocumentExpiryStatus, { label: string; className: str
   NO_EXPIRY: { label: 'ไม่มีวันหมดอายุ', className: 'bg-slate-50 text-slate-500 border-slate-200' },
 };
 
+/** ข้อความ error จาก API (ApiResponse.message) */
+const apiMessage = (err: unknown, fallback: string): string => {
+  const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+  return message || fallback;
+};
+
 const readAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -77,21 +83,33 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setDocuments(await employeeDocumentService.getByEmployee(employeeId));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'ไม่สามารถโหลดเอกสารของพนักงานได้');
-    } finally {
-      setLoading(false);
-    }
-  }, [employeeId]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    if (employeeId) load();
-  }, [employeeId, load]);
+    if (!employeeId) return;
+    let active = true;
+    employeeDocumentService
+      .getByEmployee(employeeId)
+      .then((items) => {
+        if (!active) return;
+        setDocuments(items);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (active) setError(apiMessage(err, 'ไม่สามารถโหลดเอกสารของพนักงานได้'));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [employeeId, reloadKey]);
+
+  const reload = () => {
+    setLoading(true);
+    setReloadKey((k) => k + 1);
+  };
 
   const summary = useMemo(
     () => ({
@@ -149,9 +167,9 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
       });
       toast.success('เพิ่มเอกสารเข้าแฟ้มเรียบร้อย');
       setShowUpload(false);
-      await load();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'ไม่สามารถเพิ่มเอกสารได้');
+      reload();
+    } catch (err: unknown) {
+      toast.error(apiMessage(err, 'ไม่สามารถเพิ่มเอกสารได้'));
     } finally {
       setSaving(false);
     }
@@ -181,9 +199,9 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
       await employeeDocumentService.remove(deleteTarget.id);
       toast.success('ลบเอกสารเรียบร้อย');
       setDeleteTarget(null);
-      await load();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'ไม่สามารถลบเอกสารได้');
+      reload();
+    } catch (err: unknown) {
+      toast.error(apiMessage(err, 'ไม่สามารถลบเอกสารได้'));
     } finally {
       setDeleting(false);
     }

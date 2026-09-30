@@ -24,6 +24,29 @@ ALTER TABLE hrms.employee_document ADD COLUMN IF NOT EXISTS file_size bigint NUL
 ALTER TABLE hrms.employee_document ADD COLUMN IF NOT EXISTS remarks text NULL;
 ALTER TABLE hrms.employee_document ADD COLUMN IF NOT EXISTS source_general_request_id bigint NULL;
 
+-- ลบพนักงานที่เป็นผู้อัปโหลดได้ (ตั้งผู้อัปโหลดเป็น NULL) — แก้เฉพาะฐานข้อมูลที่ FK ยังไม่ใช่ ON DELETE SET NULL
+DO $$
+DECLARE fk record;
+BEGIN
+    FOR fk IN
+        SELECT c.conname FROM pg_constraint c
+        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+        WHERE c.conrelid = 'hrms.employee_document'::regclass AND c.contype = 'f'
+          AND a.attname = 'uploaded_by_employee_id' AND c.confdeltype <> 'n'
+    LOOP
+        EXECUTE format('ALTER TABLE hrms.employee_document DROP CONSTRAINT %I', fk.conname);
+    END LOOP;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint c
+        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+        WHERE c.conrelid = 'hrms.employee_document'::regclass AND c.contype = 'f'
+          AND a.attname = 'uploaded_by_employee_id') THEN
+        ALTER TABLE hrms.employee_document
+            ADD CONSTRAINT employee_document_uploaded_by_employee_id_fkey
+            FOREIGN KEY (uploaded_by_employee_id) REFERENCES hrms.employee(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
 -- ผูกกับคำขอเอกสารทั่วไปต้นทาง (ถ้ามีตาราง general_request แล้ว)
 DO $$
 BEGIN

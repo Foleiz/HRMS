@@ -102,7 +102,7 @@ public class GeneralRequestService : IGeneralRequestService
         var request = new GeneralRequest
         {
             EmployeeId = me,
-            RequestType = masterType?.DocumentName ?? dto.DocumentType.Trim(),
+            RequestType = Truncate(masterType?.DocumentName ?? dto.DocumentType.Trim(), 150),
             DocumentTypeId = masterType?.Id,
             Purpose = dto.Purpose.Trim(),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
@@ -356,6 +356,8 @@ public class GeneralRequestService : IGeneralRequestService
         }
         return result;
     }
+
+    private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
 
     private static DateOnly? ParseDate(string? value) =>
         DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
