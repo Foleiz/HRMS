@@ -8,6 +8,12 @@ export interface LeaveType {
   status: 'ACTIVE' | 'INACTIVE' | string;
   /** หมวดในแบบฟอร์มใบลา */
   formCategory?: LeaveFormCategory | null;
+  /** จำนวนใบลาที่ใช้ประเภทนี้ (ทุกสถานะ) */
+  requestCount?: number;
+  /** ลบถาวรได้หรือไม่ (ยังไม่เคยถูกใช้งาน) */
+  canDelete?: boolean;
+  /** เหตุผลที่ลบไม่ได้ */
+  deleteBlockedReason?: string | null;
 }
 
 /** หมวดในแบบฟอร์มใบลา: ป่วย / กิจส่วนตัว / พักร้อน / ลาพิเศษ */

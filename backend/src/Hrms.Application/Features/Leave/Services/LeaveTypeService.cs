@@ -1,3 +1,4 @@
+using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
@@ -18,10 +19,28 @@ public class LeaveTypeService : ILeaveTypeService
 
     public async Task<List<LeaveTypeDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.LeaveTypes
+        var types = await _context.LeaveTypes
             .AsNoTracking()
             .OrderBy(t => t.Id)
-            .Select(t => new LeaveTypeDto
+            .ToListAsync(cancellationToken);
+
+        var requestCounts = await _context.LeaveRequests.AsNoTracking()
+            .GroupBy(r => r.LeaveTypeId)
+            .Select(g => new { LeaveTypeId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.LeaveTypeId, x => x.Count, cancellationToken);
+
+        var adjustedTypeIds = (await _context.LeaveBalanceTransactions.AsNoTracking()
+                .Where(t => t.TransactionType == "ADJUSTMENT")
+                .Select(t => t.LeaveBalance!.LeaveTypeId)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        return types.Select(t =>
+        {
+            requestCounts.TryGetValue(t.Id, out var count);
+            var reason = DeleteBlockedReason(count, adjustedTypeIds.Contains(t.Id));
+            return new LeaveTypeDto
             {
                 Id = t.Id,
                 LeaveCode = t.LeaveCode,
@@ -30,9 +49,22 @@ public class LeaveTypeService : ILeaveTypeService
                 IsPaidLeave = t.IsPaidLeave,
                 DocumentDescription = t.DocumentDescription,
                 Status = t.Status,
-                FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName)
-            })
-            .ToListAsync(cancellationToken);
+                FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName),
+                RequestCount = count,
+                CanDelete = reason == null,
+                DeleteBlockedReason = reason
+            };
+        }).ToList();
+    }
+
+    /// <summary>เหตุผลที่ลบประเภทการลาไม่ได้ (null = ลบได้)</summary>
+    private static string? DeleteBlockedReason(int requestCount, bool hasManualAdjustment)
+    {
+        if (requestCount > 0)
+            return $"มีใบลาประเภทนี้แล้ว {requestCount} ใบ ลบไม่ได้เพื่อเก็บประวัติ — ใช้ \"ปิดใช้งาน\" ในหน้าแก้ไขแทน";
+        if (hasManualAdjustment)
+            return "มีการปรับยอดวันลาประเภทนี้ด้วยมือแล้ว ลบไม่ได้เพื่อเก็บประวัติ — ใช้ \"ปิดใช้งาน\" ในหน้าแก้ไขแทน";
+        return null;
     }
 
     public async Task<LeaveTypeDto?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -140,18 +172,35 @@ public class LeaveTypeService : ILeaveTypeService
         var leaveType = await _context.LeaveTypes.FindAsync([id], cancellationToken);
         if (leaveType == null) return false;
 
-        // Check if there are dependent records (policies, balances, requests)
-        var hasPolicies = await _context.LeavePolicies.AnyAsync(p => p.LeaveTypeId == id, cancellationToken);
-        var hasBalances = await _context.LeaveBalances.AnyAsync(b => b.LeaveTypeId == id, cancellationToken);
-        var hasRequests = await _context.LeaveRequests.AnyAsync(r => r.LeaveTypeId == id, cancellationToken);
+        // มีประวัติการใช้งานจริง (ใบลา / ปรับยอดด้วยมือ) → ห้ามลบ ให้ปิดใช้งานแทน
+        var requestCount = await _context.LeaveRequests.CountAsync(r => r.LeaveTypeId == id, cancellationToken);
+        var hasManualAdjustment = await _context.LeaveBalanceTransactions
+            .AnyAsync(t => t.TransactionType == "ADJUSTMENT" && t.LeaveBalance!.LeaveTypeId == id, cancellationToken);
+        var reason = DeleteBlockedReason(requestCount, hasManualAdjustment);
+        if (reason != null)
+            throw new BusinessRuleException(reason);
 
-        if (hasPolicies || hasBalances || hasRequests)
+        // ยังไม่เคยถูกใช้: ลบถาวรพร้อมข้อมูลที่ระบบสร้างให้อัตโนมัติ (สิทธิ์การลา / ยอดวันลา)
+        var balanceIds = await _context.LeaveBalances
+            .Where(b => b.LeaveTypeId == id)
+            .Select(b => b.Id)
+            .ToListAsync(cancellationToken);
+        if (balanceIds.Count > 0)
         {
-            // Soft delete by setting status INACTIVE
-            leaveType.Status = "INACTIVE";
-            await _context.SaveChangesAsync(cancellationToken);
-            return true;
+            var transactions = await _context.LeaveBalanceTransactions
+                .Where(t => balanceIds.Contains(t.LeaveBalanceId))
+                .ToListAsync(cancellationToken);
+            _context.LeaveBalanceTransactions.RemoveRange(transactions);
+            var balances = await _context.LeaveBalances
+                .Where(b => b.LeaveTypeId == id)
+                .ToListAsync(cancellationToken);
+            _context.LeaveBalances.RemoveRange(balances);
         }
+
+        var policies = await _context.LeavePolicies
+            .Where(p => p.LeaveTypeId == id)
+            .ToListAsync(cancellationToken);
+        _context.LeavePolicies.RemoveRange(policies);
 
         _context.LeaveTypes.Remove(leaveType);
         await _context.SaveChangesAsync(cancellationToken);
