@@ -88,6 +88,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<LeavePolicy> LeavePolicies => Set<LeavePolicy>();
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
     public DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions => Set<LeaveBalanceTransaction>();
+    public DbSet<LeaveYearClosing> LeaveYearClosings => Set<LeaveYearClosing>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveRequestDocument> LeaveRequestDocuments => Set<LeaveRequestDocument>();
     // Payroll & Compensation (Dev 2 Sprint 5.1)
@@ -1236,6 +1237,27 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany(t => t.LeaveBalances)
                 .HasForeignKey(e => e.LeaveTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: LeaveYearClosing (ปิดยอดวันลาสิ้นปี)
+        modelBuilder.Entity<LeaveYearClosing>(entity =>
+        {
+            entity.ToTable("leave_year_closing", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.HasIndex(e => e.Year).IsUnique();
+            entity.Property(e => e.ClosedAt).HasColumnName("closed_at").IsRequired();
+            entity.Property(e => e.ClosedByEmployeeId).HasColumnName("closed_by_employee_id");
+            entity.Property(e => e.BalanceCount).HasColumnName("balance_count");
+            entity.Property(e => e.TotalCarriedDays).HasColumnName("total_carried_days").HasPrecision(10, 2);
+            entity.Property(e => e.TotalForfeitedDays).HasColumnName("total_forfeited_days").HasPrecision(10, 2);
+            entity.Property(e => e.Note).HasColumnName("note");
+
+            entity.HasOne(e => e.ClosedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ClosedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: LeaveBalanceTransaction

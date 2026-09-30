@@ -14,6 +14,7 @@ import {
   MonthlyTurnoverSummary,
 } from '@/types/reports';
 import { Department, Division } from '@/types/organization';
+import LeaveSummaryReportTab from '@/components/reports/LeaveSummaryReportTab';
 import {
   Users,
   Clock,
@@ -61,15 +62,20 @@ export default function ReportsPage() {
   const canViewTurnover = hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
   const canExportTurnover = hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
 
-  const canViewAnyReport = canViewHeadcount || canViewLateness || canViewTax || canViewTurnover;
+  // รายงานการลา: ฝ่ายบุคคล/ผู้บริหาร (ตรงกับฝั่ง API)
+  const canViewLeave = ['ADMIN', 'SUPER_ADMIN', 'SYS_ADMIN', 'SYSTEM_SUPER', 'HR', 'HR_ADMIN', 'HR_MGR', 'CEO', 'EXECUTIVE'].some((r) => hasRole(r));
+  const handleLeaveReportError = useCallback((message: string) => toastRef.current.error(message), []);
+
+  const canViewAnyReport = canViewHeadcount || canViewLateness || canViewTax || canViewTurnover || canViewLeave;
 
   // Active Tab
-  type ReportTab = 'headcount' | 'lateness' | 'tax' | 'turnover';
+  type ReportTab = 'headcount' | 'lateness' | 'tax' | 'turnover' | 'leave';
   const [activeTab, setActiveTab] = useState<ReportTab>(() => {
     if (canViewHeadcount) return 'headcount';
     if (canViewLateness) return 'lateness';
     if (canViewTax) return 'tax';
     if (canViewTurnover) return 'turnover';
+    if (canViewLeave) return 'leave';
     return 'headcount';
   });
   const { setBreadcrumb } = useBreadcrumb();
@@ -81,6 +87,7 @@ export default function ReportsPage() {
       lateness: 'รายงานการมาสายประจำเดือน',
       tax: 'ภาษีและประกันสังคม (ภ.ง.ด.1 / สปส. 1-10)',
       turnover: 'อัตราการเข้า-ออกของพนักงาน (Turnover Rate)',
+      leave: 'รายงานการลา',
     };
     setBreadcrumb({
       section: 'รายงาน',
@@ -412,6 +419,19 @@ export default function ReportsPage() {
               }`}
             >
               อัตราการเข้า-ออกงาน (Turnover Rate)
+            </button>
+          )}
+
+          {canViewLeave && (
+            <button
+              onClick={() => setActiveTab('leave')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'leave'
+                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              การลา
             </button>
           )}
         </nav>
@@ -1226,6 +1246,11 @@ export default function ReportsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* TAB 5: รายงานการลา */}
+      {activeTab === 'leave' && canViewLeave && (
+        <LeaveSummaryReportTab canExport={canViewLeave} onError={handleLeaveReportError} />
       )}
 
       {/* ============================================================= */}

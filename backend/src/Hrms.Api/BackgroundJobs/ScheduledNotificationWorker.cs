@@ -1,6 +1,7 @@
 using Hrms.Application.Features.Approvals.Services;
 using Hrms.Application.Features.Contracts.Services;
 using Hrms.Application.Features.EmployeeDocuments.Services;
+using Hrms.Application.Features.Leave.Services;
 
 namespace Hrms.Api.BackgroundJobs;
 
@@ -9,6 +10,7 @@ namespace Hrms.Api.BackgroundJobs;
 /// - เอกสารพนักงานใกล้หมดอายุ / หมดอายุ
 /// - สิ้นสุดทดลองงาน / สัญญาจ้างใกล้หมดอายุ
 /// - เตือนรายการค้างอนุมัติเกิน 2 วัน (เตือนซ้ำทุก 2 วัน)
+/// - ตัดยอดวันลายกมาที่หมดอายุแล้ว (ส่วนที่ยังไม่ได้ใช้)
 /// รันครั้งแรกหลังเปิดระบบ 1 นาที จากนั้นทุก 6 ชั่วโมง — แต่ละงานแยก try/catch ไม่ให้ล้มพร้อมกัน
 /// </summary>
 public class ScheduledNotificationWorker : BackgroundService
@@ -53,6 +55,10 @@ public class ScheduledNotificationWorker : BackgroundService
 
             await RunJobAsync("รายการค้างอนุมัติ", sp =>
                 sp.GetRequiredService<IApprovalWorkflowService>().SendPendingRemindersAsync(PendingApprovalReminderDays, stoppingToken),
+                stoppingToken);
+
+            await RunJobAsync("ยอดวันลายกมาหมดอายุ", sp =>
+                sp.GetRequiredService<ILeaveYearEndService>().ExpireCarryForwardAsync(stoppingToken),
                 stoppingToken);
 
             try

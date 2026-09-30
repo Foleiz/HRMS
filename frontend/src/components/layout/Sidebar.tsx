@@ -86,6 +86,13 @@ const menuItems: MenuItem[] = [
     icon: CalendarCheck,
     requiredPermissions: ['ESS_LEAVE_VIEW'],
   },
+  {
+    title: 'ปฏิทินการลาของทีม',
+    href: '/team-leave-calendar',
+    matchPrefix: '/team-leave-calendar',
+    icon: CalendarRange,
+    requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW'],
+  },
 
   {
     title: 'บันทึกเวลาของฉัน (ESS)',

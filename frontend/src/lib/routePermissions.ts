@@ -29,6 +29,11 @@ export const ROUTE_RULES: RouteRule[] = [
     requiredPermissions: ['ESS_LEAVE_VIEW'],
   },
   {
+    matchPrefix: '/team-leave-calendar',
+    title: 'ปฏิทินการลาของทีม',
+    requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW'],
+  },
+  {
     matchPrefix: '/my-news',
     title: 'ข่าวสารสำหรับฉัน',
     requiredPermissions: ['ESS_NEWS_VIEW'],
