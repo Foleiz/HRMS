@@ -129,6 +129,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // คำขอเอกสารทั่วไป (General Requests)
     public DbSet<GeneralRequest> GeneralRequests => Set<GeneralRequest>();
+    public DbSet<EmployeeDocument> EmployeeDocuments => Set<EmployeeDocument>();
 
     // Resignation Requests (Dev 1 Phase 2)
     public DbSet<ResignationRequest> ResignationRequests => Set<ResignationRequest>();
@@ -1869,6 +1870,41 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+
+        // Configuration: EmployeeDocument (แฟ้มเอกสารพนักงาน)
+        modelBuilder.Entity<EmployeeDocument>(entity =>
+        {
+            entity.ToTable("employee_document", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.DocumentTypeId).HasColumnName("document_type_id").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileMimeType).HasColumnName("file_mime_type").HasMaxLength(100);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.FileData).HasColumnName("file_data");
+            entity.Property(e => e.IssuedDate).HasColumnName("issued_date");
+            entity.Property(e => e.ExpiryDate).HasColumnName("expiry_date");
+            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
+            entity.Property(e => e.UploadedByEmployeeId).HasColumnName("uploaded_by_employee_id");
+            entity.Property(e => e.SourceGeneralRequestId).HasColumnName("source_general_request_id");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.DocumentType)
+                .WithMany()
+                .HasForeignKey(e => e.DocumentTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UploadedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.UploadedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
 
         // Configuration: GeneralRequest (คำขอเอกสารทั่วไป)
         modelBuilder.Entity<GeneralRequest>(entity =>

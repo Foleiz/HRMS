@@ -634,6 +634,17 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             {
                 general.Status = instance.Status;
                 general.CompletedAt ??= DateTime.UtcNow;
+
+                // อนุมัติครบแล้ว → เก็บไฟล์เข้าแฟ้มเอกสารพนักงาน
+                if (instance.Status == "APPROVED")
+                {
+                    var lastApprover = instance.Actions
+                        .Where(a => a.ActionDecision == "APPROVE")
+                        .OrderByDescending(a => a.ActionAt)
+                        .FirstOrDefault()?.ApproverEmployeeId;
+                    await Hrms.Application.Features.EmployeeDocuments.Services.EmployeeDocumentArchiver
+                        .ArchiveGeneralRequestAsync(_context, general, lastApprover, cancellationToken);
+                }
             }
         }
     }

@@ -94,6 +94,7 @@ builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<Hrms.Application.Features.GeneralRequests.Services.IGeneralRequestService, Hrms.Application.Features.GeneralRequests.Services.GeneralRequestService>();
+builder.Services.AddScoped<Hrms.Application.Features.EmployeeDocuments.Services.IEmployeeDocumentService, Hrms.Application.Features.EmployeeDocuments.Services.EmployeeDocumentService>();
 builder.Services.AddScoped<IResignationService, ResignationService>();
 
 

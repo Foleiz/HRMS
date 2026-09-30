@@ -1,6 +1,8 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Approvals.Services;
+using Hrms.Application.Features.EmployeeDocuments.Services;
 using Hrms.Application.Features.GeneralRequests.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +101,7 @@ public class GeneralRequestService : IGeneralRequestService
 
         if (!string.IsNullOrWhiteSpace(dto.FileData))
         {
-            var (bytes, mime) = DecodeFile(dto.FileData, dto.FileName);
+            var (bytes, mime) = FileDataDecoder.Decode(dto.FileData, dto.FileName);
             if (bytes.LongLength > MaxFileBytes)
                 throw new ValidationException("ไฟล์แนบต้องมีขนาดไม่เกิน 5 MB");
             request.FileData = bytes;
@@ -149,6 +151,8 @@ public class GeneralRequestService : IGeneralRequestService
             if (!IsHrOrAdmin) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
             request.Status = "APPROVED";
             request.CompletedAt = DateTime.UtcNow;
+            // เก็บไฟล์เข้าแฟ้มเอกสารพนักงาน
+            await EmployeeDocumentArchiver.ArchiveGeneralRequestAsync(_context, request, me, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
@@ -338,42 +342,4 @@ public class GeneralRequestService : IGeneralRequestService
         DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
             ? d
             : null;
-
-    private static (byte[] Bytes, string Mime) DecodeFile(string data, string? fileName)
-    {
-        var mime = "application/octet-stream";
-        var payload = data.Trim();
-        if (payload.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-        {
-            var comma = payload.IndexOf(',');
-            if (comma > 0)
-            {
-                var header = payload[5..comma];
-                var semi = header.IndexOf(';');
-                if (semi > 0) mime = header[..semi];
-                payload = payload[(comma + 1)..];
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(fileName))
-        {
-            mime = Path.GetExtension(fileName).ToLowerInvariant() switch
-            {
-                ".pdf" => "application/pdf",
-                ".png" => "image/png",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".doc" => "application/msword",
-                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                _ => mime
-            };
-        }
-
-        try
-        {
-            return (Convert.FromBase64String(payload), mime);
-        }
-        catch (FormatException)
-        {
-            throw new ValidationException("ไฟล์แนบไม่ถูกต้อง");
-        }
-    }
 }

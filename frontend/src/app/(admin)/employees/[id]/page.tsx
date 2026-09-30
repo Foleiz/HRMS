@@ -20,6 +20,8 @@ import { Employee } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { getAvatarUrl } from '@/lib/api-client';
+import { useAuth } from '@/context/AuthContext';
+import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
@@ -83,7 +85,9 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user' | 'documents'>('personal');
+  const { hasRole } = useAuth();
+  const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -465,6 +469,18 @@ export default function EmployeeDetailPage() {
               >
                 ข้อมูลผู้ใช้งาน
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('documents')}
+                className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
+                  activeTab === 'documents'
+                    ? 'border-[#0B2046] text-[#0B2046]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                เอกสาร
+              </button>
             </div>
 
             {/* แก้ไขข้อมูล Button */}
@@ -835,6 +851,13 @@ export default function EmployeeDetailPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TAB 5: แฟ้มเอกสารพนักงาน (Employee Documents)               */}
+          {/* ============================================================ */}
+          {activeTab === 'documents' && (
+            <EmployeeDocumentsTab employeeId={employee.id} canManage={canManageDocuments} />
           )}
         </div>
       </div>
