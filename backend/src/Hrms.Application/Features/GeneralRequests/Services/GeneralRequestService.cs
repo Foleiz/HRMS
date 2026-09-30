@@ -169,6 +169,7 @@ public class GeneralRequestService : IGeneralRequestService
         else
         {
             if (!IsHrOrAdmin) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
+            if (request.EmployeeId == me) throw new ForbiddenException("ไม่สามารถอนุมัติคำขอของตัวเองได้");
             request.Status = "APPROVED";
             request.CompletedAt = DateTime.UtcNow;
             // เก็บไฟล์เข้าแฟ้มเอกสารพนักงาน
@@ -310,7 +311,7 @@ public class GeneralRequestService : IGeneralRequestService
             else if (instance == null && status == "PENDING")
             {
                 currentApprover = "ฝ่ายทรัพยากรบุคคล";
-                isMyTurn = isHr;
+                isMyTurn = isHr && r.EmployeeId != me;
             }
 
             var lastApprove = instance?.Actions

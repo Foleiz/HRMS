@@ -1385,6 +1385,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id");
             entity.Property(e => e.ApproverRoleId).HasColumnName("approver_role_id");
             entity.Property(e => e.IsRequired).HasColumnName("is_required").IsRequired();
+            entity.Property(e => e.ApproverScope).HasColumnName("approver_scope").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FallbackAction).HasColumnName("fallback_action").HasMaxLength(20).IsRequired();
 
             entity.HasIndex(e => new { e.FlowId, e.StepNo }).IsUnique();
 

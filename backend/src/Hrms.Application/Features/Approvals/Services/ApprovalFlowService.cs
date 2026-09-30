@@ -20,7 +20,12 @@ public class ApprovalFlowService : IApprovalFlowService
     };
 
     /// <summary>ประเภทผู้อนุมัติที่เลือกได้เมื่อสร้าง/แก้ไขสายการอนุมัติ</summary>
-    private static readonly HashSet<string> ConfigurableApproverTypes = new() { "EMPLOYEE", "ROLE" };
+    /// <summary>
+    /// ประเภทผู้อนุมัติที่ตั้งค่าได้ — แบบอ้างอิงผู้ยื่น (MANAGER / DEPARTMENT_HEAD / DIVISION_HEAD) ทำให้ใช้สายเดียวได้ทุกแผนก
+    /// </summary>
+    private static readonly HashSet<string> ConfigurableApproverTypes = new() { "EMPLOYEE", "ROLE", "MANAGER", "DEPARTMENT_HEAD", "DIVISION_HEAD", "HR", "CEO" };
+    private static readonly HashSet<string> ApproverScopes = new() { "ORG", "DIVISION", "DEPARTMENT" };
+    private static readonly HashSet<string> FallbackActions = new() { "HR", "SKIP", "ESCALATE", "WAIT" };
 
     public ApprovalFlowService(IHrmsDbContext context)
     {
@@ -132,6 +137,8 @@ public class ApprovalFlowService : IApprovalFlowService
             existing.ApproverEmployeeId = incoming.ApproverEmployeeId;
             existing.ApproverRoleId = incoming.ApproverRoleId;
             existing.IsRequired = incoming.IsRequired;
+            existing.ApproverScope = incoming.ApproverScope;
+            existing.FallbackAction = incoming.FallbackAction;
         }
 
         for (int i = commonCount; i < newStepsList.Count; i++)
@@ -204,13 +211,17 @@ public class ApprovalFlowService : IApprovalFlowService
                 throw new InvalidOperationException($"ลำดับขั้นตอนที่ {input.StepNo} ซ้ำกัน กรุณาจัดลำดับใหม่");
             }
 
-            // ตั้งค่าใหม่ได้เฉพาะ "ระบุตัวบุคคล" (EMPLOYEE) และ "ระบุตามบทบาท" (ROLE)
-            // ประเภทอื่นยังรองรับในสายการอนุมัติเดิมที่ทำงานอยู่ แต่ไม่ให้สร้าง/บันทึกใหม่
             if (!ConfigurableApproverTypes.Contains(input.ApproverType))
             {
-                throw new InvalidOperationException(
-                    $"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติต้องเป็น 'ระบุตัวบุคคล' (EMPLOYEE) หรือ 'ระบุตามบทบาท' (ROLE) เท่านั้น");
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติ '{input.ApproverType}' ไม่ถูกต้อง");
             }
+
+            var scope = string.IsNullOrWhiteSpace(input.ApproverScope) ? "ORG" : input.ApproverScope.Trim().ToUpperInvariant();
+            if (!ApproverScopes.Contains(scope))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ขอบเขตผู้อนุมัติ '{input.ApproverScope}' ไม่ถูกต้อง");
+            var fallback = string.IsNullOrWhiteSpace(input.FallbackAction) ? "HR" : input.FallbackAction.Trim().ToUpperInvariant();
+            if (!FallbackActions.Contains(fallback))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: การจัดการเมื่อไม่พบผู้อนุมัติ '{input.FallbackAction}' ไม่ถูกต้อง");
 
             if (input.ApproverType == "EMPLOYEE" && input.ApproverEmployeeId is null)
             {
@@ -229,7 +240,10 @@ public class ApprovalFlowService : IApprovalFlowService
                 // เก็บเฉพาะ FK ที่เกี่ยวข้องกับ ApproverType นั้นจริง ๆ ป้องกันข้อมูลค้างจากการสลับประเภทไปมาในหน้า UI
                 ApproverEmployeeId = input.ApproverType == "EMPLOYEE" ? input.ApproverEmployeeId : null,
                 ApproverRoleId = input.ApproverType == "ROLE" ? input.ApproverRoleId : null,
-                IsRequired = input.IsRequired
+                IsRequired = fallback != "SKIP",
+                // ขอบเขตใช้กับแบบ ROLE เท่านั้น — แบบอื่นอ้างอิงผู้ยื่นอยู่แล้ว
+                ApproverScope = input.ApproverType == "ROLE" ? scope : "ORG",
+                FallbackAction = fallback
             });
         }
 
@@ -489,7 +503,9 @@ public class ApprovalFlowService : IApprovalFlowService
                     ApproverEmployeeName = s.ApproverEmployee?.FullName,
                     ApproverRoleId = s.ApproverRoleId,
                     ApproverRoleName = s.ApproverRole?.RoleName,
-                    IsRequired = s.IsRequired
+                    IsRequired = s.IsRequired,
+                    ApproverScope = s.ApproverScope,
+                    FallbackAction = s.FallbackAction
                 })
                 .ToList()
         };

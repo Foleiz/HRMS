@@ -10,6 +10,10 @@ public record ApprovalStepDto
     public long? ApproverRoleId { get; init; }
     public string? ApproverRoleName { get; init; }
     public bool IsRequired { get; init; } = true;
+    /// <summary>ORG / DIVISION / DEPARTMENT (ใช้กับ ROLE)</summary>
+    public string ApproverScope { get; init; } = "ORG";
+    /// <summary>HR / SKIP / ESCALATE / WAIT</summary>
+    public string FallbackAction { get; init; } = "HR";
 }
 
 /// <summary>ใช้รับข้อมูลขั้นตอนอนุมัติตอนสร้าง/แก้ไข flow (ไม่มี Id เพราะแทนที่ทั้งชุดทุกครั้งที่บันทึก)</summary>
@@ -20,6 +24,10 @@ public record ApprovalStepInput
     public long? ApproverEmployeeId { get; init; }
     public long? ApproverRoleId { get; init; }
     public bool IsRequired { get; init; } = true;
+    /// <summary>ORG / DIVISION / DEPARTMENT (ใช้กับ ROLE) — ไม่ส่ง = ORG</summary>
+    public string? ApproverScope { get; init; }
+    /// <summary>HR / SKIP / ESCALATE / WAIT — ไม่ส่ง = HR</summary>
+    public string? FallbackAction { get; init; }
 }
 
 public record ApprovalFlowDto

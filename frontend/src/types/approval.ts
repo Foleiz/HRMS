@@ -27,6 +27,8 @@ export interface ApprovalStep {
   approverRoleId?: number | null;
   approverRoleName?: string | null;
   isRequired: boolean;
+  approverScope?: ApproverScope | string;
+  fallbackAction?: FallbackAction | string;
 }
 
 export interface ApprovalStepInput {
@@ -35,7 +37,29 @@ export interface ApprovalStepInput {
   approverEmployeeId?: number | null;
   approverRoleId?: number | null;
   isRequired: boolean;
+  /** ขอบเขตของผู้อนุมัติแบบบทบาท เทียบกับผู้ยื่น */
+  approverScope?: ApproverScope | string;
+  /** ถ้าหาผู้อนุมัติไม่เจอ */
+  fallbackAction?: FallbackAction | string;
 }
+
+/** ขอบเขตผู้อนุมัติแบบบทบาท: ทั้งบริษัท / ฝ่ายเดียวกับผู้ยื่น / แผนกเดียวกับผู้ยื่น */
+export type ApproverScope = 'ORG' | 'DIVISION' | 'DEPARTMENT';
+/** เมื่อหาผู้อนุมัติไม่เจอ: ส่งให้ HR / ข้ามขั้น / ขยายขึ้นหนึ่งระดับ / รอ */
+export type FallbackAction = 'HR' | 'SKIP' | 'ESCALATE' | 'WAIT';
+
+export const APPROVER_SCOPE_LABELS: Record<string, string> = {
+  ORG: 'ทั้งบริษัท',
+  DIVISION: 'ฝ่ายเดียวกับผู้ยื่น',
+  DEPARTMENT: 'แผนกเดียวกับผู้ยื่น',
+};
+
+export const FALLBACK_ACTION_LABELS: Record<string, string> = {
+  HR: 'ส่งให้ฝ่ายบุคคลแทน',
+  SKIP: 'ข้ามขั้นนี้',
+  ESCALATE: 'ส่งต่อหัวหน้าระดับถัดไป',
+  WAIT: 'รอจนกว่าจะมีผู้อนุมัติ',
+};
 
 export interface ApprovalFlow {
   id: number;
@@ -122,9 +146,9 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 export const APPROVER_TYPE_LABELS: Record<string, string> = {
   EMPLOYEE: 'ระบุตัวบุคคล',
   ROLE: 'ระบุตามบทบาท',
-  MANAGER: 'หัวหน้างานตรง',
-  DEPARTMENT_HEAD: 'หัวหน้าแผนก',
-  DIVISION_HEAD: 'หัวหน้าฝ่าย',
+  MANAGER: 'หัวหน้างานตรงของผู้ยื่น',
+  DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่น',
+  DIVISION_HEAD: 'หัวหน้าฝ่ายของผู้ยื่น',
   HR: 'ฝ่ายทรัพยากรบุคคล',
   CEO: 'ผู้บริหารสูงสุด',
 };

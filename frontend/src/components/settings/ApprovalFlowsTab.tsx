@@ -31,6 +31,8 @@ import {
   CreateApprovalFlowPayload,
   DOCUMENT_TYPE_LABELS,
   APPROVER_TYPE_LABELS,
+  APPROVER_SCOPE_LABELS,
+  FALLBACK_ACTION_LABELS,
 } from '@/types/approval';
 import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
@@ -56,8 +58,23 @@ const DOCUMENT_TYPE_OPTIONS = [
   ...DOCUMENT_TYPE_ORDER.filter((t) => t in DOCUMENT_TYPE_LABELS),
   ...Object.keys(DOCUMENT_TYPE_LABELS).filter((t) => !DOCUMENT_TYPE_ORDER.includes(t)),
 ].filter((t) => !HIDDEN_DOCUMENT_TYPES.has(t));
-/** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
-const APPROVER_TYPE_OPTIONS = ['EMPLOYEE', 'ROLE'];
+/**
+ * ประเภทผู้อนุมัติที่เลือกได้ — แบบ "ของผู้ยื่น" ระบบหาคนจากโครงสร้างองค์กรให้เอง จึงใช้สายเดียวได้ทุกแผนก
+ */
+const APPROVER_TYPE_OPTIONS = ['DEPARTMENT_HEAD', 'DIVISION_HEAD', 'MANAGER', 'ROLE', 'EMPLOYEE', 'HR', 'CEO'];
+const APPROVER_TYPE_HINTS: Record<string, string> = {
+  DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการแผนกในแผนกเดียวกัน)',
+  DIVISION_HEAD: 'หัวหน้าฝ่ายของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการฝ่ายในฝ่ายเดียวกัน)',
+  MANAGER: 'หัวหน้างานโดยตรงที่กำหนดไว้ในข้อมูลพนักงานแต่ละคน',
+  EMPLOYEE: 'พนักงานคนเดียวกันเสมอ ไม่ว่าใครเป็นผู้ยื่น',
+  HR: 'ผู้มีบทบาทฝ่ายบุคคล (HR / HR_ADMIN / HR_MGR)',
+  CEO: 'ผู้มีบทบาทผู้บริหารสูงสุด (CEO / EXECUTIVE)',
+};
+const APPROVER_SCOPE_HINTS: Record<string, string> = {
+  ORG: 'ทุกคนที่มีบทบาทนี้ทั้งบริษัทจะเห็นและอนุมัติคำขอของทุกแผนกได้ — เหมาะกับบทบาทส่วนกลาง เช่น HR, การเงิน',
+  DIVISION: 'เฉพาะผู้มีบทบาทนี้ที่อยู่ฝ่ายเดียวกับผู้ยื่น',
+  DEPARTMENT: 'เฉพาะผู้มีบทบาทนี้ที่อยู่แผนกเดียวกับผู้ยื่น',
+};
 
 // ตัวช่วยป้ายชื่อประเภทเอกสารและโทนสี
 const getDocTypeBadge = (docType: string) => {
@@ -83,19 +100,20 @@ const getDocTypeBadge = (docType: string) => {
 const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: Employee[], roles: RoleSummary[]) => {
   switch (step.approverType) {
     case 'MANAGER':
-      return 'หัวหน้างานโดยตรง';
+      return 'หัวหน้างานตรงของผู้ยื่น';
     case 'DEPARTMENT_HEAD':
-      return 'หัวหน้าแผนก';
+      return 'หัวหน้าแผนกของผู้ยื่น';
     case 'DIVISION_HEAD':
-      return 'หัวหน้าฝ่าย';
+      return 'หัวหน้าฝ่ายของผู้ยื่น';
     case 'HR':
       return 'ฝ่ายทรัพยากรบุคคล';
     case 'CEO':
       return 'ผู้บริหารสูงสุด';
     case 'ROLE': {
-      if ('approverRoleName' in step && step.approverRoleName) return step.approverRoleName;
+      const scope = step.approverScope && step.approverScope !== 'ORG' ? ` (${APPROVER_SCOPE_LABELS[step.approverScope]})` : '';
+      if ('approverRoleName' in step && step.approverRoleName) return step.approverRoleName + scope;
       const foundRole = roles.find((r) => r.id === step.approverRoleId);
-      return foundRole ? foundRole.roleName : 'ระบุตามบทบาท';
+      return (foundRole ? foundRole.roleName : 'ระบุตามบทบาท') + scope;
     }
     case 'EMPLOYEE': {
       if ('approverEmployeeName' in step && step.approverEmployeeName) return step.approverEmployeeName;
@@ -112,10 +130,12 @@ const MAX_APPROVAL_STEPS = 4;
 
 const emptyStep = (stepNo: number): ApprovalStepInput => ({
   stepNo,
-  approverType: 'ROLE',
+  approverType: 'DEPARTMENT_HEAD',
   approverEmployeeId: null,
   approverRoleId: null,
   isRequired: true,
+  approverScope: 'ORG',
+  fallbackAction: 'HR',
 });
 
 export const ApprovalFlowsTab: React.FC = () => {
@@ -239,6 +259,8 @@ export const ApprovalFlowsTab: React.FC = () => {
           approverEmployeeId: s.approverEmployeeId,
           approverRoleId: s.approverRoleId,
           isRequired: s.isRequired,
+          approverScope: s.approverScope ?? 'ORG',
+          fallbackAction: s.fallbackAction ?? 'HR',
         })),
       });
       success(nextStatus === 'ACTIVE' ? `เปิดใช้งาน '${flow.flowName}' สำเร็จ` : `ปิดใช้งาน '${flow.flowName}' สำเร็จ`);
@@ -284,6 +306,8 @@ export const ApprovalFlowsTab: React.FC = () => {
           approverEmployeeId: s.approverEmployeeId,
           approverRoleId: s.approverRoleId,
           isRequired: s.isRequired,
+          approverScope: s.approverScope ?? 'ORG',
+          fallbackAction: s.fallbackAction ?? 'HR',
         })),
     });
     setIsEditorOpen(true);
@@ -338,17 +362,27 @@ export const ApprovalFlowsTab: React.FC = () => {
     approverEmployeeId: null,
     approverRoleId,
     isRequired: true,
+    approverScope: 'ORG',
+    fallbackAction: 'HR',
   });
 
   const applyPreset = (presetType: 'TWO_TIER' | 'THREE_TIER' | 'DIRECT_HR') => {
     const hrRoleId = findRoleId(['HR_MGR', 'HR_ADMIN', 'HR']);
     const ceoRoleId = findRoleId(['CEO', 'EXECUTIVE']);
+    // ขั้นหัวหน้าใช้แบบ "ของผู้ยื่น" → สายเดียวใช้ได้ทุกแผนก
+    const relativeStep = (stepNo: number, approverType: string): ApprovalStepInput => ({
+      ...emptyStep(stepNo),
+      approverType,
+    });
     if (presetType === 'TWO_TIER') {
-      setForm((f) => ({ ...f, steps: [roleStep(1, null), roleStep(2, hrRoleId)] }));
-      success('ปรับใช้แม่แบบ 2 ลำดับขั้นสำเร็จ กรุณาเลือกบทบาทในขั้นที่ยังว่าง');
+      setForm((f) => ({ ...f, steps: [relativeStep(1, 'DEPARTMENT_HEAD'), roleStep(2, hrRoleId)] }));
+      success('ปรับใช้แม่แบบ 2 ลำดับขั้นสำเร็จ: หัวหน้าแผนกของผู้ยื่น → ฝ่ายบุคคล');
     } else if (presetType === 'THREE_TIER') {
-      setForm((f) => ({ ...f, steps: [roleStep(1, null), roleStep(2, null), roleStep(3, ceoRoleId)] }));
-      success('ปรับใช้แม่แบบ 3 ลำดับขั้นสำเร็จ กรุณาเลือกบทบาทในขั้นที่ยังว่าง');
+      setForm((f) => ({
+        ...f,
+        steps: [relativeStep(1, 'DEPARTMENT_HEAD'), relativeStep(2, 'DIVISION_HEAD'), roleStep(3, ceoRoleId)],
+      }));
+      success('ปรับใช้แม่แบบ 3 ลำดับขั้นสำเร็จ: หัวหน้าแผนก → หัวหน้าฝ่ายของผู้ยื่น → ผู้บริหาร');
     } else if (presetType === 'DIRECT_HR') {
       setForm((f) => ({ ...f, steps: [roleStep(1, hrRoleId)] }));
       success('ปรับใช้แม่แบบฝ่ายทรัพยากรบุคคลโดยตรงสำเร็จ');
@@ -371,7 +405,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
     for (const step of form.steps) {
       if (!APPROVER_TYPE_OPTIONS.includes(step.approverType)) {
-        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเปลี่ยนประเภทผู้อนุมัติเป็น "ระบุตัวบุคคล" หรือ "ระบุตามบทบาท"`);
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกประเภทผู้อนุมัติ`);
         return;
       }
       if (step.approverType === 'EMPLOYEE' && !step.approverEmployeeId) {
@@ -586,7 +620,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                       {getApproverDisplay(step, employees, roles)}
                                     </div>
                                     <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                      {step.isRequired ? 'จำเป็นต้องอนุมัติ' : 'ผ่านโดยไม่มีก็ได้'}
+                                      ไม่พบผู้อนุมัติ: {FALLBACK_ACTION_LABELS[step.fallbackAction ?? 'HR'] ?? step.fallbackAction}
                                     </div>
                                   </div>
                                 </div>
@@ -719,7 +753,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           สายอนุมัติ 2 ขั้นตอน
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          บทบาทหัวหน้างาน ➔ บทบาทฝ่ายบุคคล
+                          หัวหน้าแผนกของผู้ยื่น ➔ ฝ่ายบุคคล
                         </div>
                       </button>
 
@@ -732,7 +766,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           สายอนุมัติ 3 ขั้นตอน
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          บทบาทหัวหน้างาน ➔ บทบาทหัวหน้าแผนก ➔ บทบาทผู้บริหาร
+                          หัวหน้าแผนก ➔ หัวหน้าฝ่ายของผู้ยื่น ➔ ผู้บริหาร
                         </div>
                       </button>
 
@@ -997,6 +1031,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   approverType: e.target.value,
                                   approverEmployeeId: null,
                                   approverRoleId: null,
+                                  approverScope: 'ORG',
                                 });
                               }}
                               className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
@@ -1016,25 +1051,32 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                           <div>
                             <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                              ความจำเป็นในการอนุมัติ
+                              ถ้าหาผู้อนุมัติไม่เจอ
                             </label>
-                            <div className="flex items-center gap-2 pt-1.5">
-                              <input
-                                type="checkbox"
-                                id={`req-${idx}`}
-                                checked={step.isRequired}
-                                onChange={(e) => updateStep(idx, { isRequired: e.target.checked })}
-                                className="rounded text-[#0B2046] focus:ring-[#0B2046]"
-                              />
-                              <label
-                                htmlFor={`req-${idx}`}
-                                className="text-xs text-slate-700 cursor-pointer select-none"
-                              >
-                                จำเป็นต้องอนุมัติ
-                              </label>
-                            </div>
+                            <select
+                              value={step.fallbackAction ?? 'HR'}
+                              onChange={(e) =>
+                                updateStep(idx, { fallbackAction: e.target.value, isRequired: e.target.value !== 'SKIP' })
+                              }
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                            >
+                              {Object.entries(FALLBACK_ACTION_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
+
+                        {APPROVER_TYPE_HINTS[step.approverType] && (
+                          <p className="text-[11px] text-slate-400 -mt-1">{APPROVER_TYPE_HINTS[step.approverType]}</p>
+                        )}
+                        {(step.fallbackAction ?? 'HR') === 'SKIP' && idx === form.steps.length - 1 && (
+                          <p className="text-[11px] text-amber-600 -mt-1">
+                            ขั้นสุดท้ายจะไม่ถูกข้าม — ถ้าหาผู้อนุมัติไม่เจอจะส่งให้ฝ่ายบุคคลแทน
+                          </p>
+                        )}
 
                         {/* Extra selector when ApproverType is EMPLOYEE */}
                         {step.approverType === 'EMPLOYEE' && (
@@ -1084,6 +1126,28 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 </option>
                               ))}
                             </select>
+
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1 mt-3">
+                              ขอบเขตผู้อนุมัติ
+                            </label>
+                            <select
+                              value={step.approverScope ?? 'ORG'}
+                              onChange={(e) => updateStep(idx, { approverScope: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                            >
+                              {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
+                            <p
+                              className={`text-[11px] mt-1 ${
+                                (step.approverScope ?? 'ORG') === 'ORG' ? 'text-amber-600' : 'text-slate-400'
+                              }`}
+                            >
+                              {APPROVER_SCOPE_HINTS[step.approverScope ?? 'ORG']}
+                            </p>
                           </div>
                         )}
                       </div>

@@ -27,6 +27,16 @@ public class ApprovalStep : BaseEntity
     /// <summary>ถ้า false = ขั้นตอนนี้ข้ามได้ (optional step)</summary>
     public bool IsRequired { get; set; } = true;
 
+    /// <summary>
+    /// ขอบเขตของผู้อนุมัติแบบ ROLE เทียบกับผู้ยื่น: ORG (ทั้งบริษัท), DIVISION (ฝ่ายเดียวกับผู้ยื่น), DEPARTMENT (แผนกเดียวกับผู้ยื่น)
+    /// </summary>
+    public string ApproverScope { get; set; } = "ORG";
+
+    /// <summary>
+    /// ถ้าหาผู้อนุมัติของขั้นนี้ไม่เจอ: HR (ส่งให้ฝ่ายบุคคล), SKIP (ข้ามขั้น), ESCALATE (ขยายขึ้นหนึ่งระดับ), WAIT (รอ)
+    /// </summary>
+    public string FallbackAction { get; set; } = "HR";
+
     // Navigation Properties
     public virtual ApprovalFlow? Flow { get; set; }
     public virtual Employee? ApproverEmployee { get; set; }

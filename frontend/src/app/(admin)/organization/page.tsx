@@ -37,6 +37,7 @@ import {
   Share2,
   Landmark,
   CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
@@ -398,6 +399,26 @@ export default function OrganizationPage() {
   };
 
   // Helper แสดง Avatar และชื่อพนักงาน
+  // หัวหน้าฝ่าย/แผนก — ใช้หาผู้อนุมัติแบบ "หัวหน้าของผู้ยื่น" ในสายการอนุมัติ
+  const renderHeadCell = (name?: string | null) =>
+    name ? (
+      renderEmployeeCell(name)
+    ) : (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+        <AlertTriangle className="w-3 h-3" /> ยังไม่ได้ตั้งหัวหน้า
+      </span>
+    );
+
+  const renderMissingHeadBanner = (count: number, unit: 'ฝ่าย' | 'แผนก') =>
+    count > 0 ? (
+      <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+        <span>
+          มี <strong>{count} {unit}</strong>ที่ยังไม่ได้ตั้งหัวหน้า — ขั้นอนุมัติแบบ &quot;หัวหน้า{unit}ของผู้ยื่น&quot; ของพนักงานใน{unit}นี้จะใช้ทางสำรองที่ตั้งไว้แทน (เช่น ส่งให้ฝ่ายบุคคล)
+        </span>
+      </div>
+    ) : null;
+
   const renderEmployeeCell = (name?: string | null) => {
     if (!name) return <span className="text-slate-400">-</span>;
     const initial = name.trim().charAt(0);
@@ -1116,6 +1137,7 @@ export default function OrganizationPage() {
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
+            {renderMissingHeadBanner(divisions.filter((d) => d.status === 'ACTIVE' && !d.headEmployeeId).length, 'ฝ่าย')}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative max-w-sm w-full">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1170,7 +1192,7 @@ export default function OrganizationPage() {
                       <tr key={div.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{div.divisionCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{div.divisionName}</td>
-                        <td className="py-3 px-4 whitespace-nowrap">{renderEmployeeCell(div.headEmployeeName)}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{renderHeadCell(div.headEmployeeName)}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 whitespace-nowrap">
                             {div.departmentCount} แผนก
@@ -1224,6 +1246,7 @@ export default function OrganizationPage() {
         {/* TAB 2: DEPARTMENTS */}
         {activeTab === 'departments' && (
           <div className="space-y-4">
+            {renderMissingHeadBanner(departments.filter((d) => d.status === 'ACTIVE' && !d.headEmployeeId).length, 'แผนก')}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
                 <div className="relative flex-1">
@@ -1294,7 +1317,7 @@ export default function OrganizationPage() {
                       <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{dept.departmentCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{dept.departmentName}</td>
-                        <td className="py-3 px-4 whitespace-nowrap">{renderEmployeeCell(dept.headEmployeeName)}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{renderHeadCell(dept.headEmployeeName)}</td>
                         <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{dept.divisionName}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 whitespace-nowrap">
