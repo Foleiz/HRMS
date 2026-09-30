@@ -59,7 +59,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 }) => {
   const isEditing = !!leaveTypeToEdit;
 
-  const [leaveCode, setLeaveCode] = useState('');
   const [leaveName, setLeaveName] = useState('');
   const [formCategory, setFormCategory] = useState<LeaveFormCategory>('SPECIAL');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
@@ -70,7 +69,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   useEffect(() => {
     if (leaveTypeToEdit) {
-      setLeaveCode(leaveTypeToEdit.leaveCode);
       setLeaveName(leaveTypeToEdit.leaveName);
       setFormCategory(
         (leaveTypeToEdit.formCategory as LeaveFormCategory) ||
@@ -79,7 +77,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
     } else {
-      setLeaveCode('');
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
@@ -156,11 +153,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               required
             />
-            {isEditing && leaveCode && (
-              <p className="mt-1.5 text-xs text-gray-400">
-                รหัส <span className="font-mono">{leaveCode}</span>
-              </p>
-            )}
           </div>
 
           {/* หมวดแบบฟอร์ม */}

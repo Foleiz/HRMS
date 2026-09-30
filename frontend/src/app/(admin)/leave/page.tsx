@@ -238,7 +238,7 @@ export default function LeaveManagementPage() {
     const policyCount = leavePolicies.filter((p) => p.leaveTypeId === type.id).length;
     showConfirm({
       title: 'ยืนยันการลบประเภทการลา?',
-      message: `ลบประเภทการลา "${type.leaveName}" (${type.leaveCode}) ถาวร${
+      message: `ลบประเภทการลา "${type.leaveName}" ถาวร${
         policyCount > 0 ? ` พร้อมสิทธิ์การลาที่ตั้งไว้ ${policyCount} รายการ` : ''
       } และยอดวันลาที่ระบบสร้างไว้\nการลบนี้ย้อนกลับไม่ได้`,
       type: 'danger',
@@ -518,7 +518,6 @@ export default function LeaveManagementPage() {
                       <tr key={type.id} className="hover:bg-gray-50/60 transition-colors">
                         <td className="py-4 px-5">
                           <div className="font-semibold text-gray-800">{type.leaveName}</div>
-                          <div className="text-xs text-gray-400 uppercase tracking-wide">{type.leaveCode}</div>
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600">
                           {formCategoryDisplay(type)}
