@@ -121,6 +121,10 @@ public class DocumentTypeService : IDocumentTypeService
         if (doc == null)
             throw new NotFoundException("ประเภทเอกสารแนบ", id);
 
+        var inUse = await _context.EmployeeDocuments.AnyAsync(d => d.DocumentTypeId == id, cancellationToken);
+        if (inUse)
+            throw new BusinessRuleException("ไม่สามารถลบได้ เนื่องจากมีเอกสารในแฟ้มพนักงานใช้ประเภทนี้อยู่ (เปลี่ยนสถานะเป็นปิดใช้งานแทนได้)");
+
         _context.DocumentTypes.Remove(doc);
         await _context.SaveChangesAsync(cancellationToken);
     }

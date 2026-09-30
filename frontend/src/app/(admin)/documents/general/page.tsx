@@ -22,6 +22,8 @@ import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { leaveService } from '@/services/leaveService';
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { COMMON_DOCUMENT_TYPES } from '@/types/generalDocument';
+import { masterDataService } from '@/services/masterDataService';
+import { DocumentTypeItem } from '@/types/master';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { toast } from '@/context/ToastContext';
 
@@ -67,7 +69,15 @@ export default function GeneralDocumentPage() {
     d.setFullYear(d.getFullYear() + 1);
     return toInputDate(d);
   });
-  const [documentType, setDocumentType] = useState<string>(COMMON_DOCUMENT_TYPES[0]);
+  const [documentType, setDocumentType] = useState<string>('');
+  // ประเภทเอกสารจาก Master (ตั้งค่า > ข้อมูลหลัก > ประเภทเอกสาร) — โหลดไม่ได้จะใช้รายการสำรองเดิม
+  const [masterTypes, setMasterTypes] = useState<DocumentTypeItem[]>([]);
+  const [typesLoaded, setTypesLoaded] = useState(false);
+  const typeOptions = useMemo<string[]>(
+    () => (masterTypes.length > 0 ? masterTypes.map((t) => t.documentName) : [...COMMON_DOCUMENT_TYPES]),
+    [masterTypes],
+  );
+  const selectedMasterType = masterTypes.find((t) => t.documentName === documentType);
   const [customDocumentType, setCustomDocumentType] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
 
@@ -93,13 +103,8 @@ export default function GeneralDocumentPage() {
       const savedDraft = localStorage.getItem('hrms_general_doc_draft');
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
-        if (parsed.documentType) {
-          setDocumentType(parsed.documentType);
-          if (!COMMON_DOCUMENT_TYPES.includes(parsed.documentType as any)) {
-            setIsCustomType(true);
-            setCustomDocumentType(parsed.documentType);
-          }
-        }
+        // ตรวจว่าตรงกับรายการหรือไม่หลังโหลดประเภทเอกสารเสร็จ (ดู useEffect ถัดไป)
+        if (parsed.documentType) setDocumentType(parsed.documentType);
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.notes) setNotes(parsed.notes);
         if (parsed.issueDate) setIssueDate(parsed.issueDate);
@@ -111,6 +116,35 @@ export default function GeneralDocumentPage() {
 
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
+
+  // โหลดประเภทเอกสารจาก Master
+  useEffect(() => {
+    let cancelled = false;
+    masterDataService
+      .getDocumentTypes('ACTIVE')
+      .then((items) => {
+        if (!cancelled) setMasterTypes(items.filter((t) => t.status === 'ACTIVE'));
+      })
+      .catch((err) => console.error('Error loading document types:', err))
+      .finally(() => {
+        if (!cancelled) setTypesLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // เลือกค่าเริ่มต้น / แบบร่างที่ไม่อยู่ในรายการ → โหมดระบุประเภทเอง
+  useEffect(() => {
+    if (!typesLoaded || isCustomType) return;
+    if (!documentType) {
+      setDocumentType(typeOptions[0] ?? '');
+    } else if (!typeOptions.includes(documentType)) {
+      setIsCustomType(true);
+      setCustomDocumentType(documentType);
+      setDocumentType(typeOptions[0] ?? '');
+    }
+  }, [typesLoaded, typeOptions, documentType, isCustomType]);
 
   // โหลดข้อมูลโปรไฟล์พนักงาน
   const loadInitialData = useCallback(async () => {
@@ -169,7 +203,7 @@ export default function GeneralDocumentPage() {
 
   // ล้างฟอร์ม
   const handleResetForm = () => {
-    setDocumentType(COMMON_DOCUMENT_TYPES[0]);
+    setDocumentType(typeOptions[0] ?? '');
     setCustomDocumentType('');
     setIsCustomType(false);
     setPurpose('');
@@ -226,6 +260,10 @@ export default function GeneralDocumentPage() {
       setFormError('กรุณาระบุรายละเอียดของคำขอ');
       return;
     }
+    if (!isCustomType && selectedMasterType?.isExpiryRequired && !expiryDate) {
+      setFormError('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -243,6 +281,7 @@ export default function GeneralDocumentPage() {
 
       await generalDocumentService.createRequest({
         documentType: finalDocType,
+        documentTypeId: !isCustomType ? selectedMasterType?.id : undefined,
         issueDate,
         expiryDate: expiryDate || undefined,
         purpose: purpose.trim(),
@@ -355,7 +394,8 @@ export default function GeneralDocumentPage() {
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                   >
-                    {COMMON_DOCUMENT_TYPES.map((t) => (
+                    {!typesLoaded && <option value="">กำลังโหลดประเภทเอกสาร...</option>}
+                    {typesLoaded && typeOptions.map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>
@@ -386,7 +426,9 @@ export default function GeneralDocumentPage() {
 
               {/* วันหมดอายุ */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">วันหมดอายุ</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  วันหมดอายุ{!isCustomType && selectedMasterType?.isExpiryRequired ? ' *' : ''}
+                </label>
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"

@@ -32,6 +32,8 @@ export interface GeneralDocumentRequest {
 
 export interface CreateGeneralDocumentPayload {
   documentType: string;
+  /** ประเภทเอกสารใน Master (ไม่ส่งเมื่อพนักงานระบุประเภทเอง) */
+  documentTypeId?: number;
   issueDate: string;
   expiryDate?: string;
   purpose: string;
@@ -40,6 +42,7 @@ export interface CreateGeneralDocumentPayload {
   fileData?: string; // base64
 }
 
+/** รายการสำรอง — ใช้เมื่อโหลดประเภทเอกสารจาก Master ไม่ได้ */
 export const COMMON_DOCUMENT_TYPES = [
   'สำเนาบัตรประจำตัวประชาชน',
   'สำเนาทะเบียนบ้าน',

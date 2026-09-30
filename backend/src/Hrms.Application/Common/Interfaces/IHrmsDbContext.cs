@@ -119,6 +119,9 @@ public interface IHrmsDbContext
     // คำขอเอกสารทั่วไป (General Requests)
     DbSet<GeneralRequest> GeneralRequests { get; }
 
+    // แฟ้มเอกสารพนักงาน
+    DbSet<EmployeeDocument> EmployeeDocuments { get; }
+
     // Resignation Requests (Dev 1 Phase 2)
     DbSet<ResignationRequest> ResignationRequests { get; }
 

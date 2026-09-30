@@ -1,5 +1,5 @@
 -- ==============================================================================
--- คำขออื่นๆ (General Requests) — คำขอทั่วไปถึงฝ่ายบุคคลที่ผ่านสายการอนุมัติ
+-- คำขอเอกสารทั่วไป (General Requests) — คำขอทั่วไปถึงฝ่ายบุคคลที่ผ่านสายการอนุมัติ
 -- ประเภทเอกสารในสายการอนุมัติ: GENERAL_REQUEST
 -- รันซ้ำได้ปลอดภัย (idempotent)
 -- ==============================================================================
@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS hrms.general_request (
     request_no           varchar(30)  NOT NULL DEFAULT '',
     employee_id          bigint       NOT NULL REFERENCES hrms.employee(id) ON DELETE CASCADE,
     request_type         varchar(150) NOT NULL,
+    document_type_id     bigint       NULL REFERENCES hrms.document_type(id) ON DELETE SET NULL,
     purpose              text         NOT NULL,
     notes                text         NULL,
     issue_date           date         NULL,
@@ -29,6 +30,30 @@ CREATE TABLE IF NOT EXISTS hrms.general_request (
 
 CREATE INDEX IF NOT EXISTS ix_general_request_employee ON hrms.general_request (employee_id);
 CREATE INDEX IF NOT EXISTS ix_general_request_instance ON hrms.general_request (approval_instance_id);
+
+-- กรณีสร้างตารางไว้ก่อนแล้ว: เพิ่มคอลัมน์ประเภทเอกสารจาก Master
+ALTER TABLE hrms.general_request ADD COLUMN IF NOT EXISTS document_type_id bigint NULL;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'general_request_document_type_id_fkey') THEN
+        ALTER TABLE hrms.general_request
+            ADD CONSTRAINT general_request_document_type_id_fkey
+            FOREIGN KEY (document_type_id) REFERENCES hrms.document_type(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- ประเภทเอกสารใน Master ที่ฟอร์มคำขอเอกสารทั่วไปใช้ (เพิ่มเฉพาะที่ยังไม่มี)
+INSERT INTO hrms.document_type (document_code, document_name, is_expiry_required, status)
+SELECT v.code, v.name, v.exp, 'ACTIVE'
+FROM (VALUES
+    ('DOC_BANK_BOOK',       'สำเนาสมุดบัญชีธนาคาร (รับเงินเดือน)', false),
+    ('DOC_EMPLOYMENT_CERT', 'หนังสือรับรองการผ่านงานเดิม',          false),
+    ('DOC_PDPA_CONSENT',    'หนังสือยินยอมเปิดเผยข้อมูล (PDPA Consent)', false),
+    ('DOC_TAX',             'เอกสารลดหย่อนภาษี / 50 ทวิ',            false),
+    ('DOC_OTHER',           'เอกสารทั่วไปอื่น ๆ',                    false)
+) AS v(code, name, exp)
+WHERE NOT EXISTS (SELECT 1 FROM hrms.document_type d
+                  WHERE d.document_code = v.code OR d.document_name = v.name);
 
 COMMIT;
 

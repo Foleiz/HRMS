@@ -1,6 +1,8 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Approvals.Services;
+using Hrms.Application.Features.EmployeeDocuments.Services;
 using Hrms.Application.Features.GeneralRequests.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -80,15 +82,28 @@ public class GeneralRequestService : IGeneralRequestService
         var me = _currentUser.EmployeeId
             ?? throw new UnauthorizedAccessException("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน");
 
-        if (string.IsNullOrWhiteSpace(dto.DocumentType))
+        // เลือกจาก Master ประเภทเอกสาร (hrms.document_type) หรือระบุประเภทเองเป็นข้อความ
+        DocumentType? masterType = null;
+        if (dto.DocumentTypeId.HasValue)
+        {
+            masterType = await _context.DocumentTypes.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == dto.DocumentTypeId.Value, cancellationToken)
+                ?? throw new ValidationException("ไม่พบประเภทเอกสารที่เลือก");
+            if (masterType.Status != "ACTIVE")
+                throw new ValidationException("ประเภทเอกสารนี้ถูกปิดใช้งานแล้ว");
+        }
+        else if (string.IsNullOrWhiteSpace(dto.DocumentType))
+        {
             throw new ValidationException("กรุณาเลือกประเภทคำขอ");
+        }
         if (string.IsNullOrWhiteSpace(dto.Purpose))
             throw new ValidationException("กรุณาระบุรายละเอียดของคำขอ");
 
         var request = new GeneralRequest
         {
             EmployeeId = me,
-            RequestType = dto.DocumentType.Trim(),
+            RequestType = Truncate(masterType?.DocumentName ?? dto.DocumentType.Trim(), 150),
+            DocumentTypeId = masterType?.Id,
             Purpose = dto.Purpose.Trim(),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             IssueDate = ParseDate(dto.IssueDate),
@@ -97,9 +112,14 @@ public class GeneralRequestService : IGeneralRequestService
             RequestedAt = DateTime.UtcNow
         };
 
+        if (masterType is { IsExpiryRequired: true } && !request.ExpiryDate.HasValue)
+            throw new ValidationException($"เอกสารประเภท \"{masterType.DocumentName}\" ต้องระบุวันหมดอายุ");
+        if (request.IssueDate.HasValue && request.ExpiryDate.HasValue && request.ExpiryDate < request.IssueDate)
+            throw new ValidationException("วันหมดอายุต้องไม่ก่อนวันที่ออกเอกสาร");
+
         if (!string.IsNullOrWhiteSpace(dto.FileData))
         {
-            var (bytes, mime) = DecodeFile(dto.FileData, dto.FileName);
+            var (bytes, mime) = FileDataDecoder.Decode(dto.FileData, dto.FileName);
             if (bytes.LongLength > MaxFileBytes)
                 throw new ValidationException("ไฟล์แนบต้องมีขนาดไม่เกิน 5 MB");
             request.FileData = bytes;
@@ -149,6 +169,8 @@ public class GeneralRequestService : IGeneralRequestService
             if (!IsHrOrAdmin) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
             request.Status = "APPROVED";
             request.CompletedAt = DateTime.UtcNow;
+            // เก็บไฟล์เข้าแฟ้มเอกสารพนักงาน
+            await EmployeeDocumentArchiver.ArchiveGeneralRequestAsync(_context, request, me, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
@@ -308,6 +330,7 @@ public class GeneralRequestService : IGeneralRequestService
                 DepartmentName = assign?.Department?.DepartmentName ?? "-",
                 PositionName = assign?.Position?.PositionName ?? "-",
                 DocumentType = r.RequestType,
+                DocumentTypeId = r.DocumentTypeId,
                 Purpose = r.Purpose,
                 Notes = r.Notes,
                 IssueDate = r.IssueDate?.ToString("yyyy-MM-dd"),
@@ -334,46 +357,10 @@ public class GeneralRequestService : IGeneralRequestService
         return result;
     }
 
+    private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
+
     private static DateOnly? ParseDate(string? value) =>
         DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
             ? d
             : null;
-
-    private static (byte[] Bytes, string Mime) DecodeFile(string data, string? fileName)
-    {
-        var mime = "application/octet-stream";
-        var payload = data.Trim();
-        if (payload.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-        {
-            var comma = payload.IndexOf(',');
-            if (comma > 0)
-            {
-                var header = payload[5..comma];
-                var semi = header.IndexOf(';');
-                if (semi > 0) mime = header[..semi];
-                payload = payload[(comma + 1)..];
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(fileName))
-        {
-            mime = Path.GetExtension(fileName).ToLowerInvariant() switch
-            {
-                ".pdf" => "application/pdf",
-                ".png" => "image/png",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".doc" => "application/msword",
-                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                _ => mime
-            };
-        }
-
-        try
-        {
-            return (Convert.FromBase64String(payload), mime);
-        }
-        catch (FormatException)
-        {
-            throw new ValidationException("ไฟล์แนบไม่ถูกต้อง");
-        }
-    }
 }
