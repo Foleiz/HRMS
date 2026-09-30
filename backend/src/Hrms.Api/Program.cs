@@ -81,6 +81,8 @@ builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<ILeavePolicyService, LeavePolicyService>();
 builder.Services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
 builder.Services.AddScoped<ILeaveEntitlementSync, LeaveEntitlementSync>();
+builder.Services.AddScoped<ILeaveInsightsService, LeaveInsightsService>();
+builder.Services.AddScoped<ILeaveYearEndService, LeaveYearEndService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IRoleService, RoleService>();

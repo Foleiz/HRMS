@@ -77,6 +77,7 @@ public interface IHrmsDbContext
     DbSet<LeavePolicy> LeavePolicies { get; }
     DbSet<LeaveBalance> LeaveBalances { get; }
     DbSet<LeaveBalanceTransaction> LeaveBalanceTransactions { get; }
+    DbSet<LeaveYearClosing> LeaveYearClosings { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
     DbSet<LeaveRequestDocument> LeaveRequestDocuments { get; }
 

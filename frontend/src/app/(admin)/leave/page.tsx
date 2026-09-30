@@ -19,6 +19,7 @@ import {
   ClipboardList,
   ShieldCheck,
   Wallet,
+  Lock,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { organizationService } from '@/services/organizationService';
@@ -37,6 +38,7 @@ import { Employee } from '@/types/employee';
 import { LeaveTypeModal, LEAVE_FORM_CATEGORIES, inferFormCategory } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
+import { LeaveYearEndModal } from '@/components/leave/LeaveYearEndModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/context/AuthContext';
@@ -51,6 +53,9 @@ export default function LeaveManagementPage() {
   const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
   const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
   const canViewAnyLeave = canViewTypes || canViewPolicies || canViewBalances;
+  // ปิดยอดวันลาสิ้นปี: เฉพาะฝ่ายบุคคล/ผู้ดูแลระบบ (ตรงกับฝั่ง API)
+  const canCloseYear = ['ADMIN', 'SUPER_ADMIN', 'SYS_ADMIN', 'SYSTEM_SUPER', 'HR', 'HR_ADMIN', 'HR_MGR'].some((r) => hasRole(r));
+  const [isYearEndOpen, setIsYearEndOpen] = useState(false);
 
   const defaultTab: ActiveTab = canViewTypes
     ? 'types'
@@ -739,9 +744,19 @@ export default function LeaveManagementPage() {
                 </div>
               </div>
 
-              {/* สิทธิ์ปีนี้คำนวณอัตโนมัติจากสิทธิ์การลา (ไม่ต้องกดจัดสรรยอดประจำปี) */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-700 whitespace-nowrap">
-                <Sparkles className="w-4 h-4" /> สิทธิ์ปีนี้คำนวณอัตโนมัติตามแท็บสิทธิ์การลา
+              <div className="flex flex-wrap items-center gap-2">
+                {/* สิทธิ์ปีนี้คำนวณอัตโนมัติจากสิทธิ์การลา (ไม่ต้องกดจัดสรรยอดประจำปี) */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-700 whitespace-nowrap">
+                  <Sparkles className="w-4 h-4" /> สิทธิ์ปีนี้คำนวณอัตโนมัติตามแท็บสิทธิ์การลา
+                </div>
+                {canCloseYear && (
+                  <button
+                    onClick={() => setIsYearEndOpen(true)}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-medium hover:opacity-90 whitespace-nowrap"
+                  >
+                    <Lock className="w-4 h-4" /> ปิดยอดปี {selectedYear + 543}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -955,6 +970,16 @@ export default function LeaveManagementPage() {
         onSuccess={() => {}}
         balance={balanceToAdjust}
         onSubmit={handleSubmitAdjustment}
+      />
+
+      <LeaveYearEndModal
+        isOpen={isYearEndOpen}
+        year={selectedYear}
+        onClose={() => setIsYearEndOpen(false)}
+        onClosed={(r) => {
+          showToast(`ปิดยอดวันลาปี ${r.year + 543} สำเร็จ`);
+          fetchBalances(selectedYear);
+        }}
       />
 
       <LeaveTransactionsModal

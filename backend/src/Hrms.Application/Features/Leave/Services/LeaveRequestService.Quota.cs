@@ -131,6 +131,10 @@ public partial class LeaveRequestService
         long? actorEmployeeId,
         CancellationToken cancellationToken)
     {
+        // ปีที่ปิดยอดวันลาแล้ว: ห้ามยื่น/แก้/อนุมัติใบลาของปีนั้น (ยอดยกไปปีหน้าคำนวณเสร็จแล้ว)
+        if (await _context.LeaveYearClosings.AsNoTracking().AnyAsync(c => c.Year == year, cancellationToken))
+            throw new InvalidOperationException($"ปี {year + 543} ปิดยอดวันลาไปแล้ว จึงยื่น แก้ไข หรืออนุมัติใบลาของปีนั้นไม่ได้");
+
         var isQuotaControlled = await _context.LeavePolicies.AsNoTracking()
             .AnyAsync(p => p.LeaveTypeId == leaveTypeId, cancellationToken);
 
