@@ -17,6 +17,8 @@ public class AttendanceImportBatchDto
     public int SuccessRecords { get; set; }
     public int FailedRecords { get; set; }
     public string Status { get; set; } = "IMPORTED";
+    public DateTime? RevertedAt { get; set; }
+    public string? RevertedByUserName { get; set; }
 }
 
 public class AttendanceImportErrorDto
@@ -86,6 +88,8 @@ public class RevertBatchResultDto
     public string? FileName { get; set; }
     public int DeletedAttendanceRecords { get; set; }
     public int DeletedErrorRecords { get; set; }
+    /// <summary>จำนวนวันที่ใช้เวลาจากคำขอแก้ไขเวลาที่อนุมัติแล้วแทน</summary>
+    public int RestoredFromAdjustments { get; set; }
     public string Message { get; set; } = string.Empty;
 }
 

@@ -895,6 +895,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .HasForeignKey(e => e.ImportedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            entity.Property(e => e.RevertedAt).HasColumnName("reverted_at");
+            entity.Property(e => e.RevertedByUserId).HasColumnName("reverted_by_user_id");
+            entity.HasOne(e => e.RevertedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.RevertedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasMany(e => e.Errors)
                 .WithOne(e => e.Batch)
                 .HasForeignKey(e => e.ImportBatchId)

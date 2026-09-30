@@ -13,7 +13,10 @@ export interface AttendanceImportBatch {
   totalRecords: number;
   successRecords: number;
   failedRecords: number;
-  status: 'IMPORTED' | 'PARTIAL' | 'FAILED' | string;
+  status: 'IMPORTED' | 'PARTIAL' | 'FAILED' | 'REVERTED' | string;
+  /** เวลาที่ยกเลิกชุดนำเข้า (สถานะ REVERTED) */
+  revertedAt?: string | null;
+  revertedByUserName?: string | null;
 }
 
 export interface AttendanceImportError {
@@ -77,6 +80,8 @@ export interface RevertBatchResult {
   fileName: string | null;
   deletedAttendanceRecords: number;
   deletedErrorRecords: number;
+  /** จำนวนวันที่ใช้เวลาจากคำขอแก้ไขเวลาที่อนุมัติแล้วแทน */
+  restoredFromAdjustments?: number;
   message: string;
 }
 
