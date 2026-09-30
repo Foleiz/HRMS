@@ -70,6 +70,7 @@ public class EmployeeDto
     public List<EmployeeAddressDto> Addresses { get; set; } = new();
     public List<EmployeeBankAccountDto> BankAccounts { get; set; } = new();
     public List<EmployeeEducationDto> Educations { get; set; } = new();
+    public List<EmployeeWorkExperienceDto> WorkExperiences { get; set; } = new();
     public List<FamilyMemberDto> FamilyMembers { get; set; } = new();
     public List<EmergencyContactDto> EmergencyContacts { get; set; } = new();
     public EmployeeUserAccountDto? UserAccount { get; set; }
@@ -123,6 +124,40 @@ public class EmployeeBankAccountDto
     public string? AccountName { get; set; }
     public bool IsPrimary { get; set; }
     public string Status { get; set; } = "ACTIVE";
+}
+
+public class EmployeeWorkExperienceDto
+{
+    public long Id { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string? PositionName { get; set; }
+    public string? StartDate { get; set; }
+    public string? EndDate { get; set; }
+    public decimal? LastSalary { get; set; }
+    public string? LeavingReason { get; set; }
+    public string? JobDescription { get; set; }
+}
+
+/// <summary>รายการประวัติการศึกษา (ส่งมาทั้งชุด = แทนที่ของเดิมทั้งหมด)</summary>
+public class EmployeeEducationInput
+{
+    public string EducationLevel { get; set; } = string.Empty;
+    public string Institution { get; set; } = string.Empty;
+    public string? Major { get; set; }
+    public int? GraduationYear { get; set; }
+    public decimal? Gpa { get; set; }
+}
+
+/// <summary>รายการประวัติการทำงาน (ส่งมาทั้งชุด = แทนที่ของเดิมทั้งหมด)</summary>
+public class EmployeeWorkExperienceInput
+{
+    public string CompanyName { get; set; } = string.Empty;
+    public string? PositionName { get; set; }
+    public string? StartDate { get; set; }
+    public string? EndDate { get; set; }
+    public decimal? LastSalary { get; set; }
+    public string? LeavingReason { get; set; }
+    public string? JobDescription { get; set; }
 }
 
 public class EmployeeEducationDto

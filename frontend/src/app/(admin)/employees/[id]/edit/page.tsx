@@ -14,12 +14,14 @@ import {
   Calendar,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
-import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
+import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
+import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
+import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -66,7 +68,20 @@ export default function EmployeeEditPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Active Tab: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว vs ผู้ติดต่อกรณีฉุกเฉิน
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax'>('personal');
+
+  // การศึกษา / ประวัติการทำงาน / ภาษีและประกันสังคม
+  const [educations, setEducations] = useState<EmployeeEducation[]>([]);
+  const [workExperiences, setWorkExperiences] = useState<EmployeeWorkExperience[]>([]);
+  const [taxSso, setTaxSso] = useState<TaxSsoValues>({
+    socialSecurityNo: '',
+    hospitalName: '',
+    spouseHasIncome: false,
+    numberOfChildren: 0,
+    parentDeductionCount: 0,
+    disabilityDeductionCount: 0,
+  });
+  const [ssoMasked, setSsoMasked] = useState<string | null>(null);
   const [activeFamilyIndex, setActiveFamilyIndex] = useState<number>(0);
 
   // Sub-Navigation Tabs ด้านบนตามภาพ Figma
@@ -146,6 +161,17 @@ export default function EmployeeEditPage() {
         setLoading(true);
         const emp = await employeeService.getById(employeeId);
         setManagerId(emp.managerEmployeeId ?? '');
+        setEducations((emp.educations ?? []).map((e) => ({ ...e, gpa: e.gpa != null ? Number(e.gpa) : undefined })));
+        setWorkExperiences(emp.workExperiences ?? []);
+        setTaxSso({
+          socialSecurityNo: '',
+          hospitalName: emp.socialSecurity?.hospitalName ?? '',
+          spouseHasIncome: !!emp.spouseHasIncome,
+          numberOfChildren: emp.numberOfChildren ?? 0,
+          parentDeductionCount: emp.parentDeductionCount ?? 0,
+          disabilityDeductionCount: emp.disabilityDeductionCount ?? 0,
+        });
+        setSsoMasked(emp.socialSecurity?.socialSecurityNoMasked ?? null);
         // รายชื่อพนักงานสำหรับเลือกหัวหน้างาน (โหลดไม่ได้ก็ยังแก้ข้อมูลอื่นได้)
         employeeService
           .getAll()
@@ -290,6 +316,16 @@ export default function EmployeeEditPage() {
         employeeCode: formData.employeeCode.trim(),
         setManager: true,
         managerEmployeeId: managerId === '' ? null : managerId,
+        // ประวัติการศึกษา/การทำงานส่งทั้งชุด (แทนช่องวุฒิการศึกษาเดี่ยวแบบเดิม)
+        educations: educations.filter((e) => e.educationLevel?.trim() || e.institution?.trim()),
+        workExperiences: workExperiences.filter((w) => w.companyName?.trim()),
+        // ภาษีและประกันสังคม
+        spouseHasIncome: taxSso.spouseHasIncome,
+        numberOfChildren: taxSso.numberOfChildren,
+        parentDeductionCount: taxSso.parentDeductionCount,
+        disabilityDeductionCount: taxSso.disabilityDeductionCount,
+        socialSecurityNo: taxSso.socialSecurityNo.trim() || undefined,
+        hospitalName: taxSso.hospitalName.trim(),
         biometricId: formData.biometricId?.trim() ? formData.biometricId.trim() : '',
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -302,14 +338,11 @@ export default function EmployeeEditPage() {
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
-        educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
-        institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
-        major: formData.major?.trim() || undefined,
-        graduationYear: formData.graduationYear ? Number(formData.graduationYear) : undefined,
-        gpa:
-          formData.gpa !== undefined && formData.gpa !== null && !isNaN(Number(formData.gpa)) && Number(formData.gpa) > 0
-            ? Number(formData.gpa)
-            : undefined,
+        educationLevel: undefined,
+        institution: undefined,
+        major: undefined,
+        graduationYear: undefined,
+        gpa: undefined,
         familyMembers: formData.familyMembers
           ?.filter((f) => f.firstName?.trim())
           .map((f) => ({
@@ -423,7 +456,44 @@ export default function EmployeeEditPage() {
               >
                 ผู้ติดต่อกรณีฉุกเฉิน
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('background')}
+                className={`pb-2 transition-all border-b-2 cursor-pointer ${
+                  activeTab === 'background'
+                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                การศึกษา & ประวัติการทำงาน
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('tax')}
+                className={`pb-2 transition-all border-b-2 cursor-pointer ${
+                  activeTab === 'tax'
+                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                ภาษี & ประกันสังคม
+              </button>
             </div>
+
+            {activeTab === 'background' && (
+              <EmployeeBackgroundEditor
+                educations={educations}
+                onEducationsChange={setEducations}
+                workExperiences={workExperiences}
+                onWorkExperiencesChange={setWorkExperiences}
+              />
+            )}
+
+            {activeTab === 'tax' && (
+              <EmployeeTaxSsoEditor values={taxSso} onChange={setTaxSso} currentSocialSecurityMasked={ssoMasked} />
+            )}
 
             {/* ============================================================ */}
             {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
@@ -793,86 +863,6 @@ export default function EmployeeEditPage() {
                     />
                   </div>
 
-                  {/* ระดับวุฒิการศึกษา */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      ระดับวุฒิการศึกษา (Education level) <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={formData.educationLevel}
-                      onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
-                    >
-                      <option value="">เลือกวุฒิการศึกษา</option>
-                      <option value="มัธยมศึกษา">มัธยมศึกษา</option>
-                      <option value="ปวช.">ปวช.</option>
-                      <option value="ปวส.">ปวส.</option>
-                      <option value="ปริญญาตรี">ปริญญาตรี</option>
-                      <option value="ปริญญาโท">ปริญญาโท</option>
-                      <option value="ปริญญาเอก">ปริญญาเอก</option>
-                    </select>
-                  </div>
-
-                  {/* ชื่อสถาบันการศึกษา */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      ชื่อสถาบันการศึกษา (Institution) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="เช่น จุฬาลงกรณ์มหาวิทยาลัย, ม.รามคำแหง"
-                      value={formData.institution}
-                      onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-
-                  {/* สาขาวิชา */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      สาขาวิชา (Major) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="สาขาวิชาที่เรียน"
-                      value={formData.major}
-                      onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-
-                  {/* ปีที่สำเร็จการศึกษา */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      ปีที่สำเร็จการศึกษา (Graduation year) <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={formData.graduationYear}
-                      onChange={(e) => setFormData({ ...formData, graduationYear: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
-                    >
-                      {[2570, 2569, 2568, 2567, 2566, 2565, 2564, 2563, 2562, 2561, 2560, 2559, 2558].map((y) => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* เกรดเฉลี่ยสะสม */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="4"
-                      placeholder="3.99"
-                      value={formData.gpa ?? ''}
-                      onChange={(e) => setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
                 </div>
               </div>
             )}

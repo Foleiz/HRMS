@@ -84,6 +84,7 @@ export interface Employee {
   addresses: EmployeeAddress[];
   bankAccounts: EmployeeBankAccount[];
   educations?: EmployeeEducation[];
+  workExperiences?: EmployeeWorkExperience[];
   familyMembers?: FamilyMember[];
   emergencyContacts?: EmergencyContact[];
   userAccount?: EmployeeUserAccount | null;
@@ -122,6 +123,18 @@ export interface EmergencyContact {
   primaryPhone: string;
   secondaryPhone?: string;
   isPrimary?: boolean;
+}
+
+/** ประวัติการทำงาน (ก่อนเข้าบริษัท) */
+export interface EmployeeWorkExperience {
+  id?: number;
+  companyName: string;
+  positionName?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  lastSalary?: number | null;
+  leavingReason?: string | null;
+  jobDescription?: string | null;
 }
 
 export interface EmployeeEducation {
@@ -189,10 +202,17 @@ export interface CreateEmployeePayload {
   // ครอบครัว & กรณีฉุกเฉิน
   spouseHasIncome?: boolean;
   numberOfChildren?: number;
+  parentDeductionCount?: number;
+  disabilityDeductionCount?: number;
   familyMembers?: FamilyMember[];
   emergencyContact?: EmergencyContact;
 
   // อื่นๆ (เช่น ประกันสังคม)
   socialSecurityNo?: string;
   hospitalName?: string;
+  hospitalCode?: string;
+
+  /** ประวัติการศึกษา/การทำงานทั้งชุด — ส่งมา = แทนที่ของเดิมทั้งหมด */
+  educations?: EmployeeEducation[];
+  workExperiences?: EmployeeWorkExperience[];
 }

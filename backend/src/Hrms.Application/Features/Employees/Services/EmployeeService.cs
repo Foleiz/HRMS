@@ -198,6 +198,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.SocialSecurity)
             .Include(e => e.Addresses)
             .Include(e => e.Educations)
+            .Include(e => e.WorkExperiences)
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
             .Include(e => e.BankAccounts)
@@ -407,8 +408,16 @@ public class EmployeeService : IEmployeeService
             });
         }
 
-        // 8. ประวัติการศึกษา
-        if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
+        // 8. ประวัติการศึกษา / ประวัติการทำงาน
+        if (request.WorkExperiences != null)
+        {
+            ReplaceWorkExperiences(employee, request.WorkExperiences);
+        }
+        if (request.Educations != null)
+        {
+            ReplaceEducations(employee, request.Educations);
+        }
+        else if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
         {
             employee.Educations.Add(new EmployeeEducation
             {
@@ -528,6 +537,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Addresses)
             .Include(e => e.BankAccounts)
             .Include(e => e.Educations)
+            .Include(e => e.WorkExperiences)
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
             .Include(e => e.Assignments)
@@ -600,11 +610,12 @@ public class EmployeeService : IEmployeeService
         employee.MaritalStatus = request.MaritalStatus;
         employee.MaritalStatusId = request.MaritalStatusId;
         employee.MilitaryStatus = request.MilitaryStatus;
-        employee.IsTopLevel = request.IsTopLevel;
-        employee.SpouseHasIncome = request.SpouseHasIncome;
-        employee.NumberOfChildren = request.NumberOfChildren;
-        employee.ParentDeductionCount = request.ParentDeductionCount;
-        employee.DisabilityDeductionCount = request.DisabilityDeductionCount;
+        // ไม่ส่งมา = คงค่าเดิม (หน้าที่ไม่มีช่องเหล่านี้จะไม่ล้างข้อมูลลดหย่อนเป็น 0)
+        if (request.IsTopLevel.HasValue) employee.IsTopLevel = request.IsTopLevel.Value;
+        if (request.SpouseHasIncome.HasValue) employee.SpouseHasIncome = request.SpouseHasIncome.Value;
+        if (request.NumberOfChildren.HasValue) employee.NumberOfChildren = ValidateCount(request.NumberOfChildren.Value, "จำนวนบุตร", 20);
+        if (request.ParentDeductionCount.HasValue) employee.ParentDeductionCount = ValidateCount(request.ParentDeductionCount.Value, "จำนวนบิดามารดาที่ลดหย่อน", 4);
+        if (request.DisabilityDeductionCount.HasValue) employee.DisabilityDeductionCount = ValidateCount(request.DisabilityDeductionCount.Value, "จำนวนผู้พิการที่ลดหย่อน", 20);
         employee.UpdatedAt = DateTime.UtcNow;
 
         // 3. เข้ารหัส Citizen ID ใหม่ถ้ามีการระบุเป็นเลข 13 หลักที่ถูกต้อง (ป้องกันค่า Masked ทับ)
@@ -763,8 +774,12 @@ public class EmployeeService : IEmployeeService
             }
         }
 
-        // 7. ประวัติการศึกษา (Educations)
-        if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
+        // 7. ประวัติการศึกษา (Educations) — ส่งมาทั้งชุด = แทนที่ทั้งหมด
+        if (request.Educations != null)
+        {
+            ReplaceEducations(employee, request.Educations);
+        }
+        else if (!string.IsNullOrWhiteSpace(request.EducationLevel) || !string.IsNullOrWhiteSpace(request.Institution))
         {
             var primaryEdu = employee.Educations.FirstOrDefault();
             if (primaryEdu != null)
@@ -786,6 +801,12 @@ public class EmployeeService : IEmployeeService
                     Gpa = request.Gpa
                 });
             }
+        }
+
+        // 7.1 ประวัติการทำงาน — ส่งมาทั้งชุด = แทนที่ทั้งหมด
+        if (request.WorkExperiences != null)
+        {
+            ReplaceWorkExperiences(employee, request.WorkExperiences);
         }
 
         // 8. ข้อมูลครอบครัว (Family Members)
@@ -1235,6 +1256,70 @@ public class EmployeeService : IEmployeeService
         return true;
     }
 
+    private static int ValidateCount(int value, string label, int max)
+    {
+        if (value < 0 || value > max) throw new ValidationException($"{label}ต้องอยู่ระหว่าง 0 - {max}");
+        return value;
+    }
+
+    private static void ReplaceEducations(Employee employee, List<EmployeeEducationInput> items)
+    {
+        var cleaned = items
+            .Where(i => !string.IsNullOrWhiteSpace(i.EducationLevel) || !string.IsNullOrWhiteSpace(i.Institution))
+            .ToList();
+        foreach (var i in cleaned)
+        {
+            if (string.IsNullOrWhiteSpace(i.EducationLevel) || string.IsNullOrWhiteSpace(i.Institution))
+                throw new ValidationException("ประวัติการศึกษาแต่ละรายการต้องระบุระดับการศึกษาและสถาบัน");
+            if (i.Gpa is < 0m or > 4m)
+                throw new ValidationException("เกรดเฉลี่ยต้องอยู่ระหว่าง 0.00 - 4.00");
+        }
+
+        employee.Educations.Clear();
+        foreach (var i in cleaned)
+        {
+            employee.Educations.Add(new EmployeeEducation
+            {
+                EducationLevel = i.EducationLevel.Trim(),
+                Institution = i.Institution.Trim(),
+                Major = string.IsNullOrWhiteSpace(i.Major) ? null : i.Major.Trim(),
+                GraduationYear = i.GraduationYear,
+                Gpa = i.Gpa
+            });
+        }
+    }
+
+    private static void ReplaceWorkExperiences(Employee employee, List<EmployeeWorkExperienceInput> items)
+    {
+        var cleaned = items.Where(i => !string.IsNullOrWhiteSpace(i.CompanyName)).ToList();
+        var parsed = new List<EmployeeWorkExperience>();
+        foreach (var i in cleaned)
+        {
+            var start = ParseDateOnly(i.StartDate);
+            var end = ParseDateOnly(i.EndDate);
+            if (start.HasValue && end.HasValue && end < start)
+                throw new ValidationException($"ประวัติการทำงานที่ \"{i.CompanyName.Trim()}\": วันที่ออกต้องไม่ก่อนวันที่เริ่มงาน");
+            if (i.LastSalary is < 0m)
+                throw new ValidationException("เงินเดือนล่าสุดต้องไม่ติดลบ");
+            parsed.Add(new EmployeeWorkExperience
+            {
+                CompanyName = i.CompanyName.Trim(),
+                PositionName = string.IsNullOrWhiteSpace(i.PositionName) ? null : i.PositionName.Trim(),
+                StartDate = start,
+                EndDate = end,
+                LastSalary = i.LastSalary,
+                LeavingReason = string.IsNullOrWhiteSpace(i.LeavingReason) ? null : i.LeavingReason.Trim(),
+                JobDescription = string.IsNullOrWhiteSpace(i.JobDescription) ? null : i.JobDescription.Trim()
+            });
+        }
+
+        employee.WorkExperiences.Clear();
+        foreach (var w in parsed) employee.WorkExperiences.Add(w);
+    }
+
+    private static DateOnly? ParseDateOnly(string? value) =>
+        DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d) ? d : null;
+
     /// <summary>ตรวจหัวหน้างาน: ต้องมีอยู่จริง ไม่ใช่ตัวเอง และไม่ทำให้เกิดวงวน (A เป็นหัวหน้า B และ B เป็นหัวหน้า A)</summary>
     private async Task<long?> ValidateManagerAsync(long? managerId, long? employeeId, CancellationToken cancellationToken)
     {
@@ -1359,7 +1444,20 @@ public class EmployeeService : IEmployeeService
                 IsPrimary = b.IsPrimary,
                 Status = b.Status
             }).ToList(),
-            Educations = e.Educations.Select(ed => new EmployeeEducationDto
+            WorkExperiences = (e.WorkExperiences ?? new List<EmployeeWorkExperience>())
+                .OrderByDescending(w => w.StartDate)
+                .Select(w => new EmployeeWorkExperienceDto
+                {
+                    Id = w.Id,
+                    CompanyName = w.CompanyName,
+                    PositionName = w.PositionName,
+                    StartDate = w.StartDate?.ToString("yyyy-MM-dd"),
+                    EndDate = w.EndDate?.ToString("yyyy-MM-dd"),
+                    LastSalary = w.LastSalary,
+                    LeavingReason = w.LeavingReason,
+                    JobDescription = w.JobDescription
+                }).ToList(),
+            Educations = e.Educations.OrderBy(ed => ed.GraduationYear ?? int.MaxValue).Select(ed => new EmployeeEducationDto
             {
                 Id = ed.Id,
                 EducationLevel = ed.EducationLevel,
