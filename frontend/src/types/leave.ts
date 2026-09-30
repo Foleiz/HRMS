@@ -190,6 +190,8 @@ export interface LeaveRequest {
   employeeCode: string;
   employeeName: string;
   departmentName: string;
+  positionName?: string;
+  formCategory?: string | null;
   leaveTypeId: number;
   leaveTypeCode: string;
   leaveTypeName: string;

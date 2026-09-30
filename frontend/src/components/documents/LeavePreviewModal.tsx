@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, FileText } from 'lucide-react';
+import { X, Printer, FileText, Download, Paperclip } from 'lucide-react';
+import { leaveService } from '@/services/leaveService';
 import {
   sarabun,
   Fill,
@@ -66,6 +67,14 @@ export interface LeavePreviewData {
   addressedTo?: string;
   timeline?: ApprovalTimeline | null;
   canApproveCurrentStep?: boolean;
+  requestId?: number | null;
+  departmentName?: string | null;
+  documents?: {
+    id: number;
+    leaveRequestId: number;
+    fileName?: string | null;
+    uploadedAt?: string;
+  }[];
 }
 
 export interface LeavePreviewModalProps {
@@ -346,22 +355,56 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
             <div className="mx-auto w-fit shadow-md border border-gray-300">{paper}</div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              พิมพ์เอกสาร
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              ปิดหน้าต่าง
-            </button>
+          <div className="flex items-center justify-between gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
+            {data.documents && data.documents.length > 0 ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                  <Paperclip className="w-3.5 h-3.5" />
+                  เอกสารแนบ:
+                </span>
+                {data.documents.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const blob = await leaveService.downloadLeaveDocument(doc.leaveRequestId || data.requestId || 0, doc.id);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = doc.fileName || 'document';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="max-w-[150px] truncate">{doc.fileName || 'ไฟล์แนบ'}</span>
+                  </button>
+                ))}
+              </div>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                พิมพ์เอกสาร
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
           </div>
         </div>
       </div>

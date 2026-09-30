@@ -9,10 +9,12 @@ public record LeaveRequestDto
     public string EmployeeCode { get; init; } = string.Empty;
     public string EmployeeName { get; init; } = string.Empty;
     public string DepartmentName { get; init; } = string.Empty;
+    public string PositionName { get; init; } = string.Empty;
 
     public long LeaveTypeId { get; init; }
     public string LeaveTypeCode { get; init; } = string.Empty;
     public string LeaveTypeName { get; init; } = string.Empty;
+    public string? FormCategory { get; init; }
 
     public DateTime StartDatetime { get; init; }
     public DateTime EndDatetime { get; init; }
