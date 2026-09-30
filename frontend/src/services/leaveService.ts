@@ -36,6 +36,11 @@ export const leaveService = {
     return res.data.data;
   },
 
+  async getNextLeaveTypeCode(): Promise<string> {
+    const res = await apiClient.get<ApiResponse<string>>('/leave-types/next-code');
+    return res.data.data;
+  },
+
   async createLeaveType(data: CreateLeaveTypePayload): Promise<LeaveType> {
     const res = await apiClient.post<ApiResponse<LeaveType>>('/leave-types', data);
     return res.data.data;

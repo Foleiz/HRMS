@@ -20,7 +20,8 @@ public record LeaveTypeDto
 
 public record CreateLeaveTypeRequest
 {
-    public string LeaveCode { get; init; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างให้อัตโนมัติ (LV001, LV002, ...)</summary>
+    public string? LeaveCode { get; init; }
     public string LeaveName { get; init; } = string.Empty;
     public string QuotaUnit { get; init; } = "DAY";
     public bool IsPaidLeave { get; init; } = true;

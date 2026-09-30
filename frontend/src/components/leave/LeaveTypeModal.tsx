@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
+import { leaveService } from '@/services/leaveService';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -79,7 +80,14 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
     } else {
+      // รหัสสร้างอัตโนมัติ — แสดงรหัสที่จะได้ไว้ให้ดูเฉยๆ
       setLeaveCode('');
+      if (isOpen) {
+        leaveService
+          .getNextLeaveTypeCode()
+          .then((code) => setLeaveCode(code))
+          .catch(() => setLeaveCode(''));
+      }
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
@@ -92,11 +100,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = leaveCode.trim().toUpperCase();
-    if (!isEditing && !/^[A-Z0-9_]{2,30}$/.test(code)) {
-      setError('รหัสใช้ได้เฉพาะตัวอักษรภาษาอังกฤษพิมพ์ใหญ่ ตัวเลข และ _ (2–30 ตัว) เช่น SICK, ANNUAL');
-      return;
-    }
     if (!leaveName.trim()) {
       setError('กรุณาระบุชื่อประเภทการลา');
       return;
@@ -117,7 +120,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         });
       } else {
         await onSubmitCreate({
-          leaveCode: code,
           leaveName: leaveName.trim(),
           quotaUnit: 'DAY',
           isPaidLeave,
@@ -165,21 +167,20 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">รหัส *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">รหัส</label>
               <input
                 type="text"
-                disabled={isEditing}
-                placeholder="เช่น ANNUAL"
+                disabled
+                placeholder="สร้างอัตโนมัติ"
                 value={leaveCode}
-                onChange={(e) => setLeaveCode(e.target.value.toUpperCase().replace(/\s/g, '_'))}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono ${
-                  isEditing ? 'bg-gray-50 text-gray-500 border-gray-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                }`}
-                required
+                readOnly
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono bg-gray-50 text-gray-500 border-gray-200"
               />
             </div>
           </div>
-          <p className="-mt-3 text-xs text-gray-400">รหัสใช้อ้างอิงในระบบ แก้ไขไม่ได้หลังบันทึก</p>
+          <p className="-mt-3 text-xs text-gray-400">
+            {isEditing ? 'รหัสใช้อ้างอิงในระบบ แก้ไขไม่ได้' : 'ระบบสร้างรหัสให้อัตโนมัติเมื่อบันทึก'}
+          </p>
 
           {/* หมวดแบบฟอร์ม */}
           <div>

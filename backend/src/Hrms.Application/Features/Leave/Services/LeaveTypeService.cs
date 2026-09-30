@@ -88,26 +88,46 @@ public class LeaveTypeService : ILeaveTypeService
         };
     }
 
+    public async Task<string> GetNextLeaveCodeAsync(CancellationToken cancellationToken = default)
+    {
+        var codes = await _context.LeaveTypes.AsNoTracking()
+            .Select(t => t.LeaveCode)
+            .ToListAsync(cancellationToken);
+
+        int max = 0;
+        foreach (var code in codes)
+        {
+            if (string.IsNullOrWhiteSpace(code)) continue;
+            var m = System.Text.RegularExpressions.Regex.Match(code.Trim(), @"^LV(\d+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (m.Success && int.TryParse(m.Groups[1].Value, out var n) && n > max) max = n;
+        }
+        return $"LV{max + 1:D3}";
+    }
+
     public async Task<LeaveTypeDto> CreateAsync(CreateLeaveTypeRequest request, CancellationToken cancellationToken = default)
     {
-        // Check uniqueness of LeaveCode
+        // รหัสสร้างอัตโนมัติ (LV001, LV002, ...) ถ้าไม่ได้ระบุมา
+        var leaveCode = string.IsNullOrWhiteSpace(request.LeaveCode)
+            ? await GetNextLeaveCodeAsync(cancellationToken)
+            : request.LeaveCode.Trim().ToUpperInvariant();
+
         var exists = await _context.LeaveTypes
-            .AnyAsync(t => t.LeaveCode == request.LeaveCode.Trim().ToUpper(), cancellationToken);
+            .AnyAsync(t => t.LeaveCode == leaveCode, cancellationToken);
         if (exists)
         {
-            throw new InvalidOperationException($"รหัสประเภทการลา '{request.LeaveCode}' มีอยู่ในระบบแล้ว");
+            throw new InvalidOperationException($"รหัสประเภทการลา '{leaveCode}' มีอยู่ในระบบแล้ว");
         }
 
         var leaveType = new LeaveType
         {
-            LeaveCode = request.LeaveCode.Trim().ToUpper(),
+            LeaveCode = leaveCode,
             LeaveName = request.LeaveName.Trim(),
             QuotaUnit = request.QuotaUnit.ToUpper(),
             IsPaidLeave = request.IsPaidLeave,
             DocumentDescription = string.IsNullOrWhiteSpace(request.DocumentDescription) ? null : request.DocumentDescription.Trim(),
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper(),
             FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory)
-                           ?? LeavePolicyRules.InferFormCategory(request.LeaveCode, request.LeaveName)
+                           ?? LeavePolicyRules.InferFormCategory(leaveCode, request.LeaveName)
         };
 
         _context.LeaveTypes.Add(leaveType);

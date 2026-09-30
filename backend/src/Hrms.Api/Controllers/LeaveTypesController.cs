@@ -29,6 +29,15 @@ public class LeaveTypesController : ControllerBase
         return Ok(ApiResponse<List<LeaveTypeDto>>.Ok(result, "ดึงรายการประเภทการลาสำเร็จ"));
     }
 
+    /// <summary>รหัสประเภทการลาลำดับถัดไปที่ระบบสร้างให้อัตโนมัติ (เช่น LV001)</summary>
+    [HttpGet("next-code")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<string>>> GetNextCode(CancellationToken cancellationToken)
+    {
+        var code = await _leaveTypeService.GetNextLeaveCodeAsync(cancellationToken);
+        return Ok(ApiResponse<string>.Ok(code, "ดึงรหัสประเภทการลาลำดับถัดไปสำเร็จ"));
+    }
+
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<LeaveTypeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

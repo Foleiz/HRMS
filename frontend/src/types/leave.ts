@@ -23,7 +23,8 @@ export type LeaveFormCategory = 'SICK' | 'PERSONAL' | 'VACATION' | 'SPECIAL';
 export type LeaveProrationMethod = 'FULL' | 'PRORATA_MONTHLY';
 
 export interface CreateLeaveTypePayload {
-  leaveCode: string;
+  /** ไม่ต้องส่ง — ระบบสร้างให้อัตโนมัติ (LV001, LV002, ...) */
+  leaveCode?: string;
   leaveName: string;
   quotaUnit: string;
   isPaidLeave: boolean;
