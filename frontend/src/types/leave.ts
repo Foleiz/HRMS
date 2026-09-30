@@ -153,17 +153,6 @@ export interface LeaveBalanceTransaction {
   createdByEmployeeName?: string | null;
 }
 
-export interface InitializeYearBalancePayload {
-  targetYear: number;
-}
-
-export interface InitializeYearBalanceResult {
-  targetYear: number;
-  processedEmployeesCount: number;
-  createdBalancesCount: number;
-  message: string;
-}
-
 export interface ApprovalTimelineStep {
   stepNo: number;
   approverTitle: string;
@@ -201,6 +190,8 @@ export interface LeaveRequest {
   employeeCode: string;
   employeeName: string;
   departmentName: string;
+  positionName?: string;
+  formCategory?: string | null;
   leaveTypeId: number;
   leaveTypeCode: string;
   leaveTypeName: string;

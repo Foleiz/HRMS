@@ -317,28 +317,6 @@ export default function LeaveManagementPage() {
     showToast('ปรับยอดวันลาสำเร็จ');
   };
 
-  const handleInitializeYearBalance = () => {
-    const thaiYear = selectedYear + 543;
-    showConfirm({
-      title: `จัดสรรโควตาวันลาประจำปี ${thaiYear} (${selectedYear})?`,
-      message: `ระบบจะคำนวณสิทธิ์ตามนโยบายให้พนักงานทุกคนที่ยังไม่มียอดของปีนี้\nพร้อมคำนวณยอดยกมาจากปีก่อนหน้าตามเงื่อนไขที่ระบุไว้ในนโยบาย`,
-      type: 'question',
-      confirmText: 'เริ่มจัดสรรโควตา',
-      onConfirm: async () => {
-        try {
-          const result = await leaveService.initializeYearBalance({ targetYear: selectedYear });
-          await fetchBalances(selectedYear);
-          closeConfirm();
-          showToast(result.message);
-        } catch (err: any) {
-          closeConfirm();
-          showAlert('ไม่สามารถจัดสรรได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการจัดสรรยอด', 'danger');
-        }
-      },
-    });
-  };
-
-
   // Filtered balances
   const filteredBalances = useMemo(() => {
     if (!balanceSearch.trim()) return leaveBalances;
@@ -761,13 +739,10 @@ export default function LeaveManagementPage() {
                 </div>
               </div>
 
-              {/* Initialize Balance Button */}
-              <button
-                onClick={handleInitializeYearBalance}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium shadow-sm transition-all whitespace-nowrap"
-              >
-                <Sparkles className="w-4 h-4" /> จัดสรรยอดประจำปี {selectedYear + 543}
-              </button>
+              {/* สิทธิ์ปีนี้คำนวณอัตโนมัติจากสิทธิ์การลา (ไม่ต้องกดจัดสรรยอดประจำปี) */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-700 whitespace-nowrap">
+                <Sparkles className="w-4 h-4" /> สิทธิ์ปีนี้คำนวณอัตโนมัติตามแท็บสิทธิ์การลา
+              </div>
             </div>
 
             {/* Subheader info count */}

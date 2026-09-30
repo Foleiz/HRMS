@@ -93,24 +93,4 @@ public class LeaveBalancesController : ControllerBase
         }
     }
 
-    [HttpPost("initialize-year")]
-    [ProducesResponseType(typeof(ApiResponse<InitializeYearBalanceResultDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ApiResponse<InitializeYearBalanceResultDto>>> InitializeYear(
-        [FromBody] InitializeYearBalanceRequest request,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            long.TryParse(empIdStr, out var empId);
-
-            var result = await _balanceService.InitializeYearBalanceAsync(request.TargetYear, empId > 0 ? empId : null, cancellationToken);
-            return Ok(ApiResponse<InitializeYearBalanceResultDto>.Ok(result, result.Message));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ApiResponse<InitializeYearBalanceResultDto>.Fail(ex.Message));
-        }
-    }
 }

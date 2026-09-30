@@ -121,9 +121,8 @@ public partial class LeaveRequestService
     }
 
     /// <summary>
-    /// ดึงยอดวันลาของพนักงาน/ประเภท/ปี — ถ้ายังไม่มีจะสร้างให้อัตโนมัติตามนโยบายการลา
-    /// (เหมือนการกด "จัดสรรยอดวันลาประจำปี" แต่ทำเฉพาะรายการที่ต้องใช้)
-    /// คืนค่า IsQuotaControlled = ประเภทการลานี้มีนโยบายกำหนดสิทธิ์ (ต้องตรวจโควตา)
+    /// ยอดวันลาของพนักงาน/ประเภท/ปี — คำนวณสิทธิ์ปีนี้จากสิทธิ์การลาอัตโนมัติก่อนใช้ (LeaveEntitlementSync)
+    /// คืนค่า IsQuotaControlled = ประเภทการลานี้มีสิทธิ์การลากำหนดไว้ (ต้องตรวจโควตา)
     /// </summary>
     private async Task<(LeaveBalance Balance, bool IsQuotaControlled)> EnsureLeaveBalanceAsync(
         long employeeId,
@@ -132,45 +131,15 @@ public partial class LeaveRequestService
         long? actorEmployeeId,
         CancellationToken cancellationToken)
     {
-        var policies = await _context.LeavePolicies
-            .AsNoTracking()
-            .Where(p => p.LeaveTypeId == leaveTypeId)
-            .ToListAsync(cancellationToken);
-        var isQuotaControlled = policies.Count > 0;
+        var isQuotaControlled = await _context.LeavePolicies.AsNoTracking()
+            .AnyAsync(p => p.LeaveTypeId == leaveTypeId, cancellationToken);
+
+        await _entitlementSync.SyncAsync(year, new[] { employeeId }, leaveTypeId, cancellationToken);
 
         var balance = await _context.LeaveBalances
             .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year, cancellationToken);
 
-        // มียอดจริงอยู่แล้ว (หรือไม่มีนโยบายให้จัดสรร) → ใช้ตามเดิม
-        if (balance != null && (balance.AnnualQuotaDays > 0 || !isQuotaControlled))
-        {
-            return (balance, isQuotaControlled);
-        }
-
-        // เลือกนโยบายที่ตรงกับพนักงาน (ประเภท/ระดับพนักงาน) — ตรรกะเดียวกับ InitializeYearBalanceAsync
-        var assign = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
-        var policy = LeavePolicyRules.SelectPolicy(
-            policies, assign?.EmployeeTypeId, assign?.EmployeeLevelId, LeavePolicyRules.PolicyDateForYear(year));
-
-        // ปีที่เริ่มงาน: คิดสิทธิ์ตามสัดส่วน (ถ้านโยบายกำหนด)
-        var hireDate = await GetHireDateAsync(employeeId, cancellationToken);
-        var entitlement = policy != null ? LeavePolicyRules.ComputeEntitlement(policy, hireDate, year) : 0m;
-        decimal carriedDays = 0m;
-        DateOnly? carryExpiry = null;
-        if (policy != null && policy.IsCarryForwardAllowed)
-        {
-            var prev = await _context.LeaveBalances
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year - 1, cancellationToken);
-            if (prev != null && prev.NetRemainingLeaveDays > 0)
-            {
-                carriedDays = Math.Min(prev.NetRemainingLeaveDays, LeavePolicyRules.CarryForwardMaxDays(policy));
-                carryExpiry = new DateOnly(year, 1, 1).AddMonths(LeavePolicyRules.CarryForwardExpiryMonths(policy));
-            }
-        }
-
+        // พนักงาน/ประเภทการลาที่ไม่ได้อยู่ในสถานะใช้งาน จะไม่ถูกสร้างยอดโดยการซิงค์ → สร้างยอดเปล่าไว้บันทึกการใช้
         if (balance == null)
         {
             balance = new LeaveBalance
@@ -178,53 +147,12 @@ public partial class LeaveRequestService
                 EmployeeId = employeeId,
                 LeaveTypeId = leaveTypeId,
                 Year = year,
-                BroughtForwardDays = 0,
-                AnnualQuotaDays = 0,
-                ActiveCarriedForwardDays = 0,
-                UsedDays = 0,
-                AdjustedDays = 0,
-                NetRemainingLeaveDays = 0,
             };
             _context.LeaveBalances.Add(balance);
         }
 
-        // ยอดที่ยังไม่เคยจัดสรรโควตาจริง (stub) → จัดสรรตามนโยบาย
-        if (balance.AnnualQuotaDays <= 0 && entitlement > 0)
-        {
-            balance.AnnualQuotaDays = entitlement;
-            balance.ActiveCarriedForwardDays = carriedDays;
-            balance.CarryForwardExpiry = carryExpiry;
-            balance.Transactions.Add(new LeaveBalanceTransaction
-            {
-                TransactionType = "ENTITLEMENT",
-                Amount = entitlement,
-                Note = $"จัดสรรโควตาวันลาประจำปี {year} (อัตโนมัติ)",
-                CreatedAt = DateTime.UtcNow,
-                CreatedByEmployeeId = actorEmployeeId
-            });
-            if (carriedDays > 0)
-            {
-                balance.Transactions.Add(new LeaveBalanceTransaction
-                {
-                    TransactionType = "CARRY_FORWARD",
-                    Amount = carriedDays,
-                    Note = $"ยอดยกมาจากปี {year - 1}",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByEmployeeId = actorEmployeeId
-                });
-            }
-        }
-
-        RecalculateNetRemaining(balance);
         return (balance, isQuotaControlled);
     }
-
-    /// <summary>วันเริ่มงาน = วันเริ่มสัญญาจ้างฉบับแรก (null = ไม่มีข้อมูลสัญญา)</summary>
-    private async Task<DateOnly?> GetHireDateAsync(long employeeId, CancellationToken cancellationToken) =>
-        await _context.EmploymentContracts.AsNoTracking()
-            .Where(c => c.EmployeeId == employeeId)
-            .Select(c => (DateOnly?)c.StartDate)
-            .MinAsync(cancellationToken);
 
     private static void RecalculateNetRemaining(LeaveBalance balance)
     {

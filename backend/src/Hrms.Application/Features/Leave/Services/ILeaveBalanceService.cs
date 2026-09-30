@@ -7,7 +7,6 @@ public interface ILeaveBalanceService
     Task<List<LeaveBalanceDto>> GetAllAsync(long? employeeId = null, int? year = null, long? leaveTypeId = null, CancellationToken cancellationToken = default);
     Task<List<LeaveBalanceTransactionDto>> GetTransactionsAsync(long leaveBalanceId, CancellationToken cancellationToken = default);
     Task<LeaveBalanceDto> AdjustBalanceAsync(LeaveBalanceAdjustmentRequest request, long? currentEmployeeId = null, CancellationToken cancellationToken = default);
-    Task<InitializeYearBalanceResultDto> InitializeYearBalanceAsync(int targetYear, long? currentEmployeeId = null, CancellationToken cancellationToken = default);
     Task<MyLeaveSummaryDto> GetMySummaryAsync(long employeeId, int year, CancellationToken cancellationToken = default);
 
 }

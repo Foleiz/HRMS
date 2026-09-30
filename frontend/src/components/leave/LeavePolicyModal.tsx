@@ -402,9 +402,9 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               <Field label="การยื่นย้อนหลัง">
                 <div className="flex gap-2">
                   <select value={form.backdateMode} onChange={(e) => set('backdateMode', e.target.value as BackdateMode)} className={selectCls}>
-                    <option value="UNLIMITED">ยื่นย้อนหลังได้ไม่จำกัด</option>
-                    <option value="LIMIT">ยื่นย้อนหลังได้ไม่เกิน…</option>
-                    <option value="NONE">ห้ามยื่นย้อนหลัง</option>
+                    <option value="UNLIMITED">ยื่นได้ตลอด</option>
+                    <option value="LIMIT">กำหนดวัน</option>
+                    <option value="NONE">ยื่นไม่ได้</option>
                   </select>
                   {form.backdateMode === 'LIMIT' && (
                     <div className="w-32 shrink-0">

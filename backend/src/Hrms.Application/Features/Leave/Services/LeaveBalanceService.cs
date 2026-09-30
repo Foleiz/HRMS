@@ -8,14 +8,20 @@ namespace Hrms.Application.Features.Leave.Services;
 public class LeaveBalanceService : ILeaveBalanceService
 {
     private readonly IHrmsDbContext _context;
+    private readonly ILeaveEntitlementSync _sync;
 
-    public LeaveBalanceService(IHrmsDbContext context)
+    public LeaveBalanceService(IHrmsDbContext context, ILeaveEntitlementSync sync)
     {
         _context = context;
+        _sync = sync;
     }
 
     public async Task<List<LeaveBalanceDto>> GetAllAsync(long? employeeId = null, int? year = null, long? leaveTypeId = null, CancellationToken cancellationToken = default)
     {
+        // คำนวณสิทธิ์ปีนี้อัตโนมัติจากสิทธิ์การลาก่อนแสดงผล (ไม่ต้องกดจัดสรรยอดประจำปี)
+        var syncYear = year ?? LeavePolicyRules.ThaiToday().Year;
+        await _sync.SyncAsync(syncYear, employeeId.HasValue ? new[] { employeeId.Value } : null, leaveTypeId, cancellationToken);
+
         var query = _context.LeaveBalances
             .AsNoTracking()
             .Include(b => b.Employee)
@@ -41,63 +47,6 @@ public class LeaveBalanceService : ILeaveBalanceService
             .OrderBy(b => b.EmployeeId)
             .ThenBy(b => b.LeaveTypeId)
             .ToListAsync(cancellationToken);
-
-        // Auto-complete missing active leave types for employees who have balances in this year
-        if (year.HasValue && !employeeId.HasValue && !leaveTypeId.HasValue)
-        {
-            var activeLeaveTypes = await _context.LeaveTypes
-                .AsNoTracking()
-                .Where(t => t.Status == "ACTIVE")
-                .ToListAsync(cancellationToken);
-
-            var existingPairs = balances.Select(b => (b.EmployeeId, b.LeaveTypeId)).ToHashSet();
-            var distinctEmpIds = balances.Select(b => b.EmployeeId).Distinct().ToList();
-
-            var missingBalances = new List<LeaveBalance>();
-            foreach (var empId in distinctEmpIds)
-            {
-                foreach (var lt in activeLeaveTypes)
-                {
-                    if (!existingPairs.Contains((empId, lt.Id)))
-                    {
-                        missingBalances.Add(new LeaveBalance
-                        {
-                            EmployeeId = empId,
-                            LeaveTypeId = lt.Id,
-                            Year = year.Value,
-                            BroughtForwardDays = 0,
-                            AnnualQuotaDays = 0,
-                            ActiveCarriedForwardDays = 0,
-                            UsedDays = 0,
-                            AdjustedDays = 0,
-                            NetRemainingLeaveDays = 0,
-                            Transactions = new List<LeaveBalanceTransaction>
-                            {
-                                new LeaveBalanceTransaction
-                                {
-                                    TransactionType = "OPENING",
-                                    Amount = 0,
-                                    Note = $"เพิ่มยอดวันลาอัตโนมัติสำหรับประเภทการลา '{lt.LeaveName}'",
-                                    CreatedAt = DateTime.UtcNow
-                                }
-                            }
-                        });
-                        existingPairs.Add((empId, lt.Id));
-                    }
-                }
-            }
-
-            if (missingBalances.Count > 0)
-            {
-                _context.LeaveBalances.AddRange(missingBalances);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                balances = await query
-                    .OrderBy(b => b.EmployeeId)
-                    .ThenBy(b => b.LeaveTypeId)
-                    .ToListAsync(cancellationToken);
-            }
-        }
 
         var empIds = balances.Select(b => b.EmployeeId).Distinct().ToList();
         var assignments = await _context.EmployeeAssignments
@@ -223,181 +172,6 @@ public class LeaveBalanceService : ILeaveBalanceService
         };
     }
 
-    public async Task<InitializeYearBalanceResultDto> InitializeYearBalanceAsync(int targetYear, long? currentEmployeeId = null, CancellationToken cancellationToken = default)
-    {
-        var employees = await _context.Employees
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var leaveTypes = await _context.LeaveTypes
-            .AsNoTracking()
-            .Where(t => t.Status == "ACTIVE")
-            .ToListAsync(cancellationToken);
-
-        var policies = await _context.LeavePolicies
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        // โหลดยอดวันลาที่มีอยู่แล้วของปีนี้แบบ tracked (ไม่ใช้ AsNoTracking) เพื่อให้สามารถ "อัปเกรด"
-        // รายการที่ยังไม่เคยถูกจัดสรรโควตาจริงได้ — เช่นรายการที่ถูกสร้างเป็น stub (AnnualQuotaDays = 0)
-        // อัตโนมัติตอนเรียกดูหน้ายอดวันลาทั้งหมด (GetAllAsync) ก่อนที่จะมีการกดจัดสรรโควตาประจำปีจริง
-        // ถ้าไม่ทำแบบนี้ รายการ stub เหล่านั้นจะถูกนับว่า "มีอยู่แล้ว" และถูกข้ามไปตลอด ทำให้พนักงาน
-        // มีโควตาคงเหลือ 0 วันตลอดกาล และยื่นคำขอลาไม่ได้เลยแม้แต่ครั้งเดียว
-        var existingBalancesList = await _context.LeaveBalances
-            .Where(b => b.Year == targetYear)
-            .ToListAsync(cancellationToken);
-        var existingByKey = existingBalancesList.ToDictionary(b => (b.EmployeeId, b.LeaveTypeId));
-
-        var prevBalances = await _context.LeaveBalances
-            .AsNoTracking()
-            .Where(b => b.Year == targetYear - 1)
-            .ToDictionaryAsync(b => (b.EmployeeId, b.LeaveTypeId), cancellationToken);
-
-        var currentAssignments = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .Where(a => a.IsCurrent)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
-
-        // วันเริ่มงาน (สัญญาฉบับแรก) — ใช้คิดสิทธิ์ตามสัดส่วนในปีที่เริ่มงาน
-        var hireDates = await _context.EmploymentContracts
-            .AsNoTracking()
-            .GroupBy(c => c.EmployeeId)
-            .Select(g => new { EmployeeId = g.Key, HireDate = g.Min(c => c.StartDate) })
-            .ToDictionaryAsync(x => x.EmployeeId, x => (DateOnly?)x.HireDate, cancellationToken);
-        var policyDate = LeavePolicyRules.PolicyDateForYear(targetYear);
-
-        var newBalances = new List<LeaveBalance>();
-        var upgradedCount = 0;
-
-        foreach (var emp in employees)
-        {
-            currentAssignments.TryGetValue(emp.Id, out var assign);
-            var empLevelId = assign?.EmployeeLevelId;
-            var empTypeId = assign?.EmployeeTypeId;
-
-            foreach (var lt in leaveTypes)
-            {
-                var policy = LeavePolicyRules.SelectPolicy(
-                    policies.Where(p => p.LeaveTypeId == lt.Id), empTypeId, empLevelId, policyDate);
-
-                hireDates.TryGetValue(emp.Id, out var hireDate);
-                var entitlement = policy != null ? LeavePolicyRules.ComputeEntitlement(policy, hireDate, targetYear) : 0m;
-                decimal carriedDays = 0;
-                DateOnly? carryExpiry = null;
-
-                if (policy != null && policy.IsCarryForwardAllowed)
-                {
-                    if (prevBalances.TryGetValue((emp.Id, lt.Id), out var prevBalance) && prevBalance.NetRemainingLeaveDays > 0)
-                    {
-                        carriedDays = Math.Min(prevBalance.NetRemainingLeaveDays, LeavePolicyRules.CarryForwardMaxDays(policy));
-                        carryExpiry = new DateOnly(targetYear, 1, 1).AddMonths(LeavePolicyRules.CarryForwardExpiryMonths(policy));
-                    }
-                }
-
-                if (existingByKey.TryGetValue((emp.Id, lt.Id), out var existing))
-                {
-                    // มีรายการอยู่แล้ว — ถ้ายังไม่เคยได้รับโควตาจริง (AnnualQuotaDays <= 0 คือ stub) ให้อัปเกรดเป็นยอดจริง
-                    if (existing.AnnualQuotaDays <= 0 && entitlement > 0)
-                    {
-                        existing.AnnualQuotaDays = entitlement;
-                        existing.ActiveCarriedForwardDays = carriedDays;
-                        existing.CarryForwardExpiry = carryExpiry;
-                        existing.NetRemainingLeaveDays = existing.BroughtForwardDays
-                                                        + entitlement
-                                                        + carriedDays
-                                                        - existing.UsedDays
-                                                        + existing.AdjustedDays;
-
-                        existing.Transactions.Add(new LeaveBalanceTransaction
-                        {
-                            TransactionType = "ENTITLEMENT",
-                            Amount = entitlement,
-                            Note = $"จัดสรรโควตาวันลาประจำปี {targetYear}",
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedByEmployeeId = currentEmployeeId
-                        });
-
-                        if (carriedDays > 0)
-                        {
-                            existing.Transactions.Add(new LeaveBalanceTransaction
-                            {
-                                TransactionType = "CARRY_FORWARD",
-                                Amount = carriedDays,
-                                Note = $"ยอดยกมาจากปี {targetYear - 1}",
-                                CreatedAt = DateTime.UtcNow,
-                                CreatedByEmployeeId = currentEmployeeId
-                            });
-                        }
-
-                        upgradedCount++;
-                    }
-                    // ถ้ามีโควตาจริงอยู่แล้ว (AnnualQuotaDays > 0) ถือว่าจัดสรรไปแล้ว ไม่แตะต้องซ้ำ
-                    continue;
-                }
-
-                var balance = new LeaveBalance
-                {
-                    EmployeeId = emp.Id,
-                    LeaveTypeId = lt.Id,
-                    Year = targetYear,
-                    BroughtForwardDays = 0,
-                    AnnualQuotaDays = entitlement,
-                    ActiveCarriedForwardDays = carriedDays,
-                    UsedDays = 0,
-                    AdjustedDays = 0,
-                    NetRemainingLeaveDays = entitlement + carriedDays,
-                    CarryForwardExpiry = carryExpiry,
-                    Transactions = new List<LeaveBalanceTransaction>
-                    {
-                        new LeaveBalanceTransaction
-                        {
-                            TransactionType = "ENTITLEMENT",
-                            Amount = entitlement,
-                            Note = $"จัดสรรโควตาวันลาประจำปี {targetYear}",
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedByEmployeeId = currentEmployeeId
-                        }
-                    }
-                };
-
-                if (carriedDays > 0)
-                {
-                    balance.Transactions.Add(new LeaveBalanceTransaction
-                    {
-                        TransactionType = "CARRY_FORWARD",
-                        Amount = carriedDays,
-                        Note = $"ยอดยกมาจากปี {targetYear - 1}",
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedByEmployeeId = currentEmployeeId
-                    });
-                }
-
-                newBalances.Add(balance);
-                existingByKey[(emp.Id, lt.Id)] = balance;
-            }
-        }
-
-        if (newBalances.Count > 0)
-        {
-            _context.LeaveBalances.AddRange(newBalances);
-        }
-
-        if (newBalances.Count > 0 || upgradedCount > 0)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
-        return new InitializeYearBalanceResultDto
-        {
-            TargetYear = targetYear,
-            ProcessedEmployeesCount = employees.Count,
-            CreatedBalancesCount = newBalances.Count,
-            Message = upgradedCount > 0
-                ? $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ (สร้างใหม่ {newBalances.Count} รายการ, อัปเดตยอดที่ยังไม่จัดสรร {upgradedCount} รายการ สำหรับพนักงาน {employees.Count} คน)"
-                : $"จัดสรรยอดสิทธิ์วันลาประจำปี {targetYear} สำเร็จ ({newBalances.Count} รายการ สำหรับพนักงาน {employees.Count} คน)"
-        };
-    }
-
     public async Task<MyLeaveSummaryDto> GetMySummaryAsync(long employeeId, int year, CancellationToken cancellationToken = default)
     {
         // Convert Thai Buddhist Year (e.g. 2569) to CE (2026)
@@ -405,6 +179,9 @@ public class LeaveBalanceService : ILeaveBalanceService
         {
             year -= 543;
         }
+
+        // คำนวณสิทธิ์ปีนี้อัตโนมัติก่อนสรุปยอด (หน้า ESS)
+        await _sync.SyncAsync(year, new[] { employeeId }, null, cancellationToken);
 
         var employee = await _context.Employees
             .AsNoTracking()

@@ -8,10 +8,12 @@ namespace Hrms.Application.Features.Leave.Services;
 public class LeaveTypeService : ILeaveTypeService
 {
     private readonly IHrmsDbContext _context;
+    private readonly ILeaveEntitlementSync _sync;
 
-    public LeaveTypeService(IHrmsDbContext context)
+    public LeaveTypeService(IHrmsDbContext context, ILeaveEntitlementSync sync)
     {
         _context = context;
+        _sync = sync;
     }
 
     public async Task<List<LeaveTypeDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -79,6 +81,12 @@ public class LeaveTypeService : ILeaveTypeService
         _context.LeaveTypes.Add(leaveType);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // สร้างยอดวันลาประเภทนี้ให้พนักงานทุกคน (ปีปัจจุบัน) — สิทธิ์ปีนี้คำนวณจากสิทธิ์การลา
+        // (ไม่ใช้ "โควตาเริ่มต้น" จากฟอร์มประเภทการลาอีกต่อไป ตั้งจำนวนวันที่แท็บสิทธิ์การลาที่เดียว)
+        if (leaveType.Status == "ACTIVE")
+        {
+            await _sync.SyncAsync(LeavePolicyRules.ThaiToday().Year, null, leaveType.Id, cancellationToken);
+        }
         return new LeaveTypeDto
         {
             Id = leaveType.Id,
@@ -109,6 +117,10 @@ public class LeaveTypeService : ILeaveTypeService
             leaveType.FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory);
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (leaveType.Status == "ACTIVE")
+        {
+            await _sync.SyncAsync(LeavePolicyRules.ThaiToday().Year, null, leaveType.Id, cancellationToken);
+        }
 
         return new LeaveTypeDto
         {

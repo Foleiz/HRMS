@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Info } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 
 interface LeaveTypeModalProps {
@@ -224,14 +224,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
             </div>
           </div>
 
-          {/* ขั้นต่อไป */}
-          <div className="flex gap-2.5 p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 text-xs text-blue-800">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              จำนวนวันลาต่อปีและเงื่อนไขต่าง ๆ (อายุงาน ยื่นล่วงหน้า เอกสารแนบ ยกยอด) ตั้งที่แท็บ <b>สิทธิ์การลา</b>
-              {!isEditing && ' หลังบันทึกประเภทการลานี้'}
-            </span>
-          </div>
 
           <div className="flex items-center justify-end gap-3 pt-1">
             <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">

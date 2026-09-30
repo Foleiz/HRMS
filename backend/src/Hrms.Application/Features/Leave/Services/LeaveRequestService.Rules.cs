@@ -71,9 +71,8 @@ public partial class LeaveRequestService
             .ToListAsync(cancellationToken);
         if (policies.Count == 0) return result; // ประเภทที่ไม่ได้กำหนดนโยบาย = ไม่จำกัดเงื่อนไข
 
-        var assign = await _context.EmployeeAssignments.AsNoTracking()
-            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
-        var policy = LeavePolicyRules.SelectPolicy(policies, assign?.EmployeeTypeId, assign?.EmployeeLevelId, startDate);
+        var group = await LeaveEmployeeGroups.ResolveAsync(_context, employeeId, startDate, cancellationToken);
+        var policy = LeavePolicyRules.SelectPolicy(policies, group.EmployeeTypeId, group.EmployeeLevelId, startDate);
         if (policy == null)
         {
             result.Errors.Add("ประเภทการลานี้ไม่ได้กำหนดสิทธิ์ให้กับกลุ่มพนักงานของคุณ (ประเภท/ระดับพนักงาน) กรุณาติดต่อฝ่ายบุคคล");

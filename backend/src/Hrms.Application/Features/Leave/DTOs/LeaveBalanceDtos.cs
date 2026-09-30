@@ -43,19 +43,6 @@ public record LeaveBalanceTransactionDto
     public string? CreatedByEmployeeName { get; init; }
 }
 
-public record InitializeYearBalanceRequest
-{
-    public int TargetYear { get; init; }
-}
-
-public record InitializeYearBalanceResultDto
-{
-    public int TargetYear { get; init; }
-    public int ProcessedEmployeesCount { get; init; }
-    public int CreatedBalancesCount { get; init; }
-    public string Message { get; init; } = string.Empty;
-}
-
 public record LeaveCardItemDto
 {
     public string Code { get; init; } = string.Empty;

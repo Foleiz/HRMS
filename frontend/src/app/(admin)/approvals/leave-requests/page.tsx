@@ -30,6 +30,8 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
+import { employeeService } from '@/services/employeeService';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -130,6 +132,10 @@ export default function LeaveRequestsApprovalPage() {
   // Leave Timeline Modal State
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+
+  // Leave Document Preview Modal State
+  const [selectedLeaveForPreview, setSelectedLeaveForPreview] = useState<LeavePreviewData | null>(null);
+  const [isLeavePreviewOpen, setIsLeavePreviewOpen] = useState(false);
 
   // Certificate Approval Modals State
   const [selectedCertForApprove, setSelectedCertForApprove] = useState<CertificateRequest | null>(null);
@@ -452,6 +458,62 @@ export default function LeaveRequestsApprovalPage() {
           showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาด');
         }
       },
+    });
+  };
+
+  const handleOpenLeavePreview = (req: LeaveRequest) => {
+    const lastApproved = leaveRequests
+      .filter((r) => r.employeeId === req.employeeId && r.status === 'APPROVED' && r.id !== req.id)
+      .sort((a, b) => (b.startDatetime || b.startDate || '').localeCompare(a.startDatetime || a.startDate || ''))[0];
+
+    const initialData: LeavePreviewData = {
+      requestId: req.id,
+      employeeId: req.employeeId,
+      employeeName: req.employeeName,
+      departmentName: req.departmentName,
+      positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
+      leaveTypeCode: req.leaveTypeCode,
+      leaveTypeName: req.leaveTypeName,
+      leaveFormCategory: req.formCategory || null,
+      reason: req.reason,
+      startDate: req.startDate ?? (req.startDatetime ? req.startDatetime.split('T')[0] : null),
+      endDate: req.endDate ?? (req.endDatetime ? req.endDatetime.split('T')[0] : null),
+      leaveDays: req.leaveDays ?? req.totalDays,
+      isHalfDay: req.leaveDays === 0.5 || (req.leaveHours > 0 && req.leaveHours <= 4),
+      contactDuringLeave: req.contactDuringLeave,
+      submissionDate: req.submittedAt ? req.submittedAt.split('T')[0] : (req.createdAt ? req.createdAt.split('T')[0] : null),
+      lastLeave: lastApproved
+        ? {
+            leaveTypeCode: lastApproved.leaveTypeCode,
+            leaveTypeName: lastApproved.leaveTypeName,
+            startDate: lastApproved.startDate ?? (lastApproved.startDatetime ? lastApproved.startDatetime.split('T')[0] : null),
+            endDate: lastApproved.endDate ?? (lastApproved.endDatetime ? lastApproved.endDatetime.split('T')[0] : null),
+            leaveDays: lastApproved.leaveDays ?? lastApproved.totalDays,
+          }
+        : null,
+      timeline: null,
+      canApproveCurrentStep: !!req.isMyTurnToApprove,
+      documents: req.documents,
+    };
+
+    setSelectedLeaveForPreview(initialData);
+    setIsLeavePreviewOpen(true);
+
+    // ดึง timeline และตำแหน่งงานเพิ่มเติมในเบื้องหลัง เพื่อแสดงลายเซ็นและสายอนุมัติอย่างสมบูรณ์
+    Promise.all([
+      leaveService.getApprovalTimeline(req.id).catch(() => null),
+      !initialData.positionTitle
+        ? employeeService.getById(req.employeeId).catch(() => null)
+        : Promise.resolve(null),
+    ]).then(([tl, emp]) => {
+      setSelectedLeaveForPreview((prev) => {
+        if (!prev || prev.requestId !== req.id) return prev;
+        return {
+          ...prev,
+          timeline: tl || prev.timeline,
+          positionTitle: emp?.positionName || prev.positionTitle,
+        };
+      });
     });
   };
 
@@ -1002,8 +1064,7 @@ export default function LeaveRequestsApprovalPage() {
                             type="button"
                             onClick={() => {
                               if (item.docType === 'LEAVE') {
-                                setSelectedForTimeline(item.leaveRaw!);
-                                setIsTimelineOpen(true);
+                                handleOpenLeavePreview(item.leaveRaw!);
                               } else if (item.docType === 'CERTIFICATE') {
                                 setSelectedCertForPreview(item.certRaw!);
                                 setIsCertPreviewOpen(true);
@@ -1337,6 +1398,16 @@ export default function LeaveRequestsApprovalPage() {
         isOpen={isTimelineOpen}
         onClose={() => setIsTimelineOpen(false)}
         leaveRequest={selectedForTimeline}
+      />
+
+      {/* ─── Modal ดูตัวอย่างเอกสารใบลาทางการ (Leave Document Preview) ─── */}
+      <LeavePreviewModal
+        isOpen={isLeavePreviewOpen}
+        onClose={() => {
+          setIsLeavePreviewOpen(false);
+          setSelectedLeaveForPreview(null);
+        }}
+        data={selectedLeaveForPreview}
       />
 
       {/* ─── Modal ดูตัวอย่างเอกสารหนังสือรับรองทางการ (Certificate Document Preview) ─── */}

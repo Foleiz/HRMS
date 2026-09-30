@@ -10,11 +10,13 @@ public partial class LeaveRequestService : ILeaveRequestService
 {
     private readonly IHrmsDbContext _context;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly ILeaveEntitlementSync _entitlementSync;
 
-    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow)
+    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow, ILeaveEntitlementSync entitlementSync)
     {
         _context = context;
         _approvalWorkflow = approvalWorkflow;
+        _entitlementSync = entitlementSync;
     }
 
     public async Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(
@@ -63,6 +65,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         var assignments = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(a => a.Department)
+            .Include(a => a.Position)
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
@@ -163,6 +166,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         var assign = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(a => a.Department)
+            .Include(a => a.Position)
             .FirstOrDefaultAsync(a => a.EmployeeId == r.EmployeeId && a.IsCurrent, cancellationToken);
 
         return await MapToDtoAsync(r, assign, currentViewerEmployeeId, cancellationToken);
@@ -642,9 +646,11 @@ public partial class LeaveRequestService : ILeaveRequestService
             EmployeeCode = emp?.EmployeeCode ?? string.Empty,
             EmployeeName = empName,
             DepartmentName = assign?.Department?.DepartmentName ?? "-",
+            PositionName = assign?.Position?.PositionName ?? "-",
             LeaveTypeId = r.LeaveTypeId,
             LeaveTypeCode = r.LeaveType?.LeaveCode ?? string.Empty,
             LeaveTypeName = r.LeaveType?.LeaveName ?? string.Empty,
+            FormCategory = r.LeaveType?.FormCategory,
             StartDatetime = r.StartDatetime,
             EndDatetime = r.EndDatetime,
             LeaveHours = r.LeaveHours,

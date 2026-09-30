@@ -26,6 +26,8 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
+import { employeeService } from '@/services/employeeService';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -112,6 +114,10 @@ export default function ApprovalHistoryPage() {
   // Timeline Modal State (Leave)
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+
+  // Preview Modal State (Leave)
+  const [selectedLeaveForPreview, setSelectedLeaveForPreview] = useState<LeavePreviewData | null>(null);
+  const [isLeavePreviewOpen, setIsLeavePreviewOpen] = useState(false);
 
   // Preview Modal State (Certificate)
   const [selectedCertForPreview, setSelectedCertForPreview] = useState<CertificateRequest | null>(null);
@@ -308,6 +314,61 @@ export default function ApprovalHistoryPage() {
     });
   }, [unifiedHistory, docTypeFilter, searchTerm]);
 
+  const handleOpenLeavePreview = (req: LeaveRequest) => {
+    const lastApproved = leaveHistory
+      .filter((r) => r.employeeId === req.employeeId && r.status === 'APPROVED' && r.id !== req.id)
+      .sort((a, b) => (b.startDatetime || b.startDate || '').localeCompare(a.startDatetime || a.startDate || ''))[0];
+
+    const initialData: LeavePreviewData = {
+      requestId: req.id,
+      employeeId: req.employeeId,
+      employeeName: req.employeeName,
+      departmentName: req.departmentName,
+      positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
+      leaveTypeCode: req.leaveTypeCode,
+      leaveTypeName: req.leaveTypeName,
+      leaveFormCategory: req.formCategory || null,
+      reason: req.reason,
+      startDate: req.startDate ?? (req.startDatetime ? req.startDatetime.split('T')[0] : null),
+      endDate: req.endDate ?? (req.endDatetime ? req.endDatetime.split('T')[0] : null),
+      leaveDays: req.leaveDays ?? req.totalDays,
+      isHalfDay: req.leaveDays === 0.5 || (req.leaveHours > 0 && req.leaveHours <= 4),
+      contactDuringLeave: req.contactDuringLeave,
+      submissionDate: req.submittedAt ? req.submittedAt.split('T')[0] : (req.createdAt ? req.createdAt.split('T')[0] : null),
+      lastLeave: lastApproved
+        ? {
+            leaveTypeCode: lastApproved.leaveTypeCode,
+            leaveTypeName: lastApproved.leaveTypeName,
+            startDate: lastApproved.startDate ?? (lastApproved.startDatetime ? lastApproved.startDatetime.split('T')[0] : null),
+            endDate: lastApproved.endDate ?? (lastApproved.endDatetime ? lastApproved.endDatetime.split('T')[0] : null),
+            leaveDays: lastApproved.leaveDays ?? lastApproved.totalDays,
+          }
+        : null,
+      timeline: null,
+      canApproveCurrentStep: false,
+      documents: req.documents,
+    };
+
+    setSelectedLeaveForPreview(initialData);
+    setIsLeavePreviewOpen(true);
+
+    Promise.all([
+      leaveService.getApprovalTimeline(req.id).catch(() => null),
+      !initialData.positionTitle
+        ? employeeService.getById(req.employeeId).catch(() => null)
+        : Promise.resolve(null),
+    ]).then(([tl, emp]) => {
+      setSelectedLeaveForPreview((prev) => {
+        if (!prev || prev.requestId !== req.id) return prev;
+        return {
+          ...prev,
+          timeline: tl || prev.timeline,
+          positionTitle: emp?.positionName || prev.positionTitle,
+        };
+      });
+    });
+  };
+
   // ─── Render ───────────────────────────────────────────────
 
   return (
@@ -482,8 +543,7 @@ export default function ApprovalHistoryPage() {
                           type="button"
                           onClick={() => {
                             if (item.docType === 'LEAVE') {
-                              setSelectedForTimeline(item.leaveRaw!);
-                              setIsTimelineOpen(true);
+                              handleOpenLeavePreview(item.leaveRaw!);
                             } else if (item.docType === 'CERTIFICATE') {
                               setSelectedCertForPreview(item.certRaw!);
                               setIsCertPreviewOpen(true);
@@ -519,6 +579,16 @@ export default function ApprovalHistoryPage() {
           setSelectedForTimeline(null);
         }}
         leaveRequest={selectedForTimeline}
+      />
+
+      {/* Preview Modal (คำขอลา - ตัวอย่างเอกสาร A4 PDF) */}
+      <LeavePreviewModal
+        isOpen={isLeavePreviewOpen}
+        onClose={() => {
+          setIsLeavePreviewOpen(false);
+          setSelectedLeaveForPreview(null);
+        }}
+        data={selectedLeaveForPreview}
       />
 
       {/* Preview Modal (คำขอหนังสือรับรอง) */}

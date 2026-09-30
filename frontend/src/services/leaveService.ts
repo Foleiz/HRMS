@@ -10,8 +10,6 @@ import {
   LeaveBalance,
   LeaveBalanceAdjustmentPayload,
   LeaveBalanceTransaction,
-  InitializeYearBalancePayload,
-  InitializeYearBalanceResult,
   LeaveRequest,
   LeaveDaysCalculation,
   LeaveValidationResult,
@@ -87,11 +85,6 @@ export const leaveService = {
 
   async adjustLeaveBalance(data: LeaveBalanceAdjustmentPayload): Promise<LeaveBalance> {
     const res = await apiClient.post<ApiResponse<LeaveBalance>>('/leave-balances/adjust', data);
-    return res.data.data;
-  },
-
-  async initializeYearBalance(data: InitializeYearBalancePayload): Promise<InitializeYearBalanceResult> {
-    const res = await apiClient.post<ApiResponse<InitializeYearBalanceResult>>('/leave-balances/initialize-year', data);
     return res.data.data;
   },
 
