@@ -76,29 +76,11 @@ public class AttendanceImportService : IAttendanceImportService
         }
 
         // 3. Read All Rows Dynamically with ExcelDataReader (supports .xls, .xlsx, .csv)
-        memoryStream.Position = 0;
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
         List<IDictionary<string, object?>> allRawRows = new();
 
         try
         {
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            using var reader = ext == ".csv"
-                ? ExcelReaderFactory.CreateCsvReader(memoryStream, new ExcelReaderConfiguration { FallbackEncoding = System.Text.Encoding.UTF8 })
-                : ExcelReaderFactory.CreateReader(memoryStream);
-
-            while (reader.Read())
-            {
-                var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                for (int col = 0; col < reader.FieldCount; col++)
-                {
-                    var val = reader.GetValue(col);
-                    string colKey = GetColumnName(col);
-                    row[colKey] = val;
-                }
-                allRawRows.Add(row);
-            }
+            allRawRows = ReadAllRows(fileBytes, fileName);
         }
         catch (Exception ex)
         {
@@ -148,138 +130,13 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        // 4. Dynamic Header Row Detection & Metadata Extraction (Syaco & Biometric Exports)
-        int headerRowIndex = -1;
-        string? extractedUnit = null;
-        DateOnly? metadataDateFrom = null;
-        DateOnly? metadataDateTo = null;
-        DateTime? metadataExportedAt = null;
-
-        for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
-        {
-            var row = allRawRows[r];
-            var cellValues = row.Values
-                .Where(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()))
-                .Select(v => v!.ToString()!.Trim())
-                .ToList();
-
-            if (cellValues.Count == 0) continue;
-
-            bool hasEmpCode = cellValues.Any(IsEmpCodeHeader);
-            bool hasOtherHeader = cellValues.Any(IsOtherHeader);
-
-            if (hasEmpCode && (hasOtherHeader || cellValues.Count >= 3))
-            {
-                headerRowIndex = r;
-                break;
-            }
-        }
-
-        if (headerRowIndex == -1)
-        {
-            headerRowIndex = 0; // Fallback
-        }
-
-        // Scan rows before headerRowIndex for metadata (e.g. unit: Syaco date from: 2026-08-03 to ...)
-        for (int r = 0; r < headerRowIndex; r++)
-        {
-            var text = string.Join(" ", allRawRows[r].Values
-                .Where(v => v != null)
-                .Select(v => v!.ToString()));
-
-            if (string.IsNullOrWhiteSpace(text)) continue;
-
-            var unitMatch = Regex.Match(text, @"unit\s*:\s*([^\s]+)", RegexOptions.IgnoreCase);
-            if (unitMatch.Success && string.IsNullOrWhiteSpace(extractedUnit))
-            {
-                extractedUnit = unitMatch.Groups[1].Value.Trim();
-            }
-
-            var dateRangeMatch = Regex.Match(text, @"date\s+from\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})(?:\s+[\d:]+)?\s+to\s+(\d{4}[-/]\d{1,2}[-/]\d{1,2})", RegexOptions.IgnoreCase);
-            if (dateRangeMatch.Success)
-            {
-                if (DateOnly.TryParse(dateRangeMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out var df))
-                    metadataDateFrom = df;
-                if (DateOnly.TryParse(dateRangeMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out var dt))
-                    metadataDateTo = dt;
-            }
-
-            var printMatch = Regex.Match(text, @"print\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)", RegexOptions.IgnoreCase);
-            if (printMatch.Success)
-            {
-                if (DateTime.TryParse(printMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var prDt))
-                    metadataExportedAt = AttendanceDailyService.ToUtcTime(prDt);
-            }
-        }
-
-        // Map column indices to actual header names
-        var headerRow = allRawRows[headerRowIndex];
-        var colKeyToHeaderName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var kvp in headerRow)
-        {
-            if (kvp.Value != null)
-            {
-                var hStr = kvp.Value.ToString()?.Trim();
-                if (!string.IsNullOrWhiteSpace(hStr))
-                {
-                    colKeyToHeaderName[kvp.Key] = hStr;
-                }
-            }
-        }
-
-        // บางไฟล์ Daily Summary (Syaco deliy) มีหัวตารางแยก 2 ชั้น: แถวรหัสภาษาอังกฤษ
-        // (Shichu2/Cdshi/Ztshi) กับแถวป้ายภาษาไทย (ชั่วโมง/นาที.) คนละแถวกัน — ถ้าแถวหัวตาราง
-        // หลักที่เลือกไว้ (headerRowIndex) ไม่มีชื่อคอลัมน์สถิติเหล่านี้ ให้ย้อนไปหาแถวรหัส
-        // ภาษาอังกฤษในบริเวณหัวไฟล์มาเสริมเฉพาะคอลัมน์ที่ยังไม่ถูกตั้งชื่อ (ไม่กระทบคอลัมน์อื่น)
-        var statColumnAliases = new[] { "shichu2", "cdshi", "ztshi" };
-        bool missingStatColumns = statColumnAliases.Any(alias => !colKeyToHeaderName.Values.Any(v => NormalizeHeader(v) == alias));
-        if (missingStatColumns)
-        {
-            for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
-            {
-                if (r == headerRowIndex) continue;
-                foreach (var kvp in allRawRows[r])
-                {
-                    if (kvp.Value == null) continue;
-                    var s = kvp.Value.ToString()?.Trim();
-                    if (string.IsNullOrWhiteSpace(s)) continue;
-                    if (statColumnAliases.Contains(NormalizeHeader(s)) && !colKeyToHeaderName.ContainsKey(kvp.Key))
-                    {
-                        colKeyToHeaderName[kvp.Key] = s;
-                    }
-                }
-            }
-        }
-
-        // Build data rows
-        var rawRows = new List<(int RowNumber, IDictionary<string, object?> Data)>();
-        for (int r = headerRowIndex + 1; r < allRawRows.Count; r++)
-        {
-            var row = allRawRows[r];
-            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            bool hasData = false;
-
-            foreach (var kvp in row)
-            {
-                if (kvp.Value != null && !string.IsNullOrWhiteSpace(kvp.Value.ToString()))
-                {
-                    hasData = true;
-                }
-                if (colKeyToHeaderName.TryGetValue(kvp.Key, out var headerName))
-                {
-                    dict[headerName] = kvp.Value;
-                }
-                else
-                {
-                    dict[kvp.Key] = kvp.Value;
-                }
-            }
-
-            if (hasData)
-            {
-                rawRows.Add((r + 1, dict));
-            }
-        }
+        // 4. หาแถวหัวตาราง / ข้อมูลหัวไฟล์ / แถวข้อมูล
+        var parsedFile = BuildParsedFile(allRawRows);
+        var rawRows = parsedFile.DataRows;
+        var extractedUnit = parsedFile.Unit;
+        var metadataDateFrom = parsedFile.MetaDateFrom;
+        var metadataDateTo = parsedFile.MetaDateTo;
+        var metadataExportedAt = parsedFile.ExportedAt;
 
         if (rawRows.Count == 0)
         {
@@ -425,6 +282,746 @@ public class AttendanceImportService : IAttendanceImportService
                 bulkPreloaded = true;
             }
         }
+
+        var rowCtx = new RowProcessingContext
+        {
+            Rows = rawRows,
+            Batch = batch,
+            EmpByCode = empByCode,
+            CurrentAssignments = currentAssignments,
+            EmployeeShifts = employeeShifts,
+            CustomDateFrom = customDateFrom,
+            CustomDateTo = customDateTo,
+            IsDailySummary = isDailySummary,
+            DailyDict = dailyDict,
+            BulkPreloaded = bulkPreloaded,
+            ErrorsList = errorsList,
+            ErrorDtos = errorDtos,
+            TotalRecords = totalRecords,
+            SuccessRecords = successRecords,
+            FailedRecords = failedRecords,
+            MinDate = minDate,
+            MaxDate = maxDate
+        };
+        await ProcessRowsAsync(rowCtx, cancellationToken);
+        totalRecords = rowCtx.TotalRecords;
+        successRecords = rowCtx.SuccessRecords;
+        failedRecords = rowCtx.FailedRecords;
+        minDate = rowCtx.MinDate;
+        maxDate = rowCtx.MaxDate;
+
+
+        // 8. Save errors and batch updates
+        if (errorsList.Count > 0)
+        {
+            _context.AttendanceImportErrors.AddRange(errorsList);
+        }
+
+        batch.TotalRecords = totalRecords;
+        batch.SuccessRecords = successRecords;
+        batch.FailedRecords = failedRecords;
+        batch.DateFrom = customDateFrom ?? minDate;
+        batch.DateTo = customDateTo ?? maxDate;
+        batch.Status = failedRecords == 0 ? "IMPORTED" : (successRecords > 0 ? "PARTIAL" : "FAILED");
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Recalculate monthly attendance summary for affected months so Payroll can immediately use it
+        var summaryStartDate = customDateFrom ?? minDate;
+        var summaryEndDate = customDateTo ?? maxDate;
+
+        if (summaryStartDate.HasValue && summaryEndDate.HasValue && successRecords > 0)
+        {
+            var cur = new DateOnly(summaryStartDate.Value.Year, summaryStartDate.Value.Month, 1);
+            var end = new DateOnly(summaryEndDate.Value.Year, summaryEndDate.Value.Month, 1);
+            while (cur <= end)
+            {
+                try
+                {
+                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(cur.Year, cur.Month, cancellationToken);
+                }
+                catch
+                {
+                    // Do not fail the whole import if monthly summary calculation encounters an edge case
+                }
+                cur = cur.AddMonths(1);
+            }
+        }
+
+        return new AttendanceImportResultDto
+        {
+            BatchId = batch.Id,
+            FileName = fileName,
+            FileHash = fileHash,
+            Source = batch.Source ?? "EXCEL",
+            TotalRecords = totalRecords,
+            SuccessRecords = successRecords,
+            FailedRecords = failedRecords,
+            Status = batch.Status,
+            DateFrom = (customDateFrom ?? minDate)?.ToString("yyyy-MM-dd"),
+            DateTo = (customDateTo ?? maxDate)?.ToString("yyyy-MM-dd"),
+            IsDuplicate = false,
+            Errors = errorDtos
+        };
+    }
+
+    public async Task<PagedImportBatchResult> GetBatchesAsync(AttendanceImportBatchFilterQuery query, CancellationToken cancellationToken = default)
+    {
+        var q = _context.AttendanceImportBatches
+            .AsNoTracking()
+            .Include(b => b.ImportedByUser)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(query.Source))
+        {
+            q = q.Where(b => b.Source == query.Source.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Status))
+        {
+            q = q.Where(b => b.Status == query.Status.Trim());
+        }
+
+        if (query.StartDate.HasValue)
+        {
+            q = q.Where(b => b.DateFrom >= query.StartDate.Value || (b.DateTo != null && b.DateTo >= query.StartDate.Value));
+        }
+
+        if (query.EndDate.HasValue)
+        {
+            q = q.Where(b => b.DateTo <= query.EndDate.Value || (b.DateFrom != null && b.DateFrom <= query.EndDate.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var s = query.Search.Trim().ToLower();
+            q = q.Where(b => (b.FileName != null && b.FileName.ToLower().Contains(s)) ||
+                             (b.DeviceName != null && b.DeviceName.ToLower().Contains(s)) ||
+                             (b.UnitName != null && b.UnitName.ToLower().Contains(s)) ||
+                             (b.Source != null && b.Source.ToLower().Contains(s)));
+        }
+
+        var total = await q.CountAsync(cancellationToken);
+
+        var page = query.Page > 0 ? query.Page : 1;
+        var pageSize = query.PageSize > 0 ? query.PageSize : 20;
+
+        var items = await q.OrderByDescending(b => b.ImportedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(b => new AttendanceImportBatchDto
+            {
+                Id = b.Id,
+                FileName = b.FileName,
+                FileHash = b.FileHash,
+                Source = b.Source,
+                DeviceName = b.DeviceName,
+                UnitName = b.UnitName,
+                DateFrom = b.DateFrom.HasValue ? b.DateFrom.Value.ToString("yyyy-MM-dd") : null,
+                DateTo = b.DateTo.HasValue ? b.DateTo.Value.ToString("yyyy-MM-dd") : null,
+                ImportedByUserId = b.ImportedByUserId,
+                ImportedByUserName = b.ImportedByUser != null ? b.ImportedByUser.Username : null,
+                ImportedAt = b.ImportedAt,
+                TotalRecords = b.TotalRecords ?? 0,
+                SuccessRecords = b.SuccessRecords ?? 0,
+                FailedRecords = b.FailedRecords ?? 0,
+                Status = b.Status
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedImportBatchResult
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<AttendanceImportBatchDto?> GetBatchByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var b = await _context.AttendanceImportBatches
+            .AsNoTracking()
+            .Include(x => x.ImportedByUser)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (b == null) return null;
+
+        return new AttendanceImportBatchDto
+        {
+            Id = b.Id,
+            FileName = b.FileName,
+            FileHash = b.FileHash,
+            Source = b.Source,
+            DeviceName = b.DeviceName,
+            UnitName = b.UnitName,
+            DateFrom = b.DateFrom?.ToString("yyyy-MM-dd"),
+            DateTo = b.DateTo?.ToString("yyyy-MM-dd"),
+            ImportedByUserId = b.ImportedByUserId,
+            ImportedByUserName = b.ImportedByUser?.Username,
+            ImportedAt = b.ImportedAt,
+            TotalRecords = b.TotalRecords ?? 0,
+            SuccessRecords = b.SuccessRecords ?? 0,
+            FailedRecords = b.FailedRecords ?? 0,
+            Status = b.Status
+        };
+    }
+
+    public async Task<PagedImportErrorResult> GetBatchErrorsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        var q = _context.AttendanceImportErrors
+            .AsNoTracking()
+            .Where(e => e.ImportBatchId == batchId)
+            .OrderBy(e => e.RowNumber);
+
+        var total = await q.CountAsync(cancellationToken);
+        var p = page > 0 ? page : 1;
+        var ps = pageSize > 0 ? pageSize : 50;
+
+        var items = await q.Skip((p - 1) * ps).Take(ps)
+            .Select(e => new AttendanceImportErrorDto
+            {
+                Id = e.Id,
+                ImportBatchId = e.ImportBatchId,
+                RowNumber = e.RowNumber,
+                RawRowData = e.RawRowData,
+                ErrorMessage = e.ErrorMessage,
+                ErrorCode = e.ErrorCode,
+                EmployeeCode = e.EmployeeCode,
+                EmployeeName = e.EmployeeName,
+                DepartmentName = e.DepartmentName,
+                RawPunchTimestamp = e.RawPunchTimestamp,
+                DevicePunchState = e.DevicePunchState,
+                CreatedAt = e.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedImportErrorResult
+        {
+            Items = items,
+            TotalCount = total,
+            Page = p,
+            PageSize = ps
+        };
+    }
+
+    /// <summary>
+    /// ดึงรายการบันทึกเวลาที่นำเข้าจาก Batch ที่ระบุ (สำหรับหน้าตรวจเวลา)
+    /// </summary>
+    public async Task<PagedBatchRecordResult> GetBatchRecordsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        var q = _context.AttendanceDailies
+            .AsNoTracking()
+            .Where(a => a.ImportBatchId == batchId)
+            .Include(a => a.Employee)
+            .OrderBy(a => a.WorkDate)
+                .ThenBy(a => a.Employee!.EmployeeCode);
+
+        var total = await q.CountAsync(cancellationToken);
+        var p = page > 0 ? page : 1;
+        var ps = pageSize > 0 ? pageSize : 50;
+
+        var rawItems = await q.Skip((p - 1) * ps).Take(ps).ToListAsync(cancellationToken);
+
+        // Load current assignments for matched employees
+        var employeeIds = rawItems.Select(a => a.EmployeeId).Distinct().ToList();
+        var assignmentMap = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Include(ea => ea.Department)
+            .Where(ea => ea.IsCurrent && employeeIds.Contains(ea.EmployeeId))
+            .ToDictionaryAsync(ea => ea.EmployeeId, cancellationToken);
+
+        var items = rawItems.Select(a =>
+        {
+            assignmentMap.TryGetValue(a.EmployeeId, out var asg);
+            return new BatchAttendanceRecordDto
+            {
+                Id = a.Id,
+                EmployeeCode = a.Employee?.EmployeeCode ?? string.Empty,
+                EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}".Trim(),
+                DepartmentName = asg?.Department?.DepartmentName,
+                WorkDate = a.WorkDate.ToString("yyyy-MM-dd"),
+                // แปลง UTC → Thailand Standard Time (ICT, UTC+7) ก่อน format
+                ActualIn = a.ActualIn.HasValue
+                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualIn.Value).ToString("HH:mm")
+                    : null,
+                ActualOut = a.ActualOut.HasValue
+                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualOut.Value).ToString("HH:mm")
+                    : null,
+                WorkedMinutes = a.WorkedMinutes,
+                LateMinutes = a.LateMinutes,
+                EarlyLeaveMinutes = a.EarlyLeaveMinutes,
+                IsAbsent = a.IsAbsent,
+                Status = a.Status
+            };
+        }).ToList();
+
+        return new PagedBatchRecordResult
+        {
+            Items = items,
+            TotalCount = total,
+            Page = p,
+            PageSize = ps
+        };
+    }
+
+    public async Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(string format = "xlsx", CancellationToken cancellationToken = default)
+    {
+        var sampleRows = new List<Dictionary<string, object?>>
+        {
+            new Dictionary<string, object?>
+            {
+                ["รหัส"] = "EMP001",
+                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
+                ["วันที่-เวลา"] = "2026-08-03 08:25:00",
+                ["สถานะ"] = "เข้า",
+                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
+            },
+            new Dictionary<string, object?>
+            {
+                ["รหัส"] = "EMP001",
+                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
+                ["วันที่-เวลา"] = "2026-08-03 17:35:00",
+                ["สถานะ"] = "ออก",
+                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
+            },
+            new Dictionary<string, object?>
+            {
+                ["รหัส"] = "EMP002",
+                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
+                ["วันที่-เวลา"] = "2026-08-03 08:45:00",
+                ["สถานะ"] = "เข้า",
+                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
+            },
+            new Dictionary<string, object?>
+            {
+                ["รหัส"] = "EMP002",
+                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
+                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
+                ["วันที่-เวลา"] = "2026-08-03 17:30:00",
+                ["สถานะ"] = "ออก",
+                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
+                ["การตรวจอุณหภูมิ"] = "ปกติ",
+                ["เครื่อง"] = "Syaco",
+                ["ประมวลผล"] = "สำเร็จ"
+            }
+        };
+
+        using var ms = new MemoryStream();
+        await ms.SaveAsAsync(sampleRows, cancellationToken: cancellationToken);
+        var bytes = ms.ToArray();
+
+        return (bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "attendance_import_template.xlsx");
+    }
+
+    // ---------------------------------------------------------
+    // Helper Methods
+    // ---------------------------------------------------------
+
+    private static bool IsEmpCodeHeader(string text)
+    {
+        var norm = NormalizeHeader(text);
+        return norm is "รหัส" or "รหัสพนักงาน" or "เลขประจำตัว" or "employeecode" or "empcode" or "badgeno" or "userid" or "empid" or "employeeid";
+    }
+
+    private static bool IsOtherHeader(string text)
+    {
+        var norm = NormalizeHeader(text);
+        return norm is "ชื่อ" or "ชื่อสกุล" or "ชื่อนามสกุล" or "ชื่อพนักงาน" or "ชื่อสกุล"
+            or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
+            or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
+            or "name" or "department" or "date" or "time" or "status"
+            // Daily Summary (Syaco deliy) format columns
+            or "dkrq" or "sj1" or "yingchu1" or "yingchu2" or "shichu1" or "shichu2"
+            or "yfh" or "qjfh" or "kugong" or "cdci" or "cdshi" or "ztci" or "ztshi"
+            or "wqd" or "wqt" or "xxr" or "jjr" or "qjcs" or "qjsj" or "shenhe"
+            or "เขาออก" or "กะการทำงาน" or "วันทำงาน" or "สาย" or "ออกก่อน" or "ไมลงเวลา" or "วันหยุด" or "การลา" or "สัญลักษณ์";
+    }
+
+
+    public const string EmployeeNotFoundCode = "EMPLOYEE_NOT_FOUND";
+
+    /// <summary>
+    /// จับคู่แถวที่เคย "หาพนักงานไม่เจอ" จากทุกไฟล์ที่นำเข้าไว้แล้ว กับพนักงานคนนี้ (ตามรหัสพนักงาน/รหัสเครื่องสแกนปัจจุบัน)
+    /// เรียกอัตโนมัติหลังสร้าง/แก้ไขพนักงาน — ใช้ไฟล์ต้นฉบับที่เก็บไว้ในชุดนำเข้า ไม่ต้องอัปไฟล์ใหม่
+    /// คืนจำนวนแถวที่จับคู่และบันทึกเวลาได้สำเร็จ
+    /// </summary>
+    public async Task<int> RematchUnmatchedRowsAsync(long employeeId, CancellationToken cancellationToken = default)
+    {
+        var employee = await _context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+        if (employee == null) return 0;
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(employee.EmployeeCode)) keys.Add(employee.EmployeeCode.Trim());
+        if (!string.IsNullOrWhiteSpace(employee.BiometricId)) keys.Add(employee.BiometricId.Trim());
+        if (keys.Count == 0) return 0;
+
+        var candidates = await _context.AttendanceImportErrors.AsNoTracking()
+            .Where(e => e.ErrorCode == EmployeeNotFoundCode && e.EmployeeCode != null)
+            .Select(e => new { e.Id, e.ImportBatchId, e.RowNumber, e.EmployeeCode })
+            .ToListAsync(cancellationToken);
+        var matches = candidates.Where(c => keys.Contains(NormalizeEmployeeCode(c.EmployeeCode!))).ToList();
+        if (matches.Count == 0) return 0;
+
+        var empByCode = new Dictionary<string, Employee>(StringComparer.OrdinalIgnoreCase);
+        foreach (var k in keys) empByCode[k] = employee;
+
+        var currentAssignments = (await _context.EmployeeAssignments
+                .AsNoTracking()
+                .Include(ea => ea.Department)
+                .Where(ea => ea.IsCurrent && ea.EmployeeId == employeeId)
+                .ToListAsync(cancellationToken))
+            .GroupBy(ea => ea.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(ea => ea.EffectiveFrom).First());
+
+        var employeeShifts = await _context.EmployeeShifts
+            .AsNoTracking()
+            .Include(es => es.Shift)
+            .Where(es => es.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
+
+        int matched = 0;
+        DateOnly? affectedFrom = null, affectedTo = null;
+
+        foreach (var group in matches.GroupBy(m => m.ImportBatchId))
+        {
+            var batch = await _context.AttendanceImportBatches.FirstOrDefaultAsync(b => b.Id == group.Key, cancellationToken);
+            if (batch?.FileData == null || batch.FileData.Length == 0) continue;
+
+            List<IDictionary<string, object?>> allRawRows;
+            try
+            {
+                allRawRows = ReadAllRows(batch.FileData, string.IsNullOrWhiteSpace(batch.FileName) ? "import.xlsx" : batch.FileName);
+            }
+            catch
+            {
+                continue; // ไฟล์เดิมอ่านไม่ได้ — ข้ามชุดนี้
+            }
+            if (allRawRows.Count == 0) continue;
+
+            var parsed = BuildParsedFile(allRawRows);
+            var wanted = group.Select(g => g.RowNumber).ToHashSet();
+            var rows = parsed.DataRows.Where(r => wanted.Contains(r.RowNumber)).ToList();
+            if (rows.Count == 0) continue;
+
+            // วันที่ที่ผู้ใช้กำหนดตอนนำเข้า ใช้เฉพาะกรณีไฟล์วันเดียวที่ไม่มีคอลัมน์วันที่
+            DateOnly? singleDay = batch.DateFrom.HasValue && batch.DateFrom == batch.DateTo ? batch.DateFrom : null;
+
+            var ctx = new RowProcessingContext
+            {
+                Rows = rows,
+                Batch = batch,
+                EmpByCode = empByCode,
+                CurrentAssignments = currentAssignments,
+                EmployeeShifts = employeeShifts,
+                CustomDateFrom = singleDay,
+                CustomDateTo = singleDay,
+                IsDailySummary = IsDailySummaryFormat(allRawRows),
+                DailyDict = new(),
+                BulkPreloaded = false,
+                TotalRecords = rows.Count
+            };
+            await ProcessRowsAsync(ctx, cancellationToken);
+
+            // แทนรายการผิดพลาดเดิมของแถวที่ประมวลผลใหม่แล้ว (แถวที่ยังผิดด้วยเหตุอื่นจะถูกบันทึกใหม่)
+            var processed = rows.Select(r => r.RowNumber).ToHashSet();
+            var oldErrorIds = group.Where(g => processed.Contains(g.RowNumber)).Select(g => g.Id).ToList();
+            var oldErrors = await _context.AttendanceImportErrors.Where(e => oldErrorIds.Contains(e.Id)).ToListAsync(cancellationToken);
+            _context.AttendanceImportErrors.RemoveRange(oldErrors);
+            if (ctx.ErrorsList.Count > 0) _context.AttendanceImportErrors.AddRange(ctx.ErrorsList);
+
+            var skipped = rows.Count - ctx.TotalRecords; // แถววันหยุด (W/H) ที่ไม่นับ
+            batch.TotalRecords = Math.Max(0, (batch.TotalRecords ?? 0) - skipped);
+            batch.SuccessRecords = (batch.SuccessRecords ?? 0) + ctx.SuccessRecords;
+            batch.FailedRecords = Math.Max(0, (batch.FailedRecords ?? 0) - oldErrors.Count + ctx.FailedRecords);
+            batch.Status = batch.FailedRecords == 0 ? "IMPORTED" : (batch.SuccessRecords > 0 ? "PARTIAL" : "FAILED");
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            matched += ctx.SuccessRecords;
+            if (ctx.SuccessRecords > 0)
+            {
+                if (ctx.MinDate.HasValue && (!affectedFrom.HasValue || ctx.MinDate < affectedFrom)) affectedFrom = ctx.MinDate;
+                if (ctx.MaxDate.HasValue && (!affectedTo.HasValue || ctx.MaxDate > affectedTo)) affectedTo = ctx.MaxDate;
+            }
+        }
+
+        // คำนวณสรุปรายเดือนของเดือนที่ได้รับผลใหม่ ให้ฝั่งเงินเดือนเห็นข้อมูลล่าสุด
+        if (matched > 0 && affectedFrom.HasValue && affectedTo.HasValue)
+        {
+            var cur = new DateOnly(affectedFrom.Value.Year, affectedFrom.Value.Month, 1);
+            var end = new DateOnly(affectedTo.Value.Year, affectedTo.Value.Month, 1);
+            while (cur <= end)
+            {
+                try
+                {
+                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(cur.Year, cur.Month, cancellationToken);
+                }
+                catch
+                {
+                    // ไม่ให้การคำนวณสรุปรายเดือนทำให้การจับคู่ทั้งหมดล้ม
+                }
+                cur = cur.AddMonths(1);
+            }
+        }
+
+        return matched;
+    }
+
+    /// <summary>ปรับรหัสจากไฟล์ให้อยู่รูปเดียวกับตอนนำเข้า (ตัดช่องว่าง, "100002.0" → "100002")</summary>
+    private static string NormalizeEmployeeCode(string raw)
+    {
+        var cleanCode = raw.Trim();
+        if (cleanCode.EndsWith(".0"))
+        {
+            cleanCode = cleanCode[..^2];
+        }
+        else if (double.TryParse(cleanCode, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dVal) && dVal == Math.Floor(dVal))
+        {
+            cleanCode = ((long)dVal).ToString();
+        }
+        return cleanCode;
+    }
+
+    private sealed class ParsedAttendanceFile
+    {
+        public List<(int RowNumber, IDictionary<string, object?> Data)> DataRows { get; init; } = new();
+        public string? Unit { get; init; }
+        public DateOnly? MetaDateFrom { get; init; }
+        public DateOnly? MetaDateTo { get; init; }
+        public DateTime? ExportedAt { get; init; }
+    }
+
+    /// <summary>อ่านทุกแถวของไฟล์ (.xls, .xlsx, .csv) — โยน exception ถ้าอ่านไม่ได้</summary>
+    private static List<IDictionary<string, object?>> ReadAllRows(byte[] fileBytes, string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var allRawRows = new List<IDictionary<string, object?>>();
+        using var stream = new MemoryStream(fileBytes);
+
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+        using var reader = ext == ".csv"
+            ? ExcelReaderFactory.CreateCsvReader(stream, new ExcelReaderConfiguration { FallbackEncoding = System.Text.Encoding.UTF8 })
+            : ExcelReaderFactory.CreateReader(stream);
+
+        while (reader.Read())
+        {
+            var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            for (int col = 0; col < reader.FieldCount; col++)
+            {
+                var val = reader.GetValue(col);
+                string colKey = GetColumnName(col);
+                row[colKey] = val;
+            }
+            allRawRows.Add(row);
+        }
+        return allRawRows;
+    }
+
+    /// <summary>หาแถวหัวตาราง, ข้อมูลหัวไฟล์ (unit / ช่วงวันที่ / เวลาพิมพ์) และสร้างแถวข้อมูลพร้อมเลขแถวจริงในไฟล์</summary>
+    private static ParsedAttendanceFile BuildParsedFile(List<IDictionary<string, object?>> allRawRows)
+    {
+
+        // 4. Dynamic Header Row Detection & Metadata Extraction (Syaco & Biometric Exports)
+        int headerRowIndex = -1;
+        string? extractedUnit = null;
+        DateOnly? metadataDateFrom = null;
+        DateOnly? metadataDateTo = null;
+        DateTime? metadataExportedAt = null;
+
+        for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
+        {
+            var row = allRawRows[r];
+            var cellValues = row.Values
+                .Where(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()))
+                .Select(v => v!.ToString()!.Trim())
+                .ToList();
+
+            if (cellValues.Count == 0) continue;
+
+            bool hasEmpCode = cellValues.Any(IsEmpCodeHeader);
+            bool hasOtherHeader = cellValues.Any(IsOtherHeader);
+
+            if (hasEmpCode && (hasOtherHeader || cellValues.Count >= 3))
+            {
+                headerRowIndex = r;
+                break;
+            }
+        }
+
+        if (headerRowIndex == -1)
+        {
+            headerRowIndex = 0; // Fallback
+        }
+
+        // Scan rows before headerRowIndex for metadata (e.g. unit: Syaco date from: 2026-08-03 to ...)
+        for (int r = 0; r < headerRowIndex; r++)
+        {
+            var text = string.Join(" ", allRawRows[r].Values
+                .Where(v => v != null)
+                .Select(v => v!.ToString()));
+
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            var unitMatch = Regex.Match(text, @"unit\s*:\s*([^\s]+)", RegexOptions.IgnoreCase);
+            if (unitMatch.Success && string.IsNullOrWhiteSpace(extractedUnit))
+            {
+                extractedUnit = unitMatch.Groups[1].Value.Trim();
+            }
+
+            var dateRangeMatch = Regex.Match(text, @"date\s+from\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})(?:\s+[\d:]+)?\s+to\s+(\d{4}[-/]\d{1,2}[-/]\d{1,2})", RegexOptions.IgnoreCase);
+            if (dateRangeMatch.Success)
+            {
+                if (DateOnly.TryParse(dateRangeMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out var df))
+                    metadataDateFrom = df;
+                if (DateOnly.TryParse(dateRangeMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out var dt))
+                    metadataDateTo = dt;
+            }
+
+            var printMatch = Regex.Match(text, @"print\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)", RegexOptions.IgnoreCase);
+            if (printMatch.Success)
+            {
+                if (DateTime.TryParse(printMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var prDt))
+                    metadataExportedAt = AttendanceDailyService.ToUtcTime(prDt);
+            }
+        }
+
+        // Map column indices to actual header names
+        var headerRow = allRawRows[headerRowIndex];
+        var colKeyToHeaderName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in headerRow)
+        {
+            if (kvp.Value != null)
+            {
+                var hStr = kvp.Value.ToString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(hStr))
+                {
+                    colKeyToHeaderName[kvp.Key] = hStr;
+                }
+            }
+        }
+
+        // บางไฟล์ Daily Summary (Syaco deliy) มีหัวตารางแยก 2 ชั้น: แถวรหัสภาษาอังกฤษ
+        // (Shichu2/Cdshi/Ztshi) กับแถวป้ายภาษาไทย (ชั่วโมง/นาที.) คนละแถวกัน — ถ้าแถวหัวตาราง
+        // หลักที่เลือกไว้ (headerRowIndex) ไม่มีชื่อคอลัมน์สถิติเหล่านี้ ให้ย้อนไปหาแถวรหัส
+        // ภาษาอังกฤษในบริเวณหัวไฟล์มาเสริมเฉพาะคอลัมน์ที่ยังไม่ถูกตั้งชื่อ (ไม่กระทบคอลัมน์อื่น)
+        var statColumnAliases = new[] { "shichu2", "cdshi", "ztshi" };
+        bool missingStatColumns = statColumnAliases.Any(alias => !colKeyToHeaderName.Values.Any(v => NormalizeHeader(v) == alias));
+        if (missingStatColumns)
+        {
+            for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
+            {
+                if (r == headerRowIndex) continue;
+                foreach (var kvp in allRawRows[r])
+                {
+                    if (kvp.Value == null) continue;
+                    var s = kvp.Value.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(s)) continue;
+                    if (statColumnAliases.Contains(NormalizeHeader(s)) && !colKeyToHeaderName.ContainsKey(kvp.Key))
+                    {
+                        colKeyToHeaderName[kvp.Key] = s;
+                    }
+                }
+            }
+        }
+
+        // Build data rows
+        var rawRows = new List<(int RowNumber, IDictionary<string, object?> Data)>();
+        for (int r = headerRowIndex + 1; r < allRawRows.Count; r++)
+        {
+            var row = allRawRows[r];
+            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            bool hasData = false;
+
+            foreach (var kvp in row)
+            {
+                if (kvp.Value != null && !string.IsNullOrWhiteSpace(kvp.Value.ToString()))
+                {
+                    hasData = true;
+                }
+                if (colKeyToHeaderName.TryGetValue(kvp.Key, out var headerName))
+                {
+                    dict[headerName] = kvp.Value;
+                }
+                else
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+            }
+
+            if (hasData)
+            {
+                rawRows.Add((r + 1, dict));
+            }
+        }
+
+        return new ParsedAttendanceFile
+        {
+            DataRows = rawRows,
+            Unit = extractedUnit,
+            MetaDateFrom = metadataDateFrom,
+            MetaDateTo = metadataDateTo,
+            ExportedAt = metadataExportedAt
+        };
+    }
+
+
+    /// <summary>ข้อมูลที่ใช้ร่วมกันระหว่างประมวลผลแถวของไฟล์ลงเวลา (ใช้ทั้งตอนนำเข้าไฟล์และตอนจับคู่แถวที่ค้างใหม่)</summary>
+    private sealed class RowProcessingContext
+    {
+        public List<(int RowNumber, IDictionary<string, object?> Data)> Rows { get; init; } = new();
+        public AttendanceImportBatch Batch { get; init; } = null!;
+        public Dictionary<string, Employee> EmpByCode { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<long, EmployeeAssignment> CurrentAssignments { get; init; } = new();
+        public List<EmployeeShift> EmployeeShifts { get; init; } = new();
+        public DateOnly? CustomDateFrom { get; init; }
+        public DateOnly? CustomDateTo { get; init; }
+        public bool IsDailySummary { get; init; }
+        public Dictionary<(long EmployeeId, DateOnly WorkDate), AttendanceDaily> DailyDict { get; init; } = new();
+        public bool BulkPreloaded { get; init; }
+        public List<AttendanceImportError> ErrorsList { get; init; } = new();
+        public List<AttendanceImportErrorDto> ErrorDtos { get; init; } = new();
+        public int TotalRecords { get; set; }
+        public int SuccessRecords { get; set; }
+        public int FailedRecords { get; set; }
+        public DateOnly? MinDate { get; set; }
+        public DateOnly? MaxDate { get; set; }
+    }
+
+    /// <summary>ประมวลผลแถวข้อมูลเวลา → AttendanceDaily (ตรรกะเดียวกับการนำเข้าไฟล์เดิมทุกประการ)</summary>
+    private async Task ProcessRowsAsync(RowProcessingContext ctx, CancellationToken cancellationToken)
+    {
+        var rawRows = ctx.Rows;
+        var batch = ctx.Batch;
+        var empByCode = ctx.EmpByCode;
+        var currentAssignments = ctx.CurrentAssignments;
+        var employeeShifts = ctx.EmployeeShifts;
+        var customDateFrom = ctx.CustomDateFrom;
+        var customDateTo = ctx.CustomDateTo;
+        var isDailySummary = ctx.IsDailySummary;
+        var dailyDict = ctx.DailyDict;
+        var bulkPreloaded = ctx.BulkPreloaded;
+        var errorsList = ctx.ErrorsList;
+        var errorDtos = ctx.ErrorDtos;
+        int totalRecords = ctx.TotalRecords;
+        int successRecords = ctx.SuccessRecords;
+        int failedRecords = ctx.FailedRecords;
+        DateOnly? minDate = ctx.MinDate;
+        DateOnly? maxDate = ctx.MaxDate;
+
 
         for (int i = 0; i < rawRows.Count; i++)
         {
@@ -806,345 +1403,13 @@ public class AttendanceImportService : IAttendanceImportService
             successRecords++;
         }
 
-
-        // 8. Save errors and batch updates
-        if (errorsList.Count > 0)
-        {
-            _context.AttendanceImportErrors.AddRange(errorsList);
-        }
-
-        batch.TotalRecords = totalRecords;
-        batch.SuccessRecords = successRecords;
-        batch.FailedRecords = failedRecords;
-        batch.DateFrom = customDateFrom ?? minDate;
-        batch.DateTo = customDateTo ?? maxDate;
-        batch.Status = failedRecords == 0 ? "IMPORTED" : (successRecords > 0 ? "PARTIAL" : "FAILED");
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        // Recalculate monthly attendance summary for affected months so Payroll can immediately use it
-        var summaryStartDate = customDateFrom ?? minDate;
-        var summaryEndDate = customDateTo ?? maxDate;
-
-        if (summaryStartDate.HasValue && summaryEndDate.HasValue && successRecords > 0)
-        {
-            var cur = new DateOnly(summaryStartDate.Value.Year, summaryStartDate.Value.Month, 1);
-            var end = new DateOnly(summaryEndDate.Value.Year, summaryEndDate.Value.Month, 1);
-            while (cur <= end)
-            {
-                try
-                {
-                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(cur.Year, cur.Month, cancellationToken);
-                }
-                catch
-                {
-                    // Do not fail the whole import if monthly summary calculation encounters an edge case
-                }
-                cur = cur.AddMonths(1);
-            }
-        }
-
-        return new AttendanceImportResultDto
-        {
-            BatchId = batch.Id,
-            FileName = fileName,
-            FileHash = fileHash,
-            Source = batch.Source ?? "EXCEL",
-            TotalRecords = totalRecords,
-            SuccessRecords = successRecords,
-            FailedRecords = failedRecords,
-            Status = batch.Status,
-            DateFrom = (customDateFrom ?? minDate)?.ToString("yyyy-MM-dd"),
-            DateTo = (customDateTo ?? maxDate)?.ToString("yyyy-MM-dd"),
-            IsDuplicate = false,
-            Errors = errorDtos
-        };
+        ctx.TotalRecords = totalRecords;
+        ctx.SuccessRecords = successRecords;
+        ctx.FailedRecords = failedRecords;
+        ctx.MinDate = minDate;
+        ctx.MaxDate = maxDate;
     }
 
-    public async Task<PagedImportBatchResult> GetBatchesAsync(AttendanceImportBatchFilterQuery query, CancellationToken cancellationToken = default)
-    {
-        var q = _context.AttendanceImportBatches
-            .AsNoTracking()
-            .Include(b => b.ImportedByUser)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Source))
-        {
-            q = q.Where(b => b.Source == query.Source.Trim());
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Status))
-        {
-            q = q.Where(b => b.Status == query.Status.Trim());
-        }
-
-        if (query.StartDate.HasValue)
-        {
-            q = q.Where(b => b.DateFrom >= query.StartDate.Value || (b.DateTo != null && b.DateTo >= query.StartDate.Value));
-        }
-
-        if (query.EndDate.HasValue)
-        {
-            q = q.Where(b => b.DateTo <= query.EndDate.Value || (b.DateFrom != null && b.DateFrom <= query.EndDate.Value));
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var s = query.Search.Trim().ToLower();
-            q = q.Where(b => (b.FileName != null && b.FileName.ToLower().Contains(s)) ||
-                             (b.DeviceName != null && b.DeviceName.ToLower().Contains(s)) ||
-                             (b.UnitName != null && b.UnitName.ToLower().Contains(s)) ||
-                             (b.Source != null && b.Source.ToLower().Contains(s)));
-        }
-
-        var total = await q.CountAsync(cancellationToken);
-
-        var page = query.Page > 0 ? query.Page : 1;
-        var pageSize = query.PageSize > 0 ? query.PageSize : 20;
-
-        var items = await q.OrderByDescending(b => b.ImportedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(b => new AttendanceImportBatchDto
-            {
-                Id = b.Id,
-                FileName = b.FileName,
-                FileHash = b.FileHash,
-                Source = b.Source,
-                DeviceName = b.DeviceName,
-                UnitName = b.UnitName,
-                DateFrom = b.DateFrom.HasValue ? b.DateFrom.Value.ToString("yyyy-MM-dd") : null,
-                DateTo = b.DateTo.HasValue ? b.DateTo.Value.ToString("yyyy-MM-dd") : null,
-                ImportedByUserId = b.ImportedByUserId,
-                ImportedByUserName = b.ImportedByUser != null ? b.ImportedByUser.Username : null,
-                ImportedAt = b.ImportedAt,
-                TotalRecords = b.TotalRecords ?? 0,
-                SuccessRecords = b.SuccessRecords ?? 0,
-                FailedRecords = b.FailedRecords ?? 0,
-                Status = b.Status
-            })
-            .ToListAsync(cancellationToken);
-
-        return new PagedImportBatchResult
-        {
-            Items = items,
-            TotalCount = total,
-            Page = page,
-            PageSize = pageSize
-        };
-    }
-
-    public async Task<AttendanceImportBatchDto?> GetBatchByIdAsync(long id, CancellationToken cancellationToken = default)
-    {
-        var b = await _context.AttendanceImportBatches
-            .AsNoTracking()
-            .Include(x => x.ImportedByUser)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-        if (b == null) return null;
-
-        return new AttendanceImportBatchDto
-        {
-            Id = b.Id,
-            FileName = b.FileName,
-            FileHash = b.FileHash,
-            Source = b.Source,
-            DeviceName = b.DeviceName,
-            UnitName = b.UnitName,
-            DateFrom = b.DateFrom?.ToString("yyyy-MM-dd"),
-            DateTo = b.DateTo?.ToString("yyyy-MM-dd"),
-            ImportedByUserId = b.ImportedByUserId,
-            ImportedByUserName = b.ImportedByUser?.Username,
-            ImportedAt = b.ImportedAt,
-            TotalRecords = b.TotalRecords ?? 0,
-            SuccessRecords = b.SuccessRecords ?? 0,
-            FailedRecords = b.FailedRecords ?? 0,
-            Status = b.Status
-        };
-    }
-
-    public async Task<PagedImportErrorResult> GetBatchErrorsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
-    {
-        var q = _context.AttendanceImportErrors
-            .AsNoTracking()
-            .Where(e => e.ImportBatchId == batchId)
-            .OrderBy(e => e.RowNumber);
-
-        var total = await q.CountAsync(cancellationToken);
-        var p = page > 0 ? page : 1;
-        var ps = pageSize > 0 ? pageSize : 50;
-
-        var items = await q.Skip((p - 1) * ps).Take(ps)
-            .Select(e => new AttendanceImportErrorDto
-            {
-                Id = e.Id,
-                ImportBatchId = e.ImportBatchId,
-                RowNumber = e.RowNumber,
-                RawRowData = e.RawRowData,
-                ErrorMessage = e.ErrorMessage,
-                ErrorCode = e.ErrorCode,
-                EmployeeCode = e.EmployeeCode,
-                EmployeeName = e.EmployeeName,
-                DepartmentName = e.DepartmentName,
-                RawPunchTimestamp = e.RawPunchTimestamp,
-                DevicePunchState = e.DevicePunchState,
-                CreatedAt = e.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return new PagedImportErrorResult
-        {
-            Items = items,
-            TotalCount = total,
-            Page = p,
-            PageSize = ps
-        };
-    }
-
-    /// <summary>
-    /// ดึงรายการบันทึกเวลาที่นำเข้าจาก Batch ที่ระบุ (สำหรับหน้าตรวจเวลา)
-    /// </summary>
-    public async Task<PagedBatchRecordResult> GetBatchRecordsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
-    {
-        var q = _context.AttendanceDailies
-            .AsNoTracking()
-            .Where(a => a.ImportBatchId == batchId)
-            .Include(a => a.Employee)
-            .OrderBy(a => a.WorkDate)
-                .ThenBy(a => a.Employee!.EmployeeCode);
-
-        var total = await q.CountAsync(cancellationToken);
-        var p = page > 0 ? page : 1;
-        var ps = pageSize > 0 ? pageSize : 50;
-
-        var rawItems = await q.Skip((p - 1) * ps).Take(ps).ToListAsync(cancellationToken);
-
-        // Load current assignments for matched employees
-        var employeeIds = rawItems.Select(a => a.EmployeeId).Distinct().ToList();
-        var assignmentMap = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .Include(ea => ea.Department)
-            .Where(ea => ea.IsCurrent && employeeIds.Contains(ea.EmployeeId))
-            .ToDictionaryAsync(ea => ea.EmployeeId, cancellationToken);
-
-        var items = rawItems.Select(a =>
-        {
-            assignmentMap.TryGetValue(a.EmployeeId, out var asg);
-            return new BatchAttendanceRecordDto
-            {
-                Id = a.Id,
-                EmployeeCode = a.Employee?.EmployeeCode ?? string.Empty,
-                EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}".Trim(),
-                DepartmentName = asg?.Department?.DepartmentName,
-                WorkDate = a.WorkDate.ToString("yyyy-MM-dd"),
-                // แปลง UTC → Thailand Standard Time (ICT, UTC+7) ก่อน format
-                ActualIn = a.ActualIn.HasValue
-                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualIn.Value).ToString("HH:mm")
-                    : null,
-                ActualOut = a.ActualOut.HasValue
-                    ? AttendanceDailyService.ToThaiLocalTime(a.ActualOut.Value).ToString("HH:mm")
-                    : null,
-                WorkedMinutes = a.WorkedMinutes,
-                LateMinutes = a.LateMinutes,
-                EarlyLeaveMinutes = a.EarlyLeaveMinutes,
-                IsAbsent = a.IsAbsent,
-                Status = a.Status
-            };
-        }).ToList();
-
-        return new PagedBatchRecordResult
-        {
-            Items = items,
-            TotalCount = total,
-            Page = p,
-            PageSize = ps
-        };
-    }
-
-    public async Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(string format = "xlsx", CancellationToken cancellationToken = default)
-    {
-        var sampleRows = new List<Dictionary<string, object?>>
-        {
-            new Dictionary<string, object?>
-            {
-                ["รหัส"] = "EMP001",
-                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
-                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
-                ["วันที่-เวลา"] = "2026-08-03 08:25:00",
-                ["สถานะ"] = "เข้า",
-                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
-                ["การตรวจอุณหภูมิ"] = "ปกติ",
-                ["เครื่อง"] = "Syaco",
-                ["ประมวลผล"] = "สำเร็จ"
-            },
-            new Dictionary<string, object?>
-            {
-                ["รหัส"] = "EMP001",
-                ["ชื่อ-สกุล"] = "ธนพล สิริโภคินทร์",
-                ["แผนก-ฝ่าย."] = "ฝ่ายบริหาร",
-                ["วันที่-เวลา"] = "2026-08-03 17:35:00",
-                ["สถานะ"] = "ออก",
-                ["ลงเวลาด้วย"] = "สแกนใบหน้า",
-                ["การตรวจอุณหภูมิ"] = "ปกติ",
-                ["เครื่อง"] = "Syaco",
-                ["ประมวลผล"] = "สำเร็จ"
-            },
-            new Dictionary<string, object?>
-            {
-                ["รหัส"] = "EMP002",
-                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
-                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
-                ["วันที่-เวลา"] = "2026-08-03 08:45:00",
-                ["สถานะ"] = "เข้า",
-                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
-                ["การตรวจอุณหภูมิ"] = "ปกติ",
-                ["เครื่อง"] = "Syaco",
-                ["ประมวลผล"] = "สำเร็จ"
-            },
-            new Dictionary<string, object?>
-            {
-                ["รหัส"] = "EMP002",
-                ["ชื่อ-สกุล"] = "พิมพ์ใจ กิตติพาณิชย์",
-                ["แผนก-ฝ่าย."] = "ฝ่ายบุคคล",
-                ["วันที่-เวลา"] = "2026-08-03 17:30:00",
-                ["สถานะ"] = "ออก",
-                ["ลงเวลาด้วย"] = "ลายนิ้วมือ",
-                ["การตรวจอุณหภูมิ"] = "ปกติ",
-                ["เครื่อง"] = "Syaco",
-                ["ประมวลผล"] = "สำเร็จ"
-            }
-        };
-
-        using var ms = new MemoryStream();
-        await ms.SaveAsAsync(sampleRows, cancellationToken: cancellationToken);
-        var bytes = ms.ToArray();
-
-        return (bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "attendance_import_template.xlsx");
-    }
-
-    // ---------------------------------------------------------
-    // Helper Methods
-    // ---------------------------------------------------------
-
-    private static bool IsEmpCodeHeader(string text)
-    {
-        var norm = NormalizeHeader(text);
-        return norm is "รหัส" or "รหัสพนักงาน" or "เลขประจำตัว" or "employeecode" or "empcode" or "badgeno" or "userid" or "empid" or "employeeid";
-    }
-
-    private static bool IsOtherHeader(string text)
-    {
-        var norm = NormalizeHeader(text);
-        return norm is "ชื่อ" or "ชื่อสกุล" or "ชื่อนามสกุล" or "ชื่อพนักงาน" or "ชื่อสกุล"
-            or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
-            or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
-            or "name" or "department" or "date" or "time" or "status"
-            // Daily Summary (Syaco deliy) format columns
-            or "dkrq" or "sj1" or "yingchu1" or "yingchu2" or "shichu1" or "shichu2"
-            or "yfh" or "qjfh" or "kugong" or "cdci" or "cdshi" or "ztci" or "ztshi"
-            or "wqd" or "wqt" or "xxr" or "jjr" or "qjcs" or "qjsj" or "shenhe"
-            or "เขาออก" or "กะการทำงาน" or "วันทำงาน" or "สาย" or "ออกก่อน" or "ไมลงเวลา" or "วันหยุด" or "การลา" or "สัญลักษณ์";
-    }
 
     private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
     {

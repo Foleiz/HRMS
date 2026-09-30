@@ -754,8 +754,13 @@ export default function EmployeesPage() {
         } : undefined,
       };
 
-      await employeeService.create(payload);
-      toast.success('บันทึกข้อมูลพนักงานเรียบร้อย');
+      const created = await employeeService.create(payload);
+      const linked = created?.attendanceRowsLinked ?? 0;
+      toast.success(
+        linked > 0
+          ? `บันทึกข้อมูลพนักงานเรียบร้อย และเชื่อมเวลาเข้างานจากไฟล์ที่นำเข้าไว้แล้ว ${linked} รายการ`
+          : 'บันทึกข้อมูลพนักงานเรียบร้อย'
+      );
       handleCloseCreateModal();
       setFormData(initialFormData);
       loadData();

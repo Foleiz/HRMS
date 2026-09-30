@@ -8,6 +8,8 @@ public class EmployeeDto
 {
     public long Id { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
+    /// <summary>จำนวนแถวลงเวลาจากไฟล์ที่นำเข้าไว้แล้ว ที่ถูกจับคู่ให้พนักงานคนนี้อัตโนมัติหลังบันทึก (มีเฉพาะผลของการสร้าง/แก้ไข)</summary>
+    public int? AttendanceRowsLinked { get; set; }
     public string? BiometricId { get; set; }
     /// <summary>สถานะการจ้างงาน: ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>
     public string EmploymentStatus { get; set; } = "ACTIVE";
