@@ -75,6 +75,10 @@ export interface Employee {
   divisionCode?: string;
   divisionName?: string;
   employeeType?: string;
+  /** หัวหน้างานโดยตรง */
+  managerEmployeeId?: number | null;
+  managerName?: string | null;
+  managerEmployeeCode?: string | null;
   contact?: EmployeeContact;
   socialSecurity?: EmployeeSocialSecurity;
   addresses: EmployeeAddress[];
@@ -178,6 +182,9 @@ export interface CreateEmployeePayload {
   positionId?: number;
   positionName?: string;
   employeeType?: string;
+  /** หัวหน้างานโดยตรง (null = ไม่มี) — ตอนแก้ไขต้องส่ง setManager: true ด้วย */
+  managerEmployeeId?: number | null;
+  setManager?: boolean;
 
   // ครอบครัว & กรณีฉุกเฉิน
   spouseHasIncome?: boolean;

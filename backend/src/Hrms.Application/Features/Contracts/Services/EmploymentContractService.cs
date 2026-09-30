@@ -293,13 +293,21 @@ public class EmploymentContractService : IEmploymentContractService
             contract.StartDate = request.StartDate.Value;
 
         if (request.ProbationEndDate.HasValue)
+        {
+            // เลื่อนวันสิ้นสุดทดลองงาน → แจ้งเตือนใหม่ตามวันใหม่
+            if (contract.ProbationEndDate != request.ProbationEndDate) contract.ProbationNotifiedAt = null;
             contract.ProbationEndDate = request.ProbationEndDate;
+        }
 
         if (request.ProbationPassedDate.HasValue)
             contract.ProbationPassedDate = request.ProbationPassedDate;
 
         if (request.ContractEndDate.HasValue)
+        {
+            // ต่อสัญญา/เปลี่ยนวันสิ้นสุด → แจ้งเตือนใหม่ตามวันใหม่
+            if (contract.ContractEndDate != request.ContractEndDate) contract.ExpiryNotifiedAt = null;
             contract.ContractEndDate = request.ContractEndDate;
+        }
 
         if (request.TerminationDate.HasValue)
             contract.TerminationDate = request.TerminationDate;

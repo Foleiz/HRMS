@@ -916,6 +916,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.TerminationReason).HasColumnName("termination_reason");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30);
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.ProbationNotifiedAt).HasColumnName("probation_notified_at");
+            entity.Property(e => e.ExpiryNotifiedAt).HasColumnName("expiry_notified_at");
 
             entity.HasOne(e => e.Employee)
                 .WithMany(e => e.Contracts)
@@ -1442,6 +1444,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.LastRemindedAt).HasColumnName("last_reminded_at");
 
             entity.HasOne(e => e.ApprovalFlow)
                 .WithMany()

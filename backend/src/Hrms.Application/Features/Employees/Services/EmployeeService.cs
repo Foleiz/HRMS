@@ -208,6 +208,8 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.ManagerEmployee)
             .Include(e => e.Signatures)
             .Include(e => e.UserAccount)
                 .ThenInclude(u => u!.UserRoles)
@@ -489,6 +491,7 @@ public class EmployeeService : IEmployeeService
                 DivisionId = divId,
                 DepartmentId = deptId,
                 PositionId = pos.Id,
+                ManagerEmployeeId = await ValidateManagerAsync(request.ManagerEmployeeId, null, cancellationToken),
                 EffectiveFrom = DateOnly.FromDateTime(DateTime.Today),
                 IsCurrent = true,
                 WageType = request.EmployeeType?.Contains("รายวัน") == true ? "DAILY" : "MONTHLY"
@@ -912,6 +915,15 @@ public class EmployeeService : IEmployeeService
             }
         }
 
+        // 11.1 หัวหน้างานโดยตรง (เฉพาะผู้มีสิทธิ์จัดการพนักงาน — พนักงานแก้โปรไฟล์ตัวเองเปลี่ยนไม่ได้)
+        if (request.SetManager && hasManagePermission)
+        {
+            var assignment = employee.Assignments.Where(a => a.IsCurrent).OrderByDescending(a => a.EffectiveFrom).FirstOrDefault();
+            if (assignment == null)
+                throw new ValidationException("กรุณาระบุตำแหน่งงานก่อนกำหนดหัวหน้างาน");
+            assignment.ManagerEmployeeId = await ValidateManagerAsync(request.ManagerEmployeeId, employee.Id, cancellationToken);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(employee.Id, cancellationToken);
@@ -1223,6 +1235,37 @@ public class EmployeeService : IEmployeeService
         return true;
     }
 
+    /// <summary>ตรวจหัวหน้างาน: ต้องมีอยู่จริง ไม่ใช่ตัวเอง และไม่ทำให้เกิดวงวน (A เป็นหัวหน้า B และ B เป็นหัวหน้า A)</summary>
+    private async Task<long?> ValidateManagerAsync(long? managerId, long? employeeId, CancellationToken cancellationToken)
+    {
+        if (!managerId.HasValue || managerId.Value <= 0) return null;
+        if (employeeId.HasValue && managerId.Value == employeeId.Value)
+            throw new ValidationException("ไม่สามารถกำหนดพนักงานเป็นหัวหน้าของตัวเองได้");
+
+        var exists = await _dbContext.Employees.AnyAsync(e => e.Id == managerId.Value, cancellationToken);
+        if (!exists) throw new ValidationException("ไม่พบพนักงานที่เลือกเป็นหัวหน้างาน");
+
+        if (employeeId.HasValue)
+        {
+            // เดินขึ้นสายบังคับบัญชาของหัวหน้าที่เลือก ถ้าเจอพนักงานคนนี้ = วงวน
+            var visited = new HashSet<long>();
+            long? cursor = managerId.Value;
+            while (cursor.HasValue && visited.Add(cursor.Value))
+            {
+                var current = cursor.Value;
+                cursor = await _dbContext.EmployeeAssignments.AsNoTracking()
+                    .Where(a => a.EmployeeId == current && a.IsCurrent)
+                    .OrderByDescending(a => a.EffectiveFrom)
+                    .Select(a => a.ManagerEmployeeId)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (cursor == employeeId.Value)
+                    throw new ValidationException("ไม่สามารถกำหนดหัวหน้าคนนี้ได้ เพราะพนักงานคนนี้เป็นหัวหน้า (ทางตรงหรือทางอ้อม) ของหัวหน้าที่เลือก");
+            }
+        }
+
+        return managerId.Value;
+    }
+
     private EmployeeDto MapToDto(Employee e)
     {
         var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
@@ -1268,6 +1311,9 @@ public class EmployeeService : IEmployeeService
             DivisionCode = currentAssignment?.Division?.DivisionCode?.Trim(),
             DivisionName = currentAssignment?.Division?.DivisionName?.Trim(),
             EmployeeType = currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null,
+            ManagerEmployeeId = currentAssignment?.ManagerEmployeeId,
+            ManagerName = currentAssignment?.ManagerEmployee?.FullName,
+            ManagerEmployeeCode = currentAssignment?.ManagerEmployee?.EmployeeCode,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             AvatarUpdatedAt = e.AvatarUpdatedAt,

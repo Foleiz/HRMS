@@ -21,6 +21,11 @@ public class EmploymentContract : BaseEntity
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, PENDING_APPROVAL, COMPLETED, TERMINATED, CANCELLED
     public long? ApprovalInstanceId { get; set; }
 
+    /// <summary>แจ้งเตือนใกล้สิ้นสุดทดลองงานไปแล้วเมื่อ (กันแจ้งซ้ำ)</summary>
+    public DateTime? ProbationNotifiedAt { get; set; }
+    /// <summary>แจ้งเตือนสัญญาใกล้หมดอายุไปแล้วเมื่อ (กันแจ้งซ้ำ)</summary>
+    public DateTime? ExpiryNotifiedAt { get; set; }
+
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual EmployeeType? EmployeeType { get; set; }

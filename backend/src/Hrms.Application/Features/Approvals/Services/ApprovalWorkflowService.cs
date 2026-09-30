@@ -669,7 +669,53 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         DocumentTypeLabels.TryGetValue(documentType, out var label) ? label : "เอกสาร";
 
     /// <summary>แจ้งเตือนผู้มีสิทธิ์อนุมัติของขั้นตอนที่คำขอเพิ่งเข้ามาถึง</summary>
-    private async Task NotifyStepApproversAsync(ApprovalInstance instance, ApprovalStep step, long? requesterEmployeeId, CancellationToken cancellationToken)
+    /// <summary>
+    /// เตือนผู้อนุมัติรายการที่ค้างอยู่ในขั้นเดิมนานเกิน remindAfterDays วัน (เตือนซ้ำทุก remindAfterDays วัน)
+    /// </summary>
+    public async Task<int> SendPendingRemindersAsync(int remindAfterDays, CancellationToken cancellationToken = default)
+    {
+        if (remindAfterDays < 1) remindAfterDays = 1;
+        var now = DateTime.UtcNow;
+        var threshold = now.AddDays(-remindAfterDays);
+
+        var due = await _context.ApprovalInstances.AsNoTracking()
+            .Where(i => i.Status == "PENDING" && i.CurrentStepNo != null
+                        && (i.LastRemindedAt == null || i.LastRemindedAt <= threshold))
+            .Select(i => new
+            {
+                i.Id,
+                // ขั้นปัจจุบันเริ่มเมื่อมีการอนุมัติขั้นก่อนหน้าครั้งล่าสุด (ถ้าไม่มี = ตอนยื่น)
+                StepStartedAt = i.Actions.Select(a => (DateTime?)a.ActionAt).Max() ?? i.CreatedAt
+            })
+            .Where(x => x.StepStartedAt <= threshold)
+            .ToListAsync(cancellationToken);
+        if (due.Count == 0) return 0;
+
+        var dueIds = due.Select(x => x.Id).ToList();
+        var startedAt = due.ToDictionary(x => x.Id, x => x.StepStartedAt);
+        var instances = await _context.ApprovalInstances
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f!.Steps)
+            .Where(i => dueIds.Contains(i.Id))
+            .ToListAsync(cancellationToken);
+
+        var reminded = 0;
+        foreach (var instance in instances)
+        {
+            var item = new { StepStartedAt = startedAt[instance.Id] };
+            var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == instance.CurrentStepNo);
+            if (step == null) continue;
+
+            var waitingDays = Math.Max(1, (int)Math.Floor((now - item.StepStartedAt).TotalDays));
+            await NotifyStepApproversAsync(instance, step, null, cancellationToken, waitingDays);
+            instance.LastRemindedAt = now;
+            reminded++;
+        }
+
+        if (reminded > 0) await _context.SaveChangesAsync(cancellationToken);
+        return reminded;
+    }
+
+    private async Task NotifyStepApproversAsync(ApprovalInstance instance, ApprovalStep step, long? requesterEmployeeId, CancellationToken cancellationToken, int? reminderWaitingDays = null)
     {
         try
         {
@@ -699,11 +745,14 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 : null;
 
             var label = GetDocumentLabel(instance.DocumentType);
+            var isReminder = reminderWaitingDays.HasValue;
             await AddNotificationsAsync(
                 approverUserIds,
                 "APPROVAL",
-                $"มี{label}รอการอนุมัติ",
-                $"{requesterName ?? "พนักงาน"} ยื่น{label} รอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})",
+                isReminder ? $"เตือน: {label}รอการอนุมัติมา {reminderWaitingDays} วัน" : $"มี{label}รอการอนุมัติ",
+                isReminder
+                    ? $"{label}ของ {requesterName ?? "พนักงาน"} ยังรอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})"
+                    : $"{requesterName ?? "พนักงาน"} ยื่น{label} รอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})",
                 instance.DocumentType,
                 instance.SourceDocumentId,
                 cancellationToken);

@@ -19,6 +19,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
+import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -77,6 +78,10 @@ export default function EmployeeEditPage() {
   ];
 
   // Form State
+  // หัวหน้างานโดยตรง
+  const [managerId, setManagerId] = useState<number | ''>('');
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+
   const [formData, setFormData] = useState<CreateEmployeePayload>({
     employeeCode: '',
     biometricId: '',
@@ -140,6 +145,12 @@ export default function EmployeeEditPage() {
       try {
         setLoading(true);
         const emp = await employeeService.getById(employeeId);
+        setManagerId(emp.managerEmployeeId ?? '');
+        // รายชื่อพนักงานสำหรับเลือกหัวหน้างาน (โหลดไม่ได้ก็ยังแก้ข้อมูลอื่นได้)
+        employeeService
+          .getAll()
+          .then(setAllEmployees)
+          .catch((e) => console.error('Failed to load employees for manager select:', e));
 
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
         const primaryEducation = emp.educations?.[0];
@@ -277,6 +288,8 @@ export default function EmployeeEditPage() {
       const payload: Partial<CreateEmployeePayload> = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
+        setManager: true,
+        managerEmployeeId: managerId === '' ? null : managerId,
         biometricId: formData.biometricId?.trim() ? formData.biometricId.trim() : '',
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -447,6 +460,22 @@ export default function EmployeeEditPage() {
                     />
                     <p className="text-[11px] text-slate-400 mt-1">
                       รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)
+                    </p>
+                  </div>
+
+                  {/* หัวหน้างานโดยตรง */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">หัวหน้างานโดยตรง</label>
+                    <EmployeeSelect
+                      employees={allEmployees}
+                      value={managerId}
+                      onChange={(empId) => setManagerId(empId)}
+                      emptyLabel="ไม่มีหัวหน้างาน"
+                      placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
+                      excludeEmployeeIds={[employeeId]}
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      ใช้กับขั้นอนุมัติ &quot;หัวหน้างานตรง&quot; ในสายการอนุมัติ
                     </p>
                   </div>
 

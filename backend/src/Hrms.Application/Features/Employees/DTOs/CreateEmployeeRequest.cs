@@ -60,6 +60,9 @@ public class CreateEmployeeRequest
     public string? PositionName { get; set; }
     public string? EmployeeType { get; set; }
 
+    /// <summary>หัวหน้างานโดยตรง (Employee Id)</summary>
+    public long? ManagerEmployeeId { get; set; }
+
     // วุฒิการศึกษา
     public string? EducationLevel { get; set; }
     public string? Institution { get; set; }
