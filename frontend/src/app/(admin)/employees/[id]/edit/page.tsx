@@ -603,7 +603,10 @@ export default function EmployeeEditPage() {
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
+                </div>
 
+                {/* --- คอลัมน์ที่ 2 --- */}
+                <div className="space-y-4">
                   {/* เลขบัตรประชาชน */}
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">
@@ -620,6 +623,19 @@ export default function EmployeeEditPage() {
                     <p className="text-[11px] text-slate-400 mt-1">
                       ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้
                     </p>
+                  </div>
+
+                  {/* วันเกิด */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.birthDate}
+                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
                   </div>
 
                   {/* เพศ */}
@@ -667,22 +683,6 @@ export default function EmployeeEditPage() {
                       <option value="ไม่ระบุ">ไม่ระบุ</option>
                     </select>
                   </div>
-                </div>
-
-                {/* --- คอลัมน์ที่ 2 --- */}
-                <div className="space-y-4">
-                  {/* วันเกิด */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.birthDate}
-                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
 
                   {/* สถานภาพสมรส */}
                   <div>
@@ -717,6 +717,52 @@ export default function EmployeeEditPage() {
                       <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
                       <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* --- คอลัมน์ที่ 3 --- */}
+                <div className="space-y-4">
+                  {/* อีเมล์ */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      อีเมล์ (E-mail) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="test001@gmail.com"
+                      value={formData.personalEmail}
+                      onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
+
+                  {/* อีเมลองค์กร */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="name@company.com"
+                      value={formData.organizationEmail}
+                      onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
+
+                  {/* เบอร์โทรศัพท์ส่วนตัว */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={12}
+                      placeholder="08X-XXX-XXXX"
+                      value={formData.personalPhone}
+                      onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
                   </div>
 
                   {/* ที่อยู่ (Address) */}
@@ -816,53 +862,6 @@ export default function EmployeeEditPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* --- คอลัมน์ที่ 3 --- */}
-                <div className="space-y-4">
-                  {/* อีเมล์ */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      อีเมล์ (E-mail) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="test001@gmail.com"
-                      value={formData.personalEmail}
-                      onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-
-                  {/* อีเมลองค์กร */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="name@company.com"
-                      value={formData.organizationEmail}
-                      onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-
-                  {/* เบอร์โทรศัพท์ส่วนตัว */}
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
-                      เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={12}
-                      placeholder="08X-XXX-XXXX"
-                      value={formData.personalPhone}
-                      onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                    />
-                  </div>
-
                 </div>
               </div>
             )}
