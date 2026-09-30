@@ -229,6 +229,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     [leaveTypeId, balances]
   );
 
+  const hasSelectedType = leaveTypeId !== '';
   const usedDaysSoFar = selectedBalance?.usedDays ?? 0;
 
   const leaveCountThisYear = useMemo(() => {
@@ -358,15 +359,16 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <form onSubmit={handleSubmit}>
       {error && (
         <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+      {/* คอลัมน์ซ้าย/ขวาแยกการ์ด กว้างเท่ากัน และสูงเท่ากัน (grid ยืดทั้งสองฝั่งให้เท่าฝั่งที่สูงกว่า) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
         {/* ─── Left column ─────────────────────────────── */}
-        <div className="space-y-5">
-          <div>
+        <div className="flex flex-col gap-5">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลทั่วไป</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 sm:col-span-1">
@@ -378,6 +380,12 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลพนักงาน</h3>
+            <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล</label>
                 <input
@@ -408,52 +416,54 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอลา *</label>
-            <select
-              value={leaveTypeId}
-              onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              required
-            >
-              <option value="">-- เลือกประเภทการลา --</option>
-              {leaveTypes.map((t) => {
-                // ดึงจำนวนสิทธิ์ต่อปีจากยอดวันลาคงเหลือของพนักงานคนนี้ก่อน (ถูกต้องตรงตัวที่สุด)
-                // ถ้ายังไม่มีข้อมูลยอดวันลาของปีนี้ ค่อย fallback ไปที่เกณฑ์สิทธิ์การลา (policy) ทั่วไปของประเภทนั้น
-                const balanceForType = balances.find((b) => b.leaveTypeId === t.id);
-                const policy = leavePolicies.find((p) => p.leaveTypeId === t.id);
-                const quotaDays = balanceForType?.annualQuotaDays ?? policy?.entitlementDays;
-                return (
-                  <option key={t.id} value={t.id}>
-                    {t.leaveName}
-                    {quotaDays != null ? ` (สิทธิ์ ${quotaDays} วัน/ปี)` : ''}
-                  </option>
-                );
-              })}
-            </select>
-            {leaveTypes.length === 0 && (
-              <p className="text-xs text-gray-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-gray-700">เหตุผล</label>
-              <span className="text-2xs text-gray-300">{reason.length}/{REASON_MAX_LENGTH}</span>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex-1 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอลา *</label>
+              <select
+                value={leaveTypeId}
+                onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                required
+              >
+                <option value="">-- เลือกประเภทการลา --</option>
+                {leaveTypes.map((t) => {
+                  // ดึงจำนวนสิทธิ์ต่อปีจากยอดวันลาคงเหลือของพนักงานคนนี้ก่อน (ถูกต้องตรงตัวที่สุด)
+                  // ถ้ายังไม่มีข้อมูลยอดวันลาของปีนี้ ค่อย fallback ไปที่เกณฑ์สิทธิ์การลา (policy) ทั่วไปของประเภทนั้น
+                  const balanceForType = balances.find((b) => b.leaveTypeId === t.id);
+                  const policy = leavePolicies.find((p) => p.leaveTypeId === t.id);
+                  const quotaDays = balanceForType?.annualQuotaDays ?? policy?.entitlementDays;
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {t.leaveName}
+                      {quotaDays != null ? ` (สิทธิ์ ${quotaDays} วัน/ปี)` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+              {leaveTypes.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
+              )}
             </div>
-            <textarea
-              value={reason}
-              maxLength={REASON_MAX_LENGTH}
-              onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-              rows={3}
-              placeholder="ระบุเหตุผลการลา (ถ้ามี)"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-            />
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-gray-700">เหตุผล</label>
+                <span className="text-2xs text-gray-300">{reason.length}/{REASON_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                value={reason}
+                maxLength={REASON_MAX_LENGTH}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                rows={3}
+                placeholder="ระบุเหตุผลการลา (ถ้ามี)"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
+              />
+            </div>
           </div>
         </div>
 
         {/* ─── Right column ─────────────────────────────── */}
-        <div className="space-y-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-full flex flex-col gap-5">
           {/* flex-wrap แทน grid 50/50 เพราะกล่องปฏิทินมีความกว้างคงที่ (320px) เพื่อให้พอดีกับป็อปอัพปฏิทิน
               ถ้าใช้ grid แบ่งครึ่งจะทำให้ล้นทับตัวเลือก "รูปแบบการลา" เมื่อพื้นที่ไม่พอ — flex-wrap จะดันตัวเลือกไปขึ้นบรรทัดใหม่แทนการซ้อนทับ */}
           <div className="flex flex-wrap items-start gap-3">
@@ -519,38 +529,45 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             <p className="mt-1 text-2xs text-gray-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
-          {leaveTypeId !== '' && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-              <p className="text-xs font-semibold text-blue-700 mb-3">
-                สถิติโควตาแบบ Real-time ({leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})
-              </p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">ลามาแล้ว</div>
-                  <div className="text-sm font-bold text-gray-800">{usedDaysSoFar} วัน</div>
-                </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">ลาครั้ง</div>
-                  <div className="text-sm font-bold text-gray-800">{leaveCountThisYear} ครั้ง</div>
-                </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">รวมเป็น</div>
-                  <div className={`text-sm font-bold ${withinQuota ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {projectedTotalDays} วัน
-                  </div>
+          {/* แสดงตลอด — ยังไม่เลือกประเภทจะแสดงเป็น "-" แทนตัวเลข */}
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+            <p className="text-xs font-semibold text-blue-700 mb-3">
+              สถิติโควตาแบบ Real-time
+              {hasSelectedType ? ` (${leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})` : ''}
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">ลามาแล้ว</div>
+                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
+              </div>
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">ลาครั้ง</div>
+                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
+              </div>
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">รวมเป็น</div>
+                <div
+                  className={`text-sm font-bold ${
+                    !hasSelectedType ? 'text-gray-800' : withinQuota ? 'text-emerald-600' : 'text-red-600'
+                  }`}
+                >
+                  {hasSelectedType ? `${projectedTotalDays} วัน` : '-'}
                 </div>
               </div>
-              {availableDays != null && (
-                <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
-                  ใช้ได้อีก {availableDays} วัน
-                  {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
-                  {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
-                </p>
-              )}
             </div>
-          )}
+            {availableDays != null && (
+              <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
+                ใช้ได้อีก {availableDays} วัน
+                {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
+                {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
+              </p>
+            )}
+            {!hasSelectedType && (
+              <p className="mt-3 text-xs text-blue-700/80">เลือกประเภทการลาเพื่อดูยอดวันลาของคุณ</p>
+            )}
+          </div>
 
-          <div>
+          <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-1.5">
               <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                 <Phone className="w-3.5 h-3.5 text-gray-400" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
@@ -563,7 +580,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
               rows={2}
               placeholder="สถานที่/เบอร์ติดต่อระหว่างลา"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
             />
           </div>
 
