@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Ban,
   GitMerge,
-  Compass,
   Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
@@ -37,9 +36,7 @@ import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { WorkflowSimulatorView } from './WorkflowSimulatorView';
 
-type SubTab = 'flows' | 'simulator';
 
 const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
 /** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
@@ -108,7 +105,6 @@ export const ApprovalFlowsTab: React.FC = () => {
   const { success, error } = useToast();
 
   // Active Sub-Tab
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('flows');
 
   // === Reference Data ===
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -420,42 +416,10 @@ export const ApprovalFlowsTab: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* 1. Sub-Tab Switcher Pills (Rule #10 Pure Thai) */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('flows')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === 'flows'
-              ? 'bg-white text-[#0B2046] shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <GitMerge className="w-4 h-4 text-[#0B2046]" />
-          <span>ผังสายการอนุมัติ</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600">
-            {flows.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('simulator')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === 'simulator'
-              ? 'bg-white text-[#0B2046] shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <Compass className="w-4 h-4 text-[#0B2046]" />
-          <span>ทดสอบจำลองสายการอนุมัติ</span>
-        </button>
-      </div>
-
       {/* ========================================================================= */}
-      {/* SUB-TAB 1: ผังสายการอนุมัติ (Workflow Templates) */}
+      {/* ผังสายการอนุมัติ (Workflow Templates) */}
       {/* ========================================================================= */}
-      {activeSubTab === 'flows' && (
+      {(
         <div className="space-y-6">
           {/* Top Filter & Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -690,13 +654,6 @@ export const ApprovalFlowsTab: React.FC = () => {
             </div>
           )}
         </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-TAB 2: ทดสอบจำลองสายการอนุมัติ (Workflow Simulator) */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'simulator' && (
-        <WorkflowSimulatorView employees={employees} />
       )}
 
       {/* ========================================================================= */}
