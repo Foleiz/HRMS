@@ -17,9 +17,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
     public async Task<long?> StartWorkflowAsync(string documentType, long sourceDocumentId, long requesterEmployeeId, CancellationToken cancellationToken = default)
     {
         // 1. ค้นหาข้อมูลสังกัดของผู้ยื่นเพื่อนำไปจับคู่ ApprovalFlow
-        var assignment = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.EmployeeId == requesterEmployeeId && a.IsCurrent, cancellationToken);
+        var assignment = await GetAssignmentAsync(requesterEmployeeId, cancellationToken);
 
         var departmentId = assignment?.DepartmentId;
         var levelId = assignment?.EmployeeLevelId;
@@ -57,7 +55,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             return null;
         }
 
-        var firstStep = selectedFlow.Steps.OrderBy(s => s.StepNo).First();
+        // ขั้นแรกที่มีผู้อนุมัติ (ขั้นที่ตั้ง "ข้าม" และหาผู้อนุมัติไม่เจอจะถูกข้าม)
+        var firstStep = await FindNextActionableStepAsync(selectedFlow.Steps, int.MinValue, requesterEmployeeId, assignment, cancellationToken)
+                        ?? selectedFlow.Steps.OrderBy(s => s.StepNo).First();
 
         var instance = new ApprovalInstance
         {
@@ -76,14 +76,6 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         await NotifyStepApproversAsync(instance, firstStep, requesterEmployeeId, cancellationToken);
 
         return instance.Id;
-    }
-
-    private async Task<EmployeeAssignment?> GetRequesterAssignmentAsync(ApprovalInstance instance, CancellationToken cancellationToken)
-    {
-        var requesterId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
-        return requesterId.HasValue
-            ? await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == requesterId.Value && a.IsCurrent, cancellationToken)
-            : null;
     }
 
     /// <summary>หา Employee ID ของผู้ยื่นเอกสารต้นทางของ workflow</summary>
@@ -129,60 +121,285 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         return requesterId;
     }
 
-    private async Task<bool> IsUserEligibleForStepAsync(
+    // ===================== การหาผู้อนุมัติ (ใช้ร่วมกันทุกจุด) =====================
+    // ผู้อนุมัติของแต่ละขั้นคำนวณจาก "ผู้ยื่น" ทุกครั้ง → สายเดียวใช้ได้ทุกแผนก
+    // กฎร่วม: ตัดผู้ยื่นออก (ห้ามอนุมัติของตัวเอง), ตัดคนที่ไม่มีบัญชีผู้ใช้ออก, ถ้าไม่เหลือใครใช้ทางสำรองของขั้น
+
+    private static readonly string[] HrRoleCodes = { "HR_MGR", "HR_ADMIN", "HR" };
+    private static readonly string[] CeoRoleCodes = { "CEO", "EXECUTIVE" };
+
+    /// <summary>ผู้อนุมัติ (Employee Id) ของขั้นนี้สำหรับผู้ยื่นคนนี้ — หลังใช้ทางสำรองแล้ว (ว่าง = ไม่มีใคร / ข้ามขั้น)</summary>
+    private async Task<HashSet<long>> ResolveApproverEmployeeIdsAsync(
         ApprovalStep step,
-        long employeeId,
+        bool isLastStep,
+        long? requesterEmployeeId,
         EmployeeAssignment? requesterAssignment,
-        IEnumerable<UserRole> userRoles,
         CancellationToken cancellationToken)
     {
-        switch (step.ApproverType)
+        var scope = step.ApproverType == "ROLE" ? (step.ApproverScope ?? "ORG") : "ORG";
+        var set = await ResolveCleanAsync(step.ApproverType, step.ApproverEmployeeId, step.ApproverRoleId, scope, requesterEmployeeId, requesterAssignment, cancellationToken);
+
+        // ผู้อนุมัติแทน: ALWAYS = อนุมัติได้คู่กับผู้อนุมัติหลักตลอด
+        //               WHEN_ABSENT = เมื่อผู้อนุมัติหลักทุกคนลา (อนุมัติแล้ว) ในวันนี้ หรือหาผู้อนุมัติหลักไม่เจอ
+        if (!string.IsNullOrWhiteSpace(step.DelegateType))
+        {
+            var delegates = await ResolveCleanAsync(
+                step.DelegateType!, step.DelegateEmployeeId, step.DelegateRoleId,
+                step.DelegateType == "ROLE" ? (step.DelegateScope ?? "ORG") : "ORG",
+                requesterEmployeeId, requesterAssignment, cancellationToken);
+
+            if (delegates.Count > 0)
+            {
+                var always = string.Equals(step.DelegateMode, "ALWAYS", StringComparison.OrdinalIgnoreCase);
+                if (always || set.Count == 0 || await AreAllOnLeaveTodayAsync(set, cancellationToken))
+                {
+                    set.UnionWith(delegates); // ผู้อนุมัติหลักยังกดได้ (เช่น กลับมาทำงานก่อน)
+                    return set;
+                }
+            }
+        }
+
+        if (set.Count > 0) return set;
+
+        var fallback = (step.FallbackAction ?? "HR").ToUpperInvariant();
+        // ขั้นสุดท้ายห้ามข้าม (กันคำขอผ่านโดยไม่มีใครพิจารณา) → ส่งให้ฝ่ายบุคคลแทน
+        if (fallback == "SKIP" && isLastStep) fallback = "HR";
+
+        if (fallback == "ESCALATE")
+        {
+            foreach (var (type, nextScope) in EscalationChain(step.ApproverType, scope))
+            {
+                set = await ResolveCleanAsync(type, step.ApproverEmployeeId, step.ApproverRoleId, nextScope, requesterEmployeeId, requesterAssignment, cancellationToken);
+                if (set.Count > 0) return set;
+            }
+            fallback = "HR";
+        }
+
+        if (fallback == "HR" && step.ApproverType != "HR")
+        {
+            return await ResolveCleanAsync("HR", null, null, "ORG", requesterEmployeeId, requesterAssignment, cancellationToken);
+        }
+
+        return set; // SKIP / WAIT → ว่าง
+    }
+
+    /// <summary>ผู้อนุมัติทุกคนในชุดนี้มีใบลาที่อนุมัติแล้วครอบคลุมวันนี้ (เวลาไทย)</summary>
+    private async Task<bool> AreAllOnLeaveTodayAsync(HashSet<long> employeeIds, CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0) return false;
+        var thaiToday = DateTime.UtcNow.AddHours(7).Date;
+        var dayStartUtc = DateTime.SpecifyKind(thaiToday.AddHours(-7), DateTimeKind.Utc);
+        var dayEndUtc = dayStartUtc.AddDays(1);
+        var ids = employeeIds.ToList();
+
+        var onLeave = await _context.LeaveRequests.AsNoTracking()
+            .Where(r => r.Status == "APPROVED" && ids.Contains(r.EmployeeId)
+                        && r.StartDatetime < dayEndUtc && r.EndDatetime >= dayStartUtc)
+            .Select(r => r.EmployeeId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+        return onLeave >= ids.Count;
+    }
+
+    /// <summary>ขยายขึ้นหนึ่งระดับตามลำดับ (ขั้นสุดท้ายคือฝ่ายบุคคล)</summary>
+    private static IEnumerable<(string Type, string Scope)> EscalationChain(string approverType, string scope)
+    {
+        switch (approverType)
+        {
+            case "ROLE":
+                if (scope == "DEPARTMENT") yield return ("ROLE", "DIVISION");
+                if (scope is "DEPARTMENT" or "DIVISION") yield return ("ROLE", "ORG");
+                break;
+            case "MANAGER":
+                yield return ("DEPARTMENT_HEAD", "ORG");
+                yield return ("DIVISION_HEAD", "ORG");
+                break;
+            case "DEPARTMENT_HEAD":
+                yield return ("DIVISION_HEAD", "ORG");
+                break;
+            case "DIVISION_HEAD":
+                yield return ("CEO", "ORG");
+                break;
+        }
+    }
+
+    private async Task<HashSet<long>> ResolveCleanAsync(
+        string approverType,
+        long? approverEmployeeId,
+        long? approverRoleId,
+        string scope,
+        long? requesterEmployeeId,
+        EmployeeAssignment? requesterAssignment,
+        CancellationToken cancellationToken)
+    {
+        var ids = await ResolveBaseAsync(approverType, approverEmployeeId, approverRoleId, scope, requesterAssignment, cancellationToken);
+        if (requesterEmployeeId.HasValue) ids.Remove(requesterEmployeeId.Value);
+        if (ids.Count == 0) return ids;
+
+        // ต้องมีบัญชีผู้ใช้ที่ใช้งานอยู่ ถึงจะกดอนุมัติได้
+        var idList = ids.ToList();
+        var withAccount = await _context.UserAccounts.AsNoTracking()
+            .Where(u => u.Status == "ACTIVE" && idList.Contains(u.EmployeeId))
+            .Select(u => u.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return withAccount.ToHashSet();
+    }
+
+    private async Task<HashSet<long>> ResolveBaseAsync(
+        string approverType,
+        long? approverEmployeeId,
+        long? approverRoleId,
+        string scope,
+        EmployeeAssignment? requesterAssignment,
+        CancellationToken cancellationToken)
+    {
+        var activeUsers = _context.UserAccounts.AsNoTracking().Where(u => u.Status == "ACTIVE");
+
+        switch (approverType)
         {
             case "EMPLOYEE":
-                return step.ApproverEmployeeId == employeeId;
+                return approverEmployeeId.HasValue ? new HashSet<long> { approverEmployeeId.Value } : new HashSet<long>();
 
             case "ROLE":
-                return userRoles.Any(ur => ur.RoleId == step.ApproverRoleId ||
-                                          (step.ApproverRole != null && ur.Role.RoleCode == step.ApproverRole.RoleCode));
+            {
+                if (!approverRoleId.HasValue) return new HashSet<long>();
+                var holders = await activeUsers
+                    .Where(u => u.UserRoles.Any(ur => ur.RoleId == approverRoleId.Value))
+                    .Select(u => u.EmployeeId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+                return await FilterByScopeAsync(holders, scope, requesterAssignment, cancellationToken);
+            }
 
             case "MANAGER":
-                return requesterAssignment?.ManagerEmployeeId == employeeId;
+                return requesterAssignment?.ManagerEmployeeId is { } managerId
+                    ? new HashSet<long> { managerId }
+                    : new HashSet<long>();
 
             case "DEPARTMENT_HEAD":
-                if (requesterAssignment != null)
-                {
-                    var dept = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DepartmentId, cancellationToken);
-                    if (dept?.HeadEmployeeId == employeeId) return true;
-                }
-                if (requesterAssignment != null && userRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR"))
-                {
-                    var viewerAssign = await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
-                    if (viewerAssign?.DepartmentId == requesterAssignment.DepartmentId) return true;
-                }
-                return false;
+            {
+                if (requesterAssignment == null) return new HashSet<long>();
+                var result = new HashSet<long>();
+                var headId = await _context.Departments.AsNoTracking()
+                    .Where(d => d.Id == requesterAssignment.DepartmentId)
+                    .Select(d => d.HeadEmployeeId)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (headId.HasValue) result.Add(headId.Value);
+                // ผู้มีบทบาทผู้จัดการแผนก (DEPT_MGR) ในแผนกเดียวกัน
+                var managers = await activeUsers
+                    .Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR"))
+                    .Select(u => u.EmployeeId)
+                    .ToListAsync(cancellationToken);
+                result.UnionWith(await FilterByScopeAsync(managers, "DEPARTMENT", requesterAssignment, cancellationToken));
+                return result;
+            }
 
             case "DIVISION_HEAD":
-                if (requesterAssignment != null)
-                {
-                    var div = await _context.Divisions.AsNoTracking().FirstOrDefaultAsync(d => d.Id == requesterAssignment.DivisionId, cancellationToken);
-                    if (div?.HeadEmployeeId == employeeId) return true;
-                }
-                if (requesterAssignment != null && userRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR"))
-                {
-                    var viewerAssign = await _context.EmployeeAssignments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.IsCurrent, cancellationToken);
-                    if (viewerAssign?.DivisionId == requesterAssignment.DivisionId) return true;
-                }
-                return false;
+            {
+                if (requesterAssignment == null) return new HashSet<long>();
+                var result = new HashSet<long>();
+                var headId = await _context.Divisions.AsNoTracking()
+                    .Where(d => d.Id == requesterAssignment.DivisionId)
+                    .Select(d => d.HeadEmployeeId)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (headId.HasValue) result.Add(headId.Value);
+                var managers = await activeUsers
+                    .Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR"))
+                    .Select(u => u.EmployeeId)
+                    .ToListAsync(cancellationToken);
+                result.UnionWith(await FilterByScopeAsync(managers, "DIVISION", requesterAssignment, cancellationToken));
+                return result;
+            }
 
             case "HR":
-                return userRoles.Any(ur => ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR");
+                return (await activeUsers
+                    .Where(u => u.UserRoles.Any(ur => HrRoleCodes.Contains(ur.Role.RoleCode)))
+                    .Select(u => u.EmployeeId)
+                    .ToListAsync(cancellationToken)).ToHashSet();
 
             case "CEO":
-                return userRoles.Any(ur => ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE");
+                return (await activeUsers
+                    .Where(u => u.UserRoles.Any(ur => CeoRoleCodes.Contains(ur.Role.RoleCode)))
+                    .Select(u => u.EmployeeId)
+                    .ToListAsync(cancellationToken)).ToHashSet();
 
             default:
-                return false;
+                return new HashSet<long>();
         }
+    }
+
+    /// <summary>กรองพนักงานให้อยู่ในหน่วยงานเดียวกับผู้ยื่นตามขอบเขต (ORG = ไม่กรอง)</summary>
+    private async Task<HashSet<long>> FilterByScopeAsync(
+        List<long> employeeIds,
+        string scope,
+        EmployeeAssignment? requesterAssignment,
+        CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0) return new HashSet<long>();
+        if (scope == "ORG") return employeeIds.ToHashSet();
+        if (requesterAssignment == null) return new HashSet<long>();
+
+        var query = _context.EmployeeAssignments.AsNoTracking()
+            .Where(a => a.IsCurrent && employeeIds.Contains(a.EmployeeId));
+        query = scope == "DEPARTMENT"
+            ? query.Where(a => a.DepartmentId == requesterAssignment.DepartmentId)
+            : query.Where(a => a.DivisionId == requesterAssignment.DivisionId);
+
+        return (await query.Select(a => a.EmployeeId).Distinct().ToListAsync(cancellationToken)).ToHashSet();
+    }
+
+    /// <summary>
+    /// ขั้นแรกที่มีผู้อนุมัติ เริ่มจาก fromStepNo — ขั้นที่ตั้ง "ข้าม" และหาผู้อนุมัติไม่เจอจะถูกข้ามไป
+    /// (ขั้นสุดท้ายไม่ถูกข้าม) คืน null เมื่อไม่มีขั้นเหลือ
+    /// </summary>
+    private async Task<ApprovalStep?> FindNextActionableStepAsync(
+        IEnumerable<ApprovalStep> steps,
+        int fromStepNo,
+        long? requesterEmployeeId,
+        EmployeeAssignment? requesterAssignment,
+        CancellationToken cancellationToken)
+    {
+        var all = steps.OrderBy(s => s.StepNo).ToList();
+        var lastStepNo = all.Count > 0 ? all[^1].StepNo : 0;
+        foreach (var step in all.Where(s => s.StepNo >= fromStepNo))
+        {
+            var isLast = step.StepNo == lastStepNo;
+            if (!isLast && string.Equals(step.FallbackAction, "SKIP", StringComparison.OrdinalIgnoreCase))
+            {
+                var approvers = await ResolveApproverEmployeeIdsAsync(step, isLast, requesterEmployeeId, requesterAssignment, cancellationToken);
+                if (approvers.Count == 0) continue;
+            }
+            return step;
+        }
+        return null;
+    }
+
+    private async Task<int> GetLastStepNoAsync(long flowId, CancellationToken cancellationToken) =>
+        await _context.ApprovalSteps.AsNoTracking()
+            .Where(s => s.FlowId == flowId)
+            .Select(s => (int?)s.StepNo)
+            .MaxAsync(cancellationToken) ?? 0;
+
+    private async Task<EmployeeAssignment?> GetAssignmentAsync(long? employeeId, CancellationToken cancellationToken) =>
+        employeeId.HasValue
+            ? await _context.EmployeeAssignments.AsNoTracking()
+                .Where(a => a.EmployeeId == employeeId.Value && a.IsCurrent)
+                .OrderByDescending(a => a.EffectiveFrom)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+
+    private async Task<bool> IsUserEligibleForStepAsync(
+        ApprovalStep step,
+        bool isLastStep,
+        long employeeId,
+        long? requesterEmployeeId,
+        EmployeeAssignment? requesterAssignment,
+        CancellationToken cancellationToken)
+    {
+        if (requesterEmployeeId == employeeId) return false; // ห้ามอนุมัติคำขอของตัวเอง
+        var approvers = await ResolveApproverEmployeeIdsAsync(step, isLastStep, requesterEmployeeId, requesterAssignment, cancellationToken);
+        return approvers.Contains(employeeId);
     }
 
     public async Task<bool> CanUserApproveStepAsync(long instanceId, long employeeId, CancellationToken cancellationToken = default)
@@ -196,7 +413,14 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             return false;
         }
 
-        // 1. ตรวจสอบว่าพนักงานคนนี้มีบทบาท ADMIN หรือไม่ (SuperAdmin อนุมัติได้ทุกขั้นตอน)
+        // 0. ห้ามอนุมัติคำขอของตัวเอง (รวมถึงผู้ดูแลระบบ)
+        var requesterEmployeeId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+        if (requesterEmployeeId == employeeId)
+        {
+            return false;
+        }
+
+        // 1. ตรวจสอบว่าพนักงานคนนี้มีบทบาท ADMIN หรือไม่ (SuperAdmin อนุมัติแทนได้ทุกขั้นตอน)
         var userAccount = await _context.UserAccounts
             .AsNoTracking()
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
@@ -218,11 +442,11 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             return false;
         }
 
-        // 3. ดึงข้อมูลสังกัดของผู้ยื่นคำขอ
-        var requesterAssignment = await GetRequesterAssignmentAsync(instance, cancellationToken);
-        var userRoles = userAccount?.UserRoles ?? new List<UserRole>();
+        // 3. หาผู้อนุมัติของขั้นนี้จากสังกัดของผู้ยื่น
+        var requesterAssignment = await GetAssignmentAsync(requesterEmployeeId, cancellationToken);
+        var isLast = step.StepNo >= await GetLastStepNoAsync(instance.ApprovalFlowId, cancellationToken);
 
-        return await IsUserEligibleForStepAsync(step, employeeId, requesterAssignment, userRoles, cancellationToken);
+        return await IsUserEligibleForStepAsync(step, isLast, employeeId, requesterEmployeeId, requesterAssignment, cancellationToken);
     }
 
     public async Task<WorkflowActionResult> ProcessActionAsync(
@@ -306,10 +530,13 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         }
 
         // กรณี APPROVE: ตรวจสอบว่ามีขั้นตอนถัดไปหรือไม่
-        var nextStep = instance.ApprovalFlow.Steps
-            .Where(s => s.StepNo > instance.CurrentStepNo)
-            .OrderBy(s => s.StepNo)
-            .FirstOrDefault();
+        var requesterId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+        var nextStep = await FindNextActionableStepAsync(
+            instance.ApprovalFlow.Steps,
+            (instance.CurrentStepNo ?? 0) + 1,
+            requesterId,
+            await GetAssignmentAsync(requesterId, cancellationToken),
+            cancellationToken);
 
         if (nextStep != null)
         {
@@ -443,13 +670,14 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         }
 
         // 3. ดึงข้อมูลสังกัดของผู้ยื่นคำขอ
-        var requesterAssignment = await GetRequesterAssignmentAsync(instance, cancellationToken);
-        var userRoles = userAccount?.UserRoles ?? new List<UserRole>();
+        var requesterEmployeeId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+        var requesterAssignment = await GetAssignmentAsync(requesterEmployeeId, cancellationToken);
+        var lastStepNo = instance.ApprovalFlow.Steps.Count > 0 ? instance.ApprovalFlow.Steps.Max(s => s.StepNo) : 0;
 
-        // 4. ตรวจสอบว่าผู้ใช้นี้ตรงกับขั้นตอนใดขั้นตอนหนึ่งใน ApprovalFlow.Steps หรือไม่
+        // 4. ตรวจสอบว่าผู้ใช้นี้เป็นผู้อนุมัติของขั้นตอนใดขั้นตอนหนึ่งหรือไม่
         foreach (var step in instance.ApprovalFlow.Steps)
         {
-            if (await IsUserEligibleForStepAsync(step, employeeId, requesterAssignment, userRoles, cancellationToken))
+            if (await IsUserEligibleForStepAsync(step, step.StepNo == lastStepNo, employeeId, requesterEmployeeId, requesterAssignment, cancellationToken))
             {
                 return true;
             }
@@ -527,6 +755,12 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             {
                 status = "WAITING";
             }
+            else if (string.Equals(step.FallbackAction, "SKIP", StringComparison.OrdinalIgnoreCase)
+                     && (instance.Status == "APPROVED" || (instance.CurrentStepNo.HasValue && step.StepNo < instance.CurrentStepNo.Value)))
+            {
+                // ขั้นที่ตั้ง "ข้าม" และผ่านไปโดยไม่มีผู้อนุมัติ
+                status = "SKIPPED";
+            }
             else if (instance.Status == "APPROVED" || (instance.CurrentStepNo.HasValue && step.StepNo < instance.CurrentStepNo.Value))
             {
                 status = "COMPLETED";
@@ -538,11 +772,16 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
 
             var title = step.ApproverType switch
             {
-                "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
+                "ROLE" => (step.ApproverRole?.RoleName ?? "บทบาทตามระบบ") + step.ApproverScope switch
+                {
+                    "DEPARTMENT" => " (แผนกเดียวกับผู้ยื่น)",
+                    "DIVISION" => " (ฝ่ายเดียวกับผู้ยื่น)",
+                    _ => ""
+                },
                 "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
-                "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
-                "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
+                "MANAGER" => "หัวหน้างานโดยตรงของผู้ยื่น",
+                "DEPARTMENT_HEAD" => "หัวหน้าแผนกของผู้ยื่น",
+                "DIVISION_HEAD" => "หัวหน้าฝ่ายของผู้ยื่น",
                 "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
                 "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
                 _ => step.ApproverType
@@ -669,17 +908,65 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         DocumentTypeLabels.TryGetValue(documentType, out var label) ? label : "เอกสาร";
 
     /// <summary>แจ้งเตือนผู้มีสิทธิ์อนุมัติของขั้นตอนที่คำขอเพิ่งเข้ามาถึง</summary>
-    private async Task NotifyStepApproversAsync(ApprovalInstance instance, ApprovalStep step, long? requesterEmployeeId, CancellationToken cancellationToken)
+    /// <summary>
+    /// เตือนผู้อนุมัติรายการที่ค้างอยู่ในขั้นเดิมนานเกิน remindAfterDays วัน (เตือนซ้ำทุก remindAfterDays วัน)
+    /// </summary>
+    public async Task<int> SendPendingRemindersAsync(int remindAfterDays, CancellationToken cancellationToken = default)
+    {
+        if (remindAfterDays < 1) remindAfterDays = 1;
+        var now = DateTime.UtcNow;
+        var threshold = now.AddDays(-remindAfterDays);
+
+        var due = await _context.ApprovalInstances.AsNoTracking()
+            .Where(i => i.Status == "PENDING" && i.CurrentStepNo != null
+                        && (i.LastRemindedAt == null || i.LastRemindedAt <= threshold))
+            .Select(i => new
+            {
+                i.Id,
+                // ขั้นปัจจุบันเริ่มเมื่อมีการอนุมัติขั้นก่อนหน้าครั้งล่าสุด (ถ้าไม่มี = ตอนยื่น)
+                StepStartedAt = i.Actions.Select(a => (DateTime?)a.ActionAt).Max() ?? i.CreatedAt
+            })
+            .Where(x => x.StepStartedAt <= threshold)
+            .ToListAsync(cancellationToken);
+        if (due.Count == 0) return 0;
+
+        var dueIds = due.Select(x => x.Id).ToList();
+        var startedAt = due.ToDictionary(x => x.Id, x => x.StepStartedAt);
+        var instances = await _context.ApprovalInstances
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f!.Steps)
+            .Where(i => dueIds.Contains(i.Id))
+            .ToListAsync(cancellationToken);
+
+        var reminded = 0;
+        foreach (var instance in instances)
+        {
+            var item = new { StepStartedAt = startedAt[instance.Id] };
+            var step = instance.ApprovalFlow?.Steps.FirstOrDefault(s => s.StepNo == instance.CurrentStepNo);
+            if (step == null) continue;
+
+            var waitingDays = Math.Max(1, (int)Math.Floor((now - item.StepStartedAt).TotalDays));
+            await NotifyStepApproversAsync(instance, step, null, cancellationToken, waitingDays);
+            instance.LastRemindedAt = now;
+            reminded++;
+        }
+
+        if (reminded > 0) await _context.SaveChangesAsync(cancellationToken);
+        return reminded;
+    }
+
+    private async Task NotifyStepApproversAsync(ApprovalInstance instance, ApprovalStep step, long? requesterEmployeeId, CancellationToken cancellationToken, int? reminderWaitingDays = null)
     {
         try
         {
             requesterEmployeeId ??= await GetRequesterEmployeeIdAsync(instance, cancellationToken);
-            var requesterAssignment = requesterEmployeeId.HasValue
-                ? await _context.EmployeeAssignments.AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.EmployeeId == requesterEmployeeId.Value && a.IsCurrent, cancellationToken)
-                : null;
+            var requesterAssignment = await GetAssignmentAsync(requesterEmployeeId, cancellationToken);
+            var isLast = step.StepNo >= await GetLastStepNoAsync(instance.ApprovalFlowId, cancellationToken);
 
-            var approverUserIds = await ResolveStepApproverUserIdsAsync(step, requesterAssignment, cancellationToken);
+            var approverEmployeeIds = (await ResolveApproverEmployeeIdsAsync(step, isLast, requesterEmployeeId, requesterAssignment, cancellationToken)).ToList();
+            var approverUserIds = await _context.UserAccounts.AsNoTracking()
+                .Where(u => u.Status == "ACTIVE" && approverEmployeeIds.Contains(u.EmployeeId))
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken);
 
             // ไม่ต้องแจ้งเตือนผู้ยื่นเอง (กรณีผู้ยื่นมีบทบาทเดียวกับผู้อนุมัติ)
             if (requesterEmployeeId.HasValue)
@@ -699,11 +986,14 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 : null;
 
             var label = GetDocumentLabel(instance.DocumentType);
+            var isReminder = reminderWaitingDays.HasValue;
             await AddNotificationsAsync(
                 approverUserIds,
                 "APPROVAL",
-                $"มี{label}รอการอนุมัติ",
-                $"{requesterName ?? "พนักงาน"} ยื่น{label} รอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})",
+                isReminder ? $"เตือน: {label}รอการอนุมัติมา {reminderWaitingDays} วัน" : $"มี{label}รอการอนุมัติ",
+                isReminder
+                    ? $"{label}ของ {requesterName ?? "พนักงาน"} ยังรอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})"
+                    : $"{requesterName ?? "พนักงาน"} ยื่น{label} รอคุณพิจารณา (ขั้นตอนที่ {step.StepNo})",
                 instance.DocumentType,
                 instance.SourceDocumentId,
                 cancellationToken);
@@ -738,62 +1028,6 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         catch
         {
             // การแจ้งเตือนต้องไม่ทำให้ขั้นตอนอนุมัติล้มเหลว
-        }
-    }
-
-    /// <summary>หา User Account ที่มีสิทธิ์อนุมัติขั้นตอนนี้ (สอดคล้องกับ IsUserEligibleForStepAsync)</summary>
-    private async Task<List<long>> ResolveStepApproverUserIdsAsync(ApprovalStep step, EmployeeAssignment? requesterAssignment, CancellationToken cancellationToken)
-    {
-        var users = _context.UserAccounts.AsNoTracking().Where(u => u.Status == "ACTIVE");
-
-        switch (step.ApproverType)
-        {
-            case "EMPLOYEE":
-                if (!step.ApproverEmployeeId.HasValue) return new List<long>();
-                return await users.Where(u => u.EmployeeId == step.ApproverEmployeeId.Value).Select(u => u.Id).ToListAsync(cancellationToken);
-
-            case "ROLE":
-                if (!step.ApproverRoleId.HasValue) return new List<long>();
-                return await users.Where(u => u.UserRoles.Any(ur => ur.RoleId == step.ApproverRoleId.Value)).Select(u => u.Id).ToListAsync(cancellationToken);
-
-            case "MANAGER":
-                if (requesterAssignment?.ManagerEmployeeId == null) return new List<long>();
-                return await users.Where(u => u.EmployeeId == requesterAssignment.ManagerEmployeeId.Value).Select(u => u.Id).ToListAsync(cancellationToken);
-
-            case "DEPARTMENT_HEAD":
-            {
-                if (requesterAssignment == null) return new List<long>();
-                var deptId = requesterAssignment.DepartmentId;
-                var headId = await _context.Departments.AsNoTracking().Where(d => d.Id == deptId).Select(d => d.HeadEmployeeId).FirstOrDefaultAsync(cancellationToken);
-                return await users.Where(u =>
-                        (headId.HasValue && u.EmployeeId == headId.Value) ||
-                        (u.UserRoles.Any(ur => ur.Role.RoleCode == "DEPT_MGR") &&
-                         _context.EmployeeAssignments.Any(a => a.EmployeeId == u.EmployeeId && a.IsCurrent && a.DepartmentId == deptId)))
-                    .Select(u => u.Id).ToListAsync(cancellationToken);
-            }
-
-            case "DIVISION_HEAD":
-            {
-                if (requesterAssignment == null) return new List<long>();
-                var divId = requesterAssignment.DivisionId;
-                var headId = await _context.Divisions.AsNoTracking().Where(d => d.Id == divId).Select(d => d.HeadEmployeeId).FirstOrDefaultAsync(cancellationToken);
-                return await users.Where(u =>
-                        (headId.HasValue && u.EmployeeId == headId.Value) ||
-                        (u.UserRoles.Any(ur => ur.Role.RoleCode == "DIV_MGR") &&
-                         _context.EmployeeAssignments.Any(a => a.EmployeeId == u.EmployeeId && a.IsCurrent && a.DivisionId == divId)))
-                    .Select(u => u.Id).ToListAsync(cancellationToken);
-            }
-
-            case "HR":
-                return await users.Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "HR_MGR" || ur.Role.RoleCode == "HR_ADMIN" || ur.Role.RoleCode == "HR"))
-                    .Select(u => u.Id).ToListAsync(cancellationToken);
-
-            case "CEO":
-                return await users.Where(u => u.UserRoles.Any(ur => ur.Role.RoleCode == "CEO" || ur.Role.RoleCode == "EXECUTIVE"))
-                    .Select(u => u.Id).ToListAsync(cancellationToken);
-
-            default:
-                return new List<long>();
         }
     }
 

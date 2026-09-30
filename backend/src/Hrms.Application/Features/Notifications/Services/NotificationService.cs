@@ -193,6 +193,9 @@ public class NotificationService : INotificationService
             return "/employees/documents";
         if (type == "DOCUMENT_EXPIRY")
             return "/profile";
+        // สิ้นสุดทดลองงาน / สัญญาจ้างใกล้หมดอายุ
+        if (type == "PROBATION_ENDING" || type == "CONTRACT_EXPIRING")
+            return "/employees/contracts";
 
         return refType switch
         {

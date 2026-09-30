@@ -6,6 +6,11 @@ namespace Hrms.Application.Features.Employees.DTOs;
 /// </summary>
 public class UpdateEmployeeRequest
 {
+    /// <summary>true = อัปเดตหัวหน้างานตาม ManagerEmployeeId (null = ไม่มีหัวหน้า) — ไม่ส่ง = ไม่แก้</summary>
+    public bool SetManager { get; set; }
+    /// <summary>หัวหน้างานโดยตรง (Employee Id)</summary>
+    public long? ManagerEmployeeId { get; set; }
+
     public string? EmployeeCode { get; set; }
     public string? BiometricId { get; set; }
     /// <summary>สถานะการจ้างงาน: ACTIVE, PROBATION, RESIGNED, INACTIVE</summary>

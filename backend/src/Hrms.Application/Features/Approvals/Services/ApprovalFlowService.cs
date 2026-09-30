@@ -20,7 +20,13 @@ public class ApprovalFlowService : IApprovalFlowService
     };
 
     /// <summary>ประเภทผู้อนุมัติที่เลือกได้เมื่อสร้าง/แก้ไขสายการอนุมัติ</summary>
-    private static readonly HashSet<string> ConfigurableApproverTypes = new() { "EMPLOYEE", "ROLE" };
+    /// <summary>
+    /// ประเภทผู้อนุมัติที่ตั้งค่าได้ — แบบอ้างอิงผู้ยื่น (MANAGER / DEPARTMENT_HEAD / DIVISION_HEAD) ทำให้ใช้สายเดียวได้ทุกแผนก
+    /// </summary>
+    private static readonly HashSet<string> ConfigurableApproverTypes = new() { "EMPLOYEE", "ROLE", "MANAGER", "DEPARTMENT_HEAD", "DIVISION_HEAD", "HR", "CEO" };
+    private static readonly HashSet<string> ApproverScopes = new() { "ORG", "DIVISION", "DEPARTMENT" };
+    private static readonly HashSet<string> FallbackActions = new() { "HR", "SKIP", "ESCALATE", "WAIT" };
+    private static readonly HashSet<string> DelegateModes = new() { "WHEN_ABSENT", "ALWAYS" };
 
     public ApprovalFlowService(IHrmsDbContext context)
     {
@@ -35,6 +41,8 @@ public class ApprovalFlowService : IApprovalFlowService
             .Include(f => f.Level)
             .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateEmployee)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateRole)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(documentType))
@@ -58,6 +66,8 @@ public class ApprovalFlowService : IApprovalFlowService
             .Include(f => f.Level)
             .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateEmployee)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateRole)
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
 
         return flow == null ? null : MapToDto(flow);
@@ -132,6 +142,13 @@ public class ApprovalFlowService : IApprovalFlowService
             existing.ApproverEmployeeId = incoming.ApproverEmployeeId;
             existing.ApproverRoleId = incoming.ApproverRoleId;
             existing.IsRequired = incoming.IsRequired;
+            existing.ApproverScope = incoming.ApproverScope;
+            existing.FallbackAction = incoming.FallbackAction;
+            existing.DelegateType = incoming.DelegateType;
+            existing.DelegateEmployeeId = incoming.DelegateEmployeeId;
+            existing.DelegateRoleId = incoming.DelegateRoleId;
+            existing.DelegateScope = incoming.DelegateScope;
+            existing.DelegateMode = incoming.DelegateMode;
         }
 
         for (int i = commonCount; i < newStepsList.Count; i++)
@@ -204,13 +221,34 @@ public class ApprovalFlowService : IApprovalFlowService
                 throw new InvalidOperationException($"ลำดับขั้นตอนที่ {input.StepNo} ซ้ำกัน กรุณาจัดลำดับใหม่");
             }
 
-            // ตั้งค่าใหม่ได้เฉพาะ "ระบุตัวบุคคล" (EMPLOYEE) และ "ระบุตามบทบาท" (ROLE)
-            // ประเภทอื่นยังรองรับในสายการอนุมัติเดิมที่ทำงานอยู่ แต่ไม่ให้สร้าง/บันทึกใหม่
             if (!ConfigurableApproverTypes.Contains(input.ApproverType))
             {
-                throw new InvalidOperationException(
-                    $"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติต้องเป็น 'ระบุตัวบุคคล' (EMPLOYEE) หรือ 'ระบุตามบทบาท' (ROLE) เท่านั้น");
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติ '{input.ApproverType}' ไม่ถูกต้อง");
             }
+
+            var scope = string.IsNullOrWhiteSpace(input.ApproverScope) ? "ORG" : input.ApproverScope.Trim().ToUpperInvariant();
+            if (!ApproverScopes.Contains(scope))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ขอบเขตผู้อนุมัติ '{input.ApproverScope}' ไม่ถูกต้อง");
+            var fallback = string.IsNullOrWhiteSpace(input.FallbackAction) ? "HR" : input.FallbackAction.Trim().ToUpperInvariant();
+            if (!FallbackActions.Contains(fallback))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: การจัดการเมื่อไม่พบผู้อนุมัติ '{input.FallbackAction}' ไม่ถูกต้อง");
+
+            // ผู้อนุมัติแทน (ไม่บังคับ)
+            var delegateType = string.IsNullOrWhiteSpace(input.DelegateType) ? null : input.DelegateType.Trim().ToUpperInvariant();
+            if (delegateType is not null and not "EMPLOYEE" and not "ROLE")
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ประเภทผู้อนุมัติแทน '{input.DelegateType}' ไม่ถูกต้อง");
+            if (delegateType == "EMPLOYEE" && input.DelegateEmployeeId is null)
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: กรุณาเลือกพนักงานผู้อนุมัติแทน");
+            if (delegateType == "ROLE" && input.DelegateRoleId is null)
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: กรุณาเลือกบทบาทผู้อนุมัติแทน");
+            if (delegateType == "EMPLOYEE" && input.ApproverType == "EMPLOYEE" && input.DelegateEmployeeId == input.ApproverEmployeeId)
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ผู้อนุมัติแทนต้องไม่ใช่คนเดียวกับผู้อนุมัติหลัก");
+            var delegateScope = string.IsNullOrWhiteSpace(input.DelegateScope) ? "ORG" : input.DelegateScope.Trim().ToUpperInvariant();
+            if (!ApproverScopes.Contains(delegateScope))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: ขอบเขตผู้อนุมัติแทน '{input.DelegateScope}' ไม่ถูกต้อง");
+            var delegateMode = string.IsNullOrWhiteSpace(input.DelegateMode) ? "WHEN_ABSENT" : input.DelegateMode.Trim().ToUpperInvariant();
+            if (!DelegateModes.Contains(delegateMode))
+                throw new InvalidOperationException($"ขั้นตอนที่ {input.StepNo}: เงื่อนไขการอนุมัติแทน '{input.DelegateMode}' ไม่ถูกต้อง");
 
             if (input.ApproverType == "EMPLOYEE" && input.ApproverEmployeeId is null)
             {
@@ -229,7 +267,15 @@ public class ApprovalFlowService : IApprovalFlowService
                 // เก็บเฉพาะ FK ที่เกี่ยวข้องกับ ApproverType นั้นจริง ๆ ป้องกันข้อมูลค้างจากการสลับประเภทไปมาในหน้า UI
                 ApproverEmployeeId = input.ApproverType == "EMPLOYEE" ? input.ApproverEmployeeId : null,
                 ApproverRoleId = input.ApproverType == "ROLE" ? input.ApproverRoleId : null,
-                IsRequired = input.IsRequired
+                IsRequired = fallback != "SKIP",
+                // ขอบเขตใช้กับแบบ ROLE เท่านั้น — แบบอื่นอ้างอิงผู้ยื่นอยู่แล้ว
+                ApproverScope = input.ApproverType == "ROLE" ? scope : "ORG",
+                FallbackAction = fallback,
+                DelegateType = delegateType,
+                DelegateEmployeeId = delegateType == "EMPLOYEE" ? input.DelegateEmployeeId : null,
+                DelegateRoleId = delegateType == "ROLE" ? input.DelegateRoleId : null,
+                DelegateScope = delegateType == "ROLE" ? delegateScope : "ORG",
+                DelegateMode = delegateMode
             });
         }
 
@@ -278,6 +324,8 @@ public class ApprovalFlowService : IApprovalFlowService
         var candidateFlows = await _context.ApprovalFlows
             .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateEmployee)
+            .Include(f => f.Steps).ThenInclude(s => s.DelegateRole)
             .Where(f => f.DocumentType == request.DocumentType && f.Status == "ACTIVE")
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -489,7 +537,16 @@ public class ApprovalFlowService : IApprovalFlowService
                     ApproverEmployeeName = s.ApproverEmployee?.FullName,
                     ApproverRoleId = s.ApproverRoleId,
                     ApproverRoleName = s.ApproverRole?.RoleName,
-                    IsRequired = s.IsRequired
+                    IsRequired = s.IsRequired,
+                    ApproverScope = s.ApproverScope,
+                    FallbackAction = s.FallbackAction,
+                    DelegateType = s.DelegateType,
+                    DelegateEmployeeId = s.DelegateEmployeeId,
+                    DelegateEmployeeName = s.DelegateEmployee?.FullName,
+                    DelegateRoleId = s.DelegateRoleId,
+                    DelegateRoleName = s.DelegateRole?.RoleName,
+                    DelegateScope = s.DelegateScope,
+                    DelegateMode = s.DelegateMode
                 })
                 .ToList()
         };

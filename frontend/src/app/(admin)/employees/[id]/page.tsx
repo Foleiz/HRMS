@@ -393,6 +393,23 @@ export default function EmployeeDetailPage() {
                 </div>
               </div>
 
+              {/* หัวหน้างานโดยตรง */}
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                  ห
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-medium">หัวหน้างานโดยตรง</p>
+                  {employee.managerEmployeeId ? (
+                    <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-[#0B2046] hover:underline">
+                      {employee.managerName || '-'}
+                    </Link>
+                  ) : (
+                    <p className="text-xs font-semibold text-slate-400">ยังไม่ได้กำหนด</p>
+                  )}
+                </div>
+              </div>
+
               {/* ทีม */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">

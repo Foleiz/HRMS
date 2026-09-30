@@ -15,6 +15,7 @@ import {
   Inbox,
   AlertCircle,
   FileClock,
+  UserCheck,
 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { NotificationItem } from '@/types/notification';
@@ -117,6 +118,9 @@ export const NotificationBell: React.FC = () => {
     if (t.includes('DOCUMENT_EXPIRY')) {
       return <FileClock className="w-4 h-4 text-orange-600" />;
     }
+    if (t.includes('PROBATION') || t.includes('CONTRACT')) {
+      return <UserCheck className="w-4 h-4 text-teal-600" />;
+    }
     return <AlertCircle className="w-4 h-4 text-slate-600" />;
   };
 
@@ -128,6 +132,7 @@ export const NotificationBell: React.FC = () => {
     if (t.includes('PAYROLL')) return 'bg-indigo-50';
     if (t.includes('TIME') || t.includes('ATTENDANCE')) return 'bg-purple-50';
     if (t.includes('DOCUMENT_EXPIRY')) return 'bg-orange-50';
+    if (t.includes('PROBATION') || t.includes('CONTRACT')) return 'bg-teal-50';
     return 'bg-slate-100';
   };
 

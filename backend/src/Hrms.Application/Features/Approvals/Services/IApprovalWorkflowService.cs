@@ -48,4 +48,9 @@ public interface IApprovalWorkflowService
     /// (เป็นผู้อนุมัติในขั้นตอนใดขั้นตอนหนึ่งในสายอนุมัติ หรือเคยดำเนินการไปแล้ว หรือเป็น ADMIN)
     /// </summary>
     Task<List<long>> GetInstanceIdsForApproverUserAsync(long employeeId, string? documentType = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// เตือนผู้อนุมัติรายการที่ค้างในขั้นเดิมนานเกินกำหนด (เรียกจากงานเบื้องหลัง) — คืนจำนวนรายการที่เตือน
+    /// </summary>
+    Task<int> SendPendingRemindersAsync(int remindAfterDays, CancellationToken cancellationToken = default);
 }

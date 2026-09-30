@@ -350,6 +350,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                     const isCompleted = step.status === 'COMPLETED';
                     const isWaiting = step.status === 'WAITING';
                     const isRejected = step.status === 'REJECTED';
+                    const isSkipped = step.status === 'SKIPPED';
 
                     return (
                       <div
@@ -391,6 +392,8 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                               ? 'ปฏิเสธ'
                               : isWaiting
                               ? 'กำลังรอพิจารณา'
+                              : isSkipped
+                              ? 'ข้าม (ไม่มีผู้อนุมัติ)'
                               : 'ยังไม่ถึงขั้นตอน'}
                           </span>
                         </div>

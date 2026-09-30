@@ -916,6 +916,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.TerminationReason).HasColumnName("termination_reason");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30);
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.ProbationNotifiedAt).HasColumnName("probation_notified_at");
+            entity.Property(e => e.ExpiryNotifiedAt).HasColumnName("expiry_notified_at");
 
             entity.HasOne(e => e.Employee)
                 .WithMany(e => e.Contracts)
@@ -1383,6 +1385,15 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ApproverEmployeeId).HasColumnName("approver_employee_id");
             entity.Property(e => e.ApproverRoleId).HasColumnName("approver_role_id");
             entity.Property(e => e.IsRequired).HasColumnName("is_required").IsRequired();
+            entity.Property(e => e.ApproverScope).HasColumnName("approver_scope").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FallbackAction).HasColumnName("fallback_action").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DelegateType).HasColumnName("delegate_type").HasMaxLength(20);
+            entity.Property(e => e.DelegateEmployeeId).HasColumnName("delegate_employee_id");
+            entity.Property(e => e.DelegateRoleId).HasColumnName("delegate_role_id");
+            entity.Property(e => e.DelegateScope).HasColumnName("delegate_scope").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DelegateMode).HasColumnName("delegate_mode").HasMaxLength(20).IsRequired();
+            entity.HasOne(e => e.DelegateEmployee).WithMany().HasForeignKey(e => e.DelegateEmployeeId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.DelegateRole).WithMany().HasForeignKey(e => e.DelegateRoleId).OnDelete(DeleteBehavior.SetNull);
 
             entity.HasIndex(e => new { e.FlowId, e.StepNo }).IsUnique();
 
@@ -1442,6 +1453,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.LastRemindedAt).HasColumnName("last_reminded_at");
 
             entity.HasOne(e => e.ApprovalFlow)
                 .WithMany()

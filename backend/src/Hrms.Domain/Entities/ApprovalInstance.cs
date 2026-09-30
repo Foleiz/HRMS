@@ -16,6 +16,8 @@ public class ApprovalInstance : BaseEntity
     public string Status { get; set; } = "PENDING"; // PENDING, APPROVED, REJECTED, CANCELLED
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
+    /// <summary>เตือนผู้อนุมัติครั้งล่าสุด (รายการค้างอนุมัติ)</summary>
+    public DateTime? LastRemindedAt { get; set; }
 
     // Navigation Properties
     public virtual ApprovalFlow? ApprovalFlow { get; set; }
