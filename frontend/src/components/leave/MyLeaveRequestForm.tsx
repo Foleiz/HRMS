@@ -229,6 +229,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     [leaveTypeId, balances]
   );
 
+  const hasSelectedType = leaveTypeId !== '';
   const usedDaysSoFar = selectedBalance?.usedDays ?? 0;
 
   const leaveCountThisYear = useMemo(() => {
@@ -528,36 +529,43 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             <p className="mt-1 text-2xs text-gray-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
-          {leaveTypeId !== '' && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-              <p className="text-xs font-semibold text-blue-700 mb-3">
-                สถิติโควตาแบบ Real-time ({leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})
-              </p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">ลามาแล้ว</div>
-                  <div className="text-sm font-bold text-gray-800">{usedDaysSoFar} วัน</div>
-                </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">ลาครั้ง</div>
-                  <div className="text-sm font-bold text-gray-800">{leaveCountThisYear} ครั้ง</div>
-                </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                  <div className="text-[11px] text-gray-400">รวมเป็น</div>
-                  <div className={`text-sm font-bold ${withinQuota ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {projectedTotalDays} วัน
-                  </div>
+          {/* แสดงตลอด — ยังไม่เลือกประเภทจะแสดงเป็น "-" แทนตัวเลข */}
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+            <p className="text-xs font-semibold text-blue-700 mb-3">
+              สถิติโควตาแบบ Real-time
+              {hasSelectedType ? ` (${leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})` : ''}
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">ลามาแล้ว</div>
+                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
+              </div>
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">ลาครั้ง</div>
+                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
+              </div>
+              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400">รวมเป็น</div>
+                <div
+                  className={`text-sm font-bold ${
+                    !hasSelectedType ? 'text-gray-800' : withinQuota ? 'text-emerald-600' : 'text-red-600'
+                  }`}
+                >
+                  {hasSelectedType ? `${projectedTotalDays} วัน` : '-'}
                 </div>
               </div>
-              {availableDays != null && (
-                <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
-                  ใช้ได้อีก {availableDays} วัน
-                  {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
-                  {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
-                </p>
-              )}
             </div>
-          )}
+            {availableDays != null && (
+              <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
+                ใช้ได้อีก {availableDays} วัน
+                {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
+                {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
+              </p>
+            )}
+            {!hasSelectedType && (
+              <p className="mt-3 text-xs text-blue-700/80">เลือกประเภทการลาเพื่อดูยอดวันลาของคุณ</p>
+            )}
+          </div>
 
           <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-1.5">
