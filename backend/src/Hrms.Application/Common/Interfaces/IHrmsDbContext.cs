@@ -116,6 +116,9 @@ public interface IHrmsDbContext
     DbSet<CertificateType> CertificateTypes { get; }
     DbSet<CertificateRequest> CertificateRequests { get; }
 
+    // คำขออื่นๆ (General Requests)
+    DbSet<GeneralRequest> GeneralRequests { get; }
+
     // Resignation Requests (Dev 1 Phase 2)
     DbSet<ResignationRequest> ResignationRequests { get; }
 

@@ -38,8 +38,8 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     available: true,
   },
   {
-    title: 'คำร้องเอกสารทั่วไป',
-    description: 'ยื่นคำร้องขอเอกสารหรือเรื่องอื่น ๆ ที่ไม่เข้าประเภทข้างต้น',
+    title: 'คำขออื่นๆ',
+    description: 'ขอแก้ไขข้อมูล ขอบัตรพนักงาน ขอสำเนาเอกสาร หรือส่งเอกสารให้ฝ่ายบุคคล',
     href: '/documents/general',
     icons: [FileText],
     color: 'text-amber-600',

@@ -23,6 +23,11 @@ export interface GeneralDocumentRequest {
   isMyTurnToApprove?: boolean;
   canApprove?: boolean;
   canReject?: boolean;
+  hasAlreadyApproved?: boolean;
+  /** ขั้นตอนปัจจุบัน / จำนวนขั้นทั้งหมดในสายการอนุมัติ */
+  currentStepNo?: number | null;
+  totalSteps?: number;
+  currentApproverDisplay?: string | null;
 }
 
 export interface CreateGeneralDocumentPayload {
@@ -36,13 +41,13 @@ export interface CreateGeneralDocumentPayload {
 }
 
 export const COMMON_DOCUMENT_TYPES = [
-  'สำเนาบัตรประจำตัวประชาชน',
-  'สำเนาทะเบียนบ้าน',
-  'สำเนาวุฒิการศึกษา / ทรานสคริปต์',
-  'ใบรับรองแพทย์ / ใบตรวจสุขภาพ',
-  'สำเนาสมุดบัญชีธนาคาร (รับเงินเดือน)',
-  'หนังสือรับรองการผ่านงานเดิม',
-  'หนังสือยินยอมเปิดเผยข้อมูล (PDPA Consent)',
-  'เอกสารลดหย่อนภาษี / 50 ทวิ',
-  'เอกสารทั่วไปอื่น ๆ',
+  'ขอแก้ไขข้อมูลส่วนตัว (ที่อยู่ / เบอร์โทร / ชื่อ-สกุล / สถานภาพ)',
+  'ขอเปลี่ยนบัญชีรับเงินเดือน',
+  'ขอทำบัตรพนักงาน (ใหม่ / แทนบัตรหาย / ชำรุด)',
+  'ขอสำเนาเอกสาร (สลิปเงินเดือน / 50 ทวิ / สัญญาจ้าง)',
+  'ขออุปกรณ์การทำงาน / เบิกสวัสดิการ',
+  'ส่งเอกสารให้ฝ่ายบุคคล (สำเนาบัตร / ทะเบียนบ้าน / วุฒิการศึกษา)',
+  'ส่งใบรับรองแพทย์ / ผลตรวจสุขภาพ',
+  'ส่งเอกสารลดหย่อนภาษี / 50 ทวิ จากที่ทำงานเดิม',
+  'คำขออื่น ๆ',
 ] as const;

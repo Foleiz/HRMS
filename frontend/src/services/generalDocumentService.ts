@@ -1,123 +1,57 @@
+import { apiClient } from '@/lib/api-client';
+import { ApiResponse } from '@/types/api';
 import {
   GeneralDocumentRequest,
   CreateGeneralDocumentPayload,
 } from '@/types/generalDocument';
 
-const STORAGE_KEY = 'hrms_general_doc_requests';
+// ข้อมูลจาก API ใช้ id เป็นตัวเลข — หน้าเว็บเดิมใช้ id เป็นข้อความ จึงแปลงให้ตรงกัน
+type ApiGeneralRequest = Omit<GeneralDocumentRequest, 'id'> & { id: number };
+const toModel = (r: ApiGeneralRequest): GeneralDocumentRequest => ({ ...r, id: String(r.id) });
 
+/** คำขออื่นๆ (General Requests) — ผ่านสายการอนุมัติประเภท GENERAL_REQUEST */
 export const generalDocumentService = {
-  /**
-   * ดึงรายการคำร้องเอกสารทั่วไปของพนักงาน
-   */
+  /** คำขอของพนักงานที่ล็อกอินอยู่ */
   async getMyRequests(): Promise<GeneralDocumentRequest[]> {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const list = JSON.parse(raw) as GeneralDocumentRequest[];
-      return list.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-    } catch {
-      return [];
-    }
+    const res = await apiClient.get<ApiResponse<ApiGeneralRequest[]>>('/general-requests/my');
+    return (res.data.data || []).map(toModel);
   },
 
-  /**
-   * ยื่นคำร้องเอกสารทั่วไปใหม่
-   */
-  async createRequest(
-    payload: CreateGeneralDocumentPayload,
-    employeeInfo: { id: number; name: string; code: string; dept: string; pos: string }
-  ): Promise<GeneralDocumentRequest> {
-    const requests = await this.getMyRequests();
-    const runningNo = String(requests.length + 1).padStart(4, '0');
-    const datePrefix = new Date().toISOString().slice(0, 7).replace('-', '');
-    const requestNo = `DOC-${datePrefix}-${runningNo}`;
-
-    const newDoc: GeneralDocumentRequest = {
-      id: `GEN-${Date.now()}`,
-      requestNo,
-      employeeId: employeeInfo.id,
-      employeeName: employeeInfo.name,
-      employeeCode: employeeInfo.code,
-      departmentName: employeeInfo.dept,
-      positionName: employeeInfo.pos,
-      documentType: payload.documentType,
-      issueDate: payload.issueDate,
-      expiryDate: payload.expiryDate,
-      purpose: payload.purpose,
-      notes: payload.notes,
-      fileName: payload.fileName,
-      fileUrl: payload.fileData,
-      status: 'PENDING',
-      submittedAt: new Date().toISOString(),
-      canCancel: true,
-    };
-
-    requests.unshift(newDoc);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-    return newDoc;
+  /** ยื่นคำขอใหม่ (ข้อมูลพนักงานดึงจากผู้ใช้ที่ล็อกอินฝั่ง backend) */
+  async createRequest(payload: CreateGeneralDocumentPayload): Promise<GeneralDocumentRequest> {
+    const res = await apiClient.post<ApiResponse<ApiGeneralRequest>>('/general-requests', payload);
+    return toModel(res.data.data);
   },
 
-  /**
-   * ขอยกเลิกคำร้องเอกสารทั่วไป
-   */
+  /** ยกเลิกคำขอ (เฉพาะที่ยังรออนุมัติ) */
   async cancelRequest(id: string): Promise<boolean> {
-    const requests = await this.getMyRequests();
-    const idx = requests.findIndex((r) => r.id === id);
-    if (idx !== -1) {
-      requests[idx].status = 'CANCELLED';
-      requests[idx].canCancel = false;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-      return true;
-    }
-    return false;
+    const res = await apiClient.post<ApiResponse<boolean>>(`/general-requests/${id}/cancel`);
+    return !!res.data.data;
   },
 
-  /**
-   * ดึงรายการคำร้องเอกสารทั่วไปทั้งหมด (สำหรับผู้อนุมัติ / ฝ่ายบุคคล)
-   */
+  /** คำขอสำหรับผู้อนุมัติ / ฝ่ายบุคคล */
   async getAllRequests(status?: string): Promise<GeneralDocumentRequest[]> {
-    const all = await this.getMyRequests();
-    const filtered = status ? all.filter((r) => r.status === status) : all;
-    return filtered.map((r) => ({
-      ...r,
-      isMyTurnToApprove: r.status === 'PENDING',
-      canApprove: r.status === 'PENDING',
-      canReject: r.status === 'PENDING',
-    }));
+    const res = await apiClient.get<ApiResponse<ApiGeneralRequest[]>>('/general-requests', {
+      params: status ? { status } : undefined,
+    });
+    return (res.data.data || []).map(toModel);
   },
 
-  /**
-   * อนุมัติคำร้องเอกสารทั่วไป
-   */
-  async approveRequest(id: string, approverName: string = 'ฝ่ายทรัพยากรบุคคล'): Promise<boolean> {
-    const requests = await this.getMyRequests();
-    const idx = requests.findIndex((r) => r.id === id);
-    if (idx !== -1) {
-      requests[idx].status = 'APPROVED';
-      requests[idx].approvedByName = approverName;
-      requests[idx].approvedAt = new Date().toISOString();
-      requests[idx].canCancel = true;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-      return true;
-    }
-    return false;
+  /** อนุมัติคำขอ (ตามขั้นตอนในสายการอนุมัติ) */
+  async approveRequest(id: string, comment?: string): Promise<boolean> {
+    await apiClient.put(`/general-requests/${id}/approve`, { comment });
+    return true;
   },
 
-  /**
-   * ปฏิเสธคำร้องเอกสารทั่วไป
-   */
-  async rejectRequest(id: string, reason: string, approverName: string = 'ฝ่ายทรัพยากรบุคคล'): Promise<boolean> {
-    const requests = await this.getMyRequests();
-    const idx = requests.findIndex((r) => r.id === id);
-    if (idx !== -1) {
-      requests[idx].status = 'REJECTED';
-      requests[idx].rejectReason = reason;
-      requests[idx].approvedByName = approverName;
-      requests[idx].approvedAt = new Date().toISOString();
-      requests[idx].canCancel = false;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-      return true;
-    }
-    return false;
+  /** ไม่อนุมัติคำขอ */
+  async rejectRequest(id: string, reason: string): Promise<boolean> {
+    await apiClient.put(`/general-requests/${id}/reject`, { reason });
+    return true;
+  },
+
+  /** ดาวน์โหลดไฟล์แนบของคำขอ */
+  async downloadAttachment(id: string): Promise<Blob> {
+    const res = await apiClient.get(`/general-requests/${id}/attachment`, { responseType: 'blob' });
+    return res.data as Blob;
   },
 };
