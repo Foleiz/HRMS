@@ -301,7 +301,8 @@ public class AttendanceImportService : IAttendanceImportService
             SuccessRecords = successRecords,
             FailedRecords = failedRecords,
             MinDate = minDate,
-            MaxDate = maxDate
+            MaxDate = maxDate,
+            CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken)
         };
         await ProcessRowsAsync(rowCtx, cancellationToken);
         totalRecords = rowCtx.TotalRecords;
@@ -699,6 +700,7 @@ public class AttendanceImportService : IAttendanceImportService
 
         int matched = 0;
         DateOnly? affectedFrom = null, affectedTo = null;
+        var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
         foreach (var group in matches.GroupBy(m => m.ImportBatchId))
         {
@@ -736,7 +738,8 @@ public class AttendanceImportService : IAttendanceImportService
                 IsDailySummary = IsDailySummaryFormat(allRawRows),
                 DailyDict = new(),
                 BulkPreloaded = false,
-                TotalRecords = rows.Count
+                TotalRecords = rows.Count,
+                CompanySchedule = companySchedule
             };
             await ProcessRowsAsync(ctx, cancellationToken);
 
@@ -1004,6 +1007,8 @@ public class AttendanceImportService : IAttendanceImportService
         public int FailedRecords { get; set; }
         public DateOnly? MinDate { get; set; }
         public DateOnly? MaxDate { get; set; }
+        /// <summary>วัน/เวลาทำงานปกติของบริษัท — ใช้กับพนักงานที่ไม่มีกะ</summary>
+        public CompanyWorkSchedule CompanySchedule { get; init; } = CompanyWorkSchedule.Default();
     }
 
     /// <summary>ประมวลผลแถวข้อมูลเวลา → AttendanceDaily (ตรรกะเดียวกับการนำเข้าไฟล์เดิมทุกประการ)</summary>
@@ -1021,6 +1026,7 @@ public class AttendanceImportService : IAttendanceImportService
         var bulkPreloaded = ctx.BulkPreloaded;
         var errorsList = ctx.ErrorsList;
         var errorDtos = ctx.ErrorDtos;
+        var companySchedule = ctx.CompanySchedule;
         int totalRecords = ctx.TotalRecords;
         int successRecords = ctx.SuccessRecords;
         int failedRecords = ctx.FailedRecords;
@@ -1201,6 +1207,11 @@ public class AttendanceImportService : IAttendanceImportService
                             dailyRecord.ShiftId = shift.Id;
                             AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
                         }
+                        else
+                        {
+                            // ไม่มีกะ → ใช้เวลาทำงานปกติของบริษัท
+                            companySchedule.PopulateScheduledTimes(dailyRecord, workDate);
+                        }
 
                         _context.AttendanceDailies.Add(dailyRecord);
                     }
@@ -1351,6 +1362,10 @@ public class AttendanceImportService : IAttendanceImportService
                         punchDailyRecord.ShiftId = shift.Id;
                         AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, shift, workDate);
                     }
+                    else
+                    {
+                        companySchedule.PopulateScheduledTimes(punchDailyRecord, workDate);
+                    }
 
                     _context.AttendanceDailies.Add(punchDailyRecord);
                 }
@@ -1366,6 +1381,11 @@ public class AttendanceImportService : IAttendanceImportService
                 punchDailyRecord.ShiftId = activeShift.Id;
                 punchDailyRecord.Shift = activeShift;
                 AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, activeShift, workDate);
+            }
+            else if (punchDailyRecord.ShiftId == null)
+            {
+                // ไม่มีกะ → คำนวณสาย/ออกก่อนจากเวลาทำงานปกติของบริษัท
+                companySchedule.PopulateScheduledTimes(punchDailyRecord, workDate);
             }
 
             // Merge punch times (Smart Earliest = In, Latest = Out)
@@ -1754,6 +1774,7 @@ private static string NormalizeHeader(string header)
             }
 
             var today = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
+            var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
             foreach (var d in dailies)
             {
@@ -1781,9 +1802,11 @@ private static string NormalizeHeader(string header)
                         .OrderByDescending(es => es.EffectiveFrom)
                         .FirstOrDefault();
                     var dow = (int)d.WorkDate.DayOfWeek;
+                    // ไม่มีกะ → ใช้วันทำงานปกติของบริษัท
                     var isWorkDay = shift != null
                         ? (shift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(dow)
-                        : dow != 0 && dow != 6;
+                        : companySchedule.IsWorkingDay(d.WorkDate);
+                    if (d.ShiftId == null) companySchedule.PopulateScheduledTimes(d, d.WorkDate);
 
                     d.IsAbsent = false;
                     if (holidays.Contains(d.WorkDate)) d.Status = "HOLIDAY";

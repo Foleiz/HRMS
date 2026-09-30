@@ -22,5 +22,8 @@ public interface IAttendanceDailyService
     // Admin / HR Monthly Summary Methods
     Task<MonthlyAttendanceOverviewDto> GetMonthlyAttendanceSummaryAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default);
     Task<MonthlyAttendanceOverviewDto> ProcessMonthlyAttendanceSummaryAsync(int year, int month, CancellationToken cancellationToken = default);
+
+    /// <summary>คำนวณข้อมูลเวลาใหม่ตามวัน/เวลาทำงานของบริษัทและวันหยุดประจำปี (อัตโนมัติหลังบันทึกการตั้งค่า) — คืนจำนวนรายการที่เปลี่ยน</summary>
+    Task<int> ApplyCompanyScheduleAsync(CancellationToken cancellationToken = default);
     Task<byte[]> ExportMonthlyAttendanceCsvAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default);
 }
