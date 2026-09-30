@@ -7,6 +7,8 @@ public class DocumentTypeDto
     public string DocumentCode { get; set; } = string.Empty;
     public string DocumentName { get; set; } = string.Empty;
     public bool IsExpiryRequired { get; set; }
+    public int NotifyBeforeDays { get; set; } = 30;
+    public int? ValidityMonths { get; set; }
     public string Status { get; set; } = "ACTIVE";
 }
 
@@ -16,6 +18,10 @@ public class CreateDocumentTypeDto
     public string? DocumentCode { get; set; }
     public string DocumentName { get; set; } = string.Empty;
     public bool IsExpiryRequired { get; set; } = false;
+    /// <summary>แจ้งเตือนล่วงหน้า (วัน) — ค่าเริ่มต้น 30</summary>
+    public int? NotifyBeforeDays { get; set; }
+    /// <summary>อายุเอกสาร (เดือน) — null = ไม่กำหนด</summary>
+    public int? ValidityMonths { get; set; }
     public string Status { get; set; } = "ACTIVE";
 }
 
@@ -23,6 +29,10 @@ public class UpdateDocumentTypeDto
 {
     public string DocumentName { get; set; } = string.Empty;
     public bool IsExpiryRequired { get; set; } = false;
+    /// <summary>แจ้งเตือนล่วงหน้า (วัน) — ค่าเริ่มต้น 30</summary>
+    public int? NotifyBeforeDays { get; set; }
+    /// <summary>อายุเอกสาร (เดือน) — null = ไม่กำหนด</summary>
+    public int? ValidityMonths { get; set; }
     public string Status { get; set; } = "ACTIVE";
 }
 

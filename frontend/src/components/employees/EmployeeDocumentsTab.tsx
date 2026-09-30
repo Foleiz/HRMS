@@ -121,6 +121,16 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
   );
 
   const selectedType = docTypes.find((t) => t.id === typeId);
+  // ประเภทเอกสารกำหนดอายุไว้ → คำนวณวันหมดอายุจากวันที่ออก (ถ้ายังไม่ได้กรอกเอง)
+  const autoExpiry = useMemo(() => {
+    const months = selectedType?.validityMonths;
+    if (!months || !issuedDate) return '';
+    const [y, m, d] = issuedDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + months, d);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }, [selectedType, issuedDate]);
+  const effectiveExpiry = expiryDate || autoExpiry;
 
   const openUpload = async () => {
     setTypeId('');
@@ -152,8 +162,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
   const handleSave = async () => {
     if (!typeId) return toast.warning('กรุณาเลือกประเภทเอกสาร');
     if (!file) return toast.warning('กรุณาแนบไฟล์เอกสาร');
-    if (selectedType?.isExpiryRequired && !expiryDate) return toast.warning('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
-    if (issuedDate && expiryDate && expiryDate < issuedDate) return toast.warning('วันหมดอายุต้องไม่ก่อนวันที่ออกเอกสาร');
+    if (selectedType?.isExpiryRequired && !effectiveExpiry) return toast.warning('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
+    if (issuedDate && effectiveExpiry && effectiveExpiry < issuedDate) return toast.warning('วันหมดอายุต้องไม่ก่อนวันที่ออกเอกสาร');
 
     setSaving(true);
     try {
@@ -162,7 +172,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
         fileName: file.name,
         fileData: await readAsDataUrl(file),
         issuedDate: issuedDate || undefined,
-        expiryDate: expiryDate || undefined,
+        expiryDate: effectiveExpiry || undefined,
         remarks: remarks.trim() || undefined,
       });
       toast.success('เพิ่มเอกสารเข้าแฟ้มเรียบร้อย');
@@ -284,7 +294,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                       <p className="text-slate-600">{formatDate(doc.expiryDate)}</p>
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
                         {badge.label}
-                        {doc.expiryStatus === 'EXPIRING_SOON' && doc.daysToExpiry != null ? ` (${doc.daysToExpiry} วัน)` : ''}
+                        {doc.expiryStatus === 'EXPIRING_SOON' && doc.daysToExpiry != null ? ` (อีก ${doc.daysToExpiry} วัน)` : ''}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -392,11 +402,14 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                   </label>
                   <input
                     type="date"
-                    value={expiryDate}
+                    value={effectiveExpiry}
                     min={issuedDate || undefined}
                     onChange={(e) => setExpiryDate(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
                   />
+                  {!expiryDate && autoExpiry && (
+                    <p className="text-[10px] text-slate-400 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
+                  )}
                 </div>
               </div>
 

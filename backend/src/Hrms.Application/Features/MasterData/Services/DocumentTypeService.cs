@@ -33,6 +33,8 @@ public class DocumentTypeService : IDocumentTypeService
                 DocumentCode = d.DocumentCode,
                 DocumentName = d.DocumentName,
                 IsExpiryRequired = d.IsExpiryRequired,
+                NotifyBeforeDays = d.NotifyBeforeDays,
+                ValidityMonths = d.ValidityMonths,
                 Status = d.Status
             })
             .ToListAsync(cancellationToken);
@@ -53,6 +55,8 @@ public class DocumentTypeService : IDocumentTypeService
             DocumentCode = doc.DocumentCode,
             DocumentName = doc.DocumentName,
             IsExpiryRequired = doc.IsExpiryRequired,
+            NotifyBeforeDays = doc.NotifyBeforeDays,
+            ValidityMonths = doc.ValidityMonths,
             Status = doc.Status
         };
     }
@@ -74,6 +78,8 @@ public class DocumentTypeService : IDocumentTypeService
             DocumentCode = code,
             DocumentName = dto.DocumentName.Trim(),
             IsExpiryRequired = dto.IsExpiryRequired,
+            NotifyBeforeDays = ValidateNotifyDays(dto.NotifyBeforeDays),
+            ValidityMonths = ValidateValidityMonths(dto.ValidityMonths),
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper()
         };
 
@@ -86,6 +92,8 @@ public class DocumentTypeService : IDocumentTypeService
             DocumentCode = doc.DocumentCode,
             DocumentName = doc.DocumentName,
             IsExpiryRequired = doc.IsExpiryRequired,
+            NotifyBeforeDays = doc.NotifyBeforeDays,
+            ValidityMonths = doc.ValidityMonths,
             Status = doc.Status
         };
     }
@@ -98,6 +106,8 @@ public class DocumentTypeService : IDocumentTypeService
 
         doc.DocumentName = dto.DocumentName.Trim();
         doc.IsExpiryRequired = dto.IsExpiryRequired;
+        doc.NotifyBeforeDays = ValidateNotifyDays(dto.NotifyBeforeDays);
+        doc.ValidityMonths = ValidateValidityMonths(dto.ValidityMonths);
         if (!string.IsNullOrWhiteSpace(dto.Status))
         {
             doc.Status = dto.Status.ToUpper();
@@ -111,6 +121,8 @@ public class DocumentTypeService : IDocumentTypeService
             DocumentCode = doc.DocumentCode,
             DocumentName = doc.DocumentName,
             IsExpiryRequired = doc.IsExpiryRequired,
+            NotifyBeforeDays = doc.NotifyBeforeDays,
+            ValidityMonths = doc.ValidityMonths,
             Status = doc.Status
         };
     }
@@ -127,5 +139,21 @@ public class DocumentTypeService : IDocumentTypeService
 
         _context.DocumentTypes.Remove(doc);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static int ValidateNotifyDays(int? days)
+    {
+        if (!days.HasValue) return 30;
+        if (days.Value < 1 || days.Value > 365)
+            throw new ValidationException("แจ้งเตือนล่วงหน้าต้องอยู่ระหว่าง 1 - 365 วัน");
+        return days.Value;
+    }
+
+    private static int? ValidateValidityMonths(int? months)
+    {
+        if (!months.HasValue || months.Value == 0) return null;
+        if (months.Value < 1 || months.Value > 600)
+            throw new ValidationException("อายุเอกสารต้องอยู่ระหว่าง 1 - 600 เดือน");
+        return months.Value;
     }
 }

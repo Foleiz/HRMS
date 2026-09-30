@@ -64,11 +64,9 @@ export default function GeneralDocumentPage() {
 
   // Form Fields (ตาม Figma)
   const [issueDate, setIssueDate] = useState(() => toInputDate(new Date()));
-  const [expiryDate, setExpiryDate] = useState(() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    return toInputDate(d);
-  });
+  // วันหมดอายุ: ไม่เติมให้เอง — ถ้าประเภทเอกสารกำหนดอายุไว้ (Master) จะคำนวณจากวันที่ออกจนกว่าผู้ใช้จะแก้เอง
+  const [expiryDate, setExpiryDate] = useState('');
+  const [expiryTouched, setExpiryTouched] = useState(false);
   const [documentType, setDocumentType] = useState<string>('');
   // ประเภทเอกสารจาก Master (ตั้งค่า > ข้อมูลหลัก > ประเภทเอกสาร) — โหลดไม่ได้จะใช้รายการสำรองเดิม
   const [masterTypes, setMasterTypes] = useState<DocumentTypeItem[]>([]);
@@ -80,6 +78,15 @@ export default function GeneralDocumentPage() {
   const selectedMasterType = masterTypes.find((t) => t.documentName === documentType);
   const [customDocumentType, setCustomDocumentType] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
+  const validityMonths = !isCustomType ? selectedMasterType?.validityMonths ?? null : null;
+  const autoExpiry = useMemo(() => {
+    if (!validityMonths || !issueDate) return '';
+    const [y, m, d] = issueDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + validityMonths, d);
+    return toInputDate(date);
+  }, [validityMonths, issueDate]);
+  const effectiveExpiry = expiryTouched ? expiryDate : autoExpiry;
+  const expiryRequired = !isCustomType && !!selectedMasterType?.isExpiryRequired;
 
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
@@ -108,7 +115,10 @@ export default function GeneralDocumentPage() {
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.notes) setNotes(parsed.notes);
         if (parsed.issueDate) setIssueDate(parsed.issueDate);
-        if (parsed.expiryDate) setExpiryDate(parsed.expiryDate);
+        if (parsed.expiryDate) {
+          setExpiryDate(parsed.expiryDate);
+          setExpiryTouched(true);
+        }
       }
     } catch {
       // Ignore
@@ -209,9 +219,8 @@ export default function GeneralDocumentPage() {
     setPurpose('');
     setNotes('');
     setIssueDate(toInputDate(new Date()));
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    setExpiryDate(toInputDate(d));
+    setExpiryDate('');
+    setExpiryTouched(false);
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setFormError(null);
@@ -235,7 +244,7 @@ export default function GeneralDocumentPage() {
           purpose: purpose.trim(),
           notes: notes.trim(),
           issueDate,
-          expiryDate,
+          expiryDate: effectiveExpiry,
           savedAt: new Date().toISOString(),
         })
       );
@@ -260,7 +269,7 @@ export default function GeneralDocumentPage() {
       setFormError('กรุณาระบุรายละเอียดของคำขอ');
       return;
     }
-    if (!isCustomType && selectedMasterType?.isExpiryRequired && !expiryDate) {
+    if (expiryRequired && !effectiveExpiry) {
       setFormError('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
       return;
     }
@@ -283,7 +292,7 @@ export default function GeneralDocumentPage() {
         documentType: finalDocType,
         documentTypeId: !isCustomType ? selectedMasterType?.id : undefined,
         issueDate,
-        expiryDate: expiryDate || undefined,
+        expiryDate: effectiveExpiry || undefined,
         purpose: purpose.trim(),
         notes: notes.trim() || undefined,
         fileName: selectedFile?.name,
@@ -426,16 +435,36 @@ export default function GeneralDocumentPage() {
 
               {/* วันหมดอายุ */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                  วันหมดอายุ{!isCustomType && selectedMasterType?.isExpiryRequired ? ' *' : ''}
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-gray-500">
+                    วันหมดอายุ{expiryRequired ? ' *' : ' (ถ้ามี)'}
+                  </label>
+                  {effectiveExpiry && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpiryDate('');
+                        setExpiryTouched(true);
+                      }}
+                      className="text-[11px] text-gray-400 hover:text-gray-700"
+                    >
+                      ล้างวันที่
+                    </button>
+                  )}
+                </div>
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"
-                  startDate={expiryDate}
-                  endDate={expiryDate}
-                  onChange={(d) => setExpiryDate(d)}
+                  startDate={effectiveExpiry}
+                  endDate={effectiveExpiry}
+                  onChange={(d) => {
+                    setExpiryDate(d);
+                    setExpiryTouched(true);
+                  }}
                 />
+                {!expiryTouched && validityMonths ? (
+                  <p className="text-[11px] text-gray-400 mt-1">คำนวณจากอายุเอกสาร {validityMonths} เดือนนับจากวันที่ออก</p>
+                ) : null}
               </div>
             </div>
 
@@ -618,7 +647,7 @@ export default function GeneralDocumentPage() {
           positionTitle: profile.positionTitle,
           departmentName: profile.departmentName,
           issueDate: formatThaiShort(issueDate),
-          expiryDate: expiryDate ? formatThaiShort(expiryDate) : undefined,
+          expiryDate: effectiveExpiry ? formatThaiShort(effectiveExpiry) : undefined,
           documentType: finalDocumentTypeDisplay,
           purpose: purpose || 'ยังไม่ได้ระบุวัตถุประสงค์',
           notes: notes || undefined,

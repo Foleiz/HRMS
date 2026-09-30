@@ -13,7 +13,6 @@ namespace Hrms.Application.Features.EmployeeDocuments.Services;
 public class EmployeeDocumentService : IEmployeeDocumentService
 {
     private const long MaxFileBytes = 5 * 1024 * 1024;
-    private const int ExpiringSoonDays = 30;
 
     private static readonly string[] AdminRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER" };
     private static readonly string[] HrRoles = { "HR", "HR_ADMIN", "HR_MGR" };
@@ -62,7 +61,8 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             throw new ValidationException("กรุณาแนบไฟล์เอกสาร");
 
         var issued = ParseDate(dto.IssuedDate);
-        var expiry = ParseDate(dto.ExpiryDate);
+        // ไม่ระบุวันหมดอายุ แต่ประเภทเอกสารกำหนดอายุไว้ → คำนวณจากวันที่ออก
+        var expiry = DocumentExpiry.ResolveExpiry(issued, ParseDate(dto.ExpiryDate), type);
         if (type.IsExpiryRequired && !expiry.HasValue)
             throw new ValidationException($"เอกสารประเภท \"{type.DocumentName}\" ต้องระบุวันหมดอายุ");
         if (issued.HasValue && expiry.HasValue && expiry < issued)
@@ -125,11 +125,31 @@ public class EmployeeDocumentService : IEmployeeDocumentService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<List<EmployeeDocumentDto>> GetExpiringAsync(string? status, CancellationToken cancellationToken = default)
+    {
+        if (!IsHrOrAdmin)
+            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่ดูรายการเอกสารใกล้หมดอายุได้");
+
+        // ช่วงแจ้งเตือนสูงสุดคือ 365 วัน — กรองเบื้องต้นในฐานข้อมูล แล้วคำนวณสถานะจริงตามประเภทเอกสาร
+        var horizon = DocumentExpiry.Today().AddDays(365);
+        var list = await QueryDtosAsync(d => d.ExpiryDate != null && d.ExpiryDate <= horizon, cancellationToken, includeEmployee: true);
+
+        var wanted = (status ?? string.Empty).Trim().ToUpperInvariant();
+        return list
+            .Where(d => wanted == DocumentExpiry.Expired || wanted == DocumentExpiry.ExpiringSoon
+                ? d.ExpiryStatus == wanted
+                : d.ExpiryStatus is DocumentExpiry.Expired or DocumentExpiry.ExpiringSoon)
+            .OrderBy(d => d.DaysToExpiry)
+            .ThenBy(d => d.EmployeeName)
+            .ToList();
+    }
+
     // ───────────────────────── helpers ─────────────────────────
 
     private async Task<List<EmployeeDocumentDto>> QueryDtosAsync(
         System.Linq.Expressions.Expression<Func<EmployeeDocument, bool>> predicate,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeEmployee = false)
     {
         // ไม่ดึง file_data มาด้วย (ไฟล์ใหญ่) — ดาวน์โหลดแยกทีละไฟล์
         var rows = await _context.EmployeeDocuments.AsNoTracking()
@@ -144,6 +164,11 @@ public class EmployeeDocumentService : IEmployeeDocumentService
                 TypeCode = d.DocumentType.DocumentCode,
                 TypeName = d.DocumentType.DocumentName,
                 d.DocumentType.IsExpiryRequired,
+                d.DocumentType.NotifyBeforeDays,
+                EmpCode = d.Employee.EmployeeCode,
+                EmpPrefix = d.Employee.Prefix,
+                EmpFirstName = d.Employee.FirstName,
+                EmpLastName = d.Employee.LastName,
                 d.FileName,
                 d.FileMimeType,
                 d.FileSize,
@@ -167,18 +192,23 @@ public class EmployeeDocumentService : IEmployeeDocumentService
                 .Where(g => sourceIds.Contains(g.Id))
                 .ToDictionaryAsync(g => g.Id, g => g.RequestNo, cancellationToken);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var today = DocumentExpiry.Today();
+
+        var departments = new Dictionary<long, string>();
+        if (includeEmployee && rows.Count > 0)
+        {
+            var empIds = rows.Select(r => r.EmployeeId).Distinct().ToList();
+            departments = (await _context.EmployeeAssignments.AsNoTracking()
+                    .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
+                    .Select(a => new { a.EmployeeId, a.EffectiveFrom, Name = a.Department != null ? a.Department.DepartmentName : null })
+                    .ToListAsync(cancellationToken))
+                .GroupBy(a => a.EmployeeId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.EffectiveFrom).First().Name ?? "-");
+        }
 
         return rows.Select(r =>
         {
-            int? days = r.ExpiryDate.HasValue ? r.ExpiryDate.Value.DayNumber - today.DayNumber : null;
-            var expiryStatus = days switch
-            {
-                null => "NO_EXPIRY",
-                < 0 => "EXPIRED",
-                <= ExpiringSoonDays => "EXPIRING_SOON",
-                _ => "VALID"
-            };
+            var (expiryStatus, days) = DocumentExpiry.GetStatus(r.ExpiryDate, r.NotifyBeforeDays, today);
             string? requestNo = null;
             if (r.SourceGeneralRequestId is { } sid)
                 requestNo = requestNos.TryGetValue(sid, out var no) && !string.IsNullOrEmpty(no) ? no : $"GR-{sid:D4}";
@@ -187,10 +217,14 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             {
                 Id = r.Id,
                 EmployeeId = r.EmployeeId,
+                EmployeeCode = r.EmpCode,
+                EmployeeName = $"{r.EmpPrefix} {r.EmpFirstName} {r.EmpLastName}".Trim(),
+                DepartmentName = departments.TryGetValue(r.EmployeeId, out var dept) ? dept : null,
                 DocumentTypeId = r.DocumentTypeId,
                 DocumentTypeCode = r.TypeCode,
                 DocumentTypeName = r.TypeName,
                 IsExpiryRequired = r.IsExpiryRequired,
+                NotifyBeforeDays = r.NotifyBeforeDays,
                 FileName = r.FileName,
                 FileMimeType = r.FileMimeType,
                 FileSize = r.FileSize,

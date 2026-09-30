@@ -13,11 +13,34 @@ namespace Hrms.Api.Controllers;
 [Authorize]
 public class EmployeeDocumentsController : ControllerBase
 {
-    private readonly IEmployeeDocumentService _service;
+    private static readonly string[] HrRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER", "HR", "HR_ADMIN", "HR_MGR" };
 
-    public EmployeeDocumentsController(IEmployeeDocumentService service)
+    private readonly IEmployeeDocumentService _service;
+    private readonly IDocumentExpiryNotifier _expiryNotifier;
+
+    public EmployeeDocumentsController(IEmployeeDocumentService service, IDocumentExpiryNotifier expiryNotifier)
     {
         _service = service;
+        _expiryNotifier = expiryNotifier;
+    }
+
+    /// <summary>เอกสารใกล้หมดอายุ / หมดอายุแล้วของพนักงานทุกคน (ฝ่ายบุคคล) — status: EXPIRING_SOON / EXPIRED / ว่าง = ทั้งสอง</summary>
+    [HttpGet("api/employee-documents/expiring")]
+    public async Task<ActionResult<ApiResponse<List<EmployeeDocumentDto>>>> GetExpiring([FromQuery] string? status, CancellationToken cancellationToken)
+    {
+        var result = await _service.GetExpiringAsync(status, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeDocumentDto>>.Ok(result, "ดึงรายการเอกสารใกล้หมดอายุสำเร็จ"));
+    }
+
+    /// <summary>ตรวจและส่งแจ้งเตือนเอกสารใกล้หมดอายุทันที (ปกติระบบตรวจเองทุก 6 ชั่วโมง)</summary>
+    [HttpPost("api/employee-documents/expiry-check")]
+    public async Task<ActionResult<ApiResponse<DocumentExpiryCheckResult>>> RunExpiryCheck(CancellationToken cancellationToken)
+    {
+        if (!HrRoles.Any(User.IsInRole))
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<DocumentExpiryCheckResult>.Fail("เฉพาะฝ่ายบุคคลเท่านั้นที่สั่งตรวจเอกสารได้"));
+
+        var result = await _expiryNotifier.RunAsync(cancellationToken);
+        return Ok(ApiResponse<DocumentExpiryCheckResult>.Ok(result, "ตรวจเอกสารและส่งแจ้งเตือนเรียบร้อย"));
     }
 
     /// <summary>เอกสารทั้งหมดของพนักงาน (ฝ่ายบุคคล / เจ้าของ)</summary>

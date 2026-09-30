@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
-import { EmployeeDocument, CreateEmployeeDocumentPayload } from '@/types/employeeDocument';
+import { EmployeeDocument, CreateEmployeeDocumentPayload, DocumentExpiryCheckResult } from '@/types/employeeDocument';
 
 /** แฟ้มเอกสารพนักงาน */
 export const employeeDocumentService = {
@@ -26,6 +26,20 @@ export const employeeDocumentService = {
   async download(id: number): Promise<Blob> {
     const res = await apiClient.get(`/employee-documents/${id}/file`, { responseType: 'blob' });
     return res.data as Blob;
+  },
+
+  /** เอกสารใกล้หมดอายุ / หมดอายุแล้วของพนักงานทุกคน (ฝ่ายบุคคล) */
+  async getExpiring(status?: 'EXPIRING_SOON' | 'EXPIRED'): Promise<EmployeeDocument[]> {
+    const res = await apiClient.get<ApiResponse<EmployeeDocument[]>>('/employee-documents/expiring', {
+      params: status ? { status } : undefined,
+    });
+    return res.data.data || [];
+  },
+
+  /** ตรวจและส่งแจ้งเตือนเอกสารใกล้หมดอายุทันที */
+  async runExpiryCheck(): Promise<DocumentExpiryCheckResult> {
+    const res = await apiClient.post<ApiResponse<DocumentExpiryCheckResult>>('/employee-documents/expiry-check');
+    return res.data.data;
   },
 
   /** ลบเอกสารออกจากแฟ้ม */

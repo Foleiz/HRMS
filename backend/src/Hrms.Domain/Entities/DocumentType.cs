@@ -23,6 +23,14 @@ public class DocumentType : BaseEntity
     [Column("is_expiry_required")]
     public bool IsExpiryRequired { get; set; } = false;
 
+    /// <summary>แจ้งเตือนล่วงหน้ากี่วันก่อนเอกสารหมดอายุ</summary>
+    [Column("notify_before_days")]
+    public int NotifyBeforeDays { get; set; } = 30;
+
+    /// <summary>อายุเอกสาร (เดือน) — ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ (null = ไม่กำหนด)</summary>
+    [Column("validity_months")]
+    public int? ValidityMonths { get; set; }
+
     [Column("status")]
     [Required]
     [MaxLength(20)]

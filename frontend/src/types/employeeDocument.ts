@@ -5,10 +5,15 @@ export type DocumentExpiryStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_E
 export interface EmployeeDocument {
   id: number;
   employeeId: number;
+  employeeCode?: string | null;
+  employeeName?: string | null;
+  departmentName?: string | null;
   documentTypeId: number;
   documentTypeCode: string;
   documentTypeName: string;
   isExpiryRequired: boolean;
+  /** แจ้งเตือนล่วงหน้า (วัน) ของประเภทเอกสาร */
+  notifyBeforeDays: number;
   fileName?: string | null;
   fileMimeType?: string | null;
   fileSize?: number | null;
@@ -22,6 +27,12 @@ export interface EmployeeDocument {
   uploadedByName?: string | null;
   sourceGeneralRequestId?: number | null;
   sourceRequestNo?: string | null;
+}
+
+export interface DocumentExpiryCheckResult {
+  expiringSoonNotified: number;
+  expiredNotified: number;
+  hrRecipients: number;
 }
 
 export interface CreateEmployeeDocumentPayload {

@@ -162,6 +162,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.DocumentCode).HasColumnName("document_code").IsRequired().HasMaxLength(50);
             entity.Property(e => e.DocumentName).HasColumnName("document_name").IsRequired().HasMaxLength(255);
             entity.Property(e => e.IsExpiryRequired).HasColumnName("is_expiry_required").IsRequired();
+            entity.Property(e => e.NotifyBeforeDays).HasColumnName("notify_before_days").IsRequired();
+            entity.Property(e => e.ValidityMonths).HasColumnName("validity_months");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.DocumentCode).IsUnique();
         });
@@ -1889,6 +1891,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").IsRequired();
             entity.Property(e => e.UploadedByEmployeeId).HasColumnName("uploaded_by_employee_id");
             entity.Property(e => e.SourceGeneralRequestId).HasColumnName("source_general_request_id");
+            entity.Property(e => e.ExpiryWarningNotifiedAt).HasColumnName("expiry_warning_notified_at");
+            entity.Property(e => e.ExpiredNotifiedAt).HasColumnName("expired_notified_at");
 
             entity.HasOne(e => e.Employee)
                 .WithMany()
