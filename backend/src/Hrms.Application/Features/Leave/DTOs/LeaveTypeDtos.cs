@@ -10,11 +10,18 @@ public record LeaveTypeDto
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
     public string? FormCategory { get; init; }
+    /// <summary>จำนวนใบลาที่ใช้ประเภทนี้ (ทุกสถานะ)</summary>
+    public int RequestCount { get; init; }
+    /// <summary>ลบถาวรได้หรือไม่ (ยังไม่เคยมีใบลา และไม่มีการปรับยอดวันลาด้วยมือ)</summary>
+    public bool CanDelete { get; init; } = true;
+    /// <summary>เหตุผลที่ลบไม่ได้ (แสดงให้ผู้ใช้)</summary>
+    public string? DeleteBlockedReason { get; init; }
 }
 
 public record CreateLeaveTypeRequest
 {
-    public string LeaveCode { get; init; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างให้อัตโนมัติ (LV001, LV002, ...)</summary>
+    public string? LeaveCode { get; init; }
     public string LeaveName { get; init; } = string.Empty;
     public string QuotaUnit { get; init; } = "DAY";
     public bool IsPaidLeave { get; init; } = true;

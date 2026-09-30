@@ -8,6 +8,12 @@ export interface LeaveType {
   status: 'ACTIVE' | 'INACTIVE' | string;
   /** หมวดในแบบฟอร์มใบลา */
   formCategory?: LeaveFormCategory | null;
+  /** จำนวนใบลาที่ใช้ประเภทนี้ (ทุกสถานะ) */
+  requestCount?: number;
+  /** ลบถาวรได้หรือไม่ (ยังไม่เคยถูกใช้งาน) */
+  canDelete?: boolean;
+  /** เหตุผลที่ลบไม่ได้ */
+  deleteBlockedReason?: string | null;
 }
 
 /** หมวดในแบบฟอร์มใบลา: ป่วย / กิจส่วนตัว / พักร้อน / ลาพิเศษ */
@@ -17,7 +23,8 @@ export type LeaveFormCategory = 'SICK' | 'PERSONAL' | 'VACATION' | 'SPECIAL';
 export type LeaveProrationMethod = 'FULL' | 'PRORATA_MONTHLY';
 
 export interface CreateLeaveTypePayload {
-  leaveCode: string;
+  /** ไม่ต้องส่ง — ระบบสร้างให้อัตโนมัติ (LV001, LV002, ...) */
+  leaveCode?: string;
   leaveName: string;
   quotaUnit: string;
   isPaidLeave: boolean;

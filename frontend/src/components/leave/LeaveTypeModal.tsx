@@ -59,7 +59,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 }) => {
   const isEditing = !!leaveTypeToEdit;
 
-  const [leaveCode, setLeaveCode] = useState('');
   const [leaveName, setLeaveName] = useState('');
   const [formCategory, setFormCategory] = useState<LeaveFormCategory>('SPECIAL');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
@@ -70,7 +69,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   useEffect(() => {
     if (leaveTypeToEdit) {
-      setLeaveCode(leaveTypeToEdit.leaveCode);
       setLeaveName(leaveTypeToEdit.leaveName);
       setFormCategory(
         (leaveTypeToEdit.formCategory as LeaveFormCategory) ||
@@ -79,7 +77,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
     } else {
-      setLeaveCode('');
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
@@ -92,11 +89,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = leaveCode.trim().toUpperCase();
-    if (!isEditing && !/^[A-Z0-9_]{2,30}$/.test(code)) {
-      setError('รหัสใช้ได้เฉพาะตัวอักษรภาษาอังกฤษพิมพ์ใหญ่ ตัวเลข และ _ (2–30 ตัว) เช่น SICK, ANNUAL');
-      return;
-    }
     if (!leaveName.trim()) {
       setError('กรุณาระบุชื่อประเภทการลา');
       return;
@@ -117,7 +109,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         });
       } else {
         await onSubmitCreate({
-          leaveCode: code,
           leaveName: leaveName.trim(),
           quotaUnit: 'DAY',
           isPaidLeave,
@@ -151,35 +142,18 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>}
 
-          {/* ชื่อ + รหัส */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-            <div className="sm:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">ชื่อประเภทการลา *</label>
-              <input
-                type="text"
-                placeholder="เช่น ลาพักร้อน"
-                value={leaveName}
-                onChange={(e) => setLeaveName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">รหัส *</label>
-              <input
-                type="text"
-                disabled={isEditing}
-                placeholder="เช่น ANNUAL"
-                value={leaveCode}
-                onChange={(e) => setLeaveCode(e.target.value.toUpperCase().replace(/\s/g, '_'))}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono ${
-                  isEditing ? 'bg-gray-50 text-gray-500 border-gray-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                }`}
-                required
-              />
-            </div>
+          {/* ชื่อประเภทการลา (รหัสระบบสร้างให้อัตโนมัติ ไม่ต้องแสดงตอนเพิ่ม) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">ชื่อประเภทการลา *</label>
+            <input
+              type="text"
+              placeholder="เช่น ลาพักร้อน"
+              value={leaveName}
+              onChange={(e) => setLeaveName(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              required
+            />
           </div>
-          <p className="-mt-3 text-xs text-gray-400">รหัสใช้อ้างอิงในระบบ แก้ไขไม่ได้หลังบันทึก</p>
 
           {/* หมวดแบบฟอร์ม */}
           <div>

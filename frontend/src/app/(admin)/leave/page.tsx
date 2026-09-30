@@ -231,9 +231,16 @@ export default function LeaveManagementPage() {
   };
 
   const handleDeleteType = (type: LeaveType) => {
+    if (type.canDelete === false) {
+      showAlert('ลบประเภทการลานี้ไม่ได้', type.deleteBlockedReason || 'ประเภทการลานี้ถูกใช้งานแล้ว', 'warning');
+      return;
+    }
+    const policyCount = leavePolicies.filter((p) => p.leaveTypeId === type.id).length;
     showConfirm({
       title: 'ยืนยันการลบประเภทการลา?',
-      message: `คุณต้องการลบหรือระงับประเภทการลา "${type.leaveName}" (${type.leaveCode}) หรือไม่?\nข้อมูลหรือสิทธิ์ที่เกี่ยวข้องจะถูกปรับเป็นไม่ใช้งาน`,
+      message: `ลบประเภทการลา "${type.leaveName}" ถาวร${
+        policyCount > 0 ? ` พร้อมสิทธิ์การลาที่ตั้งไว้ ${policyCount} รายการ` : ''
+      } และยอดวันลาที่ระบบสร้างไว้\nการลบนี้ย้อนกลับไม่ได้`,
       type: 'danger',
       confirmText: 'ลบประเภทการลา',
       onConfirm: async () => {
@@ -487,7 +494,6 @@ export default function LeaveManagementPage() {
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4 text-center">หมวดในใบลา</th>
                     <th className="py-3.5 px-4 text-center">รับค่าจ้าง</th>
-                    <th className="py-3.5 px-4">สิทธิ์การลาที่ตั้งไว้</th>
                     <th className="py-3.5 px-4 text-center">สถานะ</th>
                     <th className="py-3.5 px-4 text-center">จัดการ</th>
                   </tr>
@@ -495,7 +501,7 @@ export default function LeaveManagementPage() {
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400">
+                      <td colSpan={5} className="py-12 text-center text-gray-400">
                         <div className="inline-flex items-center gap-2">
                           <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูลประเภทการลา...
                         </div>
@@ -503,7 +509,7 @@ export default function LeaveManagementPage() {
                     </tr>
                   ) : leaveTypes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400">
+                      <td colSpan={5} className="py-12 text-center text-gray-400">
                         ยังไม่มีประเภทการลาในระบบ
                       </td>
                     </tr>
@@ -512,7 +518,6 @@ export default function LeaveManagementPage() {
                       <tr key={type.id} className="hover:bg-gray-50/60 transition-colors">
                         <td className="py-4 px-5">
                           <div className="font-semibold text-gray-800">{type.leaveName}</div>
-                          <div className="text-xs text-gray-400 uppercase tracking-wide">{type.leaveCode}</div>
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600">
                           {formCategoryDisplay(type)}
@@ -527,16 +532,6 @@ export default function LeaveManagementPage() {
                           >
                             {type.isPaidLeave ? 'ใช่' : 'ไม่ใช่'}
                           </span>
-                        </td>
-                        <td className="py-4 px-4 text-gray-600">
-                          {(() => {
-                            const count = leavePolicies.filter((p) => p.leaveTypeId === type.id).length;
-                            return count > 0 ? (
-                              <span className="text-gray-700">{count} รายการ</span>
-                            ) : (
-                              <span className="text-amber-600 text-xs">ยังไม่ตั้ง — พนักงานยังไม่มีโควตา</span>
-                            );
-                          })()}
                         </td>
                         <td className="py-4 px-4 text-center">
                           <span
@@ -563,8 +558,13 @@ export default function LeaveManagementPage() {
                             </button>
                             <button
                               onClick={() => handleDeleteType(type)}
-                              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                              title="ลบ"
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                type.canDelete === false
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-rose-600 hover:bg-rose-50'
+                              }`}
+                              title={type.canDelete === false ? type.deleteBlockedReason || 'ลบไม่ได้ เพราะถูกใช้งานแล้ว' : 'ลบถาวร'}
+                              aria-disabled={type.canDelete === false}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
