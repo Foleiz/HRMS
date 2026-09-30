@@ -583,10 +583,22 @@ export const ApprovalFlowsTab: React.FC = () => {
                         </div>
                       ) : (
                         <div className="flex items-center flex-wrap gap-2.5">
+                          {/* จุดเริ่มต้น: ผู้ยื่นคำขอ */}
+                          <div className="flex items-center gap-3 bg-white border border-dashed border-slate-300 rounded-xl px-4 py-2.5">
+                            <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                              <Users className="w-3 h-3" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-slate-700">จุดเริ่มต้น</div>
+                              <div className="text-[10px] text-slate-400 font-medium mt-0.5">ผู้ยื่นคำขอ</div>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+
                           {flow.steps
                             .slice()
                             .sort((a, b) => a.stepNo - b.stepNo)
-                            .map((step, idx, arr) => (
+                            .map((step) => (
                               <React.Fragment key={step.id}>
                                 <div className="flex items-center gap-3 bg-slate-50/90 border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
                                   <div className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
@@ -602,11 +614,18 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {idx < arr.length - 1 && (
-                                  <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
-                                )}
+                                <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
                               </React.Fragment>
                             ))}
+
+                          {/* จุดสิ้นสุด: อนุมัติครบทุกขั้น */}
+                          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-emerald-700">อนุมัติเสร็จสมบูรณ์</div>
+                              <div className="text-[10px] text-emerald-600/80 font-medium mt-0.5">เอกสารมีผล</div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
