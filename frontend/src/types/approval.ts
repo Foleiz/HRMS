@@ -115,7 +115,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   EMPLOYMENT_CONTRACT: 'สัญญาจ้างงาน',
   PAYROLL_PERIOD: 'รอบเงินเดือน',
   TRANSFER_REQUEST: 'คำขอย้ายแผนก/เลื่อนตำแหน่ง',
-  GENERAL_REQUEST: 'คำขออื่นๆ',
+  GENERAL_REQUEST: 'คำขอเอกสารทั่วไป',
 };
 
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ (Pure Thai - Rule #10) */

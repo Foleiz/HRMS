@@ -51,7 +51,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
-// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง, คำขออื่นๆ)
+// เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป)
 interface MyDocumentRow {
   id: string;
   code: string;
@@ -136,7 +136,7 @@ export default function DocumentHistoryPage() {
     fetchData();
   }, [fetchData]);
 
-  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (การลา, ลาออก, หนังสือรับรอง, คำขออื่นๆ) ───
+  // ─── รวมเอกสารทุกประเภทเป็นรายการเดียว (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป) ───
   const documents: MyDocumentRow[] = useMemo(() => {
     const leaveRows: MyDocumentRow[] = leaveRequests.map((r) => ({
       id: `LEAVE-${r.id}`,
@@ -186,7 +186,7 @@ export default function DocumentHistoryPage() {
       code: r.requestNo,
       submittedDate: r.submittedAt,
       detailDate: `วัตถุประสงค์: ${r.purpose}`,
-      documentType: `คำขออื่นๆ (${r.documentType})`,
+      documentType: `คำร้องเอกสารทั่วไป (${r.documentType})`,
       status: r.status,
       documents: r.fileName ? [{ id: 1, fileName: r.fileName }] : undefined,
       source: 'GENERAL',
@@ -245,7 +245,7 @@ export default function DocumentHistoryPage() {
           } else if (doc.source === 'GENERAL' && doc.rawGeneral) {
             await generalDocumentService.cancelRequest(doc.rawGeneral.id);
             closeConfirm();
-            showToast('ยกเลิกคำขออื่นๆสำเร็จ');
+            showToast('ยกเลิกคำร้องเอกสารทั่วไปสำเร็จ');
           }
           fetchData();
         } catch (err: any) {

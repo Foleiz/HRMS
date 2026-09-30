@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Hrms.Application.Features.GeneralRequests.Services;
 
 /// <summary>
-/// คำขออื่นๆ — ยื่นคำขอทั่วไปถึงฝ่ายบุคคล ผ่านสายการอนุมัติประเภท GENERAL_REQUEST
+/// คำขอเอกสารทั่วไป — ยื่นคำขอทั่วไปถึงฝ่ายบุคคล ผ่านสายการอนุมัติประเภท GENERAL_REQUEST
 /// (ถ้ายังไม่ได้ตั้งสายการอนุมัติ ฝ่ายบุคคล/แอดมินเป็นผู้อนุมัติ)
 /// </summary>
 public class GeneralRequestService : IGeneralRequestService

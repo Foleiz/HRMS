@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Hrms.Api.Controllers;
 
 /// <summary>
-/// API คำขออื่นๆ (General Requests) — ยื่นคำขอทั่วไปถึงฝ่ายบุคคลผ่านสายการอนุมัติ
+/// API คำขอเอกสารทั่วไป (General Requests) — ยื่นคำขอทั่วไปถึงฝ่ายบุคคลผ่านสายการอนุมัติ
 /// </summary>
 [ApiController]
 [Route("api/general-requests")]
