@@ -112,6 +112,8 @@ public class GeneralRequestService : IGeneralRequestService
             RequestedAt = DateTime.UtcNow
         };
 
+        // ประเภทเอกสารกำหนดอายุไว้ แต่ไม่ได้ระบุวันหมดอายุ → คำนวณจากวันที่ออก
+        request.ExpiryDate = DocumentExpiry.ResolveExpiry(request.IssueDate, request.ExpiryDate, masterType);
         if (masterType is { IsExpiryRequired: true } && !request.ExpiryDate.HasValue)
             throw new ValidationException($"เอกสารประเภท \"{masterType.DocumentName}\" ต้องระบุวันหมดอายุ");
         if (request.IssueDate.HasValue && request.ExpiryDate.HasValue && request.ExpiryDate < request.IssueDate)

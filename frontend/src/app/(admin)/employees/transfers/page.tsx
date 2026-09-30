@@ -227,6 +227,7 @@ export default function TransfersPage() {
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', active: true, show: canViewTransfers },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
+    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewProfile },
   ].filter((t) => t.show);
 
   if (!canViewTransfers) {

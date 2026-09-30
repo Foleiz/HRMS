@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Loader2,
   Inbox,
-  AlertCircle
+  AlertCircle,
+  FileClock,
 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { NotificationItem } from '@/types/notification';
@@ -113,6 +114,9 @@ export const NotificationBell: React.FC = () => {
     if (t.includes('TIME') || t.includes('ATTENDANCE')) {
       return <Clock className="w-4 h-4 text-purple-600" />;
     }
+    if (t.includes('DOCUMENT_EXPIRY')) {
+      return <FileClock className="w-4 h-4 text-orange-600" />;
+    }
     return <AlertCircle className="w-4 h-4 text-slate-600" />;
   };
 
@@ -123,6 +127,7 @@ export const NotificationBell: React.FC = () => {
     if (t.includes('ANNOUNCEMENT')) return 'bg-amber-50';
     if (t.includes('PAYROLL')) return 'bg-indigo-50';
     if (t.includes('TIME') || t.includes('ATTENDANCE')) return 'bg-purple-50';
+    if (t.includes('DOCUMENT_EXPIRY')) return 'bg-orange-50';
     return 'bg-slate-100';
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -85,7 +85,11 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user' | 'documents'>('personal');
+  const searchParams = useSearchParams();
+  // เปิดแท็บเอกสารได้โดยตรงจากลิงก์ เช่น /employees/5?tab=documents
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user' | 'documents'>(() =>
+    searchParams.get('tab') === 'documents' ? 'documents' : 'personal'
+  );
   const { hasRole } = useAuth();
   const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
 

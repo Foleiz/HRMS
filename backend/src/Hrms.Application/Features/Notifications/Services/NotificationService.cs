@@ -188,6 +188,11 @@ public class NotificationService : INotificationService
             return refType == "TRANSFER_REQUEST" ? "/employees/transfers" : "/approvals/leave-requests";
         if (type == "REQUEST_RESULT")
             return refType == "TRANSFER_REQUEST" ? "/employees/transfers" : "/documents/history";
+        // เอกสารพนักงานใกล้หมดอายุ: ฝ่ายบุคคล → หน้ารวม, เจ้าของเอกสาร → โปรไฟล์
+        if (type == "DOCUMENT_EXPIRY_HR")
+            return "/employees/documents";
+        if (type == "DOCUMENT_EXPIRY")
+            return "/profile";
 
         return refType switch
         {

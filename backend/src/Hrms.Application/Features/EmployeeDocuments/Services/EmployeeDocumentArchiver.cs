@@ -54,6 +54,7 @@ public static class EmployeeDocumentArchiver
 
         var type = await ResolveDocumentTypeAsync(context, request, cancellationToken);
         document.Remarks = BuildRemarks(request, type);
+        document.ExpiryDate = DocumentExpiry.ResolveExpiry(document.IssuedDate, document.ExpiryDate, type);
         if (type.Id > 0) document.DocumentTypeId = type.Id;
         else document.DocumentType = type;
 

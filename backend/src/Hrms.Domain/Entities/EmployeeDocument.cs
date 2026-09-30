@@ -26,6 +26,11 @@ public class EmployeeDocument : BaseEntity
     /// <summary>คำขอเอกสารทั่วไปต้นทาง (ถ้าคัดลอกมาจากคำขอที่อนุมัติแล้ว)</summary>
     public long? SourceGeneralRequestId { get; set; }
 
+    /// <summary>แจ้งเตือน "ใกล้หมดอายุ" ไปแล้วเมื่อ (กันแจ้งซ้ำ)</summary>
+    public DateTime? ExpiryWarningNotifiedAt { get; set; }
+    /// <summary>แจ้งเตือน "หมดอายุแล้ว" ไปแล้วเมื่อ (กันแจ้งซ้ำ)</summary>
+    public DateTime? ExpiredNotifiedAt { get; set; }
+
     public virtual Employee Employee { get; set; } = null!;
     public virtual DocumentType DocumentType { get; set; } = null!;
     public virtual Employee? UploadedByEmployee { get; set; }

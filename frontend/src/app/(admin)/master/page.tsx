@@ -122,7 +122,7 @@ export default function MasterDataHubPage() {
     setModalMode('create');
     setCurrentId(null);
     if (activeTab === 'document-types') {
-      setDocForm({ documentCode: '', documentName: '', isExpiryRequired: false, status: 'ACTIVE' });
+      setDocForm({ documentCode: '', documentName: '', isExpiryRequired: false, notifyBeforeDays: 30, validityMonths: null, status: 'ACTIVE' });
     } else if (activeTab === 'banks') {
       setBankForm({ bankCode: '', bankName: '', status: 'ACTIVE' });
     } else {
@@ -140,6 +140,8 @@ export default function MasterDataHubPage() {
         documentCode: item.documentCode,
         documentName: item.documentName,
         isExpiryRequired: item.isExpiryRequired,
+        notifyBeforeDays: item.notifyBeforeDays ?? 30,
+        validityMonths: item.validityMonths ?? null,
         status: item.status,
       });
     } else if (activeTab === 'nationalities') {
@@ -171,6 +173,8 @@ export default function MasterDataHubPage() {
           await masterDataService.updateDocumentType(currentId, {
             documentName: docForm.documentName,
             isExpiryRequired: !!docForm.isExpiryRequired,
+            notifyBeforeDays: docForm.notifyBeforeDays ?? 30,
+            validityMonths: docForm.validityMonths || null,
             status: docForm.status || 'ACTIVE',
           });
           toast.success('อัปเดตประเภทเอกสารแนบสำเร็จ');
@@ -374,6 +378,8 @@ export default function MasterDataHubPage() {
                   <th className="py-3 px-4">รหัสประเภทเอกสาร</th>
                   <th className="py-3 px-4">ชื่อประเภทเอกสาร</th>
                   <th className="py-3 px-4 text-center">ต้องระบุวันหมดอายุ</th>
+                  <th className="py-3 px-4 text-center">อายุเอกสาร</th>
+                  <th className="py-3 px-4 text-center">แจ้งเตือนล่วงหน้า</th>
                   <th className="py-3 px-4 text-center">สถานะ</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
                 </tr>
@@ -381,7 +387,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredDocTypes.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
+                    <td colSpan={8} className="py-8 text-center text-slate-400">
                       ไม่พบข้อมูลประเภทเอกสารแนบ
                     </td>
                   </tr>
@@ -404,6 +410,10 @@ export default function MasterDataHubPage() {
                           <span className="text-slate-400 text-[11px]">-</span>
                         )}
                       </td>
+                      <td className="py-3.5 px-4 text-center text-slate-600">
+                        {item.validityMonths ? `${item.validityMonths} เดือน` : <span className="text-slate-400 text-[11px]">-</span>}
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-slate-600">{item.notifyBeforeDays ?? 30} วัน</td>
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
@@ -705,6 +715,39 @@ export default function MasterDataHubPage() {
                     <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 cursor-pointer select-none">
                       เอกสารนี้ต้องระบุวันหมดอายุ
                     </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">อายุเอกสาร (เดือน)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={600}
+                        value={docForm.validityMonths ?? ''}
+                        onChange={(e) =>
+                          setDocForm({ ...docForm, validityMonths: e.target.value ? Number(e.target.value) : null })
+                        }
+                        placeholder="ไม่กำหนด"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">แจ้งเตือนล่วงหน้า (วัน) *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        required
+                        value={docForm.notifyBeforeDays ?? ''}
+                        onChange={(e) =>
+                          setDocForm({ ...docForm, notifyBeforeDays: e.target.value ? Number(e.target.value) : null })
+                        }
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">แจ้งพนักงานและฝ่ายบุคคลก่อนหมดอายุ</p>
+                    </div>
                   </div>
 
                   <div>

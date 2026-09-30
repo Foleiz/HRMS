@@ -3,6 +3,10 @@ export interface DocumentTypeItem {
   documentCode: string;
   documentName: string;
   isExpiryRequired: boolean;
+  /** แจ้งเตือนล่วงหน้า (วัน) ก่อนเอกสารหมดอายุ */
+  notifyBeforeDays: number;
+  /** อายุเอกสาร (เดือน) — ใช้คำนวณวันหมดอายุจากวันที่ออก */
+  validityMonths?: number | null;
   status: 'ACTIVE' | 'INACTIVE';
 }
 
@@ -10,12 +14,16 @@ export interface CreateDocumentTypeRequest {
   documentCode: string;
   documentName: string;
   isExpiryRequired?: boolean;
+  notifyBeforeDays?: number | null;
+  validityMonths?: number | null;
   status?: string;
 }
 
 export interface UpdateDocumentTypeRequest {
   documentName: string;
   isExpiryRequired: boolean;
+  notifyBeforeDays?: number | null;
+  validityMonths?: number | null;
   status: string;
 }
 

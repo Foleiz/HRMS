@@ -9,4 +9,6 @@ public interface IEmployeeDocumentService
     Task<EmployeeDocumentDto> UploadAsync(long employeeId, CreateEmployeeDocumentDto dto, CancellationToken cancellationToken = default);
     Task<EmployeeDocumentFile> GetFileAsync(long id, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
+    /// <summary>เอกสารใกล้หมดอายุ / หมดอายุแล้วของพนักงานทุกคน (ฝ่ายบุคคล)</summary>
+    Task<List<EmployeeDocumentDto>> GetExpiringAsync(string? status, CancellationToken cancellationToken = default);
 }
