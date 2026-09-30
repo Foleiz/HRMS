@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
-import { leaveService } from '@/services/leaveService';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -80,14 +79,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
     } else {
-      // รหัสสร้างอัตโนมัติ — แสดงรหัสที่จะได้ไว้ให้ดูเฉยๆ
       setLeaveCode('');
-      if (isOpen) {
-        leaveService
-          .getNextLeaveTypeCode()
-          .then((code) => setLeaveCode(code))
-          .catch(() => setLeaveCode(''));
-      }
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
@@ -153,34 +145,23 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>}
 
-          {/* ชื่อ + รหัส */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-            <div className="sm:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">ชื่อประเภทการลา *</label>
-              <input
-                type="text"
-                placeholder="เช่น ลาพักร้อน"
-                value={leaveName}
-                onChange={(e) => setLeaveName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">รหัส</label>
-              <input
-                type="text"
-                disabled
-                placeholder="สร้างอัตโนมัติ"
-                value={leaveCode}
-                readOnly
-                className="w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono bg-gray-50 text-gray-500 border-gray-200"
-              />
-            </div>
+          {/* ชื่อประเภทการลา (รหัสระบบสร้างให้อัตโนมัติ ไม่ต้องแสดงตอนเพิ่ม) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">ชื่อประเภทการลา *</label>
+            <input
+              type="text"
+              placeholder="เช่น ลาพักร้อน"
+              value={leaveName}
+              onChange={(e) => setLeaveName(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              required
+            />
+            {isEditing && leaveCode && (
+              <p className="mt-1.5 text-xs text-gray-400">
+                รหัส <span className="font-mono">{leaveCode}</span>
+              </p>
+            )}
           </div>
-          <p className="-mt-3 text-xs text-gray-400">
-            {isEditing ? 'รหัสใช้อ้างอิงในระบบ แก้ไขไม่ได้' : 'ระบบสร้างรหัสให้อัตโนมัติเมื่อบันทึก'}
-          </p>
 
           {/* หมวดแบบฟอร์ม */}
           <div>
