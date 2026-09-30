@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Ban,
   GitMerge,
-  Compass,
   Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
@@ -37,9 +36,7 @@ import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { WorkflowSimulatorView } from './WorkflowSimulatorView';
 
-type SubTab = 'flows' | 'simulator';
 
 const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
 /** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
@@ -108,7 +105,6 @@ export const ApprovalFlowsTab: React.FC = () => {
   const { success, error } = useToast();
 
   // Active Sub-Tab
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('flows');
 
   // === Reference Data ===
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -420,42 +416,10 @@ export const ApprovalFlowsTab: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* 1. Sub-Tab Switcher Pills (Rule #10 Pure Thai) */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('flows')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === 'flows'
-              ? 'bg-white text-[#0B2046] shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <GitMerge className="w-4 h-4 text-[#0B2046]" />
-          <span>ผังสายการอนุมัติ</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600">
-            {flows.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('simulator')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === 'simulator'
-              ? 'bg-white text-[#0B2046] shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <Compass className="w-4 h-4 text-[#0B2046]" />
-          <span>ทดสอบจำลองสายการอนุมัติ</span>
-        </button>
-      </div>
-
       {/* ========================================================================= */}
-      {/* SUB-TAB 1: ผังสายการอนุมัติ (Workflow Templates) */}
+      {/* ผังสายการอนุมัติ (Workflow Templates) */}
       {/* ========================================================================= */}
-      {activeSubTab === 'flows' && (
+      {(
         <div className="space-y-6">
           {/* Top Filter & Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -583,10 +547,22 @@ export const ApprovalFlowsTab: React.FC = () => {
                         </div>
                       ) : (
                         <div className="flex items-center flex-wrap gap-2.5">
+                          {/* จุดเริ่มต้น: ผู้ยื่นคำขอ */}
+                          <div className="flex items-center gap-3 bg-white border border-dashed border-slate-300 rounded-xl px-4 py-2.5">
+                            <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                              <Users className="w-3 h-3" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-slate-700">จุดเริ่มต้น</div>
+                              <div className="text-[10px] text-slate-400 font-medium mt-0.5">ผู้ยื่นคำขอ</div>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+
                           {flow.steps
                             .slice()
                             .sort((a, b) => a.stepNo - b.stepNo)
-                            .map((step, idx, arr) => (
+                            .map((step) => (
                               <React.Fragment key={step.id}>
                                 <div className="flex items-center gap-3 bg-slate-50/90 border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
                                   <div className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
@@ -602,11 +578,18 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {idx < arr.length - 1 && (
-                                  <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
-                                )}
+                                <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
                               </React.Fragment>
                             ))}
+
+                          {/* จุดสิ้นสุด: อนุมัติครบทุกขั้น */}
+                          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-emerald-700">อนุมัติเสร็จสมบูรณ์</div>
+                              <div className="text-[10px] text-emerald-600/80 font-medium mt-0.5">เอกสารมีผล</div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -671,13 +654,6 @@ export const ApprovalFlowsTab: React.FC = () => {
             </div>
           )}
         </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-TAB 2: ทดสอบจำลองสายการอนุมัติ (Workflow Simulator) */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'simulator' && (
-        <WorkflowSimulatorView employees={employees} />
       )}
 
       {/* ========================================================================= */}
