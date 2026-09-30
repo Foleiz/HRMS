@@ -192,7 +192,7 @@ public class AttendanceImportController : ControllerBase
     }
 
     /// <summary>
-    /// ยกเลิกและลบชุดข้อมูลนำเข้า (Revert / Delete Import Batch) พร้อม Rollback ข้อมูลในหน้าตรวจบันทึกเวลา
+    /// ยกเลิกชุดข้อมูลนำเข้า (Revert) — ไม่ลบถาวร: คืนสถานะวันทำงาน, เก็บคำขอแก้ไขเวลา, คำนวณสรุปรายเดือนใหม่, ห้ามถ้างวดเงินเดือนล็อกแล้ว
     /// </summary>
     [HttpDelete("batches/{id}")]
     public async Task<IActionResult> RevertBatch(long id, CancellationToken cancellationToken)
@@ -212,6 +212,11 @@ public class AttendanceImportController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<RevertBatchResultDto>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            // ยกเลิกไม่ได้ตามเงื่อนไข เช่น งวดเงินเดือนล็อกแล้ว / ยกเลิกไปแล้ว
+            return BadRequest(ApiResponse<RevertBatchResultDto>.Fail(ex.Message));
         }
         catch (Exception ex)
         {

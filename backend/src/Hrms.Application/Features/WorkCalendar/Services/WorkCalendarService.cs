@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.WorkCalendar.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class WorkCalendarService : IWorkCalendarService
 {
     private readonly IHrmsDbContext _context;
     private readonly ILogger<WorkCalendarService> _logger;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
     private static readonly (string thai, string eng)[] DayNames = new[]
     {
@@ -27,10 +29,28 @@ public class WorkCalendarService : IWorkCalendarService
         ("วันเสาร์", "Saturday")
     };
 
-    public WorkCalendarService(IHrmsDbContext context, ILogger<WorkCalendarService> logger)
+    public WorkCalendarService(IHrmsDbContext context, ILogger<WorkCalendarService> logger, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
         _logger = logger;
+        _attendanceDailyService = attendanceDailyService;
+    }
+
+    /// <summary>
+    /// หลังเปลี่ยนวัน/เวลาทำงานหรือวันหยุดประจำปี: คำนวณข้อมูลเวลาเข้า-ออก (สาย/ออกก่อน/ขาด/วันหยุด) และสรุปรายเดือนใหม่อัตโนมัติ
+    /// ถ้าคำนวณไม่สำเร็จ ไม่ทำให้การบันทึกการตั้งค่าล้ม
+    /// </summary>
+    private async Task RefreshAttendanceAsync()
+    {
+        try
+        {
+            var changed = await _attendanceDailyService.ApplyCompanyScheduleAsync();
+            if (changed > 0) _logger.LogInformation("คำนวณข้อมูลเวลาใหม่ตามการตั้งค่าวันทำงาน/วันหยุด {Count} รายการ", changed);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "คำนวณข้อมูลเวลาใหม่ตามการตั้งค่าวันทำงาน/วันหยุดไม่สำเร็จ");
+        }
     }
 
     private static string GetHolidayTypeThai(string type) => type switch
@@ -129,6 +149,7 @@ public class WorkCalendarService : IWorkCalendarService
         }
 
         await _context.SaveChangesAsync();
+        await RefreshAttendanceAsync();
         return await GetWorkWeekAsync(targetCompanyId);
     }
 
@@ -204,6 +225,7 @@ public class WorkCalendarService : IWorkCalendarService
 
         _context.Holidays.Add(holiday);
         await _context.SaveChangesAsync();
+        await RefreshAttendanceAsync();
 
         return new HolidayDto
         {
@@ -242,6 +264,7 @@ public class WorkCalendarService : IWorkCalendarService
         holiday.HolidayType = string.IsNullOrWhiteSpace(request.HolidayType) ? "PUBLIC" : request.HolidayType.Trim();
 
         await _context.SaveChangesAsync();
+        await RefreshAttendanceAsync();
 
         return new HolidayDto
         {
@@ -261,6 +284,7 @@ public class WorkCalendarService : IWorkCalendarService
 
         _context.Holidays.Remove(holiday);
         await _context.SaveChangesAsync();
+        await RefreshAttendanceAsync();
         return true;
     }
 }

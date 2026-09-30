@@ -353,6 +353,109 @@ public class AttendanceDailyService : IAttendanceDailyService
         return MapToDto(record, assign);
     }
 
+    private static readonly string[] LockedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+    private static readonly string[] NoTimeStatuses = { "ABSENT", "OFF", "HOLIDAY", "PENDING" };
+
+    /// <summary>
+    /// คำนวณข้อมูลเวลาใหม่ตามวัน/เวลาทำงานปกติของบริษัทและวันหยุดประจำปี (เรียกอัตโนมัติหลังบันทึกการตั้งค่า)
+    /// - พนักงานที่ไม่มีกะ: อัปเดตเวลาเข้า-เลิกตามตาราง แล้วคำนวณสาย/ออกก่อน/ชั่วโมงทำงานใหม่
+    /// - วันที่ไม่มีเวลาเข้า-ออก: ปรับสถานะ วันหยุด / วันหยุดประจำสัปดาห์ / ขาด / รอ ให้ตรงการตั้งค่า (ไม่แตะวันลา)
+    /// - ข้ามเดือนที่งวดเงินเดือนอนุมัติ/จ่าย/ปิดแล้ว, แล้วคำนวณสรุปรายเดือนของเดือนที่เปลี่ยนใหม่
+    /// คืนจำนวนรายการที่เปลี่ยน
+    /// </summary>
+    public async Task<int> ApplyCompanyScheduleAsync(CancellationToken cancellationToken = default)
+    {
+        var schedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+
+        var lockedMonths = (await _context.PayrollPeriods.AsNoTracking()
+                .Where(p => LockedPayrollStatuses.Contains(p.Status))
+                .Select(p => new { p.Year, p.Month })
+                .ToListAsync(cancellationToken))
+            .Select(p => (p.Year, p.Month))
+            .ToHashSet();
+
+        var holidays = (await _context.Holidays.AsNoTracking()
+                .Where(h => h.CompanyId == CompanyWorkSchedule.DefaultCompanyId)
+                .Select(h => h.HolidayDate)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        // วันทำงานของพนักงานที่มีกะ (ใช้ตัดสินสถานะวันที่ไม่มีเวลา)
+        var shifts = await _context.EmployeeShifts.AsNoTracking().ToListAsync(cancellationToken);
+
+        var records = await _context.AttendanceDailies
+            .Where(a => a.Status != "LEAVE" && (a.ShiftId == null || (a.ActualIn == null && a.ActualOut == null)))
+            .ToListAsync(cancellationToken);
+
+        var today = DateOnly.FromDateTime(ToThaiLocalTime(DateTime.UtcNow));
+        var changedMonths = new HashSet<(int Year, int Month)>();
+        var changed = 0;
+
+        foreach (var r in records)
+        {
+            if (lockedMonths.Contains((r.WorkDate.Year, r.WorkDate.Month))) continue;
+
+            var before = (r.ScheduledStart, r.ScheduledEnd, r.Status, r.LateMinutes, r.EarlyLeaveMinutes, r.WorkedMinutes, r.IsAbsent);
+            var hasTimes = r.ActualIn != null || r.ActualOut != null;
+
+            if (r.ShiftId == null)
+            {
+                schedule.PopulateScheduledTimes(r, r.WorkDate);
+                if (hasTimes)
+                {
+                    r.IsAbsent = false;
+                    RecalculateAttendance(r);
+                }
+            }
+
+            if (!hasTimes && NoTimeStatuses.Contains(r.Status))
+            {
+                bool isWorkDay;
+                if (r.ShiftId == null)
+                {
+                    isWorkDay = schedule.IsWorkingDay(r.WorkDate);
+                }
+                else
+                {
+                    var es = shifts
+                        .Where(s => s.EmployeeId == r.EmployeeId && s.EffectiveFrom <= r.WorkDate && (s.EffectiveTo == null || s.EffectiveTo >= r.WorkDate))
+                        .OrderByDescending(s => s.EffectiveFrom)
+                        .FirstOrDefault();
+                    isWorkDay = es != null
+                        ? (es.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains((int)r.WorkDate.DayOfWeek)
+                        : schedule.IsWorkingDay(r.WorkDate);
+                }
+
+                if (holidays.Contains(r.WorkDate)) { r.Status = "HOLIDAY"; r.IsAbsent = false; }
+                else if (!isWorkDay) { r.Status = "OFF"; r.IsAbsent = false; }
+                else if (r.WorkDate < today) { r.Status = "ABSENT"; r.IsAbsent = true; }
+                else { r.Status = "PENDING"; r.IsAbsent = false; }
+            }
+
+            if (before != (r.ScheduledStart, r.ScheduledEnd, r.Status, r.LateMinutes, r.EarlyLeaveMinutes, r.WorkedMinutes, r.IsAbsent))
+            {
+                changed++;
+                changedMonths.Add((r.WorkDate.Year, r.WorkDate.Month));
+            }
+        }
+
+        if (changed == 0) return 0;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        foreach (var (year, month) in changedMonths.OrderBy(m => m.Year).ThenBy(m => m.Month))
+        {
+            try
+            {
+                await ProcessMonthlyAttendanceSummaryAsync(year, month, cancellationToken);
+            }
+            catch
+            {
+                // ไม่ให้เดือนใดเดือนหนึ่งทำให้ทั้งหมดล้ม
+            }
+        }
+        return changed;
+    }
+
     public async Task<int> CalculateDailyAttendanceForDateAsync(DateOnly date, CancellationToken cancellationToken = default)
     {
         return await EnsureAttendanceRecordsForDateAsync(date, cancellationToken);
@@ -391,6 +494,9 @@ public class AttendanceDailyService : IAttendanceDailyService
                 .GroupBy(es => es.EmployeeId)
                 .ToDictionary(g => g.Key, g => g.First());
 
+            // วัน/เวลาทำงานปกติของบริษัท — ใช้กับพนักงานที่ไม่มีกะ
+            var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+
             int countNew = 0;
             int dayOfWeekInt = (int)date.DayOfWeek; // 0=Sun, 1=Mon, ..., 6=Sat
 
@@ -409,6 +515,15 @@ public class AttendanceDailyService : IAttendanceDailyService
                             {
                                 RecalculateAttendance(existingRecord, esMatch.Shift);
                             }
+                        }
+                    }
+                    else if (existingRecord.ShiftId == null && existingRecord.ScheduledStart == null)
+                    {
+                        // ไม่มีกะ และยังไม่มีเวลาตามตาราง → ใช้เวลาทำงานปกติของบริษัท
+                        companySchedule.PopulateScheduledTimes(existingRecord, date);
+                        if (existingRecord.ScheduledStart != null && (existingRecord.ActualIn != null || existingRecord.ActualOut != null) && existingRecord.Status != "LEAVE")
+                        {
+                            RecalculateAttendance(existingRecord);
                         }
                     }
                     continue;
@@ -461,8 +576,9 @@ public class AttendanceDailyService : IAttendanceDailyService
                 }
                 else
                 {
-                    // Standard default Monday-Friday check
-                    if (dayOfWeekInt == 0 || dayOfWeekInt == 6)
+                    // ไม่มีกะ → ใช้วัน/เวลาทำงานปกติของบริษัท (เมนูวันทำงานประจำสัปดาห์)
+                    companySchedule.PopulateScheduledTimes(newRecord, date);
+                    if (!companySchedule.IsWorkingDay(date))
                     {
                         newRecord.Status = "OFF";
                         newRecord.IsAbsent = false;

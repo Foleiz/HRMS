@@ -22,9 +22,13 @@ public class AttendanceImportBatch : BaseEntity
     public int? TotalRecords { get; set; } = 0;
     public int? SuccessRecords { get; set; } = 0;
     public int? FailedRecords { get; set; } = 0;
-    public string Status { get; set; } = "IMPORTED"; // IMPORTED, PARTIAL, FAILED
+    public string Status { get; set; } = "IMPORTED"; // IMPORTED, PARTIAL, FAILED, REVERTED (ยกเลิกแล้ว)
 
     // Navigation Properties
+    public DateTime? RevertedAt { get; set; }
+    public long? RevertedByUserId { get; set; }
+
     public virtual UserAccount? ImportedByUser { get; set; }
+    public virtual UserAccount? RevertedByUser { get; set; }
     public virtual ICollection<AttendanceImportError> Errors { get; set; } = new List<AttendanceImportError>();
 }

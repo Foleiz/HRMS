@@ -409,6 +409,8 @@ export default function WorkCalendarPage() {
             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
               <span className="text-xs text-slate-400">
                 คลิกที่การ์ดประจำวันเพื่อสลับระหว่างวันทำงานปกติกับวันหยุดประจำสัปดาห์
+                <br />
+                ใช้กับพนักงานที่ไม่ได้ผูกกะ — บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
               </span>
 
               <button

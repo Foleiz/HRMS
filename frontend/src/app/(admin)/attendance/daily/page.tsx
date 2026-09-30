@@ -414,7 +414,7 @@ function DailyAttendanceContent() {
       setBatches(res.items);
       setBatchTotalPages(res.totalPages);
       setBatchTotalCount(res.totalCount);
-      const valid = res.items.filter((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED');
+      const valid = res.items.filter((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED' && b.status !== 'REVERTED');
       if (valid.length > 0) {
         setHasAnyBatch(true);
       } else if (res.totalCount === 0) {
@@ -439,7 +439,7 @@ function DailyAttendanceContent() {
       try {
         const res = await attendanceImportService.getBatches({ page: 1, pageSize: 10 });
         if (res.items && res.items.length > 0) {
-          const validBatch = res.items.find((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED');
+          const validBatch = res.items.find((b) => b.dateFrom && b.dateTo && b.status !== 'FAILED' && b.status !== 'REVERTED');
           if (validBatch && validBatch.dateFrom && validBatch.dateTo) {
             setHasAnyBatch(true);
             setAllowedDateRange({
@@ -798,10 +798,10 @@ function DailyAttendanceContent() {
       if (res.success) {
         const successMsg =
           res.message ||
-          `ยกเลิกและลบชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) พร้อมข้อมูลบันทึกเวลาเรียบร้อยแล้ว`;
+          `ยกเลิกชุดข้อมูล #${batchToRevert.id} (${batchToRevert.fileName}) เรียบร้อยแล้ว`;
         toast.success(successMsg);
         if (allowedDateRange.batchId === batchToRevert.id) {
-          const remaining = batches.filter((b) => b.id !== batchToRevert.id && b.status !== 'FAILED');
+          const remaining = batches.filter((b) => b.id !== batchToRevert.id && b.status !== 'FAILED' && b.status !== 'REVERTED');
           if (remaining.length > 0 && remaining[0].dateFrom && remaining[0].dateTo) {
             setHasAnyBatch(true);
             setAllowedDateRange({
@@ -1129,6 +1129,13 @@ function DailyAttendanceContent() {
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
             <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
             ล้มเหลว
+          </span>
+        );
+      case 'REVERTED':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+            <XCircle className="w-3.5 h-3.5 text-slate-400" />
+            ยกเลิกแล้ว
           </span>
         );
       default:
@@ -2012,6 +2019,7 @@ function DailyAttendanceContent() {
                   <option value="IMPORTED">สำเร็จครบถ้วน</option>
                   <option value="PARTIAL">สำเร็จบางส่วน</option>
                   <option value="FAILED">ล้มเหลว</option>
+                  <option value="REVERTED">ยกเลิกแล้ว</option>
                 </select>
 
                 <button
@@ -2104,13 +2112,20 @@ function DailyAttendanceContent() {
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {getBatchStatusBadge(batch.status)}
+                          {batch.status === 'REVERTED' && batch.revertedAt && (
+                            <div className="text-2xs text-slate-400 mt-1">
+                              {new Date(batch.revertedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                              {batch.revertedByUserName ? ` โดย ${batch.revertedByUserName}` : ''}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                           {batch.importedByUserName || 'ระบบอัตโนมัติ'}
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
-                            {batch.failedRecords > 0 && (
+                            {batch.status === 'REVERTED' && <span className="text-2xs text-slate-400">—</span>}
+                            {batch.status !== 'REVERTED' && batch.failedRecords > 0 && (
                               <button
                                 onClick={() => handleOpenErrors(batch)}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
@@ -2119,6 +2134,8 @@ function DailyAttendanceContent() {
                                 ดูข้อผิดพลาด
                               </button>
                             )}
+                            {batch.status !== 'REVERTED' && (
+                            <>
                             <button
                               onClick={() => handleOpenTimeReview(batch)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
@@ -2130,11 +2147,13 @@ function DailyAttendanceContent() {
                             <button
                               onClick={() => handleOpenRevertModal(batch)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
-                              title="ยกเลิกการนำเข้าและลบข้อมูลเวลานี้ออกจากระบบ"
+                              title="ยกเลิกการนำเข้า: ล้างเวลาจากไฟล์นี้และคืนสถานะวันทำงาน"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              ลบชุดข้อมูล
+                              ยกเลิกชุดข้อมูล
                             </button>
+                            </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -3280,7 +3299,7 @@ function DailyAttendanceContent() {
                 <Trash2 className="w-6 h-6 text-rose-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">ยืนยันยกเลิกและลบชุดข้อมูลนำเข้า?</h3>
+                <h3 className="text-base font-bold text-slate-900">ยืนยันยกเลิกชุดข้อมูลนำเข้า?</h3>
                 <p className="text-xs text-slate-500">ชุดข้อมูล #{batchToRevert.id}</p>
               </div>
             </div>
@@ -3311,10 +3330,14 @@ function DailyAttendanceContent() {
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5 mb-5">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-rose-900">คำเตือนผลกระทบ (Rollback):</p>
-                <p className="text-rose-700 mt-0.5 leading-relaxed">
-                  ระบบจะทำการลบข้อมูลเวลาเข้า-ออกงานของพนักงานทั้งหมดที่เกิดจากไฟล์นี้ออกจากหน้า <strong>ตรวจบันทึกเวลา</strong> พร้อมทั้งลบประวัติและปลดล็อกไฟล์เพื่อให้สามารถนำเข้าไฟล์ใหม่ได้
-                </p>
+                <p className="font-bold text-rose-900">ผลของการยกเลิก:</p>
+                <ul className="text-rose-700 mt-0.5 leading-relaxed list-disc pl-4 space-y-0.5">
+                  <li>เวลาเข้า-ออกที่มาจากไฟล์นี้จะถูกล้าง วันเหล่านั้นกลับเป็น ลา / วันหยุด / ขาดงาน ตามข้อมูลในระบบ</li>
+                  <li>คำขอแก้ไขเวลาที่อนุมัติแล้วยังอยู่ และระบบจะใช้เวลาที่อนุมัติแทน</li>
+                  <li>สรุปรายเดือนจะคำนวณใหม่ (ถ้าเดือนนั้นคำนวณเงินเดือนไว้แล้ว ต้องคำนวณใหม่)</li>
+                  <li>ยกเลิกไม่ได้ ถ้างวดเงินเดือนของเดือนนั้นอนุมัติหรือจ่ายไปแล้ว</li>
+                  <li>ชุดนี้ยังอยู่ในประวัติเป็น &quot;ยกเลิกแล้ว&quot; และนำเข้าไฟล์เดิมใหม่ได้</li>
+                </ul>
               </div>
             </div>
 
@@ -3339,12 +3362,12 @@ function DailyAttendanceContent() {
                 {isRevertingBatch ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    กำลังลบและ Rollback...
+                    กำลังยกเลิก...
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4" />
-                    ยืนยันลบและ Rollback ข้อมูล
+                    ยืนยันยกเลิกชุดข้อมูล
                   </>
                 )}
               </button>

@@ -45,7 +45,7 @@ public class AttendanceImportService : IAttendanceImportService
         var existingBatch = await _context.AttendanceImportBatches
             .AsNoTracking()
             .Include(b => b.ImportedByUser)
-            .FirstOrDefaultAsync(b => b.FileHash == fileHash, cancellationToken);
+            .FirstOrDefaultAsync(b => b.FileHash == fileHash && b.Status != RevertedStatus, cancellationToken);
 
         if (existingBatch != null && !allowDuplicate)
         {
@@ -68,7 +68,7 @@ public class AttendanceImportService : IAttendanceImportService
                     new AttendanceImportErrorDto
                     {
                         RowNumber = 0,
-                        ErrorMessage = $"ไฟล์นี้เคยถูกนำเข้าแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id}) หากต้องการนำเข้าใหม่ กรุณากด 'ลบชุดข้อมูล' ในตารางประวัติด้านล่างก่อน",
+                        ErrorMessage = $"ไฟล์นี้เคยถูกนำเข้าแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id}) หากต้องการนำเข้าใหม่ กรุณากด 'ยกเลิกชุดข้อมูล' ในตารางประวัติด้านล่างก่อน",
                         ErrorCode = "DUPLICATE_FILE"
                     }
                 }
@@ -301,7 +301,8 @@ public class AttendanceImportService : IAttendanceImportService
             SuccessRecords = successRecords,
             FailedRecords = failedRecords,
             MinDate = minDate,
-            MaxDate = maxDate
+            MaxDate = maxDate,
+            CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken)
         };
         await ProcessRowsAsync(rowCtx, cancellationToken);
         totalRecords = rowCtx.TotalRecords;
@@ -421,6 +422,8 @@ public class AttendanceImportService : IAttendanceImportService
                 DateTo = b.DateTo.HasValue ? b.DateTo.Value.ToString("yyyy-MM-dd") : null,
                 ImportedByUserId = b.ImportedByUserId,
                 ImportedByUserName = b.ImportedByUser != null ? b.ImportedByUser.Username : null,
+                RevertedAt = b.RevertedAt,
+                RevertedByUserName = b.RevertedByUser != null ? b.RevertedByUser.Username : null,
                 ImportedAt = b.ImportedAt,
                 TotalRecords = b.TotalRecords ?? 0,
                 SuccessRecords = b.SuccessRecords ?? 0,
@@ -443,6 +446,7 @@ public class AttendanceImportService : IAttendanceImportService
         var b = await _context.AttendanceImportBatches
             .AsNoTracking()
             .Include(x => x.ImportedByUser)
+            .Include(x => x.RevertedByUser)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (b == null) return null;
@@ -459,6 +463,8 @@ public class AttendanceImportService : IAttendanceImportService
             DateTo = b.DateTo?.ToString("yyyy-MM-dd"),
             ImportedByUserId = b.ImportedByUserId,
             ImportedByUserName = b.ImportedByUser?.Username,
+            RevertedAt = b.RevertedAt,
+            RevertedByUserName = b.RevertedByUser?.Username,
             ImportedAt = b.ImportedAt,
             TotalRecords = b.TotalRecords ?? 0,
             SuccessRecords = b.SuccessRecords ?? 0,
@@ -694,11 +700,12 @@ public class AttendanceImportService : IAttendanceImportService
 
         int matched = 0;
         DateOnly? affectedFrom = null, affectedTo = null;
+        var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
         foreach (var group in matches.GroupBy(m => m.ImportBatchId))
         {
             var batch = await _context.AttendanceImportBatches.FirstOrDefaultAsync(b => b.Id == group.Key, cancellationToken);
-            if (batch?.FileData == null || batch.FileData.Length == 0) continue;
+            if (batch?.FileData == null || batch.FileData.Length == 0 || batch.Status == RevertedStatus) continue;
 
             List<IDictionary<string, object?>> allRawRows;
             try
@@ -731,7 +738,8 @@ public class AttendanceImportService : IAttendanceImportService
                 IsDailySummary = IsDailySummaryFormat(allRawRows),
                 DailyDict = new(),
                 BulkPreloaded = false,
-                TotalRecords = rows.Count
+                TotalRecords = rows.Count,
+                CompanySchedule = companySchedule
             };
             await ProcessRowsAsync(ctx, cancellationToken);
 
@@ -999,6 +1007,8 @@ public class AttendanceImportService : IAttendanceImportService
         public int FailedRecords { get; set; }
         public DateOnly? MinDate { get; set; }
         public DateOnly? MaxDate { get; set; }
+        /// <summary>วัน/เวลาทำงานปกติของบริษัท — ใช้กับพนักงานที่ไม่มีกะ</summary>
+        public CompanyWorkSchedule CompanySchedule { get; init; } = CompanyWorkSchedule.Default();
     }
 
     /// <summary>ประมวลผลแถวข้อมูลเวลา → AttendanceDaily (ตรรกะเดียวกับการนำเข้าไฟล์เดิมทุกประการ)</summary>
@@ -1016,6 +1026,7 @@ public class AttendanceImportService : IAttendanceImportService
         var bulkPreloaded = ctx.BulkPreloaded;
         var errorsList = ctx.ErrorsList;
         var errorDtos = ctx.ErrorDtos;
+        var companySchedule = ctx.CompanySchedule;
         int totalRecords = ctx.TotalRecords;
         int successRecords = ctx.SuccessRecords;
         int failedRecords = ctx.FailedRecords;
@@ -1196,6 +1207,11 @@ public class AttendanceImportService : IAttendanceImportService
                             dailyRecord.ShiftId = shift.Id;
                             AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
                         }
+                        else
+                        {
+                            // ไม่มีกะ → ใช้เวลาทำงานปกติของบริษัท
+                            companySchedule.PopulateScheduledTimes(dailyRecord, workDate);
+                        }
 
                         _context.AttendanceDailies.Add(dailyRecord);
                     }
@@ -1346,6 +1362,10 @@ public class AttendanceImportService : IAttendanceImportService
                         punchDailyRecord.ShiftId = shift.Id;
                         AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, shift, workDate);
                     }
+                    else
+                    {
+                        companySchedule.PopulateScheduledTimes(punchDailyRecord, workDate);
+                    }
 
                     _context.AttendanceDailies.Add(punchDailyRecord);
                 }
@@ -1361,6 +1381,11 @@ public class AttendanceImportService : IAttendanceImportService
                 punchDailyRecord.ShiftId = activeShift.Id;
                 punchDailyRecord.Shift = activeShift;
                 AttendanceDailyService.PopulateScheduledTimes(punchDailyRecord, activeShift, workDate);
+            }
+            else if (punchDailyRecord.ShiftId == null)
+            {
+                // ไม่มีกะ → คำนวณสาย/ออกก่อนจากเวลาทำงานปกติของบริษัท
+                companySchedule.PopulateScheduledTimes(punchDailyRecord, workDate);
             }
 
             // Merge punch times (Smart Earliest = In, Latest = Out)
@@ -1649,74 +1674,188 @@ private static string NormalizeHeader(string header)
         return localTime.Hour < 12 ? "IN" : "OUT";
     }
 
+    /// <summary>สถานะงวดเงินเดือนที่ถือว่าล็อกแล้ว — ห้ามยกเลิกชุดนำเข้าที่มีวันในเดือนเหล่านี้</summary>
+    private static readonly string[] LockedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+    public const string RevertedStatus = "REVERTED";
+
+    /// <summary>
+    /// ยกเลิกชุดนำเข้า (ไม่ลบทิ้งแบบถาวร):
+    /// - ห้ามยกเลิกถ้าเดือนที่เกี่ยวข้องมีงวดเงินเดือนที่อนุมัติ/กำลังจ่าย/จ่ายแล้ว/ปิดงวดแล้ว
+    /// - ไม่ลบข้อมูลรายวัน แต่ล้างเฉพาะค่าที่มาจากไฟล์ แล้วคำนวณสถานะวันนั้นใหม่
+    ///   (คำขอแก้ไขเวลาที่อนุมัติแล้ว → ใช้เวลาที่อนุมัติ, วันหยุดบริษัท → HOLIDAY, ไม่ใช่วันทำงาน → OFF,
+    ///    มีใบลาอนุมัติ → LEAVE, วันทำงานที่ผ่านไปแล้ว → ABSENT, ยังไม่ถึง → PENDING)
+    /// - เก็บคำขอแก้ไขเวลาและประวัติการอนุมัติไว้ทั้งหมด
+    /// - คำนวณสรุปรายเดือนของเดือนที่เกี่ยวข้องใหม่
+    /// - ชุดนำเข้าเปลี่ยนสถานะเป็น REVERTED พร้อมผู้ยกเลิก/เวลา (ลบเฉพาะรายการผิดพลาดของชุดนั้น)
+    /// </summary>
     public async Task<RevertBatchResultDto> RevertBatchAsync(
-        long batchId, 
-        long? userId = null, 
+        long batchId,
+        long? userId = null,
         CancellationToken cancellationToken = default)
     {
         var batch = await _context.AttendanceImportBatches
-            .AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
+            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken)
+            ?? throw new KeyNotFoundException($"ไม่พบข้อมูลชุดการนำเข้า ID: {batchId}");
 
-        if (batch == null)
-        {
-            throw new KeyNotFoundException($"ไม่พบข้อมูลชุดการนำเข้า ID: {batchId}");
-        }
+        if (batch.Status == RevertedStatus)
+            throw new InvalidOperationException($"ชุดข้อมูล #{batchId} ถูกยกเลิกไปแล้ว");
 
-        var fileName = batch.FileName;
-
-        // 1. Find AttendanceDaily IDs linked to this batch:
-        // ค้นหาเฉพาะข้อมูล AttendanceDaily ที่นำเข้าโดยชุดข้อมูลนี้ (ImportBatchId == batchId) เท่านั้น
-        var dailyIds = await _context.AttendanceDailies
+        var dailies = await _context.AttendanceDailies
+            .Include(a => a.Shift)
             .Where(a => a.ImportBatchId == batchId)
-            .Select(a => a.Id)
             .ToListAsync(cancellationToken);
 
-        int deletedDailyCount = dailyIds.Count;
-
-        if (dailyIds.Count > 0)
+        // เดือนที่ได้รับผล (จากข้อมูลรายวันจริง + ช่วงวันที่ของชุด)
+        var months = dailies.Select(d => (d.WorkDate.Year, d.WorkDate.Month)).ToHashSet();
+        if (batch.DateFrom.HasValue && batch.DateTo.HasValue && batch.DateFrom <= batch.DateTo)
         {
-            // ตรวจสอบและลบคำขอปรับปรุงเวลา (AttendanceAdjustment) ที่อ้างอิงข้อมูลเวลานี้ เพื่อไม่ให้ติด Foreign Key Constraint
-            var linkedApprovalInstanceIds = await _context.AttendanceAdjustments
-                .Where(adj => dailyIds.Contains(adj.AttendanceId) && adj.ApprovalInstanceId.HasValue)
-                .Select(adj => adj.ApprovalInstanceId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-
-            await _context.AttendanceAdjustments
-                .Where(adj => dailyIds.Contains(adj.AttendanceId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            if (linkedApprovalInstanceIds.Count > 0)
+            var cur = new DateOnly(batch.DateFrom.Value.Year, batch.DateFrom.Value.Month, 1);
+            while (cur <= batch.DateTo.Value)
             {
-                await _context.ApprovalInstances
-                    .Where(ai => linkedApprovalInstanceIds.Contains(ai.Id))
-                    .ExecuteDeleteAsync(cancellationToken);
+                months.Add((cur.Year, cur.Month));
+                cur = cur.AddMonths(1);
             }
-
-            // ลบข้อมูลเวลา AttendanceDaily ด้วย ExecuteDeleteAsync ใน 1 query ตรงไปยัง DB (รวดเร็ว ไม่ timeout)
-            await _context.AttendanceDailies
-                .Where(a => a.ImportBatchId == batchId)
-                .ExecuteDeleteAsync(cancellationToken);
         }
 
-        // 2. Remove errors associated with this batch (รวดเร็วใน 1 query)
+        // 1) ล็อกตามงวดเงินเดือน
+        if (months.Count > 0)
+        {
+            var monthKeys = months.Select(m => m.Year * 100 + m.Month).ToList();
+            var locked = await _context.PayrollPeriods.AsNoTracking()
+                .Where(p => monthKeys.Contains(p.Year * 100 + p.Month) && LockedPayrollStatuses.Contains(p.Status))
+                .Select(p => new { p.Year, p.Month, p.Status })
+                .ToListAsync(cancellationToken);
+            if (locked.Count > 0)
+            {
+                var names = string.Join(", ", locked.OrderBy(p => p.Year).ThenBy(p => p.Month).Select(p => $"{p.Month}/{p.Year + 543}"));
+                throw new InvalidOperationException(
+                    $"ยกเลิกชุดข้อมูลนี้ไม่ได้ เพราะงวดเงินเดือนเดือน {names} อนุมัติหรือจ่ายไปแล้ว — ถ้าจำเป็นต้องแก้ ให้ปรับรายการในงวดถัดไปแทน");
+            }
+        }
+
+        int resetCount = 0, restoredFromAdjustment = 0;
+        if (dailies.Count > 0)
+        {
+            var empIds = dailies.Select(d => d.EmployeeId).Distinct().ToList();
+            var minDate = dailies.Min(d => d.WorkDate);
+            var maxDate = dailies.Max(d => d.WorkDate);
+            var dailyIds = dailies.Select(d => d.Id).ToList();
+
+            // คำขอแก้ไขเวลาที่อนุมัติแล้ว (ล่าสุดต่อวัน) — ใช้เวลาที่อนุมัติแทนเวลาจากไฟล์
+            var approvedAdjustments = (await _context.AttendanceAdjustments.AsNoTracking()
+                    .Where(a => dailyIds.Contains(a.AttendanceId) && a.Status == "APPROVED")
+                    .ToListAsync(cancellationToken))
+                .GroupBy(a => a.AttendanceId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.ReviewedAt ?? a.CreatedAt).First());
+
+            var holidays = (await _context.Holidays.AsNoTracking()
+                    .Where(h => h.HolidayDate >= minDate && h.HolidayDate <= maxDate)
+                    .Select(h => h.HolidayDate)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            var shifts = await _context.EmployeeShifts.AsNoTracking()
+                .Where(es => empIds.Contains(es.EmployeeId) && es.EffectiveFrom <= maxDate && (es.EffectiveTo == null || es.EffectiveTo >= minDate))
+                .ToListAsync(cancellationToken);
+
+            // วันลาที่อนุมัติแล้ว (วันที่ตามเวลาไทย)
+            var rangeStartUtc = DateTime.SpecifyKind(minDate.ToDateTime(TimeOnly.MinValue).AddHours(-7), DateTimeKind.Utc);
+            var rangeEndUtc = DateTime.SpecifyKind(maxDate.AddDays(1).ToDateTime(TimeOnly.MinValue).AddHours(-7), DateTimeKind.Utc);
+            var leaves = await _context.LeaveRequests.AsNoTracking()
+                .Where(r => empIds.Contains(r.EmployeeId) && r.Status == "APPROVED" && r.StartDatetime < rangeEndUtc && r.EndDatetime >= rangeStartUtc)
+                .Select(r => new { r.EmployeeId, r.StartDatetime, r.EndDatetime })
+                .ToListAsync(cancellationToken);
+            var leaveDays = new HashSet<(long, DateOnly)>();
+            foreach (var l in leaves)
+            {
+                var from = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.StartDatetime));
+                var to = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.EndDatetime));
+                for (var d = from; d <= to; d = d.AddDays(1)) leaveDays.Add((l.EmployeeId, d));
+            }
+
+            var today = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
+            var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+
+            foreach (var d in dailies)
+            {
+                // ล้างค่าที่มาจากไฟล์
+                d.ActualIn = null;
+                d.ActualOut = null;
+                d.WorkedMinutes = 0;
+                d.LateMinutes = 0;
+                d.EarlyLeaveMinutes = 0;
+                d.ImportBatchId = null;
+
+                if (approvedAdjustments.TryGetValue(d.Id, out var adj) && (adj.AdjustedClockIn.HasValue || adj.AdjustedClockOut.HasValue))
+                {
+                    if (adj.AdjustedClockIn.HasValue) d.ActualIn = DateTime.SpecifyKind(adj.AdjustedClockIn.Value, DateTimeKind.Utc);
+                    if (adj.AdjustedClockOut.HasValue) d.ActualOut = DateTime.SpecifyKind(adj.AdjustedClockOut.Value, DateTimeKind.Utc);
+                    d.IsAbsent = false;
+                    d.Status = "PRESENT";
+                    AttendanceDailyService.RecalculateAttendance(d, d.Shift);
+                    restoredFromAdjustment++;
+                }
+                else
+                {
+                    var shift = shifts
+                        .Where(es => es.EmployeeId == d.EmployeeId && es.EffectiveFrom <= d.WorkDate && (es.EffectiveTo == null || es.EffectiveTo >= d.WorkDate))
+                        .OrderByDescending(es => es.EffectiveFrom)
+                        .FirstOrDefault();
+                    var dow = (int)d.WorkDate.DayOfWeek;
+                    // ไม่มีกะ → ใช้วันทำงานปกติของบริษัท
+                    var isWorkDay = shift != null
+                        ? (shift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(dow)
+                        : companySchedule.IsWorkingDay(d.WorkDate);
+                    if (d.ShiftId == null) companySchedule.PopulateScheduledTimes(d, d.WorkDate);
+
+                    d.IsAbsent = false;
+                    if (holidays.Contains(d.WorkDate)) d.Status = "HOLIDAY";
+                    else if (!isWorkDay) d.Status = "OFF";
+                    else if (leaveDays.Contains((d.EmployeeId, d.WorkDate))) d.Status = "LEAVE";
+                    else if (d.WorkDate < today)
+                    {
+                        d.IsAbsent = true;
+                        d.Status = "ABSENT";
+                    }
+                    else d.Status = "PENDING";
+                }
+                resetCount++;
+            }
+        }
+
+        // 2) ลบเฉพาะรายการผิดพลาดของชุดนี้ (ไม่ต้องจับคู่ใหม่อีก) และเปลี่ยนสถานะชุดเป็นยกเลิกแล้ว
         int deletedErrorsCount = await _context.AttendanceImportErrors
             .Where(e => e.ImportBatchId == batchId)
             .ExecuteDeleteAsync(cancellationToken);
 
-        // 3. Remove the batch itself
-        await _context.AttendanceImportBatches
-            .Where(b => b.Id == batchId)
-            .ExecuteDeleteAsync(cancellationToken);
+        batch.Status = RevertedStatus;
+        batch.RevertedAt = DateTime.UtcNow;
+        batch.RevertedByUserId = userId;
 
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // 3) คำนวณสรุปรายเดือนใหม่
+        foreach (var (year, month) in months.OrderBy(m => m.Year).ThenBy(m => m.Month))
+        {
+            try
+            {
+                await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(year, month, cancellationToken);
+            }
+            catch
+            {
+                // ไม่ให้การคำนวณสรุปรายเดือนทำให้การยกเลิกทั้งหมดล้ม
+            }
+        }
+
+        var extra = restoredFromAdjustment > 0 ? $" (ใช้เวลาจากคำขอแก้ไขเวลาที่อนุมัติแล้ว {restoredFromAdjustment} วัน)" : string.Empty;
         return new RevertBatchResultDto
         {
             BatchId = batchId,
-            FileName = fileName,
-            DeletedAttendanceRecords = deletedDailyCount,
+            FileName = batch.FileName,
+            DeletedAttendanceRecords = resetCount,
             DeletedErrorRecords = deletedErrorsCount,
-            Message = $"ยกเลิกและลบชุดข้อมูลนำเข้า #{batchId} เรียบร้อยแล้ว (ลบข้อมูลตรวจบันทึกเวลา {deletedDailyCount} รายการ)"
+            RestoredFromAdjustments = restoredFromAdjustment,
+            Message = $"ยกเลิกชุดข้อมูลนำเข้า #{batchId} เรียบร้อยแล้ว — คืนสถานะวันทำงาน {resetCount} รายการ{extra} และคำนวณสรุปรายเดือนใหม่แล้ว"
         };
     }
 }
