@@ -38,7 +38,11 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 
-const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS);
+// ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
+// ไม่แสดง "คำขอย้ายแผนก/เลื่อนตำแหน่ง" — HR บันทึกการย้าย/เลื่อนตำแหน่งเอง (ไม่มีสายการอนุมัติ → มีผลทันที)
+// ยังเก็บป้ายชื่อไว้ใน DOCUMENT_TYPE_LABELS เพื่อแสดงสายการอนุมัติเดิมที่มีอยู่แล้วได้ถูกต้อง
+const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
+const DOCUMENT_TYPE_OPTIONS = Object.keys(DOCUMENT_TYPE_LABELS).filter((t) => !HIDDEN_DOCUMENT_TYPES.has(t));
 /** ประเภทผู้อนุมัติที่เลือกได้ในการตั้งค่า (ประเภทอื่นเป็นของสายการอนุมัติเดิม ใช้งานต่อได้แต่เลือกใหม่ไม่ได้) */
 const APPROVER_TYPE_OPTIONS = ['EMPLOYEE', 'ROLE'];
 
