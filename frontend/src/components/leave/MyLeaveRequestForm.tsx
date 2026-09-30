@@ -456,7 +456,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                 rows={3}
                 placeholder="ระบุเหตุผลการลา (ถ้ามี)"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
               />
             </div>
           </div>
@@ -580,7 +580,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
               rows={2}
               placeholder="สถานที่/เบอร์ติดต่อระหว่างลา"
-              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
             />
           </div>
 
