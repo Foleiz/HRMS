@@ -1387,6 +1387,13 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IsRequired).HasColumnName("is_required").IsRequired();
             entity.Property(e => e.ApproverScope).HasColumnName("approver_scope").HasMaxLength(20).IsRequired();
             entity.Property(e => e.FallbackAction).HasColumnName("fallback_action").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DelegateType).HasColumnName("delegate_type").HasMaxLength(20);
+            entity.Property(e => e.DelegateEmployeeId).HasColumnName("delegate_employee_id");
+            entity.Property(e => e.DelegateRoleId).HasColumnName("delegate_role_id");
+            entity.Property(e => e.DelegateScope).HasColumnName("delegate_scope").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DelegateMode).HasColumnName("delegate_mode").HasMaxLength(20).IsRequired();
+            entity.HasOne(e => e.DelegateEmployee).WithMany().HasForeignKey(e => e.DelegateEmployeeId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.DelegateRole).WithMany().HasForeignKey(e => e.DelegateRoleId).OnDelete(DeleteBehavior.SetNull);
 
             entity.HasIndex(e => new { e.FlowId, e.StepNo }).IsUnique();
 

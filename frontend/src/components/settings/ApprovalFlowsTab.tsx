@@ -33,6 +33,7 @@ import {
   APPROVER_TYPE_LABELS,
   APPROVER_SCOPE_LABELS,
   FALLBACK_ACTION_LABELS,
+  DELEGATE_MODE_LABELS,
 } from '@/types/approval';
 import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
@@ -136,7 +137,29 @@ const emptyStep = (stepNo: number): ApprovalStepInput => ({
   isRequired: true,
   approverScope: 'ORG',
   fallbackAction: 'HR',
+  delegateType: null,
+  delegateEmployeeId: null,
+  delegateRoleId: null,
+  delegateScope: 'ORG',
+  delegateMode: 'WHEN_ABSENT',
 });
+
+/** ข้อความสั้นของผู้อนุมัติแทน เช่น "แทน: นาย ก (เมื่อไม่อยู่)" */
+const getDelegateDisplay = (step: ApprovalStep | ApprovalStepInput, employees: Employee[], roles: RoleSummary[]) => {
+  if (!step.delegateType) return null;
+  let who = '';
+  if (step.delegateType === 'EMPLOYEE') {
+    const name = 'delegateEmployeeName' in step ? step.delegateEmployeeName : null;
+    const emp = employees.find((e) => e.id === step.delegateEmployeeId);
+    who = name || (emp ? `${emp.firstName} ${emp.lastName}` : 'ระบุตัวบุคคล');
+  } else {
+    const name = 'delegateRoleName' in step ? step.delegateRoleName : null;
+    const role = roles.find((r) => r.id === step.delegateRoleId);
+    who = name || role?.roleName || 'ตามบทบาท';
+    if (step.delegateScope && step.delegateScope !== 'ORG') who += ` (${APPROVER_SCOPE_LABELS[step.delegateScope]})`;
+  }
+  return `แทน: ${who}${step.delegateMode === 'ALWAYS' ? '' : ' (เมื่อไม่อยู่)'}`;
+};
 
 export const ApprovalFlowsTab: React.FC = () => {
   const { success, error } = useToast();
@@ -261,6 +284,11 @@ export const ApprovalFlowsTab: React.FC = () => {
           isRequired: s.isRequired,
           approverScope: s.approverScope ?? 'ORG',
           fallbackAction: s.fallbackAction ?? 'HR',
+          delegateType: s.delegateType ?? null,
+          delegateEmployeeId: s.delegateEmployeeId ?? null,
+          delegateRoleId: s.delegateRoleId ?? null,
+          delegateScope: s.delegateScope ?? 'ORG',
+          delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
         })),
       });
       success(nextStatus === 'ACTIVE' ? `เปิดใช้งาน '${flow.flowName}' สำเร็จ` : `ปิดใช้งาน '${flow.flowName}' สำเร็จ`);
@@ -308,6 +336,11 @@ export const ApprovalFlowsTab: React.FC = () => {
           isRequired: s.isRequired,
           approverScope: s.approverScope ?? 'ORG',
           fallbackAction: s.fallbackAction ?? 'HR',
+          delegateType: s.delegateType ?? null,
+          delegateEmployeeId: s.delegateEmployeeId ?? null,
+          delegateRoleId: s.delegateRoleId ?? null,
+          delegateScope: s.delegateScope ?? 'ORG',
+          delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
         })),
     });
     setIsEditorOpen(true);
@@ -364,6 +397,11 @@ export const ApprovalFlowsTab: React.FC = () => {
     isRequired: true,
     approverScope: 'ORG',
     fallbackAction: 'HR',
+    delegateType: null,
+    delegateEmployeeId: null,
+    delegateRoleId: null,
+    delegateScope: 'ORG',
+    delegateMode: 'WHEN_ABSENT',
   });
 
   const applyPreset = (presetType: 'TWO_TIER' | 'THREE_TIER' | 'DIRECT_HR') => {
@@ -414,6 +452,14 @@ export const ApprovalFlowsTab: React.FC = () => {
       }
       if (step.approverType === 'ROLE' && !step.approverRoleId) {
         error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกบทบาทผู้มีอำนาจอนุมัติ`);
+        return;
+      }
+      if (step.delegateType === 'EMPLOYEE' && !step.delegateEmployeeId) {
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกพนักงานผู้อนุมัติแทน`);
+        return;
+      }
+      if (step.delegateType === 'ROLE' && !step.delegateRoleId) {
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกบทบาทผู้อนุมัติแทน`);
         return;
       }
     }
@@ -622,6 +668,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     <div className="text-[10px] text-slate-400 font-medium mt-0.5">
                                       ไม่พบผู้อนุมัติ: {FALLBACK_ACTION_LABELS[step.fallbackAction ?? 'HR'] ?? step.fallbackAction}
                                     </div>
+                                    {getDelegateDisplay(step, employees, roles) && (
+                                      <div className="text-[10px] text-indigo-500 font-medium mt-0.5 truncate">
+                                        {getDelegateDisplay(step, employees, roles)}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -1150,6 +1201,105 @@ export const ApprovalFlowsTab: React.FC = () => {
                             </p>
                           </div>
                         )}
+
+                        {/* ผู้อนุมัติแทน (ไม่บังคับ) */}
+                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-3 space-y-2.5">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">ผู้อนุมัติแทน</label>
+                              <select
+                                value={step.delegateType ?? ''}
+                                onChange={(e) =>
+                                  updateStep(idx, {
+                                    delegateType: e.target.value || null,
+                                    delegateEmployeeId: null,
+                                    delegateRoleId: null,
+                                    delegateScope: 'ORG',
+                                  })
+                                }
+                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              >
+                                <option value="">ไม่มี</option>
+                                <option value="EMPLOYEE">ระบุตัวบุคคล</option>
+                                <option value="ROLE">ตามบทบาท</option>
+                              </select>
+                            </div>
+                            {step.delegateType && (
+                              <div>
+                                <label className="block text-[11px] font-medium text-slate-600 mb-1">อนุมัติแทนเมื่อ</label>
+                                <select
+                                  value={step.delegateMode ?? 'WHEN_ABSENT'}
+                                  onChange={(e) => updateStep(idx, { delegateMode: e.target.value })}
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                                >
+                                  {Object.entries(DELEGATE_MODE_LABELS).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                      {label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+
+                          {step.delegateType === 'EMPLOYEE' && (
+                            <select
+                              value={step.delegateEmployeeId ?? ''}
+                              onChange={(e) =>
+                                updateStep(idx, { delegateEmployeeId: e.target.value ? Number(e.target.value) : null })
+                              }
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                            >
+                              <option value="">-- เลือกพนักงานผู้อนุมัติแทน --</option>
+                              {employees
+                                .filter((emp) => !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId))
+                                .map((emp) => (
+                                  <option key={emp.id} value={emp.id}>
+                                    {emp.employeeCode} - {emp.firstName} {emp.lastName}{' '}
+                                    {emp.positionName ? `(${emp.positionName})` : ''}
+                                  </option>
+                                ))}
+                            </select>
+                          )}
+
+                          {step.delegateType === 'ROLE' && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <select
+                                value={step.delegateRoleId ?? ''}
+                                onChange={(e) =>
+                                  updateStep(idx, { delegateRoleId: e.target.value ? Number(e.target.value) : null })
+                                }
+                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              >
+                                <option value="">-- เลือกบทบาทผู้อนุมัติแทน --</option>
+                                {roles.map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.roleName} ({r.roleCode})
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={step.delegateScope ?? 'ORG'}
+                                onChange={(e) => updateStep(idx, { delegateScope: e.target.value })}
+                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              >
+                                {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
+                                  <option key={key} value={key}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          <p className="text-[11px] text-slate-400">
+                            {!step.delegateType
+                              ? 'ไม่บังคับ — กำหนดคนที่อนุมัติแทนได้ เช่น เมื่อผู้อนุมัติหลักลา'
+                              : (step.delegateMode ?? 'WHEN_ABSENT') === 'ALWAYS'
+                                ? 'ผู้อนุมัติแทนกดอนุมัติได้ทุกเมื่อ ใครกดก่อนก็ผ่านขั้นนี้'
+                                : 'ผู้อนุมัติแทนจะเห็นและอนุมัติได้เมื่อผู้อนุมัติหลักทุกคนมีใบลาที่อนุมัติแล้วในวันนั้น หรือหาผู้อนุมัติหลักไม่เจอ (ก่อนใช้ทางสำรอง)'}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -14,6 +14,15 @@ public record ApprovalStepDto
     public string ApproverScope { get; init; } = "ORG";
     /// <summary>HR / SKIP / ESCALATE / WAIT</summary>
     public string FallbackAction { get; init; } = "HR";
+    /// <summary>ผู้อนุมัติแทน: null / EMPLOYEE / ROLE</summary>
+    public string? DelegateType { get; init; }
+    public long? DelegateEmployeeId { get; init; }
+    public string? DelegateEmployeeName { get; init; }
+    public long? DelegateRoleId { get; init; }
+    public string? DelegateRoleName { get; init; }
+    public string DelegateScope { get; init; } = "ORG";
+    /// <summary>WHEN_ABSENT / ALWAYS</summary>
+    public string DelegateMode { get; init; } = "WHEN_ABSENT";
 }
 
 /// <summary>ใช้รับข้อมูลขั้นตอนอนุมัติตอนสร้าง/แก้ไข flow (ไม่มี Id เพราะแทนที่ทั้งชุดทุกครั้งที่บันทึก)</summary>
@@ -28,6 +37,13 @@ public record ApprovalStepInput
     public string? ApproverScope { get; init; }
     /// <summary>HR / SKIP / ESCALATE / WAIT — ไม่ส่ง = HR</summary>
     public string? FallbackAction { get; init; }
+    /// <summary>ผู้อนุมัติแทน: null (ไม่มี) / EMPLOYEE / ROLE</summary>
+    public string? DelegateType { get; init; }
+    public long? DelegateEmployeeId { get; init; }
+    public long? DelegateRoleId { get; init; }
+    public string? DelegateScope { get; init; }
+    /// <summary>WHEN_ABSENT (ค่าเริ่มต้น) / ALWAYS</summary>
+    public string? DelegateMode { get; init; }
 }
 
 public record ApprovalFlowDto

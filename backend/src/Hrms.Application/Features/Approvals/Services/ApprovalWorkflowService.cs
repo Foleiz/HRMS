@@ -138,6 +138,27 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
     {
         var scope = step.ApproverType == "ROLE" ? (step.ApproverScope ?? "ORG") : "ORG";
         var set = await ResolveCleanAsync(step.ApproverType, step.ApproverEmployeeId, step.ApproverRoleId, scope, requesterEmployeeId, requesterAssignment, cancellationToken);
+
+        // ผู้อนุมัติแทน: ALWAYS = อนุมัติได้คู่กับผู้อนุมัติหลักตลอด
+        //               WHEN_ABSENT = เมื่อผู้อนุมัติหลักทุกคนลา (อนุมัติแล้ว) ในวันนี้ หรือหาผู้อนุมัติหลักไม่เจอ
+        if (!string.IsNullOrWhiteSpace(step.DelegateType))
+        {
+            var delegates = await ResolveCleanAsync(
+                step.DelegateType!, step.DelegateEmployeeId, step.DelegateRoleId,
+                step.DelegateType == "ROLE" ? (step.DelegateScope ?? "ORG") : "ORG",
+                requesterEmployeeId, requesterAssignment, cancellationToken);
+
+            if (delegates.Count > 0)
+            {
+                var always = string.Equals(step.DelegateMode, "ALWAYS", StringComparison.OrdinalIgnoreCase);
+                if (always || set.Count == 0 || await AreAllOnLeaveTodayAsync(set, cancellationToken))
+                {
+                    set.UnionWith(delegates); // ผู้อนุมัติหลักยังกดได้ (เช่น กลับมาทำงานก่อน)
+                    return set;
+                }
+            }
+        }
+
         if (set.Count > 0) return set;
 
         var fallback = (step.FallbackAction ?? "HR").ToUpperInvariant();
@@ -160,6 +181,24 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         }
 
         return set; // SKIP / WAIT → ว่าง
+    }
+
+    /// <summary>ผู้อนุมัติทุกคนในชุดนี้มีใบลาที่อนุมัติแล้วครอบคลุมวันนี้ (เวลาไทย)</summary>
+    private async Task<bool> AreAllOnLeaveTodayAsync(HashSet<long> employeeIds, CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0) return false;
+        var thaiToday = DateTime.UtcNow.AddHours(7).Date;
+        var dayStartUtc = DateTime.SpecifyKind(thaiToday.AddHours(-7), DateTimeKind.Utc);
+        var dayEndUtc = dayStartUtc.AddDays(1);
+        var ids = employeeIds.ToList();
+
+        var onLeave = await _context.LeaveRequests.AsNoTracking()
+            .Where(r => r.Status == "APPROVED" && ids.Contains(r.EmployeeId)
+                        && r.StartDatetime < dayEndUtc && r.EndDatetime >= dayStartUtc)
+            .Select(r => r.EmployeeId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+        return onLeave >= ids.Count;
     }
 
     /// <summary>ขยายขึ้นหนึ่งระดับตามลำดับ (ขั้นสุดท้ายคือฝ่ายบุคคล)</summary>

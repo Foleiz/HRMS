@@ -29,6 +29,13 @@ export interface ApprovalStep {
   isRequired: boolean;
   approverScope?: ApproverScope | string;
   fallbackAction?: FallbackAction | string;
+  delegateType?: 'EMPLOYEE' | 'ROLE' | string | null;
+  delegateEmployeeId?: number | null;
+  delegateEmployeeName?: string | null;
+  delegateRoleId?: number | null;
+  delegateRoleName?: string | null;
+  delegateScope?: ApproverScope | string;
+  delegateMode?: DelegateMode | string;
 }
 
 export interface ApprovalStepInput {
@@ -41,7 +48,21 @@ export interface ApprovalStepInput {
   approverScope?: ApproverScope | string;
   /** ถ้าหาผู้อนุมัติไม่เจอ */
   fallbackAction?: FallbackAction | string;
+  /** ผู้อนุมัติแทน: ไม่มี (null) / ระบุตัวบุคคล / ตามบทบาท */
+  delegateType?: 'EMPLOYEE' | 'ROLE' | string | null;
+  delegateEmployeeId?: number | null;
+  delegateRoleId?: number | null;
+  delegateScope?: ApproverScope | string;
+  delegateMode?: DelegateMode | string;
 }
+
+/** เงื่อนไขอนุมัติแทน: เฉพาะเมื่อผู้อนุมัติหลักลา/หาไม่เจอ หรือ ได้ตลอด */
+export type DelegateMode = 'WHEN_ABSENT' | 'ALWAYS';
+
+export const DELEGATE_MODE_LABELS: Record<string, string> = {
+  WHEN_ABSENT: 'เฉพาะเมื่อผู้อนุมัติหลักลา หรือหาผู้อนุมัติหลักไม่เจอ',
+  ALWAYS: 'อนุมัติแทนได้ตลอด (คู่กับผู้อนุมัติหลัก)',
+};
 
 /** ขอบเขตผู้อนุมัติแบบบทบาท: ทั้งบริษัท / ฝ่ายเดียวกับผู้ยื่น / แผนกเดียวกับผู้ยื่น */
 export type ApproverScope = 'ORG' | 'DIVISION' | 'DEPARTMENT';

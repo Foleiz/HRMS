@@ -37,6 +37,18 @@ public class ApprovalStep : BaseEntity
     /// </summary>
     public string FallbackAction { get; set; } = "HR";
 
+    /// <summary>ผู้อนุมัติแทน: null (ไม่มี), EMPLOYEE (ระบุตัวบุคคล), ROLE (ตามบทบาท)</summary>
+    public string? DelegateType { get; set; }
+    public long? DelegateEmployeeId { get; set; }
+    public long? DelegateRoleId { get; set; }
+    /// <summary>ขอบเขตของผู้อนุมัติแทนแบบ ROLE: ORG / DIVISION / DEPARTMENT</summary>
+    public string DelegateScope { get; set; } = "ORG";
+    /// <summary>WHEN_ABSENT (เฉพาะเมื่อผู้อนุมัติหลักลาในวันนั้น หรือหาผู้อนุมัติหลักไม่เจอ), ALWAYS (อนุมัติแทนได้ตลอด)</summary>
+    public string DelegateMode { get; set; } = "WHEN_ABSENT";
+
+    public virtual Employee? DelegateEmployee { get; set; }
+    public virtual Role? DelegateRole { get; set; }
+
     // Navigation Properties
     public virtual ApprovalFlow? Flow { get; set; }
     public virtual Employee? ApproverEmployee { get; set; }
