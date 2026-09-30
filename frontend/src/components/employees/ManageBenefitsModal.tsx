@@ -113,10 +113,6 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!editingItem && !benefitCode.trim()) {
-      setErrorMessage('กรุณาระบุรหัสสวัสดิการ (Benefit Code)');
-      return;
-    }
     if (!benefitName.trim()) {
       setErrorMessage('กรุณาระบุชื่อสิทธิประโยชน์/สวัสดิการ');
       return;
@@ -283,21 +279,6 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                    รหัสสวัสดิการ (Benefit Code) *
-                  </label>
-                  <input
-                    type="text"
-                    value={benefitCode}
-                    disabled={Boolean(editingItem)}
-                    onChange={(e) => setBenefitCode(e.target.value.toUpperCase())}
-                    placeholder="เช่น HEALTH_AIA, FITNESS"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 disabled:bg-slate-100 disabled:text-slate-500 font-mono"
-                  />
-                  <span className="text-[10px] text-slate-400">ตัวพิมพ์ใหญ่และขีดล่างเท่านั้น</span>
-                </div>
-
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                     ชื่อสวัสดิการ (Benefit Name) *

@@ -2048,18 +2048,6 @@ export default function OrganizationPage() {
 
             <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสฝ่าย (เช่น DIV_HR) *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={modalMode === 'edit'}
-                  value={divisionForm.divisionCode}
-                  onChange={(e) => setDivisionForm({ ...divisionForm, divisionCode: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อฝ่าย / สายงาน *</label>
                 <input
                   type="text"
@@ -2147,18 +2135,6 @@ export default function OrganizationPage() {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสแผนก (เช่น DEPT_QA) *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={modalMode === 'edit'}
-                  value={deptForm.departmentCode}
-                  onChange={(e) => setDeptForm({ ...deptForm, departmentCode: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
               </div>
 
               <div>
@@ -2268,18 +2244,6 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสตำแหน่ง (เช่น POS_SE) *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={modalMode === 'edit'}
-                  value={posForm.positionCode}
-                  onChange={(e) => setPosForm({ ...posForm, positionCode: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อตำแหน่งงาน *</label>
                 <input
                   type="text"
@@ -2337,21 +2301,6 @@ export default function OrganizationPage() {
             </div>
 
             <form onSubmit={handleSaveBenefit} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  รหัสสวัสดิการ (เช่น DENTAL, MEAL_ALLOWANCE) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={modalMode === 'edit'}
-                  value={benefitForm.benefitCode}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, benefitCode: e.target.value })}
-                  placeholder="เช่น SHUTTLE_BUS"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   ชื่อสวัสดิการ / สิทธิประโยชน์ *
@@ -2451,21 +2400,6 @@ export default function OrganizationPage() {
             </div>
 
             <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  รหัสระดับพนักงาน (เช่น L1, L2, EXEC_1) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={modalMode === 'edit'}
-                  value={levelForm.levelCode}
-                  onChange={(e) => setLevelForm({ ...levelForm, levelCode: e.target.value.toUpperCase() })}
-                  placeholder="เช่น L1, L2"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                />
-              </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   ชื่อระดับพนักงาน *

@@ -47,7 +47,8 @@ public class DivisionDto
 
 public class CreateDivisionDto
 {
-    public string DivisionCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? DivisionCode { get; set; }
     public string DivisionName { get; set; } = string.Empty;
     public long? HeadEmployeeId { get; set; }
     public string Status { get; set; } = "ACTIVE";
@@ -83,7 +84,8 @@ public class CreateDepartmentDto
 {
     public long DivisionId { get; set; }
     public long? ParentDepartmentId { get; set; }
-    public string DepartmentCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? DepartmentCode { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public long? HeadEmployeeId { get; set; }
     public string Status { get; set; } = "ACTIVE";
@@ -120,7 +122,8 @@ public class CreatePositionDto
 {
     public long DepartmentId { get; set; }
     public long? EmployeeLevelId { get; set; }
-    public string PositionCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? PositionCode { get; set; }
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE";
 }
@@ -146,7 +149,8 @@ public class EmployeeLevelDto
 
 public class CreateEmployeeLevelDto
 {
-    public string LevelCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? LevelCode { get; set; }
     public string LevelName { get; set; } = string.Empty;
     public int? LevelRank { get; set; }
     public string Status { get; set; } = "ACTIVE";

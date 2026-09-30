@@ -16,7 +16,8 @@ public class BenefitItemDto
 
 public class CreateBenefitItemRequest
 {
-    public string BenefitCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? BenefitCode { get; set; }
     public string BenefitName { get; set; } = string.Empty;
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }

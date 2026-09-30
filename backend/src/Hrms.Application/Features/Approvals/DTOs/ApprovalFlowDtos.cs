@@ -39,7 +39,8 @@ public record ApprovalFlowDto
 
 public record CreateApprovalFlowRequest
 {
-    public string FlowCode { get; init; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? FlowCode { get; init; }
     public string FlowName { get; init; } = string.Empty;
     public string DocumentType { get; init; } = string.Empty;
     public long? DepartmentId { get; init; }

@@ -19,7 +19,8 @@ public class EmployeeTypeDto
 
 public class CreateEmployeeTypeRequest
 {
-    public string TypeCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? TypeCode { get; set; }
     public string TypeName { get; set; } = string.Empty;
     public string WageType { get; set; } = "MONTHLY";
     public bool HasSocialSecurity { get; set; } = true;

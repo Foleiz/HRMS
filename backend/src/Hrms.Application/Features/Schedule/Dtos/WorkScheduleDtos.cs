@@ -23,7 +23,8 @@ public class WorkScheduleDto
 /// </summary>
 public class CreateWorkScheduleRequest
 {
-    public string ScheduleCode { get; set; } = string.Empty;
+    /// <summary>ไม่ต้องส่ง — ระบบสร้างรหัสให้อัตโนมัติ</summary>
+    public string? ScheduleCode { get; set; }
     public string ScheduleName { get; set; } = string.Empty;
     public string? WorkStart { get; set; } // HH:mm
     public string? WorkEnd { get; set; }   // HH:mm

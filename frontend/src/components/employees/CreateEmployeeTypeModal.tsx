@@ -106,10 +106,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEdit && !typeCode.trim()) {
-      setErrorMessage('กรุณาระบุรหัสประเภท');
-      return;
-    }
     if (!typeName.trim()) {
       setErrorMessage('กรุณาระบุชื่อประเภทสัญญา/การจ้างงาน');
       return;
@@ -205,25 +201,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* 1. รหัสประเภท */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              รหัสประเภท <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              disabled={isEdit}
-              value={typeCode}
-              onChange={(e) => setTypeCode(e.target.value.toUpperCase())}
-              placeholder="เช่น OUTSOURCE, FREELANCE, PROJECT"
-              className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] disabled:bg-slate-50 disabled:text-slate-500 transition-all font-mono"
-            />
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              ใช้ตัวอักษรภาษาอังกฤษตัวพิมพ์ใหญ่และเครื่องหมายขีดล่าง (_) เท่านั้น
-            </span>
-          </div>
-
           {/* 2. ชื่อประเภทสัญญา */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">

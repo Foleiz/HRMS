@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -142,17 +143,15 @@ public class EmployeeTypeService : IEmployeeTypeService
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างประเภทพนักงาน/สัญญาจ้าง");
         }
 
-        if (string.IsNullOrWhiteSpace(request.TypeCode))
-        {
-            throw new ValidationException("กรุณาระบุรหัสประเภท (Type Code)");
-        }
-
         if (string.IsNullOrWhiteSpace(request.TypeName))
         {
             throw new ValidationException("กรุณาระบุชื่อประเภท (Type Name)");
         }
 
-        var normalizedCode = request.TypeCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (ET001, ET002, ...) ถ้าไม่ได้ระบุมา
+        var normalizedCode = string.IsNullOrWhiteSpace(request.TypeCode)
+            ? await CodeGenerator.NextAsync(_dbContext.EmployeeTypes.Select(t => t.TypeCode), "ET", 3, cancellationToken)
+            : request.TypeCode.Trim().ToUpper();
         bool exists = await _dbContext.EmployeeTypes
             .AnyAsync(t => t.TypeCode == normalizedCode, cancellationToken);
         if (exists)

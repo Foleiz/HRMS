@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Organization.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -187,12 +188,15 @@ public class OrganizationService : IOrganizationService
 
     public async Task<DivisionDto> CreateDivisionAsync(CreateDivisionDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.DivisionCode) || string.IsNullOrWhiteSpace(request.DivisionName))
+        if (string.IsNullOrWhiteSpace(request.DivisionName))
         {
-            throw new ValidationException("กรุณากรอกรหัสฝ่ายและชื่อฝ่าย");
+            throw new ValidationException("กรุณากรอกชื่อฝ่าย");
         }
 
-        string code = request.DivisionCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (DIV001, DIV002, ...) ถ้าไม่ได้ระบุมา
+        string code = string.IsNullOrWhiteSpace(request.DivisionCode)
+            ? await CodeGenerator.NextAsync(_dbContext.Divisions.Select(d => d.DivisionCode), "DIV", 3, cancellationToken)
+            : request.DivisionCode.Trim().ToUpper();
 
         // ตรวจสอบความซ้ำซ้อนของรหัสฝ่าย
         bool exists = await _dbContext.Divisions.AnyAsync(d => d.DivisionCode.ToUpper() == code, cancellationToken);
@@ -325,12 +329,15 @@ public class OrganizationService : IOrganizationService
 
     public async Task<DepartmentDto> CreateDepartmentAsync(CreateDepartmentDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.DepartmentCode) || string.IsNullOrWhiteSpace(request.DepartmentName))
+        if (string.IsNullOrWhiteSpace(request.DepartmentName))
         {
-            throw new ValidationException("กรุณากรอกรหัสแผนกและชื่อแผนก");
+            throw new ValidationException("กรุณากรอกชื่อแผนก");
         }
 
-        string code = request.DepartmentCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (DEP001, DEP002, ...) ถ้าไม่ได้ระบุมา
+        string code = string.IsNullOrWhiteSpace(request.DepartmentCode)
+            ? await CodeGenerator.NextAsync(_dbContext.Departments.Select(d => d.DepartmentCode), "DEP", 3, cancellationToken)
+            : request.DepartmentCode.Trim().ToUpper();
 
         // ตรวจสอบรหัสแผนกซ้ำในสายงานเดียวกัน
         bool exists = await _dbContext.Departments.AnyAsync(d =>
@@ -464,12 +471,15 @@ public class OrganizationService : IOrganizationService
 
     public async Task<PositionDto> CreatePositionAsync(CreatePositionDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.PositionCode) || string.IsNullOrWhiteSpace(request.PositionName))
+        if (string.IsNullOrWhiteSpace(request.PositionName))
         {
-            throw new ValidationException("กรุณากรอกรหัสตำแหน่งและชื่อตำแหน่ง");
+            throw new ValidationException("กรุณากรอกชื่อตำแหน่ง");
         }
 
-        string code = request.PositionCode.Trim().ToUpper();
+        // รหัสรันอัตโนมัติ (POS001, POS002, ...) ถ้าไม่ได้ระบุมา
+        string code = string.IsNullOrWhiteSpace(request.PositionCode)
+            ? await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken)
+            : request.PositionCode.Trim().ToUpper();
 
         bool exists = await _dbContext.Positions.AnyAsync(p => p.PositionCode.ToUpper() == code, cancellationToken);
         if (exists)
@@ -559,15 +569,20 @@ public class OrganizationService : IOrganizationService
 
     public async Task<EmployeeLevelDto> CreateEmployeeLevelAsync(CreateEmployeeLevelDto request, CancellationToken cancellationToken = default)
     {
+        // รหัสรันอัตโนมัติ (LVL01, LVL02, ...) ถ้าไม่ได้ระบุมา
+        string levelCode = string.IsNullOrWhiteSpace(request.LevelCode)
+            ? await CodeGenerator.NextAsync(_dbContext.EmployeeLevels.Select(l => l.LevelCode), "LVL", 2, cancellationToken)
+            : request.LevelCode.Trim();
+
         bool exists = await _dbContext.EmployeeLevels
-            .AnyAsync(l => l.LevelCode.ToLower() == request.LevelCode.ToLower(), cancellationToken);
+            .AnyAsync(l => l.LevelCode.ToLower() == levelCode.ToLower(), cancellationToken);
 
         if (exists)
-            throw new InvalidOperationException($"รหัสระดับพนักงาน '{request.LevelCode}' มีอยู่ในระบบแล้ว");
+            throw new InvalidOperationException($"รหัสระดับพนักงาน '{levelCode}' มีอยู่ในระบบแล้ว");
 
         var level = new EmployeeLevel
         {
-            LevelCode = request.LevelCode.Trim(),
+            LevelCode = levelCode,
             LevelName = request.LevelName.Trim(),
             LevelRank = request.LevelRank,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
