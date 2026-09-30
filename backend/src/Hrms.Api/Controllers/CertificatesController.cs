@@ -169,8 +169,40 @@ public class CertificatesController : ControllerBase
         [FromQuery] string? lang,
         CancellationToken cancellationToken)
     {
-        var result = await _certificateService.GetCertificateDocumentAsync(id, lang, cancellationToken);
-        return Ok(ApiResponse<CertificateDocumentDto>.Ok(result, "ดึงข้อมูลเอกสารหนังสือรับรองสำเร็จ"));
+        try
+        {
+            var result = await _certificateService.GetCertificateDocumentAsync(id, lang, cancellationToken);
+            return Ok(ApiResponse<CertificateDocumentDto>.Ok(result, "ดึงข้อมูลเอกสารหนังสือรับรองสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<CertificateDocumentDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// ตัวอย่างหนังสือรับรองของผู้ใช้ปัจจุบันก่อนยื่นคำขอ (ใช้ข้อมูลจริง ไม่บันทึกลงระบบ)
+    /// </summary>
+    [HttpGet("preview")]
+    public async Task<ActionResult<ApiResponse<CertificateDocumentDto>>> Preview(
+        [FromQuery] long certificateTypeId,
+        [FromQuery] string? purpose,
+        [FromQuery] string? lang,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _certificateService.PreviewCertificateDocumentAsync(certificateTypeId, purpose, lang, cancellationToken);
+            return Ok(ApiResponse<CertificateDocumentDto>.Ok(result, "ดึงตัวอย่างหนังสือรับรองสำเร็จ"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<CertificateDocumentDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CertificateDocumentDto>.Fail(ex.Message));
+        }
     }
 
     /// <summary>

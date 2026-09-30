@@ -83,6 +83,16 @@ export const certificateService = {
   },
 
   /**
+   * ตัวอย่างหนังสือรับรองของผู้ใช้ปัจจุบันก่อนยื่นคำขอ (ข้อมูลจริง ไม่บันทึกลงระบบ)
+   */
+  async previewDocument(certificateTypeId: number, purpose: string, lang: string = 'TH'): Promise<CertificateDocument> {
+    const res = await apiClient.get<ApiResponse<CertificateDocument>>('/certificates/preview', {
+      params: { certificateTypeId, purpose, lang },
+    });
+    return res.data.data;
+  },
+
+  /**
    * ดึงรายการลายเซ็นดิจิทัลที่ใช้งานอยู่
    */
   async getSignatures(): Promise<EmployeeSignature[]> {

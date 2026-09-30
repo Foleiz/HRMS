@@ -440,8 +440,6 @@ public class CertificateService : ICertificateService
         var request = await _context.CertificateRequests
             .AsNoTracking()
             .Include(r => r.CertificateType)
-            .Include(r => r.Employee)
-            .Include(r => r.ApprovalInstance)
             .FirstOrDefaultAsync(r => r.Id == requestId, cancellationToken);
 
         if (request == null)
@@ -449,60 +447,105 @@ public class CertificateService : ICertificateService
             throw new KeyNotFoundException($"ไม่พบคำขอหนังสือรับรองรหัส {requestId}");
         }
 
-        var language = (lang ?? "TH").Trim().ToUpper() == "EN" ? "EN" : "TH";
+        await EnsureCanViewDocumentAsync(request, cancellationToken);
 
-        // Company Master
-        var company = await _context.Companies
-            .AsNoTracking()
+        return await BuildDocumentAsync(
+            request.EmployeeId, request.CertificateType, request.Purpose, request.IssuedAt, request.Id, lang, cancellationToken);
+    }
+
+    public async Task<CertificateDocumentDto> PreviewCertificateDocumentAsync(
+        long certificateTypeId, string? purpose, string? lang = "TH", CancellationToken cancellationToken = default)
+    {
+        var employeeId = _currentUserService.EmployeeId;
+        if (!employeeId.HasValue)
+        {
+            throw new UnauthorizedAccessException("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน");
+        }
+
+        var certType = await _context.CertificateTypes.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == certificateTypeId, cancellationToken)
+            ?? throw new KeyNotFoundException($"ไม่พบประเภทหนังสือรับรองรหัส {certificateTypeId}");
+
+        return await BuildDocumentAsync(employeeId.Value, certType, purpose, null, 0, lang, cancellationToken);
+    }
+
+    /// <summary>ดูเอกสารได้เฉพาะเจ้าของคำขอ, ฝ่ายบุคคล/ผู้ดูแลระบบ และผู้อนุมัติในสายอนุมัติของคำขอนั้น</summary>
+    private async Task EnsureCanViewDocumentAsync(CertificateRequest request, CancellationToken cancellationToken)
+    {
+        var me = _currentUserService.EmployeeId;
+        if (me.HasValue && me.Value == request.EmployeeId) return;
+
+        string[] privilegedRoles = { "ADMIN", "SYSTEM_SUPER", "SUPER_ADMIN", "HR", "HR_ADMIN", "HR_MGR" };
+        if (privilegedRoles.Any(_currentUserService.HasRole)) return;
+
+        if (me.HasValue && request.ApprovalInstanceId.HasValue
+            && await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, me.Value, cancellationToken))
+        {
+            return;
+        }
+
+        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูเอกสารหนังสือรับรองฉบับนี้");
+    }
+
+    /// <summary>
+    /// ประกอบข้อมูลหนังสือรับรองตามรูปแบบหนังสือรับรองของบริษัทในไทย
+    /// (ที่ / วันที่ / ชื่อเรื่อง / "หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า..." / วัตถุประสงค์ / ผู้ลงนาม)
+    /// </summary>
+    private async Task<CertificateDocumentDto> BuildDocumentAsync(
+        long employeeId, CertificateType? certType, string? purpose, DateTime? issuedAt, long requestId,
+        string? lang, CancellationToken cancellationToken)
+    {
+        var language = (lang ?? "TH").Trim().ToUpperInvariant() == "EN" ? "EN" : "TH";
+
+        var employee = await _context.Employees.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken)
+            ?? throw new KeyNotFoundException($"ไม่พบข้อมูลพนักงานรหัส {employeeId}");
+
+        var company = await _context.Companies.AsNoTracking()
             .OrderBy(c => c.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Employee Assignment & Start Date
-        var assignment = await _context.EmployeeAssignments
-            .AsNoTracking()
+        var assignment = await _context.EmployeeAssignments.AsNoTracking()
             .Include(a => a.Department)
             .Include(a => a.Position)
-            .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.IsCurrent, cancellationToken);
+            .Where(a => a.EmployeeId == employeeId && a.IsCurrent)
+            .OrderByDescending(a => a.EffectiveFrom)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var firstContract = await _context.EmploymentContracts
-            .AsNoTracking()
-            .Where(c => c.EmployeeId == request.EmployeeId)
+        var firstContract = await _context.EmploymentContracts.AsNoTracking()
+            .Where(c => c.EmployeeId == employeeId && c.Status != "CANCELLED")
             .OrderBy(c => c.StartDate)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var startDate = firstContract != null
-            ? firstContract.StartDate.ToDateTime(TimeOnly.MinValue)
-            : request.Employee.CreatedAt;
+        var nowTh = DateTime.UtcNow.AddHours(7);
+        var todayTh = DateOnly.FromDateTime(nowTh);
+        var startDate = firstContract?.StartDate
+            ?? assignment?.EffectiveFrom
+            ?? DateOnly.FromDateTime(employee.CreatedAt.AddHours(7));
 
-        // Current Base Salary
-        var todayDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var salaryRecord = await _context.EmployeeSalaries
-            .AsNoTracking()
-            .Where(s => s.EmployeeId == request.EmployeeId && (s.EffectiveTo == null || s.EffectiveTo >= todayDate))
+        var salaryRecord = await _context.EmployeeSalaries.AsNoTracking()
+            .Where(s => s.EmployeeId == employeeId && s.EffectiveFrom <= todayTh
+                        && (s.EffectiveTo == null || s.EffectiveTo >= todayTh))
             .OrderByDescending(s => s.EffectiveFrom)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Authorized Signatory Signature
-        var activeSignature = await _context.EmployeeSignatures
-            .AsNoTracking()
+        // ผู้มีอำนาจลงนาม (ลายเซ็นที่เปิดใช้งานล่าสุด)
+        var activeSignature = await _context.EmployeeSignatures.AsNoTracking()
             .Include(s => s.Employee)
             .Where(s => s.IsActive)
             .OrderByDescending(s => s.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
-        string signatoryName = "นางพิมพ์ใจ กิตติพาณิชย์";
-        string signatoryPosition = "ผู้จัดการฝ่ายทรัพยากรบุคคล";
+        string signatoryName = string.Empty;
+        string signatoryPosition = language == "TH" ? "ผู้มีอำนาจลงนาม" : "Authorized Signatory";
         string? signatureBase64 = null;
-
         if (activeSignature != null)
         {
-            signatoryName = $"{activeSignature.Employee.FirstName} {activeSignature.Employee.LastName}".Trim();
-            var signAssign = await _context.EmployeeAssignments
-                .AsNoTracking()
+            signatoryName = activeSignature.Employee.FullName;
+            var signAssign = await _context.EmployeeAssignments.AsNoTracking()
                 .Include(a => a.Position)
                 .FirstOrDefaultAsync(a => a.EmployeeId == activeSignature.EmployeeId && a.IsCurrent, cancellationToken);
-
-            signatoryPosition = signAssign?.Position?.PositionName ?? "ผู้มีอำนาจลงนามแทนนายจ้าง";
+            signatoryPosition = signAssign?.Position?.PositionName ?? signatoryPosition;
 
             if (activeSignature.SignatureData.Length > 0)
             {
@@ -517,68 +560,133 @@ public class CertificateService : ICertificateService
             companyLogoBase64 = $"data:image/png;base64,{Convert.ToBase64String(company.LogoData)}";
         }
 
-        // Calculate service duration
-        var serviceDays = (DateTime.UtcNow - startDate).Days;
-        var years = serviceDays / 365;
-        var months = (serviceDays % 365) / 30;
-        var durationText = language == "TH"
-            ? (years > 0 ? $"{years} ปี " : "") + $"{months} เดือน"
-            : (years > 0 ? $"{years} Year(s) " : "") + $"{months} Month(s)";
+        var certCode = certType?.CertificateCode ?? "CERT_WORK";
+        var includeSalary = certCode.Contains("SALARY", StringComparison.OrdinalIgnoreCase);
+        var salary = includeSalary ? salaryRecord?.BaseSalary : null;
 
-        var docNumber = $"CERT-{DateTime.UtcNow.Year}-{request.Id:D5}";
-        var certCode = request.CertificateType?.CertificateCode ?? "CERT_WORK";
-        var isSalaryCert = certCode == "CERT_SALARY";
+        var fullName = employee.FullName;
+        var position = assignment?.Position?.PositionName ?? "-";
+        var department = assignment?.Department?.DepartmentName ?? "-";
+        var companyName = company?.CompanyName ?? string.Empty;
+        var issueDate = issuedAt ?? nowTh;
+        var duration = ServiceDuration(startDate, todayTh, language);
+        var purposeText = string.IsNullOrWhiteSpace(purpose) ? "เป็นหลักฐานแสดงการทำงาน" : purpose.Trim();
 
-        var fullNameTh = $"{request.Employee.FirstName} {request.Employee.LastName}".Trim();
-        var positionTh = assignment?.Position?.PositionName ?? "พนักงาน";
-        var departmentTh = assignment?.Department?.DepartmentName ?? "สำนักงานใหญ่";
-        var companyNameTh = company?.CompanyName ?? "บริษัท ตัวอย่าง จำกัด (มหาชน)";
-
-        string bodyTh;
-        string bodyEn;
-        string salaryFormatted = salaryRecord != null ? salaryRecord.BaseSalary.ToString("N2") : "0.00";
-
-        if (isSalaryCert)
-        {
-            bodyTh = $"ขอรับรองว่า {fullNameTh} เป็นพนักงานประจำของ {companyNameTh} จริง โดยเริ่มเข้าปฏิบัติงานตั้งแต่วันที่ {startDate:d MMMM yyyy} เป็นต้นมา จนถึงปัจจุบันดำรงตำแหน่ง {positionTh} สังกัด {departmentTh} โดยได้รับเงินเดือนประจำในอัตราเดือนละ {salaryFormatted} บาท ทั้งนี้พนักงานเป็นผู้มีความประพฤติดีและปฏิบัติหน้าที่ด้วยความเรียบร้อยสม่ำเสมอ";
-            bodyEn = $"This is to certify that {fullNameTh} is an active, permanent employee of {companyNameTh}, having commenced employment on {startDate:dd MMMM yyyy}. Currently holding the position of {positionTh} within the {departmentTh} Department, receiving a regular gross monthly salary of THB {salaryFormatted}. The employee has consistently performed duties with integrity and diligence.";
-        }
-        else
-        {
-            bodyTh = $"ขอรับรองว่า {fullNameTh} เป็นพนักงานของ {companyNameTh} จริง โดยเริ่มเข้าปฏิบัติงานตั้งแต่วันที่ {startDate:d MMMM yyyy} เป็นต้นมา จนถึงปัจจุบันดำรงตำแหน่ง {positionTh} สังกัด {departmentTh} ปฏิบัติหน้าที่ด้วยความวิริยะอุตสาหะและเป็นไปตามระเบียบข้อบังคับของบริษัทฯ";
-            bodyEn = $"This is to certify that {fullNameTh} is currently employed with {companyNameTh}, having joined on {startDate:dd MMMM yyyy}. Currently assigned as {positionTh} in the {departmentTh} Department, performing assigned responsibilities in accordance with corporate standards.";
-        }
+        var bodyTh = $"หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า {fullName} เป็นพนักงานของ{companyName} "
+                     + $"ตำแหน่ง {position} สังกัด{department} โดยเริ่มปฏิบัติงานตั้งแต่วันที่ {ThaiDate(startDate)} "
+                     + $"จนถึงปัจจุบัน รวมระยะเวลา {ServiceDuration(startDate, todayTh, "TH")}"
+                     + (salary.HasValue
+                         ? $" ได้รับอัตราเงินเดือนเดือนละ {salary.Value:N2} บาท ({BahtText(salary.Value)}) ซึ่งอัตรานี้ไม่รวมค่าตอบแทนและเงินพิเศษอื่นๆ"
+                         : string.Empty);
+        var bodyEn = $"This is to certify that {fullName} has been employed by {companyName} since "
+                     + $"{EnglishDate(startDate)} to the present ({ServiceDuration(startDate, todayTh, "EN")}), "
+                     + $"currently holding the position of {position}, {department}"
+                     + (salary.HasValue
+                         ? $", and receives a monthly salary of THB {salary.Value:N2}, excluding other allowances and benefits."
+                         : ".");
 
         return new CertificateDocumentDto
         {
-            RequestId = request.Id,
-            DocumentNumber = docNumber,
-            IssueDate = request.IssuedAt ?? DateTime.UtcNow,
+            RequestId = requestId,
+            IsPreview = requestId == 0,
+            DocumentNumber = requestId == 0 ? "(ออกเลขเมื่ออนุมัติ)" : $"HR {requestId:D4}/{issueDate.Year + 543}",
+            IssueDate = issueDate,
             Language = language,
             CertificateCode = certCode,
-            CertificateTitle = request.CertificateType?.CertificateName ?? "หนังสือรับรอง",
-            CompanyName = companyNameTh,
-            CompanyAddress = company?.Address ?? "เลขที่ 123 อาคารสำนักงาน ถนนสาทร แขวงสีลม เขตบางรัก กรุงเทพมหานคร 10500",
-            CompanyPhone = company?.Phone ?? "02-123-4567",
-            CompanyEmail = company?.Email ?? "hr@company.co.th",
+            CertificateTitle = certType?.CertificateName ?? "หนังสือรับรอง",
+            IncludeSalary = includeSalary,
+            CompanyName = companyName,
+            CompanyAddress = company?.Address,
+            CompanyPhone = company?.Phone,
+            CompanyEmail = company?.Email,
             CompanyLogoBase64 = companyLogoBase64,
-            EmployeeId = request.EmployeeId,
-            EmployeeCode = request.Employee.EmployeeCode,
-            FullName = fullNameTh,
-            CitizenIdMasked = request.Employee.CitizenIdMasked,
-            PositionName = positionTh,
-            DepartmentName = departmentTh,
-            StartDate = startDate,
-            ServiceDurationText = durationText,
-            BaseSalary = isSalaryCert ? salaryRecord?.BaseSalary : null,
-            SalaryText = isSalaryCert ? $"{salaryFormatted} บาท" : null,
-            Purpose = string.IsNullOrWhiteSpace(request.Purpose) ? "เพื่อเป็นหลักฐานแสดงการทำงาน" : request.Purpose,
+            EmployeeId = employeeId,
+            EmployeeCode = employee.EmployeeCode,
+            FullName = fullName,
+            CitizenIdMasked = employee.CitizenIdMasked,
+            PositionName = position,
+            DepartmentName = department,
+            StartDate = startDate.ToDateTime(TimeOnly.MinValue),
+            StartDateText = language == "TH" ? ThaiDate(startDate) : EnglishDate(startDate),
+            IssueDateText = language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate)) : EnglishDate(DateOnly.FromDateTime(issueDate)),
+            ServiceDurationText = duration,
+            BaseSalary = salary,
+            SalaryText = salary.HasValue ? BahtText(salary.Value) : null,
+            Purpose = purposeText,
             CertificationBodyTh = bodyTh,
             CertificationBodyEn = bodyEn,
             SignatoryName = signatoryName,
             SignatoryPosition = signatoryPosition,
             SignatureBase64 = signatureBase64
         };
+    }
+
+    private static readonly string[] ThaiMonths =
+    {
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    };
+
+    private static string ThaiDate(DateOnly d) => $"{d.Day} {ThaiMonths[d.Month - 1]} พ.ศ. {d.Year + 543}";
+
+    private static string EnglishDate(DateOnly d) =>
+        d.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>อายุงานเป็นปี/เดือน เช่น "3 ปี 8 เดือน"</summary>
+    private static string ServiceDuration(DateOnly start, DateOnly today, string language)
+    {
+        int months = (today.Year - start.Year) * 12 + today.Month - start.Month;
+        if (today.Day < start.Day) months--;
+        months = Math.Max(0, months);
+        int y = months / 12, m = months % 12;
+        if (language == "TH")
+        {
+            if (y == 0 && m == 0) return "ไม่ถึง 1 เดือน";
+            return ((y > 0 ? $"{y} ปี " : "") + (m > 0 ? $"{m} เดือน" : "")).Trim();
+        }
+        if (y == 0 && m == 0) return "less than 1 month";
+        return ((y > 0 ? $"{y} year{(y > 1 ? "s" : "")} " : "") + (m > 0 ? $"{m} month{(m > 1 ? "s" : "")}" : "")).Trim();
+    }
+
+    private static readonly string[] ThaiDigits = { "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" };
+    private static readonly string[] ThaiPlaces = { "", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน" };
+
+    /// <summary>อ่านตัวเลขเป็นภาษาไทย (รองรับหลักล้านขึ้นไป)</summary>
+    private static string ReadThaiNumber(long n, bool hasHigher = false)
+    {
+        if (n == 0) return string.Empty;
+        var result = string.Empty;
+        if (n >= 1_000_000)
+        {
+            result = ReadThaiNumber(n / 1_000_000) + "ล้าน";
+            n %= 1_000_000;
+            if (n == 0) return result;
+            hasHigher = true;
+        }
+        var s = n.ToString();
+        for (int i = 0; i < s.Length; i++)
+        {
+            int d = s[i] - '0';
+            int place = s.Length - i - 1;
+            if (d == 0) continue;
+            if (place == 0 && d == 1 && (s.Length > 1 || hasHigher)) result += "เอ็ด";
+            else if (place == 1 && d == 2) result += "ยี่" + ThaiPlaces[1];
+            else if (place == 1 && d == 1) result += ThaiPlaces[1];
+            else result += ThaiDigits[d] + ThaiPlaces[place];
+        }
+        return result;
+    }
+
+    /// <summary>จำนวนเงินเป็นตัวอักษรไทย เช่น 16000 → "หนึ่งหมื่นหกพันบาทถ้วน"</summary>
+    private static string BahtText(decimal amount)
+    {
+        amount = Math.Round(Math.Abs(amount), 2, MidpointRounding.AwayFromZero);
+        long baht = (long)Math.Floor(amount);
+        int satang = (int)Math.Round((amount - baht) * 100);
+        if (baht == 0 && satang == 0) return "ศูนย์บาทถ้วน";
+        var text = baht > 0 ? ReadThaiNumber(baht) + "บาท" : string.Empty;
+        text += satang > 0 ? ReadThaiNumber(satang) + "สตางค์" : "ถ้วน";
+        return text;
     }
 
     public async Task<List<EmployeeSignatureDto>> GetActiveSignaturesAsync(CancellationToken cancellationToken = default)

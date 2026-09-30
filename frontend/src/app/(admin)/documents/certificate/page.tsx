@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Calendar,
   CheckCircle2,
   AlertCircle,
   RotateCcw,
@@ -13,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
-import { CertificateType, CertificateDocument } from '@/types/certificates';
+import { CertificateType } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import { leaveService } from '@/services/leaveService';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
@@ -23,6 +22,11 @@ import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
+const CARD = 'bg-white rounded-2xl border border-gray-100 shadow-sm p-6';
+const READONLY_INPUT =
+  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed';
+const TEXTAREA =
+  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden';
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -49,17 +53,13 @@ export default function CertificatePage() {
 
   // Employee Profile
   const [profile, setProfile] = useState({
-    fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-    positionTitle: 'วิศวกรซอฟต์แวร์อาวุโส',
-    departmentName: 'แผนกพัฒนาซอฟต์แวร์',
+    fullName: user?.fullName || '',
+    positionTitle: '',
+    departmentName: '',
   });
 
   // Form Fields
-  const [types, setTypes] = useState<CertificateType[]>([
-    { id: 1, certificateCode: 'CERT_SALARY', certificateName: 'หนังสือรับรองเงินเดือน' },
-    { id: 2, certificateCode: 'CERT_WORK', certificateName: 'หนังสือรับรองการทำงาน' },
-    { id: 3, certificateCode: 'CERT_VISA', certificateName: 'หนังสือรับรองการทำงานเพื่อขอวีซ่า' },
-  ]);
+  const [types, setTypes] = useState<CertificateType[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<number | ''>('');
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
@@ -82,7 +82,6 @@ export default function CertificatePage() {
 
   // Preview Modal State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewDoc, setPreviewDoc] = useState<CertificateDocument | null>(null);
 
   // Initialize breadcrumb & load saved draft
   useEffect(() => {
@@ -125,9 +124,9 @@ export default function CertificatePage() {
 
       if (balances.status === 'fulfilled' && balances.value.length > 0) {
         setProfile({
-          fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-          positionTitle: balances.value[0]?.positionTitle || 'วิศวกรซอฟต์แวร์อาวุโส',
-          departmentName: balances.value[0]?.departmentName || 'แผนกพัฒนาซอฟต์แวร์',
+          fullName: user?.fullName || '',
+          positionTitle: balances.value[0]?.positionTitle || '',
+          departmentName: balances.value[0]?.departmentName || '',
         });
       }
     } catch (err) {
@@ -162,38 +161,21 @@ export default function CertificatePage() {
     showToast('ล้างข้อมูลในแบบฟอร์มเรียบร้อยแล้ว');
   };
 
-  // Action 1: ดูตัวอย่าง (Preview)
-  const handlePreview = () => {
-    const currentType = types.find((t) => t.id === Number(selectedTypeId)) || types[0];
-    const previewData: CertificateDocument = {
-      requestId: 0,
-      documentNumber: 'CERT-ตัวอย่างแบบร่าง',
-      issueDate: issueDate ? new Date(issueDate).toISOString() : new Date().toISOString(),
-      language: selectedLanguage,
-      certificateCode: currentType?.certificateCode || 'CERT_SALARY',
-      certificateTitle: currentType?.certificateName || 'หนังสือรับรองเงินเดือน',
-      companyName: 'บริษัท ฟิวเจอร์ เทค คอร์ปอเรชั่น จำกัด (มหาชน)',
-      companyAddress: 'เลขที่ 123 อาคารซอฟต์แวร์ปาร์ค ชั้น 15 ถนนแจ้งวัฒนะ ตำบลคลองเกลือ อำเภอปากเกร็ด จังหวัดนนทบุรี 11120',
-      companyPhone: '02-999-8888',
-      companyEmail: 'hr@futuretech.co.th',
-      employeeId: user?.employeeId || 1,
-      employeeCode: user?.employeeCode || 'EMP001',
-      fullName: profile.fullName,
-      citizenIdMasked: '1-1002-XXXXX-XX-1',
-      positionName: profile.positionTitle,
-      departmentName: profile.departmentName,
-      startDate: '2023-01-16T00:00:00Z',
-      serviceDurationText: '3 ปี 8 เดือน',
-      baseSalary: 65000,
-      salaryText: 'หกหมื่นห้าพันบาทถ้วน',
-      purpose: purpose.trim() || 'เพื่อใช้เป็นหลักฐานแสดงการทำงานและรายได้',
-      certificationBodyTh: 'บริษัทขอรับรองว่าบุคคลดังกล่าวข้างต้น เป็นพนักงานประจำของบริษัทจริง และปฏิบัติงานด้วยความเรียบร้อย สุจริต ขยันหมั่นเพียรมาโดยตลอด',
-      certificationBodyEn: 'This certificate is issued to certify that the above-named person is a permanent employee of our company and has performed duties with diligence and integrity.',
-      signatoryName: 'คุณสมศักดิ์ มั่นคง',
-      signatoryPosition: 'ผู้อำนวยการฝ่ายทรัพยากรบุคคล (HR Director)',
-    };
+  const selectedType = types.find((t) => t.id === Number(selectedTypeId));
+  const includeSalary = !!selectedType?.certificateCode?.toUpperCase().includes('SALARY');
+  const validDays = (() => {
+    if (!issueDate || !expiryDate) return null;
+    const diff = Math.round((new Date(expiryDate).getTime() - new Date(issueDate).getTime()) / 86400000);
+    return diff >= 0 ? diff : null;
+  })();
 
-    setPreviewDoc(previewData);
+  // Action 1: ดูตัวอย่าง (Preview) — ดึงหนังสือรับรองจริงของผู้ใช้จาก API (ยังไม่บันทึกลงระบบ)
+  const handlePreview = () => {
+    if (!selectedTypeId) {
+      setFormError('กรุณาเลือกประเภทหนังสือรับรองก่อนดูตัวอย่าง');
+      return;
+    }
+    setFormError(null);
     setIsPreviewOpen(true);
   };
 
@@ -299,8 +281,8 @@ export default function CertificatePage() {
         </div>
       )}
 
-      {/* Main Form Card (รูปแบบและพื้นหลังเหมือน MyLeaveRequestForm) */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7">
+      {/* Main Form — การ์ดแยกซ้าย/ขวา กว้างและสูงเท่ากัน (รูปแบบเดียวกับฟอร์มยื่นใบลา) */}
+      <form onSubmit={handleSubmit}>
         {formError && (
           <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -308,97 +290,78 @@ export default function CertificatePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
-          {/* ─── คอลัมน์ซ้าย: ข้อมูลทั่วไป & ประเภทหนังสือรับรอง ─── */}
-          <div className="space-y-5">
-            {/* กล่องข้อมูลทั่วไป 4 ช่อง */}
-            <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+          {/* ─── คอลัมน์ซ้าย ─── */}
+          <div className="flex flex-col gap-5">
+            <div className={CARD}>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลทั่วไป</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ยื่น</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={formatThaiShort(issueDate)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed font-mono"
-                  />
+                  <input type="text" readOnly value={formatThaiShort(toInputDate(new Date()))} className={READONLY_INPUT} />
                 </div>
+              </div>
+            </div>
+
+            <div className={CARD}>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลพนักงาน</h3>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.fullName}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
-                  />
+                  <input type="text" readOnly value={profile.fullName || '-'} className={READONLY_INPUT} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.positionTitle || '-'}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
-                  />
+                  <input type="text" readOnly value={profile.positionTitle || '-'} className={READONLY_INPUT} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก/สังกัด</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.departmentName || '-'}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
-                  />
+                  <input type="text" readOnly value={profile.departmentName || '-'} className={READONLY_INPUT} />
                 </div>
               </div>
             </div>
 
-            {/* ประเภทหนังสือรับรอง */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                ประสงค์ขอรับรอง *
-              </label>
-              <select
-                value={selectedTypeId}
-                onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-                required
-              >
-                <option value="">-- เลือกประเภทหนังสือรับรอง --</option>
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.certificateName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* วัตถุประสงค์ในการขอเอกสาร (เหตุผล) */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">
-                  วัตถุประสงค์ในการขอเอกสาร *
-                </label>
-                <span className="text-2xs text-gray-400 font-mono">
-                  {purpose.length}/{REASON_MAX_LENGTH}
-                </span>
+            <div className={`${CARD} flex-1 space-y-5`}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอรับรอง *</label>
+                <select
+                  value={selectedTypeId}
+                  onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  required
+                >
+                  <option value="">-- เลือกประเภทหนังสือรับรอง --</option>
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.certificateName}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <textarea
-                value={purpose}
-                maxLength={REASON_MAX_LENGTH}
-                onChange={(e) => setPurpose(e.target.value)}
-                rows={3}
-                placeholder="ระบุวัตถุประสงค์ในการขอเอกสาร (เช่น เพื่อใช้ยื่นขอสินเชื่อที่อยู่อาศัย...)"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-                required
-              />
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">วัตถุประสงค์ในการขอเอกสาร *</label>
+                  <span className="text-2xs text-gray-400 font-mono">
+                    {purpose.length}/{REASON_MAX_LENGTH}
+                  </span>
+                </div>
+                <textarea
+                  value={purpose}
+                  maxLength={REASON_MAX_LENGTH}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  rows={3}
+                  placeholder="เช่น เพื่อใช้ประกอบการขอสินเชื่อที่อยู่อาศัย, เพื่อใช้ประกอบการขอวีซ่า"
+                  className={TEXTAREA}
+                  required
+                />
+                <p className="mt-1 text-2xs text-gray-400">ข้อความนี้จะแสดงในหนังสือรับรอง: “หนังสือรับรองฉบับนี้ออกให้เพื่อ...”</p>
+              </div>
             </div>
           </div>
 
-          {/* ─── คอลัมน์ขวา: วันที่ออก, วันหมดอายุ, ภาษา, หมายเหตุ ─── */}
-          <div className="space-y-5">
-            {/* วันที่ออก & รูปแบบภาษา (ใช้ LeaveDateRangePicker เหมือนหน้ายื่นการลา) */}
+          {/* ─── คอลัมน์ขวา ─── */}
+          <div className={`${CARD} h-full flex flex-col gap-5`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ออก *</label>
@@ -420,38 +383,25 @@ export default function CertificatePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบภาษา</label>
-                <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLanguage('TH')}
-                    className={`flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                      selectedLanguage === 'TH'
-                        ? 'bg-[#0B2046] text-white shadow-sm'
-                        : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  >
-                    ภาษาไทย
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLanguage('EN')}
-                    className={`flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                      selectedLanguage === 'EN'
-                        ? 'bg-[#0B2046] text-white shadow-sm'
-                        : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  >
-                    ฉบับสากล (EN)
-                  </button>
+                <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-full">
+                  {(['TH', 'EN'] as const).map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setSelectedLanguage(l)}
+                      className={`flex-1 inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        selectedLanguage === l ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      {l === 'TH' ? 'ภาษาไทย' : 'ฉบับสากล (EN)'}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* วันหมดอายุ (ใช้ LeaveDateRangePicker เหมือนหน้ายื่นการลา) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                วันหมดอายุ (มีผลบังคับใช้)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันหมดอายุ (มีผลบังคับใช้)</label>
               <LeaveDateRangePicker
                 mode="single"
                 className="w-full"
@@ -461,12 +411,33 @@ export default function CertificatePage() {
               />
             </div>
 
-            {/* หมายเหตุเพิ่มเติม (โครงสร้างเดียวกับ ระหว่างลาจะติดต่อข้าพเจ้าได้ที่) */}
-            <div>
+            {/* สรุปสิ่งที่จะปรากฏในหนังสือรับรอง (รูปแบบเดียวกับกล่องสถิติโควตาในหน้าการลา) */}
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+              <p className="text-xs font-semibold text-blue-700 mb-3">
+                ข้อมูลในหนังสือรับรอง{selectedType ? ` (${selectedType.certificateName})` : ''}
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                  <div className="text-[11px] text-gray-400">ภาษา</div>
+                  <div className="text-sm font-bold text-gray-800">{selectedLanguage === 'TH' ? 'ไทย' : 'อังกฤษ'}</div>
+                </div>
+                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                  <div className="text-[11px] text-gray-400">อัตราเงินเดือน</div>
+                  <div className="text-sm font-bold text-gray-800">{selectedType ? (includeSalary ? 'แสดง' : 'ไม่แสดง') : '-'}</div>
+                </div>
+                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                  <div className="text-[11px] text-gray-400">อายุเอกสาร</div>
+                  <div className="text-sm font-bold text-gray-800">{validDays != null ? `${validDays} วัน` : '-'}</div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-blue-700/80">
+                ชื่อ ตำแหน่ง วันที่เริ่มงาน อายุงาน{includeSalary ? ' และเงินเดือน' : ''} ดึงจากระบบอัตโนมัติ — กด “ดูตัวอย่าง” เพื่อตรวจสอบก่อนยื่น
+              </p>
+            </div>
+
+            <div className="flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">
-                  หมายเหตุเพิ่มเติม (ถ้ามี)
-                </label>
+                <label className="block text-sm font-medium text-gray-700">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
                 <span className="text-2xs text-gray-400 font-mono">
                   {notes.length}/{NOTES_MAX_LENGTH}
                 </span>
@@ -476,8 +447,8 @@ export default function CertificatePage() {
                 maxLength={NOTES_MAX_LENGTH}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                placeholder="ระบุข้อมูลเพิ่มเติมถึงฝ่ายบุคคล..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                placeholder="ระบุข้อมูลเพิ่มเติมถึงฝ่ายบุคคล เช่น ต้องการ 2 ฉบับ"
+                className={`${TEXTAREA} flex-1 min-h-[72px]`}
               />
             </div>
           </div>
@@ -557,11 +528,9 @@ export default function CertificatePage() {
       {/* Certificate Preview Modal */}
       <CertificatePreviewModal
         isOpen={isPreviewOpen}
-        onClose={() => {
-          setIsPreviewOpen(false);
-          setPreviewDoc(null);
-        }}
-        initialDoc={previewDoc}
+        onClose={() => setIsPreviewOpen(false)}
+        previewParams={selectedTypeId ? { certificateTypeId: Number(selectedTypeId), purpose: purpose.trim() } : null}
+        initialLang={selectedLanguage}
       />
     </div>
   );

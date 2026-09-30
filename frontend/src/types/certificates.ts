@@ -45,6 +45,13 @@ export interface CertificateDocument {
   language: string;
   certificateCode: string;
   certificateTitle: string;
+  /** true = ตัวอย่างก่อนยื่นคำขอ (ยังไม่มีเลขที่เอกสาร) */
+  isPreview?: boolean;
+  /** หนังสือรับรองเงินเดือน (แสดงอัตราเงินเดือน) */
+  includeSalary?: boolean;
+  /** วันที่เริ่มงาน/วันที่ออกหนังสือ ตามภาษาเอกสาร */
+  startDateText?: string;
+  issueDateText?: string;
   companyName: string;
   companyAddress?: string;
   companyPhone?: string;
