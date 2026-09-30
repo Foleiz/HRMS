@@ -28,6 +28,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<EmployeeBankAccount> EmployeeBankAccounts => Set<EmployeeBankAccount>();
     public DbSet<EmployeeSocialSecurity> EmployeeSocialSecurities => Set<EmployeeSocialSecurity>();
     public DbSet<EmployeeEducation> EmployeeEducations => Set<EmployeeEducation>();
+    public DbSet<EmployeeWorkExperience> EmployeeWorkExperiences => Set<EmployeeWorkExperience>();
     public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
     public DbSet<EmergencyContact> EmergencyContacts => Set<EmergencyContact>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
@@ -314,6 +315,26 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
         });
 
         // Configuration: EmployeeEducation
+        modelBuilder.Entity<EmployeeWorkExperience>(entity =>
+        {
+            entity.ToTable("employee_work_experience", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.CompanyName).HasColumnName("company_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.PositionName).HasColumnName("position_name").HasMaxLength(255);
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.LastSalary).HasColumnName("last_salary").HasPrecision(15, 2);
+            entity.Property(e => e.LeavingReason).HasColumnName("leaving_reason");
+            entity.Property(e => e.JobDescription).HasColumnName("job_description");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany(emp => emp.WorkExperiences)
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<EmployeeEducation>(entity =>
         {
             entity.ToTable("employee_education", "hrms");

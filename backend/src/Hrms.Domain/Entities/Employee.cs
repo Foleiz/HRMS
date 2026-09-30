@@ -58,6 +58,7 @@ public class Employee : BaseEntity
     public virtual ICollection<EmployeeAddress> Addresses { get; set; } = new List<EmployeeAddress>();
     public virtual ICollection<EmployeeBankAccount> BankAccounts { get; set; } = new List<EmployeeBankAccount>();
     public virtual ICollection<EmployeeEducation> Educations { get; set; } = new List<EmployeeEducation>();
+    public virtual ICollection<EmployeeWorkExperience> WorkExperiences { get; set; } = new List<EmployeeWorkExperience>();
     public virtual ICollection<FamilyMember> FamilyMembers { get; set; } = new List<FamilyMember>();
     public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
     public virtual ICollection<EmployeeAssignment> Assignments { get; set; } = new List<EmployeeAssignment>();

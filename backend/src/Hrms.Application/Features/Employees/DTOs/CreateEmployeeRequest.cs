@@ -63,6 +63,11 @@ public class CreateEmployeeRequest
     /// <summary>หัวหน้างานโดยตรง (Employee Id)</summary>
     public long? ManagerEmployeeId { get; set; }
 
+    /// <summary>ประวัติการศึกษาทั้งชุด (ถ้าส่งมา จะใช้แทนช่องเดี่ยวด้านล่าง)</summary>
+    public List<EmployeeEducationInput>? Educations { get; set; }
+    /// <summary>ประวัติการทำงาน</summary>
+    public List<EmployeeWorkExperienceInput>? WorkExperiences { get; set; }
+
     // วุฒิการศึกษา
     public string? EducationLevel { get; set; }
     public string? Institution { get; set; }

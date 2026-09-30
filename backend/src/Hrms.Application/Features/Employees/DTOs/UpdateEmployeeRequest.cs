@@ -36,13 +36,14 @@ public class UpdateEmployeeRequest
     public long? MaritalStatusId { get; set; }
 
     public string? MilitaryStatus { get; set; }
-    public bool IsTopLevel { get; set; }
+    /// <summary>ไม่ส่ง (null) = ไม่แก้ค่าเดิม</summary>
+    public bool? IsTopLevel { get; set; }
 
-    // ข้อมูลลดหย่อนภาษี
-    public bool SpouseHasIncome { get; set; }
-    public int NumberOfChildren { get; set; }
-    public int ParentDeductionCount { get; set; }
-    public int DisabilityDeductionCount { get; set; }
+    // ข้อมูลลดหย่อนภาษี — ไม่ส่ง (null) = ไม่แก้ค่าเดิม (กันหน้าที่ไม่มีช่องเหล่านี้ล้างข้อมูลเป็น 0)
+    public bool? SpouseHasIncome { get; set; }
+    public int? NumberOfChildren { get; set; }
+    public int? ParentDeductionCount { get; set; }
+    public int? DisabilityDeductionCount { get; set; }
 
     // ช่องทางการติดต่อ
     public string? PersonalPhone { get; set; }
@@ -67,6 +68,11 @@ public class UpdateEmployeeRequest
     public string? BankName { get; set; }
     public string? AccountNumber { get; set; }
     public List<CreateEmployeeBankAccountDto>? BankAccounts { get; set; }
+
+    /// <summary>ประวัติการศึกษาทั้งชุด (null = ไม่แก้ / ใช้ช่องเดี่ยวด้านล่างแบบเดิม)</summary>
+    public List<EmployeeEducationInput>? Educations { get; set; }
+    /// <summary>ประวัติการทำงานทั้งชุด (null = ไม่แก้)</summary>
+    public List<EmployeeWorkExperienceInput>? WorkExperiences { get; set; }
 
     // ประวัติการศึกษา
     public string? EducationLevel { get; set; }

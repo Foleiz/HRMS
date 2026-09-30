@@ -22,6 +22,8 @@ import { useToast } from '@/context/ToastContext';
 import { getAvatarUrl } from '@/lib/api-client';
 import { useAuth } from '@/context/AuthContext';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
+import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
+import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 
 
 // รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
@@ -87,9 +89,10 @@ export default function EmployeeDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
   // เปิดแท็บเอกสารได้โดยตรงจากลิงก์ เช่น /employees/5?tab=documents
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'user' | 'documents'>(() =>
-    searchParams.get('tab') === 'documents' ? 'documents' : 'personal'
-  );
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax' | 'user' | 'documents' | 'history'>(() => {
+    const tab = searchParams.get('tab');
+    return tab === 'documents' || tab === 'history' ? tab : 'personal';
+  });
   const { hasRole } = useAuth();
   const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
 
@@ -442,7 +445,7 @@ export default function EmployeeDetailPage() {
           {/* Top Bar: Tabs & Action Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-3.5 gap-3">
             {/* Tabs */}
-            <div className="flex items-center gap-6 text-xs font-medium">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setActiveTab('personal')}
@@ -481,6 +484,30 @@ export default function EmployeeDetailPage() {
 
               <button
                 type="button"
+                onClick={() => setActiveTab('background')}
+                className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
+                  activeTab === 'background'
+                    ? 'border-[#0B2046] text-[#0B2046]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                การศึกษา & ประวัติการทำงาน
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('tax')}
+                className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
+                  activeTab === 'tax'
+                    ? 'border-[#0B2046] text-[#0B2046]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                ภาษี & ประกันสังคม
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('user')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'user'
@@ -502,6 +529,20 @@ export default function EmployeeDetailPage() {
               >
                 เอกสาร
               </button>
+
+              {canManageDocuments && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('history')}
+                  className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
+                    activeTab === 'history'
+                      ? 'border-[#0B2046] text-[#0B2046]'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  ประวัติการเปลี่ยนแปลง
+                </button>
+              )}
             </div>
 
             {/* แก้ไขข้อมูล Button */}
@@ -877,6 +918,10 @@ export default function EmployeeDetailPage() {
           {/* ============================================================ */}
           {/* TAB 5: แฟ้มเอกสารพนักงาน (Employee Documents)               */}
           {/* ============================================================ */}
+          {activeTab === 'background' && <EmployeeBackgroundView employee={employee} />}
+          {activeTab === 'history' && canManageDocuments && <EmployeeChangeHistoryTab employeeId={employee.id} />}
+          {activeTab === 'tax' && <EmployeeTaxSsoView employee={employee} />}
+
           {activeTab === 'documents' && (
             <EmployeeDocumentsTab employeeId={employee.id} canManage={canManageDocuments} />
           )}
