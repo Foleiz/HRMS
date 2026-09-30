@@ -13,6 +13,8 @@ public interface ICertificateService
     Task<CertificateRequestDto> RejectRequestAsync(long id, long approverId, string reason, CancellationToken cancellationToken = default);
     Task<bool> CancelRequestAsync(long requestId, string? reason = null, CancellationToken cancellationToken = default);
     Task<CertificateDocumentDto> GetCertificateDocumentAsync(long requestId, string? lang = "TH", CancellationToken cancellationToken = default);
+    /// <summary>ตัวอย่างหนังสือรับรองของผู้ใช้ปัจจุบัน (ยังไม่ยื่นคำขอ) — ใช้ข้อมูลจริงของพนักงาน</summary>
+    Task<CertificateDocumentDto> PreviewCertificateDocumentAsync(long certificateTypeId, string? purpose, string? lang = "TH", CancellationToken cancellationToken = default);
     Task<List<EmployeeSignatureDto>> GetActiveSignaturesAsync(CancellationToken cancellationToken = default);
     Task<EmployeeSignatureDto> UploadSignatureAsync(SignatureUploadDto dto, CancellationToken cancellationToken = default);
 }

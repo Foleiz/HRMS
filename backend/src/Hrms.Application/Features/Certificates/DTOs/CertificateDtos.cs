@@ -61,6 +61,10 @@ public class CertificateDocumentDto
     public string Language { get; set; } = "TH";
     public string CertificateCode { get; set; } = string.Empty;
     public string CertificateTitle { get; set; } = string.Empty;
+    /// <summary>true = เป็นตัวอย่างก่อนยื่นคำขอ (ยังไม่มีเลขที่เอกสาร)</summary>
+    public bool IsPreview { get; set; }
+    /// <summary>หนังสือรับรองเงินเดือน (แสดงอัตราเงินเดือน)</summary>
+    public bool IncludeSalary { get; set; }
 
     // Company Profile
     public string CompanyName { get; set; } = string.Empty;
@@ -77,6 +81,10 @@ public class CertificateDocumentDto
     public string PositionName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
+    /// <summary>วันที่เริ่มงานตามภาษาเอกสาร เช่น "16 มกราคม พ.ศ. 2566"</summary>
+    public string StartDateText { get; set; } = string.Empty;
+    /// <summary>วันที่ออกหนังสือตามภาษาเอกสาร</summary>
+    public string IssueDateText { get; set; } = string.Empty;
     public string ServiceDurationText { get; set; } = string.Empty;
     public decimal? BaseSalary { get; set; }
     public string? SalaryText { get; set; }
