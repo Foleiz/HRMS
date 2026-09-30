@@ -2039,7 +2039,7 @@ export default function PayrollPage() {
                           case 'PERCENT_SALES':
                             return { label: 'คอมมิชชั่น % ยอดขาย', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
                           case 'DILIGENT_ALLOWANCE':
-                            return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
+                            return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย/ลา)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
                           case 'PRORATED_DAYS':
                             return { label: 'สัดส่วนวันทำงานจริง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
                           case 'MANUAL_BONUS':

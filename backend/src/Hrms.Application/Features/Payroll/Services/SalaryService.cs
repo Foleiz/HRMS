@@ -1650,13 +1650,16 @@ public class SalaryService : ISalaryService
 
         var periodStartDt = DateTime.SpecifyKind(period.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
         var periodEndDt = DateTime.SpecifyKind(period.EndDate.AddDays(1).ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
-        var unpaidLeaves = await _context.LeaveRequests
+        // ใบลาที่อนุมัติแล้วในรอบ: ใช้ทั้งหักลาไม่รับค่าจ้าง และเงื่อนไขเบี้ยขยัน
+        var approvedLeaves = await _context.LeaveRequests
             .Include(r => r.LeaveType)
             .Where(r => r.Status == "APPROVED"
-                && r.LeaveType != null && !r.LeaveType.IsPaidLeave
                 && r.StartDatetime <= periodEndDt && r.EndDatetime >= periodStartDt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+        var unpaidLeaves = approvedLeaves
+            .Where(r => r.LeaveType != null && !r.LeaveType.IsPaidLeave)
+            .ToList();
 
         int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
         var eligibleIds = new HashSet<long>();
@@ -1729,6 +1732,7 @@ public class SalaryService : ISalaryService
 
             // ===== 2. หักวันลาไม่รับค่าจ้าง (เฉพาะวันลาที่อนุมัติแล้ว และอยู่ในช่วงที่ทำงานในรอบนี้) =====
             decimal unpaidDays = CalculateUnpaidLeaveDays(unpaidLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
+            decimal periodLeaveDays = CalculateUnpaidLeaveDays(approvedLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
             if (unpaidDays > 0)
             {
                 decimal unpaidAmount = Math.Min(baseSalary, Math.Round(dailyRate * unpaidDays, 2, MidpointRounding.AwayFromZero));
@@ -1739,7 +1743,7 @@ public class SalaryService : ISalaryService
             // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
             foreach (var item in autoItems)
             {
-                var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance);
+                var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance, periodLeaveDays);
                 if (line != null) lines.Add(line);
             }
 
@@ -1764,16 +1768,20 @@ public class SalaryService : ISalaryService
             // ===== 6. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
             // เงินได้ประจำ: ประมาณการทั้งปีจากยอดเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
             // เงินได้ไม่ประจำ (โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในเดือนที่จ่าย
-            decimal regularMonthly = fullSalary + lines.Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable)
+            // กองทุนสำรองเลี้ยงชีพ (ส่วนลูกจ้าง) เป็นค่าลดหย่อน ไม่ใช่รายการที่ไปลดเงินได้
+            decimal regularMonthly = fullSalary + lines.Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable && !IsProvidentFund(l.Item))
                 .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
             decimal fullMonthSso = hasSso ? CalculateSsoContribution(fullSalary, ssoRate.EmployeePercent, ssoRate) : 0;
-            decimal regularAnnualTax = CalculateAnnualTax(regularMonthly * 12, fullMonthSso * 12, taxBrackets);
+            decimal monthlyPvd = lines.Where(l => l.IsRegular && IsProvidentFund(l.Item)).Sum(l => l.Amount);
+            if (isProrated && factor > 0) monthlyPvd = Math.Round(monthlyPvd / factor, 2, MidpointRounding.AwayFromZero);
+            decimal annualPvdAllowance = CalculatePvdAllowance(monthlyPvd * 12, fullSalary * 12);
+            decimal regularAnnualTax = CalculateAnnualTax(regularMonthly * 12, fullMonthSso * 12, taxBrackets, annualPvdAllowance);
             decimal regularMonthlyTax = Math.Round(regularAnnualTax / 12m * factor, 2, MidpointRounding.AwayFromZero);
 
-            decimal irregularTaxable = lines.Where(l => !l.IsRegular && l.Item.IsTaxable)
+            decimal irregularTaxable = lines.Where(l => !l.IsRegular && l.Item.IsTaxable && !IsProvidentFund(l.Item))
                 .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
             decimal irregularTax = irregularTaxable != 0
-                ? CalculateAnnualTax(regularMonthly * 12 + irregularTaxable, fullMonthSso * 12, taxBrackets) - regularAnnualTax
+                ? CalculateAnnualTax(regularMonthly * 12 + irregularTaxable, fullMonthSso * 12, taxBrackets, annualPvdAllowance) - regularAnnualTax
                 : 0;
             decimal monthlyTax = Math.Max(0, Math.Round(regularMonthlyTax + irregularTax, 2, MidpointRounding.AwayFromZero));
 
@@ -1884,7 +1892,7 @@ public class SalaryService : ISalaryService
     /// FIXED = ยอดคงที่ทุกคน, DILIGENT_ALLOWANCE = เบี้ยขยัน (ไม่ขาด / สายไม่เกินเกณฑ์),
     /// LATE_ABSENT = หักมาสาย/ขาดงาน, PERCENT_SALARY = % ของเงินเดือน
     /// </summary>
-    private static CalcLine? CalculateConfiguredItem(PayrollItem item, decimal baseSalary, decimal dailyRate, decimal hourlyRate, AttendanceMonthlySummary? attendance)
+    private static CalcLine? CalculateConfiguredItem(PayrollItem item, decimal baseSalary, decimal dailyRate, decimal hourlyRate, AttendanceMonthlySummary? attendance, decimal periodLeaveDays = 0)
     {
         decimal amount;
         decimal? quantity = null;
@@ -1902,13 +1910,21 @@ public class SalaryService : ISalaryService
             {
                 case "DILIGENT_ALLOWANCE":
                 {
-                    if (attendance == null) return null; // ไม่มีข้อมูลเวลา → ยืนยันเงื่อนไขไม่ได้
+                    // ต้องมีข้อมูลเวลาเข้างานจริงของเดือนนั้น (สรุปที่ไม่มีวันทำงานจริงเลย = ยังไม่มีข้อมูล)
+                    if (attendance == null) return null;
+                    if (attendance.TotalActualWorkDays <= 0 && attendance.TotalWorkedMinutes <= 0) return null;
                     decimal allowance = ParseFirstNumber(item.FormulaValue) ?? 0;
                     var lateLimitMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"สาย\s*<=?\s*(\d+)");
                     int lateLimit = lateLimitMatch.Success ? int.Parse(lateLimitMatch.Groups[1].Value) : 1;
-                    if (attendance.TotalAbsentDays > 0 || attendance.TotalLateDays > lateLimit) return null;
+                    // วันลาที่ยอมให้ได้เบี้ยขยัน: ระบุในค่าสูตรเป็น "ลา<=N" (ค่าเริ่มต้น 0 = ลาวันไหนก็ไม่ได้เบี้ยขยัน)
+                    var leaveLimitMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"ลา\s*<=?\s*(\d+(?:\.\d+)?)");
+                    decimal leaveLimit = leaveLimitMatch.Success
+                        ? decimal.Parse(leaveLimitMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
+                        : 0m;
+                    decimal leaveDays = Math.Max(periodLeaveDays, attendance.TotalLeaveDays);
+                    if (attendance.TotalAbsentDays > 0 || attendance.TotalLateDays > lateLimit || leaveDays > leaveLimit) return null;
                     amount = allowance;
-                    subtext = $"เบี้ยขยัน (ไม่ขาดงาน และมาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง)";
+                    subtext = $"เบี้ยขยัน (ไม่ขาดงาน, มาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง, ลา {leaveDays:0.##} วัน ไม่เกิน {leaveLimit:0.##} วัน)";
                     break;
                 }
                 case "LATE_ABSENT":
@@ -2017,11 +2033,14 @@ public class SalaryService : ISalaryService
         return result;
     }
 
-    /// <summary>ภาษีเงินได้ทั้งปี: หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี แล้วคิดตามขั้นบันได</summary>
-    private static decimal CalculateAnnualTax(decimal annualIncome, decimal annualSso, List<TaxBracket> taxBrackets)
+    /// <summary>
+    /// ภาษีเงินได้ทั้งปี: หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี
+    /// / เงินสะสมกองทุนสำรองเลี้ยงชีพ แล้วคิดตามขั้นบันได
+    /// </summary>
+    private static decimal CalculateAnnualTax(decimal annualIncome, decimal annualSso, List<TaxBracket> taxBrackets, decimal annualPvdAllowance = 0)
     {
         decimal standardExpenses = Math.Min(Math.Max(0, annualIncome) * 0.50m, 100000.0m);
-        decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - 60000.0m - annualSso);
+        decimal taxableIncome = Math.Max(0, annualIncome - standardExpenses - 60000.0m - annualSso - Math.Max(0, annualPvdAllowance));
 
         decimal annualTax = 0;
         foreach (var bracket in taxBrackets)
@@ -2036,6 +2055,22 @@ public class SalaryService : ISalaryService
         }
 
         return annualTax;
+    }
+
+    /// <summary>รายการหักที่เป็นเงินสะสมกองทุนสำรองเลี้ยงชีพ (ดูจากรหัส PVD/PROVIDENT หรือชื่อ "สำรองเลี้ยงชีพ")</summary>
+    private static bool IsProvidentFund(PayrollItem item)
+    {
+        if (!string.Equals(item.ItemType, "DEDUCTION", StringComparison.OrdinalIgnoreCase)) return false;
+        var code = item.ItemCode?.ToUpperInvariant() ?? string.Empty;
+        return code.Contains("PVD") || code.Contains("PROVIDENT")
+            || (item.ItemName?.Contains("สำรองเลี้ยงชีพ") ?? false);
+    }
+
+    /// <summary>ค่าลดหย่อนกองทุนสำรองเลี้ยงชีพทั้งปี: ไม่เกิน 15% ของค่าจ้าง และไม่เกิน 500,000 บาท</summary>
+    private static decimal CalculatePvdAllowance(decimal annualContribution, decimal annualWage)
+    {
+        if (annualContribution <= 0) return 0;
+        return Math.Min(annualContribution, Math.Min(Math.Max(0, annualWage) * 0.15m, 500000m));
     }
 
     /// <summary>เงินเดือนล่าสุดของพนักงานแต่ละคนที่มีผลภายในปีที่กำหนด (ใช้คำนวณโบนัส)</summary>
