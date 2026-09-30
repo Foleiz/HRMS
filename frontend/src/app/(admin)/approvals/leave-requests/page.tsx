@@ -335,7 +335,7 @@ export default function LeaveRequestsApprovalPage() {
       });
     });
 
-    // 4. คำร้องเอกสารทั่วไป
+    // 4. คำขออื่นๆ
     generalRequests.forEach((gen) => {
       const issueStr = formatDate(gen.issueDate);
       const expiryStr = gen.expiryDate ? ` - ${formatDate(gen.expiryDate)}` : '';
@@ -343,7 +343,7 @@ export default function LeaveRequestsApprovalPage() {
         id: `GEN-${gen.id}`,
         rawId: gen.id,
         docType: 'GENERAL',
-        docTypeName: 'เอกสารทั่วไป',
+        docTypeName: 'คำขออื่นๆ',
         requestNo: gen.requestNo,
         employeeId: gen.employeeId,
         employeeCode: gen.employeeCode,
@@ -355,10 +355,10 @@ export default function LeaveRequestsApprovalPage() {
         submittedAt: gen.submittedAt || null,
         status: gen.status,
         isMyTurnToApprove: !!gen.isMyTurnToApprove,
-        hasAlreadyApproved: gen.status === 'APPROVED',
+        hasAlreadyApproved: gen.hasAlreadyApproved ?? gen.status === 'APPROVED',
         approvedByName: gen.approvedByName,
         approvedAt: gen.approvedAt,
-        canCancel: gen.status === 'APPROVED' || gen.canCancel,
+        canCancel: gen.canCancel,
         generalRaw: gen,
       });
     });
@@ -684,10 +684,10 @@ export default function LeaveRequestsApprovalPage() {
     try {
       await generalDocumentService.approveRequest(selectedGeneralForApprove.id);
       setSelectedGeneralForApprove(null);
-      showToast('อนุมัติคำร้องเอกสารทั่วไปสำเร็จ');
+      showToast('อนุมัติคำขออื่นๆสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการอนุมัติคำร้อง');
+      showToast('เกิดข้อผิดพลาดในการอนุมัติคำขอ');
     } finally {
       setIsSubmittingGeneralApprove(false);
     }
@@ -708,10 +708,10 @@ export default function LeaveRequestsApprovalPage() {
     try {
       await generalDocumentService.rejectRequest(selectedGeneralForReject.id, rejectGeneralReason.trim());
       setSelectedGeneralForReject(null);
-      showToast('ปฏิเสธคำร้องเอกสารทั่วไปสำเร็จ');
+      showToast('ปฏิเสธคำขออื่นๆสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการปฏิเสธคำร้อง');
+      showToast('เกิดข้อผิดพลาดในการปฏิเสธคำขอ');
     } finally {
       setIsSubmittingGeneralReject(false);
     }
@@ -723,19 +723,19 @@ export default function LeaveRequestsApprovalPage() {
       singleButton: false,
       isLoading: false,
       cancelText: 'ยกเลิก',
-      title: 'ยกเลิกคำร้องเอกสารทั่วไป',
-      message: `ยกเลิกคำร้องเอกสารของ "${req.employeeName}" (${req.documentType}) ใช่หรือไม่?`,
-      confirmText: 'ยกเลิกคำร้อง',
+      title: 'ยกเลิกคำขออื่นๆ',
+      message: `ยกเลิกคำขอของ "${req.employeeName}" (${req.documentType}) ใช่หรือไม่?`,
+      confirmText: 'ยกเลิกคำขอ',
       type: 'danger',
       onConfirm: async () => {
         try {
           await generalDocumentService.cancelRequest(req.id);
           closeConfirm();
-          showToast('ยกเลิกคำร้องเอกสารทั่วไปสำเร็จ');
+          showToast('ยกเลิกคำขออื่นๆสำเร็จ');
           fetchData();
         } catch (err: any) {
           closeConfirm();
-          showToast('เกิดข้อผิดพลาดในการยกเลิกคำร้อง');
+          showToast('เกิดข้อผิดพลาดในการยกเลิกคำขอ');
         }
       },
     });
@@ -815,7 +815,7 @@ export default function LeaveRequestsApprovalPage() {
                 <option value="LEAVE">คำขอลา</option>
                 <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
                 <option value="RESIGNATION">คำขอลาออก</option>
-                <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
+                <option value="GENERAL">คำขออื่นๆ</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -935,7 +935,7 @@ export default function LeaveRequestsApprovalPage() {
                         {item.docType === 'GENERAL' && (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
                             <FileText className="w-3.5 h-3.5 text-amber-500" />
-                            เอกสารทั่วไป
+                            คำขออื่นๆ
                           </span>
                         )}
                       </td>
@@ -1578,7 +1578,7 @@ export default function LeaveRequestsApprovalPage() {
         } : null}
       />
 
-      {/* ─── Modal ยืนยันการอนุมัติคำร้องเอกสารทั่วไป ─── */}
+      {/* ─── Modal ยืนยันการอนุมัติคำขออื่นๆ ─── */}
       {selectedGeneralForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
@@ -1590,7 +1590,7 @@ export default function LeaveRequestsApprovalPage() {
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-800">ยืนยันการอนุมัติคำร้องเอกสารทั่วไป</h3>
+                <h3 className="text-base font-bold text-slate-800">ยืนยันการอนุมัติคำขออื่นๆ</h3>
                 <p className="text-xs text-slate-500">
                   {selectedGeneralForApprove.requestNo} • {selectedGeneralForApprove.employeeName}
                 </p>
@@ -1609,7 +1609,25 @@ export default function LeaveRequestsApprovalPage() {
               {selectedGeneralForApprove.fileName && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">ไฟล์แนบ:</span>
-                  <span className="font-medium text-blue-600 truncate max-w-44">{selectedGeneralForApprove.fileName}</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const blob = await generalDocumentService.downloadAttachment(selectedGeneralForApprove.id);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = selectedGeneralForApprove.fileName || 'attachment';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch {
+                        showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้');
+                      }
+                    }}
+                    className="font-medium text-blue-600 hover:underline truncate max-w-44 cursor-pointer"
+                  >
+                    {selectedGeneralForApprove.fileName}
+                  </button>
                 </div>
               )}
             </div>
@@ -1641,7 +1659,7 @@ export default function LeaveRequestsApprovalPage() {
         </div>
       )}
 
-      {/* ─── Modal ปฏิเสธคำร้องเอกสารทั่วไป ─── */}
+      {/* ─── Modal ปฏิเสธคำขออื่นๆ ─── */}
       {selectedGeneralForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
@@ -1653,7 +1671,7 @@ export default function LeaveRequestsApprovalPage() {
                 <XCircle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-800">ปฏิเสธคำร้องเอกสารทั่วไป</h3>
+                <h3 className="text-base font-bold text-slate-800">ปฏิเสธคำขออื่นๆ</h3>
                 <p className="text-xs text-slate-500">
                   {selectedGeneralForReject.requestNo} • {selectedGeneralForReject.employeeName}
                 </p>
@@ -1667,7 +1685,7 @@ export default function LeaveRequestsApprovalPage() {
               <textarea
                 value={rejectGeneralReason}
                 onChange={(e) => setRejectGeneralReason(e.target.value)}
-                placeholder="ระบุเหตุผลในการปฏิเสธคำร้อง..."
+                placeholder="ระบุเหตุผลในการปฏิเสธคำขอ..."
                 rows={3}
                 className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all outline-none resize-none"
               />
@@ -1700,7 +1718,7 @@ export default function LeaveRequestsApprovalPage() {
         </div>
       )}
 
-      {/* ─── Modal ดูตัวอย่างคำร้องเอกสารทั่วไป (General Document Preview) ─── */}
+      {/* ─── Modal ดูตัวอย่างคำขออื่นๆ (General Document Preview) ─── */}
       <GeneralDocumentPreviewModal
         isOpen={isGeneralPreviewOpen}
         onClose={() => {

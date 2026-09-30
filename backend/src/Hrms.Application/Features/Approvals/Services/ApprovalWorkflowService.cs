@@ -118,6 +118,13 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
             requesterId = transferReq?.EmployeeId;
         }
+        else if (instance.DocumentType == "GENERAL_REQUEST")
+        {
+            var generalReq = await _context.GeneralRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
+            requesterId = generalReq?.EmployeeId;
+        }
 
         return requesterId;
     }
@@ -618,6 +625,17 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 }
             }
         }
+        else if (instance.DocumentType == "GENERAL_REQUEST")
+        {
+            var general = await _context.GeneralRequests
+                .FirstOrDefaultAsync(g => g.Id == instance.SourceDocumentId, cancellationToken);
+
+            if (general != null)
+            {
+                general.Status = instance.Status;
+                general.CompletedAt ??= DateTime.UtcNow;
+            }
+        }
     }
 
     // ===================== In-app Notifications =====================
@@ -631,6 +649,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         ["EMPLOYMENT_CONTRACT"] = "สัญญาจ้างงาน",
         ["PAYROLL_PERIOD"] = "รอบเงินเดือน",
         ["TRANSFER_REQUEST"] = "คำขอย้ายแผนก/เลื่อนตำแหน่ง",
+        ["GENERAL_REQUEST"] = "คำขออื่นๆ",
     };
 
     private static string GetDocumentLabel(string documentType) =>

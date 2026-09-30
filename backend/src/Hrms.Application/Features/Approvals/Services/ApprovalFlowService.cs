@@ -16,7 +16,7 @@ public class ApprovalFlowService : IApprovalFlowService
     {
         "ATTENDANCE_ADJUSTMENT", "LEAVE_REQUEST", "RESIGNATION_REQUEST",
         "CERTIFICATE_REQUEST", "EMPLOYMENT_CONTRACT", "PAYROLL_PERIOD",
-        "TRANSFER_REQUEST"
+        "TRANSFER_REQUEST", "GENERAL_REQUEST"
     };
 
     /// <summary>ประเภทผู้อนุมัติที่เลือกได้เมื่อสร้าง/แก้ไขสายการอนุมัติ</summary>

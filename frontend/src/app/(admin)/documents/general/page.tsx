@@ -54,10 +54,10 @@ export default function GeneralDocumentPage() {
 
   // Employee Profile
   const [profile, setProfile] = useState({
-    fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-    employeeCode: user?.employeeCode || 'EMP001',
-    positionTitle: 'วิศวกรซอฟต์แวร์อาวุโส',
-    departmentName: 'แผนกพัฒนาซอฟต์แวร์',
+    fullName: user?.fullName || '',
+    employeeCode: user?.employeeCode || '',
+    positionTitle: '',
+    departmentName: '',
   });
 
   // Form Fields (ตาม Figma)
@@ -87,7 +87,7 @@ export default function GeneralDocumentPage() {
 
   // Sync breadcrumb & Load saved draft
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'เอกสารทั่วไป' });
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'คำขออื่นๆ' });
 
     try {
       const savedDraft = localStorage.getItem('hrms_general_doc_draft');
@@ -122,10 +122,10 @@ export default function GeneralDocumentPage() {
         });
         if (balances && balances.length > 0) {
           setProfile({
-            fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-            employeeCode: user?.employeeCode || 'EMP001',
-            positionTitle: balances[0]?.positionTitle || 'วิศวกรซอฟต์แวร์อาวุโส',
-            departmentName: balances[0]?.departmentName || 'แผนกพัฒนาซอฟต์แวร์',
+            fullName: user?.fullName || '',
+            employeeCode: user?.employeeCode || '',
+            positionTitle: balances[0]?.positionTitle || '',
+            departmentName: balances[0]?.departmentName || '',
           });
         }
       }
@@ -150,8 +150,8 @@ export default function GeneralDocumentPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 10 * 1024 * 1024) {
-        setFormError('ขนาดไฟล์ต้องไม่เกิน 10 MB');
+      if (file.size > 5 * 1024 * 1024) {
+        setFormError('ขนาดไฟล์ต้องไม่เกิน 5 MB');
         return;
       }
       setSelectedFile(file);
@@ -193,7 +193,7 @@ export default function GeneralDocumentPage() {
     }
     setSavingDraft(true);
     try {
-      const finalDocType = isCustomType ? customDocumentType.trim() || 'เอกสารทั่วไป' : documentType;
+      const finalDocType = isCustomType ? customDocumentType.trim() || 'คำขออื่นๆ' : documentType;
       localStorage.setItem(
         'hrms_general_doc_draft',
         JSON.stringify({
@@ -214,16 +214,16 @@ export default function GeneralDocumentPage() {
     }
   };
 
-  // ยื่นคำร้องเอกสารทั่วไป
+  // ยื่นคำขออื่นๆ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalDocType = isCustomType ? customDocumentType.trim() : documentType;
     if (!finalDocType) {
-      setFormError('กรุณาระบุประเภทเอกสาร');
+      setFormError('กรุณาระบุประเภทคำขอ');
       return;
     }
     if (!purpose.trim()) {
-      setFormError('กรุณาระบุวัตถุประสงค์ (เอกสารนี้ใช้สำหรับ *)');
+      setFormError('กรุณาระบุรายละเอียดของคำขอ');
       return;
     }
 
@@ -231,41 +231,43 @@ export default function GeneralDocumentPage() {
       setIsSubmitting(true);
       setFormError(null);
 
-      await generalDocumentService.createRequest(
-        {
-          documentType: finalDocType,
-          issueDate,
-          expiryDate: expiryDate || undefined,
-          purpose: purpose.trim(),
-          notes: notes.trim() || undefined,
-          fileName: selectedFile?.name,
-        },
-        {
-          id: user?.employeeId || 1,
-          name: profile.fullName,
-          code: profile.employeeCode,
-          dept: profile.departmentName,
-          pos: profile.positionTitle,
-        }
-      );
+      // แนบไฟล์เป็น base64 (data URL) ส่งไปเก็บที่ backend
+      const fileData = selectedFile
+        ? await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์แนบได้'));
+            reader.readAsDataURL(selectedFile);
+          })
+        : undefined;
+
+      await generalDocumentService.createRequest({
+        documentType: finalDocType,
+        issueDate,
+        expiryDate: expiryDate || undefined,
+        purpose: purpose.trim(),
+        notes: notes.trim() || undefined,
+        fileName: selectedFile?.name,
+        fileData,
+      });
 
       // Clear draft
       localStorage.removeItem('hrms_general_doc_draft');
       setPurpose('');
       setNotes('');
       setSelectedFile(null);
-      toast.success('ยื่นคำร้องเอกสารทั่วไปสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      toast.success('ยื่นคำขอสำเร็จ ติดตามสถานะได้ที่หน้าประวัติเอกสาร');
       router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting general document request:', err);
-      setFormError(err?.message || 'เกิดข้อผิดพลาดในการยื่นคำร้องเอกสารทั่วไป');
+      setFormError(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการยื่นคำขอ');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const finalDocumentTypeDisplay = isCustomType
-    ? customDocumentType || 'เอกสารทั่วไป'
+    ? customDocumentType || 'คำขออื่นๆ'
     : documentType;
 
   return (
@@ -276,9 +278,9 @@ export default function GeneralDocumentPage() {
       {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารทั่วไป</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">คำขออื่นๆ</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            กรอกแบบฟอร์มยื่นคำร้องขอเอกสารทั่วไปและแนบหลักฐานประกอบ ติดตามสถานะได้ที่หน้าประวัติเอกสาร
+            ยื่นคำขอถึงฝ่ายบุคคล เช่น ขอแก้ไขข้อมูล ขอบัตรพนักงาน หรือส่งเอกสาร — คำขอจะผ่านสายการอนุมัติที่ตั้งไว้
           </p>
         </div>
         <button
@@ -340,7 +342,7 @@ export default function GeneralDocumentPage() {
 
               {/* ประเภทเอกสาร (เช่น สำเนาบัตรประชาชน ตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ประเภทเอกสาร *</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">ประเภทคำขอ *</label>
                 {!isCustomType ? (
                   <select
                     value={documentType}
@@ -440,20 +442,20 @@ export default function GeneralDocumentPage() {
                   )}
                 </div>
               </div>
-              <p className="text-2xs text-gray-500">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 10MB</p>
+              <p className="text-2xs text-gray-500">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
             </div>
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดของเอกสาร (ตาม Figma) ─── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">รายละเอียดของเอกสาร</h3>
+              <h3 className="text-sm font-bold text-gray-900">รายละเอียดคำขอ</h3>
 
               {/* เอกสารนี้ใช้สำหรับ * (Textarea ตาม Figma พร้อม counter 0/160) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700">
-                    เอกสารนี้ใช้สำหรับ *
+                    รายละเอียดคำขอ *
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {purpose.length}/{REASON_MAX_LENGTH}
@@ -464,7 +466,7 @@ export default function GeneralDocumentPage() {
                   maxLength={REASON_MAX_LENGTH}
                   onChange={(e) => setPurpose(e.target.value)}
                   rows={5}
-                  placeholder="กรอกเหตุผล..."
+                  placeholder="อธิบายสิ่งที่ต้องการ เช่น ขอเปลี่ยนที่อยู่เป็น... / ขอสลิปเงินเดือนเดือน..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                   required
                 />
@@ -518,7 +520,7 @@ export default function GeneralDocumentPage() {
             className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            ถัดไป (ยื่นคำร้องเอกสารทั่วไป)
+            ยื่นคำขอ
           </button>
         </div>
       </form>
@@ -536,10 +538,10 @@ export default function GeneralDocumentPage() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-base font-bold text-slate-900 mb-1">
-              ยื่นคำร้องเอกสารทั่วไปสำเร็จ!
+              ยื่นคำขออื่นๆสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              คำร้องขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
+              คำขอขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
               <button
