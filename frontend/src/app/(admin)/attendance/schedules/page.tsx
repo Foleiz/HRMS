@@ -457,9 +457,21 @@ function SchedulesContent() {
       const code = (emp.employeeCode || '').toLowerCase();
       const name = (emp.fullName || '').toLowerCase();
       const dept = (emp.departmentName || '').toLowerCase();
-      const type = (emp.employeeTypeName || '').toLowerCase();
 
-      return code.includes(q) || name.includes(q) || dept.includes(q) || type.includes(q);
+      // Normalize spaces to support queries like "นายประจำ" or "admin syaco"
+      const cleanQ = q.replace(/\s+/g, '');
+      const cleanName = name.replace(/\s+/g, '');
+      const cleanCode = code.replace(/\s+/g, '');
+      const cleanDept = dept.replace(/\s+/g, '');
+
+      return (
+        code.includes(q) ||
+        name.includes(q) ||
+        dept.includes(q) ||
+        cleanCode.includes(cleanQ) ||
+        cleanName.includes(cleanQ) ||
+        cleanDept.includes(cleanQ)
+      );
     });
   }, [assignableEmployees, singleAssignTypeFilter, singleAssignSearch]);
 
@@ -1820,6 +1832,15 @@ function SchedulesContent() {
                               placeholder="พิมพ์ค้นหารหัส, ชื่อ-นามสกุล, หรือแผนก..."
                               value={singleAssignSearch}
                               onChange={(e) => setSingleAssignSearch(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (filteredSingleAssignEmployees.length > 0) {
+                                    setAssignForm((prev) => ({ ...prev, employeeId: filteredSingleAssignEmployees[0].id }));
+                                    setSingleAssignDropdownOpen(false);
+                                  }
+                                }
+                              }}
                               className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
                             />
                             {singleAssignSearch && (
