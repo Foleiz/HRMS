@@ -181,9 +181,10 @@ public class AttendanceImportController : ControllerBase
         long id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _importService.GetBatchRecordsAsync(id, page, pageSize, cancellationToken);
+        var result = await _importService.GetBatchRecordsAsync(id, page, pageSize, search, cancellationToken);
         return Ok(ApiResponse<PagedBatchRecordResult>.Ok(result));
     }
 

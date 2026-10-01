@@ -20,9 +20,19 @@ public class OrganizationService : IOrganizationService
         _dbContext = dbContext;
     }
 
+    private static (DateTime Expiry, CompanyDto? Data)? _cachedCompanyProfile;
+    private static readonly TimeSpan CompanyCacheTtl = TimeSpan.FromHours(1);
+
+    public static void InvalidateCompanyCache() => _cachedCompanyProfile = null;
+
     #region Company
     public async Task<CompanyDto?> GetCompanyProfileAsync(CancellationToken cancellationToken = default)
     {
+        if (_cachedCompanyProfile.HasValue && _cachedCompanyProfile.Value.Expiry > DateTime.UtcNow)
+        {
+            return _cachedCompanyProfile.Value.Data;
+        }
+
         var company = await _dbContext.Companies
             .AsNoTracking()
             .Include(c => c.CeoEmployee)
@@ -35,7 +45,7 @@ public class OrganizationService : IOrganizationService
             logoBase64 = $"data:image/png;base64,{Convert.ToBase64String(company.LogoData)}";
         }
 
-        return new CompanyDto
+        var result = new CompanyDto
         {
             Id = company.Id,
             CompanyCode = company.CompanyCode,
@@ -53,10 +63,14 @@ public class OrganizationService : IOrganizationService
             CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt
         };
+
+        _cachedCompanyProfile = (DateTime.UtcNow.Add(CompanyCacheTtl), result);
+        return result;
     }
 
     public async Task<CompanyDto> UpdateCompanyProfileAsync(UpdateCompanyDto request, CancellationToken cancellationToken = default)
     {
+        InvalidateCompanyCache();
         var company = await _dbContext.Companies
             .Include(c => c.CeoEmployee)
             .FirstOrDefaultAsync(cancellationToken);

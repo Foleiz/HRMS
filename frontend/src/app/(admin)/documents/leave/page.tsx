@@ -9,6 +9,7 @@ import { employeeService } from '@/services/employeeService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { prefetchCompanyDocumentInfo } from '@/components/documents/documentFormParts';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { toast } from '@/context/ToastContext';
 
@@ -38,6 +39,11 @@ function MyLeaveRequestPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentYear = new Date().getFullYear();
+
+  // Eagerly prefetch company logo & document info so preview opens instantly
+  useEffect(() => {
+    prefetchCompanyDocumentInfo();
+  }, []);
 
   // Sync breadcrumb
   useEffect(() => {

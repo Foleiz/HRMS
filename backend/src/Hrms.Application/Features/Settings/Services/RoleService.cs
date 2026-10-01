@@ -163,101 +163,114 @@ public class RoleService : IRoleService
         return roles;
     }
 
-    private async Task EnsureStandardPermissionsAsync(CancellationToken cancellationToken = default)
+    private static volatile bool _permissionsInitialized = false;
+    private static readonly SemaphoreSlim _permInitLock = new(1, 1);
+    private static Dictionary<string, long>? _cachedPermMap;
+    private static HashSet<long>? _cachedRelevantPermIds;
+
+    private async Task<(Dictionary<string, long> PermMap, HashSet<long> RelevantPermIds)> GetOrInitPermissionsCacheAsync(CancellationToken cancellationToken = default)
     {
-        var existingPerms = await _dbContext.Permissions
-            .Select(p => p.PermissionCode)
-            .ToHashSetAsync(cancellationToken);
-
-        var toAdd = new List<Permission>();
-        var actions = new[] { "VIEW", "CREATE", "EDIT", "APPROVE" };
-
-        foreach (var mod in StandardModules)
+        if (_permissionsInitialized && _cachedPermMap != null && _cachedRelevantPermIds != null)
         {
-            foreach (var act in actions)
-            {
-                var code = $"{mod.Prefix}_{act}";
-                if (!existingPerms.Contains(code))
-                {
-                    string actionLabel = act switch
-                    {
-                        "VIEW" => "ดูข้อมูล",
-                        "CREATE" => "สร้าง/เพิ่ม",
-                        "EDIT" => "แก้ไข",
-                        "APPROVE" => "อนุมัติ",
-                        _ => act
-                    };
+            return (_cachedPermMap, _cachedRelevantPermIds);
+        }
 
-                    toAdd.Add(new Permission
+        await _permInitLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_permissionsInitialized && _cachedPermMap != null && _cachedRelevantPermIds != null)
+            {
+                return (_cachedPermMap, _cachedRelevantPermIds);
+            }
+
+            var permissions = await _dbContext.Permissions
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var existingPerms = permissions.Select(p => p.PermissionCode).ToHashSet();
+            var toAdd = new List<Permission>();
+            var actions = new[] { "VIEW", "CREATE", "EDIT", "APPROVE" };
+
+            foreach (var mod in StandardModules)
+            {
+                foreach (var act in actions)
+                {
+                    var code = $"{mod.Prefix}_{act}";
+                    if (!existingPerms.Contains(code))
                     {
-                        PermissionCode = code,
-                        PermissionName = $"{mod.Name} ({actionLabel})",
-                        Description = $"สิทธิ์ระดับระบบสำหรับ {mod.Name} ({actionLabel})"
-                    });
-                    existingPerms.Add(code);
+                        string actionLabel = act switch
+                        {
+                            "VIEW" => "ดูข้อมูล",
+                            "CREATE" => "สร้าง/เพิ่ม",
+                            "EDIT" => "แก้ไข",
+                            "APPROVE" => "อนุมัติ",
+                            _ => act
+                        };
+
+                        toAdd.Add(new Permission
+                        {
+                            PermissionCode = code,
+                            PermissionName = $"{mod.Name} ({actionLabel})",
+                            Description = $"สิทธิ์ระดับระบบสำหรับ {mod.Name} ({actionLabel})"
+                        });
+                        existingPerms.Add(code);
+                    }
                 }
             }
-        }
 
-        // Parent permissions for backward compatibility and broad modules
-        var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW" };
-        foreach (var pCode in parentCodes)
-        {
-            if (!existingPerms.Contains(pCode))
+            // Parent permissions for backward compatibility and broad modules
+            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW" };
+            foreach (var pCode in parentCodes)
             {
-                toAdd.Add(new Permission
+                if (!existingPerms.Contains(pCode))
                 {
-                    PermissionCode = pCode,
-                    PermissionName = $"สิทธิ์ส่วนกลาง ({pCode})",
-                    Description = $"สิทธิ์ส่วนกลางระบบสำหรับ {pCode}"
-                });
-                existingPerms.Add(pCode);
+                    toAdd.Add(new Permission
+                    {
+                        PermissionCode = pCode,
+                        PermissionName = $"สิทธิ์ส่วนกลาง ({pCode})",
+                        Description = $"สิทธิ์ส่วนกลางระบบสำหรับ {pCode}"
+                    });
+                    existingPerms.Add(pCode);
+                }
             }
-        }
 
-        if (toAdd.Count > 0)
+            if (toAdd.Count > 0)
+            {
+                _dbContext.Permissions.AddRange(toAdd);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                permissions = await _dbContext.Permissions.AsNoTracking().ToListAsync(cancellationToken);
+            }
+
+            _cachedPermMap = permissions.ToDictionary(p => p.PermissionCode, p => p.Id);
+
+            var prefixList = StandardModules.Select(m => m.Prefix).Distinct().ToList();
+            var parentPrefixList = StandardModules.Select(m => m.ParentPermissionPrefix).Distinct().ToList();
+            prefixList.AddRange(parentPrefixList);
+
+            _cachedRelevantPermIds = _cachedPermMap
+                .Where(kvp => prefixList.Any(pref => kvp.Key.StartsWith(pref + "_") || kvp.Key == pref))
+                .Select(kvp => kvp.Value)
+                .ToHashSet();
+
+            _permissionsInitialized = true;
+            return (_cachedPermMap, _cachedRelevantPermIds);
+        }
+        finally
         {
-            _dbContext.Permissions.AddRange(toAdd);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _permInitLock.Release();
         }
     }
 
-    public async Task<RoleDetailDto> GetRoleMatrixAsync(long roleId, CancellationToken cancellationToken = default)
+    private RoleDetailDto BuildRoleMatrixDto(
+        long roleId,
+        string roleCode,
+        string roleName,
+        string? description,
+        string status,
+        IReadOnlySet<string> grantedPermCodes,
+        IReadOnlySet<(string PermissionCode, string DataVisibilityScope)> activeScopes)
     {
-        await EnsureStandardPermissionsAsync(cancellationToken);
-
-        if (_matrixCache.TryGetValue(roleId, out var cached) && cached.Expiry > DateTime.UtcNow)
-        {
-            return cached.Data;
-        }
-
-        var role = await _dbContext.Roles
-            .AsNoTracking()
-            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status })
-            .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
-
-        if (role == null)
-        {
-            throw new NotFoundException("Role", roleId);
-        }
-
-        // ดึงเฉพาะสิทธิ์ของบทบาทนี้โดยตรง ไม่ Join Cartesian Product (เร็วขึ้น >10 เท่า)
-        var grantedPermCodes = (await _dbContext.RolePermissions
-            .Where(rp => rp.RoleId == roleId)
-            .Select(rp => rp.Permission.PermissionCode)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
-
-        var activeScopes = (await _dbContext.RoleDataScopes
-            .Where(rds => rds.RoleId == roleId)
-            .Select(rds => new { rds.Permission.PermissionCode, rds.DataVisibilityScope })
-            .AsNoTracking()
-            .ToListAsync(cancellationToken))
-            .Select(x => (x.PermissionCode, x.DataVisibilityScope))
-            .ToHashSet();
-
-        var moduleDtos = new List<ModulePermissionScopeDto>();
+        var moduleDtos = new List<ModulePermissionScopeDto>(StandardModules.Count);
 
         foreach (var mod in StandardModules)
         {
@@ -311,22 +324,22 @@ public class RoleService : IRoleService
             // Legacy Fallback: หากใน role_permission มีสิทธิ์รหัสนี้โดยตรงอยู่แล้ว แต่ใน role_data_scope ยังไม่มีบันทึก scope ใดๆ เลย
             if (!selfPerms.View && !teamPerms.View && !deptPerms.View && !divPerms.View && !orgPerms.View && grantedPermCodes.Contains(viewCode))
             {
-                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.View = true;
+                if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.View = true;
                 else selfPerms.View = true;
             }
             if (!selfPerms.Create && !teamPerms.Create && !deptPerms.Create && !divPerms.Create && !orgPerms.Create && grantedPermCodes.Contains(createCode))
             {
-                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Create = true;
+                if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Create = true;
                 else selfPerms.Create = true;
             }
             if (!selfPerms.Edit && !teamPerms.Edit && !deptPerms.Edit && !divPerms.Edit && !orgPerms.Edit && grantedPermCodes.Contains(editCode))
             {
-                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Edit = true;
+                if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Edit = true;
                 else selfPerms.Edit = true;
             }
             if (!selfPerms.Approve && !teamPerms.Approve && !deptPerms.Approve && !divPerms.Approve && !orgPerms.Approve && grantedPermCodes.Contains(approveCode))
             {
-                if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Approve = true;
+                if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Approve = true;
                 else selfPerms.Approve = true;
             }
 
@@ -350,17 +363,62 @@ public class RoleService : IRoleService
             });
         }
 
-        var result = new RoleDetailDto
+        return new RoleDetailDto
         {
-            Id = role.Id,
-            RoleCode = role.RoleCode,
-            RoleName = role.RoleName,
-            Description = role.Description,
-            Status = role.Status,
-            IsSystemDefault = role.RoleCode is "ADMIN" or "SYSTEM_SUPER",
-            LastModifiedAt = DateTime.UtcNow.AddHours(-2),
+            Id = roleId,
+            RoleCode = roleCode,
+            RoleName = roleName,
+            Description = description,
+            Status = status,
+            IsSystemDefault = roleCode is "ADMIN" or "SYSTEM_SUPER",
+            LastModifiedAt = DateTime.UtcNow,
             Modules = moduleDtos
         };
+    }
+
+    public async Task<RoleDetailDto> GetRoleMatrixAsync(long roleId, CancellationToken cancellationToken = default)
+    {
+        if (_matrixCache.TryGetValue(roleId, out var cached) && cached.Expiry > DateTime.UtcNow)
+        {
+            return cached.Data;
+        }
+
+        await GetOrInitPermissionsCacheAsync(cancellationToken);
+
+        var role = await _dbContext.Roles
+            .AsNoTracking()
+            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status })
+            .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
+
+        if (role == null)
+        {
+            throw new NotFoundException("Role", roleId);
+        }
+
+        // ดึงเฉพาะสิทธิ์ของบทบาทนี้โดยตรง ไม่ Join Cartesian Product (เร็วขึ้น >10 เท่า)
+        var grantedPermCodes = (await _dbContext.RolePermissions
+            .Where(rp => rp.RoleId == roleId)
+            .Select(rp => rp.Permission.PermissionCode)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var activeScopes = (await _dbContext.RoleDataScopes
+            .Where(rds => rds.RoleId == roleId)
+            .Select(rds => new { rds.Permission.PermissionCode, rds.DataVisibilityScope })
+            .AsNoTracking()
+            .ToListAsync(cancellationToken))
+            .Select(x => (x.PermissionCode, x.DataVisibilityScope))
+            .ToHashSet();
+
+        var result = BuildRoleMatrixDto(
+            role.Id,
+            role.RoleCode,
+            role.RoleName,
+            role.Description,
+            role.Status,
+            grantedPermCodes,
+            activeScopes);
 
         _matrixCache[roleId] = (DateTime.UtcNow.Add(CacheTtl), result);
         return result;
@@ -448,8 +506,8 @@ public class RoleService : IRoleService
     public async Task<RoleDetailDto> UpdateRoleMatrixAsync(long roleId, UpdateRoleMatrixRequestDto request, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default)
     {
         var role = await _dbContext.Roles
-            .Include(r => r.RolePermissions)
-            .Include(r => r.RoleDataScopes)
+            .AsNoTracking()
+            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status })
             .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
 
         if (role == null)
@@ -471,55 +529,32 @@ public class RoleService : IRoleService
             throw new BusinessRuleException("ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)");
         }
 
-        await EnsureStandardPermissionsAsync(cancellationToken);
+        var (permMap, relevantPermIds) = await GetOrInitPermissionsCacheAsync(cancellationToken);
 
-        var allPermissions = await _dbContext.Permissions.ToListAsync(cancellationToken);
-        var permMap = allPermissions.ToDictionary(p => p.PermissionCode, p => p.Id);
+        // Fast set-based delete in PostgreSQL - NO 86,000-row Cartesian product!
+        await _dbContext.RoleDataScopes
+            .Where(rds => rds.RoleId == role.Id && relevantPermIds.Contains(rds.PermissionId))
+            .ExecuteDeleteAsync(cancellationToken);
 
-        // Delete existing role_permission and role_data_scope for standard sub-modules and parent modules
-        var prefixList = StandardModules.Select(m => m.Prefix).Distinct().ToList();
-        var parentPrefixList = StandardModules.Select(m => m.ParentPermissionPrefix).Distinct().ToList();
-        prefixList.AddRange(parentPrefixList);
+        await _dbContext.RolePermissions
+            .Where(rp => rp.RoleId == role.Id && relevantPermIds.Contains(rp.PermissionId))
+            .ExecuteDeleteAsync(cancellationToken);
 
-        var relevantPermIds = allPermissions
-            .Where(p => prefixList.Any(pref => p.PermissionCode.StartsWith(pref + "_") || p.PermissionCode == pref))
-            .Select(p => p.Id)
-            .ToHashSet();
-
-        var toRemovePerms = role.RolePermissions.Where(rp => relevantPermIds.Contains(rp.PermissionId)).ToList();
-        foreach (var rp in toRemovePerms)
-        {
-            _dbContext.RolePermissions.Remove(rp);
-        }
-
-        var toRemoveScopes = role.RoleDataScopes.Where(rds => relevantPermIds.Contains(rds.PermissionId)).ToList();
-        foreach (var rds in toRemoveScopes)
-        {
-            _dbContext.RoleDataScopes.Remove(rds);
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
+        var addedPermCodes = new HashSet<string>();
         var addedPermIds = new HashSet<long>();
         void AddPerm(string code)
         {
             if (permMap.TryGetValue(code, out var pId) && addedPermIds.Add(pId))
             {
-                _dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = pId });
+                addedPermCodes.Add(code);
             }
         }
 
-        var addedScopes = new HashSet<(long PermId, string Scope)>();
+        var addedScopes = new HashSet<(string PermCode, long PermId, string Scope)>();
         void AddDataScope(string permCode, string scopeVal)
         {
-            if (permMap.TryGetValue(permCode, out var permId) && addedScopes.Add((permId, scopeVal)))
+            if (permMap.TryGetValue(permCode, out var permId) && addedScopes.Add((permCode, permId, scopeVal)))
             {
-                _dbContext.RoleDataScopes.Add(new RoleDataScope
-                {
-                    RoleId = role.Id,
-                    PermissionId = permId,
-                    DataVisibilityScope = scopeVal
-                });
             }
         }
 
@@ -572,6 +607,7 @@ public class RoleService : IRoleService
         }
 
         // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติพร้อม Data Scope สูงสุด เพื่อความเข้ากันได้ (Backward Compatibility)
+        var parentPrefixList = StandardModules.Select(m => m.ParentPermissionPrefix).Distinct().ToList();
         foreach (var parentPref in parentPrefixList)
         {
             if (parentPref is "SETTINGS" or "DOCS" or "MASTER_DATA" || parentPref.StartsWith("ESS_") || parentPref.StartsWith("APPROVAL") || parentPref == "WORK_CALENDAR" || parentPref == "ANNOUNCEMENTS") continue;
@@ -615,14 +651,54 @@ public class RoleService : IRoleService
             }
         }
 
+        // Bulk insert new records in a single save
+        var newPerms = addedPermIds.Select(pId => new RolePermission { RoleId = role.Id, PermissionId = pId }).ToList();
+        var newScopes = addedScopes.Select(s => new RoleDataScope
+        {
+            RoleId = role.Id,
+            PermissionId = s.PermId,
+            DataVisibilityScope = s.Scope
+        }).ToList();
+
+        if (newPerms.Count > 0)
+        {
+            _dbContext.RolePermissions.AddRange(newPerms);
+        }
+        if (newScopes.Count > 0)
+        {
+            _dbContext.RoleDataScopes.AddRange(newScopes);
+        }
+
+        // Log audit trail in the same transaction
+        _dbContext.AuditLogs.Add(new AuditLog
+        {
+            Action = "UPDATE",
+            EntityType = "ROLE_PERMISSIONS",
+            EntityId = role.Id,
+            FieldName = "PermissionMatrix",
+            OldValue = "{}",
+            NewValue = System.Text.Json.JsonSerializer.Serialize(new { message = $"Updated matrix with {request.Modules.Count} modules" }),
+            UserId = currentUserId,
+            IpAddress = ipAddress,
+            CreatedAt = DateTime.UtcNow
+        });
+
         await _dbContext.SaveChangesAsync(cancellationToken);
-        InvalidateMatrixCache(role.Id);
 
-        await _auditLogService.LogAsync(
-            "UPDATE", "ROLE_PERMISSIONS", role.Id, "PermissionMatrix",
-            null, $"Updated matrix with {request.Modules.Count} modules", currentUserId, ipAddress, cancellationToken: cancellationToken);
+        // Build result in memory without redundant DB queries
+        var activeScopesSet = addedScopes.Select(s => (s.PermCode, s.Scope)).ToHashSet();
+        var result = BuildRoleMatrixDto(
+            role.Id,
+            role.RoleCode,
+            role.RoleName,
+            role.Description,
+            role.Status,
+            addedPermCodes,
+            activeScopesSet);
 
-        return await GetRoleMatrixAsync(role.Id, cancellationToken);
+        _matrixCache[role.Id] = (DateTime.UtcNow.Add(CacheTtl), result);
+
+        return result;
     }
 
     public async Task<bool> DeleteRoleAsync(long roleId, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default)

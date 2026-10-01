@@ -345,20 +345,26 @@ export default function PayrollPage() {
     hasRole('SYSTEM_SUPER') ||
     hasRole('SUPER_ADMIN') ||
     usernameLower === 'admin';
+  // isStrictHrUser: detect จาก username หรือ role ที่มี HR
+  const isStrictHrUser =
+    usernameLower.includes('hr') ||
+    userRolesList.some(r => r.includes('HR')) ||
+    (!isAdmin && (hasPermission('PAYROLL_CALC_CREATE') || hasPermission('TIME_DAILY_VIEW')));
+  // isStrictFinanceUser: detect จาก role name ที่ชัดเจน หรือ permission เฉพาะ Finance
+  // ไม่นับ PAYROLL_TAX_VIEW เพราะ HR ก็มี permission นี้ด้วย
+  // และต้องไม่ใช่ HR user ด้วย (HR มีสิทธิ์ทุก PAYROLL permission เช่นกัน)
   const isStrictFinanceUser =
-    usernameLower.includes('finance') ||
-    usernameLower.includes('account') ||
-    usernameLower.includes('chon') ||
-    userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT') || r.includes('PAYROLL')) ||
-    (!isAdmin && (hasPermission('PAYROLL_TAX_VIEW') || hasPermission('APPROVAL_PAYROLL_APPROVE')));
+    !isStrictHrUser && (
+      usernameLower.includes('finance') ||
+      usernameLower.includes('account') ||
+      usernameLower.includes('chon') ||
+      userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT')) ||
+      (!isAdmin && hasPermission('APPROVAL_PAYROLL_APPROVE'))
+    );
   const isStrictCeoUser =
     usernameLower.includes('ceo') ||
     usernameLower.includes('approver') ||
     (userRolesList.includes('CEO') && !isAdmin);
-  const isStrictHrUser =
-    usernameLower.includes('hr') ||
-    userRolesList.some(r => r.includes('HR')) ||
-    (!isAdmin && (hasPermission('PAYROLL_CALC_CREATE') || hasPermission('TIME_DAILY_VIEW')) && !isStrictFinanceUser);
 
   useEffect(() => {
     if (canAccessFinanceView && !canAccessHrView && !canAccessApproverView) {
@@ -1435,14 +1441,7 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Role & View Mode Switcher */}
-      <PayrollViewSwitcher
-        currentMode={viewMode}
-        onModeChange={setViewMode}
-        isHR={isHR}
-        isFinance={isFinance}
-        userRoles={user?.roles || []}
-      />
+
 
       {/* Sub Navigation Bar - Standardized to Employee Module */}
       <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
@@ -2807,10 +2806,6 @@ export default function PayrollPage() {
                 {/* Title and Scope Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                      สำหรับฝ่ายการเงิน
-                    </div>
                     <h2 className="text-base font-bold text-slate-900">ตรวจสอบยอดและจ่ายเงินเดือน</h2>
                     <p className="text-xs text-slate-500">
                       ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร
