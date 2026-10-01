@@ -823,17 +823,6 @@ export default function EmployeesPage() {
     );
   };
 
-  // Mock photo avatars matching Figma design
-  const mockAvatarImages = [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', // EMP-001 (ชาย)
-    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', // EMP-002 (หญิง)
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', // EMP-003 (ชาย)
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', // EMP-004 (หญิง)
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80', // EMP-005 (หญิง)
-    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80', // EMP-006 (หญิง)
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80', // EMP-007 (ชาย)
-  ];
-
   // Avatar colors for fallback
   const avatarColors = [
     'bg-[#0B2046] text-white',
@@ -1156,15 +1145,17 @@ export default function EmployeesPage() {
                               className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[11px] shadow-2xs hover:ring-2 hover:ring-[#0B2046]/40 transition-all focus:outline-none"
                               title={hasComment ? `คอมเมนต์: ${commentText}` : 'คลิกเพื่อเพิ่มคอมเมนต์'}
                             >
-                              <img
-                                src={emp.avatarUrl ? getAvatarUrl(emp.avatarUrl)! : mockAvatarImages[(emp.id - 1) % mockAvatarImages.length]}
-                                alt={emp.fullName}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              <span className={`w-full h-full absolute inset-0 flex items-center justify-center text-[10px] ${avatarColor} -z-10`}>
+                              {emp.avatarUrl ? (
+                                <img
+                                  src={getAvatarUrl(emp.avatarUrl)!}
+                                  alt={emp.fullName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : null}
+                              <span className={`w-full h-full ${emp.avatarUrl ? 'absolute inset-0 -z-10' : ''} flex items-center justify-center text-[10px] ${avatarColor}`}>
                                 {emp.firstName ? emp.firstName.charAt(0) : 'U'}
                               </span>
                             </button>

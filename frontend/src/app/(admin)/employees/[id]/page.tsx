@@ -26,17 +26,6 @@ import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employe
 import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 
 
-// รูปโปรไฟล์ตัวอย่างสอดคล้องกับตารางหน้าแรก
-const mockAvatarImages = [
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80', // EMP-001 (ชาย)
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80', // EMP-002 (หญิง)
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80', // EMP-003 (ชาย)
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80', // EMP-004 (หญิง)
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80', // EMP-005 (หญิง)
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80', // EMP-006 (หญิง)
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80', // EMP-007 (ชาย)
-];
-
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
   try {
@@ -214,9 +203,7 @@ export default function EmployeeDetailPage() {
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
   const primaryEducation = employee.educations?.[0];
   const rawAvatarUrl = customAvatar || employee.avatarUrl;
-  const avatarUrl = rawAvatarUrl
-    ? getAvatarUrl(rawAvatarUrl)!
-    : mockAvatarImages[(employee.id - 1) % mockAvatarImages.length];
+  const avatarUrl = rawAvatarUrl ? getAvatarUrl(rawAvatarUrl) : null;
 
   return (
     <div className="font-sans">
@@ -243,7 +230,7 @@ export default function EmployeeDetailPage() {
                 type="button"
                 onClick={handleAvatarClick}
                 disabled={isUploadingAvatar}
-                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md bg-slate-100 flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-[#0B2046]/40 group-hover/avatar:shadow-xl focus:outline-none block"
+                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 shadow-md bg-[#0B2046] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-[#0B2046]/40 group-hover/avatar:shadow-xl focus:outline-none block"
                 title="คลิกเพื่อแก้ไขรูปโปรไฟล์"
               >
                 {isUploadingAvatar ? (
@@ -253,15 +240,17 @@ export default function EmployeeDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <img
-                      src={avatarUrl}
-                      alt={employee.fullName}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                    <span className="w-full h-full absolute inset-0 flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white -z-10">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={employee.fullName}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    <span className={`w-full h-full ${avatarUrl ? 'absolute inset-0 -z-10' : ''} flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white`}>
                       {employee.firstName?.charAt(0) || 'U'}
                     </span>
 
