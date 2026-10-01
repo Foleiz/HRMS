@@ -644,6 +644,7 @@ public partial class LeaveRequestService : ILeaveRequestService
             RequestNo = r.RequestNo,
             EmployeeId = r.EmployeeId,
             EmployeeCode = emp?.EmployeeCode ?? string.Empty,
+            EmployeePrefix = emp?.Prefix,
             EmployeeName = empName,
             DepartmentName = assign?.Department?.DepartmentName ?? "-",
             PositionName = assign?.Position?.PositionName ?? "-",

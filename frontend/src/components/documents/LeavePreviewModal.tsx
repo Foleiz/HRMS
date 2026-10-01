@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileText, Download, Paperclip } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
+import { employeeService } from '@/services/employeeService';
 import {
   sarabun,
   Fill,
@@ -16,6 +17,7 @@ import {
   useApprovalSlots,
   type ApprovalSlot,
   toThaiShortDate,
+  extractPrefixAndName,
 } from './documentFormParts';
 import type { ApprovalTimeline } from '@/types/leave';
 
@@ -43,6 +45,7 @@ export const toLeaveCategory = (code?: string | null, name?: string | null): Lea
 export interface LeavePreviewData {
   employeeId?: number | null;
   employeeName: string;
+  employeePrefix?: string | null;
   positionTitle?: string | null;
   leaveTypeCode?: string | null;
   leaveTypeName?: string | null;
@@ -183,6 +186,7 @@ interface LeavePaperProps {
   signatureSrc: string | null;
   onSignatureError: () => void;
   approvalSlots: ApprovalSlot[];
+  employeePrefix?: string | null;
 }
 
 const LeavePaper: React.FC<LeavePaperProps> = ({
@@ -192,6 +196,7 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
   signatureSrc,
   onSignatureError,
   approvalSlots,
+  employeePrefix,
 }) => {
   const submission = parseDate(data.submissionDate) || new Date();
   const category =
@@ -206,6 +211,16 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
   const dd = String(submission.getDate()).padStart(2, '0');
   const mm = String(submission.getMonth() + 1).padStart(2, '0');
   const yyyy = String(submission.getFullYear() + 543);
+
+  // คำนวณชื่อผู้ยื่น:
+  // 1) ช่องลายเซ็น (บนเส้นประ): ถ้าไม่มีลายเซ็นให้แสดง "ชื่อ-นามสกุล"
+  // 2) บรรทัดข้างล่าง (ในวงเล็บ): แสดง "คำนำหน้า + ชื่อ-นามสกุล" เสมอ
+  const { prefix: detectedPrefix, displayName: pureName } = extractPrefixAndName(data.employeeName, employeePrefix || data.employeePrefix);
+  const finalPrefix = employeePrefix || data.employeePrefix || detectedPrefix || '';
+  const fullNameWithPrefix = finalPrefix && pureName
+    ? `${finalPrefix} ${pureName}`
+    : (finalPrefix ? `${finalPrefix} ${data.employeeName}` : data.employeeName);
+  const signatureFallbackName = pureName || data.employeeName || '';
 
   return (
     <div
@@ -248,7 +263,7 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
 
       {/* ===== เนื้อความ (จัดบรรทัดตามต้นฉบับ) ===== */}
       <Row indent>
-        ข้าพเจ้า<GrowFill value={data.employeeName} />
+        ข้าพเจ้า<GrowFill value={fullNameWithPrefix} />
         ตำแหน่ง<GrowFill value={data.positionTitle || ''} />
       </Row>
       <Row>
@@ -284,11 +299,16 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
         <div>ขอแสดงความนับถือ</div>
         <div style={{ marginTop: '9mm' }}>
           (ลงชื่อ)
-          <SignatureLine src={signatureSrc} onError={onSignatureError} alt="ลายเซ็นผู้ลา" />
+          <SignatureLine
+            src={signatureSrc}
+            onError={onSignatureError}
+            alt="ลายเซ็นผู้ลา"
+            fallbackText={signatureFallbackName}
+          />
           ผู้ลา
         </div>
         <div>
-          (<Fill value={data.employeeName} minWidth="50mm" />)
+          (<Fill value={fullNameWithPrefix} minWidth="50mm" />)
         </div>
         <div>
           วันที่<Fill value={dd} minWidth="12mm" />/
@@ -312,6 +332,24 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
 export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, onClose, data }) => {
   const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen);
   const signature = useEmployeeSignature(isOpen, data?.employeeId);
+  const [resolvedPrefix, setResolvedPrefix] = useState<string | null>(data?.employeePrefix || null);
+
+  useEffect(() => {
+    if (data?.employeePrefix) {
+      setResolvedPrefix(data.employeePrefix);
+      return;
+    }
+    if (isOpen && data?.employeeId) {
+      employeeService.getById(data.employeeId)
+        .then((emp) => {
+          if (emp?.prefix) {
+            setResolvedPrefix(emp.prefix);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, data?.employeeId, data?.employeePrefix]);
+
   const approvalSlots = useApprovalSlots({
     isOpen,
     documentType: 'LEAVE_REQUEST',
@@ -330,6 +368,7 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
       signatureSrc={signature.src}
       onSignatureError={signature.clear}
       approvalSlots={approvalSlots}
+      employeePrefix={resolvedPrefix}
     />
   );
 

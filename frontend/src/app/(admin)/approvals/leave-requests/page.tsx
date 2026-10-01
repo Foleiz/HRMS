@@ -470,6 +470,7 @@ export default function LeaveRequestsApprovalPage() {
       requestId: req.id,
       employeeId: req.employeeId,
       employeeName: req.employeeName,
+      employeePrefix: req.employeePrefix,
       departmentName: req.departmentName,
       positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
       leaveTypeCode: req.leaveTypeCode,
@@ -499,12 +500,10 @@ export default function LeaveRequestsApprovalPage() {
     setSelectedLeaveForPreview(initialData);
     setIsLeavePreviewOpen(true);
 
-    // ดึง timeline และตำแหน่งงานเพิ่มเติมในเบื้องหลัง เพื่อแสดงลายเซ็นและสายอนุมัติอย่างสมบูรณ์
+    // ดึง timeline และข้อมูลพนักงานเพิ่มเติมในเบื้องหลัง เพื่อแสดงลายเซ็นและสายอนุมัติอย่างสมบูรณ์
     Promise.all([
       leaveService.getApprovalTimeline(req.id).catch(() => null),
-      !initialData.positionTitle
-        ? employeeService.getById(req.employeeId).catch(() => null)
-        : Promise.resolve(null),
+      req.employeeId ? employeeService.getById(req.employeeId).catch(() => null) : Promise.resolve(null),
     ]).then(([tl, emp]) => {
       setSelectedLeaveForPreview((prev) => {
         if (!prev || prev.requestId !== req.id) return prev;
@@ -512,6 +511,8 @@ export default function LeaveRequestsApprovalPage() {
           ...prev,
           timeline: tl || prev.timeline,
           positionTitle: emp?.positionName || prev.positionTitle,
+          departmentName: emp?.departmentName || prev.departmentName,
+          employeePrefix: emp?.prefix || prev.employeePrefix,
         };
       });
     });

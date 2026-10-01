@@ -212,12 +212,71 @@ export const DocumentAddressFooter: React.FC<{ address: string }> = ({ address }
   </div>
 );
 
-/** ช่องลงชื่อพร้อมรูปลายเซ็นวางเหนือเส้นประ (ไม่ดันระยะบรรทัด) */
-export const SignatureLine: React.FC<{ src: string | null; onError?: () => void; minWidth?: string; alt?: string }> = ({
+export interface ExtractedPrefixInfo {
+  prefix: string | null;
+  displayName: string;
+}
+
+/**
+ * แยกคำนำหน้าชื่อ (Prefix) เช่น นาย, นาง, นางสาว ออกจากชื่อ-นามสกุล
+ */
+export const extractPrefixAndName = (
+  fullName?: string | null,
+  explicitPrefix?: string | null
+): ExtractedPrefixInfo => {
+  if (!fullName || fullName.trim() === '') {
+    return { prefix: explicitPrefix || null, displayName: '' };
+  }
+
+  const trimmed = fullName.trim();
+
+  // 1. ถ้ามี explicit prefix ที่ส่งมา
+  if (explicitPrefix && explicitPrefix.trim() !== '') {
+    const p = explicitPrefix.trim();
+    let clean = trimmed;
+    if (clean.startsWith(p)) {
+      clean = clean.slice(p.length).trim();
+    }
+    clean = clean.replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return {
+      prefix: p,
+      displayName: clean,
+    };
+  }
+
+  // 2. ตรวจสอบจากชื่ออัตโนมัติ (ตรวจ นางสาว ก่อน นาง)
+  if (trimmed.startsWith('นางสาว')) {
+    const clean = trimmed.slice('นางสาว'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นางสาว', displayName: clean };
+  }
+  if (trimmed.startsWith('นาง')) {
+    const clean = trimmed.slice('นาง'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาง', displayName: clean };
+  }
+  if (trimmed.startsWith('นาย')) {
+    const clean = trimmed.slice('นาย'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
+    return { prefix: 'นาย', displayName: clean };
+  }
+
+  return {
+    prefix: explicitPrefix || null,
+    displayName: trimmed,
+  };
+};
+
+/** ช่องลงชื่อพร้อมรูปลายเซ็นวางเหนือเส้นประ หรือแสดงชื่อ-นามสกุลแทนกรณีไม่มีลายเซ็น */
+export const SignatureLine: React.FC<{
+  src: string | null;
+  onError?: () => void;
+  minWidth?: string;
+  alt?: string;
+  fallbackText?: string | null;
+}> = ({
   src,
   onError,
   minWidth = '42mm',
   alt = 'ลายเซ็น',
+  fallbackText,
 }) => (
   <span
     style={{
@@ -227,26 +286,44 @@ export const SignatureLine: React.FC<{ src: string | null; onError?: () => void;
       borderBottom: '1px dotted #000',
       lineHeight: 1.15,
       verticalAlign: 'baseline',
+      textAlign: 'center',
     }}
   >
-    {' '}
-    {src && (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={alt}
-        onError={onError}
+    {src ? (
+      <>
+        {'\u00A0'}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          onError={onError}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '0.3mm',
+            transform: 'translateX(-50%)',
+            height: '12mm',
+            maxWidth: '44mm',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+          }}
+        />
+      </>
+    ) : fallbackText ? (
+      <span
         style={{
-          position: 'absolute',
-          left: '50%',
-          bottom: '0.3mm',
-          transform: 'translateX(-50%)',
-          height: '12mm',
-          maxWidth: '44mm',
-          objectFit: 'contain',
-          pointerEvents: 'none',
+          display: 'inline-block',
+          padding: '0 4px',
+          fontWeight: 600,
+          color: '#1e293b',
+          position: 'relative',
+          bottom: '0.5mm',
         }}
-      />
+      >
+        {fallbackText}
+      </span>
+    ) : (
+      '\u00A0'
     )}
   </span>
 );

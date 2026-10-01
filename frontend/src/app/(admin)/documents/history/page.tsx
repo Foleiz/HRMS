@@ -241,6 +241,7 @@ export default function DocumentHistoryPage() {
     const initialData: LeavePreviewData = {
       requestId: req.id,
       employeeId: req.employeeId,
+      employeePrefix: req.employeePrefix,
       employeeName: req.employeeName || user?.fullName || 'พนักงาน',
       departmentName: req.departmentName || '',
       positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
@@ -274,9 +275,7 @@ export default function DocumentHistoryPage() {
     // ดึง timeline และตำแหน่งงานเพิ่มเติมในเบื้องหลัง เพื่อแสดงลายเซ็นและสายอนุมัติอย่างสมบูรณ์
     Promise.all([
       leaveService.getApprovalTimeline(req.id).catch(() => null),
-      !initialData.positionTitle && req.employeeId
-        ? employeeService.getById(req.employeeId).catch(() => null)
-        : Promise.resolve(null),
+      req.employeeId ? employeeService.getById(req.employeeId).catch(() => null) : Promise.resolve(null),
     ]).then(([tl, emp]) => {
       setSelectedLeaveForPreview((prev) => {
         if (!prev || prev.requestId !== req.id) return prev;
@@ -285,6 +284,7 @@ export default function DocumentHistoryPage() {
           timeline: tl || prev.timeline,
           positionTitle: emp?.positionName || prev.positionTitle,
           departmentName: emp?.departmentName || prev.departmentName,
+          employeePrefix: emp?.prefix || prev.employeePrefix,
         };
       });
     });

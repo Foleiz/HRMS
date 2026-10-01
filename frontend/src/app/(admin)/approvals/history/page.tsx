@@ -323,6 +323,7 @@ export default function ApprovalHistoryPage() {
       requestId: req.id,
       employeeId: req.employeeId,
       employeeName: req.employeeName,
+      employeePrefix: req.employeePrefix,
       departmentName: req.departmentName,
       positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
       leaveTypeCode: req.leaveTypeCode,
@@ -354,9 +355,7 @@ export default function ApprovalHistoryPage() {
 
     Promise.all([
       leaveService.getApprovalTimeline(req.id).catch(() => null),
-      !initialData.positionTitle
-        ? employeeService.getById(req.employeeId).catch(() => null)
-        : Promise.resolve(null),
+      req.employeeId ? employeeService.getById(req.employeeId).catch(() => null) : Promise.resolve(null),
     ]).then(([tl, emp]) => {
       setSelectedLeaveForPreview((prev) => {
         if (!prev || prev.requestId !== req.id) return prev;
@@ -364,6 +363,8 @@ export default function ApprovalHistoryPage() {
           ...prev,
           timeline: tl || prev.timeline,
           positionTitle: emp?.positionName || prev.positionTitle,
+          departmentName: emp?.departmentName || prev.departmentName,
+          employeePrefix: emp?.prefix || prev.employeePrefix,
         };
       });
     });

@@ -19,6 +19,9 @@ import {
   toThaiShortDate,
   SignatureCell,
   EmptyCell,
+  SignatureLine,
+  extractPrefixAndName,
+  type ExtractedPrefixInfo,
 } from './documentFormParts';
 import type { ApprovalTimeline } from '@/types/leave';
 import { type ApprovalStep } from '@/types/approval';
@@ -152,54 +155,6 @@ const parseThaiDateParts = (dateInput?: string): ThaiDateParts => {
   };
 };
 
-interface ExtractedPrefixInfo {
-  prefix: 'นาย' | 'นาง' | 'นางสาว' | null;
-  displayName: string;
-}
-
-const extractPrefixAndName = (fullName?: string, explicitPrefix?: string): ExtractedPrefixInfo => {
-  if (!fullName || fullName.trim() === '') {
-    if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
-      return { prefix: explicitPrefix, displayName: '' };
-    }
-    return { prefix: null, displayName: '' };
-  }
-
-  const trimmed = fullName.trim();
-
-  // 1. If explicit prefix was given and valid
-  if (explicitPrefix === 'นาย' || explicitPrefix === 'นาง' || explicitPrefix === 'นางสาว') {
-    let clean = trimmed;
-    if (clean.startsWith(explicitPrefix)) {
-      clean = clean.slice(explicitPrefix.length).trim();
-    }
-    clean = clean.replace(/^(นาย|นางสาว|นาง)\s*/, '');
-    return {
-      prefix: explicitPrefix,
-      displayName: clean,
-    };
-  }
-
-  // 2. Auto-detect from fullName (Note: check 'นางสาว' before 'นาง')
-  if (trimmed.startsWith('นางสาว')) {
-    const clean = trimmed.slice('นางสาว'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
-    return { prefix: 'นางสาว', displayName: clean };
-  }
-  if (trimmed.startsWith('นาง')) {
-    const clean = trimmed.slice('นาง'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
-    return { prefix: 'นาง', displayName: clean };
-  }
-  if (trimmed.startsWith('นาย')) {
-    const clean = trimmed.slice('นาย'.length).trim().replace(/^(นาย|นางสาว|นาง)\s*/, '');
-    return { prefix: 'นาย', displayName: clean };
-  }
-
-  return {
-    prefix: null,
-    displayName: trimmed,
-  };
-};
-
 type ResignationData = NonNullable<ResignationPreviewModalProps['data']>;
 
 
@@ -329,37 +284,12 @@ const ResignationPaper: React.FC<{
         <div>ขอแสดงความนับถือ</div>
         <div style={{ marginTop: '9mm' }}>
           (ลงชื่อ)
-          {/* ช่องลงชื่อ: วางรูปลายเซ็นของผู้ลาออกไว้เหนือเส้นประ โดยไม่ดันระยะบรรทัด */}
-          <span
-            style={{
-              position: 'relative',
-              display: 'inline-block',
-              minWidth: '42mm',
-              borderBottom: '1px dotted #000',
-              lineHeight: 1.15,
-              verticalAlign: 'baseline',
-            }}
-          >
-            {'\u00A0'}
-            {signatureSrc && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={signatureSrc}
-                alt="ลายเซ็นผู้ลาออก"
-                onError={onSignatureError}
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  bottom: '0.3mm',
-                  transform: 'translateX(-50%)',
-                  height: '12mm',
-                  maxWidth: '44mm',
-                  objectFit: 'contain',
-                  pointerEvents: 'none',
-                }}
-              />
-            )}
-          </span>
+          <SignatureLine
+            src={signatureSrc}
+            onError={onSignatureError}
+            alt="ลายเซ็นผู้ลาออก"
+            fallbackText={displayName}
+          />
           ผู้ลาออก
         </div>
         <div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { leaveService } from '@/services/leaveService';
+import { employeeService } from '@/services/employeeService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
@@ -55,6 +56,7 @@ function MyLeaveRequestPageContent() {
   const [leavePolicies, setLeavePolicies] = useState<LeavePolicy[]>([]);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [employeePrefix, setEmployeePrefix] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // ─── Fetch ────────────────────────────────────────────────
@@ -64,13 +66,16 @@ function MyLeaveRequestPageContent() {
     try {
       // ใช้ allSettled แทน all — ถ้า request ใดรายการหนึ่งพัง (เช่น /leave-requests/my)
       // จะได้ไม่ทำให้ผลลัพธ์ของรายการอื่นที่โหลดสำเร็จ (เช่น ประเภทการลา) หายไปด้วย
-      const [typesRes, policiesRes, balancesRes, requestsRes] = await Promise.allSettled([
+      const [typesRes, policiesRes, balancesRes, requestsRes, empRes] = await Promise.allSettled([
         leaveService.getLeaveTypes(),
         leaveService.getLeavePolicies(),
         user?.employeeId
           ? leaveService.getLeaveBalances({ employeeId: user.employeeId, year: currentYear })
           : Promise.resolve([]),
         leaveService.getMyLeaveRequests({ pageSize: 100 }),
+        user?.employeeId
+          ? employeeService.getById(user.employeeId)
+          : Promise.resolve(null),
       ]);
 
       if (typesRes.status === 'fulfilled') {
@@ -92,6 +97,9 @@ function MyLeaveRequestPageContent() {
         setRequests(requestsRes.value);
       } else {
         console.error('Failed to load my leave requests', requestsRes.reason);
+      }
+      if (empRes.status === 'fulfilled' && empRes.value?.prefix) {
+        setEmployeePrefix(empRes.value.prefix);
       }
     } finally {
       setLoading(false);
@@ -174,6 +182,7 @@ function MyLeaveRequestPageContent() {
           employeeId={user?.employeeId}
           profile={{
             fullName: user?.fullName ?? '-',
+            prefix: employeePrefix,
             positionTitle: balances[0]?.positionTitle,
             departmentName: balances[0]?.departmentName,
           }}

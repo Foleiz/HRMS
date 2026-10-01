@@ -9,6 +9,7 @@ import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents
 
 interface EmployeeProfileSummary {
   fullName: string;
+  prefix?: string | null;
   positionTitle?: string | null;
   departmentName?: string | null;
 }
@@ -161,6 +162,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return {
       employeeId,
       employeeName: profile.fullName,
+      employeePrefix: profile.prefix || null,
       positionTitle: profile.positionTitle,
       leaveTypeCode: selectedType?.leaveCode,
       leaveTypeName: selectedType?.leaveName,
@@ -181,7 +183,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           }
         : null,
     };
-  }, [leaveTypes, leaveTypeId, requests, draftId, employeeId, profile.fullName, profile.positionTitle, reason, startDate, endDate, leaveDays, leaveFormat, contactDuringLeave]);
+  }, [leaveTypes, leaveTypeId, requests, draftId, employeeId, profile.fullName, profile.prefix, profile.positionTitle, reason, startDate, endDate, leaveDays, leaveFormat, contactDuringLeave]);
 
   const applicablePolicy = useMemo(() => {
     if (!leaveTypeId) return null;
