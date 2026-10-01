@@ -261,12 +261,16 @@ const ResignationPaper: React.FC<{
         }}
       >
         <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={companyLogo || '/syaco-logo.png'}
-          alt="Company Logo"
-          style={{ height: '15mm', width: 'auto', objectFit: 'contain', margin: '0 2mm' }}
-        />
+        {companyLogo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={companyLogo}
+            alt="Company Logo"
+            style={{ height: '15mm', width: 'auto', objectFit: 'contain', margin: '0 2mm' }}
+          />
+        ) : (
+          <div style={{ height: '15mm', width: '35mm', margin: '0 2mm' }} />
+        )}
         <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
       </div>
 

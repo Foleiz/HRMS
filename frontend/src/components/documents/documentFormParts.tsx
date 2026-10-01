@@ -188,16 +188,20 @@ export const ApprovalSignatureTable: React.FC<{ slots: ApprovalSlot[] }> = ({ sl
   );
 };
 
-/** หัวกระดาษ: โลโก้บริษัทกึ่งกลาง + เส้นคั่นซ้าย/ขวา */
+/** หัวกระดาษ: โลโก้บริษัทกึ่งกลาง + เส้นคั่นซ้าย/ขวา (ไม่แสดงโลโก้เก่า Syaco ระหว่างโหลดเด็ดขาด) */
 export const DocumentLogoHeader: React.FC<{ companyLogo: string | null; top?: string }> = ({ companyLogo, top = '6mm' }) => (
   <div style={{ position: 'absolute', top, left: '6mm', right: '5mm', height: '15mm', display: 'flex', alignItems: 'flex-end' }}>
     <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src={companyLogo || '/syaco-logo.png'}
-      alt="Company Logo"
-      style={{ height: '15mm', width: 'auto', objectFit: 'contain', margin: '0 2mm' }}
-    />
+    {companyLogo ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={companyLogo}
+        alt="Company Logo"
+        style={{ height: '15mm', width: 'auto', objectFit: 'contain', margin: '0 2mm' }}
+      />
+    ) : (
+      <div style={{ height: '15mm', width: '35mm', margin: '0 2mm' }} />
+    )}
     <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />
   </div>
 );
@@ -251,30 +255,83 @@ export const SignatureLine: React.FC<{ src: string | null; onError?: () => void;
   </span>
 );
 
-/** โลโก้และที่อยู่บริษัทจากหน้าตั้งค่าข้อมูลบริษัท */
-export const useCompanyDocumentInfo = (isOpen: boolean) => {
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyAddress, setCompanyAddress] = useState<string | null>(null);
+interface CompanyDocCache {
+  logo: string | null;
+  address: string | null;
+}
+
+let cachedCompanyDocInfo: CompanyDocCache | null = null;
+let companyFetchPromise: Promise<CompanyDocCache | null> | null = null;
+
+const getInitialCompanyDocInfo = (): CompanyDocCache | null => {
+  if (cachedCompanyDocInfo) return cachedCompanyDocInfo;
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('hrms_company_doc_info');
+      if (raw) {
+        cachedCompanyDocInfo = JSON.parse(raw);
+        return cachedCompanyDocInfo;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+};
+
+export const prefetchCompanyDocumentInfo = async (): Promise<CompanyDocCache | null> => {
+  if (companyFetchPromise) return companyFetchPromise;
+  companyFetchPromise = (async () => {
+    try {
+      const comp = await organizationService.getCompany();
+      if (comp) {
+        const logo = comp.logoData
+          ? (comp.logoData.startsWith('data:') ? comp.logoData : `data:image/png;base64,${comp.logoData}`)
+          : null;
+        const address = comp.address?.trim() || null;
+        cachedCompanyDocInfo = { logo, address };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('hrms_company_doc_info', JSON.stringify(cachedCompanyDocInfo));
+          } catch {}
+        }
+        return cachedCompanyDocInfo;
+      }
+    } catch (err) {
+      console.error('Failed to prefetch company info for document preview:', err);
+    } finally {
+      companyFetchPromise = null;
+    }
+    return cachedCompanyDocInfo;
+  })();
+  return companyFetchPromise;
+};
+
+// เริ่มโหลดทันทีที่ browser โหลดไฟล์นี้ เพื่อให้พร้อมใช้งานทันทีเมื่อผู้ใช้กดดูตัวอย่าง
+if (typeof window !== 'undefined') {
+  prefetchCompanyDocumentInfo();
+}
+
+/** โลโก้และที่อยู่บริษัทจากหน้าตั้งค่าข้อมูลบริษัท (แคชใน RAM + localStorage โหลดทันทีไม่ต้องรอ 0ms) */
+export const useCompanyDocumentInfo = (isOpen: boolean = true) => {
+  const [info, setInfo] = useState<CompanyDocCache | null>(() => getInitialCompanyDocInfo());
 
   useEffect(() => {
-    if (!isOpen) return;
     let isMounted = true;
-    organizationService
-      .getCompany()
-      .then((comp) => {
-        if (!isMounted || !comp) return;
-        if (comp.logoData) {
-          setCompanyLogo(comp.logoData.startsWith('data:') ? comp.logoData : `data:image/png;base64,${comp.logoData}`);
-        }
-        if (comp.address?.trim()) setCompanyAddress(comp.address.trim());
-      })
-      .catch((err) => console.error('Failed to load company info for document preview:', err));
+    prefetchCompanyDocumentInfo().then((data) => {
+      if (isMounted && data) {
+        setInfo(data);
+      }
+    });
     return () => {
       isMounted = false;
     };
   }, [isOpen]);
 
-  return { companyLogo, companyAddress: companyAddress || DEFAULT_COMPANY_ADDRESS };
+  return {
+    companyLogo: info?.logo ?? null,
+    companyAddress: info?.address || DEFAULT_COMPANY_ADDRESS,
+  };
 };
 
 /** URL รูปลายเซ็นของพนักงาน (ดึงใหม่ทุกครั้งที่เปิด) */
@@ -286,10 +343,12 @@ export const useEmployeeSignature = (isOpen: boolean, employeeId?: number | null
   return { src, clear: () => setSrc(null) };
 };
 
+const simulatedSlotsCache = new Map<string, ApprovalSlot[]>();
+
 /**
  * ช่องลงนามตามสายการอนุมัติของเอกสาร
  * 1) มี timeline (ยื่นแล้ว) → ใช้ขั้นตอนจริง พร้อมข้อมูลผู้ที่อนุมัติแล้ว / ผู้ใช้ที่ถึงคิวอนุมัติ
- * 2) ยังไม่ยื่น → จำลองสายการอนุมัติที่ตรงกับพนักงานจากหน้าตั้งค่า
+ * 2) ยังไม่ยื่น → จำลองสายการอนุมัติที่ตรงกับพนักงานจากหน้าตั้งค่า (พร้อมแคช)
  * 3) ไม่พบสายการอนุมัติ → ช่องเริ่มต้น 3 ช่องตามต้นฉบับ
  */
 export const useApprovalSlots = (params: {
@@ -302,7 +361,10 @@ export const useApprovalSlots = (params: {
   const { isOpen, documentType, employeeId, timeline, canApproveCurrentStep } = params;
   const { user } = useAuth();
   const [viewerPosition, setViewerPosition] = useState<string | null>(null);
-  const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(null);
+  const cacheKey = `${employeeId}_${documentType}`;
+  const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(() => {
+    return employeeId ? simulatedSlotsCache.get(cacheKey) ?? null : null;
+  });
   const showViewerPreview = !!(isOpen && canApproveCurrentStep && user?.employeeId);
   const hasTimeline = !!timeline?.steps?.length;
 
@@ -323,7 +385,6 @@ export const useApprovalSlots = (params: {
 
   useEffect(() => {
     if (!isOpen || hasTimeline || !employeeId) {
-      setSimulatedSlots(null);
       return;
     }
     let isMounted = true;
@@ -340,29 +401,29 @@ export const useApprovalSlots = (params: {
           }
         }
         if (!isMounted) return;
-        setSimulatedSlots(
-          [...res.steps]
-            .sort((a, b) => a.stepNo - b.stepNo)
-            .map((s) => {
-              const flowStep = flowSteps.find((fs) => fs.stepNo === s.stepNo);
-              const approverLabel =
-                s.approverType === 'EMPLOYEE'
-                  ? flowStep?.approverEmployeeName || s.approver?.fullName
-                  : flowStep?.approverRoleName || s.approverRoleName;
-              return {
-                stepNo: s.stepNo,
-                approverType: s.approverType,
-                approverLabel: approverLabel || null,
-                positionHint: s.approver?.positionName || null,
-              };
-            })
-        );
+        const slots: ApprovalSlot[] = [...res.steps]
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => {
+            const flowStep = flowSteps.find((fs) => fs.stepNo === s.stepNo);
+            const approverLabel =
+              s.approverType === 'EMPLOYEE'
+                ? flowStep?.approverEmployeeName || s.approver?.fullName
+                : flowStep?.approverRoleName || s.approverRoleName;
+            return {
+              stepNo: s.stepNo,
+              approverType: s.approverType,
+              approverLabel: approverLabel || null,
+              positionHint: s.approver?.positionName || null,
+            };
+          });
+        simulatedSlotsCache.set(cacheKey, slots);
+        setSimulatedSlots(slots);
       })
       .catch((err) => console.error('Failed to load approval flow for document preview:', err));
     return () => {
       isMounted = false;
     };
-  }, [isOpen, hasTimeline, employeeId, documentType]);
+  }, [isOpen, hasTimeline, employeeId, documentType, cacheKey]);
 
   if (hasTimeline && timeline) {
     const todayThai = toThaiShortDate(new Date().toISOString());
