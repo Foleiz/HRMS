@@ -16,7 +16,9 @@ interface HistoryEntry {
   changedBy?: string | null;
   category: string;
   categoryKey: string;
-  action: 'UPDATE' | 'INSERT' | 'DELETE' | 'REPLACE' | string;
+  action: 'UPDATE' | 'INSERT' | 'DELETE' | 'REPLACE' | 'MOVE' | string;
+  /** ประโยคสรุปให้อ่านเข้าใจทันที */
+  summary?: string;
   changes: FieldChange[];
 }
 
@@ -25,7 +27,75 @@ const ACTION_LABEL: Record<string, { label: string; className: string }> = {
   INSERT: { label: 'เพิ่ม', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   DELETE: { label: 'ลบ', className: 'bg-rose-50 text-rose-700 border-rose-200' },
   REPLACE: { label: 'ปรับรายการ', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+  MOVE: { label: 'เปลี่ยนตำแหน่ง/สังกัด', className: 'bg-violet-50 text-violet-700 border-violet-200' },
 };
+
+const Empty = () => <span className="text-slate-400 italic">(ว่าง)</span>;
+
+/** ตารางรายละเอียด: แก้ไข = ช่อง | เดิม | ใหม่, เพิ่ม/ลบ = ช่อง | ข้อมูล */
+function ChangeTable({ entry }: { entry: HistoryEntry }) {
+  const hasBoth = entry.action === 'UPDATE' || entry.action === 'MOVE';
+  if (hasBoth) {
+    return (
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-slate-50 text-slate-500">
+            <th className="text-left font-medium px-3 py-1.5 w-[32%]">ข้อมูล</th>
+            <th className="text-left font-medium px-3 py-1.5">ค่าเดิม</th>
+            <th className="w-6" />
+            <th className="text-left font-medium px-3 py-1.5">ค่าใหม่</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {entry.changes.map((c, i) => {
+            // แถวข้อมูลประกอบของการเปลี่ยนตำแหน่ง (วันสิ้นสุดเดิม / วันมีผลใหม่) แสดงเป็นค่าเดียว
+            const onlyInfo =
+              entry.action === 'MOVE' && c.oldValue == null && (c.field.startsWith('ตำแหน่งเดิม') || c.field.startsWith('ตำแหน่งใหม่'));
+            return (
+              <tr key={i}>
+                <td className="px-3 py-2 text-slate-600 align-top">{c.field}</td>
+                {onlyInfo ? (
+                  <td colSpan={3} className="px-3 py-2 text-slate-800 font-medium">{c.newValue ?? <Empty />}</td>
+                ) : (
+                  <>
+                    <td className="px-3 py-2 text-slate-500 align-top whitespace-pre-line break-words">{c.oldValue ?? <Empty />}</td>
+                    <td className="align-top pt-2.5"><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></td>
+                    <td className="px-3 py-2 text-slate-900 font-medium align-top whitespace-pre-line break-words">{c.newValue ?? <Empty />}</td>
+                  </>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  }
+  return (
+    <table className="w-full text-xs">
+      <tbody className="divide-y divide-slate-100">
+        {entry.changes.map((c, i) => {
+          const removed = c.newValue == null && c.oldValue != null;
+          return (
+            <tr key={i}>
+              <td className="px-3 py-2 text-slate-600 align-top w-[32%]">
+                {c.field === 'เพิ่ม' ? (
+                  <span className="text-emerald-700">+ เพิ่ม</span>
+                ) : c.field === 'ลบ' ? (
+                  <span className="text-rose-700">− ลบ</span>
+                ) : (
+                  c.field
+                )}
+              </td>
+              <td className={`px-3 py-2 align-top whitespace-pre-line break-words ${removed ? 'text-rose-700 line-through decoration-rose-300' : 'text-slate-900 font-medium'}`}>
+                {(removed ? c.oldValue : c.newValue) ?? <Empty />}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
 
 const formatDateTime = (v: string) => {
   const d = new Date(v);
@@ -136,24 +206,9 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
                     <User className="w-3 h-3" /> {e.changedBy || 'ระบบ'}
                   </span>
                 </div>
-                <div className="mt-2 rounded-lg border border-slate-200 divide-y divide-slate-100">
-                  {e.changes.map((c, i) => (
-                    <div key={i} className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 md:gap-3 px-3 py-2">
-                      <span className="text-slate-500">{c.field}</span>
-                      <span className="flex flex-wrap items-start gap-2 text-slate-800">
-                        {c.oldValue != null && (
-                          <span className="line-through text-slate-400 whitespace-pre-line break-words">{c.oldValue}</span>
-                        )}
-                        {c.oldValue != null && c.newValue != null && <ArrowRight className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />}
-                        {c.newValue != null ? (
-                          <span className="font-medium whitespace-pre-line break-words">{c.newValue}</span>
-                        ) : (
-                          c.oldValue == null && <span className="text-slate-400">-</span>
-                        )}
-                        {c.newValue == null && c.oldValue != null && <span className="text-slate-400">(ล้างค่า)</span>}
-                      </span>
-                    </div>
-                  ))}
+                {e.summary && <p className="mt-1.5 text-sm text-slate-800 font-medium">{e.summary}</p>}
+                <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
+                  <ChangeTable entry={e} />
                 </div>
               </li>
             );

@@ -615,12 +615,25 @@ public class EmployeeService : IEmployeeService
         employee.BirthDate = request.BirthDate;
         employee.Gender = gender;
         employee.GenderId = genderId;
+        // หน้าแก้ไขส่งมาเป็นข้อความ (ไม่ส่งรหัส) → ไม่ล้างรหัสอ้างอิงเดิมทิ้ง: ใช้รหัสที่ส่งมา / คงรหัสเดิมถ้าข้อความไม่เปลี่ยน / หาจากชื่อใน Master
+        var nationalityId = request.NationalityId
+            ?? (SameText(request.Nationality, employee.Nationality) && employee.NationalityId != null ? employee.NationalityId
+                : string.IsNullOrWhiteSpace(request.Nationality) ? null
+                : await _dbContext.Nationalities.AsNoTracking().Where(x => x.NationalityName == request.Nationality.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var religionId = request.ReligionId
+            ?? (SameText(request.Religion, employee.Religion) && employee.ReligionId != null ? employee.ReligionId
+                : string.IsNullOrWhiteSpace(request.Religion) ? null
+                : await _dbContext.Religions.AsNoTracking().Where(x => x.ReligionName == request.Religion.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var maritalStatusId = request.MaritalStatusId
+            ?? (SameText(request.MaritalStatus, employee.MaritalStatus) && employee.MaritalStatusId != null ? employee.MaritalStatusId
+                : string.IsNullOrWhiteSpace(request.MaritalStatus) ? null
+                : await _dbContext.MaritalStatusTypes.AsNoTracking().Where(x => x.MaritalStatusName == request.MaritalStatus.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
         employee.Nationality = request.Nationality;
-        employee.NationalityId = request.NationalityId;
+        employee.NationalityId = nationalityId;
         employee.Religion = request.Religion;
-        employee.ReligionId = request.ReligionId;
+        employee.ReligionId = religionId;
         employee.MaritalStatus = request.MaritalStatus;
-        employee.MaritalStatusId = request.MaritalStatusId;
+        employee.MaritalStatusId = maritalStatusId;
         employee.MilitaryStatus = request.MilitaryStatus;
         // ไม่ส่งมา = คงค่าเดิม (หน้าที่ไม่มีช่องเหล่านี้จะไม่ล้างข้อมูลลดหย่อนเป็น 0)
         if (request.IsTopLevel.HasValue) employee.IsTopLevel = request.IsTopLevel.Value;
@@ -1621,5 +1634,7 @@ public class EmployeeService : IEmployeeService
             _ => "CURRENT"
         };
     }
-}
 
+    private static bool SameText(string? a, string? b) =>
+        string.Equals((a ?? string.Empty).Trim(), (b ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
+}
