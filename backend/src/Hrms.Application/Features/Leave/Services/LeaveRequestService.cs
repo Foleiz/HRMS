@@ -143,8 +143,16 @@ public partial class LeaveRequestService : ILeaveRequestService
             .Select(a => a.EmployeeId)
             .ToListAsync(cancellationToken);
 
+        // ดึง IDs ของคำขอลาที่มี ApprovalInstance ที่ตรงกับ allowedInstanceIds แม้ว่า ApprovalInstanceId จะยังไม่ได้เชื่อมโยง (fallback)
+        var allowedSourceIds = await _context.ApprovalInstances
+            .AsNoTracking()
+            .Where(i => i.DocumentType == "LEAVE_REQUEST" && allowedInstanceIds.Contains(i.Id))
+            .Select(i => i.SourceDocumentId)
+            .ToListAsync(cancellationToken);
+
         return query.Where(r => 
             (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)) ||
+            allowedSourceIds.Contains(r.Id) ||
             (!r.ApprovalInstanceId.HasValue && teamEmployeeIds.Contains(r.EmployeeId))
         );
     }
@@ -600,7 +608,18 @@ public partial class LeaveRequestService : ILeaveRequestService
         var emp = r.Employee;
         var empName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : string.Empty;
 
-        var instance = r.ApprovalInstance;
+        var instance = r.ApprovalInstance ?? (r.ApprovalInstanceId.HasValue
+            ? await _context.ApprovalInstances.AsNoTracking()
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+                .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .FirstOrDefaultAsync(i => i.Id == r.ApprovalInstanceId.Value, cancellationToken)
+            : await _context.ApprovalInstances.AsNoTracking()
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+                .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .OrderByDescending(i => i.Id)
+                .FirstOrDefaultAsync(i => i.DocumentType == "LEAVE_REQUEST" && i.SourceDocumentId == r.Id, cancellationToken));
         var currentStepNo = instance?.CurrentStepNo;
         var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
         string? currentApproverDisplay = null;
