@@ -38,7 +38,7 @@ let initialRolesCache: RoleSummary[] | null = null;
 
 export default function SettingsPage() {
   const { success, error, info } = useToast();
-  const { user, hasPermission, hasRole } = useAuth();
+  const { user, hasPermission, hasRole, refreshProfile } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
   // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง)
@@ -387,6 +387,11 @@ export default function SettingsPage() {
       const updated = await settingsService.updateRoleMatrix(roleId, data);
       roleMatrixCacheRef.current[roleId] = updated;
       setSelectedRoleMatrix(updated);
+      try {
+        await refreshProfile();
+      } catch {
+        // Silently continue if refreshProfile fails
+      }
       success('บันทึกสิทธิ์การใช้งานของบทบาทสำเร็จ');
     } catch (err: any) {
       error(err.message || 'ไม่สามารถบันทึกสิทธิ์ได้');

@@ -245,8 +245,10 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/reports',
         icon: BarChart3,
         requiredPermissions: [
+          'REPORT_VIEW',
           'REPORT_ATT_VIEW',
           'REPORT_HEADCOUNT_VIEW',
+          'REPORT_LEAVE_VIEW',
         ],
       },
     ],
@@ -291,9 +293,13 @@ export const Sidebar: React.FC = () => {
 
   // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
   const checkItemAccessible = (item: MenuItem) => {
-    // 1. หากเป็น ADMIN หรือยังไม่ล็อกอิน ให้ bypass/default
+    // 1. หากยังไม่ล็อกอิน ให้ bypass/default
     if (!user) return true;
-    if (hasRole('ADMIN')) return true;
+
+    // สำหรับเมนูตั้งค่าระบบ อนุญาตให้ผู้ดูแลระบบ (ADMIN หรือ SYSTEM_SUPER) เข้าได้เสมอเพื่อป้องกัน lockout
+    if (item.href === '/settings' && (hasRole('ADMIN') || hasRole('SYSTEM_SUPER'))) {
+      return true;
+    }
 
     // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป (ถ้าไม่มีสิทธิ์ใดๆ เลย จะไม่แสดงแดชบอร์ด)
     if (item.href === '/') {

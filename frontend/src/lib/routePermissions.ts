@@ -106,7 +106,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/reports',
     title: 'รายงาน',
-    requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_HEADCOUNT_VIEW', 'REPORT_LEAVE_VIEW'],
+    requiredPermissions: ['REPORT_VIEW', 'REPORT_ATT_VIEW', 'REPORT_HEADCOUNT_VIEW', 'REPORT_LEAVE_VIEW'],
   },
   {
     matchPrefix: '/announcements',
