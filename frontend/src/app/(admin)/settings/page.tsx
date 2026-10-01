@@ -387,12 +387,8 @@ export default function SettingsPage() {
       const updated = await settingsService.updateRoleMatrix(roleId, data);
       roleMatrixCacheRef.current[roleId] = updated;
       setSelectedRoleMatrix(updated);
-      try {
-        await refreshProfile();
-      } catch {
-        // Silently continue if refreshProfile fails
-      }
       success('บันทึกสิทธิ์การใช้งานของบทบาทสำเร็จ');
+      refreshProfile().catch(() => {});
     } catch (err: any) {
       error(err.message || 'ไม่สามารถบันทึกสิทธิ์ได้');
       throw err;
