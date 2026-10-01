@@ -76,6 +76,7 @@ export interface Employee {
   divisionId?: number;
   divisionCode?: string;
   divisionName?: string;
+  employeeTypeId?: number;
   employeeType?: string;
   /** หัวหน้างานโดยตรง */
   managerEmployeeId?: number | null;

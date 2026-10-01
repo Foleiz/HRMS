@@ -1702,9 +1702,11 @@ export default function EmployeesPage() {
                           >
                             <option value="">เลือกประเภท</option>
                             <option value="พนักงานประจำ">พนักงานประจำ</option>
-                            <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
                             <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
+                            <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
+                            <option value="พนักงานรายวัน">พนักงานรายวัน</option>
                             <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
+                            <option value="นักศึกษาฝึกงาน">นักศึกษาฝึกงาน</option>
                           </select>
                           {renderFieldError('employeeType')}
                         </div>

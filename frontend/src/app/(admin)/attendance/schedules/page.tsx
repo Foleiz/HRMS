@@ -1694,7 +1694,7 @@ function SchedulesContent() {
                       .filter((emp) =>
                         singleAssignTypeFilter === 'ALL'
                           ? true
-                          : emp.employeeTypeId === Number(singleAssignTypeFilter)
+                          : (emp.employeeTypeId ?? 1) === Number(singleAssignTypeFilter)
                       )
                       .map((emp) => (
                         <option key={emp.id} value={emp.id}>
@@ -1971,7 +1971,7 @@ function SchedulesContent() {
                                 e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
                                 (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
                               const matchType =
-                                batchAssignTypeFilter === 'ALL' || e.employeeTypeId === Number(batchAssignTypeFilter);
+                                batchAssignTypeFilter === 'ALL' || (e.employeeTypeId ?? 1) === Number(batchAssignTypeFilter);
                               return matchSearch && matchType;
                             })
                             .map((e) => e.id);
@@ -2029,7 +2029,7 @@ function SchedulesContent() {
                           e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
                           (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
                         const matchType =
-                          batchAssignTypeFilter === 'ALL' || e.employeeTypeId === Number(batchAssignTypeFilter);
+                          batchAssignTypeFilter === 'ALL' || (e.employeeTypeId ?? 1) === Number(batchAssignTypeFilter);
                         return matchSearch && matchType;
                       })
                       .map((emp) => {

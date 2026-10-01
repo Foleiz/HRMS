@@ -53,6 +53,7 @@ public class EmployeeDto
     public long? DivisionId { get; set; }
     public string? DivisionCode { get; set; }
     public string? DivisionName { get; set; }
+    public long? EmployeeTypeId { get; set; }
     public string? EmployeeType { get; set; }
     /// <summary>หัวหน้างานโดยตรง (ใช้กับขั้นอนุมัติ "หัวหน้างานตรง")</summary>
     public long? ManagerEmployeeId { get; set; }

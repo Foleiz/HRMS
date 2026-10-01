@@ -48,6 +48,8 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.EmployeeType)
             .AsNoTracking();
 
         // 2. Data Scoping — กรองตามขอบเขตที่ role ของ user กำหนด
@@ -209,6 +211,8 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Division)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.EmployeeType)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.ManagerEmployee)
             .Include(e => e.Signatures)
@@ -496,11 +500,13 @@ public class EmployeeService : IEmployeeService
                 divId = await _dbContext.Divisions.Select(d => d.Id).FirstOrDefaultAsync(cancellationToken);
             }
 
+            var empTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
             employee.Assignments.Add(new EmployeeAssignment
             {
                 DivisionId = divId,
                 DepartmentId = deptId,
                 PositionId = pos.Id,
+                EmployeeTypeId = empTypeId,
                 ManagerEmployeeId = await ValidateManagerAsync(request.ManagerEmployeeId, null, cancellationToken),
                 EffectiveFrom = DateOnly.FromDateTime(DateTime.Today),
                 IsCurrent = true,
@@ -901,9 +907,16 @@ public class EmployeeService : IEmployeeService
         }
 
         // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
+        var currentAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent);
+
+        if (!string.IsNullOrWhiteSpace(request.EmployeeType) && currentAssignment != null)
+        {
+            currentAssignment.WageType = request.EmployeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY";
+            currentAssignment.EmployeeTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.PositionName))
         {
-            var currentAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent);
             var pos = await _dbContext.Positions
                 .Include(p => p.Department)
                 .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
@@ -937,15 +950,18 @@ public class EmployeeService : IEmployeeService
                 if (!string.IsNullOrWhiteSpace(request.EmployeeType))
                 {
                     currentAssignment.WageType = request.EmployeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY";
+                    currentAssignment.EmployeeTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
                 }
             }
             else
             {
+                var empTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
                 employee.Assignments.Add(new EmployeeAssignment
                 {
                     DivisionId = divId,
                     DepartmentId = deptId,
                     PositionId = pos.Id,
+                    EmployeeTypeId = empTypeId,
                     EffectiveFrom = DateOnly.FromDateTime(DateTime.Today),
                     IsCurrent = true,
                     WageType = request.EmployeeType?.Contains("รายวัน") == true ? "DAILY" : "MONTHLY"
@@ -1026,6 +1042,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Division)
+            .Include(e => e.Assignments).ThenInclude(a => a.EmployeeType)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (employee == null)
             throw new NotFoundException("Employee", id);
@@ -1434,7 +1451,8 @@ public class EmployeeService : IEmployeeService
             DivisionId = currentAssignment?.DivisionId,
             DivisionCode = currentAssignment?.Division?.DivisionCode?.Trim(),
             DivisionName = currentAssignment?.Division?.DivisionName?.Trim(),
-            EmployeeType = currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null,
+            EmployeeTypeId = currentAssignment?.EmployeeTypeId ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? 4L : 1L) : null),
+            EmployeeType = currentAssignment?.EmployeeType?.TypeName ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null),
             ManagerEmployeeId = currentAssignment?.ManagerEmployeeId,
             ManagerName = currentAssignment?.ManagerEmployee?.FullName,
             ManagerEmployeeCode = currentAssignment?.ManagerEmployee?.EmployeeCode,
@@ -1633,6 +1651,26 @@ public class EmployeeService : IEmployeeService
         }
 
         return (null, null);
+    }
+
+    private async Task<long> ResolveEmployeeTypeIdAsync(string? employeeType, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(employeeType))
+            return 1L; // default PERM (พนักงานประจำ)
+
+        var trimmed = employeeType.Trim();
+        var match = await _dbContext.EmployeeTypes.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.TypeName == trimmed || t.TypeCode == trimmed, cancellationToken);
+        if (match != null)
+            return match.Id;
+
+        if (trimmed.Contains("ทดลอง") || trimmed.Contains("PROB", StringComparison.OrdinalIgnoreCase)) return 2L;
+        if (trimmed.Contains("สัญญา") || trimmed.Contains("CONT", StringComparison.OrdinalIgnoreCase)) return 3L;
+        if (trimmed.Contains("รายวัน") || trimmed.Contains("DAILY", StringComparison.OrdinalIgnoreCase)) return 4L;
+        if (trimmed.Contains("พาร์ท") || trimmed.Contains("PART", StringComparison.OrdinalIgnoreCase)) return 5L;
+        if (trimmed.Contains("ฝึกงาน") || trimmed.Contains("INTERN", StringComparison.OrdinalIgnoreCase)) return 6L;
+
+        return 1L; // default PERM
     }
 
     private static string NormalizeAddressType(string? addressType)
