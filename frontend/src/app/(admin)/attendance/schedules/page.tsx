@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
@@ -18,6 +18,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LayoutGrid,
   List,
   RefreshCw,
@@ -257,6 +258,11 @@ function SchedulesContent() {
     effectiveTo: '',
     workDays: [1, 2, 3, 4, 5],
   });
+  // Single Assign Searchable Dropdown State
+  const [singleAssignDropdownOpen, setSingleAssignDropdownOpen] = useState(false);
+  const [singleAssignSearch, setSingleAssignSearch] = useState('');
+  const singleAssignDropdownRef = useRef<HTMLDivElement>(null);
+  const singleAssignSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Batch Assign Modal
   const [batchModalOpen, setBatchModalOpen] = useState(false);
@@ -437,6 +443,30 @@ function SchedulesContent() {
     });
   }, [shifts, shiftSearchQuery, shiftFilterType, shiftFilterStatus]);
 
+  // Single Assign Modal: Filtered Employees & Selected Employee
+  const filteredSingleAssignEmployees = useMemo(() => {
+    return assignableEmployees.filter((emp) => {
+      const matchType =
+        singleAssignTypeFilter === 'ALL'
+          ? true
+          : (emp.employeeTypeId ?? 1) === Number(singleAssignTypeFilter);
+      if (!matchType) return false;
+
+      if (!singleAssignSearch.trim()) return true;
+      const q = singleAssignSearch.trim().toLowerCase();
+      const code = (emp.employeeCode || '').toLowerCase();
+      const name = (emp.fullName || '').toLowerCase();
+      const dept = (emp.departmentName || '').toLowerCase();
+      const type = (emp.employeeTypeName || '').toLowerCase();
+
+      return code.includes(q) || name.includes(q) || dept.includes(q) || type.includes(q);
+    });
+  }, [assignableEmployees, singleAssignTypeFilter, singleAssignSearch]);
+
+  const selectedSingleEmployee = useMemo(() => {
+    return assignableEmployees.find((e) => e.id === assignForm.employeeId);
+  }, [assignableEmployees, assignForm.employeeId]);
+
   // -------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------
@@ -543,13 +573,43 @@ function SchedulesContent() {
     setShiftForm(updated);
   };
 
+  // Handle click outside to close single assign dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        singleAssignDropdownRef.current &&
+        !singleAssignDropdownRef.current.contains(event.target as Node)
+      ) {
+        setSingleAssignDropdownOpen(false);
+      }
+    };
+
+    if (singleAssignDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [singleAssignDropdownOpen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (singleAssignDropdownOpen) {
+      setTimeout(() => {
+        singleAssignSearchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [singleAssignDropdownOpen]);
+
   // -------------------------------------------------------------
   // Actions: Tab 1 (Shift Roster & Assignments)
   // -------------------------------------------------------------
   const openSingleAssignCreate = (empId?: number, dateStr?: string) => {
     setAssignModalMode('create');
+    setSingleAssignDropdownOpen(false);
+    setSingleAssignSearch('');
     setAssignForm({
-      employeeId: empId || (assignableEmployees[0]?.id ?? 0),
+      employeeId: empId || 0,
       shiftId: shifts[0]?.id ?? 0,
       effectiveFrom: dateStr || new Date().toISOString().split('T')[0],
       effectiveTo: '',
@@ -560,6 +620,8 @@ function SchedulesContent() {
 
   const openSingleAssignEdit = (assignment: EmployeeShift) => {
     setAssignModalMode('edit');
+    setSingleAssignDropdownOpen(false);
+    setSingleAssignSearch('');
     setAssignForm({
       id: assignment.id,
       employeeId: assignment.employeeId,
@@ -573,6 +635,10 @@ function SchedulesContent() {
 
   const handleSaveSingleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (assignModalMode === 'create' && (!assignForm.employeeId || Number(assignForm.employeeId) === 0)) {
+      toast.warning('กรุณาเลือกพนักงานที่ต้องการมอบหมายกะ');
+      return;
+    }
     try {
       setSubmitting(true);
       if (assignModalMode === 'create') {
@@ -1639,7 +1705,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {assignModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">
@@ -1683,25 +1749,157 @@ function SchedulesContent() {
                   )}
                 </div>
                 {assignModalMode === 'create' ? (
-                  <select
-                    value={assignForm.employeeId}
-                    onChange={(e) => setAssignForm({ ...assignForm, employeeId: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-                    required
-                  >
-                    <option value="0">-- กรุณาเลือกพนักงาน --</option>
-                    {assignableEmployees
-                      .filter((emp) =>
-                        singleAssignTypeFilter === 'ALL'
-                          ? true
-                          : (emp.employeeTypeId ?? 1) === Number(singleAssignTypeFilter)
-                      )
-                      .map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.employeeCode} - {emp.fullName} ({emp.departmentName || 'ไม่ระบุแผนก'}) · [{emp.employeeTypeName || 'พนักงานประจำ'}]
-                        </option>
-                      ))}
-                  </select>
+                  <div ref={singleAssignDropdownRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSingleAssignDropdownOpen((prev) => !prev);
+                        if (!singleAssignDropdownOpen) {
+                          setSingleAssignSearch('');
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left bg-slate-50 hover:bg-slate-100/70 border rounded-lg transition-all ${
+                        singleAssignDropdownOpen
+                          ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white'
+                          : 'border-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {selectedSingleEmployee ? (
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <span className="shrink-0 px-1.5 py-0.5 text-[11px] font-mono font-bold bg-blue-100 text-blue-700 rounded">
+                            {selectedSingleEmployee.employeeCode}
+                          </span>
+                          <span className="text-sm font-medium text-slate-900 truncate">
+                            {selectedSingleEmployee.fullName}
+                          </span>
+                          <span className="text-xs text-slate-400 truncate hidden sm:inline">
+                            ({selectedSingleEmployee.departmentName || 'ไม่ระบุแผนก'})
+                          </span>
+                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                            {selectedSingleEmployee.employeeTypeName || 'พนักงานประจำ'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-400 flex items-center gap-2">
+                          <Search className="w-4 h-4 text-slate-400" />
+                          ค้นหาหรือเลือกพนักงาน...
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1 shrink-0 text-slate-400">
+                        {selectedSingleEmployee && (
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAssignForm({ ...assignForm, employeeId: 0 });
+                            }}
+                            className="p-1 hover:text-rose-500 hover:bg-rose-50 rounded-full transition"
+                            title="ล้างการเลือก"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${
+                            singleAssignDropdownOpen ? 'rotate-180 text-[#0B2046]' : ''
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {singleAssignDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-100">
+                        {/* Search Input Bar */}
+                        <div className="p-2 border-b border-slate-100 bg-slate-50/80">
+                          <div className="relative">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              ref={singleAssignSearchInputRef}
+                              type="text"
+                              placeholder="พิมพ์ค้นหารหัส, ชื่อ-นามสกุล, หรือแผนก..."
+                              value={singleAssignSearch}
+                              onChange={(e) => setSingleAssignSearch(e.target.value)}
+                              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                            />
+                            {singleAssignSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setSingleAssignSearch('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-500">
+                            <span>พบ {filteredSingleAssignEmployees.length} คน</span>
+                            {singleAssignTypeFilter !== 'ALL' && (
+                              <span className="text-blue-600 font-medium">
+                                (กรอง: {employeeTypes.find((t) => t.id === Number(singleAssignTypeFilter))?.typeName || singleAssignTypeFilter})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* List */}
+                        <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
+                          {filteredSingleAssignEmployees.length === 0 ? (
+                            <div className="py-6 px-4 text-center">
+                              <Users className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
+                              <p className="text-xs font-medium text-slate-600">ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                ลองเปลี่ยนคำค้นหา หรือเลือก &quot;ทุกประเภทการจ้างงาน&quot;
+                              </p>
+                            </div>
+                          ) : (
+                            filteredSingleAssignEmployees.map((emp) => {
+                              const isSelected = emp.id === assignForm.employeeId;
+                              return (
+                                <button
+                                  key={emp.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAssignForm({ ...assignForm, employeeId: emp.id });
+                                    setSingleAssignDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2.5 transition-colors ${
+                                    isSelected
+                                      ? 'bg-blue-50/80 text-blue-900 font-medium'
+                                      : 'hover:bg-slate-50 text-slate-700'
+                                  }`}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 rounded border border-slate-200">
+                                        {emp.employeeCode}
+                                      </span>
+                                      <span className="text-xs font-semibold text-slate-900 truncate">
+                                        {emp.fullName}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500">
+                                      <span className="truncate flex items-center gap-1">
+                                        <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                                        {emp.departmentName || 'ไม่ระบุแผนก'}
+                                      </span>
+                                      <span className="text-slate-300">•</span>
+                                      <span className="shrink-0 px-1.5 py-0.2 text-[10px] bg-blue-50 text-blue-700 rounded font-medium">
+                                        {emp.employeeTypeName || 'พนักงานประจำ'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {isSelected && (
+                                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium flex items-center justify-between">
                     <span>
