@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -13,6 +14,7 @@ import { getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { Bank } from '@/types/api';
 import { MaritalStatusItem } from '@/types/master';
+import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 import {
   User,
   UserCheck,
@@ -39,14 +41,36 @@ import {
   AlertCircle,
   KeyRound,
   X,
+  History,
 } from 'lucide-react';
 
 export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[70vh] items-center justify-center">
+          <div className="text-center space-y-3">
+            <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mx-auto" />
+            <p className="text-sm text-slate-500 font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
+          </div>
+        </div>
+      }
+    >
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+function ProfilePageContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const { success, error, warning, info } = useToast();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'history'>(() => {
+    return tabParam === 'history' ? 'history' : tabParam === 'account' ? 'account' : 'profile';
+  });
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -116,12 +140,25 @@ export default function ProfilePage() {
     loadMasterData();
   }, []);
 
+  // Sync tab with URL search parameter
+  useEffect(() => {
+    if (tabParam === 'history') {
+      setActiveTab('history');
+    } else if (tabParam === 'account') {
+      setActiveTab('account');
+    } else if (tabParam === 'profile') {
+      setActiveTab('profile');
+    }
+  }, [tabParam]);
+
   // Sync breadcrumb with active tab
   useEffect(() => {
     if (activeTab === 'profile') {
       setBreadcrumb({ section: 'โปรไฟล์', page: 'แก้ไขโปรไฟล์' });
-    } else {
+    } else if (activeTab === 'account') {
       setBreadcrumb({ section: 'โปรไฟล์', page: 'จัดการบัญชี' });
+    } else if (activeTab === 'history') {
+      setBreadcrumb({ section: 'โปรไฟล์', page: 'ประวัติการเปลี่ยนแปลง' });
     }
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
@@ -597,6 +634,18 @@ export default function ProfilePage() {
             >
               <Shield className="w-4 h-4" />
               จัดการบัญชี
+            </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
+                activeTab === 'history'
+                  ? 'bg-[#0B2046] text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              ประวัติการเปลี่ยนแปลง
             </button>
           </div>
 
@@ -1114,6 +1163,13 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 3: ประวัติการเปลี่ยนแปลง */}
+          {activeTab === 'history' && employee && (
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm animate-in fade-in duration-150">
+              <EmployeeChangeHistoryTab employeeId={employee.id} />
             </div>
           )}
         </div>

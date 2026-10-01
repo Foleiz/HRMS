@@ -12,6 +12,7 @@ import {
   User,
   Shield,
   LogIn,
+  History,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -197,6 +198,15 @@ export const Navbar: React.FC = () => {
                   >
                     <User className="w-3.5 h-3.5 text-slate-500" />
                     โปรไฟล์ของฉัน
+                  </Link>
+
+                  <Link
+                    href="/profile?tab=history"
+                    onClick={() => setDropdownOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    <History className="w-3.5 h-3.5 text-slate-500" />
+                    ประวัติการเปลี่ยนแปลง
                   </Link>
 
                   <button
