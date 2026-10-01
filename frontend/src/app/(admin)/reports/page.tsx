@@ -1380,7 +1380,7 @@ export default function ReportsPage() {
                   <UserPlus className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-600">
-                  +{turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400">คน</span>
+                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400">คน</span>
                 </div>
               </div>
 
@@ -1390,7 +1390,7 @@ export default function ReportsPage() {
                   <UserMinus className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
-                  -{turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400">คน</span>
+                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400">คน</span>
                 </div>
               </div>
 
@@ -1460,10 +1460,10 @@ export default function ReportsPage() {
                         <td className="py-3 px-4 font-semibold text-slate-800">{dept.departmentName}</td>
                         <td className="py-3 px-4 text-center text-slate-700">{dept.beginningHeadcount}</td>
                         <td className="py-3 px-4 text-center font-bold text-emerald-600">
-                          {dept.joinedCount > 0 ? `+${dept.joinedCount}` : '-'}
+                          {dept.joinedCount > 0 ? dept.joinedCount : '-'}
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-rose-600">
-                          {dept.resignedCount > 0 ? `-${dept.resignedCount}` : '-'}
+                          {dept.resignedCount > 0 ? dept.resignedCount : '-'}
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-slate-900">{dept.endingHeadcount}</td>
                         <td className="py-3 px-4 text-center">
