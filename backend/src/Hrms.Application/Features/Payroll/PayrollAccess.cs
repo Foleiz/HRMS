@@ -39,7 +39,7 @@ public static class PayrollAccess
     private static readonly string[] ApproverRoles = { "CEO" };
 
     private static bool Any(ICurrentUserService u, string[] perms, string[] roles) =>
-        u.HasRole("ADMIN") || roles.Any(u.HasRole) || perms.Any(u.HasPermission);
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || perms.Any(u.HasPermission);
 
     /// <summary>HR: สร้างรอบ, คำนวณ, ส่งการเงิน, ลบรอบ, ปรับเงินเดือน</summary>
     public static bool IsHr(ICurrentUserService u) => Any(u, HrPermissions, HrRoles);

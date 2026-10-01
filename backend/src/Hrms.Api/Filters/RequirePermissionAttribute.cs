@@ -58,12 +58,15 @@ public class RequirePermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 3. ตรวจสอบสิทธิ์ฟังก์ชัน (Permission Code)
-        bool hasPerm = _currentUser.HasPermission(_permissionCode)
-            || (!_permissionCode.Contains('_') && _currentUser.HasPermission($"{_permissionCode}_VIEW"))
-            || (_permissionCode.EndsWith("_VIEW") && _currentUser.HasPermission(_permissionCode[..^5]));
+        // 3. ตรวจสอบสิทธิ์ฟังก์ชัน (Permission Code รองรับหลายสิทธิ์คั่นด้วยเครื่องหมายจุลภาคหรือไปป์)
+        var codes = _permissionCode.Split(new[] { ',', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var matchedCodes = codes.Where(c =>
+            _currentUser.HasPermission(c)
+            || (!c.Contains('_') && _currentUser.HasPermission($"{c}_VIEW"))
+            || (c.EndsWith("_VIEW") && _currentUser.HasPermission(c[..^5]))
+        ).ToList();
 
-        if (!hasPerm)
+        if (matchedCodes.Count == 0)
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail($"คุณไม่มีสิทธิ์ในการดำเนินการนี้ (ต้องการสิทธิ์: {_permissionCode})"))
             {
@@ -72,10 +75,11 @@ public class RequirePermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 4. ตรวจสอบขอบเขตข้อมูลขั้นต่ำ หากระบุไว้
+        // 4. ตรวจสอบขอบเขตข้อมูลขั้นต่ำ หากระบุไว้ (ต้องมีอย่างน้อยหนึ่งสิทธิ์ที่ตรงกับขอบเขตขั้นต่ำ)
         if (!string.IsNullOrWhiteSpace(_minScope))
         {
-            if (!_dataScope.HasScope(_permissionCode, _minScope))
+            bool hasScope = matchedCodes.Any(c => _dataScope.HasScope(c, _minScope));
+            if (!hasScope)
             {
                 context.Result = new ObjectResult(ApiResponse<object>.Fail($"ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการดำเนินการนี้ (ต้องการระดับ: {_minScope})"))
                 {

@@ -86,29 +86,39 @@ public interface ILeaveInsightsService
 /// </summary>
 public class LeaveInsightsService : ILeaveInsightsService
 {
-    private static readonly string[] OrgRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER", "HR", "HR_ADMIN", "HR_MGR", "CEO", "EXECUTIVE" };
     private static readonly string[] MonthNames = { "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค." };
 
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IDataScopeService _dataScope;
 
-    public LeaveInsightsService(IHrmsDbContext context, ICurrentUserService currentUser)
+    public LeaveInsightsService(IHrmsDbContext context, ICurrentUserService currentUser, IDataScopeService dataScope)
     {
         _context = context;
         _currentUser = currentUser;
+        _dataScope = dataScope;
     }
-
-    private bool IsOrgViewer => OrgRoles.Any(_currentUser.HasRole);
 
     public async Task<LeaveCalendarResult> GetCalendarAsync(DateOnly from, DateOnly to, long? departmentId, long? divisionId, bool includePending, CancellationToken cancellationToken = default)
     {
         if (to < from) (from, to) = (to, from);
         if (to.DayNumber - from.DayNumber > 92) to = from.AddDays(92);
 
-        // ขอบเขตที่ผู้ใช้เห็น
+        // ขอบเขตที่ผู้ใช้เห็น (ตรวจสอบจากสิทธิ์ LEAVE_BALANCE_VIEW หรือ ESS_LEAVE_VIEW)
         string scope;
         long? scopeDept = null, scopeDiv = null;
-        if (IsOrgViewer)
+
+        var widestScope = _dataScope.GetScope("LEAVE_BALANCE_VIEW");
+        if (string.Equals(widestScope, "SELF", StringComparison.OrdinalIgnoreCase))
+        {
+            var essScope = _dataScope.GetScope("ESS_LEAVE_VIEW");
+            if (!string.Equals(essScope, "SELF", StringComparison.OrdinalIgnoreCase))
+                widestScope = essScope;
+        }
+
+        bool isOrg = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER") || string.Equals(widestScope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase);
+
+        if (isOrg)
         {
             scope = "ORG";
             scopeDept = departmentId;
@@ -119,7 +129,7 @@ public class LeaveInsightsService : ILeaveInsightsService
             var me = _currentUser.EmployeeId ?? throw new ForbiddenException("ไม่พบข้อมูลพนักงานของผู้ใช้");
             var myAssign = await CurrentAssignmentAsync(me, cancellationToken)
                            ?? throw new ForbiddenException("ยังไม่มีข้อมูลสังกัดของคุณ จึงดูปฏิทินการลาของทีมไม่ได้");
-            var isDivisionHead = _currentUser.HasRole("DIV_MGR")
+            var isDivisionHead = string.Equals(widestScope, "DIVISION", StringComparison.OrdinalIgnoreCase)
                 || await _context.Divisions.AnyAsync(d => d.Id == myAssign.DivisionId && d.HeadEmployeeId == me, cancellationToken);
             if (isDivisionHead)
             {
@@ -131,6 +141,7 @@ public class LeaveInsightsService : ILeaveInsightsService
             }
             else
             {
+                // ขอบเขต SELF/TEAM ยังเห็นทั้งแผนก (ไม่แสดงเหตุผลการลา)
                 scope = "DEPARTMENT";
                 scopeDept = myAssign.DepartmentId;
             }
@@ -185,7 +196,11 @@ public class LeaveInsightsService : ILeaveInsightsService
 
     public async Task<LeaveSummaryReport> GetSummaryReportAsync(int year, long? departmentId, CancellationToken cancellationToken = default)
     {
-        if (!IsOrgViewer) throw new ForbiddenException("เฉพาะฝ่ายบุคคลหรือผู้บริหารเท่านั้นที่ดูรายงานการลาได้");
+        bool isSuper = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+        if (!isSuper && !_currentUser.HasPermission("REPORT_LEAVE_VIEW"))
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูรายงานสรุปการลา");
+
+        departmentId = await _dataScope.ResolveDepartmentFilterAsync(departmentId, "REPORT_LEAVE_VIEW", cancellationToken);
         if (year > 2400) year -= 543; // รับปี พ.ศ.
 
         var fromUtc = DateTime.SpecifyKind(new DateTime(year, 1, 1).AddHours(-7), DateTimeKind.Utc);
