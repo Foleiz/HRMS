@@ -16,4 +16,10 @@ public interface IEmploymentContractService
     Task<EmploymentContractDto> UpdateAsync(long id, UpdateEmploymentContractRequest request, CancellationToken cancellationToken = default);
     Task<bool> TerminateAsync(long id, string? reason, DateOnly? terminationDate, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// นำประเภทพนักงานจากสัญญาที่ถึงวันเริ่มแล้ว (ACTIVE) ไปอัปเดตข้อมูลพนักงานปัจจุบัน
+    /// ใช้กับสัญญาที่ลงวันที่เริ่มล่วงหน้า — คืนจำนวนสัญญาที่นำไปใช้
+    /// </summary>
+    Task<int> ApplyDueEmployeeTypesAsync(CancellationToken cancellationToken = default);
 }

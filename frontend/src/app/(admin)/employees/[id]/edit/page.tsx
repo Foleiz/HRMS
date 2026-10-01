@@ -19,6 +19,8 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
@@ -147,6 +149,11 @@ export default function EmployeeEditPage() {
       primaryPhone: '',
     },
   });
+
+  const { hasPermission } = useAuth();
+  const canEditEmployeeType =
+    hasPermission('EMP_PROFILE_EDIT') || hasPermission('EMP_EDIT') || hasPermission('EMP_MANAGE');
+  const employeeTypeOptions = useEmployeeTypeOptions(formData.employeeType);
 
   // โหลดข้อมูลพนักงานเดิม
   useEffect(() => {
@@ -551,6 +558,34 @@ export default function EmployeeEditPage() {
                     />
                     <p className="text-[11px] text-slate-400 mt-1">
                       ใช้กับขั้นอนุมัติ &quot;หัวหน้างานตรง&quot; ในสายการอนุมัติ
+                    </p>
+                  </div>
+
+                  {/* ประเภทพนักงาน — แก้ได้เฉพาะผู้มีสิทธิ์แก้ไขข้อมูลพนักงาน */}
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">ประเภทพนักงาน</label>
+                    {canEditEmployeeType ? (
+                      <select
+                        value={formData.employeeType || ''}
+                        onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      >
+                        {!formData.employeeType && <option value="">เลือกประเภท</option>}
+                        {employeeTypeOptions.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+                        {formData.employeeType || '-'}
+                      </div>
+                    )}
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {canEditEmployeeType
+                        ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
+                        : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
                     </p>
                   </div>
 

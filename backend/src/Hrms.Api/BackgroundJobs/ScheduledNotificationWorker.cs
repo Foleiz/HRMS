@@ -10,6 +10,7 @@ namespace Hrms.Api.BackgroundJobs;
 /// งานเบื้องหลังส่งแจ้งเตือนตามเวลา (ขอบเขต: การอนุมัติและการแจ้งเตือน)
 /// - เอกสารพนักงานใกล้หมดอายุ / หมดอายุ
 /// - สิ้นสุดทดลองงาน / สัญญาจ้างใกล้หมดอายุ
+/// - อัปเดตประเภทพนักงานตามสัญญาจ้างที่ถึงวันเริ่ม
 /// - เตือนรายการค้างอนุมัติเกิน 2 วัน (เตือนซ้ำทุก 2 วัน)
 /// - ตัดยอดวันลายกมาที่หมดอายุแล้ว (ส่วนที่ยังไม่ได้ใช้)
 /// - คำนวณข้อมูลเวลาตามวัน/เวลาทำงานของบริษัท (สาย/ออกก่อน/ขาด, วันที่ผ่านไปแล้วจาก "รอ" เป็น "ขาด")
@@ -54,6 +55,10 @@ public class ScheduledNotificationWorker : BackgroundService
                 var r = await sp.GetRequiredService<IContractAlertNotifier>().RunAsync(stoppingToken);
                 return r.ProbationNotified + r.ContractExpiryNotified;
             }, stoppingToken);
+
+            await RunJobAsync("ประเภทพนักงานตามสัญญาที่ถึงวันเริ่ม", sp =>
+                sp.GetRequiredService<IEmploymentContractService>().ApplyDueEmployeeTypesAsync(stoppingToken),
+                stoppingToken);
 
             await RunJobAsync("รายการค้างอนุมัติ", sp =>
                 sp.GetRequiredService<IApprovalWorkflowService>().SendPendingRemindersAsync(PendingApprovalReminderDays, stoppingToken),

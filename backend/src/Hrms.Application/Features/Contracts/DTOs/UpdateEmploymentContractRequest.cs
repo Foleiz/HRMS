@@ -6,6 +6,7 @@ namespace Hrms.Application.Features.Contracts.DTOs;
 public class UpdateEmploymentContractRequest
 {
     public string? ContractType { get; set; }
+    public long? EmployeeTypeId { get; set; }
     public string? WageType { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? ProbationEndDate { get; set; }

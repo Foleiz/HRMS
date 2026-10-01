@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import { employeeService } from '@/services/employeeService';
 import { apiClient, getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload } from '@/types/employee';
@@ -230,6 +231,7 @@ export default function EmployeesPage() {
   };
 
   const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
+  const employeeTypeOptions = useEmployeeTypeOptions();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
@@ -1701,12 +1703,11 @@ export default function EmployeesPage() {
                             className={`${getFieldClass('employeeType')} cursor-pointer`}
                           >
                             <option value="">เลือกประเภท</option>
-                            <option value="พนักงานประจำ">พนักงานประจำ</option>
-                            <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
-                            <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
-                            <option value="พนักงานรายวัน">พนักงานรายวัน</option>
-                            <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
-                            <option value="นักศึกษาฝึกงาน">นักศึกษาฝึกงาน</option>
+                            {employeeTypeOptions.map((name) => (
+                              <option key={name} value={name}>
+                                {name}
+                              </option>
+                            ))}
                           </select>
                           {renderFieldError('employeeType')}
                         </div>

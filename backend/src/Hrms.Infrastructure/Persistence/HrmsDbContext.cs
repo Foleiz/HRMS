@@ -947,6 +947,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
             entity.Property(e => e.ProbationNotifiedAt).HasColumnName("probation_notified_at");
             entity.Property(e => e.ExpiryNotifiedAt).HasColumnName("expiry_notified_at");
+            entity.Property(e => e.EmployeeTypeAppliedAt).HasColumnName("employee_type_applied_at");
 
             entity.HasOne(e => e.Employee)
                 .WithMany(e => e.Contracts)

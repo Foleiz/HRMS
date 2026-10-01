@@ -254,6 +254,9 @@ public class EmploymentContractService : IEmploymentContractService
 
         _context.EmploymentContracts.Add(contract);
 
+        // สัญญาที่เริ่มวันนี้หรือก่อนหน้า → อัปเดตประเภทพนักงานทันที (สัญญาล่วงหน้าจะถูกอัปเดตเมื่อถึงวันเริ่ม)
+        await TryApplyEmployeeTypeAsync(contract, Today(), cancellationToken);
+
         var statusHistory = new EmployeeStatusHistory
         {
             EmployeeId = request.EmployeeId,
@@ -285,6 +288,12 @@ public class EmploymentContractService : IEmploymentContractService
 
         if (!string.IsNullOrWhiteSpace(request.ContractType))
             contract.ContractType = request.ContractType;
+
+        var oldTypeId = contract.EmployeeTypeId;
+        var oldStart = contract.StartDate;
+        var oldStatus = contract.Status;
+        if (request.EmployeeTypeId.HasValue && request.EmployeeTypeId.Value > 0)
+            contract.EmployeeTypeId = request.EmployeeTypeId.Value;
 
         if (!string.IsNullOrWhiteSpace(request.WageType))
             contract.WageType = request.WageType;
@@ -318,9 +327,80 @@ public class EmploymentContractService : IEmploymentContractService
         if (!string.IsNullOrWhiteSpace(request.Status))
             contract.Status = request.Status;
 
+        // เปลี่ยนประเภท/วันเริ่ม/สถานะของสัญญา → ประเมินการอัปเดตประเภทพนักงานใหม่
+        if (contract.EmployeeTypeId != oldTypeId || contract.StartDate != oldStart || contract.Status != oldStatus)
+        {
+            if (contract.EmployeeTypeId != oldTypeId) contract.EmployeeTypeAppliedAt = null;
+            await TryApplyEmployeeTypeAsync(contract, Today(), cancellationToken);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(contract.Id, cancellationToken);
+    }
+
+    public async Task<int> ApplyDueEmployeeTypesAsync(CancellationToken cancellationToken = default)
+    {
+        var today = Today();
+        var due = await _context.EmploymentContracts
+            .Where(c => c.EmployeeTypeAppliedAt == null
+                        && c.Status == "ACTIVE"
+                        && c.EmployeeTypeId != null
+                        && c.StartDate <= today)
+            .OrderBy(c => c.StartDate).ThenBy(c => c.Id)
+            .ToListAsync(cancellationToken);
+
+        int applied = 0;
+        foreach (var contract in due)
+        {
+            if (await TryApplyEmployeeTypeAsync(contract, today, cancellationToken)) applied++;
+        }
+
+        if (due.Count > 0) await _context.SaveChangesAsync(cancellationToken);
+        return applied;
+    }
+
+    private static DateOnly Today() => DateOnly.FromDateTime(DateTime.Now);
+
+    /// <summary>
+    /// อัปเดตประเภทพนักงาน (และรายวัน/รายเดือน) ของตำแหน่งปัจจุบันตามสัญญา
+    /// ทำเฉพาะสัญญา ACTIVE ที่ถึงวันเริ่มแล้ว ยังไม่สิ้นสุด และยังไม่เคยนำไปใช้ — ไม่ SaveChanges เอง
+    /// </summary>
+    private async Task<bool> TryApplyEmployeeTypeAsync(EmploymentContract contract, DateOnly today, CancellationToken cancellationToken)
+    {
+        if (contract.EmployeeTypeAppliedAt != null) return false;
+        if (!string.Equals(contract.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase)) return false;
+        if (!contract.EmployeeTypeId.HasValue || contract.StartDate > today) return false;
+
+        if (contract.TerminationDate.HasValue && contract.TerminationDate.Value <= today)
+        {
+            contract.EmployeeTypeAppliedAt = DateTime.UtcNow; // สัญญาจบไปแล้ว ไม่ต้องนำไปใช้อีก
+            return false;
+        }
+
+        var type = await _context.EmployeeTypes.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == contract.EmployeeTypeId.Value, cancellationToken);
+        if (type == null) return false;
+
+        var assignment = _context.EmployeeAssignments.Local
+                             .FirstOrDefault(a => a.EmployeeId == contract.EmployeeId && a.IsCurrent)
+                         ?? await _context.EmployeeAssignments
+                             .Where(a => a.EmployeeId == contract.EmployeeId && a.IsCurrent)
+                             .OrderByDescending(a => a.EffectiveFrom)
+                             .FirstOrDefaultAsync(cancellationToken);
+        if (assignment == null) return false; // ยังไม่มีตำแหน่งงาน — รอรอบถัดไป
+
+        assignment.EmployeeTypeId = type.Id;
+        var wage = type.WageType?.ToUpperInvariant() switch
+        {
+            "DAILY" => "DAILY",
+            "MONTHLY" => "MONTHLY",
+            _ => contract.WageType?.ToUpperInvariant() is "DAILY" or "MONTHLY" ? contract.WageType.ToUpperInvariant() : assignment.WageType
+        };
+        assignment.WageType = wage;
+
+        contract.EmployeeTypeAppliedAt = DateTime.UtcNow;
+        return true;
     }
 
     public async Task<bool> TerminateAsync(
