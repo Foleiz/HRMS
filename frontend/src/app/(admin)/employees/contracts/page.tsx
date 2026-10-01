@@ -228,7 +228,7 @@ export default function ContractsPage() {
             <button
               className="pb-3 border-b-2 border-[#0B2046] text-[#0B2046] font-bold"
             >
-              คำขอย้าย/เลื่อนตำแหน่ง
+              รายการสัญญาจ้างงาน
             </button>
           </div>
 
@@ -254,6 +254,7 @@ export default function ContractsPage() {
               <option value="PROBATION">ทดลองงาน</option>
               <option value="PERMANENT">ประจำ</option>
               <option value="FIXED_TERM">สัญญาจ้าง</option>
+              <option value="OTHER">อื่นๆ / ฝึกงาน</option>
             </select>
 
             <select
@@ -315,9 +316,9 @@ export default function ContractsPage() {
                       </div>
                     </td>
 
-                    {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง */}
+                    {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง, ฝึกงาน */}
                     <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
-                      {contract.contractTypeDisplay}
+                      {contract.employeeTypeName || contract.contractTypeDisplay}
                     </td>
 
                     {/* เริ่มสัญญา: 01/07/2569 */}
