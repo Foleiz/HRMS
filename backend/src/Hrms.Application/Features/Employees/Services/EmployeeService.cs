@@ -345,13 +345,14 @@ public class EmployeeService : IEmployeeService
             };
         }
 
-        // 5. ประกันสังคม (PDPA Encrypted)
-        if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo))
+        // 5. ประกันสังคม (PDPA Encrypted - ใช้เลขเดียวกับเลขบัตรประชาชนอัตโนมัติ)
+        var ssoNo = !string.IsNullOrWhiteSpace(request.SocialSecurityNo) ? request.SocialSecurityNo.Trim() : request.CitizenId?.Trim();
+        if (!string.IsNullOrWhiteSpace(ssoNo) || !string.IsNullOrWhiteSpace(request.HospitalName))
         {
             employee.SocialSecurity = new EmployeeSocialSecurity
             {
-                SocialSecurityNoEncrypted = _cryptoService.Encrypt(request.SocialSecurityNo.Trim()),
-                SocialSecurityNoMasked = _cryptoService.MaskCitizenId(request.SocialSecurityNo.Trim()),
+                SocialSecurityNoEncrypted = !string.IsNullOrWhiteSpace(ssoNo) ? _cryptoService.Encrypt(ssoNo) : encryptedCitizenId,
+                SocialSecurityNoMasked = !string.IsNullOrWhiteSpace(ssoNo) ? _cryptoService.MaskCitizenId(ssoNo) : maskedCitizenId,
                 HospitalName = request.HospitalName?.Trim(),
                 HospitalCode = request.HospitalCode?.Trim()
             };
@@ -652,6 +653,13 @@ public class EmployeeService : IEmployeeService
                 employee.CitizenId = rawDigits;
                 employee.CitizenIdEncrypted = _cryptoService.Encrypt(rawDigits);
                 employee.CitizenIdMasked = _cryptoService.MaskCitizenId(rawDigits);
+
+                // ซิงค์เลขประกันสังคมให้ตรงกับ Citizen ID เสมอ (เลขประกันสังคมใช้เลขเดียวกับบัตรประชาชน)
+                if (employee.SocialSecurity != null && string.IsNullOrWhiteSpace(request.SocialSecurityNo))
+                {
+                    employee.SocialSecurity.SocialSecurityNoEncrypted = employee.CitizenIdEncrypted;
+                    employee.SocialSecurity.SocialSecurityNoMasked = employee.CitizenIdMasked;
+                }
             }
         }
 
@@ -673,7 +681,7 @@ public class EmployeeService : IEmployeeService
             employee.Contact.OrganizationEmail = request.OrganizationEmail?.Trim();
         }
 
-        // 5. ประกันสังคม
+        // 5. ประกันสังคม (PDPA Encrypted - ใช้เลขเดียวกับเลขบัตรประชาชนอัตโนมัติ)
         if (!string.IsNullOrWhiteSpace(request.SocialSecurityNo) || request.HospitalName != null || request.HospitalCode != null)
         {
             if (employee.SocialSecurity == null)
@@ -684,6 +692,12 @@ public class EmployeeService : IEmployeeService
             {
                 employee.SocialSecurity.SocialSecurityNoEncrypted = _cryptoService.Encrypt(request.SocialSecurityNo.Trim());
                 employee.SocialSecurity.SocialSecurityNoMasked = _cryptoService.MaskCitizenId(request.SocialSecurityNo.Trim());
+            }
+            else if (employee.SocialSecurity.SocialSecurityNoEncrypted == null || employee.SocialSecurity.SocialSecurityNoEncrypted.Length == 0)
+            {
+                // ถ้ายังไม่มีเลขประกันสังคม ให้ใช้เลขเดียวกับ Citizen ID
+                employee.SocialSecurity.SocialSecurityNoEncrypted = employee.CitizenIdEncrypted;
+                employee.SocialSecurity.SocialSecurityNoMasked = employee.CitizenIdMasked;
             }
             if (request.HospitalName != null)
             {

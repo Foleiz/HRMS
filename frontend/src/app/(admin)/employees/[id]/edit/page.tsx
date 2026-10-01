@@ -324,7 +324,7 @@ export default function EmployeeEditPage() {
         numberOfChildren: taxSso.numberOfChildren,
         parentDeductionCount: taxSso.parentDeductionCount,
         disabilityDeductionCount: taxSso.disabilityDeductionCount,
-        socialSecurityNo: taxSso.socialSecurityNo.trim() || undefined,
+        socialSecurityNo: taxSso.socialSecurityNo?.trim() || undefined,
         hospitalName: taxSso.hospitalName.trim(),
         biometricId: formData.biometricId?.trim() ? formData.biometricId.trim() : '',
         firstName: formData.firstName.trim(),

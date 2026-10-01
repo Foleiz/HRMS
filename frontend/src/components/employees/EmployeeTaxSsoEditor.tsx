@@ -6,7 +6,7 @@ import { Landmark, ShieldCheck } from 'lucide-react';
 const INPUT = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
 
 export interface TaxSsoValues {
-  socialSecurityNo: string;
+  socialSecurityNo?: string;
   hospitalName: string;
   spouseHasIncome: boolean;
   numberOfChildren: number;
@@ -32,21 +32,11 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
           <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
           <h3 className="font-bold text-slate-800 text-sm">ประกันสังคม</h3>
+          <span className="text-[11px] text-slate-500 font-normal">
+            (ใช้เลขเดียวกับเลขประจำตัวประชาชน 13 หลัก)
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="font-semibold text-slate-700 block mb-1">เลขประกันสังคม</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={13}
-              value={values.socialSecurityNo}
-              onChange={(e) => set({ socialSecurityNo: e.target.value.replace(/\D/g, '') })}
-              placeholder={currentSocialSecurityMasked ? `เดิม: ${currentSocialSecurityMasked}` : 'ส่วนใหญ่เป็นเลขบัตรประชาชน 13 หลัก'}
-              className={`${INPUT} font-mono`}
-            />
-            <p className="text-[11px] text-slate-400 mt-1">เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน (ระบบเก็บแบบเข้ารหัส)</p>
-          </div>
           <div>
             <label className="font-semibold text-slate-700 block mb-1">โรงพยาบาลตามสิทธิ์</label>
             <input
