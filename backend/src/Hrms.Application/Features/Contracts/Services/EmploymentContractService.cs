@@ -260,7 +260,8 @@ public class EmploymentContractService : IEmploymentContractService
         var statusHistory = new EmployeeStatusHistory
         {
             EmployeeId = request.EmployeeId,
-            SourceContractId = contract.Id,
+            // ใช้ navigation แทน contract.Id — ตอนนี้สัญญายังไม่ถูกบันทึก Id จึงเป็น 0 (ทำให้ FK พัง)
+            SourceContract = contract,
             Status = request.ContractType,
             EffectiveFrom = request.StartDate,
             Reason = $"ออกสัญญาจ้างงานใหม่ ({GetContractTypeDisplay(request.ContractType)})",
