@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Approvals.DTOs;
 using Hrms.Application.Features.Approvals.Services;
@@ -24,6 +25,7 @@ public class ApprovalFlowsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<ApprovalFlowDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_ROLES_VIEW,SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<List<ApprovalFlowDto>>>> GetAll(
         [FromQuery] string? documentType,
         [FromQuery] string? status,
@@ -36,6 +38,7 @@ public class ApprovalFlowsController : ControllerBase
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<ApprovalFlowDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_VIEW,SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<ApprovalFlowDto>>> GetById(long id, CancellationToken cancellationToken)
     {
         var result = await _flowService.GetByIdAsync(id, cancellationToken);
@@ -49,6 +52,7 @@ public class ApprovalFlowsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ApprovalFlowDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<ApprovalFlowDto>>> Create(
         [FromBody] CreateApprovalFlowRequest request,
         CancellationToken cancellationToken)
@@ -68,6 +72,7 @@ public class ApprovalFlowsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ApprovalFlowDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<ApprovalFlowDto>>> Update(
         long id,
         [FromBody] UpdateApprovalFlowRequest request,
@@ -91,6 +96,7 @@ public class ApprovalFlowsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _flowService.DeleteAsync(id, cancellationToken);
@@ -104,6 +110,7 @@ public class ApprovalFlowsController : ControllerBase
     [HttpPost("simulate")]
     [ProducesResponseType(typeof(ApiResponse<WorkflowSimulationResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("SETTINGS_ROLES_VIEW,SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<WorkflowSimulationResultDto>>> Simulate(
         [FromBody] WorkflowSimulationRequest request,
         CancellationToken cancellationToken)

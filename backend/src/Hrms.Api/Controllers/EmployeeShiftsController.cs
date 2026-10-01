@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,6 +18,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class EmployeeShiftsController : ControllerBase
 {
     private readonly IEmployeeShiftService _service;
@@ -26,6 +29,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetAssignments(
         [FromQuery] long? departmentId, 
         [FromQuery] string? search, 
@@ -42,6 +46,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet("employee/{employeeId}")]
+    [SelfOrPermission("employeeId", "TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetAssignmentsByEmployee(long employeeId)
     {
         var result = await _service.GetAssignmentsByEmployeeAsync(employeeId);
@@ -49,6 +54,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission("TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetAssignment(long id)
     {
         var result = await _service.GetAssignmentByIdAsync(id);
@@ -60,6 +66,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> AssignShift([FromBody] AssignEmployeeShiftRequest request)
     {
         try
@@ -82,6 +89,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpPost("batch")]
+    [RequirePermission("TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> BatchAssignShift([FromBody] BatchAssignEmployeeShiftRequest request)
     {
         try
@@ -105,6 +113,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> UpdateAssignment(long id, [FromBody] UpdateEmployeeShiftRequest request)
     {
         try
@@ -127,6 +136,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> DeleteAssignment(long id)
     {
         var success = await _service.DeleteAssignmentAsync(id);
@@ -138,6 +148,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet("roster")]
+    [RequirePermission("TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetMonthlyRoster(
         [FromQuery] int? year, 
         [FromQuery] int? month, 
@@ -159,6 +170,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpGet("employees")]
+    [RequirePermission("TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetAssignableEmployees([FromQuery] long? departmentId, [FromQuery] long? employeeTypeId)
     {
         var result = await _service.GetAssignableEmployeesAsync(departmentId, employeeTypeId);

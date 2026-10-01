@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -13,6 +15,7 @@ namespace Hrms.Api.Controllers;
 
 [ApiController]
 [Route("api/attendance/adjustments")]
+[Authorize]
 public class AttendanceAdjustmentController : ControllerBase
 {
     private readonly IAttendanceAdjustmentService _adjustmentService;
@@ -27,6 +30,7 @@ public class AttendanceAdjustmentController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("TIME_DAILY_VIEW,APPROVAL_TIME_VIEW")]
     public async Task<ActionResult<ApiResponse<PagedAdjustmentResult>>> GetAdjustments(
         [FromQuery] AdjustmentFilterDto filter,
         CancellationToken cancellationToken)
@@ -59,6 +63,7 @@ public class AttendanceAdjustmentController : ControllerBase
     }
 
     [HttpGet("pending-count")]
+    [RequirePermission("TIME_DAILY_VIEW,APPROVAL_TIME_VIEW")]
     public async Task<ActionResult<ApiResponse<int>>> GetPendingCount(CancellationToken cancellationToken)
     {
         var count = await _adjustmentService.GetPendingCountAsync(cancellationToken);
@@ -66,6 +71,7 @@ public class AttendanceAdjustmentController : ControllerBase
     }
 
     [HttpGet("{id:long}")]
+    [RequirePermission("TIME_DAILY_VIEW,APPROVAL_TIME_VIEW")]
     public async Task<ActionResult<ApiResponse<AttendanceAdjustmentDto>>> GetAdjustmentById(
         long id,
         CancellationToken cancellationToken)
@@ -89,6 +95,7 @@ public class AttendanceAdjustmentController : ControllerBase
     }
 
     [HttpPost("{id:long}/review")]
+    [RequirePermission("TIME_DAILY_EDIT,APPROVAL_TIME_APPROVE")]
     public async Task<ActionResult<ApiResponse<AttendanceAdjustmentDto>>> ReviewAdjustment(
         long id,
         [FromBody] ReviewAttendanceAdjustmentRequest request,

@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Transfers.DTOs;
 using Hrms.Application.Features.Transfers.Services;
@@ -26,6 +27,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeTransferDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<List<EmployeeTransferDto>>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? transferType,
@@ -41,6 +43,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpGet("stats")]
     [ProducesResponseType(typeof(ApiResponse<TransferStatsDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW")]
     public async Task<ActionResult<ApiResponse<TransferStatsDto>>> GetStats(CancellationToken cancellationToken)
     {
         var stats = await _transferService.GetStatsAsync(cancellationToken);
@@ -52,6 +55,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTransferDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<EmployeeTransferDto>>> GetById(long id, CancellationToken cancellationToken)
     {
         var result = await _transferService.GetByIdAsync(id, cancellationToken);
@@ -63,6 +67,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTransferDto>), StatusCodes.Status201Created)]
+    [RequirePermission("EMP_TRANSFER_CREATE")]
     public async Task<ActionResult<ApiResponse<EmployeeTransferDto>>> Create(
         [FromBody] CreateEmployeeTransferRequest request,
         CancellationToken cancellationToken)
@@ -79,6 +84,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpPut("{id:long}/approve")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTransferDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_APPROVE,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<EmployeeTransferDto>>> Approve(long id, CancellationToken cancellationToken)
     {
         var result = await _transferService.ApproveAsync(id, cancellationToken);
@@ -90,6 +96,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpPut("{id:long}/reject")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTransferDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_APPROVE,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<EmployeeTransferDto>>> Reject(
         long id,
         [FromBody] RejectTransferRequest? request,
@@ -103,6 +110,7 @@ public class EmployeeTransfersController : ControllerBase
     /// ดาวน์โหลดเอกสารคำสั่งย้าย (สำหรับ RecordType = ARCHIVE หรือคำขอที่มีเอกสารแนบ)
     /// </summary>
     [HttpGet("{id:long}/document")]
+    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<IActionResult> GetDocument(long id, CancellationToken cancellationToken)
     {
         var doc = await _transferService.GetDocumentAsync(id, cancellationToken);
@@ -117,6 +125,7 @@ public class EmployeeTransfersController : ControllerBase
     /// </summary>
     [HttpGet("{id:long}/approval-timeline")]
     [ProducesResponseType(typeof(ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>>> GetApprovalTimeline(
         long id,
         CancellationToken cancellationToken)

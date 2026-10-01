@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Contracts.DTOs;
 using Hrms.Application.Features.Contracts.Services;
@@ -26,6 +27,7 @@ public class EmploymentContractsController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<EmploymentContractDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_CONTRACT_VIEW,DASHBOARD_DEPT_VIEW,DASHBOARD_DIV_VIEW,DASHBOARD_CEO_VIEW,DASHBOARD_ADMIN_VIEW")]
     public async Task<ActionResult<ApiResponse<List<EmploymentContractDto>>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? contractType,
@@ -41,6 +43,7 @@ public class EmploymentContractsController : ControllerBase
     /// </summary>
     [HttpGet("stats")]
     [ProducesResponseType(typeof(ApiResponse<ContractSummaryStatsDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_CONTRACT_VIEW,DASHBOARD_DEPT_VIEW,DASHBOARD_DIV_VIEW,DASHBOARD_CEO_VIEW,DASHBOARD_ADMIN_VIEW")]
     public async Task<ActionResult<ApiResponse<ContractSummaryStatsDto>>> GetStats(CancellationToken cancellationToken)
     {
         var stats = await _contractService.GetStatsAsync(cancellationToken);
@@ -53,6 +56,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_VIEW")]
     public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> GetById(
         long id,
         CancellationToken cancellationToken)
@@ -66,6 +70,7 @@ public class EmploymentContractsController : ControllerBase
     /// </summary>
     [HttpGet("/api/employees/{employeeId:long}/contracts")]
     [ProducesResponseType(typeof(ApiResponse<List<EmploymentContractDto>>), StatusCodes.Status200OK)]
+    [SelfOrPermission("employeeId", "EMP_CONTRACT_VIEW")]
     public async Task<ActionResult<ApiResponse<List<EmploymentContractDto>>>> GetByEmployeeId(
         long employeeId,
         CancellationToken cancellationToken)
@@ -79,6 +84,7 @@ public class EmploymentContractsController : ControllerBase
     /// </summary>
     [HttpGet("/api/employees/{employeeId:long}/career-timeline")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeCareerTimelineDto>>), StatusCodes.Status200OK)]
+    [SelfOrPermission("employeeId", "EMP_CONTRACT_VIEW")]
     public async Task<ActionResult<ApiResponse<List<EmployeeCareerTimelineDto>>>> GetCareerTimeline(
         long employeeId,
         CancellationToken cancellationToken)
@@ -93,6 +99,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [RequirePermission("EMP_CONTRACT_CREATE")]
     public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> Create(
         [FromBody] CreateEmploymentContractRequest request,
         CancellationToken cancellationToken)
@@ -110,6 +117,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
     public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> Update(
         long id,
         [FromBody] UpdateEmploymentContractRequest request,
@@ -125,6 +133,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpPut("{id:long}/terminate")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Terminate(
         long id,
         [FromBody] TerminateContractRequest? request,
@@ -144,6 +153,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(
         long id,
         CancellationToken cancellationToken)

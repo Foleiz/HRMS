@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Application.Features.MasterData.Services;
@@ -7,6 +9,7 @@ namespace Hrms.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LookupsController : ControllerBase
 {
     private readonly ILookupMasterService _service;
@@ -34,6 +37,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPost("nationalities")]
+    [RequirePermission("MASTER_DATA_CREATE")]
     public async Task<ActionResult<ApiResponse<NationalityDto>>> CreateNationality(
         [FromBody] CreateNationalityDto dto,
         CancellationToken cancellationToken)
@@ -43,6 +47,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPut("nationalities/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<NationalityDto>>> UpdateNationality(
         long id,
         [FromBody] UpdateNationalityDto dto,
@@ -53,6 +58,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("nationalities/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteNationality(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteNationalityAsync(id, cancellationToken);
@@ -77,6 +83,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPost("religions")]
+    [RequirePermission("MASTER_DATA_CREATE")]
     public async Task<ActionResult<ApiResponse<ReligionDto>>> CreateReligion(
         [FromBody] CreateReligionDto dto,
         CancellationToken cancellationToken)
@@ -86,6 +93,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPut("religions/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<ReligionDto>>> UpdateReligion(
         long id,
         [FromBody] UpdateReligionDto dto,
@@ -96,6 +104,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("religions/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteReligion(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteReligionAsync(id, cancellationToken);
@@ -120,6 +129,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPost("marital-statuses")]
+    [RequirePermission("MASTER_DATA_CREATE")]
     public async Task<ActionResult<ApiResponse<MaritalStatusTypeDto>>> CreateMaritalStatus(
         [FromBody] CreateMaritalStatusTypeDto dto,
         CancellationToken cancellationToken)
@@ -129,6 +139,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpPut("marital-statuses/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<MaritalStatusTypeDto>>> UpdateMaritalStatus(
         long id,
         [FromBody] UpdateMaritalStatusTypeDto dto,
@@ -139,6 +150,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("marital-statuses/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteMaritalStatus(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteMaritalStatusAsync(id, cancellationToken);

@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Organization.Dtos;
 using Hrms.Application.Features.Organization.Services;
@@ -11,6 +13,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class OrganizationController : ControllerBase
 {
     private readonly IOrganizationService _orgService;
@@ -38,6 +41,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPut("company")]
+    [RequirePermission("ORG_COMP_EDIT")]
     public async Task<IActionResult> UpdateCompany([FromBody] UpdateCompanyDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.UpdateCompanyProfileAsync(request, cancellationToken);
@@ -61,6 +65,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPost("divisions")]
+    [RequirePermission("ORG_STRUCT_CREATE")]
     public async Task<IActionResult> CreateDivision([FromBody] CreateDivisionDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.CreateDivisionAsync(request, cancellationToken);
@@ -68,6 +73,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPut("divisions/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
     public async Task<IActionResult> UpdateDivision(long id, [FromBody] UpdateDivisionDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.UpdateDivisionAsync(id, request, cancellationToken);
@@ -75,6 +81,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("divisions/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
     public async Task<IActionResult> DeleteDivision(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDivisionAsync(id, cancellationToken);
@@ -98,6 +105,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPost("departments")]
+    [RequirePermission("ORG_STRUCT_CREATE")]
     public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.CreateDepartmentAsync(request, cancellationToken);
@@ -105,6 +113,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPut("departments/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
     public async Task<IActionResult> UpdateDepartment(long id, [FromBody] UpdateDepartmentDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.UpdateDepartmentAsync(id, request, cancellationToken);
@@ -112,6 +121,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("departments/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
     public async Task<IActionResult> DeleteDepartment(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDepartmentAsync(id, cancellationToken);
@@ -135,6 +145,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPost("positions")]
+    [RequirePermission("ORG_POS_CREATE")]
     public async Task<IActionResult> CreatePosition([FromBody] CreatePositionDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.CreatePositionAsync(request, cancellationToken);
@@ -142,6 +153,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPut("positions/{id}")]
+    [RequirePermission("ORG_POS_EDIT")]
     public async Task<IActionResult> UpdatePosition(long id, [FromBody] UpdatePositionDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.UpdatePositionAsync(id, request, cancellationToken);
@@ -149,6 +161,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("positions/{id}")]
+    [RequirePermission("ORG_POS_EDIT")]
     public async Task<IActionResult> DeletePosition(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeletePositionAsync(id, cancellationToken);
@@ -172,6 +185,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPost("levels")]
+    [RequirePermission("ORG_POS_CREATE")]
     public async Task<IActionResult> CreateLevel([FromBody] CreateEmployeeLevelDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.CreateEmployeeLevelAsync(request, cancellationToken);
@@ -179,6 +193,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpPut("levels/{id}")]
+    [RequirePermission("ORG_POS_EDIT")]
     public async Task<IActionResult> UpdateLevel(long id, [FromBody] UpdateEmployeeLevelDto request, CancellationToken cancellationToken)
     {
         var result = await _orgService.UpdateEmployeeLevelAsync(id, request, cancellationToken);
@@ -186,6 +201,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("levels/{id}")]
+    [RequirePermission("ORG_POS_EDIT")]
     public async Task<IActionResult> DeleteLevel(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteEmployeeLevelAsync(id, cancellationToken);

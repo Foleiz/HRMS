@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,6 +17,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/attendance/daily")]
+[Authorize]
 public class AttendanceDailyController : ControllerBase
 {
     private readonly IAttendanceDailyService _service;
@@ -28,6 +31,7 @@ public class AttendanceDailyController : ControllerBase
     /// ดึงรายการบันทึกเวลาประจำวัน พร้อมระบบกรอง ค้นหา และแบ่งหน้า
     /// </summary>
     [HttpGet]
+    [RequirePermission("TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetDailyAttendance(
         [FromQuery] DailyAttendanceFilterQuery query,
         CancellationToken cancellationToken)
@@ -40,6 +44,7 @@ public class AttendanceDailyController : ControllerBase
     /// ดึงสรุปสถิติการเข้างานประจำวัน (ตรงเวลา, สาย, ออกก่อน, ขาดงาน)
     /// </summary>
     [HttpGet("summary")]
+    [RequirePermission("TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetDailySummary(
         [FromQuery] string? date,
         CancellationToken cancellationToken)
@@ -62,6 +67,7 @@ public class AttendanceDailyController : ControllerBase
     /// ลงเวลาเข้างาน (Clock In)
     /// </summary>
     [HttpPost("clock-in")]
+    [RequirePermission("TIME_DAILY_EDIT")]
     public async Task<IActionResult> ClockIn(
         [FromBody] ClockInRequest request,
         CancellationToken cancellationToken)
@@ -77,6 +83,7 @@ public class AttendanceDailyController : ControllerBase
     /// ลงเวลาออกงาน (Clock Out)
     /// </summary>
     [HttpPost("clock-out")]
+    [RequirePermission("TIME_DAILY_EDIT")]
     public async Task<IActionResult> ClockOut(
         [FromBody] ClockOutRequest request,
         CancellationToken cancellationToken)
@@ -92,6 +99,7 @@ public class AttendanceDailyController : ControllerBase
     /// สั่งคำนวณเวลาและจัดเตรียมบันทึกเวลาประจำวันอัตโนมัติ
     /// </summary>
     [HttpPost("recalculate")]
+    [RequirePermission("TIME_DAILY_EDIT")]
     public async Task<IActionResult> RecalculateDaily(
         [FromQuery] string? date,
         CancellationToken cancellationToken)
@@ -114,6 +122,7 @@ public class AttendanceDailyController : ControllerBase
     /// ฝ่ายบุคคลแก้ไขข้อมูลบันทึกเวลาเข้า-ออกงาน
     /// </summary>
     [HttpPut("{id}")]
+    [RequirePermission("TIME_DAILY_EDIT")]
     public async Task<IActionResult> UpdateAttendance(
         long id,
         [FromBody] UpdateAttendanceRequest request,
@@ -227,6 +236,7 @@ public class AttendanceDailyController : ControllerBase
     /// ดึงรายงานสรุปเวลาทำงานรายเดือนของพนักงานทั้งหมด (Monthly Attendance Summary)
     /// </summary>
     [HttpGet("monthly-summary")]
+    [RequirePermission("TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetMonthlyAttendanceSummary(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -245,6 +255,7 @@ public class AttendanceDailyController : ControllerBase
     /// ประมวลผลและบันทึกสรุปยอดเวลาทำงานรายเดือน (Process & Lock Monthly Summary for Payroll)
     /// </summary>
     [HttpPost("monthly-summary/process")]
+    [RequirePermission("TIME_DAILY_EDIT")]
     public async Task<IActionResult> ProcessMonthlyAttendanceSummary(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -262,6 +273,7 @@ public class AttendanceDailyController : ControllerBase
     /// ส่งออกรายงานสรุปเวลาทำงานรายเดือนเป็นไฟล์ CSV (UTF-8 with BOM)
     /// </summary>
     [HttpGet("monthly-summary/export")]
+    [RequirePermission("TIME_DAILY_VIEW")]
     public async Task<IActionResult> ExportMonthlyAttendanceCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,

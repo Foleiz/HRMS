@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Attendance.Dtos;
@@ -12,6 +14,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/attendance/import")]
+[Authorize]
 public class AttendanceImportController : ControllerBase
 {
     private readonly IAttendanceImportService _importService;
@@ -26,6 +29,7 @@ public class AttendanceImportController : ControllerBase
     /// </summary>
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
+    [RequirePermission("TIME_IMPORT_CREATE")]
     public async Task<IActionResult> UploadFile(
         [FromForm] IFormFile file,
         [FromForm] string? source,
@@ -128,6 +132,7 @@ public class AttendanceImportController : ControllerBase
     /// ดึงรายการประวัติการนำเข้าไฟล์ย้อนหลัง (Batch History)
     /// </summary>
     [HttpGet("batches")]
+    [RequirePermission("TIME_IMPORT_VIEW,TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetBatches(
         [FromQuery] AttendanceImportBatchFilterQuery query,
         CancellationToken cancellationToken)
@@ -140,6 +145,7 @@ public class AttendanceImportController : ControllerBase
     /// ดึงรายละเอียดของชุดการนำเข้า (Batch Detail)
     /// </summary>
     [HttpGet("batches/{id}")]
+    [RequirePermission("TIME_IMPORT_VIEW,TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetBatchById(long id, CancellationToken cancellationToken)
     {
         var result = await _importService.GetBatchByIdAsync(id, cancellationToken);
@@ -154,6 +160,7 @@ public class AttendanceImportController : ControllerBase
     /// ดึงรายการข้อผิดพลาดรายแถวของชุดการนำเข้า (Batch Error Logs)
     /// </summary>
     [HttpGet("batches/{id}/errors")]
+    [RequirePermission("TIME_IMPORT_VIEW,TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetBatchErrors(
         long id,
         [FromQuery] int page = 1,
@@ -169,6 +176,7 @@ public class AttendanceImportController : ControllerBase
     /// สำหรับปุ่ม "ตรวจเวลา" ในหน้าประวัติการนำเข้า
     /// </summary>
     [HttpGet("batches/{id}/records")]
+    [RequirePermission("TIME_IMPORT_VIEW,TIME_DAILY_VIEW")]
     public async Task<IActionResult> GetBatchRecords(
         long id,
         [FromQuery] int page = 1,
@@ -183,6 +191,7 @@ public class AttendanceImportController : ControllerBase
     /// ดาวน์โหลดไฟล์แม่แบบตัวอย่าง (Template) สำหรับนำเข้าเวลา
     /// </summary>
     [HttpGet("template")]
+    [RequirePermission("TIME_IMPORT_VIEW,TIME_DAILY_VIEW")]
     public async Task<IActionResult> DownloadTemplate(
         [FromQuery] string format = "xlsx",
         CancellationToken cancellationToken = default)
@@ -195,6 +204,7 @@ public class AttendanceImportController : ControllerBase
     /// ยกเลิกชุดข้อมูลนำเข้า (Revert) — ไม่ลบถาวร: คืนสถานะวันทำงาน, เก็บคำขอแก้ไขเวลา, คำนวณสรุปรายเดือนใหม่, ห้ามถ้างวดเงินเดือนล็อกแล้ว
     /// </summary>
     [HttpDelete("batches/{id}")]
+    [RequirePermission("TIME_IMPORT_EDIT")]
     public async Task<IActionResult> RevertBatch(long id, CancellationToken cancellationToken)
     {
         try

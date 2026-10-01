@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using System.Security.Claims;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Settings.Dtos;
@@ -24,6 +25,7 @@ public class RolesController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<RoleSummaryDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_ROLES_VIEW,SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<List<RoleSummaryDto>>>> GetAllRoles(CancellationToken cancellationToken)
     {
         var result = await _roleService.GetAllRolesAsync(cancellationToken);
@@ -33,6 +35,7 @@ public class RolesController : ControllerBase
     [HttpGet("{id:long}/matrix")]
     [ProducesResponseType(typeof(ApiResponse<RoleDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_VIEW")]
     public async Task<ActionResult<ApiResponse<RoleDetailDto>>> GetRoleMatrix(
         long id,
         CancellationToken cancellationToken)
@@ -44,6 +47,7 @@ public class RolesController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<RoleSummaryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("SETTINGS_ROLES_CREATE")]
     public async Task<ActionResult<ApiResponse<RoleSummaryDto>>> CreateRole(
         [FromBody] CreateRoleRequestDto request,
         CancellationToken cancellationToken)
@@ -58,6 +62,7 @@ public class RolesController : ControllerBase
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<RoleSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<RoleSummaryDto>>> UpdateRole(
         long id,
         [FromBody] UpdateRoleRequestDto request,
@@ -73,6 +78,7 @@ public class RolesController : ControllerBase
     [HttpPut("{id:long}/matrix")]
     [ProducesResponseType(typeof(ApiResponse<RoleDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<RoleDetailDto>>> UpdateRoleMatrix(
         long id,
         [FromBody] UpdateRoleMatrixRequestDto request,
@@ -88,6 +94,7 @@ public class RolesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("SETTINGS_ROLES_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteRole(
         long id,
         CancellationToken cancellationToken)

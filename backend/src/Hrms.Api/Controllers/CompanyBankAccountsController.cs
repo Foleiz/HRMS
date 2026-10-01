@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Organization.Dtos;
 using Hrms.Application.Features.Organization.Services;
@@ -11,6 +13,7 @@ namespace Hrms.Api.Controllers;
 [ApiController]
 [Route("api/company-bank-accounts")]
 [Route("api/[controller]")]
+[Authorize]
 public class CompanyBankAccountsController : ControllerBase
 {
     private readonly ICompanyBankAccountService _service;
@@ -24,6 +27,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// ดึงรายการบัญชีธนาคารบริษัททั้งหมด
     /// </summary>
     [HttpGet]
+    [RequirePermission("ORG_COMP_VIEW,PAYROLL_BANK_VIEW")]
     public async Task<ActionResult<ApiResponse<List<CompanyBankAccountDto>>>> GetAll([FromQuery] long? companyId, CancellationToken cancellationToken)
     {
         var result = await _service.GetAllAsync(companyId, cancellationToken);
@@ -34,6 +38,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// ดึงข้อมูลบัญชีธนาคารบริษัทตาม ID
     /// </summary>
     [HttpGet("{id:long}")]
+    [RequirePermission("ORG_COMP_VIEW,PAYROLL_BANK_VIEW")]
     public async Task<ActionResult<ApiResponse<CompanyBankAccountDto>>> GetById(long id, CancellationToken cancellationToken)
     {
         var result = await _service.GetByIdAsync(id, cancellationToken);
@@ -44,6 +49,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// เพิ่มบัญชีธนาคารบริษัทใหม่
     /// </summary>
     [HttpPost]
+    [RequirePermission("ORG_COMP_CREATE")]
     public async Task<ActionResult<ApiResponse<CompanyBankAccountDto>>> Create([FromBody] CreateCompanyBankAccountDto dto, CancellationToken cancellationToken)
     {
         var result = await _service.CreateAsync(dto, cancellationToken);
@@ -54,6 +60,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// แก้ไขข้อมูลบัญชีธนาคารบริษัท
     /// </summary>
     [HttpPut("{id:long}")]
+    [RequirePermission("ORG_COMP_EDIT")]
     public async Task<ActionResult<ApiResponse<CompanyBankAccountDto>>> Update(long id, [FromBody] UpdateCompanyBankAccountDto dto, CancellationToken cancellationToken)
     {
         var result = await _service.UpdateAsync(id, dto, cancellationToken);
@@ -64,6 +71,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// กำหนดให้บัญชีนี้เป็นบัญชีจ่ายเงินเดือนหลัก (Primary Payroll Account)
     /// </summary>
     [HttpPut("{id:long}/set-primary")]
+    [RequirePermission("ORG_COMP_EDIT")]
     public async Task<ActionResult<ApiResponse<CompanyBankAccountDto>>> SetPrimary(long id, CancellationToken cancellationToken)
     {
         var result = await _service.SetPrimaryAsync(id, cancellationToken);
@@ -74,6 +82,7 @@ public class CompanyBankAccountsController : ControllerBase
     /// ลบบัญชีธนาคารบริษัท
     /// </summary>
     [HttpDelete("{id:long}")]
+    [RequirePermission("ORG_COMP_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteAsync(id, cancellationToken);

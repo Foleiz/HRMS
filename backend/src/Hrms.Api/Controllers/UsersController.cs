@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using System.Security.Claims;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Settings.Dtos;
@@ -24,6 +25,7 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<UserAccountDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<PagedResult<UserAccountDto>>>> GetUsers(
         [FromQuery] UserQueryFilter filter,
         CancellationToken cancellationToken)
@@ -34,6 +36,7 @@ public class UsersController : ControllerBase
 
     [HttpGet("assigned-employee-ids")]
     [ProducesResponseType(typeof(ApiResponse<List<long>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<List<long>>>> GetAssignedEmployeeIds(CancellationToken cancellationToken)
     {
         var result = await _userService.GetAssignedEmployeeIdsAsync(cancellationToken);
@@ -43,6 +46,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<UserAccountDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_USERS_VIEW")]
     public async Task<ActionResult<ApiResponse<UserAccountDto>>> GetUserById(
         long id,
         CancellationToken cancellationToken)
@@ -54,6 +58,7 @@ public class UsersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<UserAccountDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("SETTINGS_USERS_CREATE")]
     public async Task<ActionResult<ApiResponse<UserAccountDto>>> CreateUser(
         [FromBody] CreateUserRequestDto request,
         CancellationToken cancellationToken)
@@ -68,6 +73,7 @@ public class UsersController : ControllerBase
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<UserAccountDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("SETTINGS_USERS_EDIT")]
     public async Task<ActionResult<ApiResponse<UserAccountDto>>> UpdateUser(
         long id,
         [FromBody] UpdateUserRequestDto request,
@@ -82,6 +88,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("{id:long}/reset-password")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_USERS_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> ResetPassword(
         long id,
         [FromBody] ResetPasswordRequestDto request,
@@ -96,6 +103,7 @@ public class UsersController : ControllerBase
 
     [HttpPatch("{id:long}/status")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_USERS_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> ToggleStatus(
         long id,
         [FromBody] ToggleStatusRequest request,
@@ -110,6 +118,7 @@ public class UsersController : ControllerBase
 
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_USERS_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteUser(
         long id,
         CancellationToken cancellationToken)

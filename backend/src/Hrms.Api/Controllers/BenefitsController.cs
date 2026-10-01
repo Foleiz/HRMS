@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Application.Features.MasterData.Services;
@@ -50,6 +51,7 @@ public class BenefitsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<BenefitItemDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [RequirePermission("ORG_BENEFIT_CREATE")]
     public async Task<ActionResult<ApiResponse<BenefitItemDto>>> Create(
         [FromBody] CreateBenefitItemRequest request,
         CancellationToken cancellationToken)
@@ -65,6 +67,7 @@ public class BenefitsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<BenefitItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("ORG_BENEFIT_EDIT")]
     public async Task<ActionResult<ApiResponse<BenefitItemDto>>> Update(
         long id,
         [FromBody] UpdateBenefitItemRequest request,
@@ -81,6 +84,7 @@ public class BenefitsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("ORG_BENEFIT_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _benefitService.DeleteAsync(id, cancellationToken);
