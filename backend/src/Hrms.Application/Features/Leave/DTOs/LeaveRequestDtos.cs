@@ -7,6 +7,7 @@ public record LeaveRequestDto
     
     public long EmployeeId { get; init; }
     public string EmployeeCode { get; init; } = string.Empty;
+    public string? EmployeePrefix { get; init; }
     public string EmployeeName { get; init; } = string.Empty;
     public string DepartmentName { get; init; } = string.Empty;
     public string PositionName { get; init; } = string.Empty;

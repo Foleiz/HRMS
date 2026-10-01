@@ -195,6 +195,7 @@ export interface LeaveRequest {
   requestNo: string;
   employeeId: number;
   employeeCode: string;
+  employeePrefix?: string | null;
   employeeName: string;
   departmentName: string;
   positionName?: string;

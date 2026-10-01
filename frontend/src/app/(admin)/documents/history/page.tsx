@@ -17,6 +17,7 @@ import {
   Pencil,
   MoreVertical,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -28,9 +29,14 @@ import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
+import { employeeService } from '@/services/employeeService';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
+import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
+import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
+import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -91,6 +97,19 @@ export default function DocumentHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+
+  // Document Preview Modals State
+  const [isLeavePreviewOpen, setIsLeavePreviewOpen] = useState(false);
+  const [selectedLeaveForPreview, setSelectedLeaveForPreview] = useState<LeavePreviewData | null>(null);
+
+  const [isResignPreviewOpen, setIsResignPreviewOpen] = useState(false);
+  const [selectedResignForPreview, setSelectedResignForPreview] = useState<ResignationRequest | null>(null);
+
+  const [isCertPreviewOpen, setIsCertPreviewOpen] = useState(false);
+  const [selectedCertForPreview, setSelectedCertForPreview] = useState<CertificateRequest | null>(null);
+
+  const [isGeneralPreviewOpen, setIsGeneralPreviewOpen] = useState(false);
+  const [selectedGeneralForPreview, setSelectedGeneralForPreview] = useState<GeneralDocumentRequest | null>(null);
 
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -213,6 +232,78 @@ export default function DocumentHistoryPage() {
   }, [totalPages, page]);
 
   // ─── Actions ────────────────────────────────────────────────
+
+  const handleOpenLeavePreview = (req: LeaveRequest) => {
+    const lastApproved = leaveRequests
+      .filter((r) => r.employeeId === req.employeeId && r.status === 'APPROVED' && r.id !== req.id)
+      .sort((a, b) => (b.startDatetime || b.startDate || '').localeCompare(a.startDatetime || a.startDate || ''))[0];
+
+    const initialData: LeavePreviewData = {
+      requestId: req.id,
+      employeeId: req.employeeId,
+      employeePrefix: req.employeePrefix,
+      employeeName: req.employeeName || user?.fullName || 'พนักงาน',
+      departmentName: req.departmentName || '',
+      positionTitle: req.positionName && req.positionName !== '-' ? req.positionName : '',
+      leaveTypeCode: req.leaveTypeCode,
+      leaveTypeName: req.leaveTypeName,
+      leaveFormCategory: req.formCategory || null,
+      reason: req.reason,
+      startDate: req.startDate ?? (req.startDatetime ? req.startDatetime.split('T')[0] : null),
+      endDate: req.endDate ?? (req.endDatetime ? req.endDatetime.split('T')[0] : null),
+      leaveDays: req.leaveDays ?? req.totalDays,
+      isHalfDay: req.leaveDays === 0.5 || (req.leaveHours > 0 && req.leaveHours <= 4),
+      contactDuringLeave: req.contactDuringLeave,
+      submissionDate: req.submittedAt ? req.submittedAt.split('T')[0] : (req.createdAt ? req.createdAt.split('T')[0] : null),
+      lastLeave: lastApproved
+        ? {
+            leaveTypeCode: lastApproved.leaveTypeCode,
+            leaveTypeName: lastApproved.leaveTypeName,
+            startDate: lastApproved.startDate ?? (lastApproved.startDatetime ? lastApproved.startDatetime.split('T')[0] : null),
+            endDate: lastApproved.endDate ?? (lastApproved.endDatetime ? lastApproved.endDatetime.split('T')[0] : null),
+            leaveDays: lastApproved.leaveDays ?? lastApproved.totalDays,
+          }
+        : null,
+      timeline: null,
+      canApproveCurrentStep: false,
+      documents: req.documents,
+    };
+
+    setSelectedLeaveForPreview(initialData);
+    setIsLeavePreviewOpen(true);
+
+    // ดึง timeline และตำแหน่งงานเพิ่มเติมในเบื้องหลัง เพื่อแสดงลายเซ็นและสายอนุมัติอย่างสมบูรณ์
+    Promise.all([
+      leaveService.getApprovalTimeline(req.id).catch(() => null),
+      req.employeeId ? employeeService.getById(req.employeeId).catch(() => null) : Promise.resolve(null),
+    ]).then(([tl, emp]) => {
+      setSelectedLeaveForPreview((prev) => {
+        if (!prev || prev.requestId !== req.id) return prev;
+        return {
+          ...prev,
+          timeline: tl || prev.timeline,
+          positionTitle: emp?.positionName || prev.positionTitle,
+          departmentName: emp?.departmentName || prev.departmentName,
+          employeePrefix: emp?.prefix || prev.employeePrefix,
+        };
+      });
+    });
+  };
+
+  const handleOpenDocumentPreview = (doc: MyDocumentRow) => {
+    if (doc.source === 'LEAVE' && doc.rawLeave) {
+      handleOpenLeavePreview(doc.rawLeave);
+    } else if (doc.source === 'RESIGNATION' && doc.rawResignation) {
+      setSelectedResignForPreview(doc.rawResignation);
+      setIsResignPreviewOpen(true);
+    } else if (doc.source === 'CERTIFICATE' && doc.rawCertificate) {
+      setSelectedCertForPreview(doc.rawCertificate);
+      setIsCertPreviewOpen(true);
+    } else if (doc.source === 'GENERAL' && doc.rawGeneral) {
+      setSelectedGeneralForPreview(doc.rawGeneral);
+      setIsGeneralPreviewOpen(true);
+    }
+  };
 
   const handleCancel = (doc: MyDocumentRow) => {
     setConfirmConfig({
@@ -412,7 +503,16 @@ export default function DocumentHistoryPage() {
                     const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
                     return (
                       <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-5 py-4 font-medium text-gray-700 whitespace-nowrap">{doc.code}</td>
+                        <td className="px-5 py-4 font-medium whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDocumentPreview(doc)}
+                            className="text-[#0B2046] hover:text-blue-600 hover:underline font-semibold transition-colors cursor-pointer text-left"
+                            title="คลิกเพื่อดูตัวอย่างเอกสาร"
+                          >
+                            {doc.code}
+                          </button>
+                        </td>
                         <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
                         <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{doc.detailDate}</td>
                         <td className="px-4 py-4 text-gray-600">{doc.documentType}</td>
@@ -433,13 +533,19 @@ export default function DocumentHistoryPage() {
                             const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
                             const hasCancel = doc.status === 'PENDING';
                             const hasDelete = doc.status === 'DRAFT';
-                            const hasAnyAction = hasAttachments || hasEdit || hasCancel || hasDelete;
                             return (
                               <ActionDropdown
-                                disabled={!hasAnyAction}
                                 menuClassName="w-56"
                                 triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                                 items={[
+                                  {
+                                    label: 'ดูตัวอย่างเอกสาร',
+                                    icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+                                    onClick: () => handleOpenDocumentPreview(doc),
+                                  },
+                                  ...(hasAttachments || hasEdit || hasCancel || hasDelete
+                                    ? [{ divider: true, label: '' }]
+                                    : []),
                                   ...(hasAttachments
                                     ? doc.documents!.map((d) => ({
                                         label: d.fileName ?? 'เอกสารแนบ',
@@ -539,6 +645,72 @@ export default function DocumentHistoryPage() {
           </>
         )}
       </div>
+
+      {/* ─── Modal ดูตัวอย่างเอกสารใบลาทางการ (Leave Document Preview) ─── */}
+      <LeavePreviewModal
+        isOpen={isLeavePreviewOpen}
+        onClose={() => {
+          setIsLeavePreviewOpen(false);
+          setSelectedLeaveForPreview(null);
+        }}
+        data={selectedLeaveForPreview}
+      />
+
+      {/* ─── Modal ดูตัวอย่างเอกสารหนังสือรับรองทางการ (Certificate Document Preview) ─── */}
+      <CertificatePreviewModal
+        isOpen={isCertPreviewOpen}
+        onClose={() => {
+          setIsCertPreviewOpen(false);
+          setSelectedCertForPreview(null);
+        }}
+        requestId={selectedCertForPreview?.id}
+      />
+
+      {/* ─── Modal ดูตัวอย่างหนังสือขอลาออก (Resignation Preview) ─── */}
+      <ResignationPreviewModal
+        isOpen={isResignPreviewOpen}
+        onClose={() => {
+          setIsResignPreviewOpen(false);
+          setSelectedResignForPreview(null);
+        }}
+        data={selectedResignForPreview ? {
+          employeeName: selectedResignForPreview.employeeName || user?.fullName || '',
+          employeeId: selectedResignForPreview.employeeId,
+          timeline: selectedResignForPreview.timeline,
+          canApproveCurrentStep: false,
+          employeeCode: selectedResignForPreview.employeeCode,
+          positionTitle: selectedResignForPreview.positionName,
+          departmentName: selectedResignForPreview.departmentName,
+          submissionDate: selectedResignForPreview.submittedAt ? selectedResignForPreview.submittedAt.split('T')[0] : '',
+          requestedLastWorkingDate: selectedResignForPreview.requestedLastWorkingDate,
+          reasonCategoryLabel: selectedResignForPreview.reasonCategory || 'ลาออกจากงาน',
+          reasonDetail: selectedResignForPreview.reasonDetail || selectedResignForPreview.reason || '-',
+          handoverNotes: selectedResignForPreview.handoverNotes,
+          contactAfterResignation: selectedResignForPreview.contactAfterResignation,
+          noticeDays: selectedResignForPreview.noticePeriodDays,
+        } : null}
+      />
+
+      {/* ─── Modal ดูตัวอย่างคำร้องเอกสารทั่วไป (General Document Preview) ─── */}
+      <GeneralDocumentPreviewModal
+        isOpen={isGeneralPreviewOpen}
+        onClose={() => {
+          setIsGeneralPreviewOpen(false);
+          setSelectedGeneralForPreview(null);
+        }}
+        data={selectedGeneralForPreview ? {
+          employeeName: selectedGeneralForPreview.employeeName || user?.fullName || '',
+          employeeCode: selectedGeneralForPreview.employeeCode || '',
+          positionTitle: selectedGeneralForPreview.positionName || '',
+          departmentName: selectedGeneralForPreview.departmentName || '',
+          issueDate: selectedGeneralForPreview.issueDate,
+          expiryDate: selectedGeneralForPreview.expiryDate,
+          documentType: selectedGeneralForPreview.documentType,
+          purpose: selectedGeneralForPreview.purpose,
+          notes: selectedGeneralForPreview.notes,
+          fileName: selectedGeneralForPreview.fileName,
+        } : null}
+      />
 
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
