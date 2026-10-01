@@ -1,0 +1,90 @@
+using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace Hrms.Api.Filters;
+
+/// <summary>
+/// แอตทริบิวต์สำหรับตรวจสอบสิทธิ์การเข้าถึง (Permission-based Authorization)
+/// พร้อมรองรับการตรวจสอบระดับขอบเขตข้อมูลขั้นต่ำ (Min Scope: SELF, TEAM, DEPARTMENT, DIVISION, ORGANIZATION)
+/// ผู้ใช้งานระดับ ADMIN หรือ SYSTEM_SUPER จะได้รับสิทธิ์ผ่านโดยอัตโนมัติ (Bypass)
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
+public class RequirePermissionAttribute : TypeFilterAttribute
+{
+    public RequirePermissionAttribute(string permissionCode, string? minScope = null)
+        : base(typeof(RequirePermissionFilter))
+    {
+        Arguments = new object[] { permissionCode, minScope ?? string.Empty };
+    }
+}
+
+public class RequirePermissionFilter : IAsyncActionFilter
+{
+    private readonly string _permissionCode;
+    private readonly string? _minScope;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IDataScopeService _dataScope;
+
+    public RequirePermissionFilter(
+        string permissionCode,
+        string? minScope,
+        ICurrentUserService currentUser,
+        IDataScopeService dataScope)
+    {
+        _permissionCode = permissionCode;
+        _minScope = minScope;
+        _currentUser = currentUser;
+        _dataScope = dataScope;
+    }
+
+    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        // 1. ตรวจสอบว่าเข้าสู่ระบบหรือไม่
+        if (!_currentUser.UserId.HasValue)
+        {
+            context.Result = new ObjectResult(ApiResponse<object>.Fail("กรุณาเข้าสู่ระบบก่อนดำเนินการ"))
+            {
+                StatusCode = StatusCodes.Status401Unauthorized
+            };
+            return;
+        }
+
+        // 2. Admin และ Super Admin ผ่านได้เสมอ
+        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
+        {
+            await next();
+            return;
+        }
+
+        // 3. ตรวจสอบสิทธิ์ฟังก์ชัน (Permission Code)
+        bool hasPerm = _currentUser.HasPermission(_permissionCode)
+            || (!_permissionCode.Contains('_') && _currentUser.HasPermission($"{_permissionCode}_VIEW"))
+            || (_permissionCode.EndsWith("_VIEW") && _currentUser.HasPermission(_permissionCode[..^5]));
+
+        if (!hasPerm)
+        {
+            context.Result = new ObjectResult(ApiResponse<object>.Fail($"คุณไม่มีสิทธิ์ในการดำเนินการนี้ (ต้องการสิทธิ์: {_permissionCode})"))
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            };
+            return;
+        }
+
+        // 4. ตรวจสอบขอบเขตข้อมูลขั้นต่ำ หากระบุไว้
+        if (!string.IsNullOrWhiteSpace(_minScope))
+        {
+            if (!_dataScope.HasScope(_permissionCode, _minScope))
+            {
+                context.Result = new ObjectResult(ApiResponse<object>.Fail($"ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการดำเนินการนี้ (ต้องการระดับ: {_minScope})"))
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+                return;
+            }
+        }
+
+        await next();
+    }
+}

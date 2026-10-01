@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Certificates.DTOs;
@@ -88,6 +89,7 @@ public class CertificatesController : ControllerBase
     /// อนุมัติคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/approve")]
+    [RequirePermission("APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Approve(
         long id,
         [FromBody] ApproveCertificateRequestPayload? payload,
@@ -99,13 +101,18 @@ public class CertificatesController : ControllerBase
             if (!approverId.HasValue || approverId.Value <= 0)
             {
                 var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (long.TryParse(empIdStr, out var parsedId))
+                if (long.TryParse(empIdStr, out var parsedId) && parsedId > 0)
                 {
                     approverId = parsedId;
                 }
             }
 
-            var result = await _certificateService.ApproveRequestAsync(id, approverId ?? 1, payload?.Comment, cancellationToken);
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                return BadRequest(ApiResponse<CertificateRequestDto>.Fail("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน"));
+            }
+
+            var result = await _certificateService.ApproveRequestAsync(id, approverId.Value, payload?.Comment, cancellationToken);
             return Ok(ApiResponse<CertificateRequestDto>.Ok(result, "อนุมัติคำขอหนังสือรับรองสำเร็จ"));
         }
         catch (KeyNotFoundException ex)
@@ -126,6 +133,7 @@ public class CertificatesController : ControllerBase
     /// ปฏิเสธคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/reject")]
+    [RequirePermission("APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Reject(
         long id,
         [FromBody] RejectCertificateRequestPayload payload,
@@ -137,13 +145,18 @@ public class CertificatesController : ControllerBase
             if (!approverId.HasValue || approverId.Value <= 0)
             {
                 var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (long.TryParse(empIdStr, out var parsedId))
+                if (long.TryParse(empIdStr, out var parsedId) && parsedId > 0)
                 {
                     approverId = parsedId;
                 }
             }
 
-            var result = await _certificateService.RejectRequestAsync(id, approverId ?? 1, payload.Reason, cancellationToken);
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                return BadRequest(ApiResponse<CertificateRequestDto>.Fail("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน"));
+            }
+
+            var result = await _certificateService.RejectRequestAsync(id, approverId.Value, payload.Reason, cancellationToken);
             return Ok(ApiResponse<CertificateRequestDto>.Ok(result, "ปฏิเสธคำขอหนังสือรับรองสำเร็จ"));
         }
         catch (KeyNotFoundException ex)
@@ -209,6 +222,7 @@ public class CertificatesController : ControllerBase
     /// ดึงรายการลายเซ็นดิจิทัลของผู้มีอำนาจลงนาม
     /// </summary>
     [HttpGet("signatures")]
+    [RequirePermission("EMP_DOC_VIEW")]
     public async Task<ActionResult<ApiResponse<List<EmployeeSignatureDto>>>> GetSignatures(CancellationToken cancellationToken)
     {
         var result = await _certificateService.GetActiveSignaturesAsync(cancellationToken);
@@ -219,6 +233,7 @@ public class CertificatesController : ControllerBase
     /// อัปโหลดหรืออัปเดตลายเซ็นดิจิทัลของผู้มีอำนาจลงนาม
     /// </summary>
     [HttpPost("signatures")]
+    [RequirePermission("EMP_DOC_EDIT")]
     public async Task<ActionResult<ApiResponse<EmployeeSignatureDto>>> UploadSignature(
         [FromBody] SignatureUploadDto dto,
         CancellationToken cancellationToken)

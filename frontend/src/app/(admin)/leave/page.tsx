@@ -53,8 +53,8 @@ export default function LeaveManagementPage() {
   const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
   const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
   const canViewAnyLeave = canViewTypes || canViewPolicies || canViewBalances;
-  // ปิดยอดวันลาสิ้นปี: เฉพาะฝ่ายบุคคล/ผู้ดูแลระบบ (ตรงกับฝั่ง API)
-  const canCloseYear = ['ADMIN', 'SUPER_ADMIN', 'SYS_ADMIN', 'SYSTEM_SUPER', 'HR', 'HR_ADMIN', 'HR_MGR'].some((r) => hasRole(r));
+  // ปิดยอดวันลาสิ้นปี: ใช้สิทธิ์ LEAVE_BALANCE_EDIT ตามระบบ Permissions
+  const canCloseYear = hasPermission('LEAVE_BALANCE_EDIT') || hasPermission('LEAVE_EDIT') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const [isYearEndOpen, setIsYearEndOpen] = useState(false);
 
   const defaultTab: ActiveTab = canViewTypes

@@ -11,7 +11,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/employees',
     title: 'พนักงาน',
-    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE', 'EMP_PROFILE_VIEW'],
+    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE', 'EMP_PROFILE_VIEW', 'EMP_DOC_VIEW', 'EMP_HISTORY_VIEW'],
   },
   {
     matchPrefix: '/my-salary',
@@ -106,7 +106,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/reports',
     title: 'รายงาน',
-    requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_HEADCOUNT_VIEW'],
+    requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_HEADCOUNT_VIEW', 'REPORT_LEAVE_VIEW'],
   },
   {
     matchPrefix: '/announcements',

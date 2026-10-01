@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +43,7 @@ public class LeaveInsightsController : ControllerBase
 
     /// <summary>รายงานสรุปการลาประจำปี (ฝ่ายบุคคล/ผู้บริหาร)</summary>
     [HttpGet("api/reports/leave-summary")]
+    [RequirePermission("REPORT_LEAVE_VIEW")]
     public async Task<ActionResult<ApiResponse<LeaveSummaryReport>>> GetLeaveSummary(
         [FromQuery] int? year,
         [FromQuery] long? departmentId,
@@ -52,6 +54,7 @@ public class LeaveInsightsController : ControllerBase
     }
 
     [HttpGet("api/reports/leave-summary/export")]
+    [RequirePermission("REPORT_LEAVE_VIEW")]
     public async Task<IActionResult> ExportLeaveSummary(
         [FromQuery] int? year,
         [FromQuery] long? departmentId,
@@ -65,6 +68,7 @@ public class LeaveInsightsController : ControllerBase
 
     /// <summary>ดูตัวอย่างการปิดยอดวันลาสิ้นปี (ฝ่ายบุคคล)</summary>
     [HttpGet("api/leave-balances/year-end/{year:int}/preview")]
+    [RequirePermission("LEAVE_BALANCE_VIEW")]
     public async Task<ActionResult<ApiResponse<LeaveYearEndPreview>>> PreviewYearEnd(int year, CancellationToken cancellationToken = default)
     {
         var result = await _yearEnd.PreviewAsync(year, cancellationToken);
@@ -73,6 +77,7 @@ public class LeaveInsightsController : ControllerBase
 
     /// <summary>ยืนยันปิดยอดวันลาสิ้นปี (ฝ่ายบุคคล) — ทำได้ปีละครั้ง</summary>
     [HttpPost("api/leave-balances/year-end/{year:int}/close")]
+    [RequirePermission("LEAVE_BALANCE_EDIT")]
     public async Task<ActionResult<ApiResponse<LeaveYearEndPreview>>> CloseYearEnd(
         int year,
         [FromBody] LeaveYearEndCloseRequest? request,
