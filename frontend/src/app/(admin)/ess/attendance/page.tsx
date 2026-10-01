@@ -32,11 +32,14 @@ export default function EssAttendancePage() {
   const { setBreadcrumb } = useBreadcrumb();
 
   const canViewEss =
-    hasPermission('TIME_VIEW') ||
+    hasPermission('ESS_TIME_VIEW') ||
     hasPermission('TIME_DAILY_VIEW') ||
+    hasPermission('TIME_VIEW') ||
     hasPermission('TIME_SCHEDULE_VIEW') ||
     hasPermission('TIME_IMPORT_VIEW') ||
-    hasRole('ADMIN');
+    hasRole('ADMIN') ||
+    hasRole('SYSTEM_SUPER') ||
+    Boolean(user?.employeeId);
 
   // ─────────────────────────────────────────────────────────────
   // State: Data

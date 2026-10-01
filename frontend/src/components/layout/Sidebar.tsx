@@ -106,7 +106,7 @@ const menuGroups: MenuGroup[] = [
         href: '/ess/attendance',
         matchPrefix: '/ess/attendance',
         icon: Clock,
-        requiredPermissions: ['ESS_TIME_VIEW'],
+        requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_VIEW'],
       },
     ],
   },
