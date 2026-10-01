@@ -64,32 +64,36 @@ public interface ILeaveYearEndService
 /// </summary>
 public class LeaveYearEndService : ILeaveYearEndService
 {
-    private static readonly string[] HrRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER", "HR", "HR_ADMIN", "HR_MGR" };
     public const string YearEndReference = "YEAR_END";
     public const string CarryExpiryReference = "CARRY_EXPIRY";
 
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly ILeaveEntitlementSync _entitlementSync;
+    private readonly IDataScopeService _dataScope;
 
-    public LeaveYearEndService(IHrmsDbContext context, ICurrentUserService currentUser, ILeaveEntitlementSync entitlementSync)
+    public LeaveYearEndService(IHrmsDbContext context, ICurrentUserService currentUser, ILeaveEntitlementSync entitlementSync, IDataScopeService dataScope)
     {
         _context = context;
         _currentUser = currentUser;
         _entitlementSync = entitlementSync;
+        _dataScope = dataScope;
     }
 
-    private void EnsureHr()
+    private void EnsureAccess(string permCode)
     {
-        if (!HrRoles.Any(_currentUser.HasRole))
-            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่ปิดยอดวันลาสิ้นปีได้");
+        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER")) return;
+        if (!_currentUser.HasPermission(permCode))
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดำเนินการนี้");
+        if (!_dataScope.HasScope(permCode, "ORGANIZATION"))
+            throw new ForbiddenException("การปิดยอดวันลาสิ้นปีต้องมีสิทธิ์ระดับทั้งองค์กร (ORGANIZATION) เท่านั้น");
     }
 
     private static int NormalizeYear(int year) => year > 2400 ? year - 543 : year;
 
     public async Task<LeaveYearEndPreview> PreviewAsync(int year, CancellationToken cancellationToken = default)
     {
-        EnsureHr();
+        EnsureAccess("LEAVE_BALANCE_VIEW");
         year = NormalizeYear(year);
         var (preview, _) = await BuildPreviewAsync(year, cancellationToken);
         return preview;
@@ -97,7 +101,7 @@ public class LeaveYearEndService : ILeaveYearEndService
 
     public async Task<LeaveYearEndPreview> CloseAsync(int year, string? note, CancellationToken cancellationToken = default)
     {
-        EnsureHr();
+        EnsureAccess("LEAVE_BALANCE_EDIT");
         year = NormalizeYear(year);
         var (preview, rows) = await BuildPreviewAsync(year, cancellationToken);
         if (!preview.CanClose) throw new BusinessRuleException(preview.BlockReason ?? $"ยังปิดยอดวันลาปี {year + 543} ไม่ได้");

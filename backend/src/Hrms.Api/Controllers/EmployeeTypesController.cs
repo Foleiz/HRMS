@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Application.Features.MasterData.Services;
@@ -22,6 +23,7 @@ public class EmployeeTypesController : ControllerBase
     /// ดึงรายการประเภทพนักงาน / สัญญาจ้างทั้งหมด พร้อมฟิลเตอร์ค้นหา
     /// </summary>
     [HttpGet]
+    [RequirePermission("EMP_TYPE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeTypeDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeTypeDto>>>> GetAll(
         [FromQuery] string? search,
@@ -36,6 +38,7 @@ public class EmployeeTypesController : ControllerBase
     /// สรุปสถิติประเภทสัญญาจ้าง / การจ้างงานสำหรับแสดงบน KPI Cards
     /// </summary>
     [HttpGet("stats")]
+    [RequirePermission("EMP_TYPE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTypeStatsDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<EmployeeTypeStatsDto>>> GetStats(CancellationToken cancellationToken)
     {
@@ -47,6 +50,7 @@ public class EmployeeTypesController : ControllerBase
     /// ดึงรายละเอียดประเภทพนักงาน / สัญญาจ้างตาม ID
     /// </summary>
     [HttpGet("{id:long}")]
+    [RequirePermission("EMP_TYPE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTypeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<EmployeeTypeDto>>> GetById(long id, CancellationToken cancellationToken)
@@ -59,6 +63,7 @@ public class EmployeeTypesController : ControllerBase
     /// สร้างประเภทพนักงาน / สัญญาจ้างใหม่
     /// </summary>
     [HttpPost]
+    [RequirePermission("EMP_TYPE_CREATE")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTypeDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<EmployeeTypeDto>>> Create(
@@ -73,6 +78,7 @@ public class EmployeeTypesController : ControllerBase
     /// แก้ไขข้อมูลประเภทพนักงาน / สัญญาจ้าง
     /// </summary>
     [HttpPut("{id:long}")]
+    [RequirePermission("EMP_TYPE_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeTypeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -89,6 +95,7 @@ public class EmployeeTypesController : ControllerBase
     /// ลบหรือปิดการใช้งานประเภทพนักงาน / สัญญาจ้าง
     /// </summary>
     [HttpDelete("{id:long}")]
+    [RequirePermission("EMP_TYPE_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)

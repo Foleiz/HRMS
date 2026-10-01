@@ -515,8 +515,9 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS)
-        bool hasManagePermission = _currentUserService.HasRole("ADMIN") ||
+        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS)
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool hasManagePermission = isSuper ||
                                    _currentUserService.HasPermission("EMP_MANAGE") ||
                                    _currentUserService.HasPermission("EMP_EDIT") ||
                                    _currentUserService.HasPermission("EMP_PROFILE_EDIT");
@@ -527,6 +528,17 @@ public class EmployeeService : IEmployeeService
         if (!hasManagePermission && !isSelfUpdate)
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
+        }
+
+        if (!isSelfUpdate && !isSuper)
+        {
+            string permToUse = _currentUserService.HasPermission("EMP_MANAGE") ? "EMP_MANAGE" :
+                               _currentUserService.HasPermission("EMP_EDIT") ? "EMP_EDIT" : "EMP_PROFILE_EDIT";
+            string scope = _currentUserService.GetDataScope(permToUse);
+            if (scope == "SELF")
+            {
+                throw new ForbiddenException("ขอบเขตสิทธิ์ของคุณแก้ไขได้เฉพาะข้อมูลตนเองเท่านั้น");
+            }
         }
 
 
@@ -1428,7 +1440,10 @@ public class EmployeeService : IEmployeeService
                 PersonalEmail = e.Contact.PersonalEmail,
                 OrganizationEmail = e.Contact.OrganizationEmail
             } : null,
-            SocialSecurity = e.SocialSecurity != null ? new EmployeeSocialSecurityDto
+            SocialSecurity = ((_currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER")
+                || (_currentUserService.EmployeeId.HasValue && _currentUserService.EmployeeId.Value == e.Id)
+                || _currentUserService.HasPermission("EMP_MANAGE") || _currentUserService.HasPermission("EMP_EDIT"))
+                && e.SocialSecurity != null) ? new EmployeeSocialSecurityDto
             {
                 SocialSecurityNoMasked = e.SocialSecurity.SocialSecurityNoMasked,
                 HospitalName = e.SocialSecurity.HospitalName,

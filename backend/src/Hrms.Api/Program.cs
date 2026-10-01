@@ -56,6 +56,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddSingleton<IAesEncryptionService, AesEncryptionService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IDataScopeService, DataScopeService>();
 
 // 3. Application Services DI
 builder.Services.AddScoped<IBankService, BankService>();

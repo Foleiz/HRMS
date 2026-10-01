@@ -24,6 +24,12 @@ public class CertificateService : ICertificateService
         _approvalWorkflow = approvalWorkflow;
     }
 
+    private bool IsAdmin => _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+    private bool IsHrOrAdmin => IsAdmin
+        || _currentUserService.HasPermission("APPROVAL_EMP_APPROVE")
+        || _currentUserService.HasPermission("EMP_DOC_APPROVE")
+        || _currentUserService.HasPermission("EMP_DOC_VIEW");
+
     public async Task<List<CertificateTypeDto>> GetCertificateTypesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.CertificateTypes
@@ -74,12 +80,7 @@ public class CertificateService : ICertificateService
             .FirstOrDefaultAsync(a => a.EmployeeId == r.EmployeeId && a.IsCurrent, cancellationToken);
 
         var currentEmpId = _currentUserService.EmployeeId;
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("HR") ||
-                          _currentUserService.HasRole("ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN") ||
-                          _currentUserService.HasRole("SYS_ADMIN");
+        var isHrOrAdmin = IsHrOrAdmin;
 
         return await MapToDtoAsync(r, assign, currentEmpId, isHrOrAdmin, cancellationToken);
     }
@@ -171,9 +172,7 @@ public class CertificateService : ICertificateService
     private async Task<List<CertificateRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var isSystemAdmin = _currentUserService.HasRole("ADMIN") ||
-                            _currentUserService.HasRole("SUPER_ADMIN") ||
-                            _currentUserService.HasRole("SYS_ADMIN");
+        var isPrivileged = IsHrOrAdmin;
 
         var query = _context.CertificateRequests
             .AsNoTracking()
@@ -188,9 +187,9 @@ public class CertificateService : ICertificateService
         {
             query = query.Where(r => r.EmployeeId == employeeId.Value);
         }
-        else if (!isSystemAdmin)
+        else if (!isPrivileged)
         {
-            // ถ้าไม่ใช่ Admin และเป็นการดึงรายการคำขอเพื่ออนุมัติ/ประวัติ
+            // ถ้าไม่ใช่ Admin/HR และเป็นการดึงรายการคำขอเพื่ออนุมัติ/ประวัติ
             // ให้แสดงเฉพาะรายการที่ผู้ใช้นี้ "อยู่ในสายการอนุมัติ" (เป็นผู้อนุมัติในขั้นตอนใดขั้นตอนหนึ่ง หรือเคยดำเนินการไปแล้ว) เท่านั้น
             if (!currentEmpId.HasValue)
             {
@@ -222,10 +221,7 @@ public class CertificateService : ICertificateService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("HR") ||
-                          isSystemAdmin;
+        var isHrOrAdmin = IsHrOrAdmin;
 
         var items = new List<CertificateRequestDto>();
         foreach (var r in requests)
@@ -409,9 +405,7 @@ public class CertificateService : ICertificateService
         }
 
         var currentEmpId = _currentUserService.EmployeeId;
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN");
+        var isHrOrAdmin = IsHrOrAdmin;
 
         if (request.EmployeeId != currentEmpId && !isHrOrAdmin)
         {
@@ -475,8 +469,7 @@ public class CertificateService : ICertificateService
         var me = _currentUserService.EmployeeId;
         if (me.HasValue && me.Value == request.EmployeeId) return;
 
-        string[] privilegedRoles = { "ADMIN", "SYSTEM_SUPER", "SUPER_ADMIN", "HR", "HR_ADMIN", "HR_MGR" };
-        if (privilegedRoles.Any(_currentUserService.HasRole)) return;
+        if (IsHrOrAdmin) return;
 
         if (me.HasValue && request.ApprovalInstanceId.HasValue
             && await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, me.Value, cancellationToken))

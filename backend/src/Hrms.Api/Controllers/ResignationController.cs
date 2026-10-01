@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Resignation.DTOs;
@@ -96,6 +97,7 @@ public class ResignationController : ControllerBase
     /// อนุมัติคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/approve")]
+    [RequirePermission("APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Approve(
         long id,
         [FromBody] ApproveResignationRequestPayload? payload,
@@ -107,13 +109,18 @@ public class ResignationController : ControllerBase
             if (!approverId.HasValue || approverId.Value <= 0)
             {
                 var empIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("employee_id")?.Value;
-                if (long.TryParse(empIdStr, out var parsedId))
+                if (long.TryParse(empIdStr, out var parsedId) && parsedId > 0)
                 {
                     approverId = parsedId;
                 }
             }
 
-            var result = await _resignationService.ApproveRequestAsync(id, approverId ?? 1, payload?.Comment, cancellationToken);
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                return BadRequest(ApiResponse<ResignationRequestDto>.Fail("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน"));
+            }
+
+            var result = await _resignationService.ApproveRequestAsync(id, approverId.Value, payload?.Comment, cancellationToken);
             return Ok(ApiResponse<ResignationRequestDto>.Ok(result, "อนุมัติคำขอลาออกสำเร็จ"));
         }
         catch (KeyNotFoundException ex)
@@ -134,6 +141,7 @@ public class ResignationController : ControllerBase
     /// ปฏิเสธคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/reject")]
+    [RequirePermission("APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Reject(
         long id,
         [FromBody] RejectResignationRequestPayload payload,
@@ -150,13 +158,18 @@ public class ResignationController : ControllerBase
             if (!approverId.HasValue || approverId.Value <= 0)
             {
                 var empIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("employee_id")?.Value;
-                if (long.TryParse(empIdStr, out var parsedId))
+                if (long.TryParse(empIdStr, out var parsedId) && parsedId > 0)
                 {
                     approverId = parsedId;
                 }
             }
 
-            var result = await _resignationService.RejectRequestAsync(id, approverId ?? 1, payload.Reason, cancellationToken);
+            if (!approverId.HasValue || approverId.Value <= 0)
+            {
+                return BadRequest(ApiResponse<ResignationRequestDto>.Fail("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน"));
+            }
+
+            var result = await _resignationService.RejectRequestAsync(id, approverId.Value, payload.Reason, cancellationToken);
             return Ok(ApiResponse<ResignationRequestDto>.Ok(result, "ปฏิเสธคำขอลาออกสำเร็จ"));
         }
         catch (KeyNotFoundException ex)

@@ -39,7 +39,6 @@ public interface IEmployeeChangeHistoryService
 /// </summary>
 public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
 {
-    private static readonly string[] AllowedRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER", "HR", "HR_ADMIN", "HR_MGR" };
     private static readonly string[] ThaiMonths = { "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค." };
 
     private static readonly Dictionary<string, (string Key, string Label)> Tables = new()
@@ -137,18 +136,32 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
 
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IDataScopeService _dataScope;
     private Dictionary<string, Dictionary<long, string>> _lookups = new(StringComparer.OrdinalIgnoreCase);
 
-    public EmployeeChangeHistoryService(IHrmsDbContext context, ICurrentUserService currentUser)
+    public EmployeeChangeHistoryService(IHrmsDbContext context, ICurrentUserService currentUser, IDataScopeService dataScope)
     {
         _context = context;
         _currentUser = currentUser;
+        _dataScope = dataScope;
     }
 
     public async Task<List<EmployeeChangeHistoryEntry>> GetAsync(long employeeId, int limit = 300, CancellationToken cancellationToken = default)
     {
-        if (!AllowedRoles.Any(_currentUser.HasRole))
-            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่ดูประวัติการเปลี่ยนแปลงข้อมูลพนักงานได้");
+        bool isSelf = _currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == employeeId;
+        bool isSuper = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+        bool hasPerm = _currentUser.HasPermission("EMP_HISTORY_VIEW") || _currentUser.HasPermission("EMP_PROFILE_VIEW");
+
+        if (!isSelf && !isSuper && !hasPerm)
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูประวัติการเปลี่ยนแปลงข้อมูลพนักงาน");
+
+        if (!isSelf && !isSuper)
+        {
+            var canAccess = await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_HISTORY_VIEW", cancellationToken)
+                || await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_PROFILE_VIEW", cancellationToken);
+            if (!canAccess)
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลพนักงานท่านนี้");
+        }
         limit = Math.Clamp(limit, 1, 1000);
 
         // รหัสแถวปัจจุบันของตารางย่อย (แถวที่ถูกลบไปแล้วจะหาเจอจากค่า EmployeeId ใน old_value)

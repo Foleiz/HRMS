@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
@@ -31,21 +32,27 @@ public class LeaveBalancesController : ControllerBase
     /// ดึงข้อมูลสรุปยอดวันลาคงเหลือ 8 หมวดหมู่ประจำตัวพนักงานสำหรับหน้า ESS
     /// </summary>
     [HttpGet("my-summary")]
+    [SelfOrPermission("employeeId", "LEAVE_BALANCE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<MyLeaveSummaryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<MyLeaveSummaryDto>>> GetMySummary(
         [FromQuery] int? year,
         [FromQuery] long? employeeId,
         CancellationToken cancellationToken)
     {
-        long targetEmpId = employeeId ?? _currentUserService.EmployeeId ?? 1;
+        long targetEmpId = employeeId ?? _currentUserService.EmployeeId ?? 0;
+        if (targetEmpId <= 0)
+        {
+            return BadRequest(ApiResponse<MyLeaveSummaryDto>.Fail("ไม่พบข้อมูลพนักงานสำหรับบัญชีผู้ใช้นี้"));
+        }
+
         int targetYear = year ?? DateTime.Now.Year;
 
         var result = await _balanceService.GetMySummaryAsync(targetEmpId, targetYear, cancellationToken);
         return Ok(ApiResponse<MyLeaveSummaryDto>.Ok(result, "ดึงข้อมูลสรุปยอดวันลาคงเหลือสำเร็จ"));
     }
 
-
     [HttpGet]
+    [RequirePermission("LEAVE_BALANCE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<LeaveBalanceDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<LeaveBalanceDto>>>> GetAll(
         [FromQuery] long? employeeId,
@@ -58,6 +65,7 @@ public class LeaveBalancesController : ControllerBase
     }
 
     [HttpGet("{id:long}/transactions")]
+    [RequirePermission("LEAVE_BALANCE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<LeaveBalanceTransactionDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<LeaveBalanceTransactionDto>>>> GetTransactions(
         long id,
@@ -68,6 +76,7 @@ public class LeaveBalancesController : ControllerBase
     }
 
     [HttpPost("adjust")]
+    [RequirePermission("LEAVE_BALANCE_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<LeaveBalanceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
