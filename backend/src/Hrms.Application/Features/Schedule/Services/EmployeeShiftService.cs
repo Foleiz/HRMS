@@ -497,14 +497,19 @@ public class EmployeeShiftService : IEmployeeShiftService
 
         var assignMap = currentAssignments.ToDictionary(
             ea => ea.EmployeeId,
-            ea => (
-                DepartmentId: ea.DepartmentId,
-                DepartmentName: ea.Department?.DepartmentName?.Trim() ?? "-",
-                PositionName: ea.Position?.PositionName?.Trim() ?? "-",
-                EmployeeTypeId: ea.EmployeeTypeId,
-                EmployeeTypeCode: ea.EmployeeType?.TypeCode ?? string.Empty,
-                EmployeeTypeName: ea.EmployeeType?.TypeName ?? "พนักงานประจำ"
-            )
+            ea => {
+                var resolvedTypeId = ea.EmployeeTypeId ?? (ea.WageType == "DAILY" ? 4L : 1L);
+                var typeName = ea.EmployeeType?.TypeName ?? (resolvedTypeId == 4L ? "พนักงานรายวัน" : "พนักงานประจำ");
+                var typeCode = ea.EmployeeType?.TypeCode ?? (resolvedTypeId == 4L ? "DAILY" : "PERM");
+                return (
+                    DepartmentId: ea.DepartmentId,
+                    DepartmentName: ea.Department?.DepartmentName?.Trim() ?? "-",
+                    PositionName: ea.Position?.PositionName?.Trim() ?? "-",
+                    EmployeeTypeId: (long?)resolvedTypeId,
+                    EmployeeTypeCode: typeCode,
+                    EmployeeTypeName: typeName
+                );
+            }
         );
 
         var list = new List<AssignableEmployeeDto>();
@@ -516,7 +521,8 @@ public class EmployeeShiftService : IEmployeeShiftService
                 continue;
             }
 
-            if (employeeTypeId.HasValue && employeeTypeId.Value > 0 && info.EmployeeTypeId != employeeTypeId.Value)
+            var effectiveTypeId = info.EmployeeTypeId ?? 1L;
+            if (employeeTypeId.HasValue && employeeTypeId.Value > 0 && effectiveTypeId != employeeTypeId.Value)
             {
                 continue;
             }
@@ -529,8 +535,8 @@ public class EmployeeShiftService : IEmployeeShiftService
                 DepartmentId = info.DepartmentId == 0 ? null : info.DepartmentId,
                 DepartmentName = string.IsNullOrEmpty(info.DepartmentName) ? "-" : info.DepartmentName,
                 PositionName = string.IsNullOrEmpty(info.PositionName) ? "-" : info.PositionName,
-                EmployeeTypeId = info.EmployeeTypeId,
-                EmployeeTypeCode = info.EmployeeTypeCode ?? string.Empty,
+                EmployeeTypeId = effectiveTypeId,
+                EmployeeTypeCode = string.IsNullOrEmpty(info.EmployeeTypeCode) ? "PERM" : info.EmployeeTypeCode,
                 EmployeeTypeName = string.IsNullOrEmpty(info.EmployeeTypeName) ? "พนักงานประจำ" : info.EmployeeTypeName
             });
         }
