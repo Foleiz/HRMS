@@ -25,6 +25,8 @@ public class EmploymentContract : BaseEntity
     public DateTime? ProbationNotifiedAt { get; set; }
     /// <summary>แจ้งเตือนสัญญาใกล้หมดอายุไปแล้วเมื่อ (กันแจ้งซ้ำ)</summary>
     public DateTime? ExpiryNotifiedAt { get; set; }
+    /// <summary>นำประเภทพนักงานของสัญญานี้ไปอัปเดตข้อมูลพนักงานแล้วเมื่อ (null = ยังไม่ได้ใช้)</summary>
+    public DateTime? EmployeeTypeAppliedAt { get; set; }
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }

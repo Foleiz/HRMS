@@ -909,10 +909,12 @@ public class EmployeeService : IEmployeeService
         // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
         var currentAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent);
 
+        // ประเภทพนักงาน: เปลี่ยนได้เฉพาะผู้มีสิทธิ์แก้ไขข้อมูลพนักงาน (ไม่ใช่การแก้โปรไฟล์ตนเองแบบ ESS)
+        bool canChangeEmployeeType = hasManagePermission;
+
         if (!string.IsNullOrWhiteSpace(request.EmployeeType) && currentAssignment != null)
         {
-            currentAssignment.WageType = request.EmployeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY";
-            currentAssignment.EmployeeTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
+            await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(request.PositionName))
@@ -949,8 +951,7 @@ public class EmployeeService : IEmployeeService
                 currentAssignment.DivisionId = divId;
                 if (!string.IsNullOrWhiteSpace(request.EmployeeType))
                 {
-                    currentAssignment.WageType = request.EmployeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY";
-                    currentAssignment.EmployeeTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
+                    await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
                 }
             }
             else
@@ -1651,6 +1652,31 @@ public class EmployeeService : IEmployeeService
         }
 
         return (null, null);
+    }
+
+    /// <summary>
+    /// ตั้งประเภทพนักงานให้ตำแหน่งปัจจุบัน — ถ้าค่าเปลี่ยนจริงแต่ไม่มีสิทธิ์ จะไม่ยอมให้เปลี่ยน
+    /// รายวัน/รายเดือนอิงจากข้อมูลหลักประเภทพนักงาน
+    /// </summary>
+    private async Task ApplyEmployeeTypeAsync(EmployeeAssignment assignment, string employeeType, bool canChange, CancellationToken cancellationToken)
+    {
+        var newTypeId = await ResolveEmployeeTypeIdAsync(employeeType, cancellationToken);
+        if (assignment.EmployeeTypeId == newTypeId) return;
+
+        if (assignment.EmployeeTypeId.HasValue && !canChange)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนประเภทพนักงาน (ต้องมีสิทธิ์แก้ไขข้อมูลพนักงาน)");
+        }
+
+        var typeWage = await _dbContext.EmployeeTypes.AsNoTracking()
+            .Where(t => t.Id == newTypeId).Select(t => t.WageType).FirstOrDefaultAsync(cancellationToken);
+        assignment.EmployeeTypeId = newTypeId;
+        assignment.WageType = typeWage?.ToUpperInvariant() switch
+        {
+            "DAILY" => "DAILY",
+            "MONTHLY" => "MONTHLY",
+            _ => employeeType.Contains("รายวัน") ? "DAILY" : "MONTHLY"
+        };
     }
 
     private async Task<long> ResolveEmployeeTypeIdAsync(string? employeeType, CancellationToken cancellationToken = default)

@@ -101,6 +101,17 @@ export default function CreateContractModal({
     }
   };
 
+  // ค่าเริ่มต้นของช่องประเภท = ประเภทปัจจุบันของพนักงานที่เลือก (แก้ได้)
+  useEffect(() => {
+    if (!isOpen || !employeeId || employeeTypes.length === 0) return;
+    const emp = employees.find((e) => e.id === employeeId);
+    const current =
+      employeeTypes.find((t) => t.id === emp?.employeeTypeId) ||
+      employeeTypes.find((t) => t.typeName === emp?.employeeType);
+    if (current) handleTypeSelectChange(String(current.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, employeeId, employeeTypes]);
+
   const handleStartDateChange = (newStart: string) => {
     setStartDate(newStart);
     if (contractType === 'PROBATION' && newStart) {
@@ -213,12 +224,15 @@ export default function CreateContractModal({
                 ))
               ) : (
                 <>
-                  <option value="1">ทดลองงาน (PROB)</option>
-                  <option value="2">ประจำ (PERM)</option>
+                  <option value="2">ทดลองงาน (PROB)</option>
+                  <option value="1">ประจำ (PERM)</option>
                   <option value="3">สัญญาจ้าง (CONT)</option>
                 </>
               )}
             </select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              เมื่อถึงวันเริ่มสัญญา ระบบจะอัปเดตประเภทพนักงานของพนักงานคนนี้ตามสัญญาให้อัตโนมัติ
+            </p>
           </div>
 
           {/* 3. วันที่เริ่มสัญญา * */}

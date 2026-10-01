@@ -23,7 +23,8 @@ public class EmployeeTypesController : ControllerBase
     /// ดึงรายการประเภทพนักงาน / สัญญาจ้างทั้งหมด พร้อมฟิลเตอร์ค้นหา
     /// </summary>
     [HttpGet]
-    [RequirePermission("EMP_TYPE_VIEW")]
+    // ใช้เป็นตัวเลือกในฟอร์มเพิ่ม/แก้ไขพนักงานและสัญญาจ้างด้วย
+    [RequirePermission("EMP_TYPE_VIEW,EMP_PROFILE_VIEW,EMP_PROFILE_CREATE,EMP_PROFILE_EDIT,EMP_CONTRACT_VIEW,EMP_CONTRACT_CREATE")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeTypeDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeTypeDto>>>> GetAll(
         [FromQuery] string? search,
