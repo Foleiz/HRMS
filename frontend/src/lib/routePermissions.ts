@@ -130,7 +130,9 @@ export const ROUTE_RULES: RouteRule[] = [
  */
 export function isPathAccessible(pathname: string, user: UserProfile | null): { allowed: boolean; rule?: RouteRule } {
   if (!user) return { allowed: false };
-  if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) {
+
+  // ยกเว้นเฉพาะหน้าตั้งค่าระบบ ที่อนุญาตให้ ADMIN หรือ SYSTEM_SUPER เข้าถึงได้เสมอ เพื่อป้องกัน lockout
+  if (pathname.startsWith('/settings') && user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
     return { allowed: true };
   }
 
@@ -143,7 +145,9 @@ export function isPathAccessible(pathname: string, user: UserProfile | null): { 
   const bestMatch = matches.reduce((a, b) => (b.matchPrefix.length > a.matchPrefix.length ? b : a));
 
   if (bestMatch.requiredRoles && bestMatch.requiredRoles.length > 0) {
-    const hasRole = bestMatch.requiredRoles.some((role) => user.roles?.includes(role));
+    const hasRole = bestMatch.requiredRoles.some((role) =>
+      user.roles?.some((r) => r.toUpperCase() === role.toUpperCase())
+    );
     if (!hasRole) return { allowed: false, rule: bestMatch };
   }
 

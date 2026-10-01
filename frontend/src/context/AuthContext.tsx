@@ -176,13 +176,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasRole = (role: string) => {
     if (!user) return false;
-    if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return true;
-    return user.roles?.includes(role) ?? false;
+    return user.roles?.some((r) => r.toUpperCase() === role.toUpperCase()) ?? false;
   };
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return true;
     return user.permissions?.includes(permission) ?? false;
   };
 
