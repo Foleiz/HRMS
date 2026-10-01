@@ -195,6 +195,9 @@ public class EmployeeTransferService : IEmployeeTransferService
 
         bool shouldApproveImmediately = isArchive || request.AutoApprove;
 
+        // วันที่มีผลต้องไม่ก่อนวันที่เริ่มตำแหน่งปัจจุบัน (กันข้อมูลประวัติตำแหน่งทับซ้อน/ย้อนกลับ)
+        EnsureEffectiveDateValid(currentAssign, request.EffectiveDate);
+
         var transfer = new EmployeeTransferRequest
         {
             RequestNo = requestNo,
@@ -233,31 +236,29 @@ public class EmployeeTransferService : IEmployeeTransferService
         else
         {
             // กรณีเป็นคำขอทั่วไป (REQUEST) ให้เริ่มต้น Approval Workflow ตามสายการอนุมัติ
+            long? instanceId = null;
             try
             {
-                var instanceId = await _approvalWorkflowService.StartWorkflowAsync(
+                instanceId = await _approvalWorkflowService.StartWorkflowAsync(
                     "TRANSFER_REQUEST",
                     transfer.Id,
                     transfer.EmployeeId,
                     cancellationToken);
-
-                if (instanceId.HasValue)
-                {
-                    transfer.ApprovalInstanceId = instanceId.Value;
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-                else
-                {
-                    // หากไม่ได้ตั้งค่าสายการอนุมัติไว้ ให้มีผลอัตโนมัติ
-                    transfer.Status = "APPROVED";
-                    transfer.ApprovedAt = DateTime.UtcNow;
-                    await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
             }
             catch
             {
-                // Fallback ป้องกันระบบค้างหาก workflow service มีปัญหา
+                // Fallback ป้องกันระบบค้างหาก workflow service มีปัญหา → มีผลอัตโนมัติ
+                instanceId = null;
+            }
+
+            if (instanceId.HasValue)
+            {
+                transfer.ApprovalInstanceId = instanceId.Value;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            else
+            {
+                // หากไม่ได้ตั้งค่าสายการอนุมัติไว้ ให้มีผลอัตโนมัติ
                 transfer.Status = "APPROVED";
                 transfer.ApprovedAt = DateTime.UtcNow;
                 await ApplyAssignmentUpdateAsync(currentAssign, transfer, cancellationToken);
@@ -416,18 +417,24 @@ public class EmployeeTransferService : IEmployeeTransferService
         return await GetByIdAsync(id, cancellationToken);
     }
 
+    private static void EnsureEffectiveDateValid(EmployeeAssignment? currentAssign, DateOnly effectiveDate)
+    {
+        if (currentAssign != null && effectiveDate < currentAssign.EffectiveFrom)
+        {
+            throw new BusinessRuleException(
+                $"วันที่มีผล ({FormatThaiDate(effectiveDate)}) ต้องไม่ก่อนวันที่เริ่มตำแหน่งปัจจุบันของพนักงาน " +
+                $"({FormatThaiDate(currentAssign.EffectiveFrom)}) กรุณาเลือกวันที่มีผลตั้งแต่ {FormatThaiDate(currentAssign.EffectiveFrom)} เป็นต้นไป");
+        }
+    }
+
+    private static string FormatThaiDate(DateOnly d) => $"{d.Day:D2}/{d.Month:D2}/{d.Year + 543}";
+
     private async Task ApplyAssignmentUpdateAsync(EmployeeAssignment? currentAssign, EmployeeTransferRequest transfer, CancellationToken cancellationToken)
     {
-        // ปิดรอบ assignment เดิม
-        if (currentAssign != null)
-        {
-            currentAssign.IsCurrent = false;
-            currentAssign.EffectiveTo = transfer.EffectiveDate.AddDays(-1);
-        }
+        // ตรวจซ้ำตอนอนุมัติ เพราะตำแหน่งปัจจุบันอาจเปลี่ยนไประหว่างรออนุมัติ
+        EnsureEffectiveDateValid(currentAssign, transfer.EffectiveDate);
 
-        // ── ดึง DivisionId ที่ถูกต้องจาก Department เป้าหมายเสมอ
-        // เพื่อป้องกัน check constraint "employee_assignment_check"
-        // ที่บังคับว่า DivisionId ต้องตรงกับ Department ที่เลือก
+        // DivisionId ใช้ของ Department เป้าหมายเสมอ (employee_assignment_check ตรวจแค่ effective_to >= effective_from)
         long resolvedDivisionId;
         if (transfer.ToDivisionId.HasValue && transfer.ToDivisionId.Value > 0)
         {
@@ -445,22 +452,40 @@ public class EmployeeTransferService : IEmployeeTransferService
                 ?? 1;
         }
 
-        // สร้าง assignment ใหม่
-        var newAssignment = new EmployeeAssignment
+        if (currentAssign != null && transfer.EffectiveDate == currentAssign.EffectiveFrom)
         {
-            EmployeeId = transfer.EmployeeId,
-            DivisionId = resolvedDivisionId,
-            DepartmentId = transfer.ToDepartmentId,
-            PositionId = transfer.ToPositionId,
-            ManagerEmployeeId = transfer.ToManagerId ?? currentAssign?.ManagerEmployeeId,
-            EffectiveFrom = transfer.EffectiveDate,
-            EffectiveTo = null,
-            IsCurrent = true,
-            WageType = currentAssign?.WageType ?? "MONTHLY",
-            WorkScheduleId = currentAssign?.WorkScheduleId
-        };
+            // มีผลวันเดียวกับที่ตำแหน่งปัจจุบันเริ่ม → แก้ไขตำแหน่งปัจจุบันแทน (ตำแหน่งเดิมมีผล 0 วัน)
+            currentAssign.DivisionId = resolvedDivisionId;
+            currentAssign.DepartmentId = transfer.ToDepartmentId;
+            currentAssign.PositionId = transfer.ToPositionId;
+            currentAssign.ManagerEmployeeId = transfer.ToManagerId ?? currentAssign.ManagerEmployeeId;
+        }
+        else
+        {
+            // ปิดรอบ assignment เดิม (สิ้นสุดก่อนวันที่มีผล 1 วัน)
+            if (currentAssign != null)
+            {
+                currentAssign.IsCurrent = false;
+                currentAssign.EffectiveTo = transfer.EffectiveDate.AddDays(-1);
+            }
 
-        _context.EmployeeAssignments.Add(newAssignment);
+            // สร้าง assignment ใหม่
+            var newAssignment = new EmployeeAssignment
+            {
+                EmployeeId = transfer.EmployeeId,
+                DivisionId = resolvedDivisionId,
+                DepartmentId = transfer.ToDepartmentId,
+                PositionId = transfer.ToPositionId,
+                ManagerEmployeeId = transfer.ToManagerId ?? currentAssign?.ManagerEmployeeId,
+                EffectiveFrom = transfer.EffectiveDate,
+                EffectiveTo = null,
+                IsCurrent = true,
+                WageType = currentAssign?.WageType ?? "MONTHLY",
+                WorkScheduleId = currentAssign?.WorkScheduleId
+            };
+
+            _context.EmployeeAssignments.Add(newAssignment);
+        }
 
         // ตรวจสอบและปรับฐานเงินเดือนขั้นต่ำตามโครงสร้างเงินเดือนของตำแหน่งใหม่ (Auto-Adjust to Structure Minimum)
         var toStructure = await _context.SalaryStructures
