@@ -1441,14 +1441,7 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Role & View Mode Switcher */}
-      <PayrollViewSwitcher
-        currentMode={viewMode}
-        onModeChange={setViewMode}
-        isHR={isHR}
-        isFinance={isFinance}
-        userRoles={user?.roles || []}
-      />
+
 
       {/* Sub Navigation Bar - Standardized to Employee Module */}
       <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
