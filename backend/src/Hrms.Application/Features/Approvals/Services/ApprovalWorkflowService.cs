@@ -72,10 +72,69 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         _context.ApprovalInstances.Add(instance);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // ซิงค์ ApprovalInstanceId กลับไปยังเอกสารต้นทางเสมอ เพื่อป้องกันข้อมูลตกหล่น
+        await SyncSourceDocumentApprovalInstanceIdAsync(documentType, sourceDocumentId, instance.Id, cancellationToken);
+
         // แจ้งเตือนผู้อนุมัติขั้นตอนแรก
         await NotifyStepApproversAsync(instance, firstStep, requesterEmployeeId, cancellationToken);
 
         return instance.Id;
+    }
+
+    private async Task SyncSourceDocumentApprovalInstanceIdAsync(string documentType, long sourceDocumentId, long instanceId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (documentType == "LEAVE_REQUEST")
+            {
+                var doc = await _context.LeaveRequests.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+            else if (documentType == "CERTIFICATE_REQUEST")
+            {
+                var doc = await _context.CertificateRequests.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+            else if (documentType == "RESIGNATION_REQUEST")
+            {
+                var doc = await _context.ResignationRequests.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+            else if (documentType == "GENERAL_REQUEST")
+            {
+                var doc = await _context.GeneralRequests.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+            else if (documentType == "TRANSFER_REQUEST")
+            {
+                var doc = await _context.EmployeeTransferRequests.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
+        }
+        catch
+        {
+            // การซิงค์สำรองไม่ควรทำให้ workflow ล้มเหลว
+        }
     }
 
     /// <summary>หา Employee ID ของผู้ยื่นเอกสารต้นทางของ workflow</summary>
