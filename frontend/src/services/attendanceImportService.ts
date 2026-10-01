@@ -94,11 +94,11 @@ export const attendanceImportService = {
   /**
    * ดึงรายการบันทึกเวลาที่นำเข้าสำเร็จของ Batch (ตรวจเวลา)
    */
-  async getBatchRecords(id: number, page: number = 1, pageSize: number = 50): Promise<PagedBatchRecordResult> {
+  async getBatchRecords(id: number, page: number = 1, pageSize: number = 50, search?: string): Promise<PagedBatchRecordResult> {
     const res = await apiClient.get<ApiResponse<PagedBatchRecordResult>>(`/attendance/import/batches/${id}/records`, {
-      params: { page, pageSize },
+      params: { page, pageSize, search: search?.trim() || undefined },
     });
-    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 0 };
+    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize, totalPages: 0 };
   },
 
   /**

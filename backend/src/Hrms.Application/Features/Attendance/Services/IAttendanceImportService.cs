@@ -36,6 +36,7 @@ public interface IAttendanceImportService
         long batchId,
         int page = 1,
         int pageSize = 50,
+        string? search = null,
         CancellationToken cancellationToken = default);
 
     Task<(byte[] Content, string ContentType, string FileName)> GenerateTemplateAsync(

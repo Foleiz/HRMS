@@ -228,6 +228,8 @@ function DailyAttendanceContent() {
   const [batchRecords, setBatchRecords] = useState<BatchAttendanceRecord[]>([]);
   const [isLoadingBatchRecords, setIsLoadingBatchRecords] = useState<boolean>(false);
   const [batchRecordPage, setBatchRecordPage] = useState<number>(1);
+  const [batchRecordPageSize, setBatchRecordPageSize] = useState<number>(20);
+  const [batchRecordSearch, setBatchRecordSearch] = useState<string>('');
   const [batchRecordTotalPages, setBatchRecordTotalPages] = useState<number>(1);
   const [batchRecordTotalCount, setBatchRecordTotalCount] = useState<number>(0);
 
@@ -772,13 +774,21 @@ function DailyAttendanceContent() {
   const handleOpenTimeReview = async (batch: AttendanceImportBatch) => {
     setSelectedBatchForReview(batch);
     setBatchRecordPage(1);
-    await loadBatchRecords(batch.id, 1);
+    setBatchRecordSearch('');
+    await loadBatchRecords(batch.id, 1, batchRecordPageSize, '');
   };
 
-  const loadBatchRecords = async (batchId: number, targetPage: number) => {
+  const loadBatchRecords = async (
+    batchId: number,
+    targetPage: number,
+    targetPageSize?: number,
+    targetSearch?: string
+  ) => {
     try {
       setIsLoadingBatchRecords(true);
-      const res = await attendanceImportService.getBatchRecords(batchId, targetPage, 20);
+      const size = targetPageSize !== undefined ? targetPageSize : batchRecordPageSize;
+      const search = targetSearch !== undefined ? targetSearch : batchRecordSearch;
+      const res = await attendanceImportService.getBatchRecords(batchId, targetPage, size, search);
       setBatchRecords(res.items);
       setBatchRecordTotalPages(res.totalPages);
       setBatchRecordTotalCount(res.totalCount);
@@ -2165,9 +2175,28 @@ function DailyAttendanceContent() {
 
             {/* Pagination */}
             <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <div>
-                แสดงหน้า <span className="font-bold text-slate-800">{batchPage}</span> จาก{' '}
-                <span className="font-bold text-slate-800">{batchTotalPages || 1}</span> หน้า
+              <div className="flex items-center gap-3">
+                <div>
+                  แสดงหน้า <span className="font-bold text-slate-800">{batchPage}</span> จาก{' '}
+                  <span className="font-bold text-slate-800">{batchTotalPages || 1}</span> หน้า
+                </div>
+                {batchTotalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-600 font-medium">ไปที่หน้า:</span>
+                    <select
+                      value={batchPage}
+                      onChange={(e) => setBatchPage(Number(e.target.value))}
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                    >
+                      {Array.from({ length: batchTotalPages }, (_, i) => i + 1).map((p) => (
+                        <option key={p} value={p}>
+                          หน้า {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -3157,6 +3186,75 @@ function DailyAttendanceContent() {
               </button>
             </div>
 
+            {/* Search & Page Size Toolbar */}
+            <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                  value={batchRecordSearch}
+                  onChange={(e) => setBatchRecordSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setBatchRecordPage(1);
+                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
+                    }
+                  }}
+                  className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                />
+                {batchRecordSearch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBatchRecordSearch('');
+                      setBatchRecordPage(1);
+                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, '');
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                    title="ล้างคำค้นหา"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBatchRecordPage(1);
+                    loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  ค้นหา
+                </button>
+
+                <div className="h-4 w-px bg-slate-200" />
+
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <span className="whitespace-nowrap font-medium">แสดงหน้าละ:</span>
+                  <select
+                    value={batchRecordPageSize}
+                    onChange={(e) => {
+                      const newSize = Number(e.target.value);
+                      setBatchRecordPageSize(newSize);
+                      setBatchRecordPage(1);
+                      loadBatchRecords(selectedBatchForReview.id, 1, newSize, batchRecordSearch);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer font-medium"
+                  >
+                    <option value={10}>10 คน / หน้า</option>
+                    <option value={20}>20 คน / หน้า</option>
+                    <option value={50}>50 คน / หน้า</option>
+                    <option value={100}>100 คน / หน้า</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Table */}
             <div className="p-5 overflow-y-auto flex-1">
               <div className="overflow-x-auto border border-slate-200 rounded-xl">
@@ -3185,7 +3283,9 @@ function DailyAttendanceContent() {
                     ) : batchRecords.length === 0 ? (
                       <tr>
                         <td colSpan={9} className="py-8 text-center text-slate-400">
-                          ไม่พบข้อมูลบันทึกเวลาในชุดนี้
+                          {batchRecordSearch
+                            ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${batchRecordSearch}"`
+                            : 'ไม่พบข้อมูลบันทึกเวลาในชุดนี้'}
                         </td>
                       </tr>
                     ) : (
@@ -3250,21 +3350,48 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Footer Pagination */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs">
-              <span className="text-slate-500">
-                แสดงหน้า {batchRecordPage} จาก {batchRecordTotalPages || 1} หน้า
-                {batchRecordTotalCount > 0 && ` (ทั้งหมด ${batchRecordTotalCount.toLocaleString()} รายการ)`}
-              </span>
+            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <span className="text-slate-500">
+                  แสดงหน้า <strong className="font-bold text-slate-800">{batchRecordPage}</strong> จาก{' '}
+                  <strong className="font-bold text-slate-800">{batchRecordTotalPages || 1}</strong> หน้า
+                  {batchRecordTotalCount > 0 && ` (ทั้งหมด ${batchRecordTotalCount.toLocaleString()} รายการ)`}
+                </span>
+
+                {batchRecordTotalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-600 font-medium">ไปที่หน้า:</span>
+                    <select
+                      value={batchRecordPage}
+                      onChange={(e) => {
+                        const targetP = Number(e.target.value);
+                        setBatchRecordPage(targetP);
+                        loadBatchRecords(selectedBatchForReview.id, targetP, batchRecordPageSize, batchRecordSearch);
+                      }}
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                    >
+                      {Array.from({ length: batchRecordTotalPages }, (_, i) => i + 1).map((p) => (
+                        <option key={p} value={p}>
+                          หน้า {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2">
                 <button
                   disabled={batchRecordPage <= 1}
                   onClick={() => {
                     const nextP = batchRecordPage - 1;
                     setBatchRecordPage(nextP);
-                    loadBatchRecords(selectedBatchForReview.id, nextP);
+                    loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed"
                 >
+                  <ChevronLeft className="w-3.5 h-3.5" />
                   ย้อนกลับ
                 </button>
                 <button
@@ -3272,15 +3399,16 @@ function DailyAttendanceContent() {
                   onClick={() => {
                     const nextP = batchRecordPage + 1;
                     setBatchRecordPage(nextP);
-                    loadBatchRecords(selectedBatchForReview.id, nextP);
+                    loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed"
                 >
                   ถัดไป
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setSelectedBatchForReview(null)}
-                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2"
+                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2 cursor-pointer"
                 >
                   ปิด
                 </button>

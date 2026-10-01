@@ -514,14 +514,29 @@ public class AttendanceImportService : IAttendanceImportService
     /// <summary>
     /// ดึงรายการบันทึกเวลาที่นำเข้าจาก Batch ที่ระบุ (สำหรับหน้าตรวจเวลา)
     /// </summary>
-    public async Task<PagedBatchRecordResult> GetBatchRecordsAsync(long batchId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    public async Task<PagedBatchRecordResult> GetBatchRecordsAsync(long batchId, int page = 1, int pageSize = 50, string? search = null, CancellationToken cancellationToken = default)
     {
         var q = _context.AttendanceDailies
             .AsNoTracking()
             .Where(a => a.ImportBatchId == batchId)
             .Include(a => a.Employee)
-            .OrderBy(a => a.WorkDate)
-                .ThenBy(a => a.Employee!.EmployeeCode);
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            q = q.Where(a =>
+                a.Employee != null && (
+                    a.Employee.EmployeeCode.ToLower().Contains(s) ||
+                    a.Employee.FirstName.ToLower().Contains(s) ||
+                    a.Employee.LastName.ToLower().Contains(s) ||
+                    (a.Employee.FirstName + " " + a.Employee.LastName).ToLower().Contains(s)
+                )
+            );
+        }
+
+        q = q.OrderBy(a => a.WorkDate)
+            .ThenBy(a => a.Employee!.EmployeeCode);
 
         var total = await q.CountAsync(cancellationToken);
         var p = page > 0 ? page : 1;
