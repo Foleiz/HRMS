@@ -62,8 +62,8 @@ export default function ReportsPage() {
   const canViewTurnover = hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
   const canExportTurnover = hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
 
-  // รายงานการลา: ฝ่ายบุคคล/ผู้บริหาร (ตรงกับฝั่ง API)
-  const canViewLeave = ['ADMIN', 'SUPER_ADMIN', 'SYS_ADMIN', 'SYSTEM_SUPER', 'HR', 'HR_ADMIN', 'HR_MGR', 'CEO', 'EXECUTIVE'].some((r) => hasRole(r));
+  // รายงานการลา: ใช้สิทธิ์ REPORT_LEAVE_VIEW ตามระบบ Permissions
+  const canViewLeave = hasPermission('REPORT_LEAVE_VIEW') || hasPermission('REPORT_LEAVE') || hasPermission('REPORT_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const handleLeaveReportError = useCallback((message: string) => toastRef.current.error(message), []);
 
   const canViewAnyReport = canViewHeadcount || canViewLateness || canViewTax || canViewTurnover || canViewLeave;

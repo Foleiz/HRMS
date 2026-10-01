@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Approvals.DTOs;
@@ -32,6 +33,8 @@ public class LeaveRequestsController : ControllerBase
         _currentUser = currentUser;
     }
 
+    private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<List<LeaveRequestDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<LeaveRequestDto>>>> GetAll(
@@ -44,7 +47,7 @@ public class LeaveRequestsController : ControllerBase
         // หน้ารายการรออนุมัติ/ประวัติฝั่งแอดมินเรียก endpoint นี้โดยไม่ระบุ employeeId มา —
         // ถ้าผู้เรียกไม่ใช่ ADMIN ให้กรองอัตโนมัติเหลือเฉพาะคำขอลาของทีมตนเอง หรือรายการที่อยู่ในสายการอนุมัติของผู้ใช้นี้
         long? scopeToManagerId = null;
-        if (!employeeId.HasValue && !_currentUser.HasRole("ADMIN"))
+        if (!employeeId.HasValue && !IsAdmin)
         {
             scopeToManagerId = _currentUser.EmployeeId ?? -1;
         }
@@ -66,7 +69,7 @@ public class LeaveRequestsController : ControllerBase
     public async Task<ActionResult<ApiResponse<LeaveStatsDto>>> GetStats(CancellationToken cancellationToken)
     {
         long? scopeToManagerId = null;
-        if (!_currentUser.HasRole("ADMIN"))
+        if (!IsAdmin)
         {
             scopeToManagerId = _currentUser.EmployeeId ?? -1;
         }

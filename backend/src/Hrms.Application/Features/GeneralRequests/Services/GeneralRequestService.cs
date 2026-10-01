@@ -18,9 +18,6 @@ public class GeneralRequestService : IGeneralRequestService
     public const string DocumentTypeCode = "GENERAL_REQUEST";
     private const long MaxFileBytes = 5 * 1024 * 1024;
 
-    private static readonly string[] AdminRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER" };
-    private static readonly string[] HrRoles = { "HR", "HR_ADMIN", "HR_MGR" };
-
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IApprovalWorkflowService _approvalWorkflow;
@@ -32,8 +29,12 @@ public class GeneralRequestService : IGeneralRequestService
         _approvalWorkflow = approvalWorkflow;
     }
 
-    private bool IsAdmin => AdminRoles.Any(_currentUser.HasRole);
-    private bool IsHrOrAdmin => IsAdmin || HrRoles.Any(_currentUser.HasRole);
+    private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+    private bool IsHrApprover => IsAdmin
+        || _currentUser.HasPermission("APPROVAL_EMP_APPROVE")
+        || _currentUser.HasPermission("EMP_DOC_APPROVE")
+        || _currentUser.HasPermission("EMP_DOC_EDIT")
+        || _currentUser.HasPermission("EMP_DOC_VIEW");
 
     private IQueryable<GeneralRequest> BaseQuery() => _context.GeneralRequests
         .AsNoTracking()
@@ -60,7 +61,7 @@ public class GeneralRequestService : IGeneralRequestService
         {
             if (!me.HasValue) return new List<GeneralRequestDto>();
             var allowed = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken);
-            var hr = IsHrOrAdmin;
+            var hr = IsHrApprover;
             // ผู้อนุมัติเห็นเฉพาะคำขอในสายของตน / ฝ่ายบุคคลเห็นคำขอที่ไม่มีสายการอนุมัติด้วย (ต้องพิจารณาเอง)
             query = query.Where(r =>
                 (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
@@ -168,7 +169,7 @@ public class GeneralRequestService : IGeneralRequestService
         }
         else
         {
-            if (!IsHrOrAdmin) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
+            if (!IsHrApprover) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
             if (request.EmployeeId == me) throw new ForbiddenException("ไม่สามารถอนุมัติคำขอของตัวเองได้");
             request.Status = "APPROVED";
             request.CompletedAt = DateTime.UtcNow;
@@ -197,7 +198,7 @@ public class GeneralRequestService : IGeneralRequestService
         {
             await _approvalWorkflow.ProcessActionAsync(request.ApprovalInstanceId.Value, me, "REJECT", reason.Trim(), cancellationToken);
         }
-        else if (!IsHrOrAdmin)
+        else if (!IsHrApprover)
         {
             throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้พิจารณา");
         }
@@ -218,7 +219,7 @@ public class GeneralRequestService : IGeneralRequestService
             ?? throw new KeyNotFoundException($"ไม่พบคำขอรหัส {id}");
 
         var me = _currentUser.EmployeeId;
-        if (request.EmployeeId != me && !IsHrOrAdmin)
+        if (request.EmployeeId != me && !IsHrApprover)
             throw new ForbiddenException("คุณไม่มีสิทธิ์ยกเลิกคำขอนี้");
         if (request.Status != "PENDING")
             throw new InvalidOperationException($"ไม่สามารถยกเลิกคำขอที่อยู่ในสถานะ {request.Status} ได้");
@@ -241,7 +242,7 @@ public class GeneralRequestService : IGeneralRequestService
             ?? throw new KeyNotFoundException($"ไม่พบคำขอรหัส {id}");
 
         var me = _currentUser.EmployeeId;
-        var allowed = request.EmployeeId == me || IsHrOrAdmin
+        var allowed = request.EmployeeId == me || IsHrApprover
             || (me.HasValue && request.ApprovalInstanceId.HasValue
                 && await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, me.Value, cancellationToken));
         if (!allowed) throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดไฟล์แนบของคำขอนี้");
@@ -268,7 +269,7 @@ public class GeneralRequestService : IGeneralRequestService
     private async Task<List<GeneralRequestDto>> MapListAsync(List<GeneralRequest> requests, CancellationToken cancellationToken)
     {
         var me = _currentUser.EmployeeId;
-        var isHr = IsHrOrAdmin;
+        var isHr = IsHrApprover;
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
         var assignments = (await _context.EmployeeAssignments.AsNoTracking()
                 .Include(a => a.Department)

@@ -72,8 +72,8 @@ public class CurrentUserService : ICurrentUserService
 
     public bool HasPermission(string permission)
     {
-        // หากเป็น ADMIN ถือว่ามีสิทธิ์ทุกอย่าง (Superuser)
-        if (HasRole("ADMIN")) return true;
+        // หากเป็น ADMIN หรือ SYSTEM_SUPER ถือว่ามีสิทธิ์ทุกอย่าง (Superuser)
+        if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER")) return true;
 
         var perms = User?.FindAll("permission").Select(p => p.Value).ToList();
         if (perms == null || perms.Count == 0) return false;
@@ -102,8 +102,8 @@ public class CurrentUserService : ICurrentUserService
 
     public string GetDataScope(string permission)
     {
-        // หากเป็น ADMIN ให้ Scope สูงสุดคือทั้งบริษัท
-        if (HasRole("ADMIN")) return "ORGANIZATION";
+        // หากเป็น ADMIN หรือ SYSTEM_SUPER ให้ Scope สูงสุดคือทั้งบริษัท
+        if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER")) return "ORGANIZATION";
 
         var permsToCheck = new List<string> { permission };
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))

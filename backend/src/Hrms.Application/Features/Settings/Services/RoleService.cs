@@ -53,6 +53,8 @@ public class RoleService : IRoleService
         new("EMP_CONTRACT", "สัญญาจ้างงาน", "EMP_CONTRACT", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_TRANSFER", "การโอนย้าย / ปรับตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_DOC", "แฟ้มเอกสารพนักงาน", "EMP_DOC", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_HISTORY", "ประวัติการเปลี่ยนแปลง", "EMP_HISTORY", "EMPLOYEE", "พนักงาน", "EMP"),
 
         // 3. เงินเดือนของฉัน (MY_SALARY)
         new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
@@ -114,6 +116,7 @@ public class RoleService : IRoleService
         // 16. รายงาน (REPORT)
         new("REPORT_ATT", "รายงานการลงเวลาและวันลา", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
         new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT"),
+        new("REPORT_LEAVE", "รายงานสรุปการลา", "REPORT_LEAVE", "REPORT", "รายงาน", "REPORT"),
 
         // 17. จัดการประกาศ (ANNOUNCEMENTS)
         new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ANNOUNCEMENTS", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),

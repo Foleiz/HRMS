@@ -14,24 +14,32 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 {
     private const long MaxFileBytes = 5 * 1024 * 1024;
 
-    private static readonly string[] AdminRoles = { "ADMIN", "SUPER_ADMIN", "SYS_ADMIN", "SYSTEM_SUPER" };
-    private static readonly string[] HrRoles = { "HR", "HR_ADMIN", "HR_MGR" };
-
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IDataScopeService _dataScope;
 
-    public EmployeeDocumentService(IHrmsDbContext context, ICurrentUserService currentUser)
+    public EmployeeDocumentService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUser,
+        IDataScopeService dataScope)
     {
         _context = context;
         _currentUser = currentUser;
+        _dataScope = dataScope;
     }
 
-    private bool IsHrOrAdmin => AdminRoles.Any(_currentUser.HasRole) || HrRoles.Any(_currentUser.HasRole);
+    private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+    private bool HasDocView => IsAdmin || _currentUser.HasPermission("EMP_DOC_VIEW") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocCreate => IsAdmin || _currentUser.HasPermission("EMP_DOC_CREATE") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocEdit => IsAdmin || _currentUser.HasPermission("EMP_DOC_EDIT") || _currentUser.HasPermission("EMP_DOC");
 
     public async Task<List<EmployeeDocumentDto>> GetByEmployeeAsync(long employeeId, CancellationToken cancellationToken = default)
     {
-        if (!IsHrOrAdmin && _currentUser.EmployeeId != employeeId)
-            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูเอกสารของพนักงานคนนี้");
+        if (_currentUser.EmployeeId != employeeId)
+        {
+            if (!HasDocView || !await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_VIEW", cancellationToken))
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ดูเอกสารของพนักงานคนนี้");
+        }
 
         return await QueryDtosAsync(d => d.EmployeeId == employeeId, cancellationToken);
     }
@@ -45,8 +53,11 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 
     public async Task<EmployeeDocumentDto> UploadAsync(long employeeId, CreateEmployeeDocumentDto dto, CancellationToken cancellationToken = default)
     {
-        if (!IsHrOrAdmin)
-            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่เพิ่มเอกสารเข้าแฟ้มพนักงานได้");
+        if (!HasDocCreate)
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารเข้าแฟ้มพนักงาน");
+
+        if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_CREATE", cancellationToken))
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารของพนักงานท่านนี้");
 
         var employeeExists = await _context.Employees.AnyAsync(e => e.Id == employeeId, cancellationToken);
         if (!employeeExists) throw new NotFoundException("พนักงาน", employeeId);
@@ -99,8 +110,11 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken)
             ?? throw new NotFoundException("เอกสาร", id);
 
-        if (!IsHrOrAdmin && _currentUser.EmployeeId != doc.EmployeeId)
-            throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดเอกสารนี้");
+        if (_currentUser.EmployeeId != doc.EmployeeId)
+        {
+            if (!HasDocView || !await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_VIEW", cancellationToken))
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดเอกสารนี้");
+        }
 
         if (doc.FileData == null || doc.FileData.Length == 0)
             throw new NotFoundException("เอกสารนี้ไม่มีไฟล์แนบ");
@@ -115,11 +129,14 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!IsHrOrAdmin)
-            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่ลบเอกสารในแฟ้มพนักงานได้");
+        if (!HasDocEdit)
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารในแฟ้มพนักงาน");
 
         var doc = await _context.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == id, cancellationToken)
             ?? throw new NotFoundException("เอกสาร", id);
+
+        if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารของพนักงานท่านนี้");
 
         _context.EmployeeDocuments.Remove(doc);
         await _context.SaveChangesAsync(cancellationToken);
@@ -127,12 +144,17 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 
     public async Task<List<EmployeeDocumentDto>> GetExpiringAsync(string? status, CancellationToken cancellationToken = default)
     {
-        if (!IsHrOrAdmin)
-            throw new ForbiddenException("เฉพาะฝ่ายบุคคลเท่านั้นที่ดูรายการเอกสารใกล้หมดอายุได้");
+        if (!HasDocView)
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูรายการเอกสารใกล้หมดอายุ");
+
+        var accessibleEmpIds = await _dataScope.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
 
         // ช่วงแจ้งเตือนสูงสุดคือ 365 วัน — กรองเบื้องต้นในฐานข้อมูล แล้วคำนวณสถานะจริงตามประเภทเอกสาร
         var horizon = DocumentExpiry.Today().AddDays(365);
-        var list = await QueryDtosAsync(d => d.ExpiryDate != null && d.ExpiryDate <= horizon, cancellationToken, includeEmployee: true);
+        var list = await QueryDtosAsync(
+            d => d.ExpiryDate != null && d.ExpiryDate <= horizon && (accessibleEmpIds == null || accessibleEmpIds.Contains(d.EmployeeId)),
+            cancellationToken,
+            includeEmployee: true);
 
         var wanted = (status ?? string.Empty).Trim().ToUpperInvariant();
         return list

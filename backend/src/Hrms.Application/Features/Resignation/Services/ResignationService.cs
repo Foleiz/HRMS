@@ -32,6 +32,12 @@ public class ResignationService : IResignationService
         _approvalWorkflow = approvalWorkflow;
     }
 
+    private bool IsAdmin => _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+    private bool IsHrOrAdmin => IsAdmin
+        || _currentUserService.HasPermission("APPROVAL_EMP_APPROVE")
+        || _currentUserService.HasPermission("EMP_PROFILE_EDIT")
+        || _currentUserService.HasPermission("EMP_PROFILE_VIEW");
+
     public async Task<List<ResignationRequestDto>> GetMyRequestsAsync(CancellationToken cancellationToken = default)
     {
         var employeeId = _currentUserService.EmployeeId;
@@ -65,10 +71,7 @@ public class ResignationService : IResignationService
         }
 
         var currentEmpId = _currentUserService.EmployeeId;
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN") ||
-                          _currentUserService.HasRole("SYS_ADMIN");
+        var isHrOrAdmin = IsHrOrAdmin;
 
         var isApprover = request.ApprovalInstanceId.HasValue && currentEmpId.HasValue &&
             await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, currentEmpId.Value, cancellationToken);
@@ -195,9 +198,7 @@ public class ResignationService : IResignationService
         }
 
         var currentEmpId = _currentUserService.EmployeeId;
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("SUPER_ADMIN");
+        var isHrOrAdmin = IsHrOrAdmin;
 
         if (request.EmployeeId != currentEmpId && !isHrOrAdmin)
         {
@@ -320,9 +321,7 @@ public class ResignationService : IResignationService
     private async Task<List<ResignationRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var isSystemAdmin = _currentUserService.HasRole("ADMIN") ||
-                            _currentUserService.HasRole("SUPER_ADMIN") ||
-                            _currentUserService.HasRole("SYS_ADMIN");
+        var isPrivileged = IsHrOrAdmin;
 
         var query = _context.ResignationRequests
             .AsNoTracking()
@@ -337,7 +336,7 @@ public class ResignationService : IResignationService
         {
             query = query.Where(r => r.EmployeeId == employeeId.Value);
         }
-        else if (!isSystemAdmin)
+        else if (!isPrivileged)
         {
             if (!currentEmpId.HasValue)
             {
@@ -369,10 +368,7 @@ public class ResignationService : IResignationService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var isHrOrAdmin = _currentUserService.HasRole("HR_MGR") ||
-                          _currentUserService.HasRole("HR_ADMIN") ||
-                          _currentUserService.HasRole("HR") ||
-                          isSystemAdmin;
+        var isHrOrAdmin = IsHrOrAdmin;
 
         var items = new List<ResignationRequestDto>();
         foreach (var r in requests)
