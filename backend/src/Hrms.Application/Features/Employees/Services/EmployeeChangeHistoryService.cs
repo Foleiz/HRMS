@@ -38,6 +38,7 @@ public interface IEmployeeChangeHistoryService
 /// ปิดบังข้อมูลอ่อนไหว และรวม "ลบ+เพิ่มใหม่ทั้งชุด" / "สิ้นสุดตำแหน่งเดิม+เพิ่มตำแหน่งใหม่" ให้เป็นรายการเดียว
 /// </summary>
 public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
+{
     private static readonly string[] ThaiMonths = { "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค." };
 
     private static readonly Dictionary<string, (string Key, string Label)> Tables = new()
