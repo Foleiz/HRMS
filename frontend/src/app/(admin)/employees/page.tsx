@@ -1673,6 +1673,53 @@ export default function EmployeesPage() {
 
                         <div>
                           <label className="font-semibold text-slate-700 block mb-1">
+                            ตำแหน่ง <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.positionName}
+                            onChange={(e) => {
+                              setFormData({ ...formData, positionName: e.target.value });
+                              clearFieldError('positionName');
+                            }}
+                            className={`${getFieldClass('positionName')} cursor-pointer`}
+                          >
+                            <option value="">เลือกตำแหน่ง</option>
+                            <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
+                            <option value="หัวหน้าทีมนักพัฒนา">หัวหน้าทีมนักพัฒนา</option>
+                            <option value="เจ้าหน้าที่ยิงโฆษณาออนไลน์">เจ้าหน้าที่ยิงโฆษณาออนไลน์</option>
+                            <option value="ผู้จัดการลูกค้ารายใหญ่">ผู้จัดการลูกค้ารายใหญ่</option>
+                            <option value="สมุห์บัญชี">สมุห์บัญชี</option>
+                            <option value="ผู้ควบคุมคลังสินค้า">ผู้ควบคุมคลังสินค้า</option>
+                            <option value="วิศวกรควบคุมคุณภาพ">วิศวกรควบคุมคุณภาพ</option>
+                            <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
+                            <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
+                          </select>
+                          {renderFieldError('positionName')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
+                            ประเภทพนักงาน <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={formData.employeeType}
+                            onChange={(e) => {
+                              setFormData({ ...formData, employeeType: e.target.value });
+                              clearFieldError('employeeType');
+                            }}
+                            className={`${getFieldClass('employeeType')} cursor-pointer`}
+                          >
+                            <option value="">เลือกประเภท</option>
+                            <option value="พนักงานประจำ">พนักงานประจำ</option>
+                            <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
+                            <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
+                            <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
+                          </select>
+                          {renderFieldError('employeeType')}
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 block mb-1">
                             คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -2208,53 +2255,6 @@ export default function EmployeesPage() {
                               className={getFieldClass('accountNumber', true)}
                             />
                             {renderFieldError('accountNumber')}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
-                              ตำแหน่ง <span className="text-rose-500">*</span>
-                            </label>
-                            <select
-                              value={formData.positionName}
-                              onChange={(e) => {
-                                setFormData({ ...formData, positionName: e.target.value });
-                                clearFieldError('positionName');
-                              }}
-                              className={`${getFieldClass('positionName')} cursor-pointer`}
-                            >
-                              <option value="">เลือกตำแหน่ง</option>
-                              <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
-                              <option value="หัวหน้าทีมนักพัฒนา">หัวหน้าทีมนักพัฒนา</option>
-                              <option value="เจ้าหน้าที่ยิงโฆษณาออนไลน์">เจ้าหน้าที่ยิงโฆษณาออนไลน์</option>
-                              <option value="ผู้จัดการลูกค้ารายใหญ่">ผู้จัดการลูกค้ารายใหญ่</option>
-                              <option value="สมุห์บัญชี">สมุห์บัญชี</option>
-                              <option value="ผู้ควบคุมคลังสินค้า">ผู้ควบคุมคลังสินค้า</option>
-                              <option value="วิศวกรควบคุมคุณภาพ">วิศวกรควบคุมคุณภาพ</option>
-                              <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
-                              <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
-                            </select>
-                            {renderFieldError('positionName')}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
-                              ประเภทพนักงาน <span className="text-rose-500">*</span>
-                            </label>
-                            <select
-                              value={formData.employeeType}
-                              onChange={(e) => {
-                                setFormData({ ...formData, employeeType: e.target.value });
-                                clearFieldError('employeeType');
-                              }}
-                              className={`${getFieldClass('employeeType')} cursor-pointer`}
-                            >
-                              <option value="">เลือกประเภท</option>
-                              <option value="พนักงานประจำ">พนักงานประจำ</option>
-                              <option value="พนักงานสัญญาจ้าง">พนักงานสัญญาจ้าง</option>
-                              <option value="พนักงานทดลองงาน">พนักงานทดลองงาน</option>
-                              <option value="พนักงานพาร์ทไทม์">พนักงานพาร์ทไทม์</option>
-                            </select>
-                            {renderFieldError('employeeType')}
                           </div>
                         </div>
                       </div>
