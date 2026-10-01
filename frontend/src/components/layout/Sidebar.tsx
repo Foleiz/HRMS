@@ -38,205 +38,242 @@ interface MenuItem {
   requiredRoles?: string[];
 }
 
-const menuItems: MenuItem[] = [
-  {
-    title: 'แดชบอร์ด',
-    href: '/',
-    icon: LayoutDashboard,
-    requiredPermissions: [
-      'DASHBOARD_VIEW',
-      'DASHBOARD_EMPLOYEE_VIEW',
-      'DASHBOARD_EMP_VIEW',
-      'DASHBOARD_DEPT_VIEW',
-      'DASHBOARD_DIV_VIEW',
-      'DASHBOARD_CEO_VIEW',
-      'DASHBOARD_ADMIN_VIEW',
-    ],
-  },
-  {
-    title: 'พนักงาน',
-    href: '/employees',
-    matchPrefix: '/employees',
-    icon: Users,
-    requiredPermissions: [
-      'EMP_PROFILE_VIEW',
-      'EMP_CONTRACT_VIEW',
-      'EMP_TRANSFER_VIEW',
-      'EMP_TYPE_VIEW',
-    ],
-  },
-  {
-    title: 'เงินเดือนของฉัน',
-    href: '/my-salary',
-    matchPrefix: '/my-salary',
-    icon: Wallet,
-    requiredPermissions: ['ESS_SALARY_VIEW'],
-  },
-  {
-    title: 'โปรไฟล์ของฉัน (ESS)',
-    href: '/profile',
-    matchPrefix: '/profile',
-    icon: User,
-    requiredPermissions: ['ESS_PROFILE_VIEW'],
-  },
-  {
-    title: 'ยอดวันลาคงเหลือ',
-    href: '/leave-balances',
-    matchPrefix: '/leave-balances',
-    icon: CalendarCheck,
-    requiredPermissions: ['ESS_LEAVE_VIEW'],
-  },
-  {
-    title: 'ปฏิทินการลาของทีม',
-    href: '/team-leave-calendar',
-    matchPrefix: '/team-leave-calendar',
-    icon: CalendarRange,
-    requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW'],
-  },
+interface MenuGroup {
+  category: string;
+  items: MenuItem[];
+}
 
+const menuGroups: MenuGroup[] = [
   {
-    title: 'บันทึกเวลาของฉัน (ESS)',
-    href: '/ess/attendance',
-    matchPrefix: '/ess/attendance',
-    icon: Clock,
-    requiredPermissions: ['ESS_TIME_VIEW'],
-  },
-  {
-    title: 'ข่าวสารสำหรับฉัน',
-    href: '/my-news',
-    matchPrefix: '/my-news',
-    icon: CalendarDays,
-    requiredPermissions: ['ESS_NEWS_VIEW'],
-  },
-  {
-    title: 'ยื่นเอกสาร',
-    href: '/documents',
-    matchPrefix: '/documents',
-    icon: FileText,
-    requiredPermissions: ['ESS_DOCS_VIEW'],
-  },
-  {
-    title: 'ตรวจบันทึกเวลา',
-    href: '/attendance/daily',
-    matchPrefix: '/attendance/daily',
-    icon: CalendarDays,
-    requiredPermissions: [
-      'TIME_DAILY_VIEW',
-      'TIME_IMPORT_VIEW',
+    category: 'ภาพรวม',
+    items: [
+      {
+        title: 'แดชบอร์ด',
+        href: '/',
+        icon: LayoutDashboard,
+        requiredPermissions: [
+          'DASHBOARD_VIEW',
+          'DASHBOARD_EMPLOYEE_VIEW',
+          'DASHBOARD_EMP_VIEW',
+          'DASHBOARD_DEPT_VIEW',
+          'DASHBOARD_DIV_VIEW',
+          'DASHBOARD_CEO_VIEW',
+          'DASHBOARD_ADMIN_VIEW',
+        ],
+      },
+      {
+        title: 'ข่าวสารสำหรับฉัน',
+        href: '/my-news',
+        matchPrefix: '/my-news',
+        icon: CalendarDays,
+        requiredPermissions: ['ESS_NEWS_VIEW'],
+      },
     ],
   },
   {
-    title: 'การจัดตารางงาน',
-    href: '/attendance/schedules',
-    matchPrefix: '/attendance/schedules',
-    icon: CalendarRange,
-    requiredPermissions: [
-      'TIME_SCHEDULE_VIEW',
+    category: 'บริการตนเอง (ESS)',
+    items: [
+      {
+        title: 'โปรไฟล์ของฉัน',
+        href: '/profile',
+        matchPrefix: '/profile',
+        icon: User,
+        requiredPermissions: ['ESS_PROFILE_VIEW'],
+      },
+      {
+        title: 'ยื่นเอกสาร',
+        href: '/documents',
+        matchPrefix: '/documents',
+        icon: FileText,
+        requiredPermissions: ['ESS_DOCS_VIEW'],
+      },
+      {
+        title: 'ยอดวันลาคงเหลือ',
+        href: '/leave-balances',
+        matchPrefix: '/leave-balances',
+        icon: CalendarCheck,
+        requiredPermissions: ['ESS_LEAVE_VIEW'],
+      },
+      {
+        title: 'ปฏิทินการลาของทีม',
+        href: '/team-leave-calendar',
+        matchPrefix: '/team-leave-calendar',
+        icon: CalendarRange,
+        requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW'],
+      },
+      {
+        title: 'บันทึกเวลาของฉัน',
+        href: '/ess/attendance',
+        matchPrefix: '/ess/attendance',
+        icon: Clock,
+        requiredPermissions: ['ESS_TIME_VIEW'],
+      },
     ],
   },
   {
-    title: 'การลา',
-    href: '/leave',
-    matchPrefix: '/leave',
-    icon: CalendarCheck,
-    requiredPermissions: [
-      'LEAVE_BALANCE_VIEW',
-      'LEAVE_TYPE_VIEW',
-      'LEAVE_POLICY_VIEW',
+    category: 'การเงินและค่าตอบแทน',
+    items: [
+      {
+        title: 'เงินเดือน',
+        href: '/payroll',
+        matchPrefix: '/payroll',
+        icon: CreditCard,
+        requiredPermissions: [
+          'PAYROLL_HR_VIEW',
+          'PAYROLL_FINANCE_VIEW',
+          'PAYROLL_ADMIN_VIEW',
+          'PAYROLL_CALC_VIEW',
+          'PAYROLL_STRUCTURE_VIEW',
+          'PAYROLL_ITEMS_VIEW',
+          'PAYROLL_BONUS_VIEW',
+          'PAYROLL_BANK_VIEW',
+          'PAYROLL_TAX_VIEW',
+          'PAYROLL_SLIP_VIEW',
+        ],
+      },
+      {
+        title: 'เงินเดือนของฉัน',
+        href: '/my-salary',
+        matchPrefix: '/my-salary',
+        icon: Wallet,
+        requiredPermissions: ['ESS_SALARY_VIEW'],
+      },
     ],
   },
   {
-    title: 'เงินเดือน',
-    href: '/payroll',
-    matchPrefix: '/payroll',
-    icon: CreditCard,
-    requiredPermissions: [
-      'PAYROLL_HR_VIEW',
-      'PAYROLL_FINANCE_VIEW',
-      'PAYROLL_ADMIN_VIEW',
-      'PAYROLL_CALC_VIEW',
-      'PAYROLL_STRUCTURE_VIEW',
-      'PAYROLL_ITEMS_VIEW',
-      'PAYROLL_BONUS_VIEW',
-      'PAYROLL_BANK_VIEW',
-      'PAYROLL_TAX_VIEW',
-      'PAYROLL_SLIP_VIEW',
+    category: 'การจัดการบุคคล',
+    items: [
+      {
+        title: 'พนักงาน',
+        href: '/employees',
+        matchPrefix: '/employees',
+        icon: Users,
+        requiredPermissions: [
+          'EMP_PROFILE_VIEW',
+          'EMP_CONTRACT_VIEW',
+          'EMP_TRANSFER_VIEW',
+          'EMP_TYPE_VIEW',
+        ],
+      },
+      {
+        title: 'โครงสร้างองค์กร',
+        href: '/organization',
+        matchPrefix: '/organization',
+        icon: Building2,
+        requiredPermissions: [
+          'ORG_STRUCT_VIEW',
+          'ORG_POS_VIEW',
+          'ORG_BENEFIT_VIEW',
+          'ORG_COMP_VIEW',
+        ],
+      },
+      {
+        title: 'จัดการประกาศ',
+        href: '/announcements',
+        matchPrefix: '/announcements',
+        icon: Megaphone,
+        requiredPermissions: ['ANNOUNCEMENTS_VIEW'],
+      },
     ],
   },
   {
-    title: 'การอนุมัติ',
-    href: '/approvals/leave-requests',
-    matchPrefix: '/approvals',
-    icon: CheckCircle2,
-    requiredPermissions: [
-      'APPROVAL_LEAVE_VIEW',
-      'APPROVAL_LEAVE_APPROVE',
-      'APPROVAL_TIME_VIEW',
-      'APPROVAL_TIME_APPROVE',
-      'APPROVAL_EMP_VIEW',
-      'APPROVAL_EMP_APPROVE',
-      'APPROVAL_PAYROLL_VIEW',
-      'APPROVAL_PAYROLL_APPROVE',
+    category: 'เวลาและการลา',
+    items: [
+      {
+        title: 'ตรวจบันทึกเวลา',
+        href: '/attendance/daily',
+        matchPrefix: '/attendance/daily',
+        icon: CalendarDays,
+        requiredPermissions: [
+          'TIME_DAILY_VIEW',
+          'TIME_IMPORT_VIEW',
+        ],
+      },
+      {
+        title: 'การจัดตารางงาน',
+        href: '/attendance/schedules',
+        matchPrefix: '/attendance/schedules',
+        icon: CalendarRange,
+        requiredPermissions: [
+          'TIME_SCHEDULE_VIEW',
+        ],
+      },
+      {
+        title: 'การลา',
+        href: '/leave',
+        matchPrefix: '/leave',
+        icon: CalendarCheck,
+        requiredPermissions: [
+          'LEAVE_BALANCE_VIEW',
+          'LEAVE_TYPE_VIEW',
+          'LEAVE_POLICY_VIEW',
+        ],
+      },
+      {
+        title: 'วันทำงานและวันหยุด',
+        href: '/work-calendar',
+        matchPrefix: '/work-calendar',
+        icon: CalendarDays,
+        requiredPermissions: [
+          'WORK_CALENDAR_VIEW',
+        ],
+      },
     ],
   },
   {
-    title: 'โครงสร้างองค์กร',
-    href: '/organization',
-    matchPrefix: '/organization',
-    icon: Building2,
-    requiredPermissions: [
-      'ORG_STRUCT_VIEW',
-      'ORG_POS_VIEW',
-      'ORG_BENEFIT_VIEW',
-      'ORG_COMP_VIEW',
+    category: 'การอนุมัติและรายงาน',
+    items: [
+      {
+        title: 'การอนุมัติ',
+        href: '/approvals/leave-requests',
+        matchPrefix: '/approvals',
+        icon: CheckCircle2,
+        requiredPermissions: [
+          'APPROVAL_LEAVE_VIEW',
+          'APPROVAL_LEAVE_APPROVE',
+          'APPROVAL_TIME_VIEW',
+          'APPROVAL_TIME_APPROVE',
+          'APPROVAL_EMP_VIEW',
+          'APPROVAL_EMP_APPROVE',
+          'APPROVAL_PAYROLL_VIEW',
+          'APPROVAL_PAYROLL_APPROVE',
+        ],
+      },
+      {
+        title: 'รายงาน',
+        href: '/reports',
+        matchPrefix: '/reports',
+        icon: BarChart3,
+        requiredPermissions: [
+          'REPORT_ATT_VIEW',
+          'REPORT_HEADCOUNT_VIEW',
+        ],
+      },
     ],
   },
   {
-    title: 'วันทำงานและวันหยุด',
-    href: '/work-calendar',
-    matchPrefix: '/work-calendar',
-    icon: CalendarDays,
-    requiredPermissions: [
-      'WORK_CALENDAR_VIEW',
-    ],
-  },
-  {
-    title: 'รายงาน',
-    href: '/reports',
-    matchPrefix: '/reports',
-    icon: BarChart3,
-    requiredPermissions: [
-      'REPORT_ATT_VIEW',
-      'REPORT_HEADCOUNT_VIEW',
-    ],
-  },
-  {
-    title: 'จัดการประกาศ',
-    href: '/announcements',
-    matchPrefix: '/announcements',
-    icon: Megaphone,
-    requiredPermissions: [
-      'ANNOUNCEMENTS_VIEW',
-    ],
-  },
-  {
-    title: 'ข้อมูลหลัก (Master Data)',
-    href: '/master',
-    matchPrefix: '/master',
-    icon: Database,
-    requiredPermissions: [
-      'MASTER_DATA_VIEW',
-    ],
-  },
-  {
-    title: 'ตั้งค่า',
-    href: '/settings',
-    matchPrefix: '/settings',
-    icon: Settings,
-    requiredPermissions: [
-      'SETTINGS_USERS_VIEW',
-      'SETTINGS_ROLES_VIEW',
-      'SETTINGS_AUDIT_VIEW',
+    category: 'ระบบและการตั้งค่า',
+    items: [
+      {
+        title: 'ข้อมูลหลัก (Master Data)',
+        href: '/master',
+        matchPrefix: '/master',
+        icon: Database,
+        requiredPermissions: [
+          'MASTER_DATA_VIEW',
+        ],
+      },
+      {
+        title: 'ตั้งค่าระบบ',
+        href: '/settings',
+        matchPrefix: '/settings',
+        icon: Settings,
+        requiredPermissions: [
+          'SETTINGS_USERS_VIEW',
+          'SETTINGS_ROLES_VIEW',
+          'SETTINGS_AUDIT_VIEW',
+        ],
+      },
     ],
   },
 ];
@@ -253,7 +290,7 @@ export const Sidebar: React.FC = () => {
   };
 
   // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
-  const accessibleItems = menuItems.filter((item) => {
+  const checkItemAccessible = (item: MenuItem) => {
     // 1. หากเป็น ADMIN หรือยังไม่ล็อกอิน ให้ bypass/default
     if (!user) return true;
     if (hasRole('ADMIN')) return true;
@@ -277,18 +314,34 @@ export const Sidebar: React.FC = () => {
     }
 
     return true;
-  });
+  };
 
-  const filteredItems = accessibleItems.filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
-  );
+  // Grouped & Filtered by RBAC and Search Term
+  const filteredGroups = menuGroups
+    .map((group) => {
+      const accessibleGroupItems = group.items.filter(checkItemAccessible);
+      const matchedItems = accessibleGroupItems.filter((item) =>
+        item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      );
+      return {
+        ...group,
+        items: matchedItems,
+      };
+    })
+    .filter((group) => group.items.length > 0);
+
+  // Flatten accessible items for isActive calculation
+  const allAccessibleItems = menuGroups
+    .flatMap((g) => g.items)
+    .filter(checkItemAccessible);
 
   const isActive = (item: MenuItem) => {
     if (item.href === '/' && pathname === '/') return true;
     if (!item.matchPrefix || !pathname.startsWith(item.matchPrefix)) return false;
 
     // ป้องกันกรณี matchPrefix ซ้อนกัน — ให้ยึดเมนูที่ prefix ตรงกับ pathname มากที่สุด (ยาวที่สุด) เป็นตัวไฮไลต์เพียงอันเดียว
-    const matches = accessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
+    const matches = allAccessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
+    if (matches.length === 0) return false;
     const longestMatch = matches.reduce((a, b) => ((b.matchPrefix?.length ?? 0) > (a.matchPrefix?.length ?? 0) ? b : a));
     return longestMatch.href === item.href;
   };
@@ -336,37 +389,93 @@ export const Sidebar: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ค้นหา"
+              placeholder="ค้นหาเมนู..."
               className="w-full pl-9 pr-3 py-2 bg-[#F1F5F9] border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
             />
           </div>
         </div>
       )}
 
-      {/* 3. Navigation Menu Items */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-        {filteredItems.map((item) => {
-          const active = isActive(item);
-          const Icon = item.icon;
+      {/* 3. Navigation Menu Items Grouped by Category */}
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+        {filteredGroups.length === 0 && (
+          <div className="py-8 text-center text-xs text-slate-400">
+            {!isCollapsed && 'ไม่พบเมนูที่ค้นหา'}
+          </div>
+        )}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={handleSelectMenu}
-              title={isCollapsed ? item.title : undefined}
-              className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                active
-                  ? 'bg-[#0B2046] text-white shadow-sm font-semibold'
-                  : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-              } ${isCollapsed ? 'justify-center px-0' : ''}`}
-            >
-              <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
-              {!isCollapsed && <span className="truncate">{item.title}</span>}
-            </Link>
-          );
-        })}
+        {filteredGroups.map((group, groupIndex) => (
+          <div key={group.category} className="space-y-1">
+            {/* Category Header Label */}
+            {!isCollapsed ? (
+              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider select-none">
+                {group.category}
+              </div>
+            ) : (
+              groupIndex > 0 && <div className="my-2 border-t border-slate-100 mx-2" />
+            )}
+
+            {/* Menu Items */}
+            {group.items.map((item) => {
+              const active = isActive(item);
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleSelectMenu}
+                  title={isCollapsed ? item.title : undefined}
+                  className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                    active
+                      ? 'bg-[#0B2046] text-white shadow-xs font-semibold'
+                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                  } ${isCollapsed ? 'justify-center px-0 py-2.5' : ''}`}
+                >
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                  {!isCollapsed && <span className="truncate">{item.title}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
+
+      {/* 4. Bottom User Profile Card (like in modern sidebar design) */}
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        {!isCollapsed ? (
+          <Link
+            href="/profile"
+            onClick={handleSelectMenu}
+            className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100/80 transition-colors group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 text-[#0B2046] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15">
+                {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-800 truncate leading-tight group-hover:text-[#0B2046]">
+                  {user?.fullName || user?.username || 'ผู้ใช้งาน'}
+                </p>
+                <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                  {user?.roles?.[0] || 'พนักงาน'}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href="/profile"
+            onClick={handleSelectMenu}
+            title={user?.fullName || user?.username || 'โปรไฟล์'}
+            className="flex justify-center p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 text-[#0B2046] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15">
+              {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
+            </div>
+          </Link>
+        )}
+      </div>
     </aside>
   );
 };
