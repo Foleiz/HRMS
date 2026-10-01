@@ -425,11 +425,31 @@ public class EmployeeTransferService : IEmployeeTransferService
             currentAssign.EffectiveTo = transfer.EffectiveDate.AddDays(-1);
         }
 
+        // ── ดึง DivisionId ที่ถูกต้องจาก Department เป้าหมายเสมอ
+        // เพื่อป้องกัน check constraint "employee_assignment_check"
+        // ที่บังคับว่า DivisionId ต้องตรงกับ Department ที่เลือก
+        long resolvedDivisionId;
+        if (transfer.ToDivisionId.HasValue && transfer.ToDivisionId.Value > 0)
+        {
+            resolvedDivisionId = transfer.ToDivisionId.Value;
+        }
+        else
+        {
+            // ดึง DivisionId จาก Department เป้าหมายโดยตรง
+            var targetDept = await _context.Departments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == transfer.ToDepartmentId, cancellationToken);
+
+            resolvedDivisionId = targetDept?.DivisionId
+                ?? currentAssign?.DivisionId
+                ?? 1;
+        }
+
         // สร้าง assignment ใหม่
         var newAssignment = new EmployeeAssignment
         {
             EmployeeId = transfer.EmployeeId,
-            DivisionId = transfer.ToDivisionId ?? (currentAssign?.DivisionId ?? 1),
+            DivisionId = resolvedDivisionId,
             DepartmentId = transfer.ToDepartmentId,
             PositionId = transfer.ToPositionId,
             ManagerEmployeeId = transfer.ToManagerId ?? currentAssign?.ManagerEmployeeId,
@@ -478,6 +498,7 @@ public class EmployeeTransferService : IEmployeeTransferService
             }
         }
     }
+
 
     private static EmployeeTransferDto MapToDto(EmployeeTransferRequest t)
     {
