@@ -235,8 +235,9 @@ public class EmploymentContractService : IEmploymentContractService
             // หากไม่ได้ใส่วันที่สิ้นสุดมา ให้คำนวณตามมาตรฐานกฎหมายแรงงานไทย 119 วัน
             probationEndDate = request.EndDate ?? request.StartDate.AddDays(119);
         }
-        else if (request.ContractType == "FIXED_TERM")
+        else
         {
+            // FIXED_TERM, OTHER (เช่น นักศึกษาฝึกงาน) หรือกรณีระบุวันสิ้นสุดสัญญา
             contractEndDate = request.EndDate;
         }
 
@@ -461,7 +462,7 @@ public class EmploymentContractService : IEmploymentContractService
         DateOnly? effectiveEndDate = null;
         if (c.ContractType == "PROBATION")
             effectiveEndDate = c.ProbationEndDate;
-        else if (c.ContractType == "FIXED_TERM")
+        else if (c.ContractEndDate.HasValue)
             effectiveEndDate = c.ContractEndDate;
         else if (c.TerminationDate.HasValue)
             effectiveEndDate = c.TerminationDate;
@@ -477,7 +478,9 @@ public class EmploymentContractService : IEmploymentContractService
             EmployeeTypeId = c.EmployeeTypeId,
             EmployeeTypeName = c.EmployeeType?.TypeName,
             ContractType = c.ContractType,
-            ContractTypeDisplay = GetContractTypeDisplay(c.ContractType),
+            ContractTypeDisplay = !string.IsNullOrWhiteSpace(c.EmployeeType?.TypeName)
+                ? c.EmployeeType.TypeName
+                : GetContractTypeDisplay(c.ContractType),
             WageType = c.WageType,
             StartDate = c.StartDate,
             StartDateDisplay = FormatBuddhistDate(c.StartDate),
@@ -502,6 +505,9 @@ public class EmploymentContractService : IEmploymentContractService
             "PROBATION" => "ทดลองงาน",
             "PERMANENT" => "ประจำ",
             "FIXED_TERM" => "สัญญาจ้าง",
+            "INTERN" => "นักศึกษาฝึกงาน",
+            "DAILY" => "รายวัน",
+            "PART" or "PART_TIME" => "พาร์ทไทม์",
             _ => "อื่นๆ"
         };
     }

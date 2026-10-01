@@ -76,7 +76,7 @@ export default function ContractDetailModal({
             <div>
               <span className="text-slate-400 text-xs block">ประเภทสัญญา</span>
               <span className="font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-xs inline-block">
-                {contract.contractTypeDisplay}
+                {contract.employeeTypeName || contract.contractTypeDisplay}
               </span>
             </div>
             <div>
