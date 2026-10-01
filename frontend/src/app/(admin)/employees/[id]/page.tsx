@@ -23,7 +23,6 @@ import { getAvatarUrl } from '@/lib/api-client';
 import { useAuth } from '@/context/AuthContext';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
-import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 
 
 const formatThaiDate = (dateStr?: string) => {
@@ -78,9 +77,9 @@ export default function EmployeeDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
   // เปิดแท็บเอกสารได้โดยตรงจากลิงก์ เช่น /employees/5?tab=documents
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax' | 'user' | 'documents' | 'history'>(() => {
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax' | 'user' | 'documents'>(() => {
     const tab = searchParams.get('tab');
-    return tab === 'documents' || tab === 'history' ? tab : 'personal';
+    return tab === 'documents' ? tab : 'personal';
   });
   const { hasRole } = useAuth();
   const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
@@ -518,20 +517,6 @@ export default function EmployeeDetailPage() {
               >
                 เอกสาร
               </button>
-
-              {canManageDocuments && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('history')}
-                  className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
-                    activeTab === 'history'
-                      ? 'border-[#0B2046] text-[#0B2046]'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  ประวัติการเปลี่ยนแปลง
-                </button>
-              )}
             </div>
 
             {/* แก้ไขข้อมูล Button */}
@@ -908,7 +893,6 @@ export default function EmployeeDetailPage() {
           {/* TAB 5: แฟ้มเอกสารพนักงาน (Employee Documents)               */}
           {/* ============================================================ */}
           {activeTab === 'background' && <EmployeeBackgroundView employee={employee} />}
-          {activeTab === 'history' && canManageDocuments && <EmployeeChangeHistoryTab employeeId={employee.id} />}
           {activeTab === 'tax' && <EmployeeTaxSsoView employee={employee} />}
 
           {activeTab === 'documents' && (
