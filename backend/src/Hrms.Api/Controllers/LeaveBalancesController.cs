@@ -52,7 +52,7 @@ public class LeaveBalancesController : ControllerBase
     }
 
     [HttpGet]
-    [RequirePermission("LEAVE_BALANCE_VIEW")]
+    [SelfOrPermission("employeeId", "LEAVE_BALANCE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<LeaveBalanceDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<LeaveBalanceDto>>>> GetAll(
         [FromQuery] long? employeeId,
@@ -60,7 +60,23 @@ public class LeaveBalancesController : ControllerBase
         [FromQuery] long? leaveTypeId,
         CancellationToken cancellationToken)
     {
-        var result = await _balanceService.GetAllAsync(employeeId, year, leaveTypeId, cancellationToken);
+        // หากผู้ใช้ไม่มีสิทธิ์ LEAVE_BALANCE_VIEW และไม่ใช่ Admin ให้ดึงได้เฉพาะยอดวันลาของตนเองเท่านั้น
+        long? targetEmpId = employeeId;
+        bool hasViewAllPerm = _currentUserService.HasRole("ADMIN") ||
+                              _currentUserService.HasRole("SYSTEM_SUPER") ||
+                              _currentUserService.HasPermission("LEAVE_BALANCE_VIEW") ||
+                              _currentUserService.HasPermission("LEAVE_BALANCE");
+
+        if (!hasViewAllPerm)
+        {
+            if (!_currentUserService.EmployeeId.HasValue)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<LeaveBalanceDto>>.Fail("คุณไม่มีสิทธิ์ในการดำเนินการนี้ (ต้องการสิทธิ์: LEAVE_BALANCE_VIEW)"));
+            }
+            targetEmpId = _currentUserService.EmployeeId.Value;
+        }
+
+        var result = await _balanceService.GetAllAsync(targetEmpId, year, leaveTypeId, cancellationToken);
         return Ok(ApiResponse<List<LeaveBalanceDto>>.Ok(result, "ดึงรายการยอดสิทธิ์วันลาสำเร็จ"));
     }
 
