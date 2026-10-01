@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
@@ -45,6 +46,7 @@ public class LeavePoliciesController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<LeavePolicyDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("LEAVE_POLICY_CREATE")]
     public async Task<ActionResult<ApiResponse<LeavePolicyDto>>> Create(
         [FromBody] CreateLeavePolicyRequest request,
         CancellationToken cancellationToken)
@@ -63,6 +65,7 @@ public class LeavePoliciesController : ControllerBase
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<LeavePolicyDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("LEAVE_POLICY_EDIT")]
     public async Task<ActionResult<ApiResponse<LeavePolicyDto>>> Update(
         long id,
         [FromBody] UpdateLeavePolicyRequest request,
@@ -86,6 +89,7 @@ public class LeavePoliciesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("LEAVE_POLICY_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _policyService.DeleteAsync(id, cancellationToken);

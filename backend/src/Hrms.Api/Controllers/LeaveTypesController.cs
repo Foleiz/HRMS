@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
@@ -54,6 +55,7 @@ public class LeaveTypesController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<LeaveTypeDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [RequirePermission("LEAVE_TYPE_CREATE")]
     public async Task<ActionResult<ApiResponse<LeaveTypeDto>>> Create(
         [FromBody] CreateLeaveTypeRequest request,
         CancellationToken cancellationToken)
@@ -72,6 +74,7 @@ public class LeaveTypesController : ControllerBase
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<LeaveTypeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("LEAVE_TYPE_EDIT")]
     public async Task<ActionResult<ApiResponse<LeaveTypeDto>>> Update(
         long id,
         [FromBody] UpdateLeaveTypeRequest request,
@@ -91,6 +94,7 @@ public class LeaveTypesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [RequirePermission("LEAVE_TYPE_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _leaveTypeService.DeleteAsync(id, cancellationToken);

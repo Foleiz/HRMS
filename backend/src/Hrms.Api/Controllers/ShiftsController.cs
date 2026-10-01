@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ShiftsController : ControllerBase
 {
     private readonly IShiftService _shiftService;
@@ -42,6 +45,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> CreateShift([FromBody] CreateShiftRequest request)
     {
         try
@@ -60,6 +64,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> UpdateShift(long id, [FromBody] UpdateShiftRequest request)
     {
         try
@@ -82,6 +87,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> DeleteShift(long id)
     {
         var success = await _shiftService.DeleteShiftAsync(id);

@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Application.Features.MasterData.Services;
@@ -10,6 +12,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class BanksController : ControllerBase
 {
     private readonly IBankService _bankService;
@@ -43,6 +46,7 @@ public class BanksController : ControllerBase
     /// เพิ่มข้อมูลธนาคารใหม่
     /// </summary>
     [HttpPost]
+    [RequirePermission("MASTER_DATA_CREATE")]
     public async Task<ActionResult<ApiResponse<BankDto>>> Create([FromBody] CreateBankDto dto, CancellationToken cancellationToken)
     {
         var created = await _bankService.CreateAsync(dto, cancellationToken);
@@ -53,6 +57,7 @@ public class BanksController : ControllerBase
     /// แก้ไขข้อมูลธนาคาร
     /// </summary>
     [HttpPut("{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<BankDto>>> Update(long id, [FromBody] UpdateBankDto dto, CancellationToken cancellationToken)
     {
         var updated = await _bankService.UpdateAsync(id, dto, cancellationToken);
@@ -63,6 +68,7 @@ public class BanksController : ControllerBase
     /// ลบข้อมูลธนาคาร
     /// </summary>
     [HttpDelete("{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _bankService.DeleteAsync(id, cancellationToken);

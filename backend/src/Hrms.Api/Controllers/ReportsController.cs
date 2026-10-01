@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Reports.DTOs;
 using Hrms.Application.Features.Reports.Services;
@@ -22,6 +23,7 @@ public class ReportsController : ControllerBase
     /// ดึงข้อมูลรายงานอัตรากำลังคนประจำวัน (Daily Department Headcount Snapshot)
     /// </summary>
     [HttpGet("headcount/daily")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW,DASHBOARD_DEPT_VIEW,DASHBOARD_DIV_VIEW,DASHBOARD_CEO_VIEW,DASHBOARD_ADMIN_VIEW")]
     public async Task<ActionResult<ApiResponse<DailyHeadcountSummaryDto>>> GetDailyHeadcountSnapshot(
         [FromQuery] string? date,
         [FromQuery] long? divisionId,
@@ -42,6 +44,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานอัตรากำลังคนประจำวันเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("headcount/daily/export")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportDailyHeadcountCsv(
         [FromQuery] string? date,
         [FromQuery] long? divisionId,
@@ -64,6 +67,7 @@ public class ReportsController : ControllerBase
     /// ดึงรายงานสรุปเวลาทำงานและการมาสายประจำเดือน (Monthly Attendance & Lateness Report)
     /// </summary>
     [HttpGet("attendance/monthly-lateness")]
+    [RequirePermission("REPORT_ATT_VIEW,REPORT_VIEW")]
     public async Task<ActionResult<ApiResponse<MonthlyLatenessReportDto>>> GetMonthlyAttendanceLatenessReport(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -83,6 +87,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานสรุปเวลาและการมาสายประจำเดือนเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("attendance/monthly-lateness/export")]
+    [RequirePermission("REPORT_ATT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportMonthlyLatenessCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -104,6 +109,7 @@ public class ReportsController : ControllerBase
     /// ดึงรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และประกันสังคม (สปส. 1-10) ประจำเดือน
     /// </summary>
     [HttpGet("financial/payroll-tax")]
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
     public async Task<ActionResult<ApiResponse<PayrollTaxSummaryDto>>> GetPayrollTaxSummaryReport(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -122,6 +128,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/payroll-tax/export")]
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportPayrollTaxCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -142,6 +149,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/sso/export")]
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportSsoCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -162,6 +170,7 @@ public class ReportsController : ControllerBase
     /// ดึงรายงานอัตราการเข้า-ออกของพนักงาน (Monthly Turnover Rate)
     /// </summary>
     [HttpGet("analytics/turnover")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
     public async Task<ActionResult<ApiResponse<MonthlyTurnoverSummaryDto>>> GetMonthlyTurnoverReport(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -181,6 +190,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานอัตราการเข้า-ออกของพนักงานเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("analytics/turnover/export")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportMonthlyTurnoverCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,

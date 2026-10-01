@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class WorkSchedulesController : ControllerBase
 {
     private readonly IWorkScheduleService _service;
@@ -42,6 +45,7 @@ public class WorkSchedulesController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> CreateSchedule([FromBody] CreateWorkScheduleRequest request)
     {
         try
@@ -60,6 +64,7 @@ public class WorkSchedulesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> UpdateSchedule(long id, [FromBody] UpdateWorkScheduleRequest request)
     {
         try
@@ -78,6 +83,7 @@ public class WorkSchedulesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequirePermission("TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> DeleteSchedule(long id)
     {
         var success = await _service.DeleteWorkScheduleAsync(id);

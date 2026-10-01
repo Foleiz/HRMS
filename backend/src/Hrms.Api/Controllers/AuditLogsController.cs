@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Settings.Dtos;
 using Hrms.Application.Features.Settings.Services;
@@ -23,6 +24,7 @@ public class AuditLogsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AuditLogDto>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_AUDIT_VIEW")]
     public async Task<ActionResult<ApiResponse<PagedResult<AuditLogDto>>>> GetAuditLogs(
         [FromQuery] AuditLogQueryFilter filter,
         CancellationToken cancellationToken)
@@ -32,6 +34,7 @@ public class AuditLogsController : ControllerBase
     }
 
     [HttpGet("export")]
+    [RequirePermission("SETTINGS_AUDIT_VIEW")]
     public async Task<IActionResult> ExportAuditLogs(
         [FromQuery] AuditLogQueryFilter filter,
         CancellationToken cancellationToken)
@@ -43,6 +46,7 @@ public class AuditLogsController : ControllerBase
 
     [HttpGet("modules")]
     [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
+    [RequirePermission("SETTINGS_AUDIT_VIEW")]
     public async Task<ActionResult<ApiResponse<List<string>>>> GetModules(CancellationToken cancellationToken)
     {
         var modules = await _auditLogService.GetDistinctEntityTypesAsync(cancellationToken);

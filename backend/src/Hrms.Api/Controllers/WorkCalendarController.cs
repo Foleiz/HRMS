@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ namespace Hrms.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class WorkCalendarController : ControllerBase
 {
     private readonly IWorkCalendarService _workCalendarService;
@@ -32,6 +35,7 @@ public class WorkCalendarController : ControllerBase
     }
 
     [HttpPut("work-week")]
+    [RequirePermission("WORK_CALENDAR_EDIT")]
     public async Task<IActionResult> UpdateWorkWeek([FromBody] UpdateWorkWeekRequest request, [FromQuery] long? companyId)
     {
         var result = await _workCalendarService.UpdateWorkWeekAsync(request, companyId);
@@ -59,6 +63,7 @@ public class WorkCalendarController : ControllerBase
     }
 
     [HttpPost("holidays")]
+    [RequirePermission("WORK_CALENDAR_CREATE")]
     public async Task<IActionResult> CreateHoliday([FromBody] CreateHolidayRequest request)
     {
         try
@@ -77,6 +82,7 @@ public class WorkCalendarController : ControllerBase
     }
 
     [HttpPut("holidays/{id}")]
+    [RequirePermission("WORK_CALENDAR_EDIT")]
     public async Task<IActionResult> UpdateHoliday(long id, [FromBody] UpdateHolidayRequest request)
     {
         try
@@ -99,6 +105,7 @@ public class WorkCalendarController : ControllerBase
     }
 
     [HttpDelete("holidays/{id}")]
+    [RequirePermission("WORK_CALENDAR_EDIT")]
     public async Task<IActionResult> DeleteHoliday(long id)
     {
         var success = await _workCalendarService.DeleteHolidayAsync(id);

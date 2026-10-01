@@ -1,3 +1,5 @@
+using Hrms.Api.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.MasterData.DTOs;
 using Hrms.Application.Features.MasterData.Services;
@@ -8,6 +10,7 @@ namespace Hrms.Api.Controllers;
 [ApiController]
 [Route("api/document-types")]
 [Route("api/[controller]")]
+[Authorize]
 public class DocumentTypesController : ControllerBase
 {
     private readonly IDocumentTypeService _service;
@@ -36,6 +39,7 @@ public class DocumentTypesController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("MASTER_DATA_CREATE")]
     public async Task<ActionResult<ApiResponse<DocumentTypeDto>>> Create(
         [FromBody] CreateDocumentTypeDto dto,
         CancellationToken cancellationToken)
@@ -45,6 +49,7 @@ public class DocumentTypesController : ControllerBase
     }
 
     [HttpPut("{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<DocumentTypeDto>>> Update(
         long id,
         [FromBody] UpdateDocumentTypeDto dto,
@@ -55,6 +60,7 @@ public class DocumentTypesController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         long id,
         CancellationToken cancellationToken)
