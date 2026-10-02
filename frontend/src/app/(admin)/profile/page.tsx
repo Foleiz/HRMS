@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -9,39 +9,27 @@ import { confirmDelete } from '@/lib/sweetalert';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
 import { masterDataService } from '@/services/masterDataService';
-import { authService } from '@/services/authService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { Employee, CreateEmployeePayload, FamilyMember } from '@/types/employee';
 import { Bank } from '@/types/api';
 import { MaritalStatusItem } from '@/types/master';
-import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
+import EmployeeDetailView from '@/components/employees/EmployeeDetailView';
 import {
   User,
-  UserCheck,
-  Shield,
   ShieldCheck,
   Camera,
   Phone,
-  Mail,
-  MapPin,
   Briefcase,
-  Building2,
-  Calendar,
   CreditCard,
   FileSignature,
   Upload,
   Trash2,
   Lock,
-  Eye,
-  EyeOff,
-  CheckCircle2,
   RotateCcw,
   Save,
   Loader2,
+  Eye,
   AlertCircle,
-  KeyRound,
-  X,
-  History,
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -64,28 +52,27 @@ export default function ProfilePage() {
 function ProfilePageContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
-  const { success, error, warning, info } = useToast();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'history'>(() => {
-    return tabParam === 'history' ? 'history' : tabParam === 'account' ? 'account' : 'profile';
-  });
+  // isEditing: false = แสดงหน้าดูข้อมูลพนักงาน (View Mode ตาม Mockup 1 & 3), true = หน้าฟอร์มแก้ไข (Edit Mode)
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Avatar Upload State
+  // Avatar Upload State (สำหรับ Edit Mode)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Digital Signature State
+  // Digital Signature State (สำหรับ Edit Mode)
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [isUploadingSig, setIsUploadingSig] = useState<boolean>(false);
   const sigFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form State for Tab 1 (Edit Profile)
+  // Form State for Edit Mode
   const [formData, setFormData] = useState({
     prefix: 'นาย',
     firstName: '',
@@ -105,22 +92,12 @@ function ProfilePageContent() {
     hospitalName: '',
   });
 
-  // Password Change Modal State for Tab 2 (Account Management)
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
-  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [currentPassword, setCurrentPassword] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
-
   // Bank Master Data State
   const [banks, setBanks] = useState<Bank[]>([]);
   const [isLoadingBanks, setIsLoadingBanks] = useState<boolean>(false);
   const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatusItem[]>([]);
 
-  // Load Banks & Marital Statuses Master Data
+  // โหลด Master Data สำหรับฟอร์มแก้ไข
   useEffect(() => {
     const loadMasterData = async () => {
       setIsLoadingBanks(true);
@@ -140,28 +117,15 @@ function ProfilePageContent() {
     loadMasterData();
   }, []);
 
-  // Sync tab with URL search parameter
+  // Sync breadcrumb with view/edit state
   useEffect(() => {
-    if (tabParam === 'history') {
-      setActiveTab('history');
-    } else if (tabParam === 'account') {
-      setActiveTab('account');
-    } else if (tabParam === 'profile') {
-      setActiveTab('profile');
-    }
-  }, [tabParam]);
-
-  // Sync breadcrumb with active tab
-  useEffect(() => {
-    if (activeTab === 'profile') {
+    if (isEditing) {
       setBreadcrumb({ section: 'โปรไฟล์', page: 'แก้ไขโปรไฟล์' });
-    } else if (activeTab === 'account') {
-      setBreadcrumb({ section: 'โปรไฟล์', page: 'จัดการบัญชี' });
-    } else if (activeTab === 'history') {
-      setBreadcrumb({ section: 'โปรไฟล์', page: 'ประวัติการเปลี่ยนแปลง' });
+    } else {
+      setBreadcrumb({ section: 'โปรไฟล์', page: 'ข้อมูลพนักงาน' });
     }
     return () => setBreadcrumb(null);
-  }, [activeTab, setBreadcrumb]);
+  }, [isEditing, setBreadcrumb]);
 
   // Load employee details
   const fetchEmployeeData = async () => {
@@ -222,10 +186,9 @@ function ProfilePageContent() {
       } else {
         setSignaturePreview(null);
       }
-
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load profile:', err);
-      error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
+      toast.error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
     } finally {
       setIsLoading(false);
     }
@@ -237,9 +200,8 @@ function ProfilePageContent() {
     }
   }, [user?.employeeId, isAuthLoading]);
 
-
   // Handle Input Changes
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -247,7 +209,7 @@ function ProfilePageContent() {
   const handleReset = () => {
     if (!employee) return;
     fetchEmployeeData();
-    success('คืนค่าข้อมูลเดิมเรียบร้อยแล้ว');
+    toast.success('คืนค่าข้อมูลเดิมเรียบร้อยแล้ว');
   };
 
   // Save profile changes
@@ -255,7 +217,6 @@ function ProfilePageContent() {
     if (!employee) return;
     setIsSaving(true);
     try {
-      // Build Family Members Payload
       const familyMembersPayload: FamilyMember[] = [];
 
       if (formData.spouse.trim()) {
@@ -304,44 +265,43 @@ function ProfilePageContent() {
       };
 
       await employeeService.update(employee.id, payload);
-      success('บันทึกการแก้ไขข้อมูลโปรไฟล์เรียบร้อยแล้ว');
+      toast.success('บันทึกการแก้ไขข้อมูลโปรไฟล์เรียบร้อยแล้ว');
       await fetchEmployeeData();
-    } catch (err: any) {
+      setIsEditing(false); // สลับกลับไปยังหน้าดูข้อมูลโปรไฟล์
+    } catch (err: unknown) {
       console.error('Failed to save profile:', err);
-      error(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      const error = err as Error;
+      toast.error(error.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Handle Avatar Change
+  // Handle Avatar Change in Edit Mode
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !employee) return;
 
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-      error('กรุณาเลือกไฟล์ภาพ PNG หรือ JPG เท่านั้น');
+      toast.warning('กรุณาเลือกไฟล์ภาพ PNG หรือ JPG เท่านั้น');
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      error('ขนาดไฟล์ภาพต้องไม่เกิน 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.warning('ขนาดไฟล์ภาพต้องไม่เกิน 5MB');
       return;
     }
 
-    // Instant local preview
-    const localUrl = URL.createObjectURL(file);
-    setAvatarPreview(localUrl);
     setIsUploadingAvatar(true);
-
     try {
       const url = await employeeService.uploadAvatar(employee.id, file);
       setAvatarPreview(getAvatarUrl(url));
-      success('อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว');
+      toast.success('อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว');
       await fetchEmployeeData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAvatarPreview(employee.avatarUrl ? getAvatarUrl(employee.avatarUrl) : null);
-      error(err.message || 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ');
+      const error = err as Error;
+      toast.error(error.message || 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ');
     } finally {
       setIsUploadingAvatar(false);
       if (avatarFileInputRef.current) {
@@ -350,34 +310,31 @@ function ProfilePageContent() {
     }
   };
 
-  // Handle Signature Upload
+  // Handle Signature Upload in Edit Mode
   const handleSignatureFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !employee) return;
 
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-      error('กรุณาเลือกไฟล์ภาพ PNG หรือ JPG เท่านั้น');
+      toast.warning('กรุณาเลือกไฟล์ภาพ PNG หรือ JPG เท่านั้น');
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      error('ขนาดไฟล์ต้องไม่เกิน 2MB');
+      toast.warning('ขนาดไฟล์ต้องไม่เกิน 2MB');
       return;
     }
 
-    // Instant local preview
-    const localUrl = URL.createObjectURL(file);
-    setSignaturePreview(localUrl);
     setIsUploadingSig(true);
-
     try {
       const url = await employeeService.uploadSignature(employee.id, file);
       setSignaturePreview(getAvatarUrl(url));
-      success('อัปโหลดลายเซ็นดิจิทัลเรียบร้อยแล้ว');
+      toast.success('อัปโหลดลายเซ็นดิจิทัลเรียบร้อยแล้ว');
       await fetchEmployeeData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSignaturePreview(employee.signatureUrl ? getAvatarUrl(employee.signatureUrl) : null);
-      error(err.message || 'อัปโหลดลายเซ็นไม่สำเร็จ');
+      const error = err as Error;
+      toast.error(error.message || 'อัปโหลดลายเซ็นไม่สำเร็จ');
     } finally {
       setIsUploadingSig(false);
       if (sigFileInputRef.current) {
@@ -386,7 +343,7 @@ function ProfilePageContent() {
     }
   };
 
-  // Handle Signature Delete
+  // Handle Signature Delete in Edit Mode
   const handleDeleteSignature = async () => {
     if (!employee) return;
     const isConfirmed = await confirmDelete({
@@ -403,49 +360,11 @@ function ProfilePageContent() {
       if (sigFileInputRef.current) {
         sigFileInputRef.current.value = '';
       }
-      success('ลบลายเซ็นดิจิทัลเรียบร้อยแล้ว');
+      toast.success('ลบลายเซ็นดิจิทัลเรียบร้อยแล้ว');
       await fetchEmployeeData();
-    } catch (err: any) {
-      error(err.message || 'ลบลายเซ็นไม่สำเร็จ');
-    }
-  };
-
-  // Handle Change Password Submit
-  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentPassword) {
-      warning('กรุณากรอกรหัสผ่านปัจจุบัน');
-      return;
-    }
-    if (!newPassword) {
-      warning('กรุณากรอกรหัสผ่านใหม่');
-      return;
-    }
-    if (newPassword.length < 6) {
-      warning('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      warning('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
-      return;
-    }
-
-    setIsChangingPassword(true);
-    try {
-      await authService.changePassword({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      });
-      success('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
-      setIsPasswordModalOpen(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err: any) {
-      error(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
-    } finally {
-      setIsChangingPassword(false);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || 'ลบลายเซ็นไม่สำเร็จ');
     }
   };
 
@@ -460,6 +379,36 @@ function ProfilePageContent() {
     );
   }
 
+  if (!employee) {
+    return (
+      <div className="py-12 px-4 max-w-xl mx-auto text-center font-sans">
+        <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1.5">ไม่พบข้อมูลโปรไฟล์</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">ไม่สามารถโหลดข้อมูลโปรไฟล์ผู้ใช้งานได้</p>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW MODE: แสดงหน้าเหมือนกับหน้าดูข้อมูลพนักงาน (EmployeeDetailView) 100%
+  // =========================================================================
+  if (!isEditing) {
+    return (
+      <EmployeeDetailView
+        employee={employee}
+        onEmployeeUpdate={setEmployee}
+        isProfilePage={true}
+        onEditClick={() => setIsEditing(true)}
+        editButtonLabel="แก้ไขข้อมูล"
+      />
+    );
+  }
+
+  // =========================================================================
+  // EDIT MODE: หน้าฟอร์มแก้ไขโปรไฟล์ (เมื่อกดปุ่ม "แก้ไขข้อมูล")
+  // =========================================================================
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-16 animate-in fade-in duration-200">
       {/* Hidden File Inputs */}
@@ -480,14 +429,14 @@ function ProfilePageContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* ========================================================= */}
-        {/* LEFT COLUMN: Profile Summary Card (Matching Mockup 1 & 3) */}
+        {/* LEFT COLUMN: Profile Summary Card                         */}
         {/* ========================================================= */}
         <div className="lg:col-span-4 xl:col-span-3">
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden sticky top-6">
             {/* Top Avatar Banner */}
             <div className="p-6 text-center border-b border-slate-100 dark:border-slate-700/60">
               <div className="relative inline-block mx-auto mb-4">
-                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-slate-50 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-slate-50 dark:border-slate-800 shadow-sm bg-[#0B2046] flex items-center justify-center text-3xl font-bold text-white">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -504,10 +453,11 @@ function ProfilePageContent() {
 
                 {/* Camera upload badge button */}
                 <button
+                  type="button"
                   onClick={() => avatarFileInputRef.current?.click()}
                   disabled={isUploadingAvatar}
                   title="เปลี่ยนรูปโปรไฟล์"
-                  className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer border-2 border-white dark:border-slate-800"
+                  className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#153468] text-white flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer border-2 border-white dark:border-slate-800"
                 >
                   {isUploadingAvatar ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -520,7 +470,7 @@ function ProfilePageContent() {
               {/* Employee Code & Status Badges */}
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
-                  {employee?.employeeCode || 'DEV-001'}
+                  {employee?.employeeCode || 'EMP0001'}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-green-900/20 text-emerald-700 dark:text-green-400 border border-emerald-200/70 dark:border-green-800/50 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -534,32 +484,32 @@ function ProfilePageContent() {
                 {employee?.firstName} {employee?.lastName}
               </h2>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                {employee?.positionName || 'Software Engineer'}
+                {employee?.positionName || '-'}
               </p>
             </div>
 
             {/* Contact Information Section */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 space-y-3.5">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-                <Phone className="w-3.5 h-3.5 text-[#0B2046]" />
+                <Phone className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400" />
                 ข้อมูลติดต่อ
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">อีเมล</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">อีเมล</span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium break-all">
                     {formData.email || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">เบอร์โทรศัพท์</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">เบอร์โทรศัพท์</span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {formData.phone || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">ที่อยู่ปัจจุบัน</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">ที่อยู่ปัจจุบัน</span>
                   <span className="text-slate-700 dark:text-slate-300 leading-relaxed block">
                     {formData.address || '-'}
                   </span>
@@ -570,35 +520,27 @@ function ProfilePageContent() {
             {/* Job Position Information Section */}
             <div className="p-5 space-y-3.5">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-                <Briefcase className="w-3.5 h-3.5 text-[#0B2046]" />
+                <Briefcase className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400" />
                 ข้อมูลตำแหน่งงาน
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">ฝ่าย</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">ฝ่าย</span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium">
-                    {employee?.divisionName || 'ฝ่ายเทคโนโลยีสารสนเทศ'}
+                    {employee?.divisionName || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">แผนก</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">แผนก</span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium">
-                    {employee?.departmentName || 'แผนกพัฒนาซอฟต์แวร์'}
+                    {employee?.departmentName || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">วันที่เริ่มงาน</span>
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">ตำแหน่ง</span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium">
-                    {employee?.createdAt
-                      ? new Date(employee.createdAt).toLocaleDateString('th-TH')
-                      : '01/01/2023'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">โรงพยาบาลประกันสังคม</span>
-                  <span className="text-slate-800 dark:text-slate-200 font-medium">
-                    {formData.hospitalName || employee?.socialSecurity?.hospitalName || '-'}
+                    {employee?.positionName || '-'}
                   </span>
                 </div>
               </div>
@@ -607,710 +549,467 @@ function ProfilePageContent() {
         </div>
 
         {/* ========================================================= */}
-        {/* RIGHT COLUMN: Tabs & Editor (Matching Mockup 1, 2 & 3)    */}
+        {/* RIGHT COLUMN: Edit Form                                   */}
         {/* ========================================================= */}
         <div className="lg:col-span-8 xl:col-span-9 space-y-6">
-          {/* Tab Headers */}
-          <div className="flex items-center gap-3">
+          {/* Header Bar: Switch back to View Mode */}
+          <div className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 px-6 py-4 shadow-xs">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">แก้ไขข้อมูลโปรไฟล์</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                ปรับปรุงข้อมูลส่วนตัว ข้อมูลติดต่อ และบัญชีธนาคารของคุณ
+              </p>
+            </div>
             <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-                activeTab === 'profile'
-                  ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
-              }`}
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
             >
-              <UserCheck className="w-4 h-4" />
-              แก้ไขโปรไฟล์
-            </button>
-
-            <button
-              onClick={() => setActiveTab('account')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-                activeTab === 'account'
-                  ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
-              }`}
-            >
-              <Shield className="w-4 h-4" />
-              จัดการบัญชี
-            </button>
-
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-                activeTab === 'history'
-                  ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
-              }`}
-            >
-              <History className="w-4 h-4" />
-              ประวัติการเปลี่ยนแปลง
+              <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>ดูข้อมูลโปรไฟล์</span>
             </button>
           </div>
 
-          {/* TAB 1: แก้ไขโปรไฟล์ (Mockup 1 & Mockup 2) */}
-          {activeTab === 'profile' && (
-            <div className="space-y-6 animate-in fade-in duration-150">
-              {/* Card 1: ข้อมูลส่วนตัว */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#0B2046]" />
-                  ข้อมูลส่วนตัว
-                </h3>
+          <div className="space-y-6 animate-in fade-in duration-150">
+            {/* Card 1: ข้อมูลส่วนตัว */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <User className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                ข้อมูลส่วนตัว
+              </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* คำนำหน้า */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      คำนำหน้า <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={formData.prefix}
-                      onChange={(e) => handleInputChange('prefix', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    >
-                      <option value="นาย">นาย</option>
-                      <option value="นาง">นาง</option>
-                      <option value="นางสาว">นางสาว</option>
-                    </select>
-                  </div>
-
-                  {/* ชื่อ */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      ชื่อ <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      placeholder="ชื่อจริง"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* นามสกุล */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      นามสกุล <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      placeholder="นามสกุล"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* วันเกิด */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      วันเกิด
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={formData.birthDate}
-                        onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                        className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                      />
-                    </div>
-                  </div>
-
-                  {/* เพศ */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      เพศ
-                    </label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => handleInputChange('gender', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    >
-                      <option value="ชาย">ชาย</option>
-                      <option value="หญิง">หญิง</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                    </select>
-                  </div>
-
-                  {/* สถานะภาพ */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      สถานะภาพ
-                    </label>
-                    <select
-                      value={formData.maritalStatus}
-                      onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    >
-                      {maritalStatuses.length > 0 ? (
-                        maritalStatuses.map((m) => (
-                          <option key={m.id} value={m.maritalStatusName}>
-                            {m.maritalStatusName}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="โสด">โสด</option>
-                          <option value="สมรส">สมรส</option>
-                          <option value="หย่าร้าง">หย่าร้าง</option>
-                          <option value="หม้าย">หม้าย</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* คู่สมรส */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      คู่สมรส
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.spouse}
-                      onChange={(e) => handleInputChange('spouse', e.target.value)}
-                      placeholder="ชื่อ-นามสกุลคู่สมรส"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* จำนวนบุตร */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      จำนวนบุตร
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.numberOfChildren}
-                      onChange={(e) => handleInputChange('numberOfChildren', parseInt(e.target.value) || 0)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* บิดา */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      บิดา
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.father}
-                      onChange={(e) => handleInputChange('father', e.target.value)}
-                      placeholder="ชื่อ-นามสกุลบิดา"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* มารดา */}
-                  <div className="md:col-span-3">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      มารดา
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.mother}
-                      onChange={(e) => handleInputChange('mother', e.target.value)}
-                      placeholder="ชื่อ-นามสกุลมารดา"
-                      className="w-full md:w-1/3 h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: ข้อมูลติดต่อ */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[#0B2046]" />
-                  ข้อมูลติดต่อ
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* อีเมล */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      อีเมล
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="example@company.com"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* เบอร์โทรศัพท์ */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      เบอร์โทรศัพท์
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="081-234-5678"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  {/* ที่อยู่ปัจจุบัน */}
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      ที่อยู่ปัจจุบัน
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: ข้อมูลตำแหน่งงาน (Read-only ตาม Mockup) */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-[#0B2046]" />
-                    ข้อมูลตำแหน่งงาน
-                  </h3>
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
-                    <Lock className="w-3 h-3 text-slate-400" />
-                    ฝ่ายบุคคลเป็นผู้จัดการ
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* ฝ่าย */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ฝ่าย</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={employee?.divisionName || 'ฝ่ายเทคโนโลยีสารสนเทศ'}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                    />
-                  </div>
-
-                  {/* แผนก */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">แผนก</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={employee?.departmentName || 'แผนกพัฒนาซอฟต์แวร์'}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                    />
-                  </div>
-
-                  {/* ทีม */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ทีม</label>
-                    <input
-                      type="text"
-                      disabled
-                      value="Core Team"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                    />
-                  </div>
-
-                  {/* ตำแหน่ง */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={employee?.positionName || 'Software Engineer'}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: บัญชีธนาคาร (Mockup 2) */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[#0B2046]" />
-                  บัญชีธนาคาร
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* ธนาคาร */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">ธนาคาร</label>
-                    <select
-                      value={formData.bankName}
-                      onChange={(e) => handleInputChange('bankName', e.target.value)}
-                      disabled={isLoadingBanks}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
-                    >
-                      <option value="">-- เลือกธนาคาร --</option>
-                      {banks.map((b) => (
-                        <option key={b.id} value={b.bankName}>
-                          {b.bankName}
-                        </option>
-                      ))}
-                      {formData.bankName && !banks.some((b) => b.bankName === formData.bankName) && (
-                        <option value={formData.bankName}>{formData.bankName}</option>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* เลขที่บัญชี */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">เลขที่บัญชี</label>
-                    <input
-                      type="text"
-                      value={formData.accountNumber}
-                      onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                      placeholder="123-4-56789-0"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 5: สิทธิประโยชน์และประกันสังคม */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
-                    สิทธิประโยชน์และประกันสังคม
-                  </h3>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    สิทธิการรักษาพยาบาล (ผู้ประกันตน ม.33)
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* โรงพยาบาลประกันสังคม */}
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      โรงพยาบาลประกันสังคม
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.hospitalName}
-                      onChange={(e) => handleInputChange('hospitalName', e.target.value)}
-                      placeholder="เช่น โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    />
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      สถานพยาบาลหลักที่ลงทะเบียนไว้ตามสิทธิประกันสังคม (เลขประจำตัวผู้ประกันตนใช้เลขเดียวกันกับบัตรประจำตัวประชาชน)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 6: ลายเซ็นดิจิทัล (Digital Signature - Mockup 2) */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* คำนำหน้า */}
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <FileSignature className="w-4 h-4 text-[#0B2046]" />
-                    ลายเซ็นดิจิทัล
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    อัปโหลดรูปลายเซ็นสำหรับใช้ในระบบเอกสารอิเล็กทรอนิกส์
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    คำนำหน้า <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={formData.prefix}
+                    onChange={(e) => handleInputChange('prefix', e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  >
+                    <option value="นาย">นาย</option>
+                    <option value="นาง">นาง</option>
+                    <option value="นางสาว">นางสาว</option>
+                  </select>
+                </div>
+
+                {/* ชื่อ */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    ชื่อ <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    placeholder="ชื่อจริง"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* นามสกุล */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    นามสกุล <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    placeholder="นามสกุล"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* วันเกิด */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    วันเกิด
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* เพศ */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    เพศ
+                  </label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  >
+                    <option value="ชาย">ชาย</option>
+                    <option value="หญิง">หญิง</option>
+                    <option value="อื่นๆ">อื่นๆ</option>
+                  </select>
+                </div>
+
+                {/* สถานะภาพสมรส */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    สถานะภาพสมรส
+                  </label>
+                  <select
+                    value={formData.maritalStatus}
+                    onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  >
+                    {maritalStatuses.length > 0 ? (
+                      maritalStatuses.map((m) => (
+                        <option key={m.id} value={m.maritalStatusName}>
+                          {m.maritalStatusName}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="โสด">โสด</option>
+                        <option value="สมรส">สมรส</option>
+                        <option value="หย่าร้าง">หย่าร้าง</option>
+                        <option value="หม้าย">หม้าย</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* คู่สมรส */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    คู่สมรส
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.spouse}
+                    onChange={(e) => handleInputChange('spouse', e.target.value)}
+                    placeholder="ชื่อ-นามสกุลคู่สมรส"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* จำนวนบุตร */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    จำนวนบุตร
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.numberOfChildren}
+                    onChange={(e) => handleInputChange('numberOfChildren', parseInt(e.target.value) || 0)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* บิดา */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    บิดา
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.father}
+                    onChange={(e) => handleInputChange('father', e.target.value)}
+                    placeholder="ชื่อ-นามสกุลบิดา"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* มารดา */}
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    มารดา
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.mother}
+                    onChange={(e) => handleInputChange('mother', e.target.value)}
+                    placeholder="ชื่อ-นามสกุลมารดา"
+                    className="w-full md:w-1/3 h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: ข้อมูลติดต่อ */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                ข้อมูลติดต่อ
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* อีเมล */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    อีเมล
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="example@company.com"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* เบอร์โทรศัพท์ */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    เบอร์โทรศัพท์
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="081-234-5678"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+
+                {/* ที่อยู่ปัจจุบัน */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    ที่อยู่ปัจจุบัน
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: ข้อมูลตำแหน่งงาน (Read-only) */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                  ข้อมูลตำแหน่งงาน
+                </h3>
+                <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
+                  <Lock className="w-3 h-3 text-slate-400" />
+                  ฝ่ายบุคคลเป็นผู้จัดการ
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ฝ่าย</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={employee?.divisionName || '-'}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">แผนก</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={employee?.departmentName || '-'}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ทีม</label>
+                  <input
+                    type="text"
+                    disabled
+                    value="-"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={employee?.positionName || '-'}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: บัญชีธนาคาร */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                บัญชีธนาคาร
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">ธนาคาร</label>
+                  <select
+                    value={formData.bankName}
+                    onChange={(e) => handleInputChange('bankName', e.target.value)}
+                    disabled={isLoadingBanks}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
+                  >
+                    <option value="">-- เลือกธนาคาร --</option>
+                    {banks.map((b) => (
+                      <option key={b.id} value={b.bankName}>
+                        {b.bankName}
+                      </option>
+                    ))}
+                    {formData.bankName && !banks.some((b) => b.bankName === formData.bankName) && (
+                      <option value={formData.bankName}>{formData.bankName}</option>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">เลขที่บัญชี</label>
+                  <input
+                    type="text"
+                    value={formData.accountNumber}
+                    onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                    placeholder="123-4-56789-0"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: สิทธิประโยชน์และประกันสังคม */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                  สิทธิประโยชน์และประกันสังคม
+                </h3>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  สิทธิการรักษาพยาบาล (ผู้ประกันตน ม.33)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    โรงพยาบาลประกันสังคม
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.hospitalName}
+                    onChange={(e) => handleInputChange('hospitalName', e.target.value)}
+                    placeholder="เช่น โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย"
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    สถานพยาบาลหลักที่ลงทะเบียนไว้ตามสิทธิประกันสังคม
                   </p>
                 </div>
+              </div>
+            </div>
 
-                <div className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/50 flex flex-col md:flex-row items-center gap-6">
-                  {/* Signature Preview Area */}
-                  <div className="w-64 h-28 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden p-2 relative shrink-0">
-                    {signaturePreview ? (
-                      <img
-                        src={signaturePreview}
-                        alt="Digital Signature"
-                        className="max-h-full max-w-full object-contain"
-                        onError={() => setSignaturePreview(null)}
-                      />
-                    ) : (
-                      <div className="text-center text-slate-400 text-xs font-medium">
-                        <FileSignature className="w-6 h-6 mx-auto mb-1 text-slate-300" />
-                        ยังไม่มีลายเซ็นในระบบ
-                      </div>
-                    )}
-                  </div>
+            {/* Card 6: ลายเซ็นดิจิทัล */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <FileSignature className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                  ลายเซ็นดิจิทัล
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  อัปโหลดรูปลายเซ็นสำหรับใช้ในระบบเอกสารอิเล็กทรอนิกส์
+                </p>
+              </div>
 
-                  {/* Controls & Guideline */}
-                  <div className="space-y-3 flex-1 text-center md:text-left">
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <div className="p-4 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40 flex flex-col md:flex-row items-center gap-6">
+                <div className="w-64 h-28 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden p-2 relative shrink-0">
+                  {signaturePreview ? (
+                    <img
+                      src={signaturePreview}
+                      alt="Digital Signature"
+                      className="max-h-full max-w-full object-contain"
+                      onError={() => setSignaturePreview(null)}
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400 text-xs font-medium">
+                      <FileSignature className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-slate-600" />
+                      ยังไม่มีลายเซ็นในระบบ
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 flex-1 text-center md:text-left">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => sigFileInputRef.current?.click()}
+                      disabled={isUploadingSig}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      {isUploadingSig ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0B2046]" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      )}
+                      อัปโหลดลายเซ็นใหม่
+                    </button>
+
+                    {signaturePreview && (
                       <button
                         type="button"
-                        onClick={() => sigFileInputRef.current?.click()}
-                        disabled={isUploadingSig}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                        onClick={handleDeleteSignature}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium transition-colors cursor-pointer"
                       >
-                        {isUploadingSig ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0B2046]" />
-                        ) : (
-                          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        )}
-                        อัปโหลดลายเซ็นใหม่
+                        <Trash2 className="w-3.5 h-3.5" />
+                        ลบ
                       </button>
-
-                      {signaturePreview && (
-                        <button
-                          type="button"
-                          onClick={handleDeleteSignature}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          ลบ
-                        </button>
-                      )}
-                    </div>
-
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
-                    </p>
+                    )}
                   </div>
-                </div>
-              </div>
 
-              {/* Bottom Actions Bar (Mockup 2) */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  คืนค่าเดิม
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-6 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5" />
-                  )}
-                  บันทึกการแก้ไข
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: จัดการบัญชี (Mockup 3) */}
-          {activeTab === 'account' && (
-            <div className="space-y-6 animate-in fade-in duration-150">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">จัดการบัญชี</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    ตั้งค่าชื่อผู้ใช้งานและรหัสผ่านสำหรับเข้าสู่ระบบ
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
                   </p>
                 </div>
-
-                <div className="space-y-5 pt-2">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-[#0B2046]" />
-                    ชื่อผู้ใช้งานและรหัสผ่าน
-                  </h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Username */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        ชื่อผู้ใช้
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          disabled
-                          value={user?.username || 'user_001'}
-                          className="w-full h-9.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-mono cursor-not-allowed"
-                        />
-                        <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3" />
-                      </div>
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        รหัสผ่าน
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="password"
-                            disabled
-                            value="••••••••••••"
-                            className="w-full h-9.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-mono tracking-widest cursor-not-allowed"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsPasswordModalOpen(true)}
-                          className="px-4 h-9.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer shrink-0"
-                        >
-                          เปลี่ยนรหัสผ่าน
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-          )}
 
-          {/* TAB 3: ประวัติการเปลี่ยนแปลง */}
-          {activeTab === 'history' && employee && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-sm animate-in fade-in duration-150">
-              <EmployeeChangeHistoryTab employeeId={employee.id} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* CHANGE PASSWORD MODAL                                     */}
-      {/* ========================================================= */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center">
-                  <KeyRound className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">เปลี่ยนรหัสผ่าน</h3>
-              </div>
+            {/* Bottom Actions Bar */}
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                onClick={() => setIsPasswordModalOpen(false)}
-                className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                type="button"
+                onClick={handleReset}
+                disabled={isSaving}
+                className="px-5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <X className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                คืนค่าเดิม
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-6 py-2 rounded-xl bg-[#0B2046] hover:bg-[#153468] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                บันทึกการแก้ไข
               </button>
             </div>
-
-            {/* Modal Body Form */}
-            <form onSubmit={handleChangePasswordSubmit} className="p-6 space-y-4">
-              {/* Current Password */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  รหัสผ่านปัจจุบัน <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="กรอกรหัสผ่านปัจจุบัน"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  รหัสผ่านใหม่ <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm New Password */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  ยืนยันรหัสผ่านใหม่ <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordModalOpen(false)}
-                  disabled={isChangingPassword}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isChangingPassword}
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  {isChangingPassword ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  )}
-                  บันทึกรหัสผ่านใหม่
-                </button>
-              </div>
-            </form>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
-

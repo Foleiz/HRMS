@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -900,6 +900,37 @@ export default function EmployeeEditPage() {
                           className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* ข้อมูลบัญชีธนาคาร (Bank Account) */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                      บัญชีธนาคาร (Bank Account)
+                    </label>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        ชื่อธนาคาร
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="เช่น ธนาคารกสิกรไทย"
+                        value={formData.bankName || ''}
+                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        เลขที่บัญชี
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="123-4-56789-0"
+                        value={formData.accountNumber || ''}
+                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      />
                     </div>
                   </div>
                 </div>
