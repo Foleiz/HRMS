@@ -118,3 +118,52 @@ input[type="reset"]:disabled {
 .dark .border-gray-200 {
   border-color: #334155 !important;
 }
+
+/* Dark mode table & container borders and headers */
+.dark table {
+  border-color: #334155 !important;
+}
+
+.dark thead tr {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark thead th {
+  background-color: #0F172A !important;
+  color: #94A3B8 !important;
+  border-color: #334155 !important;
+}
+
+.dark tbody tr {
+  border-color: #334155 !important;
+}
+
+.dark tbody td {
+  border-color: #334155 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
+}
+
+.dark .border,
+.dark .border-t,
+.dark .border-b,
+.dark .border-l,
+.dark .border-r {
+  border-color: #334155;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/80,
+.dark .bg-gray-50 {
+  background-color: #0F172A !important;
+}
