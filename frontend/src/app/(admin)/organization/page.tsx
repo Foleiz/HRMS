@@ -2640,7 +2640,7 @@ export default function OrganizationPage() {
         return (
           <div className="-mx-6 -mb-6">
             {/* Header bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Network className="w-5 h-5 text-[#0B2046]" />
@@ -2688,8 +2688,8 @@ export default function OrganizationPage() {
             </div>
 
             {/* Toolbar: Search + expand all */}
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-              <div className="relative flex-1 max-w-xs">
+            <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative flex-1 max-w-xs min-w-[180px]">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -2720,7 +2720,7 @@ export default function OrganizationPage() {
             </div>
 
             {/* Chart Canvas */}
-            <div className="relative overflow-auto bg-slate-100/80" style={{ minHeight: 520 }}>
+            <div className="relative overflow-x-auto overflow-y-auto bg-slate-100/80 touch-pan-x touch-pan-y overscroll-contain" style={{ minHeight: 520, WebkitOverflowScrolling: 'touch' }}>
               <div
                 style={{ transform: `scale(${orgZoom})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', minWidth: 'max-content' }}
                 className="py-10 px-12 flex flex-col items-center"

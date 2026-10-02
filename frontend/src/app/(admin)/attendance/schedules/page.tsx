@@ -1083,134 +1083,138 @@ function SchedulesContent() {
                 </div>
               ) : (
                 <div className="rounded-lg border border-slate-200 overflow-hidden shadow-xs">
-                  {/* Day of week headers: Mon - Sun */}
-                  <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center text-xs font-bold text-slate-600">
-                    {['จันทร์ (Mon)', 'อังคาร (Tue)', 'พุธ (Wed)', 'พฤหัสบดี (Thu)', 'ศุกร์ (Fri)', 'เสาร์ (Sat)', 'อาทิตย์ (Sun)'].map(
-                      (dayLabel, idx) => (
-                        <div
-                          key={dayLabel}
-                          className={`py-2.5 border-r border-slate-200 last:border-r-0 ${
-                            idx >= 5 ? 'bg-amber-50/60 text-amber-900' : ''
-                          }`}
-                        >
-                          {dayLabel}
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  {/* Month days cells */}
-                  <div className="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-px">
-                    {monthCalendarGrid.map((cell, cellIdx) => {
-                      if (!cell.isCurrentMonth) {
-                        return (
-                          <div
-                            key={`empty-${cellIdx}`}
-                            className="bg-slate-50/50 p-2 min-h-[115px] text-slate-300 select-none"
-                          >
-                            <span className="text-xs font-medium">{cell.dayNumber}</span>
-                          </div>
-                        );
-                      }
-
-                      const dayShifts = (rosterData?.employees || []).flatMap((emp) => {
-                        const shift = emp.days?.[cell.dayNumber];
-                        if (!shift) return [];
-                        return [{
-                          employeeId: emp.employeeId,
-                          employeeName: emp.employeeName,
-                          employeeCode: emp.employeeCode,
-                          departmentName: emp.departmentName,
-                          shift: shift,
-                        }];
-                      });
-
-                      const dateStr = `${rosterYear}-${String(rosterMonth).padStart(2, '0')}-${String(cell.dayNumber).padStart(2, '0')}`;
-
-                      return (
-                        <div
-                          key={`day-${cell.dayNumber}`}
-                          className={`bg-white p-2 min-h-[115px] flex flex-col justify-between transition group hover:bg-slate-50/80 cursor-pointer ${
-                            cell.isWeekend ? 'bg-amber-50/20' : ''
-                          }`}
-                          onClick={() =>
-                            setSelectedCalendarDay({
-                              day: cell.dayNumber,
-                              month: rosterMonth,
-                              year: rosterYear,
-                              shifts: dayShifts,
-                            })
-                          }
-                        >
-                          {/* Cell Header: Day number & Add action */}
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span
-                              className={`inline-flex items-center justify-center text-xs font-bold rounded-full transition ${
-                                cell.isToday
-                                  ? 'w-6 h-6 bg-[#0B2046] text-white shadow-xs'
-                                  : cell.isWeekend
-                                  ? 'text-amber-800'
-                                  : 'text-slate-800'
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[700px]">
+                      {/* Day of week headers: Mon - Sun */}
+                      <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center text-xs font-bold text-slate-600">
+                        {['จันทร์ (Mon)', 'อังคาร (Tue)', 'พุธ (Wed)', 'พฤหัสบดี (Thu)', 'ศุกร์ (Fri)', 'เสาร์ (Sat)', 'อาทิตย์ (Sun)'].map(
+                          (dayLabel, idx) => (
+                            <div
+                              key={dayLabel}
+                              className={`py-2.5 border-r border-slate-200 last:border-r-0 ${
+                                idx >= 5 ? 'bg-amber-50/60 text-amber-900' : ''
                               }`}
                             >
-                              {cell.dayNumber}
-                            </span>
-
-                            <div className="flex items-center gap-1">
-                              {dayShifts.length > 0 && (
-                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
-                                  {dayShifts.length} คน
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openSingleAssignCreate(undefined, dateStr);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition"
-                                title="มอบหมายกะในวันนี้"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                              {dayLabel}
                             </div>
-                          </div>
+                          )
+                        )}
+                      </div>
 
-                          {/* Scheduled Shift Pills */}
-                          <div className="space-y-1 flex-1">
-                            {dayShifts.slice(0, 3).map((item, idx) => {
-                              const period = getShiftPeriodInfo(item.shift);
-                              const PeriodIcon = period.icon;
-                              return (
-                                <div
-                                  key={`${item.employeeId}-${idx}`}
-                                  className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded font-medium border truncate ${period.badgeClass}`}
-                                  title={`${item.employeeName} (${item.employeeCode}) - ${item.shift.shiftName} (${item.shift.startTime.substring(0, 5)}-${item.shift.endTime.substring(0, 5)})`}
+                      {/* Month days cells */}
+                      <div className="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-px">
+                        {monthCalendarGrid.map((cell, cellIdx) => {
+                          if (!cell.isCurrentMonth) {
+                            return (
+                              <div
+                                key={`empty-${cellIdx}`}
+                                className="bg-slate-50/50 p-2 min-h-[115px] text-slate-300 select-none"
+                              >
+                                <span className="text-xs font-medium">{cell.dayNumber}</span>
+                              </div>
+                            );
+                          }
+
+                          const dayShifts = (rosterData?.employees || []).flatMap((emp) => {
+                            const shift = emp.days?.[cell.dayNumber];
+                            if (!shift) return [];
+                            return [{
+                              employeeId: emp.employeeId,
+                              employeeName: emp.employeeName,
+                              employeeCode: emp.employeeCode,
+                              departmentName: emp.departmentName,
+                              shift: shift,
+                            }];
+                          });
+
+                          const dateStr = `${rosterYear}-${String(rosterMonth).padStart(2, '0')}-${String(cell.dayNumber).padStart(2, '0')}`;
+
+                          return (
+                            <div
+                              key={`day-${cell.dayNumber}`}
+                              className={`bg-white p-2 min-h-[115px] flex flex-col justify-between transition group hover:bg-slate-50/80 cursor-pointer ${
+                                cell.isWeekend ? 'bg-amber-50/20' : ''
+                              }`}
+                              onClick={() =>
+                                setSelectedCalendarDay({
+                                  day: cell.dayNumber,
+                                  month: rosterMonth,
+                                  year: rosterYear,
+                                  shifts: dayShifts,
+                                })
+                              }
+                            >
+                              {/* Cell Header: Day number & Add action */}
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span
+                                  className={`inline-flex items-center justify-center text-xs font-bold rounded-full transition ${
+                                    cell.isToday
+                                      ? 'w-6 h-6 bg-[#0B2046] text-white shadow-xs'
+                                      : cell.isWeekend
+                                      ? 'text-amber-800'
+                                      : 'text-slate-800'
+                                  }`}
                                 >
-                                  <div className="flex items-center gap-1 min-w-0 truncate">
-                                    <PeriodIcon className="w-2.5 h-2.5 shrink-0" />
-                                    <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
-                                    <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
-                                  </div>
+                                  {cell.dayNumber}
+                                </span>
+
+                                <div className="flex items-center gap-1">
+                                  {dayShifts.length > 0 && (
+                                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                                      {dayShifts.length} คน
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openSingleAssignCreate(undefined, dateStr);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition"
+                                    title="มอบหมายกะในวันนี้"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
                                 </div>
-                              );
-                            })}
-
-                            {dayShifts.length > 3 && (
-                              <div className="text-[10px] font-semibold text-slate-500 group-hover:text-[#0B2046] text-right pt-0.5">
-                                + อีก {dayShifts.length - 3} คน
                               </div>
-                            )}
 
-                            {dayShifts.length === 0 && (
-                              <div className="h-full flex items-center justify-center py-3 text-[11px] text-slate-300 select-none">
-                                {cell.isWeekend ? 'วันหยุด' : '-'}
+                              {/* Scheduled Shift Pills */}
+                              <div className="space-y-1 flex-1">
+                                {dayShifts.slice(0, 3).map((item, idx) => {
+                                  const period = getShiftPeriodInfo(item.shift);
+                                  const PeriodIcon = period.icon;
+                                  return (
+                                    <div
+                                      key={`${item.employeeId}-${idx}`}
+                                      className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded font-medium border truncate ${period.badgeClass}`}
+                                      title={`${item.employeeName} (${item.employeeCode}) - ${item.shift.shiftName} (${item.shift.startTime.substring(0, 5)}-${item.shift.endTime.substring(0, 5)})`}
+                                    >
+                                      <div className="flex items-center gap-1 min-w-0 truncate">
+                                        <PeriodIcon className="w-2.5 h-2.5 shrink-0" />
+                                        <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
+                                        <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+
+                                {dayShifts.length > 3 && (
+                                  <div className="text-[10px] font-semibold text-slate-500 group-hover:text-[#0B2046] text-right pt-0.5">
+                                    + อีก {dayShifts.length - 3} คน
+                                  </div>
+                                )}
+
+                                {dayShifts.length === 0 && (
+                                  <div className="h-full flex items-center justify-center py-3 text-[11px] text-slate-300 select-none">
+                                    {cell.isWeekend ? 'วันหยุด' : '-'}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
