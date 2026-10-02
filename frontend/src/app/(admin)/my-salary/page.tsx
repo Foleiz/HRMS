@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -479,7 +479,7 @@ export default function MySalaryPage() {
                     setCurrentPage(1);
                   }}
                   placeholder="ค้นหาเดือน / พ.ศ."
-                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                 />
               </div>
             </div>
@@ -579,7 +579,7 @@ export default function MySalaryPage() {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
+                className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
               >
                 <option value={5}>5 รายการ / หน้า</option>
                 <option value={8}>8 รายการ / หน้า</option>

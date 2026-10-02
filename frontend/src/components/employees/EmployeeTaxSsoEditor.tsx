@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Landmark, ShieldCheck } from 'lucide-react';
 
-const INPUT = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
 
 export interface TaxSsoValues {
   socialSecurityNo?: string;
@@ -105,3 +105,4 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
     </div>
   );
 }
+

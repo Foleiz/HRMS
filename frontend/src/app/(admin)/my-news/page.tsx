@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
@@ -315,7 +315,7 @@ export default function MyNewsCalendarPage() {
   return (
     <div className="space-y-5 pb-16">
       {/* Main Navigation Controls Card (Identical to mockup) */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Month / Week / Day Navigator with Arrows */}
         <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-xl px-2 py-1 shadow-2xs">
           <button
@@ -378,7 +378,7 @@ export default function MyNewsCalendarPage() {
       </div>
 
       {/* Calendar View Container */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
         {/* Weekday Headers (Month & Week views only) */}
         {viewMode !== 'DAY' && (
           <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-50/50">
@@ -475,7 +475,7 @@ export default function MyNewsCalendarPage() {
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs hover:shadow-md hover:border-blue-400 group ${
                         !item.isReadByCurrentUser
                           ? 'bg-amber-50/20 border-amber-200/70'
-                          : 'bg-white border-slate-200/80 hover:bg-slate-50/50'
+                          : 'bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700'
                       }`}
                     >
                       <div className="space-y-2">
@@ -552,7 +552,7 @@ export default function MyNewsCalendarPage() {
                 <div
                   key={idx}
                   className={`min-h-[115px] sm:min-h-[125px] p-2 flex flex-col justify-between transition-colors ${
-                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white text-slate-800'
+                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800'
                   } ${isCurrentDay ? 'ring-2 ring-blue-500/40 inset-ring inset-0 bg-blue-50/20' : ''}`}
                 >
                   {/* Date Number */}
@@ -638,7 +638,7 @@ export default function MyNewsCalendarPage() {
                 <div
                   key={idx}
                   className={`p-3 flex flex-col justify-start gap-2 ${
-                    isCurrentDay ? 'bg-blue-50/20 ring-1 ring-blue-500/30' : 'bg-white'
+                    isCurrentDay ? 'bg-blue-50/20 ring-1 ring-blue-500/30' : 'bg-white dark:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -730,7 +730,7 @@ export default function MyNewsCalendarPage() {
       {/* Reading Modal (Identical full details) */}
       {readingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -805,7 +805,7 @@ export default function MyNewsCalendarPage() {
       {/* Modal แสดงรายการประกาศทั้งหมดในวันที่เลือก (เมื่อกด +N รายการเพิ่มเติม) */}
       {selectedDayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -848,7 +848,7 @@ export default function MyNewsCalendarPage() {
                       handleOpenReading(item);
                     }}
                     className={`pt-2.5 first:pt-0 group p-3 rounded-xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col gap-1.5 ${
-                      !item.isReadByCurrentUser ? 'bg-amber-50/20' : 'bg-white'
+                      !item.isReadByCurrentUser ? 'bg-amber-50/20' : 'bg-white dark:bg-slate-800'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -908,3 +908,4 @@ export default function MyNewsCalendarPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -261,7 +261,7 @@ export default function ResignationPage() {
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -290,7 +290,7 @@ export default function ResignationPage() {
           {/* ใช้ flex-col + การ์ดล่าง flex-1 เพื่อให้ขอบล่างเสมอกับการ์ดฝั่งขวา */}
           <div className="flex flex-col gap-6">
             {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -310,14 +310,14 @@ export default function ResignationPage() {
                     value={addressedTo}
                     onChange={(e) => setAddressedTo(e.target.value)}
                     placeholder="เช่น กรรมการผู้จัดการบริษัท ไซอโคว จำกัด"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   />
                 </div>
               </div>
             </div>
 
             {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-gray-900">ข้อมูลพนักงาน</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
@@ -325,7 +325,7 @@ export default function ResignationPage() {
                   <select
                     value={titlePrefix}
                     onChange={(e) => setTitlePrefix(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   >
                     <option value="นาย">นาย</option>
                     <option value="นาง">นาง</option>
@@ -366,7 +366,7 @@ export default function ResignationPage() {
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 flex flex-col">
             <div className="flex-1 flex flex-col space-y-4">
               <h3 className="text-sm font-bold text-gray-900">รายละเอียดการขอลาออก</h3>
 
@@ -409,7 +409,7 @@ export default function ResignationPage() {
                 <select
                   value={reasonCategory}
                   onChange={(e) => setReasonCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                 >
                   {RESIGNATION_REASON_CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>
@@ -450,7 +450,7 @@ export default function ResignationPage() {
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
             <Eye className="w-4 h-4 text-gray-500" />
             ดูตัวอย่าง
@@ -459,7 +459,7 @@ export default function ResignationPage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
           >
             {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500" />}
             บันทึกแบบร่าง
@@ -483,7 +483,7 @@ export default function ResignationPage() {
             onClick={() => setShowSuccessModal(false)}
           />
 
-          <div className="relative bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -540,3 +540,4 @@ export default function ResignationPage() {
     </div>
   );
 }
+

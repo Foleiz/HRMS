@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -193,7 +193,7 @@ export default function ExpiringDocumentsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ค้นหาชื่อ รหัสพนักงาน แผนก หรือประเภทเอกสาร"
-              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -205,7 +205,7 @@ export default function ExpiringDocumentsPage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
                   statusFilter === b.key
                     ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
                 {b.label} ({b.count})
@@ -310,3 +310,4 @@ export default function ExpiringDocumentsPage() {
     </div>
   );
 }
+

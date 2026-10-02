@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -22,9 +22,9 @@ import { toast } from '@/context/ToastContext';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
-const CARD = 'bg-white rounded-2xl border border-gray-100 shadow-sm p-6';
+const CARD = 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6';
 const READONLY_INPUT =
-  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed';
+  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-slate-800 text-sm text-gray-600 cursor-not-allowed';
 const TEXTAREA =
   'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden';
 
@@ -266,7 +266,7 @@ export default function CertificatePage() {
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -327,7 +327,7 @@ export default function CertificatePage() {
                 <select
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   required
                 >
                   <option value="">-- เลือกประเภทหนังสือรับรอง --</option>
@@ -383,7 +383,7 @@ export default function CertificatePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบภาษา</label>
-                <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-full">
+                <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 dark:bg-slate-800 w-full">
                   {(['TH', 'EN'] as const).map((l) => (
                     <button
                       key={l}
@@ -417,15 +417,15 @@ export default function CertificatePage() {
                 ข้อมูลในหนังสือรับรอง{selectedType ? ` (${selectedType.certificateName})` : ''}
               </p>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">ภาษา</div>
                   <div className="text-sm font-bold text-gray-800">{selectedLanguage === 'TH' ? 'ไทย' : 'อังกฤษ'}</div>
                 </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">อัตราเงินเดือน</div>
                   <div className="text-sm font-bold text-gray-800">{selectedType ? (includeSalary ? 'แสดง' : 'ไม่แสดง') : '-'}</div>
                 </div>
-                <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
+                <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">อายุเอกสาร</div>
                   <div className="text-sm font-bold text-gray-800">{validDays != null ? `${validDays} วัน` : '-'}</div>
                 </div>
@@ -459,7 +459,7 @@ export default function CertificatePage() {
           <button
             type="button"
             onClick={handlePreview}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             ดูตัวอย่าง
@@ -468,7 +468,7 @@ export default function CertificatePage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
           >
             {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             บันทึกแบบร่าง
@@ -492,7 +492,7 @@ export default function CertificatePage() {
             onClick={() => setShowSuccessModal(false)}
           />
 
-          <div className="relative bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -535,3 +535,4 @@ export default function CertificatePage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -334,7 +334,7 @@ export default function GeneralDocumentPage() {
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -360,7 +360,7 @@ export default function GeneralDocumentPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป & กล่องแนบเอกสาร (ตาม Figma) ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-5">
             <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -401,7 +401,7 @@ export default function GeneralDocumentPage() {
                         setDocumentType(e.target.value);
                       }
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   >
                     {!typesLoaded && <option value="">กำลังโหลดประเภทเอกสาร...</option>}
                     {typesLoaded && typeOptions.map((t) => (
@@ -418,7 +418,7 @@ export default function GeneralDocumentPage() {
                       value={customDocumentType}
                       onChange={(e) => setCustomDocumentType(e.target.value)}
                       placeholder="เช่น สำเนาบัตรประชาชน"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
                       required
                     />
                     <button
@@ -475,7 +475,7 @@ export default function GeneralDocumentPage() {
                 <p className="text-xs text-gray-600 mt-0.5">กรุณาแนบเอกสารด้านล่างนี้</p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-white p-2 rounded-xl border border-amber-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-xl border border-amber-200">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -518,7 +518,7 @@ export default function GeneralDocumentPage() {
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดของเอกสาร (ตาม Figma) ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-gray-900">รายละเอียดของเอกสาร</h3>
 
@@ -571,7 +571,7 @@ export default function GeneralDocumentPage() {
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
             <Eye className="w-4 h-4 text-gray-500" />
             ดูตัวอย่าง
@@ -580,7 +580,7 @@ export default function GeneralDocumentPage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
           >
             {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500" />}
             บันทึกแบบร่าง
@@ -604,7 +604,7 @@ export default function GeneralDocumentPage() {
             onClick={() => setShowSuccessModal(false)}
           />
 
-          <div className="relative bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -657,3 +657,4 @@ export default function GeneralDocumentPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
@@ -614,7 +614,7 @@ export default function EmployeesPage() {
 
   const getFieldClass = (fieldName: string, isMono = false) => {
     const hasError = hasAttemptedSubmit && Boolean(formErrors[fieldName]);
-    return `w-full px-3.5 py-2 bg-white rounded-lg text-xs transition-all ${
+    return `w-full px-3.5 py-2 bg-white dark:bg-slate-800 rounded-lg text-xs transition-all ${
       isMono ? 'font-mono' : ''
     } ${
       hasError
@@ -895,7 +895,7 @@ export default function EmployeesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาพนักงาน"
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
             />
           </div>
 
@@ -905,7 +905,7 @@ export default function EmployeesPage() {
               <select
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
               >
                 <option value="ALL">ทุกแผนก</option>
                 {departments.map((dept) => (
@@ -1343,7 +1343,7 @@ export default function EmployeesPage() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
               <option value={5}>5</option>
               <option value={8}>8</option>
@@ -2638,3 +2638,4 @@ export default function EmployeesPage() {
     </div>
   );
 }
+

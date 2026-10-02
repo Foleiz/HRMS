@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
@@ -1201,7 +1201,7 @@ function DailyAttendanceContent() {
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ตรวจบันทึกเวลาประจำวัน */}
           {canViewDaily && (
@@ -1272,7 +1272,7 @@ function DailyAttendanceContent() {
       {activeTab === 'daily' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {hasAnyBatch === false ? (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4 dark:bg-slate-800 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4 dark:bg-slate-800 dark:border-slate-700">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0B2046] flex items-center justify-center mb-4">
                 <FileSpreadsheet className="w-8 h-8 text-blue-600" />
               </div>
@@ -1384,7 +1384,7 @@ function DailyAttendanceContent() {
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Total Employees */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
               <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                 <span className="text-xs font-medium">พนักงานทั้งหมด</span>
                 <Users className="w-4 h-4 text-slate-400 dark:text-slate-500" />
@@ -1396,7 +1396,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 2. Present */}
-            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-emerald-700">
                 <span className="text-xs font-medium">มาตรงเวลา</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -1408,7 +1408,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 3. Late */}
-            <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-amber-700">
                 <span className="text-xs font-medium">มาสาย</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -1420,7 +1420,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 4. Early Leave */}
-            <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-purple-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-purple-700">
                 <span className="text-xs font-medium">ออกก่อนเวลา</span>
                 <LogOut className="w-4 h-4 text-purple-500" />
@@ -1432,7 +1432,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 5. Absent */}
-            <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-rose-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-rose-700">
                 <span className="text-xs font-medium">ขาดงาน</span>
                 <XCircle className="w-4 h-4 text-rose-500" />
@@ -1444,7 +1444,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 6. Holiday / Off */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
               <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                 <span className="text-xs font-medium">วันหยุด</span>
                 <Calendar className="w-4 h-4 text-blue-500" />
@@ -1457,7 +1457,7 @@ function DailyAttendanceContent() {
           </div>
 
           {/* Daily Table with whitespace-nowrap */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -1631,7 +1631,7 @@ function DailyAttendanceContent() {
       {activeTab === 'import' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Upload Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
@@ -1723,7 +1723,7 @@ function DailyAttendanceContent() {
                         <select
                           value={importYear}
                           onChange={(e) => setImportYear(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                          className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                         >
                           {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
                             <option key={y} value={y}>
@@ -1741,7 +1741,7 @@ function DailyAttendanceContent() {
                         <select
                           value={importMonth}
                           onChange={(e) => setImportMonth(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                          className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                         >
                           {THAI_MONTHS.map((mName, idx) => (
                             <option key={idx + 1} value={idx + 1}>
@@ -1763,7 +1763,7 @@ function DailyAttendanceContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                     <div className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>
                       ระบบจะตรวจจับเดือนและปีจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
@@ -1972,7 +1972,7 @@ function DailyAttendanceContent() {
           )}
 
           {/* Batch History Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 dark:border-slate-700/60">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
@@ -2226,7 +2226,7 @@ function DailyAttendanceContent() {
       {activeTab === 'adjustments' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Toolbar & Filters */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700">
             {/* Left: Search & Status Filter */}
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               {/* Search */}
@@ -2286,7 +2286,7 @@ function DailyAttendanceContent() {
           </div>
 
           {/* Adjustments Table Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -2481,7 +2481,7 @@ function DailyAttendanceContent() {
       {activeTab === 'monthly' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter & Action Toolbar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700/80">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Month, Year, Department, Search */}
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Month Selector */}
@@ -2596,7 +2596,7 @@ function DailyAttendanceContent() {
           {/* Overview Metric Cards (6 Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Card 1: Total Employees */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">พนักงานทั้งหมด</span>
                 <Users className="w-4 h-4 text-blue-600" />
@@ -2608,7 +2608,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 2: Total Planned Work Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานตามแผน</span>
                 <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -2620,7 +2620,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 3: Actual Work Days & Rate */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานจริง</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -2637,7 +2637,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 4: Late Minutes */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">มาสายสะสม</span>
                 <Clock className="w-4 h-4 text-amber-600" />
@@ -2652,7 +2652,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 5: Leave Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">ลางานสะสม</span>
                 <FileText className="w-4 h-4 text-blue-600" />
@@ -2665,7 +2665,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 6: Absent Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
               <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">ขาดงานสะสม</span>
                 <XCircle className="w-4 h-4 text-rose-600" />
@@ -2679,7 +2679,7 @@ function DailyAttendanceContent() {
           </div>
 
           {/* Table of Employees */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
             {/* Table Header / Subtitle */}
             <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50 dark:border-slate-700/60">
               <div>
@@ -2881,7 +2881,7 @@ function DailyAttendanceContent() {
                     const val = e.target.value ? Number(e.target.value) : undefined;
                     setEditForm((prev) => ({ ...prev, shiftId: val }));
                   }}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value="">ไม่ได้ระบุกะ</option>
                   {shifts.map((s) => (
@@ -2915,7 +2915,7 @@ function DailyAttendanceContent() {
                 <select
                   value={editForm.status}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value="PRESENT">ตรงเวลา (PRESENT)</option>
                   <option value="LATE">มาสาย (LATE)</option>
@@ -2997,7 +2997,7 @@ function DailyAttendanceContent() {
                   value={clockEmpId}
                   onChange={(e) => setClockEmpId(Number(e.target.value))}
                   required
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value={0}>-- กรุณาเลือกพนักงาน --</option>
                   {records.map((r) => (
@@ -3587,7 +3587,7 @@ function DailyAttendanceContent() {
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value)}
                   placeholder="ระบุเหตุผล เช่น ลืมสแกนนิ้วมือ, เครื่องสแกนขัดข้อง, ไปปฏิบัติงานนอกสถานที่ ฯลฯ"
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
                   required
                 />
               </div>
@@ -3735,7 +3735,7 @@ function DailyAttendanceContent() {
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติมประกอบการพิจารณา..."
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -3818,3 +3818,4 @@ export default function DailyAttendancePage() {
     </Suspense>
   );
 }
+

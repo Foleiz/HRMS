@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { X, Printer, FileText, Paperclip } from 'lucide-react';
@@ -40,7 +40,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
       />
 
       {/* Modal Dialog */}
-      <div className="relative bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
         {/* Header Actions */}
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-slate-800">
@@ -162,3 +162,4 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
     </div>
   );
 };
+

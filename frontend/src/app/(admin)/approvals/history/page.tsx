@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -378,7 +378,7 @@ export default function ApprovalHistoryPage() {
       <ApprovalNavTabs currentSubTitle="ประวัติเอกสาร" />
 
       {/* Filters & Control Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4">
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
@@ -389,7 +389,7 @@ export default function ApprovalHistoryPage() {
                 placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ, ผู้อนุมัติ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
               />
             </div>
 
@@ -399,7 +399,7 @@ export default function ApprovalHistoryPage() {
               <select
                 value={docTypeFilter}
                 onChange={(e) => setDocTypeFilter(e.target.value as any)}
-                className="pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+                className="pl-9 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
               >
                 <option value="ALL">ทุกประเภทเอกสาร</option>
                 <option value="LEAVE">คำขอลา</option>
@@ -415,7 +415,7 @@ export default function ApprovalHistoryPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+                className="px-3 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
               >
                 <option value="">ทุกสถานะ (ที่ดำเนินการแล้ว)</option>
                 <option value="APPROVED">อนุมัติแล้ว</option>
@@ -433,7 +433,7 @@ export default function ApprovalHistoryPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
@@ -450,7 +450,7 @@ export default function ApprovalHistoryPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
+                <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">เลขที่เอกสาร</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ประเภทเอกสาร</th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">พนักงาน</th>
@@ -466,7 +466,7 @@ export default function ApprovalHistoryPage() {
                   const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
 
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={item.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
                       {/* 1. เลขที่เอกสาร */}
                       <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-[#0B2046]">
                         {item.requestNo}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -250,7 +250,7 @@ export default function WorkCalendarPage() {
   return (
     <div className="space-y-6">
       {/* 1. Sub-navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           <button
             onClick={() => {
@@ -283,7 +283,7 @@ export default function WorkCalendarPage() {
       </div>
 
       {/* 3. Tab Content Panels */}
-      <div className="bg-white border border-slate-200 border-t-0 rounded-b-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-t-0 rounded-b-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
         {/* ========================================================= */}
         {/* TAB 1: WORK WEEK */}
         {/* ========================================================= */}
@@ -360,7 +360,7 @@ export default function WorkCalendarPage() {
                       onClick={() => handleToggleDay(day.dayOfWeek)}
                       className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between min-h-[140px] ${
                         day.isWorkingDay
-                          ? 'border-[#0B2046] bg-white shadow-md shadow-[#0B2046]/5 hover:border-[#081836]'
+                          ? 'border-[#0B2046] bg-white dark:bg-slate-700 shadow-md shadow-[#0B2046]/5 hover:border-[#081836]'
                           : 'border-slate-200 bg-slate-50/60 opacity-80 hover:opacity-100 hover:border-slate-300'
                       }`}
                     >
@@ -570,7 +570,7 @@ export default function WorkCalendarPage() {
       {/* ========================================================= */}
       {modalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มวันหยุดประจำปี' : 'แก้ไขข้อมูลวันหยุด'}
@@ -642,7 +642,7 @@ export default function WorkCalendarPage() {
       {/* ========================================================= */}
       {deleteModalOpen && itemToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
               <Trash2 className="w-6 h-6" />
             </div>
@@ -670,3 +670,4 @@ export default function WorkCalendarPage() {
     </div>
   );
 }
+

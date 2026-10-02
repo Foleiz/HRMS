@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
@@ -6,7 +6,7 @@ import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
-const INPUT = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
 const currentBE = new Date().getFullYear() + 543;
 const YEARS = Array.from({ length: 50 }, (_, i) => currentBE + 1 - i);
 
@@ -252,3 +252,4 @@ export default function EmployeeBackgroundEditor({
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -411,7 +411,7 @@ export default function AnnouncementsPage() {
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
             <Megaphone className="w-5 h-5 text-[#0B2046]" />
@@ -442,7 +442,7 @@ export default function AnnouncementsPage() {
       <div className="space-y-6">
           {/* Summary KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500">ประกาศทั้งหมด</span>
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -453,7 +453,7 @@ export default function AnnouncementsPage() {
               <span className="text-xs text-slate-400 mt-1 block">รายการทั้งหมดในระบบ</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500">กำลังเผยแพร่</span>
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -464,7 +464,7 @@ export default function AnnouncementsPage() {
               <span className="text-xs text-slate-400 mt-1 block">แสดงบนพอร์ทัลพนักงาน</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500">ปักหมุดสำคัญ</span>
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -475,7 +475,7 @@ export default function AnnouncementsPage() {
               <span className="text-xs text-slate-400 mt-1 block">อยู่บนสุดของฟีด</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500">ฉบับร่าง</span>
                 <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
@@ -488,7 +488,7 @@ export default function AnnouncementsPage() {
           </div>
 
           {/* Filter Bar */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 shadow-xs space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
               {/* Search */}
               <div className="relative md:col-span-2">
@@ -550,7 +550,7 @@ export default function AnnouncementsPage() {
           </div>
 
           {/* Announcements Table */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
@@ -765,7 +765,7 @@ export default function AnnouncementsPage() {
       {/* ========================================================================= */}
       {readingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -842,7 +842,7 @@ export default function AnnouncementsPage() {
       {/* ========================================================================= */}
       {statsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -1038,7 +1038,7 @@ export default function AnnouncementsPage() {
       {/* ========================================================================= */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
@@ -1187,7 +1187,7 @@ export default function AnnouncementsPage() {
                 {formTargetType === 'DEPARTMENT' && (
                   <div className="pt-2 border-t border-slate-200 space-y-2">
                     <span className="text-[11px] text-slate-500 font-medium">เลือกแผนกที่ต้องการส่งประกาศถึง:</span>
-                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-white rounded-lg border border-slate-200">
+                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200">
                       {departments.map((dept) => {
                         const isChecked = formSelectedDeptIds.includes(dept.id);
                         return (
@@ -1281,3 +1281,4 @@ export default function AnnouncementsPage() {
     </div>
   );
 }
+

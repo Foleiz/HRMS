@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -814,7 +814,7 @@ function ProfilePageContent() {
                       value={formData.mother}
                       onChange={(e) => handleInputChange('mother', e.target.value)}
                       placeholder="ชื่อ-นามสกุลมารดา"
-                      className="w-full md:w-1/3 h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full md:w-1/3 h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
                 </div>
@@ -866,7 +866,7 @@ function ProfilePageContent() {
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] resize-none"
                     />
                   </div>
                 </div>
@@ -947,7 +947,7 @@ function ProfilePageContent() {
                       value={formData.bankName}
                       onChange={(e) => handleInputChange('bankName', e.target.value)}
                       disabled={isLoadingBanks}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
                     >
                       <option value="">-- เลือกธนาคาร --</option>
                       {banks.map((b) => (
@@ -969,7 +969,7 @@ function ProfilePageContent() {
                       value={formData.accountNumber}
                       onChange={(e) => handleInputChange('accountNumber', e.target.value)}
                       placeholder="123-4-56789-0"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
                 </div>
@@ -1021,7 +1021,7 @@ function ProfilePageContent() {
 
                 <div className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/50 flex flex-col md:flex-row items-center gap-6">
                   {/* Signature Preview Area */}
-                  <div className="w-64 h-28 rounded-lg border border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden p-2 relative shrink-0">
+                  <div className="w-64 h-28 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden p-2 relative shrink-0">
                     {signaturePreview ? (
                       <img
                         src={signaturePreview}
@@ -1044,7 +1044,7 @@ function ProfilePageContent() {
                         type="button"
                         onClick={() => sigFileInputRef.current?.click()}
                         disabled={isUploadingSig}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                       >
                         {isUploadingSig ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0B2046]" />
@@ -1079,7 +1079,7 @@ function ProfilePageContent() {
                   type="button"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
                   คืนค่าเดิม
@@ -1168,7 +1168,7 @@ function ProfilePageContent() {
 
           {/* TAB 3: ประวัติการเปลี่ยนแปลง */}
           {activeTab === 'history' && employee && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm animate-in fade-in duration-150">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-sm animate-in fade-in duration-150">
               <EmployeeChangeHistoryTab employeeId={employee.id} />
             </div>
           )}
@@ -1313,3 +1313,4 @@ function ProfilePageContent() {
     </div>
   );
 }
+

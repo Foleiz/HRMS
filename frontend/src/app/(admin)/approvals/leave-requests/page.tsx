@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -779,7 +779,7 @@ export default function LeaveRequestsApprovalPage() {
           { label: 'รอการอนุมัติ', value: totalPending, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'อนุมัติแล้ว', value: totalApproved, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'ปฏิเสธแล้ว', value: totalRejected, color: 'text-red-500', bg: 'bg-red-50' },
-          { label: 'ยกเลิกแล้ว', value: totalCancelled, color: 'text-gray-500', bg: 'bg-gray-50' },
+          { label: 'ยกเลิกแล้ว', value: totalCancelled, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-slate-800' },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-2xl border border-white p-4 shadow-2xs`}>
             <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -800,7 +800,7 @@ export default function LeaveRequestsApprovalPage() {
                 placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
               />
             </div>
 
@@ -810,7 +810,7 @@ export default function LeaveRequestsApprovalPage() {
               <select
                 value={docTypeFilter}
                 onChange={(e) => setDocTypeFilter(e.target.value as any)}
-                className="pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+                className="pl-9 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
               >
                 <option value="ALL">ทุกประเภทเอกสาร</option>
                 <option value="LEAVE">คำขอลา</option>
@@ -826,7 +826,7 @@ export default function LeaveRequestsApprovalPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
+                className="px-3 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
               >
                 <option value="">ทุกสถานะ</option>
                 <option value="PENDING">รอการอนุมัติ</option>
@@ -870,7 +870,7 @@ export default function LeaveRequestsApprovalPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
+                <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     เลขที่เอกสาร
                   </th>
@@ -905,7 +905,7 @@ export default function LeaveRequestsApprovalPage() {
                       className={`transition-colors ${
                         item.isMyTurnToApprove
                           ? 'bg-amber-50/30 hover:bg-amber-50/50'
-                          : 'hover:bg-gray-50/50'
+                          : 'hover:bg-gray-50 dark:bg-slate-800/50'
                       }`}
                     >
                       {/* 1. เลขที่เอกสาร */}
@@ -1121,7 +1121,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1167,7 +1167,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1202,7 +1202,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1226,7 +1226,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1261,7 +1261,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedCertForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1304,7 +1304,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveCertComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1339,7 +1339,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedCertForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1363,7 +1363,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setRejectCertReason(e.target.value)}
                 placeholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1425,7 +1425,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedResignForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1464,7 +1464,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveResignComment(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1499,7 +1499,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedResignForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1523,7 +1523,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setRejectResignReason(e.target.value)}
                 placeholder="ระบุเหตุผลในการปฏิเสธคำขอลาออก..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
@@ -1583,7 +1583,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedGeneralForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1664,7 +1664,7 @@ export default function LeaveRequestsApprovalPage() {
       {selectedGeneralForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -1688,7 +1688,7 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setRejectGeneralReason(e.target.value)}
                 placeholder="ระบุเหตุผลในการปฏิเสธคำร้อง..."
                 rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
