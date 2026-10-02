@@ -313,6 +313,18 @@ public class AttendanceDailyService : IAttendanceDailyService
         if (record == null)
             throw new KeyNotFoundException($"ไม่พบรายการบันทึกเวลา ID {id}");
 
+        // Period Lock Guard: ป้องกันการแก้ไขเวลาของรอบเงินเดือนที่ปิด/จ่ายเงินแล้ว (Data Integrity)
+        var isPeriodLocked = await _context.PayrollPeriods
+            .AnyAsync(p => p.StartDate <= record.WorkDate &&
+                           record.WorkDate <= p.EndDate &&
+                           (p.Status == "PAID" || p.Status == "CLOSED"),
+                      cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            throw new InvalidOperationException($"ไม่สามารถแก้ไขบันทึกเวลาของวันที่ {record.WorkDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
+        }
+
         if (request.ShiftId.HasValue)
         {
             record.ShiftId = request.ShiftId.Value;
