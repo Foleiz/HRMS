@@ -191,4 +191,245 @@ public class BenefitService : IBenefitService
 
         return true;
     }
+
+    public async Task<EmployeeBenefitUsageSummaryDto> GetEmployeeUsageSummaryAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default)
+    {
+        int targetYear = year ?? DateTime.UtcNow.Year;
+
+        var employee = await _context.Employees
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.EmployeeType)
+                    .ThenInclude(et => et!.EmployeeTypeBenefits)
+                        .ThenInclude(etb => etb.BenefitItem)
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+        if (employee == null)
+            throw new NotFoundException($"ไม่พบข้อมูลพนักงานรหัส ID: {employeeId}");
+
+        var currentAssignment = employee.Assignments?.FirstOrDefault(a => a.IsCurrent) 
+            ?? employee.Assignments?.FirstOrDefault();
+
+        var empType = currentAssignment?.EmployeeType;
+
+        // Active benefits assigned to this employee type
+        var typeBenefits = empType?.EmployeeTypeBenefits?
+            .Where(etb => etb.IsActive && etb.BenefitItem != null && etb.BenefitItem.Status == "ACTIVE")
+            .ToList() ?? new List<EmployeeTypeBenefit>();
+
+        // Query all claims for this employee in the target year
+        var claims = await _context.EmployeeBenefitClaims
+            .AsNoTracking()
+            .Where(c => c.EmployeeId == employeeId && c.ClaimYear == targetYear && c.Status == "APPROVED")
+            .ToListAsync(cancellationToken);
+
+        var claimsByBenefit = claims
+            .GroupBy(c => c.BenefitItemId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var benefitItemsDto = new List<BenefitUsageItemDto>();
+
+        foreach (var tb in typeBenefits)
+        {
+            var bItem = tb.BenefitItem;
+            var itemClaims = claimsByBenefit.GetValueOrDefault(bItem.Id, new List<EmployeeBenefitClaim>());
+            decimal used = itemClaims.Sum(c => c.Amount);
+            decimal quota = tb.CoverageAmount;
+            decimal remaining = quota > 0 ? Math.Max(0, quota - used) : 0;
+            decimal percentage = quota > 0 ? Math.Min(100, Math.Round((used / quota) * 100, 1)) : (used > 0 ? 100 : 0);
+            bool isMaxed = quota > 0 && used >= quota;
+
+            string statusText = "ได้รับสิทธิ์ตามระเบียบบริษัท";
+            if (tb.Frequency == "YEARLY" || quota > 0)
+            {
+                if (isMaxed)
+                    statusText = "ใช้เต็มโควตาแล้ว (100%)";
+                else if (percentage >= 70)
+                    statusText = $"ใกล้ครบโควตา ({percentage}%)";
+                else if (used > 0)
+                    statusText = $"ยังไม่ครบโควตา ({percentage}%)";
+                else
+                    statusText = "ยังไม่ได้ใช้สิทธิ์";
+            }
+            else if (bItem.Category == "ALLOWANCE")
+            {
+                statusText = "คำนวณอัตโนมัติผ่านเงินเดือน";
+            }
+
+            benefitItemsDto.Add(new BenefitUsageItemDto
+            {
+                BenefitItemId = bItem.Id,
+                BenefitCode = bItem.BenefitCode,
+                BenefitName = bItem.BenefitName,
+                Category = bItem.Category,
+                Description = bItem.Description,
+                QuotaAmount = quota,
+                Frequency = tb.Frequency,
+                UsedAmount = used,
+                RemainingAmount = remaining,
+                UsagePercentage = percentage,
+                IsMaxedOut = isMaxed,
+                StatusText = statusText,
+                ClaimCount = itemClaims.Count,
+                LastClaimDate = itemClaims.OrderByDescending(c => c.ClaimDate).Select(c => (DateOnly?)c.ClaimDate).FirstOrDefault()
+            });
+        }
+
+        decimal totalQuota = benefitItemsDto.Where(b => b.Frequency == "YEARLY").Sum(b => b.QuotaAmount);
+        decimal totalUsed = benefitItemsDto.Sum(b => b.UsedAmount);
+        decimal totalRemaining = benefitItemsDto.Where(b => b.Frequency == "YEARLY").Sum(b => b.RemainingAmount);
+        decimal overallPercent = totalQuota > 0 ? Math.Min(100, Math.Round((totalUsed / totalQuota) * 100, 1)) : 0;
+
+        return new EmployeeBenefitUsageSummaryDto
+        {
+            EmployeeId = employee.Id,
+            EmployeeCode = employee.EmployeeCode,
+            EmployeeName = employee.FullName,
+            EmployeeType = empType?.TypeName,
+            Year = targetYear,
+            TotalQuotaAmount = totalQuota,
+            TotalUsedAmount = totalUsed,
+            TotalRemainingAmount = totalRemaining,
+            OverallUsagePercent = overallPercent,
+            TotalBenefitsCount = benefitItemsDto.Count,
+            MaxedOutBenefitsCount = benefitItemsDto.Count(b => b.IsMaxedOut),
+            Benefits = benefitItemsDto
+        };
+    }
+
+    public async Task<List<BenefitClaimDto>> GetEmployeeClaimsAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.EmployeeBenefitClaims
+            .Include(c => c.BenefitItem)
+            .Include(c => c.ApprovedByUser)
+            .Include(c => c.Employee)
+            .Where(c => c.EmployeeId == employeeId);
+
+        if (year.HasValue)
+        {
+            query = query.Where(c => c.ClaimYear == year.Value);
+        }
+
+        var claims = await query
+            .OrderByDescending(c => c.ClaimDate)
+            .ThenByDescending(c => c.Id)
+            .ToListAsync(cancellationToken);
+
+        return claims.Select(c => new BenefitClaimDto
+        {
+            Id = c.Id,
+            EmployeeId = c.EmployeeId,
+            EmployeeCode = c.Employee?.EmployeeCode,
+            EmployeeName = c.Employee?.FullName,
+            BenefitItemId = c.BenefitItemId,
+            BenefitCode = c.BenefitItem?.BenefitCode ?? string.Empty,
+            BenefitName = c.BenefitItem?.BenefitName ?? string.Empty,
+            Category = c.BenefitItem?.Category ?? string.Empty,
+            ClaimYear = c.ClaimYear,
+            ClaimDate = c.ClaimDate,
+            Amount = c.Amount,
+            ReceiptNumber = c.ReceiptNumber,
+            ServiceProvider = c.ServiceProvider,
+            Remarks = c.Remarks,
+            Status = c.Status,
+            ApprovedByName = c.ApprovedByUser?.Username,
+            ApprovedAt = c.ApprovedAt,
+            CreatedAt = c.CreatedAt
+        }).ToList();
+    }
+
+    public async Task<BenefitClaimDto> CreateClaimAsync(CreateBenefitClaimRequest request, long? approvedByUserId = null, CancellationToken cancellationToken = default)
+    {
+        if (request.Amount <= 0)
+            throw new ValidationException("จำนวนเงินที่ใช้สิทธิ์ต้องมากกว่า 0 บาท");
+
+        var employee = await _context.Employees
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.EmployeeType)
+                    .ThenInclude(et => et!.EmployeeTypeBenefits)
+            .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken);
+
+        if (employee == null)
+            throw new NotFoundException($"ไม่พบข้อมูลพนักงานรหัส ID: {request.EmployeeId}");
+
+        var benefitItem = await _context.BenefitItems
+            .FirstOrDefaultAsync(b => b.Id == request.BenefitItemId, cancellationToken);
+
+        if (benefitItem == null)
+            throw new NotFoundException($"ไม่พบข้อมูลสิทธิประโยชน์รหัส ID: {request.BenefitItemId}");
+
+        int claimYear = request.ClaimYear ?? DateTime.UtcNow.Year;
+        DateOnly claimDate = request.ClaimDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Check quota limit if configured
+        var currentAssignment = employee.Assignments?.FirstOrDefault(a => a.IsCurrent) 
+            ?? employee.Assignments?.FirstOrDefault();
+        var empTypeBenefit = currentAssignment?.EmployeeType?.EmployeeTypeBenefits?
+            .FirstOrDefault(etb => etb.BenefitItemId == request.BenefitItemId && etb.IsActive);
+
+        if (empTypeBenefit != null && empTypeBenefit.CoverageAmount > 0)
+        {
+            var alreadyUsed = await _context.EmployeeBenefitClaims
+                .Where(c => c.EmployeeId == request.EmployeeId && c.BenefitItemId == request.BenefitItemId && c.ClaimYear == claimYear && c.Status == "APPROVED")
+                .SumAsync(c => c.Amount, cancellationToken);
+
+            decimal remaining = empTypeBenefit.CoverageAmount - alreadyUsed;
+            if (request.Amount > remaining)
+            {
+                throw new ValidationException($"ยอดขอใช้สิทธิ์ ({request.Amount:N2} บาท) เกินวงเงินโควตาคงเหลือ (โควตาคงเหลือ: {Math.Max(0, remaining):N2} บาท จากวงเงินทั้งหมด {empTypeBenefit.CoverageAmount:N2} บาท)");
+            }
+        }
+
+        var claim = new EmployeeBenefitClaim
+        {
+            EmployeeId = request.EmployeeId,
+            BenefitItemId = request.BenefitItemId,
+            ClaimYear = claimYear,
+            ClaimDate = claimDate,
+            Amount = request.Amount,
+            ReceiptNumber = request.ReceiptNumber?.Trim(),
+            ServiceProvider = request.ServiceProvider?.Trim(),
+            Remarks = request.Remarks?.Trim(),
+            Status = "APPROVED",
+            ApprovedByUserId = approvedByUserId,
+            ApprovedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.EmployeeBenefitClaims.Add(claim);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new BenefitClaimDto
+        {
+            Id = claim.Id,
+            EmployeeId = claim.EmployeeId,
+            EmployeeCode = employee.EmployeeCode,
+            EmployeeName = employee.FullName,
+            BenefitItemId = benefitItem.Id,
+            BenefitCode = benefitItem.BenefitCode,
+            BenefitName = benefitItem.BenefitName,
+            Category = benefitItem.Category,
+            ClaimYear = claim.ClaimYear,
+            ClaimDate = claim.ClaimDate,
+            Amount = claim.Amount,
+            ReceiptNumber = claim.ReceiptNumber,
+            ServiceProvider = claim.ServiceProvider,
+            Remarks = claim.Remarks,
+            Status = claim.Status,
+            ApprovedAt = claim.ApprovedAt,
+            CreatedAt = claim.CreatedAt
+        };
+    }
+
+    public async Task<bool> DeleteClaimAsync(long claimId, CancellationToken cancellationToken = default)
+    {
+        var claim = await _context.EmployeeBenefitClaims.FirstOrDefaultAsync(c => c.Id == claimId, cancellationToken);
+        if (claim == null)
+            throw new NotFoundException($"ไม่พบรายการเบิกสวัสดิการรหัส ID: {claimId}");
+
+        _context.EmployeeBenefitClaims.Remove(claim);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }
+

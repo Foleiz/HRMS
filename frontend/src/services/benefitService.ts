@@ -37,4 +37,37 @@ export const benefitService = {
   async delete(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<null>>(`/benefits/${id}`);
   },
+
+  // ดึงข้อมูลสรุปโควตาและการใช้สิทธิ์สวัสดิการของพนักงาน
+  async getEmployeeUsageSummary(employeeId: number, year?: number) {
+    const res = await apiClient.get<ApiResponse<import('@/types/benefit').EmployeeBenefitUsageSummary>>(
+      `/benefits/usage/${employeeId}`,
+      { params: year ? { year } : undefined }
+    );
+    return res.data.data;
+  },
+
+  // ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการของพนักงาน
+  async getEmployeeClaims(employeeId: number, year?: number) {
+    const res = await apiClient.get<ApiResponse<import('@/types/benefit').BenefitClaim[]>>(
+      `/benefits/claims/${employeeId}`,
+      { params: year ? { year } : undefined }
+    );
+    return res.data.data;
+  },
+
+  // บันทึกการขอเบิก/ใช้สิทธิ์สวัสดิการ
+  async createClaim(data: import('@/types/benefit').CreateBenefitClaimPayload) {
+    const res = await apiClient.post<ApiResponse<import('@/types/benefit').BenefitClaim>>(
+      '/benefits/claims',
+      data
+    );
+    return res.data.data;
+  },
+
+  // ยกเลิก/ลบรายการเบิกสวัสดิการ
+  async deleteClaim(claimId: number): Promise<void> {
+    await apiClient.delete<ApiResponse<null>>(`/benefits/claims/${claimId}`);
+  },
 };
+

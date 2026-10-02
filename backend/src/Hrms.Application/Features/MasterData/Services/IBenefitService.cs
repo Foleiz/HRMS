@@ -9,4 +9,11 @@ public interface IBenefitService
     Task<BenefitItemDto> CreateAsync(CreateBenefitItemRequest request, CancellationToken cancellationToken = default);
     Task<BenefitItemDto> UpdateAsync(long id, UpdateBenefitItemRequest request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default);
+
+    // Individual Employee Benefit Usage & Claims Tracking
+    Task<EmployeeBenefitUsageSummaryDto> GetEmployeeUsageSummaryAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default);
+    Task<List<BenefitClaimDto>> GetEmployeeClaimsAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default);
+    Task<BenefitClaimDto> CreateClaimAsync(CreateBenefitClaimRequest request, long? approvedByUserId = null, CancellationToken cancellationToken = default);
+    Task<bool> DeleteClaimAsync(long claimId, CancellationToken cancellationToken = default);
 }
+

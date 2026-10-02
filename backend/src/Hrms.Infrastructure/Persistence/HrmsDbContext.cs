@@ -76,6 +76,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Benefits & Welfare Management
     public DbSet<BenefitItem> BenefitItems => Set<BenefitItem>();
     public DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits => Set<EmployeeTypeBenefit>();
+    public DbSet<EmployeeBenefitClaim> EmployeeBenefitClaims => Set<EmployeeBenefitClaim>();
 
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     public DbSet<EmployeeAvatar> EmployeeAvatars => Set<EmployeeAvatar>();
@@ -1061,6 +1062,44 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(e => new { e.EmployeeTypeId, e.BenefitItemId }).IsUnique();
+        });
+
+        // Configuration: EmployeeBenefitClaim
+        modelBuilder.Entity<EmployeeBenefitClaim>(entity =>
+        {
+            entity.ToTable("employee_benefit_claim", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.BenefitItemId).HasColumnName("benefit_item_id").IsRequired();
+            entity.Property(e => e.ClaimYear).HasColumnName("claim_year").IsRequired();
+            entity.Property(e => e.ClaimDate).HasColumnName("claim_date").IsRequired();
+            entity.Property(e => e.Amount).HasColumnName("amount").HasPrecision(12, 2).IsRequired();
+            entity.Property(e => e.ReceiptNumber).HasColumnName("receipt_number").HasMaxLength(100);
+            entity.Property(e => e.ServiceProvider).HasColumnName("service_provider").HasMaxLength(200);
+            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("APPROVED");
+            entity.Property(e => e.ApprovedByUserId).HasColumnName("approved_by_user_id");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.BenefitItem)
+                .WithMany()
+                .HasForeignKey(e => e.BenefitItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => new { e.EmployeeId, e.ClaimYear });
         });
 
         // Configuration: EmployeeAvatar (Option 3 - Binary storage in PostgreSQL)
