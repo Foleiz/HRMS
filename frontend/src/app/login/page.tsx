@@ -130,7 +130,7 @@ export default function LoginPage() {
               <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
               <span>บัญชีสำหรับทดสอบสิทธิ์ (คลิกเพื่อเลือก - แต่ละบทบาทในระบบ):</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin', 'Admin#2026!Sec')}

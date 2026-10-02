@@ -382,7 +382,7 @@ export default function ApprovalHistoryPage() {
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
-            <div className="relative w-72 sm:w-80">
+            <div className="relative w-full sm:w-72 md:w-80">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"

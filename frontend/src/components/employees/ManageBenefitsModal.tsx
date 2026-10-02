@@ -370,98 +370,100 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 ไม่พบข้อมูลสวัสดิการที่ตรงกับเงื่อนไข
               </div>
             ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-                    <th className="py-3 px-4">รหัส</th>
-                    <th className="py-3 px-4">ชื่อสวัสดิการ & รายละเอียด</th>
-                    <th className="py-3 px-4">หมวดหมู่</th>
-                    <th className="py-3 px-4 text-center">ประเภทสัญญาที่ผูก</th>
-                    <th className="py-3 px-4 text-center">สถานะ</th>
-                    <th className="py-3 px-4 text-right">การจัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredBenefits.map((item) => {
-                    const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.OTHER;
-                    const CatIcon = cat.icon;
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700">
-                          {item.benefitCode}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-900 flex items-center gap-2">
-                            <span>{item.benefitName}</span>
-                            {item.isStatutory && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 font-medium">
-                                สิทธิตามกฎหมาย
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                      <th className="py-3 px-4">รหัส</th>
+                      <th className="py-3 px-4">ชื่อสวัสดิการ & รายละเอียด</th>
+                      <th className="py-3 px-4">หมวดหมู่</th>
+                      <th className="py-3 px-4 text-center">ประเภทสัญญาที่ผูก</th>
+                      <th className="py-3 px-4 text-center">สถานะ</th>
+                      <th className="py-3 px-4 text-right">การจัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredBenefits.map((item) => {
+                      const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.OTHER;
+                      const CatIcon = cat.icon;
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-slate-700">
+                            {item.benefitCode}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-900 flex items-center gap-2">
+                              <span>{item.benefitName}</span>
+                              {item.isStatutory && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 font-medium">
+                                  สิทธิตามกฎหมาย
+                                </span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                {item.description}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium border ${cat.color}`}
+                            >
+                              <CatIcon className="w-3 h-3" />
+                              {cat.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                              {item.assignedTypesCount || 0} สัญญา
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {item.status === 'ACTIVE' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                เปิดใช้งาน
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                ปิดใช้งาน
                               </span>
                             )}
-                          </div>
-                          {item.description && (
-                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                              {item.description}
-                            </p>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium border ${cat.color}`}
-                          >
-                            <CatIcon className="w-3 h-3" />
-                            {cat.label}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
-                            {item.assignedTypesCount || 0} สัญญา
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {item.status === 'ACTIVE' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              เปิดใช้งาน
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                              ปิดใช้งาน
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {!item.isStatutory && (
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <button
-                                onClick={() => setDeleteConfirmId(item.id)}
-                                disabled={(item.assignedTypesCount || 0) > 0}
-                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-25 disabled:hover:bg-transparent"
-                                title={
-                                  (item.assignedTypesCount || 0) > 0
-                                    ? 'ไม่สามารถลบได้เนื่องจากถูกผูกในสัญญาจ้าง'
-                                    : 'ลบ'
-                                }
+                                onClick={() => handleOpenEdit(item)}
+                                className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                                title="แก้ไข"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+
+                              {!item.isStatutory && (
+                                <button
+                                  onClick={() => setDeleteConfirmId(item.id)}
+                                  disabled={(item.assignedTypesCount || 0) > 0}
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-25 disabled:hover:bg-transparent"
+                                  title={
+                                    (item.assignedTypesCount || 0) > 0
+                                      ? 'ไม่สามารถลบได้เนื่องจากถูกผูกในสัญญาจ้าง'
+                                      : 'ลบ'
+                                  }
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

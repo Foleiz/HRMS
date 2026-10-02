@@ -239,90 +239,92 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
 
           {/* Table of Brackets */}
           <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 font-semibold text-slate-700">
-                  <th className="py-3 px-3 w-12 text-center">ขั้น</th>
-                  <th className="py-3 px-3">ชื่อขั้นบันได</th>
-                  <th className="py-3 px-3 text-right w-36">เงินได้สุทธิตั้งแต่ (฿)</th>
-                  <th className="py-3 px-3 text-right w-36">ถึงเงินได้สุทธิ (฿)</th>
-                  <th className="py-3 px-3 text-center w-28">อัตราภาษี (%)</th>
-                  <th className="py-3 px-3 text-right w-32">ภาษีสะสม (฿)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {localBrackets.map((b, idx) => {
-                  const isLast = idx === localBrackets.length - 1;
-                  return (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-2.5 px-3 text-center font-bold text-slate-500">
-                        {idx + 1}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <input
-                          type="text"
-                          value={b.bracketName}
-                          onChange={(e) => handleFieldChange(idx, 'bracketName', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                        />
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={b.incomeFrom}
-                          disabled={idx === 0} // ขั้นแรกบังคับ 0
-                          onChange={(e) => handleFieldChange(idx, 'incomeFrom', parseFloat(e.target.value) || 0)}
-                          className={`w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                            idx === 0 ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
-                          }`}
-                        />
-                      </td>
-                      <td className="py-2.5 px-3">
-                        {isLast ? (
-                          <div className="py-1.5 px-2.5 bg-slate-100 rounded-lg text-slate-500 text-right font-medium italic">
-                            ขึ้นไป (ไม่จำกัดเพดาน)
-                          </div>
-                        ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/80 border-b border-slate-200 font-semibold text-slate-700">
+                    <th className="py-3 px-3 w-12 text-center">ขั้น</th>
+                    <th className="py-3 px-3">ชื่อขั้นบันได</th>
+                    <th className="py-3 px-3 text-right w-36">เงินได้สุทธิตั้งแต่ (฿)</th>
+                    <th className="py-3 px-3 text-right w-36">ถึงเงินได้สุทธิ (฿)</th>
+                    <th className="py-3 px-3 text-center w-28">อัตราภาษี (%)</th>
+                    <th className="py-3 px-3 text-right w-32">ภาษีสะสม (฿)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {localBrackets.map((b, idx) => {
+                    const isLast = idx === localBrackets.length - 1;
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 text-center font-bold text-slate-500">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <input
+                            type="text"
+                            value={b.bracketName}
+                            onChange={(e) => handleFieldChange(idx, 'bracketName', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
                           <input
                             type="number"
                             step="0.01"
-                            value={b.incomeTo ?? ''}
-                            onChange={(e) =>
-                              handleFieldChange(
-                                idx,
-                                'incomeTo',
-                                e.target.value === '' ? null : parseFloat(e.target.value) || 0
-                              )
-                            }
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            value={b.incomeFrom}
+                            disabled={idx === 0} // ขั้นแรกบังคับ 0
+                            onChange={(e) => handleFieldChange(idx, 'incomeFrom', parseFloat(e.target.value) || 0)}
+                            className={`w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              idx === 0 ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
+                            }`}
                           />
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <div className="relative">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={b.taxRatePercent}
-                            onChange={(e) =>
-                              handleFieldChange(idx, 'taxRatePercent', parseFloat(e.target.value) || 0)
-                            }
-                            className="w-full px-2.5 py-1.5 pr-6 rounded-lg border border-slate-200 text-xs text-center font-bold text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                          />
-                          <span className="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700">
-                        ฿{b.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {isLast ? (
+                            <div className="py-1.5 px-2.5 bg-slate-100 rounded-lg text-slate-500 text-right font-medium italic">
+                              ขึ้นไป (ไม่จำกัดเพดาน)
+                            </div>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={b.incomeTo ?? ''}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  idx,
+                                  'incomeTo',
+                                  e.target.value === '' ? null : parseFloat(e.target.value) || 0
+                                )
+                              }
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            />
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={b.taxRatePercent}
+                              onChange={(e) =>
+                                handleFieldChange(idx, 'taxRatePercent', parseFloat(e.target.value) || 0)
+                              }
+                              className="w-full px-2.5 py-1.5 pr-6 rounded-lg border border-slate-200 text-xs text-center font-bold text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            />
+                            <span className="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700">
+                          ฿{b.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-xs text-slate-500 pt-2">

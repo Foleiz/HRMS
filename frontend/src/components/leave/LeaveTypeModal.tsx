@@ -158,7 +158,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           {/* หมวดแบบฟอร์ม */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">หมวดในแบบฟอร์มใบลา</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {LEAVE_FORM_CATEGORIES.map((c) => (
                 <button
                   key={c.value}

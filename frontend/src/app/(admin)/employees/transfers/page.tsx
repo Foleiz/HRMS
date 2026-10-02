@@ -341,8 +341,8 @@ export default function TransfersPage() {
           </div>
 
           {/* Search & Filter Controls */}
-          <div className="flex items-center gap-3 pb-3">
-            <div className="relative w-64">
+          <div className="flex flex-wrap items-center gap-3 pb-3">
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"

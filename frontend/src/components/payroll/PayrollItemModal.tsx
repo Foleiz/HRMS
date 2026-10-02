@@ -359,7 +359,7 @@ export const PayrollItemModal: React.FC<Props> = ({
             <label className="block text-xs font-medium text-slate-700 mb-1.5">
               ประเภทการคำนวณ
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {[
                 { id: 'FIXED', label: 'จำนวนคงที่' },
                 { id: 'FORMULA', label: 'สูตรคำนวณ' },
@@ -508,7 +508,7 @@ export const PayrollItemModal: React.FC<Props> = ({
           </div>
 
           {/* Actions */}
-          <div className="grid grid-cols-2 gap-3 pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
