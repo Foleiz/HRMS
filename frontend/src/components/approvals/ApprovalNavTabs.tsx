@@ -25,7 +25,7 @@ export const ApprovalNavTabs: React.FC<ApprovalNavTabsProps> = () => {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${ isTabActive ? 'border-[#0B2046] text-[#0B2046] font-bold'
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${ isTabActive ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >

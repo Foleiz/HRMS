@@ -240,7 +240,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
           <button
             type="button"
             onClick={openUpload}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-[#0B2046] text-[#0B2046] text-xs font-medium rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white text-xs font-medium rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             เพิ่มเอกสาร

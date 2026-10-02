@@ -439,7 +439,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('personal')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'personal'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -451,7 +451,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('family')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'family'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -463,7 +463,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('emergency')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'emergency'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -475,7 +475,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('background')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'background'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -487,7 +487,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('tax')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'tax'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -499,7 +499,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('user')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'user'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
@@ -511,7 +511,7 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab('documents')}
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'documents'
-                    ? 'border-[#0B2046] text-[#0B2046]'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >

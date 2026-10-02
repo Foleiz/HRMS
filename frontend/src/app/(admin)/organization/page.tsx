@@ -1026,7 +1026,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'divisions'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1040,7 +1040,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'departments'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1054,7 +1054,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'positions'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1068,7 +1068,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'levels'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1082,7 +1082,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'benefits'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1096,7 +1096,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'company'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1110,7 +1110,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('bank-accounts'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'bank-accounts'
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1123,7 +1123,7 @@ export default function OrganizationPage() {
             onClick={() => { setActiveTab('orgchart'); setOrgSearch(''); }}
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'orgchart'
-                ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >

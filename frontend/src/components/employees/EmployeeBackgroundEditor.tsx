@@ -60,7 +60,7 @@ export default function EmployeeBackgroundEditor({
           <button
             type="button"
             onClick={() => onEducationsChange([...educations, emptyEducation()])}
-            className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] text-[#0B2046] rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> เพิ่มวุฒิการศึกษา
           </button>
@@ -159,7 +159,7 @@ export default function EmployeeBackgroundEditor({
           <button
             type="button"
             onClick={() => onWorkExperiencesChange([...workExperiences, emptyWorkExperience()])}
-            className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] text-[#0B2046] rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> เพิ่มประวัติการทำงาน
           </button>
