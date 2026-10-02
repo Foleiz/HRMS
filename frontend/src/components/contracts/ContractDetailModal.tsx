@@ -60,7 +60,7 @@ export default function ContractDetailModal({
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div>
               <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">ชื่อพนักงาน</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{contract.employeeName}</span>

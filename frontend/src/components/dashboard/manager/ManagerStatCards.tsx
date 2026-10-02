@@ -339,18 +339,18 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
   const cards = getCardsConfig();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
       {cards.map((card, idx) => (
         <div
           key={idx}
-          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-4 flex flex-col justify-between shadow-xs min-h-[90px] transition-all`}
+          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px] transition-all`}
         >
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{card.title}</span>
-          <div className="flex items-baseline justify-center gap-1.5 my-1">
-            <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">{card.title}</span>
+          <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {loading ? '-' : card.value}
             </span>
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{card.unit}</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-600">{card.unit}</span>
           </div>
         </div>
       ))}

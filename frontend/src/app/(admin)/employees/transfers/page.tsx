@@ -341,8 +341,8 @@ export default function TransfersPage() {
           </div>
 
           {/* Search & Filter Controls */}
-          <div className="flex items-center gap-3 pb-3">
-            <div className="relative w-64">
+          <div className="flex flex-wrap items-center gap-3 pb-3">
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -398,17 +398,17 @@ export default function TransfersPage() {
         {/* 5. TAB 1 CONTENT: Table ตรงตาม Mockup 100% */}
         {activeTab === 'transfers' && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
-                  <th className="py-3.5 px-6 font-medium">เลขที่คำขอ</th>
-                  <th className="py-3.5 px-6 font-medium">พนักงาน</th>
-                  <th className="py-3.5 px-6 font-medium">จาก</th>
-                  <th className="py-3.5 px-6 font-medium">ไปยัง</th>
-                  <th className="py-3.5 px-6 font-medium">ประเภท</th>
-                  <th className="py-3.5 px-6 font-medium">วันที่มีผล</th>
-                  <th className="py-3.5 px-6 font-medium">สถานะ</th>
-                  <th className="py-3.5 px-6 font-medium text-right">การจัดการ</th>
+                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">เลขที่คำขอ</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">จาก</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ไปยัง</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภท</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
+                  <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">
@@ -604,14 +604,14 @@ export default function TransfersPage() {
         {/* 6. TAB 2 CONTENT: ประวัติรายบุคคล (ทำเหมือนหน้าสัญญาจ้างงาน 100%) */}
         {activeTab === 'timeline' && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full min-w-[750px] text-left border-collapse text-sm whitespace-nowrap">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
-                  <th className="py-3.5 px-6 font-medium">รหัสพนักงาน</th>
-                  <th className="py-3.5 px-6 font-medium">ชื่อ-นามสกุล</th>
-                  <th className="py-3.5 px-6 font-medium">แผนก / สังกัด</th>
-                  <th className="py-3.5 px-6 font-medium">ตำแหน่งปัจจุบัน</th>
-                  <th className="py-3.5 px-6 font-medium text-right">ไทม์ไลน์การทำงาน</th>
+                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">รหัสพนักงาน</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ชื่อ-นามสกุล</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">แผนก / สังกัด</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ตำแหน่งปัจจุบัน</th>
+                  <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">ไทม์ไลน์การทำงาน</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">

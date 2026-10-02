@@ -1,10 +1,11 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +26,7 @@ import {
   User,
   Wallet,
   Database,
+  X,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -283,11 +285,17 @@ const menuGroups: MenuGroup[] = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user, hasPermission, hasRole } = useAuth();
-  const { isCollapsed, toggleSidebar, collapseSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, collapseSidebar, isMobileOpen, closeMobileSidebar } = useSidebar();
+  const isDesktop = useIsDesktop();
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectMenu = () => {
-    collapseSidebar();
+    // Desktop: ย่อ sidebar, Mobile: ปิด drawer
+    if (isDesktop) {
+      collapseSidebar();
+    } else {
+      closeMobileSidebar();
+    }
     setSearchTerm('');
   };
 
@@ -352,15 +360,12 @@ export const Sidebar: React.FC = () => {
     return longestMatch.href === item.href;
   };
 
-  return (
-    <aside
-      className={`bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-700/80 flex flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
-        isCollapsed ? 'w-20' : 'w-64'
-      }`}
-    >
+  // ===== Sidebar Inner Content (shared between Desktop and Mobile) =====
+  const sidebarContent = (
+    <>
       {/* 1. Header: Logo & System Name */}
-      <div className={`h-20 flex items-center border-b border-slate-100/80 dark:border-slate-700/80 transition-all ${isCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}>
-        {!isCollapsed && (
+      <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all ${isCollapsed && isDesktop ? 'justify-center px-0' : 'justify-between px-5'}`}>
+        {(!isCollapsed || !isDesktop) && (
           <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
             {/* Logo Badge Icon (3 avatars in navy square) */}
             <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
@@ -374,18 +379,28 @@ export const Sidebar: React.FC = () => {
           </Link>
         )}
 
-        {/* Toggle Collapse Button */}
-        <button
-          onClick={toggleSidebar}
-          title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
-          className="w-8 h-8 rounded-lg bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 dark:hover:text-slate-200 flex items-center justify-center transition-colors shrink-0"
-        >
-          {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-        </button>
+        {/* Desktop: Toggle Collapse Button / Mobile: Close Button */}
+        {isDesktop ? (
+          <button
+            onClick={toggleSidebar}
+            title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
+            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
+          >
+            {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
+        ) : (
+          <button
+            onClick={closeMobileSidebar}
+            title="ปิดเมนู"
+            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* 2. Search Input */}
-      {!isCollapsed && (
+      {(!isCollapsed || !isDesktop) && (
         <div className="px-4 pt-4 pb-2">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -405,16 +420,16 @@ export const Sidebar: React.FC = () => {
       {/* 3. Navigation Menu Items Grouped by Category */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
         {filteredGroups.length === 0 && (
-          <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-            {!isCollapsed && 'ไม่พบเมนูที่ค้นหา'}
+          <div className="py-8 text-center text-xs text-slate-400">
+            {(!isCollapsed || !isDesktop) && 'ไม่พบเมนูที่ค้นหา'}
           </div>
         )}
 
         {filteredGroups.map((group, groupIndex) => (
           <div key={group.category} className="space-y-1">
             {/* Category Header Label */}
-            {!isCollapsed ? (
-              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wider select-none">
+            {(!isCollapsed || !isDesktop) ? (
+              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider select-none">
                 {group.category}
               </div>
             ) : (
@@ -431,15 +446,15 @@ export const Sidebar: React.FC = () => {
                   key={item.href}
                   href={item.href}
                   onClick={handleSelectMenu}
-                  title={isCollapsed ? item.title : undefined}
+                  title={isCollapsed && isDesktop ? item.title : undefined}
                   className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
                     active
                       ? 'bg-[#0B2046] text-white shadow-xs font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100'
-                  } ${isCollapsed ? 'justify-center px-0 py-2.5' : ''}`}
+                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                  } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : ''}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  {!isCollapsed && <span className="truncate">{item.title}</span>}
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                  {(!isCollapsed || !isDesktop) && <span className="truncate">{item.title}</span>}
                 </Link>
               );
             })}
@@ -448,8 +463,8 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* 4. Bottom User Profile Card (like in modern sidebar design) */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/50">
-        {!isCollapsed ? (
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        {(!isCollapsed || !isDesktop) ? (
           <Link
             href="/profile"
             onClick={handleSelectMenu}
@@ -482,6 +497,43 @@ export const Sidebar: React.FC = () => {
           </Link>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ===== Desktop Sidebar: Static flex child, hidden on mobile ===== */}
+      <aside
+        className={`hidden lg:flex bg-white border-r border-slate-200/80 flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
+          isCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* ===== Mobile Sidebar: Overlay Drawer + Backdrop ===== */}
+      {!isDesktop && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${
+              isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={closeMobileSidebar}
+            aria-hidden="true"
+          />
+
+          {/* Drawer panel */}
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
+              isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            {sidebarContent}
+          </aside>
+        </>
+      )}
+    </>
   );
 };
+

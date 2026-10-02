@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -8,12 +9,20 @@ interface SidebarContextType {
   toggleSidebar: () => void;
   collapseSidebar: () => void;
   expandSidebar: () => void;
+  /** Mobile: สถานะเปิด/ปิด sidebar drawer */
+  isMobileOpen: boolean;
+  /** Mobile: เปิด sidebar drawer */
+  openMobileSidebar: () => void;
+  /** Mobile: ปิด sidebar drawer */
+  closeMobileSidebar: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   // Sync initial state from localStorage on mount (client-side only)
   useEffect(() => {
@@ -26,6 +35,11 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Ignore localStorage access errors
     }
   }, []);
+
+  // ปิด mobile sidebar อัตโนมัติเมื่อเปลี่ยนหน้า
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   const handleSetCollapsed = (collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -48,6 +62,14 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleSetCollapsed(false);
   };
 
+  const openMobileSidebar = useCallback(() => {
+    setIsMobileOpen(true);
+  }, []);
+
+  const closeMobileSidebar = useCallback(() => {
+    setIsMobileOpen(false);
+  }, []);
+
   return (
     <SidebarContext.Provider
       value={{
@@ -56,6 +78,9 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toggleSidebar,
         collapseSidebar,
         expandSidebar,
+        isMobileOpen,
+        openMobileSidebar,
+        closeMobileSidebar,
       }}
     >
       {children}

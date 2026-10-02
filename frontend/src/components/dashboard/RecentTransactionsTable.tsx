@@ -371,14 +371,14 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Table Content */}
       <div className="overflow-x-auto flex-1 flex flex-col justify-between min-h-0">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-slate-400 flex-1">
-          <thead className="bg-slate-50/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0">
+        <table className="w-full min-w-[700px] text-left text-xs text-slate-600 flex-1 whitespace-nowrap">
+          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100 shrink-0 whitespace-nowrap">
             <tr>
-              <th className="py-3 px-5">รหัสเอกสาร</th>
-              <th className="py-3 px-5">วันที่กรอกเอกสาร</th>
-              <th className="py-3 px-5">ระยะเวลาในการลา</th>
-              <th className="py-3 px-5">ประเภทเอกสาร</th>
-              <th className="py-3 px-5">สถานะเอกสาร</th>
+              <th className="py-3 px-5 whitespace-nowrap">รหัสเอกสาร</th>
+              <th className="py-3 px-5 whitespace-nowrap">วันที่กรอกเอกสาร</th>
+              <th className="py-3 px-5 whitespace-nowrap">ระยะเวลาในการลา</th>
+              <th className="py-3 px-5 whitespace-nowrap">ประเภทเอกสาร</th>
+              <th className="py-3 px-5 whitespace-nowrap">สถานะเอกสาร</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 flex-1">

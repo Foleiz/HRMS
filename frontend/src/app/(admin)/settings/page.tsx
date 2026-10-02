@@ -671,11 +671,20 @@ export default function SettingsPage() {
         roleToEdit={roleToEdit}
       />
 
-      {/* Audit Log Detail Modal */}
+      {/* Audit Log Detail Modal / Slide-over Drawer */}
       <AuditLogDetailModal
         isOpen={!!selectedAuditLog}
         onClose={() => setSelectedAuditLog(null)}
         log={selectedAuditLog}
+        logs={auditLogs}
+        onSelectLog={(log) => setSelectedAuditLog(log)}
+        onFilterByUser={(userId) => {
+          if (userId) {
+            setAuditLogFilters((prev) => ({ ...prev, userId }));
+            setAuditLogPage(1);
+          }
+          setSelectedAuditLog(null);
+        }}
       />
 
       {/* Confirm Action Modal */}

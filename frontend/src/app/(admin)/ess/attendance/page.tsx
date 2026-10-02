@@ -491,69 +491,129 @@ export default function EssAttendancePage() {
                 ไม่พบข้อมูลบันทึกเวลาในเดือนนี้
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">วันที่</th>
-                      <th className="py-3 px-4">กะการทำงาน</th>
-                      <th className="py-3 px-4">เวลาเข้าจริง</th>
-                      <th className="py-3 px-4">เวลาออกจริง</th>
-                      <th className="py-3 px-4">มาสาย</th>
-                      <th className="py-3 px-4">ออกก่อน</th>
-                      <th className="py-3 px-4">สถานะ</th>
-                      <th className="py-3 px-4 text-center">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {historyList.map((rec) => (
-                      <tr key={rec.id || rec.workDate} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                          {formatThaiDate(rec.workDate)}
-                          <span className="block text-xs font-mono text-slate-400">{rec.workDate}</span>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-semibold block text-slate-700 dark:text-slate-300">{rec.shiftName || 'กะปกติ'}</span>
-                          <span className="text-slate-400 font-mono">{rec.shiftTimeWindow || '-'}</span>
-                        </td>
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
-                          {formatTime(rec.actualIn)}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
-                          {formatTime(rec.actualOut)}
-                        </td>
-                        <td className="py-3 px-4 text-xs font-mono">
-                          {rec.lateMinutes > 0 ? (
-                            <span className="text-amber-600 font-semibold">{rec.lateMinutes} นาที</span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs font-mono">
-                          {rec.earlyLeaveMinutes > 0 ? (
-                            <span className="text-orange-600 font-semibold">{rec.earlyLeaveMinutes} นาที</span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          {renderStatusBadge(rec.status, rec.isAbsent)}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => openAdjustmentModal(rec)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
-                            title="ยื่นขอปรับเวลาสำหรับวันนี้"
-                          >
-                            <FileEdit className="w-3.5 h-3.5" />
-                            ขอปรับเวลา
-                          </button>
-                        </td>
+              <>
+                {/* Desktop View: Full Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full min-w-[750px] text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่</th>
+                        <th className="py-3 px-4 whitespace-nowrap">กะการทำงาน</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาเข้าจริง</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาออกจริง</th>
+                        <th className="py-3 px-4 whitespace-nowrap">มาสาย</th>
+                        <th className="py-3 px-4 whitespace-nowrap">ออกก่อน</th>
+                        <th className="py-3 px-4 whitespace-nowrap">สถานะ</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {historyList.map((rec) => (
+                        <tr key={rec.id || rec.workDate} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4 font-medium text-slate-800">
+                            {formatThaiDate(rec.workDate)}
+                            <span className="block text-xs font-mono text-slate-400">{rec.workDate}</span>
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-600">
+                            <span className="font-semibold block text-slate-700">{rec.shiftName || 'กะปกติ'}</span>
+                            <span className="text-slate-400 font-mono">{rec.shiftTimeWindow || '-'}</span>
+                          </td>
+                          <td className="py-3 px-4 font-mono font-semibold text-slate-800">
+                            {formatTime(rec.actualIn)}
+                          </td>
+                          <td className="py-3 px-4 font-mono font-semibold text-slate-800">
+                            {formatTime(rec.actualOut)}
+                          </td>
+                          <td className="py-3 px-4 text-xs font-mono">
+                            {rec.lateMinutes > 0 ? (
+                              <span className="text-amber-600 font-semibold">{rec.lateMinutes} นาที</span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs font-mono">
+                            {rec.earlyLeaveMinutes > 0 ? (
+                              <span className="text-orange-600 font-semibold">{rec.earlyLeaveMinutes} นาที</span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {renderStatusBadge(rec.status, rec.isAbsent)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              onClick={() => openAdjustmentModal(rec)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                              title="ยื่นขอปรับเวลาสำหรับวันนี้"
+                            >
+                              <FileEdit className="w-3.5 h-3.5" />
+                              ขอปรับเวลา
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View: Stacked Cards */}
+                <div className="md:hidden divide-y divide-slate-100">
+                  {historyList.map((rec) => (
+                    <div key={rec.id || rec.workDate} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-semibold text-slate-900 text-sm">
+                            {formatThaiDate(rec.workDate)}
+                          </div>
+                          <span className="text-xs font-mono text-slate-400">{rec.workDate}</span>
+                        </div>
+                        <div>
+                          {renderStatusBadge(rec.status, rec.isAbsent)}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">เวลาเข้า</span>
+                          <span className="font-mono font-bold text-slate-800 text-sm">
+                            {formatTime(rec.actualIn)}
+                          </span>
+                          {rec.lateMinutes > 0 && (
+                            <span className="block text-[10px] text-amber-600 font-medium mt-0.5">
+                              สาย {rec.lateMinutes} น.
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">เวลาออก</span>
+                          <span className="font-mono font-bold text-slate-800 text-sm">
+                            {formatTime(rec.actualOut)}
+                          </span>
+                          {rec.earlyLeaveMinutes > 0 && (
+                            <span className="block text-[10px] text-orange-600 font-medium mt-0.5">
+                              ออกก่อน {rec.earlyLeaveMinutes} น.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 text-xs">
+                        <span className="text-slate-500 truncate max-w-[180px]">
+                          {rec.shiftName || 'กะปกติ'} ({rec.shiftTimeWindow || '-'})
+                        </span>
+                        <button
+                          onClick={() => openAdjustmentModal(rec)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 transition-all"
+                        >
+                          <FileEdit className="w-3.5 h-3.5" />
+                          ขอปรับเวลา
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -579,58 +639,116 @@ export default function EssAttendancePage() {
               คุณยังไม่เคยยื่นคำขอปรับปรุงเวลา
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">วันที่ขอปรับ</th>
-                    <th className="py-3 px-4">เวลาเดิม</th>
-                    <th className="py-3 px-4">เวลาที่ขอปรับ</th>
-                    <th className="py-3 px-4">เหตุผล</th>
-                    <th className="py-3 px-4">สถานะคำขอ</th>
-                    <th className="py-3 px-4">วันที่ยื่นคำขอ</th>
-                    <th className="py-3 px-4 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
+              <>
+                {/* Desktop View: Full Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่ขอปรับ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาเดิม</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาที่ขอปรับ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เหตุผล</th>
+                        <th className="py-3 px-4 whitespace-nowrap">สถานะคำขอ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่ยื่นคำขอ</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {adjustmentsList.map((adj) => (
+                        <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4 font-semibold text-slate-800">
+                            {adj.workDate}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-xs text-slate-500">
+                            {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-700">
+                            {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-600 max-w-xs truncate" title={adj.reason}>
+                            {adj.reason}
+                          </td>
+                          <td className="py-3 px-4">
+                            {renderAdjustmentStatusBadge(adj.status)}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-400 font-mono">
+                            {adj.createdAt ? new Date(adj.createdAt).toLocaleString('th-TH') : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {adj.status === 'PENDING' ? (
+                              <button
+                                onClick={() => handleCancelAdjustment(adj.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                ยกเลิกคำขอ
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View: Stacked Cards */}
+                <div className="md:hidden divide-y divide-slate-100">
                   {adjustmentsList.map((adj) => (
-                    <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                        {adj.workDate}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">
-                        {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-700">
-                        {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={adj.reason}>
-                        {adj.reason}
-                      </td>
-                      <td className="py-3 px-4">
-                        {renderAdjustmentStatusBadge(adj.status)}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-slate-400 font-mono">
-                        {adj.createdAt ? new Date(adj.createdAt).toLocaleString('th-TH') : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {adj.status === 'PENDING' ? (
+                    <div key={adj.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-semibold text-slate-900 text-sm">
+                            วันที่ขอปรับ: {adj.workDate}
+                          </span>
+                          <span className="block text-2xs text-slate-400 font-mono mt-0.5">
+                            ยื่นเมื่อ: {adj.createdAt ? new Date(adj.createdAt).toLocaleString('th-TH') : '-'}
+                          </span>
+                        </div>
+                        <div>
+                          {renderAdjustmentStatusBadge(adj.status)}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">เวลาเดิม</span>
+                          <span className="font-mono text-slate-500 font-medium">
+                            {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">เวลาที่ขอปรับ</span>
+                          <span className="font-mono font-bold text-blue-700">
+                            {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {adj.reason && (
+                        <div className="text-xs text-slate-600 bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                          <span className="font-medium text-slate-700">เหตุผล: </span>
+                          {adj.reason}
+                        </div>
+                      )}
+
+                      {adj.status === 'PENDING' && (
+                        <div className="flex justify-end pt-1">
                           <button
                             onClick={() => handleCancelAdjustment(adj.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all"
                           >
                             <X className="w-3.5 h-3.5" />
                             ยกเลิกคำขอ
                           </button>
-                        ) : (
-                          <span className="text-xs text-slate-400">-</span>
-                        )}
-                      </td>
-                    </tr>
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </>
           )}
         </div>
       )}

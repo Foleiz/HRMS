@@ -81,8 +81,8 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
   const isMaternity = !!leaveTypeName?.includes('คลอด');
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-8">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-4 sm:my-8">
         {/* Toolbar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">ตัวอย่างเอกสารใบลา</h3>
@@ -96,62 +96,64 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
         </div>
 
         {/* Paper */}
-        <div className="p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900 dark:text-slate-100 max-h-[75vh] overflow-y-auto">
-          <h2 className="text-center text-base font-bold mb-8">ใบลาป่วย ลาคลอดบุตร ลากิจส่วนตัว</h2>
+        <div className="overflow-x-auto max-h-[75vh] overflow-y-auto">
+          <div className="min-w-[600px] p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900">
+            <h2 className="text-center text-base font-bold mb-8">ใบลาป่วย ลาคลอดบุตร ลากิจส่วนตัว</h2>
 
-          <div className="text-right mb-1">
-            เขียนที่ <Dotted minWidth="10rem" />
-          </div>
-          <div className="text-right mb-6">
-            วันที่ <Dotted value={issueDate.day} minWidth="2rem" /> เดือน{' '}
-            <Dotted value={issueDate.month} minWidth="6rem" /> พ.ศ. <Dotted value={issueDate.yearBE} minWidth="3rem" />
-          </div>
-
-          <div className="mb-3">
-            เรื่อง <Dotted value={leaveTypeName ? `ขอลา${leaveTypeName}` : undefined} minWidth="20rem" />
-          </div>
-          <div className="mb-3">
-            เรียน <Dotted minWidth="26rem" />
-          </div>
-
-          <div className="mb-1 pl-6">
-            ข้าพเจ้า <Dotted value={fullName} minWidth="13rem" /> ตำแหน่ง{' '}
-            <Dotted value={positionTitle || undefined} minWidth="10rem" />
-          </div>
-          <div className="mb-4">
-            สังกัด <Dotted value={departmentName || undefined} minWidth="30rem" />
-          </div>
-
-          <div className="mb-4 pl-6 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <span className="shrink-0">ขอลา</span>
-              <CheckBox checked={isSick} label="ป่วย" />
-              <CheckBox checked={isPersonal} label="กิจส่วนตัว" />
-              <span>
-                เนื่องจาก <Dotted value={reason || undefined} minWidth="14rem" />
-              </span>
+            <div className="text-right mb-1">
+              เขียนที่ <Dotted minWidth="10rem" />
             </div>
-            <div className="flex items-center gap-x-4 pl-10">
-              <CheckBox checked={isMaternity} label="คลอดบุตร" />
+            <div className="text-right mb-6">
+              วันที่ <Dotted value={issueDate.day} minWidth="2rem" /> เดือน{' '}
+              <Dotted value={issueDate.month} minWidth="6rem" /> พ.ศ. <Dotted value={issueDate.yearBE} minWidth="3rem" />
             </div>
-          </div>
 
-          <div className="mb-1">
-            ตั้งแต่วันที่{' '}
-            <Dotted value={startDate ? `${start.day} ${start.month} ${start.yearBE}` : undefined} minWidth="10rem" /> ถึงวันที่{' '}
-            <Dotted value={endDate ? `${end.day} ${end.month} ${end.yearBE}` : undefined} minWidth="10rem" /> มีกำหนด{' '}
-            <Dotted value={leaveDays ? String(leaveDays) : undefined} minWidth="3rem" /> วัน
-          </div>
-          <div className="mb-1">
-            ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่ <Dotted value={contactDuringLeave || undefined} minWidth="22rem" />
-          </div>
+            <div className="mb-3">
+              เรื่อง <Dotted value={leaveTypeName ? `ขอลา${leaveTypeName}` : undefined} minWidth="20rem" />
+            </div>
+            <div className="mb-3">
+              เรียน <Dotted minWidth="26rem" />
+            </div>
 
-          <div className="text-right mt-10 mb-1">ขอแสดงความนับถือ</div>
-          <div className="text-right mb-1">
-            (ลงชื่อ) <Dotted minWidth="10rem" />
-          </div>
-          <div className="text-right">
-            (<Dotted value={fullName} minWidth="12rem" />)
+            <div className="mb-1 pl-6">
+              ข้าพเจ้า <Dotted value={fullName} minWidth="13rem" /> ตำแหน่ง{' '}
+              <Dotted value={positionTitle || undefined} minWidth="10rem" />
+            </div>
+            <div className="mb-4">
+              สังกัด <Dotted value={departmentName || undefined} minWidth="30rem" />
+            </div>
+
+            <div className="mb-4 pl-6 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <span className="shrink-0">ขอลา</span>
+                <CheckBox checked={isSick} label="ป่วย" />
+                <CheckBox checked={isPersonal} label="กิจส่วนตัว" />
+                <span>
+                  เนื่องจาก <Dotted value={reason || undefined} minWidth="14rem" />
+                </span>
+              </div>
+              <div className="flex items-center gap-x-4 pl-4 sm:pl-10">
+                <CheckBox checked={isMaternity} label="คลอดบุตร" />
+              </div>
+            </div>
+
+            <div className="mb-1">
+              ตั้งแต่วันที่{' '}
+              <Dotted value={startDate ? `${start.day} ${start.month} ${start.yearBE}` : undefined} minWidth="10rem" /> ถึงวันที่{' '}
+              <Dotted value={endDate ? `${end.day} ${end.month} ${end.yearBE}` : undefined} minWidth="10rem" /> มีกำหนด{' '}
+              <Dotted value={leaveDays ? String(leaveDays) : undefined} minWidth="3rem" /> วัน
+            </div>
+            <div className="mb-1">
+              ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่ <Dotted value={contactDuringLeave || undefined} minWidth="22rem" />
+            </div>
+
+            <div className="text-right mt-10 mb-1">ขอแสดงความนับถือ</div>
+            <div className="text-right mb-1">
+              (ลงชื่อ) <Dotted minWidth="10rem" />
+            </div>
+            <div className="text-right">
+              (<Dotted value={fullName} minWidth="12rem" />)
+            </div>
           </div>
         </div>
 

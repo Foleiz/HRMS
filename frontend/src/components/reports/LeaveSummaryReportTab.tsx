@@ -196,9 +196,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[600px] text-sm whitespace-nowrap">
                   <thead>
-                    <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">
+                    <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
                       <th className="text-left py-2 px-3">แผนก</th>
                       {matrix.types.map((t) => (
                         <th key={t} className="text-right py-2 px-3 whitespace-nowrap">
@@ -235,20 +235,21 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             {data.topEmployees.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">
-                    <th className="text-left py-2 px-3 w-10">#</th>
-                    <th className="text-left py-2 px-3">พนักงาน</th>
-                    <th className="text-left py-2 px-3">แผนก</th>
-                    <th className="text-right py-2 px-3">วันลา</th>
-                    <th className="text-right py-2 px-3">ใบลา</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.topEmployees.map((e, i) => (
-                    <tr key={e.employeeId} className="border-t border-slate-100 dark:border-slate-700/60">
-                      <td className="py-2 px-3 text-slate-400 dark:text-slate-500 dark:text-slate-400">{i + 1}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
+                      <th className="text-left py-2 px-3 w-10">#</th>
+                      <th className="text-left py-2 px-3">พนักงาน</th>
+                      <th className="text-left py-2 px-3">แผนก</th>
+                      <th className="text-right py-2 px-3">วันลา</th>
+                      <th className="text-right py-2 px-3">ใบลา</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.topEmployees.map((e, i) => (
+                    <tr key={e.employeeId} className="border-t border-slate-100">
+                      <td className="py-2 px-3 text-slate-400">{i + 1}</td>
                       <td className="py-2 px-3">
                         <div className="font-medium text-slate-800 dark:text-slate-200">{e.employeeName}</div>
                         <div className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{e.employeeCode}</div>
@@ -260,6 +261,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </>

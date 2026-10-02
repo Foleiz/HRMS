@@ -1,10 +1,31 @@
 ﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { History, Loader2, AlertTriangle, ArrowRight, User } from 'lucide-react';
+import {
+  History,
+  Loader2,
+  AlertTriangle,
+  Pencil,
+  X,
+  Plus,
+  Minus,
+  ArrowRight,
+  RefreshCw,
+  MoveRight,
+  User,
+  Calendar,
+  CreditCard,
+  FileText,
+  MapPin,
+  Phone,
+  Tag,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
 
+/* ─── Types ─────────────────────────────────────────────────────── */
 interface FieldChange {
   field: string;
   oldValue?: string | null;
@@ -17,97 +38,216 @@ interface HistoryEntry {
   category: string;
   categoryKey: string;
   action: 'UPDATE' | 'INSERT' | 'DELETE' | 'REPLACE' | 'MOVE' | string;
-  /** ประโยคสรุปให้อ่านเข้าใจทันที */
   summary?: string;
   changes: FieldChange[];
 }
 
-const ACTION_LABEL: Record<string, { label: string; className: string }> = {
-  UPDATE: { label: 'แก้ไข', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  INSERT: { label: 'เพิ่ม', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  DELETE: { label: 'ลบ', className: 'bg-rose-50 text-rose-700 border-rose-200' },
-  REPLACE: { label: 'ปรับรายการ', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  MOVE: { label: 'เปลี่ยนตำแหน่ง/สังกัด', className: 'bg-violet-50 text-violet-700 border-violet-200' },
+/* ─── Action config ──────────────────────────────────────────────── */
+const ACTION_CONFIG: Record<
+  string,
+  {
+    Icon: React.ElementType;
+    bg: string;
+    iconColor: string;
+    label: string;
+    border: string;
+  }
+> = {
+  UPDATE: {
+    Icon: Pencil,
+    bg: 'bg-blue-50 dark:bg-blue-950/50',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    label: 'แก้ไข',
+    border: 'border-blue-200 dark:border-blue-900',
+  },
+  INSERT: {
+    Icon: Plus,
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    label: 'เพิ่ม',
+    border: 'border-emerald-200 dark:border-emerald-900',
+  },
+  DELETE: {
+    Icon: X,
+    bg: 'bg-rose-50 dark:bg-rose-950/50',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    label: 'ลบ',
+    border: 'border-rose-200 dark:border-rose-900',
+  },
+  REPLACE: {
+    Icon: RefreshCw,
+    bg: 'bg-amber-50 dark:bg-amber-950/50',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    label: 'ปรับรายการ',
+    border: 'border-amber-200 dark:border-amber-900',
+  },
+  MOVE: {
+    Icon: MoveRight,
+    bg: 'bg-violet-50 dark:bg-violet-950/50',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    label: 'เปลี่ยนตำแหน่ง/สังกัด',
+    border: 'border-violet-200 dark:border-violet-900',
+  },
 };
 
-const Empty = () => <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 italic">(ว่าง)</span>;
+/* ─── Category Icon helper ───────────────────────────────────────── */
+const getCategoryIcon = (key: string) => {
+  const k = key.toLowerCase();
+  if (k.includes('bank') || k.includes('บัญชี') || k.includes('เงิน')) return CreditCard;
+  if (k.includes('personal') || k.includes('profile') || k.includes('ส่วนตัว')) return User;
+  if (k.includes('doc') || k.includes('file') || k.includes('เอกสาร')) return FileText;
+  if (k.includes('address') || k.includes('ที่อยู่')) return MapPin;
+  if (k.includes('contact') || k.includes('โทร') || k.includes('ติดต่อ')) return Phone;
+  return Tag;
+};
 
-/** ตารางรายละเอียด: แก้ไข = ช่อง | เดิม | ใหม่, เพิ่ม/ลบ = ช่อง | ข้อมูล */
-function ChangeTable({ entry }: { entry: HistoryEntry }) {
-  const hasBoth = entry.action === 'UPDATE' || entry.action === 'MOVE';
-  if (hasBoth) {
-    return (
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
-            <th className="text-left font-medium px-3 py-1.5 w-[32%]">ข้อมูล</th>
-            <th className="text-left font-medium px-3 py-1.5">ค่าเดิม</th>
-            <th className="w-6" />
-            <th className="text-left font-medium px-3 py-1.5">ค่าใหม่</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {entry.changes.map((c, i) => {
-            // แถวข้อมูลประกอบของการเปลี่ยนตำแหน่ง (วันสิ้นสุดเดิม / วันมีผลใหม่) แสดงเป็นค่าเดียว
-            const onlyInfo =
-              entry.action === 'MOVE' && c.oldValue == null && (c.field.startsWith('ตำแหน่งเดิม') || c.field.startsWith('ตำแหน่งใหม่'));
-            return (
-              <tr key={i}>
-                <td className="px-3 py-2 text-slate-600 dark:text-slate-400 align-top">{c.field}</td>
-                {onlyInfo ? (
-                  <td colSpan={3} className="px-3 py-2 text-slate-800 dark:text-slate-200 font-medium">{c.newValue ?? <Empty />}</td>
-                ) : (
-                  <>
-                    <td className="px-3 py-2 text-slate-500 dark:text-slate-400 align-top whitespace-pre-line break-words">{c.oldValue ?? <Empty />}</td>
-                    <td className="align-top pt-2.5"><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></td>
-                    <td className="px-3 py-2 text-slate-900 dark:text-slate-100 font-medium align-top whitespace-pre-line break-words">{c.newValue ?? <Empty />}</td>
-                  </>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    );
-  }
-  return (
-    <table className="w-full text-xs">
-      <tbody className="divide-y divide-slate-100">
-        {entry.changes.map((c, i) => {
-          const removed = c.newValue == null && c.oldValue != null;
-          return (
-            <tr key={i}>
-              <td className="px-3 py-2 text-slate-600 dark:text-slate-400 align-top w-[32%]">
-                {c.field === 'เพิ่ม' ? (
-                  <span className="text-emerald-700">+ เพิ่ม</span>
-                ) : c.field === 'ลบ' ? (
-                  <span className="text-rose-700">− ลบ</span>
-                ) : (
-                  c.field
-                )}
-              </td>
-              <td className={`px-3 py-2 align-top whitespace-pre-line break-words ${removed ? 'text-rose-700 line-through decoration-rose-300' : 'text-slate-900 dark:text-slate-100 font-medium'}`}>
-                {(removed ? c.oldValue : c.newValue) ?? <Empty />}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
-const formatDateTime = (v: string) => {
+/* ─── Helpers ────────────────────────────────────────────────────── */
+const formatDateShort = (v: string) => {
   const d = new Date(v);
   return isNaN(d.getTime())
     ? v
-    : d.toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const formatTimeOnly = (v: string) => {
+  const d = new Date(v);
+  return isNaN(d.getTime())
+    ? v
+    : d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+};
+
+const dateKey = (v: string) => {
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? v : d.toISOString().slice(0, 10);
 };
 
 const apiMessage = (err: unknown, fallback: string) =>
   (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
 
-/** แท็บประวัติการเปลี่ยนแปลงข้อมูลพนักงาน (จาก audit log) */
+const Empty = () => <span className="text-slate-400 italic">(ว่าง)</span>;
+
+/* ─── Inline change row ──────────────────────────────────────────── */
+function ChangeRow({ c, action }: { c: FieldChange; action: string }) {
+  const isDelete = action === 'DELETE' || (c.newValue == null && c.oldValue != null);
+  const isInsert = action === 'INSERT' || (c.oldValue == null && c.newValue != null && action !== 'MOVE');
+  const isUpdate = !isDelete && !isInsert;
+
+  return (
+    <div className="flex items-start gap-3 text-xs py-1.5 border-b border-slate-100 last:border-0">
+      {/* Field name */}
+      <span className="w-36 shrink-0 text-slate-500 truncate pt-0.5 font-medium">
+        {c.field}
+      </span>
+
+      {/* Value(s) */}
+      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+        {isDelete && (
+          <span className="text-rose-600 line-through decoration-rose-300 font-medium flex items-center gap-1">
+            <Minus className="w-3 h-3 text-rose-500 inline shrink-0" />
+            <span>{c.oldValue ?? <Empty />}</span>
+          </span>
+        )}
+        {isInsert && (
+          <span className="text-emerald-700 font-medium flex items-center gap-1">
+            <Plus className="w-3 h-3 text-emerald-600 inline shrink-0" />
+            <span>{c.newValue ?? <Empty />}</span>
+          </span>
+        )}
+        {isUpdate && (
+          <>
+            <span className="text-slate-400 line-through decoration-slate-300">
+              {c.oldValue ?? <Empty />}
+            </span>
+            <ArrowRight className="w-3 h-3 text-slate-400 shrink-0 mx-0.5" />
+            <span className="text-slate-900 font-bold">
+              {c.newValue ?? <Empty />}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Entry card ─────────────────────────────────────────────────── */
+const SHOW_LIMIT = 3;
+
+function EntryCard({ e }: { e: HistoryEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  const cfg = ACTION_CONFIG[e.action] ?? ACTION_CONFIG.UPDATE;
+  const { Icon } = cfg;
+  const CategoryIcon = getCategoryIcon(e.categoryKey);
+
+  const shown = expanded ? e.changes : e.changes.slice(0, SHOW_LIMIT);
+  const hidden = e.changes.length - SHOW_LIMIT;
+
+  return (
+    <div className="flex items-start gap-3">
+      {/* Action icon (Lucide) */}
+      <div
+        className={`shrink-0 w-8 h-8 rounded-full ${cfg.bg} border ${cfg.border} flex items-center justify-center mt-0.5 shadow-2xs`}
+      >
+        <Icon className={`w-4 h-4 ${cfg.iconColor}`} />
+      </div>
+
+      {/* Card */}
+      <div className="flex-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        {/* Header */}
+        <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 text-sm leading-snug">
+              {e.summary || cfg.label}
+            </p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-slate-500">
+              <span className="flex items-center gap-1 text-slate-500">
+                <User className="w-3 h-3 text-slate-400" />
+                <span>โดย <strong className="font-semibold text-slate-700">{e.changedBy || 'ระบบ'}</strong></span>
+              </span>
+              <span className="text-slate-300">·</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200/60">
+                <CategoryIcon className="w-2.5 h-2.5 text-slate-500" />
+                <span>{e.category}</span>
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] text-slate-400 font-mono shrink-0 pt-0.5">
+            {formatTimeOnly(e.at)} น.
+          </span>
+        </div>
+
+        {/* Change rows */}
+        {e.changes.length > 0 && (
+          <div className="border-t border-slate-100 px-4 py-2 bg-slate-50/40">
+            {shown.map((c, i) => (
+              <ChangeRow key={i} c={c} action={e.action} />
+            ))}
+            {hidden > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpanded((p) => !p)}
+                className="mt-1 text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                {expanded ? (
+                  <>
+                    <span>แสดงน้อยลง</span>
+                    <ChevronUp className="w-3 h-3" />
+                  </>
+                ) : (
+                  <>
+                    <span>ดูอีก {hidden} ช่อง</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main component ─────────────────────────────────────────────── */
 export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: number }) {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +274,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     };
   }, [employeeId]);
 
+  /* Category filter chips */
   const categories = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
     entries.forEach((e) => {
@@ -144,74 +285,106 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     return Array.from(map.entries());
   }, [entries]);
 
-  const filtered = category === 'ALL' ? entries : entries.filter((e) => e.categoryKey === category);
+  const filtered = category === 'ALL'
+    ? entries
+    : entries.filter((e) => e.categoryKey === category);
+
+  /* Group by date */
+  const grouped = useMemo(() => {
+    const map = new Map<string, HistoryEntry[]>();
+    filtered.forEach((e) => {
+      const key = dateKey(e.at);
+      const arr = map.get(key) ?? [];
+      arr.push(e);
+      map.set(key, arr);
+    });
+    return Array.from(map.entries());
+  }, [filtered]);
 
   return (
-    <div className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4">
+    <div className="pt-6 flex-1 animate-in fade-in duration-150 space-y-4">
+      {/* Title */}
       <div className="flex items-center gap-2">
-        <History className="w-4 h-4 text-[#0B2046]" />
-        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+        <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
+          <History className="w-4 h-4" />
+        </div>
+        <h3 className="font-bold text-slate-800 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
       </div>
 
+      {/* Category chips with Lucide icons */}
       {!loading && !error && entries.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 text-xs">
           <button
             type="button"
             onClick={() => setCategory('ALL')}
-            className={`px-3 py-1 rounded-full border cursor-pointer ${ category === 'ALL' ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-50'
+            className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
+              category === 'ALL'
+                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            ทั้งหมด ({entries.length})
+            <History className="w-3.5 h-3.5" />
+            <span>ทั้งหมด</span>
+            <span className="opacity-80 font-normal">({entries.length})</span>
           </button>
-          {categories.map(([key, c]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setCategory(key)}
-              className={`px-3 py-1 rounded-full border cursor-pointer ${ category === key ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {c.label} ({c.count})
-            </button>
-          ))}
+
+          {categories.map(([key, c]) => {
+            const CatIcon = getCategoryIcon(key);
+            const isSelected = category === key;
+
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCategory(key)}
+                className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <CatIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
+                <span>{c.label}</span>
+                <span className="opacity-80 font-normal">({c.count})</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
+      {/* Body */}
       {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
+        <div className="py-16 flex items-center justify-center text-slate-400 gap-2 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin text-[#0B2046]" /> กำลังโหลด...
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" /> {error}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 py-10 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+        <p className="text-center text-slate-400 py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-sm">
           ยังไม่มีประวัติการเปลี่ยนแปลง
         </p>
       ) : (
-        <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-2 space-y-4">
-          {filtered.map((e, idx) => {
-            const action = ACTION_LABEL[e.action] ?? ACTION_LABEL.UPDATE;
-            return (
-              <li key={`${e.at}-${idx}`} className="ml-4">
-                <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full bg-[#0B2046] ring-4 ring-white" />
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDateTime(e.at)}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300">{e.category}</span>
-                  <span className={`px-2 py-0.5 rounded-full border text-[10px] font-medium ${action.className}`}>{action.label}</span>
-                  <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                    <User className="w-3 h-3" /> {e.changedBy || 'ระบบ'}
-                  </span>
-                </div>
-                {e.summary && <p className="mt-1.5 text-sm text-slate-800 dark:text-slate-200 font-medium">{e.summary}</p>}
-                <div className="mt-2 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                  <ChangeTable entry={e} />
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="space-y-6">
+          {grouped.map(([dk, dayEntries]) => (
+            <div key={dk} className="space-y-2.5">
+              {/* Date header with trailing line and Calendar icon */}
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 pl-0.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>{formatDateShort(dayEntries[0].at)}</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              {/* Entry cards */}
+              <div className="space-y-3">
+                {dayEntries.map((e, idx) => (
+                  <EntryCard key={`${e.at}-${idx}`} e={e} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

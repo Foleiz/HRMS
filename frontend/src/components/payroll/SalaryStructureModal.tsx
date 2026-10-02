@@ -211,7 +211,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
           </div>
 
           {/* Action Buttons: ยกเลิก / บันทึก */}
-          <div className="grid grid-cols-2 gap-3 pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}

@@ -382,7 +382,7 @@ export default function ApprovalHistoryPage() {
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
-            <div className="relative w-72 sm:w-80">
+            <div className="relative w-full sm:w-72 md:w-80">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -448,7 +448,7 @@ export default function ApprovalHistoryPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[850px] text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">เลขที่เอกสาร</th>

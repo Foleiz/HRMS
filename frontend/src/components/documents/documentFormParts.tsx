@@ -171,20 +171,22 @@ export const ApprovalSignatureTable: React.FC<{ slots: ApprovalSlot[] }> = ({ sl
   const positions = getSlotPositions(slots.length);
   const rowCount = Math.max(...positions.map(([r]) => r)) + 1;
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
-      <tbody>
-        {Array.from({ length: rowCount }, (_, row) => (
-          <tr key={row}>
-            {[0, 1].map((col) => {
-              const idx = positions.findIndex(([r, c]) => r === row && c === col);
-              if (idx < 0) return <EmptyCell key={col} />;
-              const slot = slots[idx];
-              return <SignatureCell key={col} slot={slot} heading={getSlotHeading(slot)} />;
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="overflow-x-auto">
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
+        <tbody>
+          {Array.from({ length: rowCount }, (_, row) => (
+            <tr key={row}>
+              {[0, 1].map((col) => {
+                const idx = positions.findIndex(([r, c]) => r === row && c === col);
+                if (idx < 0) return <EmptyCell key={col} />;
+                const slot = slots[idx];
+                return <SignatureCell key={col} slot={slot} heading={getSlotHeading(slot)} />;
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

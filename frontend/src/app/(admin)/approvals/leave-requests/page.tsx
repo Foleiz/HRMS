@@ -793,7 +793,7 @@ export default function LeaveRequestsApprovalPage() {
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
-            <div className="relative w-72 sm:w-80">
+            <div className="relative w-full sm:w-72 md:w-80">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -867,8 +867,10 @@ export default function LeaveRequestsApprovalPage() {
             <p className="text-gray-400 text-sm">ไม่พบเอกสารสำหรับเงื่อนไขที่เลือก</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+            {/* Desktop View: Full Approvals Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full min-w-[850px] text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
@@ -1113,8 +1115,213 @@ export default function LeaveRequestsApprovalPage() {
               </tbody>
             </table>
           </div>
-        )
-      }
+
+          {/* Mobile View: Stacked Approval Cards */}
+          <div className="lg:hidden divide-y divide-gray-100">
+            {filteredRequests.map((item) => {
+              const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+              const isPending = item.status === 'PENDING';
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-4 space-y-3 transition-colors ${
+                    item.isMyTurnToApprove ? 'bg-amber-50/20' : ''
+                  }`}
+                >
+                  {/* Card Header: Type Badge, Request No, Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {item.docType === 'LEAVE' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <ClipboardList className="w-3 h-3 text-indigo-500" />
+                            คำขอลา
+                          </span>
+                        )}
+                        {item.docType === 'CERTIFICATE' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <FileText className="w-3 h-3 text-emerald-500" />
+                            หนังสือรับรอง
+                          </span>
+                        )}
+                        {item.docType === 'RESIGNATION' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            <FileText className="w-3 h-3 text-rose-500" />
+                            คำขอลาออก
+                          </span>
+                        )}
+                        {item.docType === 'GENERAL' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                            <FileText className="w-3 h-3 text-amber-500" />
+                            เอกสารทั่วไป
+                          </span>
+                        )}
+                        <span className="font-mono font-bold text-xs text-[#0B2046]">
+                          {item.requestNo}
+                        </span>
+                      </div>
+                      <span className="text-2xs text-slate-400 block font-mono">
+                        ยื่นเมื่อ: {formatDate(item.submittedAt)}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border shrink-0 ${statusConf.color}`}
+                    >
+                      {statusConf.icon}
+                      {statusConf.label}
+                    </span>
+                  </div>
+
+                  {/* Card Body: Employee & Request Details */}
+                  <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-100 space-y-2 text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                      <span>{item.employeeName}</span>
+                      {item.departmentName && item.departmentName !== '-' && (
+                        <span className="text-[11px] text-slate-500 font-normal">• {item.departmentName}</span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200/70 text-slate-700">
+                        {item.subType}
+                      </div>
+                      <p className="text-slate-600 text-xs leading-relaxed">{item.details}</p>
+                    </div>
+
+                    {item.documents && item.documents.length > 0 && (
+                      <div className="flex items-center gap-1 pt-1 border-t border-slate-200/60 flex-wrap">
+                        {item.documents.map((doc) => (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            onClick={() =>
+                              handleDownloadDoc(
+                                typeof item.rawId === 'number' ? item.rawId : 0,
+                                doc.id,
+                                doc.fileName || 'document'
+                              )
+                            }
+                            className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span className="max-w-28 truncate">{doc.fileName}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="space-y-2 pt-1">
+                    {/* Approve / Reject primary buttons when it's user's turn */}
+                    {isPending && item.isMyTurnToApprove && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            if (item.docType === 'LEAVE') {
+                              openApproveDialog(item.leaveRaw!);
+                            } else if (item.docType === 'CERTIFICATE') {
+                              openApproveCertDialog(item.certRaw!);
+                            } else if (item.docType === 'RESIGNATION') {
+                              openApproveResignDialog(item.resignationRaw!);
+                            } else if (item.docType === 'GENERAL') {
+                              openApproveGeneralDialog(item.generalRaw!);
+                            }
+                          }}
+                          className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          อนุมัติ
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (item.docType === 'LEAVE') {
+                              openRejectDialog(item.leaveRaw!);
+                            } else if (item.docType === 'CERTIFICATE') {
+                              openRejectCertDialog(item.certRaw!);
+                            } else if (item.docType === 'RESIGNATION') {
+                              openRejectResignDialog(item.resignationRaw!);
+                            } else if (item.docType === 'GENERAL') {
+                              openRejectGeneralDialog(item.generalRaw!);
+                            }
+                          }}
+                          className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          ปฏิเสธ
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Status notes if not turn */}
+                    {isPending && !item.isMyTurnToApprove && item.hasAlreadyApproved && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 w-full justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        คุณอนุมัติแล้ว (รอขั้นตอนถัดไป)
+                      </div>
+                    )}
+
+                    {isPending && !item.isMyTurnToApprove && !item.hasAlreadyApproved && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 w-full justify-center">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        กำลังรอการพิจารณาจาก {item.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}
+                      </div>
+                    )}
+
+                    {/* Secondary action: View document */}
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.docType === 'LEAVE') {
+                            handleOpenLeavePreview(item.leaveRaw!);
+                          } else if (item.docType === 'CERTIFICATE') {
+                            setSelectedCertForPreview(item.certRaw!);
+                            setIsCertPreviewOpen(true);
+                          } else if (item.docType === 'RESIGNATION') {
+                            setSelectedResignForPreview(item.resignationRaw!);
+                            setIsResignPreviewOpen(true);
+                          } else if (item.docType === 'GENERAL') {
+                            setSelectedGeneralForPreview(item.generalRaw!);
+                            setIsGeneralPreviewOpen(true);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ดูตัวอย่างเอกสาร
+                      </button>
+
+                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && (
+                        <button
+                          onClick={() => {
+                            if (item.docType === 'LEAVE') {
+                              handleCancelLeave(item.leaveRaw!);
+                            } else if (item.docType === 'CERTIFICATE') {
+                              handleCancelCert(item.certRaw!);
+                            } else if (item.docType === 'RESIGNATION') {
+                              handleCancelResign(item.resignationRaw!);
+                            } else if (item.docType === 'GENERAL') {
+                              handleCancelGeneral(item.generalRaw!);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          ยกเลิก
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )
+    }
       </div>
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอลา ─── */}

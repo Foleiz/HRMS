@@ -493,9 +493,9 @@ export default function LeaveManagementPage() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500 dark:text-slate-400">
+                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4 text-center">หมวดในใบลา</th>
                     <th className="py-3.5 px-4 text-center">รับค่าจ้าง</th>
@@ -600,9 +600,9 @@ export default function LeaveManagementPage() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500 dark:text-slate-400">
+                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4">ใช้กับ</th>
                     <th className="py-3.5 px-4 text-center">สิทธิ์/ปี</th>
@@ -855,10 +855,10 @@ export default function LeaveManagementPage() {
                       {/* Expanded Sub-Table */}
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-1 bg-slate-50/70 border-t border-gray-100 animate-in fade-in duration-150">
-                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
-                            <table className="w-full text-left border-collapse text-xs">
+                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 bg-white shadow-xs">
+                            <table className="w-full min-w-[650px] text-left border-collapse text-xs whitespace-nowrap">
                               <thead>
-                                <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-100 font-semibold text-gray-500 dark:text-slate-400">
+                                <tr className="bg-gray-50 border-b border-gray-100 font-semibold text-gray-500 whitespace-nowrap">
                                   <th className="py-2.5 px-4">ประเภทการลา</th>
                                   <th className="py-2.5 px-3 text-center">สิทธิ์ปีนี้</th>
                                   <th className="py-2.5 px-3 text-center">ยกมา</th>

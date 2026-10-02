@@ -496,7 +496,7 @@ export default function ThaiTimePicker({
                 {selectedHour}:{selectedMinute} น.
               </span>
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {QUICK_MINUTES.map((m) => (
                 <button
                   key={m}

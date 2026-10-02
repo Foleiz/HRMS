@@ -1159,10 +1159,10 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อฝ่าย / สายงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าฝ่าย</th>
@@ -1283,10 +1283,10 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าแผนก</th>
@@ -1408,10 +1408,10 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
@@ -1524,10 +1524,10 @@ export default function OrganizationPage() {
               ระดับพนักงานสำหรับจัดเกรดและโครงสร้างตำแหน่งในองค์กร
             </p>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
@@ -1641,10 +1641,10 @@ export default function OrganizationPage() {
               จัดการรายการสิทธิประโยชน์และสวัสดิการกลางขององค์กร สวัสดิการเหล่านี้จะถูกนำไปผูกกับประเภทสัญญาจ้างพนักงาน (Employee Types) ในหน้าจัดการประเภทพนักงาน
             </p>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
@@ -1964,10 +1964,10 @@ export default function OrganizationPage() {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm dark:border-slate-700">
-                <table className="w-full text-left border-collapse text-xs">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+                <table className="w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                       <th className="py-3 px-4">ธนาคาร</th>
                       <th className="py-3 px-4">เลขที่บัญชี</th>
                       <th className="py-3 px-4">ชื่อบัญชี</th>
@@ -2640,7 +2640,7 @@ export default function OrganizationPage() {
         return (
           <div className="-mx-6 -mb-6">
             {/* Header bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
                   <Network className="w-5 h-5 text-[#0B2046]" />
@@ -2688,9 +2688,9 @@ export default function OrganizationPage() {
             </div>
 
             {/* Toolbar: Search + expand all */}
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-slate-50/50 dark:border-slate-700/60">
-              <div className="relative flex-1 max-w-xs">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+            <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative flex-1 max-w-xs min-w-[180px]">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="ค้นหาพนักงาน..."
@@ -2720,7 +2720,7 @@ export default function OrganizationPage() {
             </div>
 
             {/* Chart Canvas */}
-            <div className="relative overflow-auto bg-slate-100/80 dark:bg-slate-800/80" style={{ minHeight: 520 }}>
+            <div className="relative overflow-x-auto overflow-y-auto bg-slate-100/80 touch-pan-x touch-pan-y overscroll-contain" style={{ minHeight: 520, WebkitOverflowScrolling: 'touch' }}>
               <div
                 style={{ transform: `scale(${orgZoom})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', minWidth: 'max-content' }}
                 className="py-10 px-12 flex flex-col items-center"

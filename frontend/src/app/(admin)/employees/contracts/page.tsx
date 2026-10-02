@@ -233,8 +233,8 @@ export default function ContractsPage() {
           </div>
 
           {/* Search & Filter Inputs (ข้อเสนอแนะที่ได้รับอนุมัติ) */}
-          <div className="flex items-center gap-3 pb-3">
-            <div className="relative w-64">
+          <div className="flex flex-wrap items-center gap-3 pb-3">
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -272,15 +272,15 @@ export default function ContractsPage() {
 
         {/* 6. Contracts Table ตรงตาม Mockup 100% */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-sm">
+          <table className="w-full min-w-[750px] text-left border-collapse text-sm whitespace-nowrap">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
-                <th className="py-3.5 px-6 font-medium">พนักงาน</th>
-                <th className="py-3.5 px-6 font-medium">ประเภทสัญญา</th>
-                <th className="py-3.5 px-6 font-medium">เริ่มสัญญา</th>
-                <th className="py-3.5 px-6 font-medium">สิ้นสุด / ครบทดลองงาน</th>
-                <th className="py-3.5 px-6 font-medium">สถานะ</th>
-                <th className="py-3.5 px-6 font-medium text-right">การจัดการ</th>
+              <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทสัญญา</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">สิ้นสุด / ครบทดลองงาน</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
+                <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

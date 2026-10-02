@@ -325,54 +325,58 @@ export default function TeamLeaveCalendarPage() {
 
       <div className="flex flex-col xl:flex-row gap-4">
         {/* Calendar grid */}
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-            {WEEK_DAYS.map((d, i) => (
-              <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'}`}>
-                {d}
+        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+                {WEEK_DAYS.map((d, i) => (
+                  <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500'}`}>
+                    {d}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {days.map((d) => {
-              const key = ymd(d);
-              const list = itemsByDay.get(key) ?? [];
-              const outside = view === 'month' && d.getMonth() !== anchor.getMonth();
-              const max = view === 'month' ? 3 : 50;
-              return (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  key={key}
-                  onClick={() => setSelectedDay(key === selectedDay ? null : key)}
-                  className={`text-left border-b border-r border-slate-100 p-1.5 align-top flex flex-col gap-1 ${
-                    view === 'month' ? 'min-h-[104px]' : 'min-h-[320px]'
-                  } ${outside ? 'bg-slate-50/60' : 'bg-white dark:bg-slate-800'} ${
-                    key === selectedDay ? 'ring-2 ring-inset ring-blue-400' : 'hover:bg-blue-50/40'
-                  }`}
-                >
-                  <span
-                    className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                      key === todayKey ? 'bg-[#0B2046] text-white' : outside ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    {d.getDate()}
-                  </span>
-                  {list.slice(0, max).map((it) => (
-                    <Chip key={`${it.id}-${key}`} item={it} compact={view === 'month'} />
-                  ))}
-                  {list.length > max && (
-                    <span className="text-[11px] text-blue-600 font-medium">+{list.length - max} คน</span>
-                  )}
-                </div>
-              );
-            })}
+              <div className="grid grid-cols-7">
+                {days.map((d) => {
+                  const key = ymd(d);
+                  const list = itemsByDay.get(key) ?? [];
+                  const outside = view === 'month' && d.getMonth() !== anchor.getMonth();
+                  const max = view === 'month' ? 3 : 50;
+                  return (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      key={key}
+                      onClick={() => setSelectedDay(key === selectedDay ? null : key)}
+                      className={`text-left border-b border-r border-slate-100 p-1.5 align-top flex flex-col gap-1 ${
+                        view === 'month' ? 'min-h-[104px]' : 'min-h-[320px]'
+                      } ${outside ? 'bg-slate-50/60' : 'bg-white'} ${
+                        key === selectedDay ? 'ring-2 ring-inset ring-blue-400' : 'hover:bg-blue-50/40'
+                      }`}
+                    >
+                      <span
+                        className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
+                          key === todayKey ? 'bg-[#0B2046] text-white' : outside ? 'text-slate-300' : 'text-slate-600'
+                        }`}
+                      >
+                        {d.getDate()}
+                      </span>
+                      {list.slice(0, max).map((it) => (
+                        <Chip key={`${it.id}-${key}`} item={it} compact={view === 'month'} />
+                      ))}
+                      {list.length > max && (
+                        <span className="text-[11px] text-blue-600 font-medium">+{list.length - max} คน</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Day detail */}
         {selectedDay && (
-          <div className="xl:w-80 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 h-fit">
+          <div className="w-full xl:w-80 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 h-fit">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">ผู้ลาวันที่ {thaiDate(selectedDay)}</h2>
               <button onClick={() => setSelectedDay(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">

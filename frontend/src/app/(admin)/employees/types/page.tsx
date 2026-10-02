@@ -283,7 +283,7 @@ export default function EmployeeTypesPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Search Input */}
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -321,9 +321,9 @@ export default function EmployeeTypesPage() {
               <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
             </div>
           ) : (
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
-                <tr>
+            <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
+                <tr className="whitespace-nowrap">
                   <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
                   <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทสัญญา / การจ้างงาน</th>
                   <th className="py-3 px-4 whitespace-nowrap">รูปแบบค่าตอบแทน</th>

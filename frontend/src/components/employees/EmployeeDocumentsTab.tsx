@@ -264,10 +264,10 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
           <p className="text-[11px]">เอกสารจากคำขอเอกสารทั่วไปที่อนุมัติแล้วจะถูกเก็บเข้าแฟ้มนี้อัตโนมัติ</p>
         </div>
       ) : (
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
-          <table className="w-full min-w-[760px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/60  text-slate-500 dark:text-slate-400 text-[11px]">
-              <tr>
+        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+          <table className="w-full min-w-[760px] whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500 text-[11px]">
+              <tr className="whitespace-nowrap">
                 <th className="text-left font-semibold px-4 py-2.5">ประเภทเอกสาร</th>
                 <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
                 <th className="text-left font-semibold px-4 py-2.5">วันที่ออก</th>
@@ -386,7 +386,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">วันที่ออกเอกสาร</label>
                   <input
