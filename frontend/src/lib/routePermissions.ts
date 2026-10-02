@@ -51,7 +51,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/ess/benefits',
     title: 'สวัสดิการของฉัน (ESS)',
-    requiredPermissions: ['ESS_PROFILE_VIEW', 'ESS_DOCS_VIEW'],
+    requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
   },
 
   {
