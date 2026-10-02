@@ -2415,9 +2415,9 @@ export default function OrganizationPage() {
                     onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
                     className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
                   >
-                    <option value="IN_KIND">ตามระเบียบบริษัท (In-Kind / สิทธิประโยชน์คุ้มครอง เช่น ประกันสังคม, ประกันกลุ่ม, รถรับส่ง)</option>
-                    <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ (Reimbursement ผ่านระบบ ESS)</option>
-                    <option value="PAYROLL">จ่ายในเงินเดือน (Payroll Allowance เช่น ค่าอาหาร, ค่าครองชีพ)</option>
+                    <option value="IN_KIND">ตามระเบียบบริษัท</option>
+                    <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
+                    <option value="PAYROLL">จ่ายในเงินเดือน</option>
                   </select>
                 </div>
 
