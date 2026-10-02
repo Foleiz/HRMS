@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
@@ -157,7 +157,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
         onClick={handleToggleOpen}
         className={`${className} flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800 cursor-pointer dark:text-slate-100`}
       >
-        <span className={startDate || endDate ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500'}>
+        <span className={startDate || endDate ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500 dark:text-slate-400'}>
           {mode === 'single' ? (
             startDate ? formatThaiShort(startDate) : 'dd/mm/yyyy'
           ) : (
@@ -168,7 +168,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
             </>
           )}
         </span>
-        <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
+        <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
       </button>
 
       {open && (
@@ -217,7 +217,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
           <div className="relative">
             <div className="grid grid-cols-7 mb-1">
               {THAI_WEEKDAYS.map((w) => (
-                <div key={w} className="h-7 flex items-center justify-center text-[11px] font-medium text-gray-400 dark:text-slate-500">
+                <div key={w} className="h-7 flex items-center justify-center text-[11px] font-medium text-gray-400 dark:text-slate-500 dark:text-slate-400">
                   {w}
                 </div>
               ))}

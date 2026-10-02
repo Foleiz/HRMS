@@ -136,10 +136,10 @@ function TablePagination({
   return (
     <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white dark:bg-slate-800">
       {/* Left: Summary and Page Size Selector */}
-      <div className="flex flex-wrap items-center gap-3 text-slate-500">
+      <div className="flex flex-wrap items-center gap-3 text-slate-500 dark:text-slate-400">
         <span>
-          แสดง <strong className="font-semibold text-slate-800">{startIndex} - {endIndex}</strong> จากทั้งหมด{' '}
-          <strong className="font-semibold text-slate-800">{totalCount}</strong> {unitText}
+          แสดง <strong className="font-semibold text-slate-800 dark:text-slate-200">{startIndex} - {endIndex}</strong> จากทั้งหมด{' '}
+          <strong className="font-semibold text-slate-800 dark:text-slate-200">{totalCount}</strong> {unitText}
         </span>
         <div className="flex items-center gap-1.5">
           <span className="text-slate-400">แสดงหน้าละ:</span>
@@ -167,7 +167,7 @@ function TablePagination({
           type="button"
           disabled={safeCurrentPage <= 1}
           onClick={() => onPageChange(safeCurrentPage - 1)}
-          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
           title="หน้าก่อนหน้า"
         >
           ←
@@ -178,7 +178,7 @@ function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(1)}
-              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer transition-colors"
             >
               1
             </button>
@@ -194,7 +194,7 @@ function TablePagination({
             className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
               safeCurrentPage === p
                 ? 'bg-[#0B2046] text-white shadow-xs'
-                : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                : 'border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
             }`}
           >
             {p}
@@ -207,7 +207,7 @@ function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(totalPages)}
-              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-lg font-semibold flex items-center justify-center border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer transition-colors"
             >
               {totalPages}
             </button>
@@ -218,7 +218,7 @@ function TablePagination({
           type="button"
           disabled={safeCurrentPage >= totalPages}
           onClick={() => onPageChange(safeCurrentPage + 1)}
-          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
           title="หน้าถัดไป"
         >
           →
@@ -1453,8 +1453,8 @@ export default function PayrollPage() {
               onClick={() => setActiveTab(t.id)}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === t.id
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-[#0B2046] text-[#0B2046] dark:border-blue-400 dark:text-blue-400 font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               {t.label}
@@ -1479,11 +1479,11 @@ export default function PayrollPage() {
             {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between relative hover:border-slate-200 transition-all">
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
-                <div className="text-2xl font-bold text-slate-900 tracking-tight">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   ฿{overview?.currentMonthTotal?.toLocaleString() || '1,842,300'}
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                   {overview?.currentMonthPeriod || 'รอบ ส.ค. 2569'}
                 </span>
               </div>
@@ -1494,7 +1494,7 @@ export default function PayrollPage() {
                 </div>
                 <button
                   type="button"
-                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
@@ -1504,16 +1504,16 @@ export default function PayrollPage() {
             {/* Card 2: พนักงานที่คำนวณแล้ว */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-medium">พนักงานที่คำนวณแล้ว</span>
-                <div className="text-2xl font-bold text-slate-900 tracking-tight">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '118/145'}
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                   คิดเป็น {overview?.calculatedPercentage || 81}%
                 </span>
               </div>
 
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 text-slate-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
                 <Users className="w-4 h-4" />
               </div>
             </div>
@@ -1521,14 +1521,14 @@ export default function PayrollPage() {
             {/* Card 3: รอตรวจสอบ/อนุมัติ */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-medium">รอตรวจสอบ/อนุมัติ</span>
-                <div className="text-2xl font-bold text-slate-900 tracking-tight">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {overview ? `${overview.pendingApprovalCount} คน` : '27 คน'}
                 </div>
-                <span className="text-xs text-slate-400">ต้องดำเนินการก่อนปิดรอบ</span>
+                <span className="text-xs text-slate-400 dark:text-slate-400">ต้องดำเนินการก่อนปิดรอบ</span>
               </div>
 
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 text-slate-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
@@ -1536,16 +1536,16 @@ export default function PayrollPage() {
             {/* Card 4: กำหนดปิดรอบถัดไป */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-medium">กำหนดปิดรอบถัดไป</span>
-                <div className="text-2xl font-bold text-slate-900 tracking-tight">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {overview?.nextClosingDate || '29 ส.ค. 2569'}
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                   เหลืออีก {overview?.remainingDays != null ? overview.remainingDays : 2} วัน
                 </span>
               </div>
 
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 text-slate-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
                 <Calendar className="w-4 h-4" />
               </div>
             </div>
@@ -1554,7 +1554,7 @@ export default function PayrollPage() {
           {/* Section: รอบเงินเดือนล่าสุด */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-bold text-slate-900">รอบเงินเดือนล่าสุด</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">รอบเงินเดือนล่าสุด</h2>
               <button
                 onClick={() => setActiveTab('process')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
@@ -1595,9 +1595,9 @@ export default function PayrollPage() {
                   ]
               ).map((p, idx) => (
                 <div key={idx} className="py-4 flex items-center justify-between text-sm">
-                  <span className="font-semibold text-slate-800">{p.periodName}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{p.periodName}</span>
                   <div className="flex items-center gap-8">
-                    <span className="font-bold text-slate-900 font-mono">
+                    <span className="font-bold text-slate-900 dark:text-white font-mono">
                       ฿{p.totalAmount.toLocaleString()}
                     </span>
                     <span
@@ -1623,14 +1623,14 @@ export default function PayrollPage() {
           {/* Header matching mockup: Title on left, "+ เพิ่ม" button on right */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-bold text-slate-900">โครงสร้างเงินเดือน</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">โครงสร้างเงินเดือน</h2>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
                 <button
                   onClick={() => setStructureSubTab('positions')}
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'positions'
                       ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                   }`}
                 >
                   กรอบโครงสร้าง ({structures.length})
@@ -1640,7 +1640,7 @@ export default function PayrollPage() {
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'employees'
                       ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                   }`}
                 >
                   ฐานเงินเดือนพนักงาน ({employees.length})
@@ -1672,7 +1672,7 @@ export default function PayrollPage() {
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         <th className="py-3.5 px-5">ระดับพนักงาน</th>
                         <th className="py-3.5 px-5">เงินเดือนขั้นต่ำ</th>
                         <th className="py-3.5 px-5">เงินเดือนขั้นสูง</th>
@@ -1706,21 +1706,21 @@ export default function PayrollPage() {
                             onDoubleClick={() => handleOpenEditStructure(s)}
                             className="hover:bg-slate-50/60 transition-colors"
                           >
-                            <td className="py-4 px-5 font-medium text-slate-800">
+                            <td className="py-4 px-5 font-medium text-slate-800 dark:text-slate-200">
                               {s.levelName || s.positionName || 'ระดับปฏิบัติการ'}
                             </td>
-                            <td className="py-4 px-5 font-medium text-slate-700">
+                            <td className="py-4 px-5 font-medium text-slate-700 dark:text-slate-300">
                               ฿{s.minSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td className="py-4 px-5 font-medium text-slate-700">
+                            <td className="py-4 px-5 font-medium text-slate-700 dark:text-slate-300">
                               ฿{s.maxSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td className="py-4 px-5 font-medium text-slate-700">
+                            <td className="py-4 px-5 font-medium text-slate-700 dark:text-slate-300">
                               ฿{(s.positionAllowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                             <td className="py-4 px-5">
                               {isStructureActive ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 font-medium">
+                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
                                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                   <span>ใช้งาน</span>
                                 </span>
@@ -1814,14 +1814,14 @@ export default function PayrollPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleFilterEmployees()}
-                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800"
+                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                       />
                     </div>
 
                     <select
                       value={selectedDeptId}
                       onChange={(e) => setSelectedDeptId(e.target.value)}
-                      className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800"
+                      className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                     >
                       <option value="">-- ทุกแผนก --</option>
                       {departments.map((d) => (
@@ -1833,14 +1833,14 @@ export default function PayrollPage() {
 
                     <button
                       onClick={handleFilterEmployees}
-                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                     >
                       ค้นหา
                     </button>
                   </div>
 
-                  <div className="text-xs text-slate-500">
-                    แสดง <span className="font-bold text-slate-800">{employees.length}</span> คน
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    แสดง <span className="font-bold text-slate-800 dark:text-slate-200">{employees.length}</span> คน
                   </div>
                 </div>
 
@@ -1848,7 +1848,7 @@ export default function PayrollPage() {
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
                         <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
                         <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
@@ -1863,11 +1863,11 @@ export default function PayrollPage() {
                         return (
                           <tr key={emp.employeeId} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-3.5 px-4">
-                              <div className="font-semibold text-slate-900">{emp.employeeName}</div>
+                              <div className="font-semibold text-slate-900 dark:text-slate-100">{emp.employeeName}</div>
                               <div className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeCode}</div>
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="text-slate-800 text-xs font-medium">
+                              <div className="text-slate-800 dark:text-slate-200 text-xs font-medium">
                                 {emp.departmentName || 'ไม่ระบุแผนก'}
                               </div>
                               <div className="text-xs text-slate-400 mt-0.5">
@@ -1876,7 +1876,7 @@ export default function PayrollPage() {
                             </td>
                             <td className="py-3.5 px-4 text-right">
                               {hasSalary ? (
-                                <span className="font-bold text-slate-900 font-mono text-xs">
+                                <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
                                   ฿{emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </span>
                               ) : (
@@ -1885,16 +1885,16 @@ export default function PayrollPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center text-xs text-slate-500 font-mono">
+                            <td className="py-3.5 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
                               {emp.currentEffectiveFrom || '-'}
                             </td>
                             <td className="py-3.5 px-4">
                               {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
-                                <span className="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
                                   ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
                                 </span>
                               ) : (
-                                <span className="text-xs text-slate-400">-</span>
+                                <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
                               )}
                             </td>
                             <td className="py-3.5 px-4 text-center">
@@ -1908,7 +1908,7 @@ export default function PayrollPage() {
                                 <button
                                   onClick={() => handleOpenSalaryHistory(emp)}
                                   title="ดูประวัติการปรับเงินเดือน"
-                                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <History className="w-4 h-4" />
                                 </button>
@@ -1970,14 +1970,14 @@ export default function PayrollPage() {
           {/* 2 Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
-              <span className="text-xs text-slate-500 font-medium">รายการทั้งหมด</span>
-              <div className="text-2xl font-bold text-slate-900 mt-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รายการทั้งหมด</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                 {payrollItems.filter((i) => i.itemType === itemsSubTab).length} รายการ
               </div>
             </div>
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
-              <span className="text-xs text-slate-500 font-medium">เปิดใช้งานอยู่</span>
-              <div className="text-2xl font-bold text-slate-900 mt-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">เปิดใช้งานอยู่</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                 {
                   payrollItems.filter(
                     (i) =>
@@ -2006,7 +2006,7 @@ export default function PayrollPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-3.5 px-5">รายการ</th>
                     <th className="py-3.5 px-5">ประเภทการคำนวณ</th>
                     <th className="py-3.5 px-5">ค่า / สูตร</th>
@@ -2052,9 +2052,9 @@ export default function PayrollPage() {
                           case 'PERCENT_SALARY':
                             return { label: 'PVD / % เงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
                           case 'STAFF_LOAN':
-                            return { label: 'หักเงินกู้ยืมสวัสดิการ', color: 'bg-slate-50 text-slate-700 border-slate-200' };
+                            return { label: 'หักเงินกู้ยืมสวัสดิการ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
                           case 'CUSTOM_FORMULA':
-                            return { label: 'สูตรกำหนดเอง', color: 'bg-slate-50 text-slate-700 border-slate-200' };
+                            return { label: 'สูตรกำหนดเอง', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
                           default:
                             return null;
                         }
@@ -2068,7 +2068,7 @@ export default function PayrollPage() {
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3.5 px-5">
-                            <div className="font-bold text-slate-900 text-xs">{item.itemName}</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">{item.itemName}</div>
                             {item.description && (
                               <div className="text-[11px] text-slate-400 mt-0.5">{item.description}</div>
                             )}
@@ -2092,25 +2092,25 @@ export default function PayrollPage() {
                                     {templateBadge.label}
                                   </span>
                                 )}
-                                <span className="text-xs text-slate-700 font-medium">
+                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                                   {item.formulaValue || '-'}
                                 </span>
                               </div>
                             ) : item.calculationType === 'FIXED' ? (
                               <div className="flex items-center gap-1.5">
                                 {fixedNumber !== null ? (
-                                  <span className="text-xs font-bold text-slate-900 font-mono">
+                                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
                                     ฿{fixedNumber.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                   </span>
                                 ) : (
-                                  <span className="text-xs text-slate-700 font-medium">
+                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                                     {item.formulaValue || '-'}
                                   </span>
                                 )}
                                 <span className="text-[10px] text-slate-400 font-normal">(ยอดคงที่)</span>
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-500 font-medium italic">
+                              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">
                                 {item.formulaValue || 'กำหนดตามจริงรายงวด'}
                               </span>
                             )}
@@ -2135,7 +2135,7 @@ export default function PayrollPage() {
                           </td>
                           <td className="py-3.5 px-5">
                             {isItemActive ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 font-medium">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                 <span>ใช้งาน</span>
                               </span>
@@ -2218,14 +2218,14 @@ export default function PayrollPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
                       <span className="text-xs text-slate-300">•</span>
-                      <span className="text-xs font-bold text-slate-700">รอบเงินเดือน : {selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">รอบเงินเดือน : {selectedPeriod?.periodName || 'งวดปัจจุบัน'}</span>
                     </div>
-                    <h1 className="text-lg font-bold mt-1 text-slate-900 flex items-center gap-2">
+                    <h1 className="text-lg font-bold mt-1 text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
                       {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
                       {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
                     </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {processSubTab === 'HR' && 'มุมมองฝ่ายบุคคล: ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
                       {processSubTab === 'FINANCE' && 'มุมมองฝ่ายการเงิน: ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร'}
                       {processSubTab === 'APPROVER' && 'มุมมองผู้อนุมัติ (CEO): ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย'}
@@ -2244,7 +2244,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'HR'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                         }`}
                       >
                         <Users className="w-3.5 h-3.5 text-blue-600" />
@@ -2261,7 +2261,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'FINANCE'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                         }`}
                       >
                         <Landmark className="w-3.5 h-3.5 text-emerald-600" />
@@ -2278,7 +2278,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'APPROVER'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                         }`}
                       >
                         <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
@@ -2331,12 +2331,12 @@ export default function PayrollPage() {
                                   ? 'bg-amber-500 text-white animate-pulse'
                                   : isViewing
                                   ? 'bg-[#0B2046] text-white'
-                                  : 'bg-slate-200 text-slate-500'
+                                  : 'bg-slate-200 text-slate-500 dark:text-slate-400'
                               }`}
                             >
                               {isDone ? '✓' : s.step}
                             </span>
-                            <span className={`text-xs font-bold ${isViewing ? 'text-amber-950 font-bold' : isPeriodCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600'}`}>
+                            <span className={`text-xs font-bold ${isViewing ? 'text-amber-950 font-bold' : isPeriodCurrent ? 'text-amber-900' : isDone ? 'text-emerald-800' : 'text-slate-600 dark:text-slate-400'}`}>
                               {s.title}
                             </span>
                           </div>
@@ -2365,18 +2365,18 @@ export default function PayrollPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
                         <span className="text-xs text-slate-300">•</span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
                           {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
                           {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
                           {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
                         </span>
                       </div>
-                      <h1 className="text-lg font-bold text-slate-900 mt-1">
+                      <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
                         {processSubTab === 'HR' && 'เตรียมข้อมูลก่อนคำนวณเงินเดือน'}
                         {processSubTab === 'FINANCE' && 'ตรวจสอบยอดและจ่ายเงินเดือน'}
                         {processSubTab === 'APPROVER' && 'สรุปภาพรวมและอนุมัติรอบเงินเดือน'}
                       </h1>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         {processSubTab === 'HR' && 'ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน'}
                         {processSubTab === 'FINANCE' && 'ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และจัดการการจ่ายเงินเดือน'}
                         {processSubTab === 'APPROVER' && 'ตรวจสอบความถูกต้องของยอดรวมและภาระภาษี ก่อนลงนามอนุมัติรอบเงินเดือน'}
@@ -2390,7 +2390,7 @@ export default function PayrollPage() {
                         <select
                           value={selectedPeriod?.id || ''}
                           onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                          className="appearance-none font-bold text-slate-900 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                          className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
                         >
                           {periods.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -2398,10 +2398,10 @@ export default function PayrollPage() {
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-4 h-4 text-slate-500 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 py-1 text-slate-500 font-bold text-sm">
+                      <div className="flex items-center gap-2 py-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
                         <span>ยังไม่มีรอบเงินเดือนในระบบ</span>
                       </div>
@@ -2422,7 +2422,7 @@ export default function PayrollPage() {
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : selectedPeriod.status === 'PAID'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-200 text-slate-700'
+                            : 'bg-slate-200 text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         {selectedPeriod.status === 'PENDING_APPROVAL'
@@ -2445,7 +2445,7 @@ export default function PayrollPage() {
                   <div className="flex flex-wrap items-center gap-6 mt-2 text-xs text-slate-400">
                     <span>
                       ช่วงเงินเดือน:{' '}
-                      <span className="text-slate-600 font-medium">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">
                         {selectedPeriod
                           ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026
                               ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
@@ -2455,7 +2455,7 @@ export default function PayrollPage() {
                     </span>
                     <span>
                       วันจ่ายเงิน:{' '}
-                      <span className="text-slate-600 font-medium">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">
                         {selectedPeriod?.paymentDate
                           ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026 ? '29 ส.ค. 2569' : selectedPeriod.paymentDate)
                           : '-'}
@@ -2463,7 +2463,7 @@ export default function PayrollPage() {
                     </span>
                     <span>
                       พนักงานในรอบ:{' '}
-                      <span className="text-slate-600 font-medium">{payrolls.length} คน</span>
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">{payrolls.length} คน</span>
                     </span>
                   </div>
                 </div>
@@ -2474,9 +2474,9 @@ export default function PayrollPage() {
                     <>
                       <button
                         onClick={handleOpenCreatePeriodModal}
-                        className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-2xs"
                       >
-                        <Plus className="w-3.5 h-3.5 text-slate-500" />
+                        <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         <span>สร้างรอบเงินเดือน</span>
                       </button>
 
@@ -2574,9 +2574,9 @@ export default function PayrollPage() {
                           <button
                             onClick={handleDownloadBankFile}
                             disabled={isExportingBankFile}
-                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5 text-slate-600" />
+                            <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                             <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
                           </button>
 
@@ -2601,7 +2601,7 @@ export default function PayrollPage() {
                           )}
 
                           {selectedPeriod?.status === 'CLOSED' && (
-                            <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200 rounded-xl text-xs font-semibold">
                               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                               <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
                             </span>
@@ -2646,7 +2646,7 @@ export default function PayrollPage() {
                           <span>{selectedPeriod?.status === 'CLOSED' ? 'ปิดรอบเงินเดือนสมบูรณ์แล้ว' : 'CEO อนุมัติรอบนี้เรียบร้อยแล้ว'}</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200">
                           <Clock className="w-4 h-4 text-slate-400" />
                           <span>ยังไม่ถึงขั้นตอนการอนุมัติ (รอ HR และการเงิน)</span>
                         </span>
@@ -2669,8 +2669,8 @@ export default function PayrollPage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                       สำหรับ HR
                     </div>
-                    <h2 className="text-base font-bold text-slate-900">เตรียมข้อมูลก่อนคำนวณเงินเดือน</h2>
-                    <p className="text-xs text-slate-500">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">เตรียมข้อมูลก่อนคำนวณเงินเดือน</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       ตรวจสอบวันลาและรายการที่กระทบเงินเดือน ก่อนกดคำนวณส่งต่อให้ฝ่ายการเงิน
                     </p>
                   </div>
@@ -2679,17 +2679,17 @@ export default function PayrollPage() {
                 {/* 3 Stat Cards for HR */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">พนักงานในรอบ</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานในรอบ</span>
                     <div className="text-2xl font-bold text-emerald-700 mt-1">
-                      {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
+                      {totalEmployees} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">คน</span>
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">ทุกแผนก</span>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ข้อมูลยังไม่ครบ</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ข้อมูลยังไม่ครบ</span>
                     <div className={`text-2xl font-bold mt-1 ${pendingCheckCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {pendingCheckCount} <span className="text-sm font-normal text-slate-500">คน</span>
+                      {pendingCheckCount} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">คน</span>
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">
                       {pendingCheckCount > 0 ? 'รอ HR ตรวจสอบวันลา' : 'ข้อมูลพนักงานครบถ้วน'}
@@ -2697,9 +2697,9 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">วันลารวมในรอบ</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">วันลารวมในรอบ</span>
                     <div className="text-2xl font-bold text-emerald-700 mt-1">
-                      {totalLeaveDays} <span className="text-sm font-normal text-slate-500">วัน</span>
+                      {totalLeaveDays} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">วัน</span>
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">จากคำร้องลาที่ได้รับอนุมัติ</span>
                   </div>
@@ -2708,13 +2708,13 @@ export default function PayrollPage() {
                 {/* Table: HR Data Input Verification */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900">รายการพนักงานและข้อมูลนำเข้า</h3>
-                    <span className="text-xs text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">รายการพนักงานและข้อมูลนำเข้า</h3>
+                    <span className="text-xs text-slate-400 dark:text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                           <th className="py-3.5 px-5">พนักงาน</th>
                           <th className="py-3.5 px-5">แผนก</th>
                           <th className="py-3.5 px-5">วันลา</th>
@@ -2728,14 +2728,14 @@ export default function PayrollPage() {
                           return (
                             <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
                               <td className="py-4 px-5">
-                                <div className="font-semibold text-slate-900">{pr.employeeName}</div>
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
                                 <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
                               </td>
-                              <td className="py-4 px-5 text-slate-600">{pr.departmentName}</td>
+                              <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
                               <td className="py-4 px-5">
                                 {pr.leaveDays && pr.leaveDays > 0 ? (
                                   <div>
-                                    <span className="font-semibold text-slate-900">{pr.leaveDays} วัน</span>
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100">{pr.leaveDays} วัน</span>
                                     {pr.leaveSummary && (
                                       <div className="text-[11px] text-slate-400">{pr.leaveSummary}</div>
                                     )}
@@ -2744,7 +2744,7 @@ export default function PayrollPage() {
                                   <span className="text-slate-400">-</span>
                                 )}
                               </td>
-                              <td className="py-4 px-5 text-slate-600">
+                              <td className="py-4 px-5 text-slate-600 dark:text-slate-400">
                                 {pr.adjustmentsSummary || '-'}
                               </td>
                               <td className="py-4 px-5">
@@ -2769,7 +2769,7 @@ export default function PayrollPage() {
                                 <button
                                   onClick={() => handleOpenDetailDrawer(pr)}
                                   title="ดูรายละเอียดการคำนวณ"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
@@ -2806,8 +2806,8 @@ export default function PayrollPage() {
                 {/* Title and Scope Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">ตรวจสอบยอดและจ่ายเงินเดือน</h2>
-                    <p className="text-xs text-slate-500">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">ตรวจสอบยอดและจ่ายเงินเดือน</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       ยืนยันยอดจ่ายสุทธิ นำส่งภาษี/ประกันสังคม และดาวน์โหลดไฟล์โอนเงินผ่านธนาคาร
                     </p>
                   </div>
@@ -2816,7 +2816,7 @@ export default function PayrollPage() {
                 {/* 4 Stat Cards for Finance */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ยอดจ่ายรวม (Gross)</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดจ่ายรวม (Gross)</span>
                     <div className="text-2xl font-bold text-amber-700 mt-1">
                       ฿{totalGross.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
@@ -2824,7 +2824,7 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
                     <div className="text-2xl font-bold text-rose-600 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
@@ -2832,7 +2832,7 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ยอดโอนสุทธิ (Net Pay)</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดโอนสุทธิ (Net Pay)</span>
                     <div className="text-2xl font-bold text-emerald-600 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
@@ -2842,8 +2842,8 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">สถานะการโอน</span>
-                    <div className="text-2xl font-bold text-slate-900 mt-1">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการโอน</span>
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                       {transferredCount} / {totalEmployees}
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">
@@ -2855,13 +2855,13 @@ export default function PayrollPage() {
                 {/* Table: Finance Disbursement & Banking */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900">รายการจ่ายเงินเดือน</h3>
-                    <span className="text-xs text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">รายการจ่ายเงินเดือน</h3>
+                    <span className="text-xs text-slate-400 dark:text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                           <th className="py-3.5 px-5">พนักงาน</th>
                           <th className="py-3.5 px-5">บัญชีธนาคาร</th>
                           <th className="py-3.5 px-5 text-right">รายได้รวม</th>
@@ -2877,16 +2877,16 @@ export default function PayrollPage() {
                           return (
                             <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
                               <td className="py-4 px-5">
-                                <div className="font-semibold text-slate-900">{pr.employeeName}</div>
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
                                 <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
                               </td>
                               <td className="py-4 px-5">
-                                <div className="font-medium text-slate-800">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
+                                <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
                                 <div className="text-[11px] font-mono text-slate-400">
                                   {pr.accountNumber ? `xxx-x-x${pr.accountNumber.slice(-4)}-x` : 'xxx-x-x4821-x'}
                                 </div>
                               </td>
-                              <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                              <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                                 {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
                               </td>
                               <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
@@ -2916,7 +2916,7 @@ export default function PayrollPage() {
                                 <button
                                   onClick={() => handleOpenDetailDrawer(pr)}
                                   title="ดูรายละเอียดการคำนวณ"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
@@ -2957,8 +2957,8 @@ export default function PayrollPage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
                       สำหรับผู้อนุมัติ (CEO / Executive)
                     </div>
-                    <h2 className="text-base font-bold text-slate-900">สรุปภาพรวมและอนุมัติรอบเงินเดือน</h2>
-                    <p className="text-xs text-slate-500">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">สรุปภาพรวมและอนุมัติรอบเงินเดือน</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       ตรวจสอบภาพรวมงบประมาณเงินเดือนและภาระผูกพัน ก่อนลงนามอนุมัติให้การเงินดำเนินการจ่าย
                     </p>
                   </div>
@@ -2967,7 +2967,7 @@ export default function PayrollPage() {
                 {/* 4 Stat Cards for Approver */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">งบประมาณเงินเดือนสุทธิรวม</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">งบประมาณเงินเดือนสุทธิรวม</span>
                     <div className="text-2xl font-bold text-emerald-600 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
@@ -2975,7 +2975,7 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">ภาระภาษีและประกันสังคม</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ภาระภาษีและประกันสังคม</span>
                     <div className="text-2xl font-bold text-rose-600 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
@@ -2983,15 +2983,15 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">จำนวนพนักงานทั้งหมด</span>
-                    <div className="text-2xl font-bold text-slate-900 mt-1">
-                      {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">จำนวนพนักงานทั้งหมด</span>
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                      {totalEmployees} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">คน</span>
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">ได้รับการคำนวณครบถ้วน</span>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 font-medium">สถานะการตรวจทาน</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการตรวจทาน</span>
                     <div className="text-base font-bold text-indigo-700 mt-2">
                       {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
                         ? 'รอ CEO อนุมัติ ⏳'
@@ -3007,13 +3007,13 @@ export default function PayrollPage() {
                 {/* Table: Approver Overview */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900">สรุปภาพรวมรายบุคคล</h3>
-                    <span className="text-xs text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">สรุปภาพรวมรายบุคคล</h3>
+                    <span className="text-xs text-slate-400 dark:text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                           <th className="py-3.5 px-5">รหัสพนักงาน</th>
                           <th className="py-3.5 px-5">ชื่อพนักงาน</th>
                           <th className="py-3.5 px-5">แผนก</th>
@@ -3026,10 +3026,10 @@ export default function PayrollPage() {
                       <tbody className="divide-y divide-slate-100 text-xs">
                         {paginatedPayrolls.map((pr) => (
                           <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="py-4 px-5 font-mono font-semibold text-slate-900">{pr.employeeCode}</td>
-                            <td className="py-4 px-5 font-semibold text-slate-900">{pr.employeeName}</td>
-                            <td className="py-4 px-5 text-slate-600">{pr.departmentName}</td>
-                            <td className="py-4 px-5 text-right font-mono text-slate-700 font-medium">
+                            <td className="py-4 px-5 font-mono font-semibold text-slate-900 dark:text-slate-100">{pr.employeeCode}</td>
+                            <td className="py-4 px-5 font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</td>
+                            <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
+                            <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                               ฿{(pr.totalGrossIncome || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
                             </td>
                             <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
@@ -3042,7 +3042,7 @@ export default function PayrollPage() {
                               <button
                                 onClick={() => handleOpenDetailDrawer(pr)}
                                 title="ดูรายละเอียด"
-                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
@@ -3081,7 +3081,7 @@ export default function PayrollPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   💳 การจ่ายเงินเดือน
                   {selectedPeriod && (
                     <span className="text-slate-400 font-normal">— {selectedPeriod.periodName}</span>
@@ -3115,7 +3115,7 @@ export default function PayrollPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
                 <div className="text-[11px] text-slate-400 font-medium">พนักงานทั้งหมด</div>
-                <div className="text-lg font-bold text-slate-900 mt-0.5">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0} คน</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0} คน</div>
               </div>
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
                 <div className="text-[11px] text-emerald-600 font-medium">โอนแล้ว</div>
@@ -3177,7 +3177,7 @@ export default function PayrollPage() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Building2 className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-slate-900">วิธีการจ่าย: ส่งไฟล์ธนาคาร (Bank Batch)</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">วิธีการจ่าย: ส่งไฟล์ธนาคาร (Bank Batch)</h3>
               </div>
 
               {/* Steps for Flow 1 */}
@@ -3209,10 +3209,10 @@ export default function PayrollPage() {
                   },
                 ].map(({ step, title, desc, done }) => (
                   <div key={step} className={`p-4 rounded-xl border transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-2 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-2 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>
                       {done ? '✓' : step}
                     </div>
-                    <div className={`text-xs font-bold ${done ? 'text-emerald-700' : 'text-slate-800'}`}>{title}</div>
+                    <div className={`text-xs font-bold ${done ? 'text-emerald-700' : 'text-slate-800 dark:text-slate-200'}`}>{title}</div>
                     <div className="text-[11px] text-slate-400 mt-0.5">{desc}</div>
                   </div>
                 ))}
@@ -3221,7 +3221,7 @@ export default function PayrollPage() {
               {/* Step 2 Confirmation Section */}
               {(selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' || selectedPeriod?.status === 'PROCESSING_BANK') && (
                 <div className="space-y-3 pt-2 border-t border-slate-100">
-                  <div className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
                     <span>📁 ไฟล์โอนเงินพร้อมใช้งาน</span>
                     <span className={`px-2.5 py-0.5 rounded-md font-semibold text-[11px] ${
                       selectedPeriod?.status === 'PROCESSING_BANK'
@@ -3274,7 +3274,7 @@ export default function PayrollPage() {
               {isFinance ? (
                 <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3 mt-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                    <div className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                       <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                       <span>ขั้นตอนที่ 3: สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน/บัญชี)</span>
                     </div>
@@ -3296,14 +3296,14 @@ export default function PayrollPage() {
 
                   {selectedPeriod?.status !== 'PAID' && (
                     <div className="space-y-3">
-                      <label className="block text-[11px] font-semibold text-slate-600">
+                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                         อัปโหลดสลิป/ใบเสร็จยืนยันการโอนเงินรวมจากธนาคาร (PDF / JPG / PNG)
                       </label>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
                         onChange={e => setBankReceiptFile(e.target.files?.[0] || null)}
-                        className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
+                        className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
                       />
                       {bankReceiptFile ? (
                         <div className="pt-2 flex justify-end">
@@ -3331,7 +3331,7 @@ export default function PayrollPage() {
                       {/* If receipt was already attached before, allow confirming to PAID */}
                       {selectedPeriod?.hasBankReceipt && !bankReceiptFile && selectedPeriod?.status === 'PROCESSING_BANK' && (
                         <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-xs text-slate-600">
+                          <span className="text-xs text-slate-600 dark:text-slate-400">
                             แนบสลิปธนาคารเรียบร้อยแล้ว กดปุ่มเพื่อยืนยันการจ่ายเงินและปรับสถานะรอบเงินเดือนเป็น PAID
                           </span>
                           <button
@@ -3361,7 +3361,7 @@ export default function PayrollPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs text-slate-600 mt-3">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mt-3">
                       <span>⏳ รอดำเนินการ: ฝ่ายการเงินตรวจสอบและแนบสลิปโอนเงินรวมของธนาคาร (ขั้นตอนที่ 3)</span>
                     </div>
                   )
@@ -3386,7 +3386,7 @@ export default function PayrollPage() {
                 <button
                   onClick={handleGenerateAndDownloadBankFile}
                   disabled={isGeneratingBankFile || selectedPeriod?.status === 'PAID'}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 disabled:opacity-50 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 dark:text-slate-300 disabled:opacity-50 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 >
                   {isGeneratingBankFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Building2 className="w-4 h-4" />}
                   <span>{selectedPeriod?.bankFileGeneratedAt ? 'ดาวน์โหลดไฟล์อีกครั้ง' : 'ดาวน์โหลดไฟล์ธนาคาร'}</span>
@@ -3402,7 +3402,7 @@ export default function PayrollPage() {
               <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     รายการโอนเงินรายบุคคล
                     <span className="ml-2 text-slate-400 font-normal text-xs">
                       {transferList?.transferredCount ?? 0}/{transferList?.totalEmployees ?? 0} คน โอนแล้ว
@@ -3442,7 +3442,7 @@ export default function PayrollPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                         <th className="py-3 px-4">พนักงาน</th>
                         <th className="py-3 px-4">ธนาคาร / เลขบัญชี</th>
                         <th className="py-3 px-4 text-right">ยอดโอน</th>
@@ -3466,14 +3466,14 @@ export default function PayrollPage() {
                           <tr key={item.payrollId} className="hover:bg-slate-50/50 transition-colors">
                             {/* ชื่อพนักงาน */}
                             <td className="py-3.5 px-4">
-                              <div className="font-bold text-slate-900">{item.employeeName}</div>
+                              <div className="font-bold text-slate-900 dark:text-slate-100">{item.employeeName}</div>
                               <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.employeeCode} · {item.departmentName}</div>
                             </td>
                             {/* Bank */}
                             <td className="py-3.5 px-4">
                               {item.bankName ? (
                                 <>
-                                  <div className="font-semibold text-slate-700">{item.bankName}</div>
+                                  <div className="font-semibold text-slate-700 dark:text-slate-300">{item.bankName}</div>
                                   <div className="font-mono text-[11px] text-slate-400 mt-0.5">{item.accountNumber}</div>
                                   {item.accountName && <div className="text-[11px] text-slate-400">{item.accountName}</div>}
                                 </>
@@ -3482,11 +3482,11 @@ export default function PayrollPage() {
                               )}
                             </td>
                             {/* ยอด */}
-                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
+                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-slate-100 font-mono">
                               ฿{item.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
                             {/* Ref */}
-                            <td className="py-3.5 px-4 text-center font-mono text-slate-500 text-[11px]">
+                            <td className="py-3.5 px-4 text-center font-mono text-slate-500 dark:text-slate-400 text-[11px]">
                               {item.transferReference || '—'}
                             </td>
                             {/* Slip */}
@@ -3528,7 +3528,7 @@ export default function PayrollPage() {
                                   disabled={isMarkingTransferred === item.payrollId}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer
                                     ${item.paymentStatus === 'TRANSFERRED'
-                                      ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                      ? 'bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200'
                                       : 'bg-[#0B2046] hover:bg-[#112d5e] text-white shadow-xs'
                                     } disabled:opacity-50`}
                                 >
@@ -3572,13 +3572,13 @@ export default function PayrollPage() {
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900">📎 แนบสลิปการโอนเงิน</h3>
-                  <button onClick={() => setSlipModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer text-xl leading-none">×</button>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100">📎 แนบสลิปการโอนเงิน</h3>
+                  <button onClick={() => setSlipModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer text-xl leading-none">×</button>
                 </div>
 
                 {/* Employee info */}
                 <div className="bg-slate-50 rounded-xl p-3.5 text-sm">
-                  <div className="font-bold text-slate-900">{slipModalTarget.employeeName}</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100">{slipModalTarget.employeeName}</div>
                   <div className="text-slate-400 text-xs mt-0.5">{slipModalTarget.employeeCode} · {slipModalTarget.bankName} {slipModalTarget.accountNumber}</div>
                   <div className="text-emerald-700 font-bold mt-1">
                     ฿{slipModalTarget.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -3587,7 +3587,7 @@ export default function PayrollPage() {
 
                 {/* Transfer Ref */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">เลข Reference (ไม่บังคับ)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">เลข Reference (ไม่บังคับ)</label>
                   <input
                     type="text"
                     value={slipTransferRef}
@@ -3599,7 +3599,7 @@ export default function PayrollPage() {
 
                 {/* Slip Upload Zone */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                     สลิปการโอนเงิน <span className="text-red-500">*</span>
                   </label>
                   <div
@@ -3643,7 +3643,7 @@ export default function PayrollPage() {
                 <div className="flex gap-3 pt-1">
                   <button
                     onClick={() => setSlipModalOpen(false)}
-                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 dark:text-slate-400 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
                   >
                     ยกเลิก
                   </button>
@@ -3669,10 +3669,10 @@ export default function PayrollPage() {
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="text-center">
                   <div className="text-5xl mb-3">🔐</div>
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                     {selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'Confirm การจ่ายเงินเดือน'}
                   </h3>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {selectedPeriod?.paymentMethod === 'BANK_BATCH'
                       ? 'ยืนยันว่าธนาคารได้โอนเงินเดือนตามไฟล์ Bank Batch เรียบร้อยแล้ว (สถานะจะเปลี่ยนเป็น PROCESSING_BANK เพื่อให้ฝ่ายการเงินตรวจสลิป)'
                       : `ยืนยันว่าโอนเงินเดือนให้พนักงานครบ ${transferList?.totalEmployees} คน พร้อมสลิปครบถ้วนแล้ว`}
@@ -3682,21 +3682,21 @@ export default function PayrollPage() {
                 {/* Summary */}
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">รอบเงินเดือน</span>
-                    <span className="font-semibold text-slate-900">{selectedPeriod?.periodName}</span>
+                    <span className="text-slate-500 dark:text-slate-400">รอบเงินเดือน</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedPeriod?.periodName}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">วิธีการจ่าย</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="text-slate-500 dark:text-slate-400">วิธีการจ่าย</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {selectedPeriod?.paymentMethodText ?? (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? 'CEO โอนเอง' : 'ส่งไฟล์ธนาคาร (Bank Batch)')}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">จำนวนพนักงาน</span>
-                    <span className="font-semibold text-slate-900">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount} คน</span>
+                    <span className="text-slate-500 dark:text-slate-400">จำนวนพนักงาน</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount} คน</span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-slate-200 pt-2 mt-2">
-                    <span className="text-slate-500 font-medium">รวมเงินที่จ่าย</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">รวมเงินที่จ่าย</span>
                     <span className="font-bold text-emerald-700 text-base">
                       ฿{(transferList?.totalNetSalary ?? selectedPeriod?.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
@@ -3705,7 +3705,7 @@ export default function PayrollPage() {
 
                 {/* Note */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">หมายเหตุ (ไม่บังคับ)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">หมายเหตุ (ไม่บังคับ)</label>
                   <textarea
                     value={confirmPaymentNote}
                     onChange={e => setConfirmPaymentNote(e.target.value)}
@@ -3725,7 +3725,7 @@ export default function PayrollPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setConfirmPaymentModalOpen(false); setConfirmPaymentNote(''); }}
-                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 dark:text-slate-400 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
                   >
                     ยกเลิก
                   </button>
@@ -3754,8 +3754,8 @@ export default function PayrollPage() {
           {/* Header Actions for CSV Reports */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
-              <h2 className="text-base font-bold text-slate-900">สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || 'กันยายน 2569'}
               </p>
             </div>
@@ -3783,8 +3783,8 @@ export default function PayrollPage() {
           {taxSsoSummary && (
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-                <span className="text-[11px] text-slate-500 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
-                <p className="text-lg font-bold text-slate-900 mt-1 font-mono">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1 font-mono">
                   ฿{(taxSsoSummary.totalGrossIncome ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -3815,11 +3815,11 @@ export default function PayrollPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Scale className="w-5 h-5 text-blue-700" />
                   <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
                 </p>
               </div>
@@ -3834,7 +3834,7 @@ export default function PayrollPage() {
                     <span>แก้ไขอัตราภาษี</span>
                   </button>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200">
                     <Lock className="w-3 h-3" />
                     สิทธิ์ดูอย่างเดียว
                   </span>
@@ -3845,7 +3845,7 @@ export default function PayrollPage() {
             <div className="overflow-x-auto border border-slate-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
                     <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
                     <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
@@ -3857,11 +3857,11 @@ export default function PayrollPage() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {taxBrackets.map((t) => (
                     <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800">{t.bracketName}</td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700">
+                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
+                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
                         ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700">
+                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
                         {t.incomeTo != null
                           ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                           : 'ขึ้นไป (ไม่จำกัด)'}
@@ -3869,7 +3869,7 @@ export default function PayrollPage() {
                       <td className="py-3 px-4 text-center font-bold text-blue-700">
                         {(t.taxRate * 100).toFixed(0)}%
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-600">
+                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
                         ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -3888,11 +3888,11 @@ export default function PayrollPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-purple-700" />
                   <span>เกณฑ์และอัตราเงินสมทบกองทุนประกันสังคม (Social Security Fund)</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   อัตราเงินสมทบฝ่ายลูกจ้างและนายจ้าง พร้อมฐานเพดานค่าจ้างขั้นต่ำและสูงสุดตามกฎหมาย
                 </p>
               </div>
@@ -3910,7 +3910,7 @@ export default function PayrollPage() {
                     <span>แก้ไขอัตราประกันสังคม</span>
                   </button>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200">
                     <Lock className="w-3 h-3" />
                     สิทธิ์ดูอย่างเดียว
                   </span>
@@ -3921,7 +3921,7 @@ export default function PayrollPage() {
             <div className="overflow-x-auto border border-slate-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500">
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-3.5 px-4">ชื่อเกณฑ์</th>
                     <th className="py-3.5 px-4 text-center">สมทบฝ่ายผู้ประกันตน (%)</th>
                     <th className="py-3.5 px-4 text-center">สมทบฝ่ายนายจ้าง (%)</th>
@@ -3935,20 +3935,20 @@ export default function PayrollPage() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {ssoRates.map((s) => (
                     <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800">{s.rateName}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{s.rateName}</td>
                       <td className="py-3 px-4 text-center font-bold text-purple-700">
                         {(s.employeeContributionPercent * 100).toFixed(1)}%
                       </td>
                       <td className="py-3 px-4 text-center font-bold text-purple-700">
                         {(s.employerContributionPercent * 100).toFixed(1)}%
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700">
+                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
                         ฿{s.minWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-900 font-semibold">
+                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold">
                         ฿{s.maxWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs text-slate-500 font-mono">
+                      <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
                         {s.effectiveFrom}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -4063,10 +4063,10 @@ export default function PayrollPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">สร้างรอบเงินเดือนใหม่</h3>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">สร้างรอบเงินเดือนใหม่</h3>
               <button
                 onClick={() => setIsCreatePeriodModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1 rounded-lg"
               >
                 ✕
               </button>
@@ -4075,7 +4075,7 @@ export default function PayrollPage() {
             <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 text-xs">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">ชื่อรอบเงินเดือน</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">ชื่อรอบเงินเดือน</label>
                   {isPeriodNameCustom && (
                     <button
                       type="button"
@@ -4099,7 +4099,7 @@ export default function PayrollPage() {
                     setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value });
                   }}
                   placeholder="เช่น รอบเดือนสิงหาคม 2569"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
                   💡 ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)
@@ -4108,21 +4108,21 @@ export default function PayrollPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">ปี (ค.ศ.)</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ปี (ค.ศ.)</label>
                   <input
                     type="number"
                     required
                     value={newPeriodForm.year}
                     onChange={(e) => handleYearChange(parseInt(e.target.value) || 2026)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">เดือน (1-12)</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน (1-12)</label>
                   <select
                     value={newPeriodForm.month}
                     onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
                   >
                     {THAI_MONTH_NAMES.map((name, idx) => (
                       <option key={idx + 1} value={idx + 1}>
@@ -4172,34 +4172,34 @@ export default function PayrollPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">วันเริ่มคำนวณ</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันเริ่มคำนวณ</label>
                   <input
                     type="date"
                     required
                     value={newPeriodForm.startDate}
                     onChange={(e) => setNewPeriodForm({ ...newPeriodForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">วันสิ้นสุดคำนวณ</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันสิ้นสุดคำนวณ</label>
                   <input
                     type="date"
                     required
                     value={newPeriodForm.endDate}
                     onChange={(e) => setNewPeriodForm({ ...newPeriodForm, endDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">วันกำหนดจ่ายเงิน</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันกำหนดจ่ายเงิน</label>
                 <input
                   type="date"
                   value={newPeriodForm.paymentDate}
                   onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
               </div>
 
@@ -4229,7 +4229,7 @@ export default function PayrollPage() {
                 <button
                   type="button"
                   onClick={() => setIsCreatePeriodModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium"
                 >
                   ยกเลิก
                 </button>

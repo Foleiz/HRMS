@@ -234,14 +234,14 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
       <div className="cert-modal no-print fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
         <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
-            <div className="flex items-center gap-2 text-slate-800">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
               <FileText className="w-5 h-5 text-[#0B2046]" />
               <h3 className="text-base font-bold">ตัวอย่างหนังสือรับรอง</h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -249,7 +249,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
 
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
             {loading ? (
-              <div className="py-24 flex flex-col items-center justify-center text-slate-500 gap-3">
+              <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
                 <p className="text-xs">กำลังจัดเตรียมหนังสือรับรอง...</p>
               </div>
@@ -258,7 +258,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
             ) : paper ? (
               <div className="mx-auto w-fit shadow-md border border-gray-300">{paper}</div>
             ) : (
-              <div className="py-16 text-center text-slate-500 text-sm">ไม่มีข้อมูลเอกสาร</div>
+              <div className="py-16 text-center text-slate-500 dark:text-slate-400 text-sm">ไม่มีข้อมูลเอกสาร</div>
             )}
           </div>
 
@@ -270,7 +270,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                   type="button"
                   onClick={() => setLang(l)}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                    lang === l ? 'bg-white text-[#0B2046] shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                    lang === l ? 'bg-white text-[#0B2046] shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                   }`}
                 >
                   {l === 'TH' ? 'ภาษาไทย' : 'English'}
@@ -283,7 +283,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                 type="button"
                 onClick={() => window.print()}
                 disabled={!doc || loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
                 พิมพ์เอกสาร

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -417,7 +417,7 @@ export default function EmployeeEditPage() {
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                   isActive
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
                 {tab.title}
@@ -439,7 +439,7 @@ export default function EmployeeEditPage() {
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'personal'
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
                 ข้อมูลส่วนตัว
@@ -451,7 +451,7 @@ export default function EmployeeEditPage() {
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'family'
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
                 ข้อมูลครอบครัว
@@ -463,7 +463,7 @@ export default function EmployeeEditPage() {
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'emergency'
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
                 ผู้ติดต่อกรณีฉุกเฉิน
@@ -475,7 +475,7 @@ export default function EmployeeEditPage() {
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'background'
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
                 การศึกษา & ประวัติการทำงาน
@@ -487,7 +487,7 @@ export default function EmployeeEditPage() {
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'tax'
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
                 ภาษี & ประกันสังคม
@@ -516,7 +516,7 @@ export default function EmployeeEditPage() {
                 <div className="space-y-4">
                   {/* รหัสพนักงาน */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -524,13 +524,13 @@ export default function EmployeeEditPage() {
                       placeholder="เช่น EMP001"
                       value={formData.employeeCode}
                       onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
                   {/* รหัสเครื่องสแกนนิ้ว (Biometric ID) */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       รหัสเครื่องสแกนนิ้ว (Biometric ID)
                     </label>
                     <input
@@ -538,16 +538,16 @@ export default function EmployeeEditPage() {
                       placeholder="เช่น 100001"
                       value={formData.biometricId || ''}
                       onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                       รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)
                     </p>
                   </div>
 
                   {/* หัวหน้างานโดยตรง */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">หัวหน้างานโดยตรง</label>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">หัวหน้างานโดยตรง</label>
                     <EmployeeSelect
                       employees={allEmployees}
                       value={managerId}
@@ -556,19 +556,19 @@ export default function EmployeeEditPage() {
                       placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
                       excludeEmployeeIds={[employeeId]}
                     />
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                       ใช้กับขั้นอนุมัติ &quot;หัวหน้างานตรง&quot; ในสายการอนุมัติ
                     </p>
                   </div>
 
                   {/* ประเภทพนักงาน — แก้ได้เฉพาะผู้มีสิทธิ์แก้ไขข้อมูลพนักงาน */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">ประเภทพนักงาน</label>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ประเภทพนักงาน</label>
                     {canEditEmployeeType ? (
                       <select
                         value={formData.employeeType || ''}
                         onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                       >
                         {!formData.employeeType && <option value="">เลือกประเภท</option>}
                         {employeeTypeOptions.map((name) => (
@@ -582,7 +582,7 @@ export default function EmployeeEditPage() {
                         {formData.employeeType || '-'}
                       </div>
                     )}
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                       {canEditEmployeeType
                         ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
                         : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
@@ -591,7 +591,7 @@ export default function EmployeeEditPage() {
 
                   {/* คำนำหน้า */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                     </label>
                     <select
@@ -605,7 +605,7 @@ export default function EmployeeEditPage() {
                         }
                         setFormData({ ...formData, prefix: val, gender: autoGender });
                       }}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกคำนำหน้า</option>
                       <option value="นาย">นาย</option>
@@ -616,7 +616,7 @@ export default function EmployeeEditPage() {
 
                   {/* ชื่อ */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ชื่อ (First Name) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -625,13 +625,13 @@ export default function EmployeeEditPage() {
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* นามสกุล */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       นามสกุล (Last Name) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -640,7 +640,7 @@ export default function EmployeeEditPage() {
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
                 </div>
@@ -649,7 +649,7 @@ export default function EmployeeEditPage() {
                 <div className="space-y-4">
                   {/* เลขบัตรประชาชน */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -658,35 +658,35 @@ export default function EmployeeEditPage() {
                       placeholder="เลขบัตรประชาชน 13 หลัก"
                       value={formData.citizenId || ''}
                       onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                       ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้
                     </p>
                   </div>
 
                   {/* วันเกิด */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.birthDate}
                       onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* เพศ */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       เพศ (Gender) <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.gender}
                       onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกเพศ</option>
                       <option value="ชาย">ชาย</option>
@@ -697,7 +697,7 @@ export default function EmployeeEditPage() {
 
                   {/* สัญชาติ */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       สัญชาติ (Nationality) <span className="text-rose-500">*</span>
                     </label>
                     <NationalitySelect
@@ -708,13 +708,13 @@ export default function EmployeeEditPage() {
 
                   {/* ศาสนา */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ศาสนา (Religion) <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.religion}
                       onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="พุทธ">พุทธ</option>
                       <option value="คริสต์">คริสต์</option>
@@ -726,13 +726,13 @@ export default function EmployeeEditPage() {
 
                   {/* สถานภาพสมรส */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.maritalStatus}
                       onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกสถานภาพ</option>
                       <option value="โสด">โสด</option>
@@ -744,13 +744,13 @@ export default function EmployeeEditPage() {
 
                   {/* สถานภาพทางทหาร */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.militaryStatus}
                       onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกสถานภาพทางทหาร</option>
                       <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
@@ -764,7 +764,7 @@ export default function EmployeeEditPage() {
                 <div className="space-y-4">
                   {/* อีเมล์ */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       อีเมล์ (E-mail) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -772,13 +772,13 @@ export default function EmployeeEditPage() {
                       placeholder="test001@gmail.com"
                       value={formData.personalEmail}
                       onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* อีเมลองค์กร */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -786,13 +786,13 @@ export default function EmployeeEditPage() {
                       placeholder="name@company.com"
                       value={formData.organizationEmail}
                       onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* เบอร์โทรศัพท์ส่วนตัว */}
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -801,13 +801,13 @@ export default function EmployeeEditPage() {
                       placeholder="08X-XXX-XXXX"
                       value={formData.personalPhone}
                       onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
                   {/* ที่อยู่ (Address) */}
                   <div className="pt-1 space-y-3">
-                    <label className="font-semibold text-slate-700 block">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block">
                       ที่อยู่ (Address) <span className="text-rose-500">*</span>
                     </label>
 
@@ -816,7 +816,7 @@ export default function EmployeeEditPage() {
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
                       <div className="flex flex-wrap items-center gap-3">
                         {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                          <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                          <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 text-xs">
                             <input
                               type="radio"
                               name="addressType"
@@ -841,7 +841,7 @@ export default function EmployeeEditPage() {
                         placeholder="บ้านเลขที่ 4"
                         value={formData.addressLine}
                         onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
@@ -855,7 +855,7 @@ export default function EmployeeEditPage() {
                         placeholder="แขวงหัวหมาก"
                         value={formData.subDistrict}
                         onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
@@ -869,7 +869,7 @@ export default function EmployeeEditPage() {
                         placeholder="บางกะปิ"
                         value={formData.district}
                         onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
@@ -884,7 +884,7 @@ export default function EmployeeEditPage() {
                           placeholder="กรุงเทพมหานคร"
                           value={formData.province}
                           onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
                       <div>
@@ -897,7 +897,7 @@ export default function EmployeeEditPage() {
                           placeholder="10240"
                           value={formData.postalCode}
                           onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                         />
                       </div>
                     </div>
@@ -927,7 +927,7 @@ export default function EmployeeEditPage() {
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                           activeFamilyIndex === idx
                             ? 'bg-[#0B2046] text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            : 'bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                         }`}
                       >
                         {idx + 1}
@@ -938,7 +938,7 @@ export default function EmployeeEditPage() {
                     <button
                       type="button"
                       onClick={handleAddFamilyMember}
-                      className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
+                      className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
                       title="เพิ่มสมาชิกครอบครัวคนถัดไป"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -959,7 +959,7 @@ export default function EmployeeEditPage() {
                   {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 dark:bg-slate-950/70 p-5 border border-slate-200/80 dark:border-slate-700/80 rounded-xl">
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                         </label>
                         <select
@@ -969,7 +969,7 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].relationshipType = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                         >
                           <option value="บิดา">บิดา</option>
                           <option value="มารดา">มารดา</option>
@@ -980,7 +980,7 @@ export default function EmployeeEditPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                         </label>
                         <select
@@ -990,7 +990,7 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].prefix = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                         >
                           <option value="">เลือกคำนำหน้า</option>
                           <option value="นาย">นาย</option>
@@ -1002,7 +1002,7 @@ export default function EmployeeEditPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ชื่อ (First Name) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -1014,12 +1014,12 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].firstName = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           นามสกุล (Last Name) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -1031,12 +1031,12 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].lastName = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">เลขบัตรประชาชน</label>
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">เลขบัตรประชาชน</label>
                         <input
                           type="text"
                           placeholder="เลขบัตรประชาชน 13 หลัก"
@@ -1046,12 +1046,12 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].citizenId = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                         />
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">วันเกิด</label>
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันเกิด</label>
                         <input
                           type="date"
                           value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
@@ -1060,7 +1060,7 @@ export default function EmployeeEditPage() {
                             list[activeFamilyIndex].birthDate = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
                     </div>
@@ -1081,7 +1081,7 @@ export default function EmployeeEditPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-sky-50/40 p-5 border border-sky-100 rounded-xl">
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                     </label>
                     <select
@@ -1098,7 +1098,7 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="บิดา">บิดา</option>
                       <option value="มารดา">มารดา</option>
@@ -1111,7 +1111,7 @@ export default function EmployeeEditPage() {
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">คำนำหน้า</label>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">คำนำหน้า</label>
                     <select
                       value={formData.emergencyContact?.prefix || ''}
                       onChange={(e) =>
@@ -1126,7 +1126,7 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกคำนำหน้า</option>
                       <option value="นาย">นาย</option>
@@ -1136,7 +1136,7 @@ export default function EmployeeEditPage() {
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ชื่อผู้ติดต่อ <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1154,12 +1154,12 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       นามสกุลผู้ติดต่อ <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1177,12 +1177,12 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       เบอร์โทรศัพท์ฉุกเฉิน <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1201,12 +1201,12 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">ที่อยู่ผู้ติดต่อ</label>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ที่อยู่ผู้ติดต่อ</label>
                     <textarea
                       rows={2}
                       placeholder="ที่อยู่สำหรับติดต่อกรณีฉุกเฉิน"
@@ -1223,7 +1223,7 @@ export default function EmployeeEditPage() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
                 </div>
@@ -1236,7 +1236,7 @@ export default function EmployeeEditPage() {
             <button
               type="button"
               onClick={() => router.push(`/employees/${employeeId}`)}
-              className="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
+              className="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
             >
               ยกเลิก
             </button>

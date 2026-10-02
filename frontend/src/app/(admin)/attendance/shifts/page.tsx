@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -15,8 +15,8 @@ export default function ShiftsRedirectPage() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
       <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mb-4" />
-      <h2 className="text-lg font-bold text-slate-800 mb-1 dark:text-slate-200">กำลังนำท่านไปยังหน้า "การจัดตารางงาน"...</h2>
-      <p className="text-sm text-slate-500 mb-4 dark:text-slate-400">
+      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1 dark:text-slate-200">กำลังนำท่านไปยังหน้า "การจัดตารางงาน"...</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 dark:text-slate-400">
         เมนูกะการทำงานได้ถูกรวมเข้ากับระบบการจัดตารางงานแบบครบวงจรเรียบร้อยแล้ว
       </p>
       <Link

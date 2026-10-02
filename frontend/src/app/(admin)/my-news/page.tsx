@@ -77,9 +77,9 @@ const CATEGORY_STYLES: Record<string, {
   DEFAULT: {
     label: 'ข่าวสารทั่วไป',
     pillBg: 'bg-slate-100 hover:bg-slate-200',
-    pillText: 'text-slate-700',
+    pillText: 'text-slate-700 dark:text-slate-300',
     dotColor: 'bg-slate-400',
-    badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+    badgeBg: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200',
   },
 };
 
@@ -91,11 +91,11 @@ const THAI_MONTHS = [
 
 const WEEKDAYS = [
   { key: 0, label: 'อาทิตย์', color: 'text-rose-500' },
-  { key: 1, label: 'จันทร์', color: 'text-slate-700' },
-  { key: 2, label: 'อังคาร', color: 'text-slate-700' },
-  { key: 3, label: 'พุธ', color: 'text-slate-700' },
-  { key: 4, label: 'พฤหัสบดี', color: 'text-slate-700' },
-  { key: 5, label: 'ศุกร์', color: 'text-slate-700' },
+  { key: 1, label: 'จันทร์', color: 'text-slate-700 dark:text-slate-300' },
+  { key: 2, label: 'อังคาร', color: 'text-slate-700 dark:text-slate-300' },
+  { key: 3, label: 'พุธ', color: 'text-slate-700 dark:text-slate-300' },
+  { key: 4, label: 'พฤหัสบดี', color: 'text-slate-700 dark:text-slate-300' },
+  { key: 5, label: 'ศุกร์', color: 'text-slate-700 dark:text-slate-300' },
   { key: 6, label: 'เสาร์', color: 'text-blue-600' },
 ];
 
@@ -321,18 +321,18 @@ export default function MyNewsCalendarPage() {
           <button
             type="button"
             onClick={handlePrev}
-            className="p-1.5 hover:bg-slate-200/80 text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-200/80 text-slate-600 dark:text-slate-400 rounded-lg transition-colors cursor-pointer"
             title={viewMode === 'DAY' ? 'วันก่อนหน้า' : viewMode === 'WEEK' ? 'สัปดาห์ก่อนหน้า' : 'เดือนก่อนหน้า'}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-bold text-sm text-slate-800 min-w-[140px] sm:min-w-[170px] text-center select-none">
+          <span className="font-bold text-sm text-slate-800 dark:text-slate-200 min-w-[140px] sm:min-w-[170px] text-center select-none">
             {displayNavTitle}
           </span>
           <button
             type="button"
             onClick={handleNext}
-            className="p-1.5 hover:bg-slate-200/80 text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-200/80 text-slate-600 dark:text-slate-400 rounded-lg transition-colors cursor-pointer"
             title={viewMode === 'DAY' ? 'วันถัดไป' : viewMode === 'WEEK' ? 'สัปดาห์ถัดไป' : 'เดือนถัดไป'}
           >
             <ChevronRight className="w-4 h-4" />
@@ -347,7 +347,7 @@ export default function MyNewsCalendarPage() {
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'DAY'
                 ? 'bg-[#2563EB] text-white shadow-xs font-bold'
-                : 'text-slate-700 hover:bg-white/80'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
             วันนี้
@@ -358,7 +358,7 @@ export default function MyNewsCalendarPage() {
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'WEEK'
                 ? 'bg-[#2563EB] text-white shadow-xs font-bold'
-                : 'text-slate-700 hover:bg-white/80'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
             สัปดาห์
@@ -369,7 +369,7 @@ export default function MyNewsCalendarPage() {
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'MONTH'
                 ? 'bg-[#2563EB] text-white shadow-xs font-bold'
-                : 'text-slate-700 hover:bg-white/80'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
             เดือน
@@ -398,7 +398,7 @@ export default function MyNewsCalendarPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B2046] flex flex-col items-center justify-center font-bold border border-blue-100 shadow-2xs">
-                  <span className="text-[11px] font-medium text-slate-500 uppercase leading-none">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase leading-none">
                     {WEEKDAYS[currentDate.getDay()]?.label}
                   </span>
                   <span className="text-xl font-extrabold leading-none mt-0.5">
@@ -407,7 +407,7 @@ export default function MyNewsCalendarPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
                       {WEEKDAYS[currentDate.getDay()]?.label}ที่ {currentDate.getDate()} {THAI_MONTHS[currentDate.getMonth()]} พ.ศ. {currentDate.getFullYear() + 543}
                     </h2>
                     {isToday(currentDate) && (
@@ -416,7 +416,7 @@ export default function MyNewsCalendarPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {getAnnouncementsForDate(currentDate).length > 0
                       ? `พบกิจกรรมและประกาศทั้งหมด ${getAnnouncementsForDate(currentDate).length} รายการ`
                       : 'ไม่มีกิจกรรมหรือประกาศในวันนี้'}
@@ -428,7 +428,7 @@ export default function MyNewsCalendarPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentDate(new Date())}
-                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   กลับไปวันปัจจุบัน
                 </button>
@@ -441,7 +441,7 @@ export default function MyNewsCalendarPage() {
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
                   <CalendarIcon className="w-7 h-7" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-700 mb-1">
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
                   ไม่มีประกาศหรือกิจกรรมในวันนี้
                 </h3>
                 <p className="text-xs text-slate-400 max-w-sm mb-4">
@@ -451,14 +451,14 @@ export default function MyNewsCalendarPage() {
                   <button
                     type="button"
                     onClick={() => setViewMode('WEEK')}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     ดูมุมมองสัปดาห์
                   </button>
                   <button
                     type="button"
                     onClick={() => setViewMode('MONTH')}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     ดูมุมมองเดือน
                   </button>
@@ -503,12 +503,12 @@ export default function MyNewsCalendarPage() {
                           </span>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#0B2046] transition-colors leading-snug">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#0B2046] transition-colors leading-snug">
                           {idx + 1}. {item.title}
                         </h4>
 
                         {item.content && (
-                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
                             {item.content}
                           </p>
                         )}
@@ -552,7 +552,7 @@ export default function MyNewsCalendarPage() {
                 <div
                   key={idx}
                   className={`min-h-[115px] sm:min-h-[125px] p-2 flex flex-col justify-between transition-colors ${
-                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800'
+                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200'
                   } ${isCurrentDay ? 'ring-2 ring-blue-500/40 inset-ring inset-0 bg-blue-50/20' : ''}`}
                 >
                   {/* Date Number */}
@@ -565,7 +565,7 @@ export default function MyNewsCalendarPage() {
                           ? 'text-rose-500'
                           : isSat
                           ? 'text-blue-600'
-                          : 'text-slate-700'
+                          : 'text-slate-700 dark:text-slate-300'
                       } ${
                         isCurrentDay
                           ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs'
@@ -644,7 +644,7 @@ export default function MyNewsCalendarPage() {
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span
                       className={`text-sm font-bold ${
-                        isSun ? 'text-rose-500' : isSat ? 'text-blue-600' : 'text-slate-800'
+                        isSun ? 'text-rose-500' : isSat ? 'text-blue-600' : 'text-slate-800 dark:text-slate-200'
                       } ${
                         isCurrentDay
                           ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center'
@@ -693,33 +693,33 @@ export default function MyNewsCalendarPage() {
 
         {/* Color Legend Bar at Bottom */}
         <div className="p-4 bg-slate-50/70 border-t border-slate-200/80 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs">
-          <span className="font-bold text-slate-600 flex items-center gap-1.5">
+          <span className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-slate-400" />
             <span>คำอธิบายสีหัวข้อประกาศ:</span>
           </span>
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
               <span className="w-3.5 h-3.5 rounded-sm bg-[#FED7AA] border border-[#FDBA74]" />
               <span>กิจกรรม / อบรมพนักงาน</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
               <span className="w-3.5 h-3.5 rounded-sm bg-[#BAE6FD] border border-[#7DD3FC]" />
               <span>นโยบาย / ประชุมทีม</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
               <span className="w-3.5 h-3.5 rounded-sm bg-[#BBF7D0] border border-[#86EFAC]" />
               <span>ข่าวสารทั่วไป / ส่งรายงาน</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
               <span className="w-3.5 h-3.5 rounded-sm bg-[#FECDD3] border border-[#FDA4AF]" />
               <span>ประกาศด่วน / นำเสนอผลงาน</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
               <span className="w-3.5 h-3.5 rounded-sm bg-[#E9D5FF] border border-[#D8B4FE]" />
               <span>สวัสดิการ / ตรวจสอบงาน</span>
             </span>
@@ -738,14 +738,14 @@ export default function MyNewsCalendarPage() {
                   <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 block leading-tight">ข่าวสารและประกาศ</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block leading-tight">ข่าวสารและประกาศ</span>
                   <span className="text-[11px] text-slate-400">รายละเอียดประกาศ</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setReadingItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -754,7 +754,7 @@ export default function MyNewsCalendarPage() {
             {/* Modal Body Content */}
             <div className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1 min-w-0">
               {/* Title */}
-              <h2 className="text-xl font-bold text-slate-900 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
                 {readingItem.title}
               </h2>
 
@@ -779,7 +779,7 @@ export default function MyNewsCalendarPage() {
               </div>
 
               {/* Content Body */}
-              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
+              <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
                 {readingItem.content}
               </div>
             </div>
@@ -814,14 +814,14 @@ export default function MyNewsCalendarPage() {
                   <span className="text-base font-extrabold leading-none">{selectedDayModal.date.getDate()}</span>
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
                     รายการประกาศวันที่ {selectedDayModal.date.toLocaleDateString('th-TH', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
                     })}
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     พบทั้งหมด {selectedDayModal.items.length} รายการ
                   </p>
                 </div>
@@ -829,7 +829,7 @@ export default function MyNewsCalendarPage() {
               <button
                 type="button"
                 onClick={() => setSelectedDayModal(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 title="ปิดหน้าต่าง"
               >
                 <X className="w-5 h-5" />
@@ -875,12 +875,12 @@ export default function MyNewsCalendarPage() {
                       </span>
                     </div>
 
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-[#0B2046] transition-colors leading-snug">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046] transition-colors leading-snug">
                       {idx + 1}. {item.title}
                     </h4>
 
                     {item.content && (
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                         {item.content}
                       </p>
                     )}
@@ -897,7 +897,7 @@ export default function MyNewsCalendarPage() {
               <button
                 type="button"
                 onClick={() => setSelectedDayModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-300 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-300 transition-all cursor-pointer"
               >
                 ปิด
               </button>

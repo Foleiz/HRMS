@@ -50,11 +50,11 @@ const formatShortDate = (d?: string | null) => {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  DRAFT: { label: 'แบบร่าง', color: 'bg-gray-100 text-gray-600 border-gray-200', icon: <FileText className="w-3.5 h-3.5" /> },
+  DRAFT: { label: 'แบบร่าง', color: 'bg-gray-100 text-gray-600 dark:text-slate-400 border-gray-200', icon: <FileText className="w-3.5 h-3.5" /> },
   PENDING: { label: 'รออนุมัติ', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: <Clock className="w-3.5 h-3.5" /> },
   APPROVED: { label: 'อนุมัติแล้ว', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
   REJECTED: { label: 'ไม่อนุมัติ', color: 'bg-red-50 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
-  CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
+  CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 dark:text-slate-400 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
 // เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป)
@@ -420,7 +420,7 @@ export default function DocumentHistoryPage() {
     { label: 'เอกสารที่อนุมัติแล้ว', value: stats.approved, icon: <CheckCircle2 className="w-5 h-5" />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'เอกสารรอการอนุมัติ', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'เอกสารที่ไม่อนุมัติ', value: stats.rejected, icon: <XCircle className="w-5 h-5" />, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'เอกสารทั้งหมด', value: stats.total, icon: <FileText className="w-5 h-5" />, color: 'text-gray-600', bg: 'bg-gray-100' },
+    { label: 'เอกสารทั้งหมด', value: stats.total, icon: <FileText className="w-5 h-5" />, color: 'text-gray-600 dark:text-slate-400', bg: 'bg-gray-100' },
   ];
 
   return (
@@ -430,7 +430,7 @@ export default function DocumentHistoryPage() {
 
       {/* Page Header */}
       <div>
-        <p className="text-sm text-gray-500">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
       </div>
 
       {/* Stat Cards */}
@@ -439,7 +439,7 @@ export default function DocumentHistoryPage() {
           <div key={s.label} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4 flex items-center gap-3">
             <div className={`w-11 h-11 rounded-xl ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>{s.icon}</div>
             <div className="min-w-0">
-              <div className="text-2xl font-bold text-gray-900">{s.value}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{s.value}</div>
               <div className="text-xs text-gray-400 truncate">{s.label}</div>
             </div>
           </div>
@@ -450,13 +450,13 @@ export default function DocumentHistoryPage() {
       <div className="flex items-center gap-2">
         <button
           onClick={handleExport}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-xs font-medium transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-xs font-medium transition-all"
         >
           <Download className="w-3.5 h-3.5" /> ส่งออก
         </button>
         <button
           onClick={fetchData}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-xs font-medium transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-xs font-medium transition-all"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> รีเฟรช
         </button>
@@ -490,12 +490,12 @@ export default function DocumentHistoryPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60">
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">รหัสเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ยื่นเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ลา</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ประเภทเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สถานะเอกสาร</th>
-                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">การจัดการ</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">รหัสเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">วันที่ยื่นเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">วันที่ลา</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">ประเภทเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">สถานะเอกสาร</th>
+                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -513,9 +513,9 @@ export default function DocumentHistoryPage() {
                             {doc.code}
                           </button>
                         </td>
-                        <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                        <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{doc.detailDate}</td>
-                        <td className="px-4 py-4 text-gray-600">{doc.documentType}</td>
+                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
+                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{doc.detailDate}</td>
+                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400">{doc.documentType}</td>
                         <td className="px-4 py-4">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
                             {statusConf.icon}
@@ -536,7 +536,7 @@ export default function DocumentHistoryPage() {
                             return (
                               <ActionDropdown
                                 menuClassName="w-56"
-                                triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+                                triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:text-slate-300 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                                 items={[
                                   {
                                     label: 'ดูตัวอย่างเอกสาร',
@@ -598,7 +598,7 @@ export default function DocumentHistoryPage() {
 
             {/* Pagination */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                 แสดง
                 <select
                   value={pageSize}
@@ -618,7 +618,7 @@ export default function DocumentHistoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> ก่อนหน้า
                 </button>
@@ -627,7 +627,7 @@ export default function DocumentHistoryPage() {
                     key={p}
                     onClick={() => setPage(p)}
                     className={`w-7 h-7 rounded-lg text-xs font-medium transition-all ${
-                      p === page ? 'bg-[#0B2046] text-white' : 'text-gray-500 hover:bg-gray-100'
+                      p === page ? 'bg-[#0B2046] text-white' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100'
                     }`}
                   >
                     {p}
@@ -636,7 +636,7 @@ export default function DocumentHistoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   ถัดไป <ChevronRight className="w-3.5 h-3.5" />
                 </button>

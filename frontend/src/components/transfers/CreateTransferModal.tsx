@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -207,7 +207,7 @@ export default function CreateTransferModal({
             <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
               {recordType === 'ARCHIVE' ? 'บันทึกคำสั่งย้ายย้อนหลัง' : 'สร้างคำขอย้าย / เลื่อนตำแหน่ง'}
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
               {recordType === 'ARCHIVE'
                 ? 'บันทึกประวัติคำสั่งแต่งตั้ง/โยกย้าย พร้อมแนบไฟล์เอกสาร'
                 : 'ยื่นคำขอย้ายแผนกเพื่อดำเนินการตามสายการอนุมัติ'}
@@ -215,7 +215,7 @@ export default function CreateTransferModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -241,7 +241,7 @@ export default function CreateTransferModal({
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 recordType === 'REQUEST'
                   ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'
               }`}
             >
               <GitPullRequest className="w-3.5 h-3.5" />
@@ -256,7 +256,7 @@ export default function CreateTransferModal({
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 recordType === 'ARCHIVE'
                   ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'
               }`}
             >
               <Archive className="w-3.5 h-3.5" />
@@ -387,7 +387,7 @@ export default function CreateTransferModal({
                   className="w-full h-10 pl-3.5 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                   required
                 />
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -427,7 +427,7 @@ export default function CreateTransferModal({
               <span>
                 เอกสารคำสั่งแต่งตั้ง/โยกย้าย {recordType === 'ARCHIVE' ? '(แนบไฟล์หลักฐาน)' : '(แนบเอกสารเพิ่มเติมถ้ามี)'}
               </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
             </label>
 
             {!attachedFile ? (
@@ -442,9 +442,9 @@ export default function CreateTransferModal({
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 mx-auto mb-1.5" />
+                <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 dark:text-slate-400 mx-auto mb-1.5" />
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
               </div>
             ) : (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
@@ -454,7 +454,7 @@ export default function CreateTransferModal({
                   </div>
                   <div className="truncate">
                     <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">{attachedFile.name}</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       {(attachedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
@@ -462,7 +462,7 @@ export default function CreateTransferModal({
                 <button
                   type="button"
                   onClick={removeFile}
-                  className="text-slate-400 dark:text-slate-500 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                  className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
                   title="ลบไฟล์"
                 >
                   <Trash2 className="w-4 h-4" />

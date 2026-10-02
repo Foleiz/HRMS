@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { X, FileText, Calendar, CheckCircle2, AlertTriangle, ShieldCheck, Loader2 } from 'lucide-react';
@@ -52,7 +52,7 @@ export default function ContractDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -62,33 +62,33 @@ export default function ContractDetailModal({
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60">
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">ชื่อพนักงาน</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">ชื่อพนักงาน</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{contract.employeeName}</span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">รหัสพนักงาน</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">รหัสพนักงาน</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{contract.employeeCode}</span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">แผนก / ตำแหน่ง</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">แผนก / ตำแหน่ง</span>
               <span className="text-slate-700 dark:text-slate-300">{contract.departmentName || '-'} / {contract.positionTitle || '-'}</span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">ประเภทสัญญา</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">ประเภทสัญญา</span>
               <span className="font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded text-xs inline-block">
                 {contract.employeeTypeName || contract.contractTypeDisplay}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">วันที่เริ่มสัญญา</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">วันที่เริ่มสัญญา</span>
               <span className="text-slate-700 dark:text-slate-300 font-medium">{contract.startDateDisplay}</span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">สิ้นสุด / ครบทดลองงาน</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">สิ้นสุด / ครบทดลองงาน</span>
               <span className="text-slate-700 dark:text-slate-300 font-medium">{contract.effectiveEndDateDisplay || '-'}</span>
             </div>
             <div>
-              <span className="text-slate-400 dark:text-slate-500 text-xs block">สถานะสัญญา</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">สถานะสัญญา</span>
               <span className="flex items-center gap-1.5 font-medium text-xs mt-0.5">
                 {contract.status === 'ACTIVE' ? (
                   <>
@@ -105,7 +105,7 @@ export default function ContractDetailModal({
             </div>
             {contract.terminationDate && (
               <div>
-                <span className="text-slate-400 dark:text-slate-500 text-xs block">วันที่สิ้นสุดจริง</span>
+                <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs block">วันที่สิ้นสุดจริง</span>
                 <span className="text-rose-600 font-medium">{contract.terminationReason || 'สิ้นสุดสัญญา'}</span>
               </div>
             )}

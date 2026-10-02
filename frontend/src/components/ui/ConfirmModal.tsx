@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { X, AlertTriangle, CheckCircle2, HelpCircle, Info, Trash2, Sparkles, Loader2 } from 'lucide-react';
@@ -87,7 +87,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-5 right-5 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="absolute top-5 right-5 text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" />
         </button>

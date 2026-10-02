@@ -633,13 +633,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         {/* Search & Add */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchRole}
               onChange={(e) => setSearchRole(e.target.value)}
               placeholder="ค้นหาบทบาท..."
-              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
           <button
@@ -689,7 +689,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 </div>
 
                 {role.description && (
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-2 mt-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 line-clamp-2 mt-2 leading-relaxed">
                     {role.description}
                   </p>
                 )}
@@ -698,7 +698,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3 text-[11px]">
                     <button
                       onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
-                      className="text-slate-500 dark:text-slate-400 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+                      className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 flex items-center gap-1 cursor-pointer"
                     >
                       <Edit2 className="w-3 h-3" /><span>แก้ไข</span>
                     </button>
@@ -739,7 +739,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                   {localModules.length} โมดูลในระบบ
                 </span>
               </div>
@@ -774,7 +774,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 <button
                   type="button"
                   onClick={handleDeselectAll}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer"
                 >
                   ยกเลิกทั้งหมด
                 </button>
@@ -782,19 +782,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
               {/* Search Bar */}
               <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={searchModuleQuery}
                   onChange={(e) => setSearchModuleQuery(e.target.value)}
                   placeholder="ค้นหากลุ่มหรือสิทธิ์..."
-                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
                 />
                 {searchModuleQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchModuleQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-0.5"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-0.5"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -805,7 +805,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             {/* 3. Accordion Group List */}
             <div className="space-y-3 pt-2">
               {filteredCategories.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs">
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
                   ไม่พบโมดูลหรือสิทธิ์ที่ค้นหา &quot;{searchModuleQuery}&quot;
                 </div>
               ) : (
@@ -831,12 +831,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
-                            className="text-slate-400 dark:text-slate-500 hover:text-slate-700 transition-transform"
+                            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 transition-transform"
                           >
                             {isExpanded ? (
                               <ChevronUp className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                             ) : (
-                              <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                              <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                             )}
                           </button>
                           <div className="w-7 h-7 rounded-lg bg-[#0B2046]/5 text-[#0B2046] flex items-center justify-center shrink-0">
@@ -866,7 +866,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           className="flex items-center gap-2"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 hidden sm:inline">
                             {isCatAllActive ? 'เปิดทั้งหมด' : isCatPartial ? 'เปิดบางส่วน' : 'ปิดทั้งหมด'}
                           </span>
                           <ToggleSwitch
@@ -903,7 +903,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 leading-snug">
                                       {mod.moduleName}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                                       {mod.moduleCode}
                                     </div>
                                   </div>
@@ -938,7 +938,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                                 ? 'bg-[#0B2046] hover:bg-[#112d5e] text-white border-[#0B2046] shadow-2xs'
                                                 : isPopoverOpen
                                                 ? 'bg-slate-100 text-[#0B2046] border-slate-300 ring-2 ring-[#0B2046]/20'
-                                                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300'
                                             }`}
                                           >
                                             <span>{scope.label}</span>
@@ -1019,7 +1019,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
           </>
         ) : (
-          <div className="py-24 text-center text-slate-400 dark:text-slate-500 font-medium text-xs">
+          <div className="py-24 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium text-xs">
             เลือกบทบาททางด้านซ้ายเพื่อตั้งค่าสิทธิ์การเข้าถึง
           </div>
         )}
@@ -1048,7 +1048,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             {/* Popover Header */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700/60">
               <div className="min-w-0 pr-2">
-                <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+                <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 truncate">
                   {activeMod.moduleName}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
@@ -1059,7 +1059,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <button
                 type="button"
                 onClick={() => setActivePopover(null)}
-                className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
+                className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -1085,7 +1085,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       );
                     }}
                     className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${ isChecked ? 'bg-blue-50/70 border-blue-200 text-blue-950 font-semibold shadow-2xs'
-                        : 'bg-slate-50/50 border-slate-200/70 text-slate-600 hover:bg-slate-100/70'
+                        : 'bg-slate-50/50 border-slate-200/70 text-slate-600 dark:text-slate-400 hover:bg-slate-100/70'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -1132,7 +1132,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     false
                   );
                 }}
-                className="text-slate-400 dark:text-slate-500 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
               >
                 ล้างทั้งหมด
               </button>

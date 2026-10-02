@@ -106,7 +106,7 @@ const toIsoStringFromExpireInput = (dateStr: string) => {
 };
 
 const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
-  GENERAL: { label: 'ข่าวทั่วไป', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  GENERAL: { label: 'ข่าวทั่วไป', color: 'bg-slate-100 text-slate-700 dark:text-slate-300 border-slate-200' },
   POLICY: { label: 'นโยบายองค์กร', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   ACTIVITY: { label: 'กิจกรรมและสัมมนา', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   WELFARE: { label: 'สวัสดิการและสิทธิประโยชน์', color: 'bg-purple-50 text-purple-700 border-purple-200' },
@@ -114,7 +114,7 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
 };
 
 const PRIORITY_MAP: Record<string, { label: string; color: string; badge: string }> = {
-  LOW: { label: 'ทั่วไป', color: 'text-slate-500', badge: 'bg-slate-50 text-slate-600 border-slate-200' },
+  LOW: { label: 'ทั่วไป', color: 'text-slate-500 dark:text-slate-400', badge: 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200' },
   NORMAL: { label: 'ปกติ', color: 'text-blue-600', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
   HIGH: { label: 'สำคัญ', color: 'text-amber-600', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
   URGENT: { label: 'ด่วนที่สุด', color: 'text-red-600', badge: 'bg-red-50 text-red-700 border-red-200' },
@@ -417,8 +417,8 @@ export default function AnnouncementsPage() {
             <Megaphone className="w-5 h-5 text-[#0B2046]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">จัดการประกาศองค์กร</h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">จัดการประกาศองค์กร</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               ศูนย์รวมการประชาสัมพันธ์ จัดการข่าวสาร นโยบายบริษัท และติดตามสถิติการเปิดอ่าน
             </p>
           </div>
@@ -444,18 +444,18 @@ export default function AnnouncementsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">ประกาศทั้งหมด</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">ประกาศทั้งหมด</span>
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                   <Megaphone className="w-4 h-4" />
                 </div>
               </div>
-              <div className="mt-2 text-2xl font-bold text-slate-900">{totalCount}</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{totalCount}</div>
               <span className="text-xs text-slate-400 mt-1 block">รายการทั้งหมดในระบบ</span>
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">กำลังเผยแพร่</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">กำลังเผยแพร่</span>
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                   <Eye className="w-4 h-4" />
                 </div>
@@ -466,7 +466,7 @@ export default function AnnouncementsPage() {
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">ปักหมุดสำคัญ</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">ปักหมุดสำคัญ</span>
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                   <Pin className="w-4 h-4" />
                 </div>
@@ -477,12 +477,12 @@ export default function AnnouncementsPage() {
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">ฉบับร่าง</span>
-                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">ฉบับร่าง</span>
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 dark:text-slate-400 flex items-center justify-center">
                   <Clock className="w-4 h-4" />
                 </div>
               </div>
-              <div className="mt-2 text-2xl font-bold text-slate-700">{draftCount}</div>
+              <div className="mt-2 text-2xl font-bold text-slate-700 dark:text-slate-300">{draftCount}</div>
               <span className="text-xs text-slate-400 mt-1 block">ยังไม่เปิดเผยแพร่</span>
             </div>
           </div>
@@ -498,7 +498,7 @@ export default function AnnouncementsPage() {
                   placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
               </div>
 
@@ -507,7 +507,7 @@ export default function AnnouncementsPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                 >
                   <option value="">สถานะทั้งหมด</option>
                   <option value="PUBLISHED">เผยแพร่แล้ว</option>
@@ -521,7 +521,7 @@ export default function AnnouncementsPage() {
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                 >
                   <option value="">หมวดหมู่ทั้งหมด</option>
                   <option value="GENERAL">ข่าวทั่วไป</option>
@@ -537,7 +537,7 @@ export default function AnnouncementsPage() {
                 <select
                   value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                 >
                   <option value="">ความสำคัญทั้งหมด</option>
                   <option value="LOW">ทั่วไป</option>
@@ -554,7 +554,7 @@ export default function AnnouncementsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
                     <th className="py-3 px-4">หัวข้อประกาศ</th>
                     <th className="py-3 px-4">หมวดหมู่</th>
@@ -581,7 +581,7 @@ export default function AnnouncementsPage() {
                       <td colSpan={9} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-1.5">
                           <Megaphone className="w-8 h-8 text-slate-300 stroke-[1.5]" />
-                          <span className="font-semibold text-slate-600">ไม่พบข้อมูลข่าวประกาศ</span>
+                          <span className="font-semibold text-slate-600 dark:text-slate-400">ไม่พบข้อมูลข่าวประกาศ</span>
                           <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
                         </div>
                       </td>
@@ -609,7 +609,7 @@ export default function AnnouncementsPage() {
                               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                                 a.isPinned
                                   ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                                  : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100'
+                                  : 'text-slate-300 hover:text-slate-500 dark:text-slate-400 hover:bg-slate-100'
                               }`}
                             >
                               <Pin className={`w-4 h-4 ${a.isPinned ? 'fill-amber-500' : ''}`} />
@@ -617,7 +617,7 @@ export default function AnnouncementsPage() {
                           </td>
 
                           {/* Title */}
-                          <td className="py-3 px-4 font-medium text-slate-800 max-w-xs">
+                          <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 max-w-xs">
                             <div className="flex items-center gap-2">
                               {a.isPinned && (
                                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
@@ -625,7 +625,7 @@ export default function AnnouncementsPage() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenReading(a)}
-                                className="font-semibold text-slate-800 hover:text-blue-600 transition-colors text-left cursor-pointer truncate max-w-xs block"
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-blue-600 transition-colors text-left cursor-pointer truncate max-w-xs block"
                                 title="คลิกเพื่อดูตัวอย่างประกาศฉบับเต็ม"
                               >
                                 {a.title}
@@ -651,7 +651,7 @@ export default function AnnouncementsPage() {
                           </td>
 
                           {/* Target */}
-                          <td className="py-3 px-4 text-slate-600">
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                             <div className="flex items-center gap-1.5">
                               <Users className="w-3.5 h-3.5 text-slate-400" />
                               <span>{targetSummary}</span>
@@ -680,7 +680,7 @@ export default function AnnouncementsPage() {
                                 a.status === 'PUBLISHED'
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : a.status === 'DRAFT'
-                                  ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                                  ? 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-200'
                                   : 'bg-rose-50 text-rose-700 border-rose-200'
                               }`}
                               title="คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง"
@@ -700,7 +700,7 @@ export default function AnnouncementsPage() {
                           </td>
 
                           {/* Published At */}
-                          <td className="py-3 px-4 text-slate-500">
+                          <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
                             {formatDateTime(a.publishedAt || a.createdAt)}
                           </td>
 
@@ -711,7 +711,7 @@ export default function AnnouncementsPage() {
                                 type="button"
                                 onClick={() => handleOpenEdit(a)}
                                 title="แก้ไขประกาศ"
-                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -719,7 +719,7 @@ export default function AnnouncementsPage() {
                                 type="button"
                                 onClick={() => handleDelete(a)}
                                 title="ลบ/จัดเก็บประกาศ"
-                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -735,7 +735,7 @@ export default function AnnouncementsPage() {
 
             {/* Pagination */}
             {totalCount > pageSize && (
-              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>ทั้งหมด {totalCount} รายการ (หน้า {page} จาก {Math.ceil(totalCount / pageSize)})</span>
                 <div className="flex items-center gap-2">
                   <button
@@ -773,14 +773,14 @@ export default function AnnouncementsPage() {
                   <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 block leading-tight">ข่าวสารองค์กร</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block leading-tight">ข่าวสารองค์กร</span>
                   <span className="text-[11px] text-slate-400">รายละเอียดประกาศ</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setReadingItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -789,7 +789,7 @@ export default function AnnouncementsPage() {
             {/* Modal Body Content */}
             <div className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1 min-w-0">
               {/* Title */}
-              <h2 className="text-xl font-bold text-slate-900 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
                 {readingItem.title}
               </h2>
 
@@ -814,7 +814,7 @@ export default function AnnouncementsPage() {
               </div>
 
               {/* Content Body */}
-              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
+              <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
                 {readingItem.content}
               </div>
             </div>
@@ -849,14 +849,14 @@ export default function AnnouncementsPage() {
                   <BarChart2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">สถิติและรายชื่อผู้เปิดอ่าน</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">สถิติและรายชื่อผู้เปิดอ่าน</h3>
                   <p className="text-[11px] text-slate-400 truncate max-w-sm">{readStats?.title || 'กำลังโหลด...'}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setStatsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -875,8 +875,8 @@ export default function AnnouncementsPage() {
                   {/* Stats Progress Cards */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-medium block">เป้าหมายทั้งหมด</span>
-                      <span className="text-lg font-bold text-slate-800">{readStats.totalTargetEmployees} คน</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">เป้าหมายทั้งหมด</span>
+                      <span className="text-lg font-bold text-slate-800 dark:text-slate-200">{readStats.totalTargetEmployees} คน</span>
                     </div>
                     <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center">
                       <span className="text-[11px] text-emerald-700 font-medium block">เปิดอ่านแล้ว</span>
@@ -921,11 +921,11 @@ export default function AnnouncementsPage() {
                     return (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-700">
+                          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                             รายชื่อพนักงานที่เปิดอ่านแล้ว ({totalReceipts} คน)
                           </h4>
                           {totalStatsPages > 1 && (
-                            <span className="text-[11px] text-slate-500 font-medium">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                               หน้า {statsPage} จาก {totalStatsPages}
                             </span>
                           )}
@@ -939,7 +939,7 @@ export default function AnnouncementsPage() {
                           <>
                             <div className="border border-slate-100 rounded-xl overflow-hidden shadow-2xs">
                               <table className="w-full text-left text-xs whitespace-nowrap">
-                                <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase sticky top-0 border-b border-slate-100">
+                                <thead className="bg-slate-50 text-[11px] text-slate-500 dark:text-slate-400 uppercase sticky top-0 border-b border-slate-100">
                                   <tr>
                                     <th className="py-2.5 px-3.5">รหัสพนักงาน</th>
                                     <th className="py-2.5 px-3.5">ชื่อ-นามสกุล</th>
@@ -950,9 +950,9 @@ export default function AnnouncementsPage() {
                                 <tbody className="divide-y divide-slate-100">
                                   {paginatedReceipts.map((r) => (
                                     <tr key={r.employeeId} className="hover:bg-slate-50 transition-colors">
-                                      <td className="py-2.5 px-3.5 font-mono text-slate-600">{r.employeeCode}</td>
-                                      <td className="py-2.5 px-3.5 font-medium text-slate-800">{r.employeeName}</td>
-                                      <td className="py-2.5 px-3.5 text-slate-500">{r.departmentName || '-'}</td>
+                                      <td className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-400">{r.employeeCode}</td>
+                                      <td className="py-2.5 px-3.5 font-medium text-slate-800 dark:text-slate-200">{r.employeeName}</td>
+                                      <td className="py-2.5 px-3.5 text-slate-500 dark:text-slate-400">{r.departmentName || '-'}</td>
                                       <td className="py-2.5 px-3.5 text-slate-400 text-[11px]">{formatDateTime(r.readAt)}</td>
                                     </tr>
                                   ))}
@@ -962,7 +962,7 @@ export default function AnnouncementsPage() {
 
                             {/* Pagination Controls */}
                             {totalStatsPages > 1 && (
-                              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-xs text-slate-500">
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
                                 <span className="text-[11px]">
                                   แสดง {(statsPage - 1) * STATS_PAGE_SIZE + 1} - {Math.min(statsPage * STATS_PAGE_SIZE, totalReceipts)} จากทั้งหมด {totalReceipts} คน
                                 </span>
@@ -972,7 +972,7 @@ export default function AnnouncementsPage() {
                                     type="button"
                                     onClick={() => setStatsPage((p) => Math.max(1, p - 1))}
                                     disabled={statsPage === 1}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                                     title="หน้าก่อนหน้า"
                                   >
                                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -987,7 +987,7 @@ export default function AnnouncementsPage() {
                                         className={`min-w-7 h-7 px-1.5 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                           statsPage === p
                                             ? 'bg-[#0B2046] text-white shadow-xs'
-                                            : 'text-slate-600 hover:bg-slate-100'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                                         }`}
                                       >
                                         {p}
@@ -1003,7 +1003,7 @@ export default function AnnouncementsPage() {
                                     type="button"
                                     onClick={() => setStatsPage((p) => Math.min(totalStatsPages, p + 1))}
                                     disabled={statsPage === totalStatsPages}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                                     title="หน้าถัดไป"
                                   >
                                     <ChevronRight className="w-3.5 h-3.5" />
@@ -1024,7 +1024,7 @@ export default function AnnouncementsPage() {
               <button
                 type="button"
                 onClick={() => setStatsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
               </button>
@@ -1045,7 +1045,7 @@ export default function AnnouncementsPage() {
                   <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                     {editingAnnouncement ? 'แก้ไขข่าวสารและประกาศ' : 'สร้างข่าวสารและประกาศใหม่'}
                   </h3>
                   <p className="text-[11px] text-slate-400">กรอกข้อมูลรายละเอียดและเลือกกลุ่มเป้าหมายผู้รับข่าวสาร</p>
@@ -1054,7 +1054,7 @@ export default function AnnouncementsPage() {
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1063,7 +1063,7 @@ export default function AnnouncementsPage() {
             <form onSubmit={handleSave} className="overflow-y-auto p-5 space-y-4 flex-1">
               {/* Title */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   หัวข้อข่าวประกาศ <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -1072,18 +1072,18 @@ export default function AnnouncementsPage() {
                   placeholder="เช่น ประกาศวันหยุดตามประเพณีประจำปี 2026..."
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                 />
               </div>
 
               {/* Category & Priority */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่ข่าว</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่ข่าว</label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                   >
                     <option value="GENERAL">ข่าวทั่วไป</option>
                     <option value="POLICY">นโยบายองค์กร</option>
@@ -1094,11 +1094,11 @@ export default function AnnouncementsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">ระดับความสำคัญ</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ระดับความสำคัญ</label>
                   <select
                     value={formPriority}
                     onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                   >
                     <option value="LOW">ต่ำ</option>
                     <option value="NORMAL">ปกติ</option>
@@ -1111,7 +1111,7 @@ export default function AnnouncementsPage() {
               {/* Publication Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่เผยแพร่ประกาศ <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1119,7 +1119,7 @@ export default function AnnouncementsPage() {
                     required
                     value={formPublishedAt}
                     onChange={(e) => setFormPublishedAt(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">
                     กำหนดวันที่ประกาศจะแสดงผลบนปฏิทินข่าวสาร
@@ -1127,7 +1127,7 @@ export default function AnnouncementsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่สิ้นสุดการเผยแพร่ (ไม่ระบุก็ได้)
                   </label>
                   <input
@@ -1135,7 +1135,7 @@ export default function AnnouncementsPage() {
                     min={formPublishedAt || undefined}
                     value={formExpireAt}
                     onChange={(e) => setFormExpireAt(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">
                     จัดเก็บประกาศอัตโนมัติเมื่อพ้นกำหนด
@@ -1145,7 +1145,7 @@ export default function AnnouncementsPage() {
 
               {/* Content */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   เนื้อหาประกาศอย่างละเอียด <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -1154,15 +1154,15 @@ export default function AnnouncementsPage() {
                   placeholder="ระบุข้อความรายละเอียด คำชี้แจง หรือแนวทางปฏิบัติต่างๆ..."
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-sans"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-sans"
                 />
               </div>
 
               {/* Target Selection */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                <label className="block text-xs font-bold text-slate-800">กลุ่มเป้าหมายผู้รับข่าวสาร</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">กลุ่มเป้าหมายผู้รับข่าวสาร</label>
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                     <input
                       type="radio"
                       name="targetType"
@@ -1172,7 +1172,7 @@ export default function AnnouncementsPage() {
                     />
                     <span>พนักงานทุกคนในองค์กร</span>
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                     <input
                       type="radio"
                       name="targetType"
@@ -1186,12 +1186,12 @@ export default function AnnouncementsPage() {
 
                 {formTargetType === 'DEPARTMENT' && (
                   <div className="pt-2 border-t border-slate-200 space-y-2">
-                    <span className="text-[11px] text-slate-500 font-medium">เลือกแผนกที่ต้องการส่งประกาศถึง:</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">เลือกแผนกที่ต้องการส่งประกาศถึง:</span>
                     <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200">
                       {departments.map((dept) => {
                         const isChecked = formSelectedDeptIds.includes(dept.id);
                         return (
-                          <label key={dept.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                          <label key={dept.id} className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -1223,17 +1223,17 @@ export default function AnnouncementsPage() {
                     className="accent-[#0B2046] w-4 h-4"
                   />
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block">ปักหมุดประกาศนี้</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">ปักหมุดประกาศนี้</span>
                     <span className="text-[11px] text-slate-400 block">แสดงข่าวนี้อยู่บนสุดของฟีดพนักงานเสมอ</span>
                   </div>
                 </label>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะเมื่อบันทึก</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะเมื่อบันทึก</label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value as AnnouncementStatus)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                   >
                     <option value="PUBLISHED">เผยแพร่</option>
                     <option value="DRAFT">บันทึกเป็นฉบับร่าง</option>
@@ -1247,7 +1247,7 @@ export default function AnnouncementsPage() {
                   type="button"
                   disabled={isSaving}
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
                 >
                   ยกเลิก
                 </button>

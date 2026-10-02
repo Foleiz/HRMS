@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
@@ -222,7 +222,7 @@ function WheelColumn({ items, selected, onSelect, isOpen }: WheelColumnProps) {
               isSelected
                 ? 'text-2xl font-black text-slate-900 dark:text-slate-100 scale-110 tracking-wide'
                 : distance === 1
-                ? 'text-base font-semibold text-slate-400 dark:text-slate-500 opacity-60 scale-95'
+                ? 'text-base font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 opacity-60 scale-95'
                 : 'text-xs font-medium text-slate-300 opacity-20 scale-85'
             }`}
           >
@@ -387,7 +387,7 @@ export default function ThaiTimePicker({
       >
         {/* Left: Clock Icon + Typing Inputs */}
         <div className="flex items-center gap-2 font-mono">
-          <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+          <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
 
           {/* Hour Direct Typing Input */}
           <input
@@ -403,7 +403,7 @@ export default function ThaiTimePicker({
             className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all cursor-text"
           />
 
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">:</span>
+          <span className="font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 select-none">:</span>
 
           {/* Minute Direct Typing Input */}
           <input
@@ -425,7 +425,7 @@ export default function ThaiTimePicker({
 
         {/* Right: Chevron Arrow */}
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${
+          className={`w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0 transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-[#0B2046]' : ''
           }`}
         />
@@ -491,7 +491,7 @@ export default function ThaiTimePicker({
           {/* Quick Minute Selection Presets with Live Time Badge */}
           <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">ปุ่มลัดนาที:</span>
+              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400">ปุ่มลัดนาที:</span>
               <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                 {selectedHour}:{selectedMinute} น.
               </span>

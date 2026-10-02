@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { History, Loader2, AlertTriangle, ArrowRight, User } from 'lucide-react';
@@ -30,7 +30,7 @@ const ACTION_LABEL: Record<string, { label: string; className: string }> = {
   MOVE: { label: 'เปลี่ยนตำแหน่ง/สังกัด', className: 'bg-violet-50 text-violet-700 border-violet-200' },
 };
 
-const Empty = () => <span className="text-slate-400 dark:text-slate-500 italic">(ว่าง)</span>;
+const Empty = () => <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 italic">(ว่าง)</span>;
 
 /** ตารางรายละเอียด: แก้ไข = ช่อง | เดิม | ใหม่, เพิ่ม/ลบ = ช่อง | ข้อมูล */
 function ChangeTable({ entry }: { entry: HistoryEntry }) {
@@ -86,7 +86,7 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
                   c.field
                 )}
               </td>
-              <td className={`px-3 py-2 align-top whitespace-pre-line break-words ${removed ? 'text-rose-700 line-through decoration-rose-300' : 'text-slate-900 font-medium'}`}>
+              <td className={`px-3 py-2 align-top whitespace-pre-line break-words ${removed ? 'text-rose-700 line-through decoration-rose-300' : 'text-slate-900 dark:text-slate-100 font-medium'}`}>
                 {(removed ? c.oldValue : c.newValue) ?? <Empty />}
               </td>
             </tr>
@@ -158,7 +158,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           <button
             type="button"
             onClick={() => setCategory('ALL')}
-            className={`px-3 py-1 rounded-full border cursor-pointer ${ category === 'ALL' ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            className={`px-3 py-1 rounded-full border cursor-pointer ${ category === 'ALL' ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-50'
             }`}
           >
             ทั้งหมด ({entries.length})
@@ -168,7 +168,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               key={key}
               type="button"
               onClick={() => setCategory(key)}
-              className={`px-3 py-1 rounded-full border cursor-pointer ${ category === key ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              className={`px-3 py-1 rounded-full border cursor-pointer ${ category === key ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-50'
               }`}
             >
               {c.label} ({c.count})
@@ -178,7 +178,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       )}
 
       {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
         </div>
       ) : error ? (
@@ -186,7 +186,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-slate-400 dark:text-slate-500 py-10 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+        <p className="text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 py-10 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
           ยังไม่มีประวัติการเปลี่ยนแปลง
         </p>
       ) : (
@@ -200,7 +200,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDateTime(e.at)}</span>
                   <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300">{e.category}</span>
                   <span className={`px-2 py-0.5 rounded-full border text-[10px] font-medium ${action.className}`}>{action.label}</span>
-                  <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                  <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     <User className="w-3 h-3" /> {e.changedBy || 'ระบบ'}
                   </span>
                 </div>

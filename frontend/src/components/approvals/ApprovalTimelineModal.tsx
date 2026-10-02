@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -152,7 +152,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -168,18 +168,18 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-slate-600 dark:text-slate-400">
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500">พนักงานผู้ขอ: </span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">พนักงานผู้ขอ: </span>
                   <strong className="text-slate-800 dark:text-slate-200">{leaveRequest.employeeName}</strong>
                   {leaveRequest.departmentName && (
                     <span className="text-slate-500 dark:text-slate-400"> ({leaveRequest.departmentName})</span>
                   )}
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500">ประเภทการลา: </span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ประเภทการลา: </span>
                   <strong className="text-slate-800 dark:text-slate-200">{leaveRequest.leaveTypeName}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500">ช่วงวันที่ลา: </span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ช่วงวันที่ลา: </span>
                   <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {formatDateOnly(leaveRequest.startDate ?? leaveRequest.startDatetime)}
                     {(leaveRequest.endDate ?? leaveRequest.endDatetime) &&
@@ -191,18 +191,18 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500">ติดต่อระหว่างลา: </span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ติดต่อระหว่างลา: </span>
                   <span className="text-slate-800 dark:text-slate-200">{leaveRequest.contactDuringLeave || '-'}</span>
                 </div>
                 {leaveRequest.reason && (
                   <div className="col-span-1 sm:col-span-2">
-                    <span className="text-slate-400 dark:text-slate-500">เหตุผลการลา: </span>
+                    <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">เหตุผลการลา: </span>
                     <span className="text-slate-800 dark:text-slate-200">{leaveRequest.reason}</span>
                   </div>
                 )}
                 {leaveRequest.documents && leaveRequest.documents.length > 0 && (
                   <div className="col-span-1 sm:col-span-2 flex items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <span className="text-slate-400 dark:text-slate-500">เอกสารแนบ: </span>
+                    <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">เอกสารแนบ: </span>
                     <div className="flex flex-wrap gap-2">
                       {leaveRequest.documents.map((doc) => (
                         <button
@@ -225,7 +225,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
           )}
 
           {loading ? (
-            <div className="py-16 text-center text-slate-400 dark:text-slate-500 space-y-2">
+            <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 space-y-2">
               <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#0B2046]" />
               <p className="text-xs">กำลังโหลดข้อมูลผังการอนุมัติ...</p>
             </div>
@@ -241,7 +241,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                 <div>
                   <span className="text-slate-500 dark:text-slate-400">สายการอนุมัติ: </span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">{timeline.flowName}</span>
-                  <span className="ml-1 text-slate-400 dark:text-slate-500">({timeline.flowCode})</span>
+                  <span className="ml-1 text-slate-400 dark:text-slate-500 dark:text-slate-400">({timeline.flowCode})</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-slate-500 dark:text-slate-400">สถานะรวม:</span>
@@ -251,7 +251,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                         : timeline.status === 'REJECTED'
                         ? 'bg-rose-50 text-rose-700 border border-rose-200'
                         : timeline.status === 'CANCELLED'
-                        ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                        ? 'bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}
                   >
@@ -291,7 +291,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                                   ? 'bg-amber-500 text-white shadow-xs ring-4 ring-amber-100 animate-pulse'
                                   : isCancelled
                                   ? 'bg-slate-400 text-white'
-                                  : 'bg-slate-100 text-slate-500 border border-slate-300'
+                                  : 'bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-300'
                               }`}
                             >
                               {isCompleted ? (
@@ -318,7 +318,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                                 ) : isWaiting ? (
                                   <span className="text-amber-600 font-semibold">กำลังรอพิจารณา</span>
                                 ) : (
-                                  <span className="text-slate-400 dark:text-slate-500">รอลำดับถัดไป</span>
+                                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">รอลำดับถัดไป</span>
                                 )}
                               </div>
                             </div>
@@ -376,7 +376,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                                 ? 'bg-rose-100 text-rose-800'
                                 : isWaiting
                                 ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-200/70 text-slate-600'
+                                : 'bg-slate-200/70 text-slate-600 dark:text-slate-400'
                             }`}
                           >
                             {isCompleted
@@ -395,7 +395,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                         <div className="mt-2.5 text-xs text-slate-600 dark:text-slate-400 space-y-1 pl-7">
                           {step.actionByEmployeeName && (
                             <div className="flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                              <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>
                                 ดำเนินการโดย: <strong className="text-slate-800 dark:text-slate-200">{step.actionByEmployeeName}</strong>
                               </span>
@@ -404,14 +404,14 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
 
                           {step.actionAt && (
                             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                              <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>วันและเวลา: {formatDateTime(step.actionAt)}</span>
                             </div>
                           )}
 
                           {step.comment && (
                             <div className="mt-1.5 p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 flex items-start gap-2">
-                              <MessageSquare className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
+                              <MessageSquare className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
                               <div>
                                 <span className="font-medium text-slate-500 dark:text-slate-400 text-[11px] block">ความเห็นผู้อนุมัติ:</span>
                                 <span>{step.comment}</span>

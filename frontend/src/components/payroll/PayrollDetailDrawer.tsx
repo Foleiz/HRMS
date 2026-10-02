@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
@@ -119,13 +119,13 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
         <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{record.employeeName}</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1 font-medium">
               {record.employeeCode} · {record.departmentName} · payroll_detail
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -134,7 +134,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 gap-2">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
               <span className="text-xs">กำลังโหลดรายละเอียด...</span>
             </div>
@@ -153,7 +153,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                             {item.isManual && <ManualBadge source={item.source} />}
                           </div>
                           {item.subtext && (
-                            <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{item.subtext}</div>
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">{item.subtext}</div>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       </div>
                     ))
                   ) : (
-                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500">
+                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       {record.status === 'DRAFT' ? 'ยังไม่ได้ประมวลผล' : 'ไม่มีรายการรายได้'}
                     </div>
                   )}
@@ -189,7 +189,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                               {item.isManual && <ManualBadge source={item.source} />}
                             </div>
                             {item.subtext && (
-                              <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{item.subtext}</div>
+                              <div className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">{item.subtext}</div>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       );
                     })
                   ) : (
-                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500">
+                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       {record.status === 'DRAFT' ? 'ยังไม่ได้ประมวลผล' : 'ไม่มีรายการหัก'}
                     </div>
                   )}
@@ -273,7 +273,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                     <span>{saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}</span>
                   </button>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     ประกันสังคม ภาษี และยอดสุทธิ จะถูกคำนวณใหม่ตามการตั้งค่า &quot;คิดภาษี / คิดประกันสังคม&quot; ของรายการที่เลือก
                   </p>
                 </div>

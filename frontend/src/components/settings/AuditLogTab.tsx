@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -39,7 +39,7 @@ const ACTION_CONFIG: Record<string, { label: string; badgeClass: string }> = {
   UPDATE: { label: 'แก้ไข', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   DELETE: { label: 'ลบ', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200' },
   LOGIN: { label: 'เข้าสู่ระบบ', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  LOGOUT: { label: 'ออกจากระบบ', badgeClass: 'bg-slate-100 text-slate-600 border-slate-200' },
+  LOGOUT: { label: 'ออกจากระบบ', badgeClass: 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200' },
   APPROVE: { label: 'อนุมัติ', badgeClass: 'bg-purple-50 text-purple-700 border-purple-200' },
   REJECT: { label: 'ปฏิเสธ', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200' },
   EXPORT: { label: 'ส่งออก', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300' },
@@ -265,7 +265,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-full h-9 px-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               />
-              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">-</span>
               <input
                 type="date"
                 value={endDate}
@@ -339,14 +339,14 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
         {/* Second Row: Search + Action buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
               placeholder="ใส่คำค้นหา (คีย์เวิร์ด, บัญชีผู้ใช้, รหัสข้อมูล...)"
-              className="w-full h-9.5 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full h-9.5 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
 
@@ -355,7 +355,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={handleClearFilter}
               className="h-9.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
               <span>ล้างค่าตัวกรอง</span>
             </button>
 
@@ -399,13 +399,13 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
                     กำลังโหลดบันทึกการใช้งานระบบ...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
                     ไม่พบบันทึกการใช้งานระบบที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
@@ -413,7 +413,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 logs.map((item) => {
                   const actionInfo = ACTION_CONFIG[item.action] || {
                     label: item.action,
-                    badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+                    badgeClass: 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200',
                   };
 
                   const oldPreview = formatCellPreview(item.oldValue, item.action, true);
@@ -434,7 +434,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
                         <span>{item.username}</span>
                         {item.fullName && (
-                          <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">({item.fullName})</span>
+                          <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal ml-1">({item.fullName})</span>
                         )}
                       </td>
 
@@ -500,7 +500,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               <option value={50}>50</option>
             </select>
             <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">
               (ทั้งหมด {totalCount.toLocaleString()} รายการ)
             </span>
           </div>
@@ -523,7 +523,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 key={p}
                 onClick={() => onPageChange(p)}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${ currentPage === p ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 {p}

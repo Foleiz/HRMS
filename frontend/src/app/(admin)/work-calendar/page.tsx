@@ -260,7 +260,7 @@ export default function WorkCalendarPage() {
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'work-week'
                 ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
             วันทำงานประจำสัปดาห์
@@ -274,7 +274,7 @@ export default function WorkCalendarPage() {
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'holidays'
                 ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
             วันหยุดประจำปี
@@ -293,7 +293,7 @@ export default function WorkCalendarPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">กำหนดวันและเวลาทำงานปกติของบริษัท</h2>
-                <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
                   ระบุวันทำงานปกติและเวลาเข้า-ออกงานมาตรฐานขององค์กร เพื่อใช้คำนวณการเข้างาน สาย และการทำงานล่วงเวลา (OT)
                 </p>
               </div>
@@ -303,7 +303,7 @@ export default function WorkCalendarPage() {
                   <Sun className="w-3.5 h-3.5" />
                   ทำงาน {workingDaysCount} วัน
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold whitespace-nowrap dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
                   <Moon className="w-3.5 h-3.5" />
                   วันหยุด {offDaysCount} วัน
                 </div>
@@ -318,7 +318,7 @@ export default function WorkCalendarPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">กำหนดเวลาทำงานปกติของบริษัท</h3>
-                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
                     ระบุเวลาเข้าและเลิกงานมาตรฐาน สำหรับวันทำงานปกติทั้งหมด
                   </p>
                 </div>
@@ -346,7 +346,7 @@ export default function WorkCalendarPage() {
 
             {/* 7-Day Grid Cards */}
             {loading ? (
-              <div className="py-16 text-center text-slate-400 dark:text-slate-500">
+              <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                 กำลังโหลดการตั้งค่าวันทำงาน...
               </div>
@@ -378,8 +378,8 @@ export default function WorkCalendarPage() {
                             <Check className="w-3 h-3 stroke-[3]" />
                           </span>
                         </div>
-                        <div className="text-sm font-bold text-slate-800 pt-1 dark:text-slate-200">{day.dayNameThai}</div>
-                        <div className="text-[11px] text-slate-400 font-medium dark:text-slate-500">{day.dayNameEnglish}</div>
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200 pt-1 dark:text-slate-200">{day.dayNameThai}</div>
+                        <div className="text-[11px] text-slate-400 font-medium dark:text-slate-500 dark:text-slate-400">{day.dayNameEnglish}</div>
                       </div>
 
                       {/* Bottom Status Pill */}
@@ -388,7 +388,7 @@ export default function WorkCalendarPage() {
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap w-full justify-center ${
                             day.isWorkingDay
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200'
                           }`}
                         >
                           <span
@@ -407,7 +407,7 @@ export default function WorkCalendarPage() {
 
             {/* Save Button */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/60">
-              <span className="text-xs text-slate-400 dark:text-slate-500">
+              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 คลิกที่การ์ดประจำวันเพื่อสลับระหว่างวันทำงานปกติกับวันหยุดประจำสัปดาห์
                 <br />
                 ใช้กับพนักงานที่ไม่ได้ผูกกะ — บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
@@ -435,13 +435,13 @@ export default function WorkCalendarPage() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl w-full">
                 {/* Search */}
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อวันหยุด หรือวันที่..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -449,7 +449,7 @@ export default function WorkCalendarPage() {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value={2025}>ปี พ.ศ. 2568 (2025)</option>
                   <option value={2026}>ปี พ.ศ. 2569 (2026)</option>
@@ -460,7 +460,7 @@ export default function WorkCalendarPage() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ALL">ทุกประเภทวันหยุด</option>
                   <option value="PUBLIC">วันหยุดตามประเพณี</option>
@@ -494,34 +494,34 @@ export default function WorkCalendarPage() {
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
+                      <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลวันหยุดประจำปี...
                       </td>
                     </tr>
                   ) : filteredHolidays.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
+                      <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         ไม่พบข้อมูลวันหยุดสำหรับปี {selectedYear + 543} ({selectedYear})
                       </td>
                     </tr>
                   ) : (
                     filteredHolidays.map((h, idx) => (
                       <tr key={h.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 text-center font-mono text-slate-400 whitespace-nowrap dark:text-slate-500">
+                        <td className="py-3 px-4 text-center font-mono text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                           {idx + 1}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md dark:text-slate-100 dark:bg-slate-800">
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 px-2 py-0.5 rounded-md dark:text-slate-100 dark:bg-slate-800">
                               {h.holidayDate}
                             </span>
-                            <span className="text-slate-600 font-medium dark:text-slate-400">
+                            <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">
                               ({formatThaiDate(h.holidayDate)})
                             </span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap dark:text-slate-200">
+                        <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">
                           {h.holidayName}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
@@ -542,14 +542,14 @@ export default function WorkCalendarPage() {
                             <button
                               onClick={() => handleOpenEditModal(h)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleConfirmDelete(h)}
                               title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -572,44 +572,44 @@ export default function WorkCalendarPage() {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มวันหยุดประจำปี' : 'แก้ไขข้อมูลวันหยุด'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveHoliday} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">วันที่วันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">วันที่วันหยุด *</label>
                 <input
                   type="date"
                   required
                   value={holidayForm.holidayDate}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayDate: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อวันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อวันหยุด *</label>
                 <input
                   type="text"
                   required
                   placeholder="เช่น วันขึ้นปีใหม่, วันสงกรานต์..."
                   value={holidayForm.holidayName}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ประเภทวันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ประเภทวันหยุด *</label>
                 <select
                   value={holidayForm.holidayType}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayType: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="PUBLIC">วันหยุดตามประเพณี</option>
                   <option value="COMPANY_SPECIAL">วันหยุดพิเศษบริษัท</option>
@@ -621,7 +621,7 @@ export default function WorkCalendarPage() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -646,14 +646,14 @@ export default function WorkCalendarPage() {
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
               <Trash2 className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1 dark:text-slate-100">ยืนยันการลบวันหยุด?</h3>
-            <p className="text-xs text-slate-500 mb-4 dark:text-slate-400">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 dark:text-slate-100">ยืนยันการลบวันหยุด?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 dark:text-slate-400">
               คุณต้องการลบวันหยุด <span className="font-semibold text-slate-800 dark:text-slate-200">"{itemToDelete.name}"</span> ({itemToDelete.date}) ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
             </p>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
+                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ยกเลิก
               </button>

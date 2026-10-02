@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
@@ -130,7 +130,7 @@ export default function TransfersPage() {
         popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-900 p-6',
         title: 'text-lg font-bold text-slate-800 dark:text-slate-100 pt-2',
         confirmButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all shadow-sm shadow-blue-200 cursor-pointer',
-        cancelButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 active:scale-95 transition-all mr-3 border border-slate-300 cursor-pointer',
+        cancelButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 hover:bg-slate-300 active:scale-95 transition-all mr-3 border border-slate-300 cursor-pointer',
         input: 'rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 w-full',
         actions: 'gap-3 mt-4 w-full flex justify-end',
       },
@@ -251,7 +251,7 @@ export default function TransfersPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               {tab.title}
@@ -320,7 +320,7 @@ export default function TransfersPage() {
               className={`pb-3 transition-all cursor-pointer ${
                 activeTab === 'transfers'
                   ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
               }`}
             >
               คำขอย้าย/เลื่อนตำแหน่ง
@@ -333,7 +333,7 @@ export default function TransfersPage() {
               className={`pb-3 transition-all cursor-pointer ${
                 activeTab === 'timeline'
                   ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
               }`}
             >
               ประวัติรายบุคคล
@@ -368,7 +368,7 @@ export default function TransfersPage() {
                     setSelectedType(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 >
                   <option value="ALL">ประเภททั้งหมด</option>
                   <option value="DEPARTMENT_TRANSFER">ย้ายแผนก</option>
@@ -383,7 +383,7 @@ export default function TransfersPage() {
                     setSelectedStatus(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 >
                   <option value="ALL">สถานะทั้งหมด</option>
                   <option value="PENDING">รอดำเนินการ</option>
@@ -400,7 +400,7 @@ export default function TransfersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
+                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
                   <th className="py-3.5 px-6 font-medium">เลขที่คำขอ</th>
                   <th className="py-3.5 px-6 font-medium">พนักงาน</th>
                   <th className="py-3.5 px-6 font-medium">จาก</th>
@@ -411,10 +411,10 @@ export default function TransfersPage() {
                   <th className="py-3.5 px-6 font-medium text-right">การจัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                         <span>กำลังโหลดข้อมูลการโยกย้าย...</span>
@@ -423,7 +423,7 @@ export default function TransfersPage() {
                   </tr>
                 ) : paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลคำขอย้าย/เลื่อนตำแหน่ง
                     </td>
                   </tr>
@@ -442,7 +442,7 @@ export default function TransfersPage() {
                               });
                               setIsTimelineModalOpen(true);
                             }}
-                            className="hover:underline hover:text-blue-700 cursor-pointer font-bold text-slate-900"
+                            className="hover:underline hover:text-blue-700 cursor-pointer font-bold text-slate-900 dark:text-slate-100"
                           >
                             {item.requestNo}
                           </button>
@@ -484,7 +484,7 @@ export default function TransfersPage() {
                       {/* พนักงาน */}
                       <td className="py-4 px-6">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">{item.employeeName}</span>
-                        <span className="text-slate-400 dark:text-slate-500 font-normal"> · {item.employeeCode}</span>
+                        <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal"> · {item.employeeCode}</span>
                       </td>
 
                       {/* จาก */}
@@ -606,7 +606,7 @@ export default function TransfersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
+                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
                   <th className="py-3.5 px-6 font-medium">รหัสพนักงาน</th>
                   <th className="py-3.5 px-6 font-medium">ชื่อ-นามสกุล</th>
                   <th className="py-3.5 px-6 font-medium">แผนก / สังกัด</th>
@@ -614,10 +614,10 @@ export default function TransfersPage() {
                   <th className="py-3.5 px-6 font-medium text-right">ไทม์ไลน์การทำงาน</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                         <span>กำลังโหลดรายชื่อพนักงาน...</span>
@@ -626,7 +626,7 @@ export default function TransfersPage() {
                   </tr>
                 ) : filteredEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลพนักงาน
                     </td>
                   </tr>
@@ -657,7 +657,7 @@ export default function TransfersPage() {
                               });
                               setIsTimelineModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-[#0B2046] hover:text-white text-slate-700 rounded-lg transition-all font-medium cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-[#0B2046] hover:text-white text-slate-700 dark:text-slate-300 rounded-lg transition-all font-medium cursor-pointer"
                           >
                             <Clock className="w-3.5 h-3.5 text-emerald-600 hover:text-white" />
                             <span>ดูประวัติรายบุคคล</span>
@@ -709,7 +709,7 @@ export default function TransfersPage() {
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   currentPage === page
                     ? 'bg-[#0B2046] text-white font-bold'
-                    : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    : 'border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                 }`}
               >
                 {page}

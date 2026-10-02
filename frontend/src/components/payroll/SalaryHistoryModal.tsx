@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2 } from 'lucide-react';
@@ -59,7 +59,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -68,12 +68,12 @@ export const SalaryHistoryModal: React.FC<Props> = ({
         {/* Content */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {loading ? (
-            <div className="py-12 text-center text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span>กำลังโหลดประวัติเงินเดือน...</span>
             </div>
           ) : history.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
               <History className="w-8 h-8 mx-auto text-slate-300 mb-2" />
               <span>ยังไม่มีประวัติการปรับเงินเดือนในระบบ</span>
             </div>
@@ -107,7 +107,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
                                 ปัจจุบัน
                               </span>
                             ) : (
-                              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">สิ้นสุดแล้ว</span>
+                              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">สิ้นสุดแล้ว</span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">

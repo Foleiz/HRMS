@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
@@ -158,7 +158,7 @@ export default function EmployeeTypesPage() {
       case 'STIPEND':
         return { label: 'เบี้ยเลี้ยง', color: 'bg-purple-50 text-purple-700 border-purple-200/80' };
       default:
-        return { label: val, color: 'bg-slate-50 text-slate-700 border-slate-200/80' };
+        return { label: val, color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200/80' };
     }
   };
 
@@ -180,7 +180,7 @@ export default function EmployeeTypesPage() {
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
                 {tab.title}
@@ -241,8 +241,8 @@ export default function EmployeeTypesPage() {
         {/* Card 1: ประเภทสัญญาทั้งหมด */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 mb-1">ประเภทสัญญาทั้งหมด</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">ประเภทการจ้างงานที่กำหนดในระบบ</p>
+            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">ประเภทสัญญาทั้งหมด</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ประเภทการจ้างงานที่กำหนดในระบบ</p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 text-[#0B2046] px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.totalTypes}
@@ -252,8 +252,8 @@ export default function EmployeeTypesPage() {
         {/* Card 2: จ่ายค่าจ้างรายเดือน */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 mb-1">จ่ายค่าจ้างรายเดือน</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
+            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">จ่ายค่าจ้างรายเดือน</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
           </div>
           <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.monthlyWageCount}
@@ -263,8 +263,8 @@ export default function EmployeeTypesPage() {
         {/* Card 3: รายวัน / รายชั่วโมง / เบี้ยเลี้ยง */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
+            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
           </div>
           <div className="bg-purple-50 text-purple-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.otherWageCount}
@@ -278,7 +278,7 @@ export default function EmployeeTypesPage() {
         <div className="p-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">รายการประเภทสัญญา</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">({types.length} รายการ)</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">({types.length} รายการ)</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -290,7 +290,7 @@ export default function EmployeeTypesPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ค้นหาชื่อ หรือรหัสประเภท..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
               />
             </div>
 
@@ -298,7 +298,7 @@ export default function EmployeeTypesPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-8 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+              className="h-8 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
             >
               <option value="ALL">สถานะทั้งหมด</option>
               <option value="ACTIVE">เปิดใช้งาน</option>
@@ -310,15 +310,15 @@ export default function EmployeeTypesPage() {
         {/* Data Table */}
         <div className="overflow-x-auto min-h-[300px]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mb-2" />
               <span>กำลังโหลดข้อมูลประเภทสัญญา...</span>
             </div>
           ) : paginatedTypes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
               <FileCheck2 className="w-10 h-10 text-slate-300 mb-2" />
               <p className="font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประเภทสัญญา</p>
-              <p className="text-slate-400 dark:text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
+              <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
             </div>
           ) : (
             <table className="w-full text-left text-xs border-collapse">
@@ -333,7 +333,7 @@ export default function EmployeeTypesPage() {
                   <th className="py-3 px-4 text-right whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
                 {paginatedTypes.map((item) => {
                   const wage = formatWageType(item.wageType);
 
@@ -365,7 +365,7 @@ export default function EmployeeTypesPage() {
                         <div className="flex flex-wrap items-center gap-1.5 max-w-sm">
                           {item.benefits && item.benefits.length > 0 ? (
                             item.benefits.map((b) => {
-                              let badgeColor = 'bg-slate-50 text-slate-700 border-slate-200/80';
+                              let badgeColor = 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200/80';
                               if (b.category === 'STATUTORY') {
                                 badgeColor = 'bg-blue-50 text-blue-700 border-blue-200/80';
                               } else if (b.category === 'HEALTH') {
@@ -414,7 +414,7 @@ export default function EmployeeTypesPage() {
                               )}
                             </>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">- ไม่มี -</span>
+                            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">- ไม่มี -</span>
                           )}
                         </div>
                       </td>
@@ -484,7 +484,7 @@ export default function EmployeeTypesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 disabled:opacity-40 cursor-pointer"
+              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
             >
               &lt;
             </button>
@@ -495,7 +495,7 @@ export default function EmployeeTypesPage() {
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   page === currentPage
                     ? 'bg-[#0B2046] text-white font-bold'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 {page}
@@ -504,7 +504,7 @@ export default function EmployeeTypesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 disabled:opacity-40 cursor-pointer"
+              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
             >
               &gt;
             </button>

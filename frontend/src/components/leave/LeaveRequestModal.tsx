@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Paperclip } from 'lucide-react';
@@ -136,7 +136,7 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
           <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 text-center flex-1">ยื่นคำขอลา</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -116,7 +116,7 @@ export const NotificationsWidget: React.FC<NotificationsWidgetProps> = ({ role }
             <span className="text-lg font-black text-slate-900 dark:text-slate-100 w-9 text-center group-hover:text-[#0B2046] transition-colors">
               {loading ? '-' : item.count}
             </span>
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-2 group-hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100 transition-colors">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-2 group-hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100 transition-colors">
               {item.label}
             </span>
           </Link>

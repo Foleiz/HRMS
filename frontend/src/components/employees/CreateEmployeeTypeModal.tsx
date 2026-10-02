@@ -273,12 +273,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             </div>
 
             {loadingBenefits ? (
-              <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
+              <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-[#0B2046]" />
                 กำลังโหลดรายการสวัสดิการ...
               </div>
             ) : availableBenefits.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500 py-2">ไม่พบสิทธิประโยชน์ในระบบ</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 py-2">ไม่พบสิทธิประโยชน์ในระบบ</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 max-h-48 overflow-y-auto">
                 {availableBenefits.map((b) => {
@@ -301,7 +301,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                           {b.benefitName}
                         </span>
                         {b.description && (
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                             {b.description}
                           </span>
                         )}
@@ -318,7 +318,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>

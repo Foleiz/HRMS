@@ -27,7 +27,7 @@ const PALETTE = [
   { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-400', dot: 'bg-teal-500' },
   { bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', border: 'border-fuchsia-400', dot: 'bg-fuchsia-500' },
   { bg: 'bg-lime-100', text: 'text-lime-800', border: 'border-lime-400', dot: 'bg-lime-500' },
-  { bg: 'bg-slate-200', text: 'text-slate-800', border: 'border-slate-400', dot: 'bg-slate-500' },
+  { bg: 'bg-slate-200', text: 'text-slate-800 dark:text-slate-200', border: 'border-slate-400', dot: 'bg-slate-500' },
 ];
 
 const SCOPE_LABEL: Record<string, string> = {
@@ -213,7 +213,7 @@ export default function TeamLeaveCalendarPage() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-[#0B2046]" />
-            <h1 className="text-base font-bold text-slate-800">ปฏิทินการลาของทีม</h1>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิทินการลาของทีม</h1>
           </div>
           {scope && (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
@@ -254,7 +254,7 @@ export default function TeamLeaveCalendarPage() {
               ))}
             </select>
           )}
-          <label className="flex items-center gap-1.5 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 cursor-pointer">
             <input type="checkbox" checked={includePending} onChange={(e) => setIncludePending(e.target.checked)} />
             แสดงใบลารออนุมัติ
           </label>
@@ -267,7 +267,7 @@ export default function TeamLeaveCalendarPage() {
                   setSelectedDay(null);
                 }}
                 className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                  view === m ? 'bg-white dark:bg-slate-700 shadow-sm text-[#0B2046] dark:text-blue-300' : 'text-slate-500'
+                  view === m ? 'bg-white dark:bg-slate-700 shadow-sm text-[#0B2046] dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {m === 'month' ? 'รายเดือน' : 'รายสัปดาห์'}
@@ -295,10 +295,10 @@ export default function TeamLeaveCalendarPage() {
           <button onClick={() => move(1)} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50">
             <ChevronRight className="w-4 h-4" />
           </button>
-          <span className="ml-2 text-sm font-bold text-slate-800">{title}</span>
+          <span className="ml-2 text-sm font-bold text-slate-800 dark:text-slate-200">{title}</span>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-500 dark:text-slate-400">
           ลาในช่วงนี้ {employeesOnLeave} คน{includePending && pendingCount > 0 ? ` · รออนุมัติ ${pendingCount} ใบ` : ''}
         </div>
       </div>
@@ -309,7 +309,7 @@ export default function TeamLeaveCalendarPage() {
 
       {/* Legend */}
       {colorOf.types.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
           {colorOf.types.map(([id, name]) => (
             <span key={id} className="inline-flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-full ${colorOf.map.get(id)?.dot}`} /> {name}
@@ -328,7 +328,7 @@ export default function TeamLeaveCalendarPage() {
         <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
             {WEEK_DAYS.map((d, i) => (
-              <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500'}`}>
+              <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'}`}>
                 {d}
               </div>
             ))}
@@ -353,7 +353,7 @@ export default function TeamLeaveCalendarPage() {
                 >
                   <span
                     className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                      key === todayKey ? 'bg-[#0B2046] text-white' : outside ? 'text-slate-300' : 'text-slate-600'
+                      key === todayKey ? 'bg-[#0B2046] text-white' : outside ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     {d.getDate()}
@@ -374,7 +374,7 @@ export default function TeamLeaveCalendarPage() {
         {selectedDay && (
           <div className="xl:w-80 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 h-fit">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-slate-800">ผู้ลาวันที่ {thaiDate(selectedDay)}</h2>
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">ผู้ลาวันที่ {thaiDate(selectedDay)}</h2>
               <button onClick={() => setSelectedDay(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
                 <X className="w-4 h-4" />
               </button>
@@ -389,7 +389,7 @@ export default function TeamLeaveCalendarPage() {
                     <li key={it.id} className="flex gap-2">
                       <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${c.dot}`} />
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-800 truncate">
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                           {it.employeeName}
                           {it.status === 'PENDING' && (
                             <span className="ml-1.5 rounded bg-amber-50 border border-amber-200 px-1.5 text-[10px] text-amber-700">
@@ -397,7 +397,7 @@ export default function TeamLeaveCalendarPage() {
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {it.leaveTypeName} · {it.departmentName || '-'}
                         </div>
                         <div className="text-xs text-slate-400">

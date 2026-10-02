@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Shield } from 'lucide-react';
@@ -103,7 +103,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -127,11 +127,11 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               value={roleCode}
               onChange={(e) => setRoleCode(e.target.value.toUpperCase())}
               placeholder="เช่น HR_SPECIALIST, AUDITOR"
-              className={`w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 uppercase ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-400' : ''
+              className={`w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 uppercase ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-400' : ''
               }`}
             />
             {isEditMode && (
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">รหัสบทบาทไม่สามารถเปลี่ยนแปลงได้</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">รหัสบทบาทไม่สามารถเปลี่ยนแปลงได้</p>
             )}
           </div>
 
@@ -145,7 +145,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="เช่น ผู้เชี่ยวชาญฝ่ายสรรหาบุคลากร"
-              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
 
@@ -156,7 +156,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="ระบุหน้าที่และขอบข่ายความรับผิดชอบของบทบาทนี้..."
-              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
 

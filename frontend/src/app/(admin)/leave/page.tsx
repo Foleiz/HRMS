@@ -433,7 +433,7 @@ export default function LeaveManagementPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'types'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               ประเภทการลา
@@ -445,7 +445,7 @@ export default function LeaveManagementPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'policies'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               สิทธิ์การลา
@@ -457,7 +457,7 @@ export default function LeaveManagementPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'balances'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               ยอดวันลาพนักงาน
@@ -482,7 +482,7 @@ export default function LeaveManagementPage() {
           <div className="p-6">
             {/* Action Bar */}
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">ประเภทการลา</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">ประเภทการลา</h2>
               <button
                 onClick={handleOpenCreateType}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
@@ -495,7 +495,7 @@ export default function LeaveManagementPage() {
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500 dark:text-slate-400">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4 text-center">หมวดในใบลา</th>
                     <th className="py-3.5 px-4 text-center">รับค่าจ้าง</th>
@@ -522,9 +522,9 @@ export default function LeaveManagementPage() {
                     leaveTypes.map((type) => (
                       <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
-                          <div className="font-semibold text-gray-800">{type.leaveName}</div>
+                          <div className="font-semibold text-gray-800 dark:text-slate-200">{type.leaveName}</div>
                         </td>
-                        <td className="py-4 px-4 text-center text-gray-600">
+                        <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
                           {formCategoryDisplay(type)}
                         </td>
                         <td className="py-4 px-4 text-center">
@@ -532,7 +532,7 @@ export default function LeaveManagementPage() {
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                               type.isPaidLeave
                                 ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-gray-100 text-gray-600'
+                                : 'bg-gray-100 text-gray-600 dark:text-slate-400'
                             }`}
                           >
                             {type.isPaidLeave ? 'ใช่' : 'ไม่ใช่'}
@@ -589,7 +589,7 @@ export default function LeaveManagementPage() {
           <div className="p-6">
             {/* Action Bar */}
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">สิทธิ์การลา</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">สิทธิ์การลา</h2>
               <button
                 onClick={handleOpenCreatePolicy}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
@@ -602,7 +602,7 @@ export default function LeaveManagementPage() {
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500 dark:text-slate-400">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4">ใช้กับ</th>
                     <th className="py-3.5 px-4 text-center">สิทธิ์/ปี</th>
@@ -632,19 +632,19 @@ export default function LeaveManagementPage() {
                     leavePolicies.map((policy) => (
                       <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
-                          <span className="font-semibold text-gray-800">{policy.leaveTypeName}</span>
+                          <span className="font-semibold text-gray-800 dark:text-slate-200">{policy.leaveTypeName}</span>
                         </td>
-                        <td className="py-4 px-4 text-gray-600">
-                          <span className="block text-gray-700">{policy.employeeTypeName || 'ทุกประเภทพนักงาน'}</span>
+                        <td className="py-4 px-4 text-gray-600 dark:text-slate-400">
+                          <span className="block text-gray-700 dark:text-slate-300">{policy.employeeTypeName || 'ทุกประเภทพนักงาน'}</span>
                           <span className="block text-xs text-gray-400">{policy.employeeLevelName || 'ทุกระดับ'}</span>
                         </td>
-                        <td className="py-4 px-4 text-center font-bold text-gray-900">
+                        <td className="py-4 px-4 text-center font-bold text-gray-900 dark:text-slate-100">
                           {policy.entitlementDays} วัน
                         </td>
-                        <td className="py-4 px-4 text-center text-gray-600">
+                        <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
                           {policy.minimumServiceDays > 0 ? `${policy.minimumServiceDays} วัน` : 'ไม่กำหนด'}
                         </td>
-                        <td className="py-4 px-4 text-center text-gray-600">
+                        <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
                           {policy.advanceRequestDays > 0 ? `${policy.advanceRequestDays} วัน` : 'วันเดียวกันได้'}
                         </td>
                         <td className="py-4 px-4 text-center">
@@ -700,12 +700,12 @@ export default function LeaveManagementPage() {
               <div className="flex flex-wrap items-center gap-3">
                 {/* Year Select */}
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-600">ประจำปี:</span>
+                  <Calendar className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+                  <span className="text-xs font-medium text-gray-600 dark:text-slate-400">ประจำปี:</span>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="bg-transparent text-sm font-semibold text-gray-800 focus:outline-none cursor-pointer"
+                    className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     {[2025, 2026, 2027].map((y) => (
                       <option key={y} value={y}>
@@ -731,13 +731,13 @@ export default function LeaveManagementPage() {
                 <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200">
                   <button
                     onClick={expandAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all flex items-center gap-1"
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all flex items-center gap-1"
                   >
                     <ChevronsUpDown className="w-3.5 h-3.5" /> ขยายทั้งหมด
                   </button>
                   <button
                     onClick={collapseAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all"
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all"
                   >
                     ยุบทั้งหมด
                   </button>
@@ -761,7 +761,7 @@ export default function LeaveManagementPage() {
             </div>
 
             {/* Subheader info count */}
-            <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 px-1">
               <div className="flex items-center gap-1.5 font-medium">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span>
@@ -816,8 +816,8 @@ export default function LeaveManagementPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-gray-900 text-sm">{emp.employeeName}</span>
-                              <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              <span className="font-bold text-gray-900 dark:text-slate-100 text-sm">{emp.employeeName}</span>
+                              <span className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 px-2 py-0.5 rounded-full">
                                 {emp.employeeCode}
                               </span>
                             </div>
@@ -831,17 +831,17 @@ export default function LeaveManagementPage() {
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-11 sm:pl-0">
                           <div className="text-left sm:text-right">
                             <span className="text-[11px] text-gray-400 block">สิทธิ์ที่เปิด</span>
-                            <span className="text-xs font-semibold text-gray-700 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-200">
+                            <span className="text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-200">
                               {emp.balances.length} ประเภท
                             </span>
                           </div>
                           <div className="text-left sm:text-right">
                             <span className="text-[11px] text-gray-400 block">สิทธิ์ปีนี้</span>
-                            <span className="text-xs font-bold text-gray-800">{emp.totalQuota} วัน</span>
+                            <span className="text-xs font-bold text-gray-800 dark:text-slate-200">{emp.totalQuota} วัน</span>
                           </div>
                           <div className="text-left sm:text-right">
                             <span className="text-[11px] text-gray-400 block">ใช้ไปรวม</span>
-                            <span className={`text-xs font-bold ${emp.totalUsed > 0 ? 'text-rose-600' : 'text-gray-500'}`}>
+                            <span className={`text-xs font-bold ${emp.totalUsed > 0 ? 'text-rose-600' : 'text-gray-500 dark:text-slate-400'}`}>
                               {emp.totalUsed} วัน
                             </span>
                           </div>
@@ -858,13 +858,13 @@ export default function LeaveManagementPage() {
                           <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
-                                <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-100 font-semibold text-gray-500">
+                                <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-100 font-semibold text-gray-500 dark:text-slate-400">
                                   <th className="py-2.5 px-4">ประเภทการลา</th>
                                   <th className="py-2.5 px-3 text-center">สิทธิ์ปีนี้</th>
                                   <th className="py-2.5 px-3 text-center">ยกมา</th>
                                   <th className="py-2.5 px-3 text-center">ใช้ไป</th>
                                   <th className="py-2.5 px-3 text-center">ปรับยอด</th>
-                                  <th className="py-2.5 px-3 text-center font-bold text-gray-700">คงเหลือ</th>
+                                  <th className="py-2.5 px-3 text-center font-bold text-gray-700 dark:text-slate-300">คงเหลือ</th>
                                   <th className="py-2.5 px-3 text-center">หมดอายุยกยอด</th>
                                   <th className="py-2.5 px-3 text-center">จัดการ</th>
                                 </tr>
@@ -873,10 +873,10 @@ export default function LeaveManagementPage() {
                                 {emp.balances.map((b) => (
                                   <tr key={b.id} className="hover:bg-blue-50/30 transition-colors">
                                     <td className="py-3 px-4">
-                                      <span className="font-semibold text-gray-800">{b.leaveTypeName}</span>
+                                      <span className="font-semibold text-gray-800 dark:text-slate-200">{b.leaveTypeName}</span>
                                     </td>
-                                    <td className="py-3 px-3 text-center text-gray-600">{b.annualQuotaDays} วัน</td>
-                                    <td className="py-3 px-3 text-center text-gray-600">{b.activeCarriedForwardDays} วัน</td>
+                                    <td className="py-3 px-3 text-center text-gray-600 dark:text-slate-400">{b.annualQuotaDays} วัน</td>
+                                    <td className="py-3 px-3 text-center text-gray-600 dark:text-slate-400">{b.activeCarriedForwardDays} วัน</td>
                                     <td className="py-3 px-3 text-center font-bold text-rose-600">{b.usedDays} วัน</td>
                                     <td className="py-3 px-3 text-center">
                                       <span

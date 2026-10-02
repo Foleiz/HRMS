@@ -157,12 +157,12 @@ export default function LeaveBalancesPage() {
       <div className="flex items-center justify-end gap-3">
         {/* Thai Buddhist Year Dropdown */}
         <div className="relative inline-block">
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 hover:border-slate-300 transition-colors">
-            <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 transition-colors">
+            <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
+              className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer pr-1"
             >
               {availableYears.map((yr) => (
                 <option key={yr} value={yr}>
@@ -211,7 +211,7 @@ export default function LeaveBalancesPage() {
           {/* Card 1: ลาป่วยปีนี้ไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาป่วยปีนี้ไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
@@ -231,7 +231,7 @@ export default function LeaveBalancesPage() {
           {/* Card 2: ลากิจปีนี้ไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลากิจปีนี้ไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -251,7 +251,7 @@ export default function LeaveBalancesPage() {
           {/* Card 3: ลาพักร้อนปีนี้ไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาพักร้อนปีนี้ไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
@@ -271,7 +271,7 @@ export default function LeaveBalancesPage() {
           {/* Card 4: ลาพิเศษปีนี้ไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาพิเศษปีนี้ไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
@@ -291,7 +291,7 @@ export default function LeaveBalancesPage() {
           {/* Card 5: ลาบวชไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาบวชไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
@@ -306,7 +306,7 @@ export default function LeaveBalancesPage() {
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-800 tracking-tight">
+                <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                   {summary?.ordinationLeave ? `${summary.ordinationLeave.usedTimes ?? 0}/${summary.ordinationLeave.maxTimes ?? 1}` : '0/1'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">ครั้ง</span>
@@ -317,7 +317,7 @@ export default function LeaveBalancesPage() {
           {/* Card 6: ลาเกณฑ์ทหารไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาเกณฑ์ทหารไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -332,7 +332,7 @@ export default function LeaveBalancesPage() {
                 <span className="text-xs font-medium text-slate-400">วัน</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-800 tracking-tight">
+                <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                   {summary?.militaryLeave ? `${summary.militaryLeave.usedTimes ?? 0}/${summary.militaryLeave.maxTimes ?? 1}` : '0/1'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">ครั้ง</span>
@@ -343,7 +343,7 @@ export default function LeaveBalancesPage() {
           {/* Card 7: ลาคลอดไปแล้ว */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ลาคลอดไปแล้ว
               </span>
               <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
@@ -363,7 +363,7 @@ export default function LeaveBalancesPage() {
           {/* Card 8: เวลาทำ OT ทั้งหมด */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 เวลาทำ OT ทั้งหมด
               </span>
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">

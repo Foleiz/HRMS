@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Sparkles, FileCheck2 } from 'lucide-react';
@@ -137,7 +137,7 @@ const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode 
   <div>
     <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
     {children}
-    {hint && <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500">{hint}</p>}
+    {hint && <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">{hint}</p>}
   </div>
 );
 
@@ -160,7 +160,7 @@ const NumberBox: React.FC<{
       onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
       className="w-full min-w-0 px-3 py-2 bg-transparent text-sm outline-none rounded-xl"
     />
-    <span className="px-3 text-xs text-gray-400 dark:text-slate-500 whitespace-nowrap">{unit}</span>
+    <span className="px-3 text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 whitespace-nowrap">{unit}</span>
   </div>
 );
 
@@ -314,9 +314,9 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
+          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -359,7 +359,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 </select>
               </Field>
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">
+            <p className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">
               ถ้ามีหลายรายการตรงกับพนักงาน ระบบใช้รายการที่เจาะจงที่สุด (ระบุประเภท/ระดับ) ก่อน · ประเภทการลา + กลุ่มพนักงานเดียวกันสร้างซ้ำไม่ได้
             </p>
             {!isEditing && (
@@ -428,7 +428,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
             <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 space-y-2.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
-                  <FileCheck2 className="w-4 h-4 text-gray-400 dark:text-slate-500" /> ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)
+                  <FileCheck2 className="w-4 h-4 text-gray-400 dark:text-slate-500 dark:text-slate-400" /> ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)
                 </span>
                 <Toggle checked={form.isDocumentRequired} onChange={(v) => set('isDocumentRequired', v)} />
               </div>

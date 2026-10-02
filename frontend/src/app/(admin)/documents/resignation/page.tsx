@@ -253,15 +253,15 @@ export default function ResignationPage() {
       {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารขอลาออก</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารขอลาออก</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             กรอกแบบฟอร์มแสดงความประสงค์ขอลาออกจากงานและส่งต่อสายการอนุมัติ
           </p>
         </div>
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -291,10 +291,10 @@ export default function ResignationPage() {
           <div className="flex flex-col gap-6">
             {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลทั่วไป</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ *</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ *</label>
                   <LeaveDateRangePicker
                     mode="single"
                     className="w-full"
@@ -304,7 +304,7 @@ export default function ResignationPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">เรียน</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">เรียน</label>
                   <input
                     type="text"
                     value={addressedTo}
@@ -318,10 +318,10 @@ export default function ResignationPage() {
 
             {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">ข้อมูลพนักงาน</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลพนักงาน</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">คำนำหน้า</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">คำนำหน้า</label>
                   <select
                     value={titlePrefix}
                     onChange={(e) => setTitlePrefix(e.target.value as any)}
@@ -333,31 +333,31 @@ export default function ResignationPage() {
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล *</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล *</label>
                   <input
                     type="text"
                     readOnly
                     value={profile.fullName}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed font-medium"
                   />
                 </div>
                 <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
                     <input
                       type="text"
                       readOnly
                       value={profile.positionTitle || '-'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก / สังกัด</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">แผนก / สังกัด</label>
                     <input
                       type="text"
                       readOnly
                       value={profile.departmentName || '-'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -368,11 +368,11 @@ export default function ResignationPage() {
           {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 flex flex-col">
             <div className="flex-1 flex flex-col space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">รายละเอียดการขอลาออก</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">รายละเอียดการขอลาออก</h3>
 
               {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
                   วันที่มีผลลาออก ( วันทำงานวันสุดท้าย ) *
                 </label>
                 <LeaveDateRangePicker
@@ -403,7 +403,7 @@ export default function ResignationPage() {
 
               {/* สาเหตุการลาออก (หมวดหมู่) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">
                   หมวดหมู่สาเหตุการลาออก
                 </label>
                 <select
@@ -423,7 +423,7 @@ export default function ResignationPage() {
               {/* ขยายเต็มพื้นที่ที่เหลือ เพื่อให้การ์ดสูงเท่าฝั่งซ้าย */}
               <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
                     เหตุผลการลาออก *
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
@@ -450,18 +450,18 @@ export default function ResignationPage() {
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
-            <Eye className="w-4 h-4 text-gray-500" />
+            <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
             ดูตัวอย่าง
           </button>
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
           >
-            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500" />}
+            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
             บันทึกแบบร่าง
           </button>
           <button
@@ -487,10 +487,10 @@ export default function ResignationPage() {
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
               ยื่นคำขอลาออกสำเร็จ!
             </h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
               คำขอของคุณถูกส่งเข้าสู่สายการอนุมัติเรียบร้อยแล้ว คุณสามารถติดตามสถานะการพิจารณาได้ที่เมนูประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
@@ -507,7 +507,7 @@ export default function ResignationPage() {
               <button
                 type="button"
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
               </button>

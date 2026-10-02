@@ -6,7 +6,7 @@ import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
 const currentBE = new Date().getFullYear() + 543;
 const YEARS = Array.from({ length: 50 }, (_, i) => currentBE + 1 - i);
 
@@ -55,7 +55,7 @@ export default function EmployeeBackgroundEditor({
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-[#0B2046]" />
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">({educations.length} รายการ)</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">({educations.length} รายการ)</span>
           </div>
           <button
             type="button"
@@ -67,7 +67,7 @@ export default function EmployeeBackgroundEditor({
         </div>
 
         {educations.length === 0 && (
-          <p className="text-center text-slate-400 dark:text-slate-500 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+          <p className="text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             ยังไม่มีประวัติการศึกษา
           </p>
         )}
@@ -77,7 +77,7 @@ export default function EmployeeBackgroundEditor({
             <button
               type="button"
               onClick={() => onEducationsChange(educations.filter((_, i) => i !== idx))}
-              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
               title="ลบรายการนี้"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -154,7 +154,7 @@ export default function EmployeeBackgroundEditor({
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-[#0B2046]" />
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการทำงาน</h3>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">({workExperiences.length} แห่ง)</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">({workExperiences.length} แห่ง)</span>
           </div>
           <button
             type="button"
@@ -166,7 +166,7 @@ export default function EmployeeBackgroundEditor({
         </div>
 
         {workExperiences.length === 0 && (
-          <p className="text-center text-slate-400 dark:text-slate-500 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+          <p className="text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             ยังไม่มีประวัติการทำงาน
           </p>
         )}
@@ -176,7 +176,7 @@ export default function EmployeeBackgroundEditor({
             <button
               type="button"
               onClick={() => onWorkExperiencesChange(workExperiences.filter((_, i) => i !== idx))}
-              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
               title="ลบรายการนี้"
             >
               <Trash2 className="w-3.5 h-3.5" />

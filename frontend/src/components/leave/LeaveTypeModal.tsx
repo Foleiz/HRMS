@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
@@ -134,7 +134,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 text-center flex-1">
             {isEditing ? 'แก้ไขประเภทการลา' : 'เพิ่มประเภทการลา'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -173,11 +173,11 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
                   <span className={`block text-sm font-medium ${formCategory === c.value ? 'text-blue-700' : 'text-gray-700 dark:text-slate-300'}`}>
                     {c.label}
                   </span>
-                  <span className="block text-xs text-gray-400 dark:text-slate-500">{c.hint}</span>
+                  <span className="block text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">{c.hint}</span>
                 </button>
               ))}
             </div>
-            <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500">ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา</p>
+            <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา</p>
           </div>
 
           {/* สวิตช์ */}
@@ -185,14 +185,14 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">ได้รับค่าจ้างระหว่างลา</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500">ปิด = ลาไม่รับค่าจ้าง ระบบเงินเดือนจะหักตามจำนวนวันลา</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิด = ลาไม่รับค่าจ้าง ระบบเงินเดือนจะหักตามจำนวนวันลา</span>
               </div>
               <Toggle checked={isPaidLeave} onChange={setIsPaidLeave} />
             </div>
             <div className="flex items-center justify-between gap-4 pt-3 border-t border-gray-200/60">
               <div>
                 <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">เปิดใช้งาน</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
               </div>
               <Toggle checked={isActive} onChange={setIsActive} />
             </div>

@@ -72,7 +72,7 @@ export default function DocumentsHubPage() {
 
       {/* Page Header */}
       <div>
-        <p className="text-sm text-gray-500">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
       </div>
 
       {/* Option Cards — ตาราง 2 x 2 เต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
@@ -86,14 +86,14 @@ export default function DocumentsHubPage() {
             >
               <div className="flex flex-col items-center gap-1.5">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-800">{opt.title}</h3>
+                  <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">{opt.title}</h3>
                   {!opt.available && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-medium bg-gray-100 text-gray-500">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-medium bg-gray-100 text-gray-500 dark:text-slate-400">
                       <Clock className="w-3 h-3" /> เร็ว ๆ นี้
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed max-w-sm min-h-[2.5rem] line-clamp-2">{opt.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm min-h-[2.5rem] line-clamp-2">{opt.description}</p>
               </div>
               <div className="flex items-center justify-center gap-3">
                 {opt.icons.map((Icon, i) => (

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { X } from 'lucide-react';
@@ -85,18 +85,18 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-8">
         {/* Toolbar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">ตัวอย่างเอกสารใบลา</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">ตัวอย่างเอกสารใบลา</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-slate-400 transition-colors"
           >
             <X className="w-4.5 h-4.5" />
           </button>
         </div>
 
         {/* Paper */}
-        <div className="p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900 dark:text-slate-100 max-h-[75vh] overflow-y-auto">
           <h2 className="text-center text-base font-bold mb-8">ใบลาป่วย ลาคลอดบุตร ลากิจส่วนตัว</h2>
 
           <div className="text-right mb-1">
@@ -160,7 +160,7 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
           >
             ปิด
           </button>

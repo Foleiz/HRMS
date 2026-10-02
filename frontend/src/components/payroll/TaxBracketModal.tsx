@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -199,7 +199,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -312,7 +312,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                             }
                             className="w-full px-2.5 py-1.5 pr-6 rounded-lg border border-slate-200 dark:border-slate-700 text-xs text-center font-bold text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800"
                           />
-                          <span className="absolute right-2 top-1.5 text-xs text-slate-400 dark:text-slate-500 font-bold">%</span>
+                          <span className="absolute right-2 top-1.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-bold">%</span>
                         </div>
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700 dark:text-slate-300">

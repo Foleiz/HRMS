@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -40,7 +40,7 @@ const EXPIRY_BADGE: Record<DocumentExpiryStatus, { label: string; className: str
   VALID: { label: 'ใช้งานได้', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   EXPIRING_SOON: { label: 'ใกล้หมดอายุ', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   EXPIRED: { label: 'หมดอายุแล้ว', className: 'bg-rose-50 text-rose-700 border-rose-200' },
-  NO_EXPIRY: { label: 'ไม่มีวันหมดอายุ', className: 'bg-slate-50 text-slate-500 border-slate-200' },
+  NO_EXPIRY: { label: 'ไม่มีวันหมดอายุ', className: 'bg-slate-50 text-slate-500 dark:text-slate-400 border-slate-200' },
 };
 
 /** ข้อความ error จาก API (ApiResponse.message) */
@@ -250,7 +250,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
 
       {/* รายการ */}
       {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดเอกสาร...
         </div>
       ) : error ? (
@@ -258,7 +258,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
       ) : documents.length === 0 ? (
-        <div className="p-10 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+        <div className="p-10 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
           <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
           <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีเอกสารในแฟ้มของพนักงานท่านนี้</p>
           <p className="text-[11px]">เอกสารจากคำขอเอกสารทั่วไปที่อนุมัติแล้วจะถูกเก็บเข้าแฟ้มนี้อัตโนมัติ</p>
@@ -283,11 +283,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                   <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/60 align-top">
                     <td className="px-4 py-3">
                       <p className="font-semibold text-slate-800 dark:text-slate-200">{doc.documentTypeName}</p>
-                      {doc.remarks && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 break-words max-w-[220px]">{doc.remarks}</p>}
+                      {doc.remarks && <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5 break-words max-w-[220px]">{doc.remarks}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-slate-700 dark:text-slate-300 break-all max-w-[200px]">{doc.fileName || '-'}</p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">{formatSize(doc.fileSize)}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">{formatSize(doc.fileSize)}</p>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatDate(doc.issuedDate)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -301,7 +301,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                       <p className="text-slate-700 dark:text-slate-300">
                         {doc.sourceRequestNo ? `คำขอ ${doc.sourceRequestNo}` : 'ฝ่ายบุคคลอัปโหลด'}
                       </p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         {formatDate(doc.uploadedAt)}
                         {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
                       </p>
@@ -324,7 +324,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                             type="button"
                             title="ลบ"
                             onClick={() => setDeleteTarget(doc)}
-                            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -379,8 +379,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                   onClick={() => fileRef.current?.click()}
                   className="w-full flex items-center gap-2 px-3 py-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl hover:border-[#0B2046] hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer text-left"
                 >
-                  <Upload className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                  <span className={`break-all ${file ? 'text-slate-800' : 'text-slate-400'}`}>
+                  <Upload className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span className={`break-all ${file ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}`}>
                     {file ? `${file.name} (${formatSize(file.size)})` : 'เลือกไฟล์ PDF, JPG, PNG, DOC (ไม่เกิน 5 MB)'}
                   </span>
                 </button>
@@ -408,7 +408,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                     className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none"
                   />
                   {!expiryDate && autoExpiry && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
                   )}
                 </div>
               </div>

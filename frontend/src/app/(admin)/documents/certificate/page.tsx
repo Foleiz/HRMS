@@ -24,7 +24,7 @@ const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
 const CARD = 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6';
 const READONLY_INPUT =
-  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-slate-800 text-sm text-gray-600 cursor-not-allowed';
+  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed';
 const TEXTAREA =
   'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden';
 
@@ -258,15 +258,15 @@ export default function CertificatePage() {
       {/* Page Header (เหมือนหน้าเอกสารการลา) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ขอหนังสือรับรอง</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">ขอหนังสือรับรอง</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             กรอกแบบฟอร์มยื่นขอหนังสือรับรองเงินเดือนและการทำงาน ติดตามสถานะได้ที่หน้าประวัติเอกสาร
           </p>
         </div>
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -294,28 +294,28 @@ export default function CertificatePage() {
           {/* ─── คอลัมน์ซ้าย ─── */}
           <div className="flex flex-col gap-5">
             <div className={CARD}>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลทั่วไป</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลทั่วไป</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ยื่น</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ยื่น</label>
                   <input type="text" readOnly value={formatThaiShort(toInputDate(new Date()))} className={READONLY_INPUT} />
                 </div>
               </div>
             </div>
 
             <div className={CARD}>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลพนักงาน</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลพนักงาน</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล</label>
                   <input type="text" readOnly value={profile.fullName || '-'} className={READONLY_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
                   <input type="text" readOnly value={profile.positionTitle || '-'} className={READONLY_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก/สังกัด</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">แผนก/สังกัด</label>
                   <input type="text" readOnly value={profile.departmentName || '-'} className={READONLY_INPUT} />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function CertificatePage() {
 
             <div className={`${CARD} flex-1 space-y-5`}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอรับรอง *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอรับรอง *</label>
                 <select
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
@@ -341,7 +341,7 @@ export default function CertificatePage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700">วัตถุประสงค์ในการขอเอกสาร *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">วัตถุประสงค์ในการขอเอกสาร *</label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {purpose.length}/{REASON_MAX_LENGTH}
                   </span>
@@ -364,7 +364,7 @@ export default function CertificatePage() {
           <div className={`${CARD} h-full flex flex-col gap-5`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ออก *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ออก *</label>
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"
@@ -382,7 +382,7 @@ export default function CertificatePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบภาษา</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">รูปแบบภาษา</label>
                 <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 dark:bg-slate-800 w-full">
                   {(['TH', 'EN'] as const).map((l) => (
                     <button
@@ -390,7 +390,7 @@ export default function CertificatePage() {
                       type="button"
                       onClick={() => setSelectedLanguage(l)}
                       className={`flex-1 inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                        selectedLanguage === l ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                        selectedLanguage === l ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100'
                       }`}
                     >
                       {l === 'TH' ? 'ภาษาไทย' : 'ฉบับสากล (EN)'}
@@ -401,7 +401,7 @@ export default function CertificatePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันหมดอายุ (มีผลบังคับใช้)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันหมดอายุ (มีผลบังคับใช้)</label>
               <LeaveDateRangePicker
                 mode="single"
                 className="w-full"
@@ -419,15 +419,15 @@ export default function CertificatePage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">ภาษา</div>
-                  <div className="text-sm font-bold text-gray-800">{selectedLanguage === 'TH' ? 'ไทย' : 'อังกฤษ'}</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{selectedLanguage === 'TH' ? 'ไทย' : 'อังกฤษ'}</div>
                 </div>
                 <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">อัตราเงินเดือน</div>
-                  <div className="text-sm font-bold text-gray-800">{selectedType ? (includeSalary ? 'แสดง' : 'ไม่แสดง') : '-'}</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{selectedType ? (includeSalary ? 'แสดง' : 'ไม่แสดง') : '-'}</div>
                 </div>
                 <div className="bg-white dark:bg-slate-800 rounded-lg py-2.5 border border-blue-100/70">
                   <div className="text-[11px] text-gray-400">อายุเอกสาร</div>
-                  <div className="text-sm font-bold text-gray-800">{validDays != null ? `${validDays} วัน` : '-'}</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{validDays != null ? `${validDays} วัน` : '-'}</div>
                 </div>
               </div>
               <p className="mt-3 text-xs text-blue-700/80">
@@ -437,7 +437,7 @@ export default function CertificatePage() {
 
             <div className="flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
                 <span className="text-2xs text-gray-400 font-mono">
                   {notes.length}/{NOTES_MAX_LENGTH}
                 </span>
@@ -459,7 +459,7 @@ export default function CertificatePage() {
           <button
             type="button"
             onClick={handlePreview}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             ดูตัวอย่าง
@@ -468,7 +468,7 @@ export default function CertificatePage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
           >
             {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             บันทึกแบบร่าง
@@ -496,10 +496,10 @@ export default function CertificatePage() {
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
               ยื่นคำขอหนังสือรับรองสำเร็จ!
             </h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
               คำขอของคุณถูกส่งไปยังฝ่ายทรัพยากรบุคคลเพื่อพิจารณาอนุมัติเรียบร้อยแล้ว คุณสามารถติดตามสถานะหรือพิมพ์เอกสารได้ในเมนูประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
@@ -516,7 +516,7 @@ export default function CertificatePage() {
               <button
                 type="button"
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
               </button>
