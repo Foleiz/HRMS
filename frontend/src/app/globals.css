@@ -112,6 +112,11 @@ input[type="reset"]:disabled {
   background-color: #1E293B !important;
 }
 
+.dark .bg-slate-100 {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
 .dark .border-slate-100,
 .dark .border-slate-200,
 .dark .border-gray-100,

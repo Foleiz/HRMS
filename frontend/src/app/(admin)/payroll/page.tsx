@@ -1624,13 +1624,13 @@ export default function PayrollPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">โครงสร้างเงินเดือน</h2>
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                 <button
                   onClick={() => setStructureSubTab('positions')}
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'positions'
                       ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   กรอบโครงสร้าง ({structures.length})
@@ -1640,7 +1640,7 @@ export default function PayrollPage() {
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'employees'
                       ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   ฐานเงินเดือนพนักงาน ({employees.length})
@@ -2233,7 +2233,7 @@ export default function PayrollPage() {
                   </div>
 
                   {/* View Switcher based on Permissions / Role */}
-                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 self-start sm:self-auto">
                     {canAccessHrView && (
                       <button
                         type="button"
@@ -2244,7 +2244,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'HR'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <Users className="w-3.5 h-3.5 text-blue-600" />
@@ -2261,7 +2261,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'FINANCE'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <Landmark className="w-3.5 h-3.5 text-emerald-600" />
@@ -2278,7 +2278,7 @@ export default function PayrollPage() {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'APPROVER'
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />

@@ -258,7 +258,7 @@ export default function TeamLeaveCalendarPage() {
             <input type="checkbox" checked={includePending} onChange={(e) => setIncludePending(e.target.checked)} />
             แสดงใบลารออนุมัติ
           </label>
-          <div className="flex items-center bg-slate-100 rounded-xl p-1">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 rounded-xl p-1 border border-slate-200 dark:border-slate-800">
             {(['month', 'week'] as ViewMode[]).map((m) => (
               <button
                 key={m}
