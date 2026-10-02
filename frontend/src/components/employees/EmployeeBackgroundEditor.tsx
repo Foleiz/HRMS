@@ -80,7 +80,7 @@ export default function EmployeeBackgroundEditor({
   const currentWork = workExperiences[safeWorkIndex];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 text-xs animate-in fade-in duration-150">
+    <div className="w-full space-y-8 text-xs animate-in fade-in duration-150">
       {/* ──────────────────────────────────────────────────────────── */}
       {/* ส่วนที่ 1: ประวัติการศึกษา                                  */}
       {/* ──────────────────────────────────────────────────────────── */}

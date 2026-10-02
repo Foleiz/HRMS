@@ -965,7 +965,7 @@ function EmployeeEditPageContent() {
             {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
             {/* ============================================================ */}
             {activeTab === 'family' && (
-              <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
+              <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                   <Users className="w-4 h-4 text-[#0B2046]" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">สมาชิกในครอบครัว</h3>
@@ -1128,7 +1128,7 @@ function EmployeeEditPageContent() {
             {/* TAB 3: กรณีฉุกเฉินติดต่อใคร (Emergency Contact)             */}
             {/* ============================================================ */}
             {activeTab === 'emergency' && (
-              <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
+              <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                   <Phone className="w-4 h-4 text-[#0B2046]" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>

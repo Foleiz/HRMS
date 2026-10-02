@@ -746,7 +746,7 @@ export default function EmployeeDetailView({
           {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
           {/* ============================================================ */}
           {activeTab === 'family' && (
-            <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
+            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
@@ -803,7 +803,7 @@ export default function EmployeeDetailView({
           {/* TAB 3: กรณีฉุกเฉินติดต่อใคร (Emergency Contact)             */}
           {/* ============================================================ */}
           {activeTab === 'emergency' && (
-            <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
+            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
                 <Phone className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
@@ -879,7 +879,7 @@ export default function EmployeeDetailView({
           {/* TAB 6: ข้อมูลผู้ใช้งาน & จัดการบัญชี (User Account & Signature) */}
           {/* ============================================================ */}
           {activeTab === 'user' && (
-            <div className="pt-6 flex-1 max-w-2xl space-y-6 text-xs animate-in fade-in duration-150">
+            <div className="pt-6 flex-1 w-full space-y-6 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
@@ -1065,7 +1065,7 @@ export default function EmployeeDetailView({
           {/* TAB 8: ประวัติการเปลี่ยนแปลง (Change History) - Merged        */}
           {/* ============================================================ */}
           {activeTab === 'history' && (
-            <div className="pt-4 flex-1">
+            <div className="w-full flex-1">
               <EmployeeChangeHistoryTab employeeId={employee.id} />
             </div>
           )}

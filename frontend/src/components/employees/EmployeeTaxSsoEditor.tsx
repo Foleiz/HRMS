@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Landmark, ShieldCheck } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
   const count = (v: string, max: number) => Math.max(0, Math.min(max, Number(v) || 0));
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 text-xs animate-in fade-in duration-150">
+    <div className="w-full space-y-8 text-xs animate-in fade-in duration-150">
       <section className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
