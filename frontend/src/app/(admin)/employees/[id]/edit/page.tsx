@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -53,17 +53,41 @@ const autoFormatPhone = (val: string): string => {
 };
 
 export default function EmployeeEditPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex h-[70vh] items-center justify-center">
+          <div className="text-center space-y-3">
+            <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mx-auto" />
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">กำลังโหลดข้อมูล...</p>
+          </div>
+        </div>
+      }
+    >
+      <EmployeeEditPageContent />
+    </React.Suspense>
+  );
+}
+
+function EmployeeEditPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const employeeId = Number(params.id);
+  const isFromProfile = searchParams.get('from') === 'profile';
+  const returnUrl = searchParams.get('returnUrl') || (isFromProfile ? '/profile' : `/employees/${employeeId}`);
 
   const { setBreadcrumb } = useBreadcrumb();
 
   useEffect(() => {
-    setBreadcrumb({ section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' });
+    if (isFromProfile) {
+      setBreadcrumb({ section: 'โปรไฟล์', page: 'แก้ไขข้อมูลพนักงาน' });
+    } else {
+      setBreadcrumb({ section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' });
+    }
     return () => setBreadcrumb(null);
-  }, [setBreadcrumb]);
+  }, [isFromProfile, setBreadcrumb]);
 
   // Loading & Feedback states
   const [loading, setLoading] = useState<boolean>(true);
@@ -380,9 +404,9 @@ export default function EmployeeEditPage() {
           : 'บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ'
       );
 
-      // รอ 800ms แล้วนำทางกลับไปยังหน้ารายละเอียดพนักงาน
+      // รอ 800ms แล้วนำทางกลับไปยังหน้ารายละเอียดพนักงาน หรือ หน้าโปรไฟล์
       setTimeout(() => {
-        router.push(`/employees/${employeeId}`);
+        router.push(returnUrl);
       }, 800);
     } catch (err: unknown) {
       console.error('Failed to update employee:', err);
@@ -1266,7 +1290,7 @@ export default function EmployeeEditPage() {
           <div className="pt-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => router.push(`/employees/${employeeId}`)}
+              onClick={() => router.push(returnUrl)}
               className="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
             >
               ยกเลิก
