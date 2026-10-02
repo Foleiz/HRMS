@@ -13,9 +13,11 @@ import {
   Shield,
   LogIn,
   History,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useSidebar } from '@/context/SidebarContext';
 import { NotificationBell } from './NotificationBell';
 
 export const Navbar: React.FC = () => {
@@ -23,6 +25,7 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { breadcrumb: customBreadcrumb } = useBreadcrumb();
+  const { openMobileSidebar } = useSidebar();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -110,9 +113,19 @@ export const Navbar: React.FC = () => {
   const breadcrumb = getBreadcrumb();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-6 shrink-0 z-10">
-      {/* 1. Left Side: Circular Back Button & Breadcrumb */}
-      <div className="flex items-center gap-3.5">
+    <header className="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-3 sm:px-6 shrink-0 z-10">
+      {/* 1. Left Side: Hamburger (mobile) + Back Button + Breadcrumb */}
+      <div className="flex items-center gap-2 sm:gap-3.5">
+        {/* Hamburger Menu Button — visible only on mobile (< lg) */}
+        <button
+          onClick={openMobileSidebar}
+          title="เปิดเมนู"
+          className="w-9 h-9 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center transition-all shadow-sm active:scale-95 lg:hidden"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Back Button — hidden on mobile to save space */}
         <button
           onClick={() => {
             const editMatch = pathname.match(/^\/employees\/(\d+)\/edit/);
@@ -125,15 +138,16 @@ export const Navbar: React.FC = () => {
             }
           }}
           title="ย้อนกลับ"
-          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer"
+          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white hidden sm:flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-1.5 text-sm">
-          <span className="text-slate-500 font-normal">{breadcrumb.section}</span>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-900 font-semibold">{breadcrumb.page}</span>
+        {/* Breadcrumb: Mobile shows page only, Desktop shows section / page */}
+        <div className="flex items-center gap-1.5 text-sm min-w-0">
+          <span className="text-slate-500 font-normal hidden sm:inline">{breadcrumb.section}</span>
+          <span className="text-slate-400 hidden sm:inline">/</span>
+          <span className="text-slate-900 font-semibold truncate">{breadcrumb.page}</span>
         </div>
       </div>
 
