@@ -611,7 +611,6 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-bold text-slate-800 text-base">{flow.flowName}</h3>
-                          <span className="text-slate-400 text-xs font-normal">{flow.flowCode}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                           <span className="inline-flex items-center gap-1">
@@ -694,9 +693,6 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                     {/* Footer Actions */}
                     <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
-                      <div className="text-xs text-slate-400 italic">
-                        * ลำดับการอนุมัติจะดำเนินตามลูกศรชี้อ้างอิงจากซ้ายไปขวา
-                      </div>
 
                       <div className="flex items-center gap-4">
                         {/* Toggle Status */}
@@ -787,55 +783,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* 1. Quick Presets (แม่แบบสายการอนุมัติสำเร็จรูป) */}
-                {!editingFlow && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                      <span>แม่แบบสายการอนุมัติสำเร็จรูป (เลือกเพื่อสร้างขั้นตอนรวดเร็ว)</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => applyPreset('TWO_TIER')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
-                      >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
-                          สายอนุมัติ 2 ขั้นตอน
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          หัวหน้าแผนกของผู้ยื่น ➔ ฝ่ายบุคคล
-                        </div>
-                      </button>
 
-                      <button
-                        type="button"
-                        onClick={() => applyPreset('THREE_TIER')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
-                      >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
-                          สายอนุมัติ 3 ขั้นตอน
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          หัวหน้าแผนก ➔ หัวหน้าฝ่ายของผู้ยื่น ➔ ผู้บริหาร
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => applyPreset('DIRECT_HR')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
-                      >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
-                          ฝ่ายบุคคลตรง
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          บทบาทฝ่ายบุคคลพิจารณาตรง
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* 2. Interactive Real-Time Visual Flow Preview */}
                 <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-3 shadow-md">

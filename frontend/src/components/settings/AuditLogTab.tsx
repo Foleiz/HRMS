@@ -1,17 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   Download,
   RotateCcw,
-  Calendar,
+  SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
-  Eye,
+  ArrowRight,
+  AlertTriangle,
+  Key,
+  Shield,
+  Pencil,
+  X,
+  Plus,
+  Settings as SettingsIcon,
+  Layers,
 } from 'lucide-react';
 import { AuditLogItem, UserAccount } from '@/types/settings';
-import { settingsService } from '@/services/settingsService';
 
 interface AuditLogTabProps {
   logs: AuditLogItem[];
@@ -34,74 +41,142 @@ interface AuditLogTabProps {
   isLoading: boolean;
 }
 
-const ACTION_CONFIG: Record<string, { label: string; badgeClass: string }> = {
-  INSERT: { label: 'สร้างใหม่', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  UPDATE: { label: 'แก้ไข', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  DELETE: { label: 'ลบ', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200' },
-  LOGIN: { label: 'เข้าสู่ระบบ', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  LOGOUT: { label: 'ออกจากระบบ', badgeClass: 'bg-slate-100 text-slate-600 border-slate-200' },
-  APPROVE: { label: 'อนุมัติ', badgeClass: 'bg-purple-50 text-purple-700 border-purple-200' },
-  REJECT: { label: 'ปฏิเสธ', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200' },
-  EXPORT: { label: 'ส่งออก', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300' },
+export type QuickTab = 'all' | 'imp' | 'sec' | 'data' | 'sys';
+
+export const isSystemEvent = (item: AuditLogItem) => {
+  const u = (item.username || '').toLowerCase();
+  const act = (item.action || '').toUpperCase();
+  const ent = (item.entityType || '').toLowerCase();
+  return (
+    u === 'system' ||
+    u === 'ระบบ' ||
+    act === 'CLEANUP' ||
+    ent === 'session' ||
+    ent.includes('system')
+  );
 };
 
-const ENTITY_TRANSLATIONS: Record<string, string> = {
-  employee: 'ข้อมูลพนักงาน',
-  user_account: 'บัญชีผู้ใช้งาน',
-  useraccount: 'บัญชีผู้ใช้งาน',
-  role: 'บทบาทและสิทธิ์',
-  approval_flow: 'สายการอนุมัติ',
-  approvalflow: 'สายการอนุมัติ',
-  approval_instance: 'การขออนุมัติ',
-  approvalinstance: 'การขออนุมัติ',
-  leave_request: 'การขออนุมัติลา',
-  leaverequest: 'การขออนุมัติลา',
-  leave_balance: 'ยอดวันลาคงเหลือ',
-  leavebalance: 'ยอดวันลาคงเหลือ',
-  attendance_daily: 'เวลาทำงาน',
-  attendancedaily: 'เวลาทำงาน',
-  announcement: 'ประกาศองค์กร',
-  notification: 'การแจ้งเตือน',
-  certificate_request: 'ขอหนังสือรับรอง',
-  certificaterequest: 'ขอหนังสือรับรอง',
-  employment_contract: 'สัญญาจ้างงาน',
-  employmentcontract: 'สัญญาจ้างงาน',
-  salary_structure: 'รายงานเงินเดือน',
-  salarystructure: 'รายงานเงินเดือน',
-  department: 'แผนก',
-  division: 'ฝ่าย',
-  position: 'ตำแหน่ง',
-  company: 'บริษัท',
-  auth: 'ระบบรักษาความปลอดภัย',
-  audit_log: 'บันทึกการใช้งานระบบ',
-  'audit-logs': 'บันทึกการใช้งานระบบ',
+export const isImportantLog = (item: AuditLogItem) => {
+  const act = (item.action || '').toUpperCase();
+  const desc = (item.description || '').toLowerCase();
+  const ent = (item.entityType || '').toLowerCase();
+  return (
+    act === 'DELETE' ||
+    act === 'LOGIN_FAILED' ||
+    act === 'EXPORT' ||
+    desc.includes('รหัสผ่าน') ||
+    desc.includes('password') ||
+    ent.includes('role') ||
+    ent.includes('user_role') ||
+    (ent.includes('user') && act === 'UPDATE')
+  );
 };
 
-const FIELD_TRANSLATIONS: Record<string, string> = {
-  id: 'รหัสข้อมูล',
-  employee_id: 'รหัสพนักงาน',
-  employeeid: 'รหัสพนักงาน',
-  username: 'ชื่อผู้ใช้งาน',
-  firstname: 'ชื่อจริง',
-  lastname: 'นามสกุล',
-  email: 'อีเมล',
-  phone: 'เบอร์โทรศัพท์',
-  status: 'สถานะ',
-  role: 'บทบาท',
-  title: 'หัวข้อ',
-  description: 'คำอธิบาย',
-  amount: 'จำนวนเงิน',
-  start_date: 'วันที่เริ่มต้น',
-  startdate: 'วันที่เริ่มต้น',
-  end_date: 'วันที่สิ้นสุด',
-  enddate: 'วันที่สิ้นสุด',
-  created_at: 'วันที่สร้าง',
-  createdat: 'วันที่สร้าง',
-  updated_at: 'วันที่แก้ไข',
-  updatedat: 'วันที่แก้ไข',
-  reason: 'เหตุผล',
-  workflow_name: 'สายการอนุมัติ',
-  step_order: 'ลำดับ',
+export const isSecurityLog = (item: AuditLogItem) => {
+  const act = (item.action || '').toUpperCase();
+  const desc = (item.description || '').toLowerCase();
+  const ent = (item.entityType || '').toLowerCase();
+  return (
+    act === 'LOGIN' ||
+    act === 'LOGOUT' ||
+    act === 'LOGIN_FAILED' ||
+    act === 'EXPORT' ||
+    ent === 'auth' ||
+    desc.includes('รหัสผ่าน') ||
+    desc.includes('password')
+  );
+};
+
+export const isDataEditLog = (item: AuditLogItem) => {
+  const act = (item.action || '').toUpperCase();
+  return act === 'UPDATE' || act === 'INSERT' || act === 'DELETE';
+};
+
+export const getLogType = (
+  item: AuditLogItem
+): 'login' | 'fail' | 'pw' | 'role' | 'edit' | 'del' | 'exp' | 'sys' => {
+  const act = (item.action || '').toUpperCase();
+  const desc = (item.description || '').toLowerCase();
+  const ent = (item.entityType || '').toLowerCase();
+
+  if (act === 'LOGIN_FAILED') return 'fail';
+  if (desc.includes('รหัสผ่าน') || desc.includes('password')) return 'pw';
+  if (ent.includes('role') || ent.includes('user_role')) return 'role';
+  if (act === 'LOGIN' || act === 'LOGOUT') return 'login';
+  if (act === 'DELETE') return 'del';
+  if (act === 'UPDATE' || act === 'INSERT') return 'edit';
+  if (act === 'EXPORT') return 'exp';
+  if (isSystemEvent(item)) return 'sys';
+  return 'edit';
+};
+
+export const getIconElement = (type: ReturnType<typeof getLogType>) => {
+  switch (type) {
+    case 'login':
+      return { icon: <ArrowRight className="w-3.5 h-3.5 text-slate-500" />, bg: 'bg-slate-100 dark:bg-slate-800' };
+    case 'fail':
+      return { icon: <AlertTriangle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />, bg: 'bg-rose-100 dark:bg-rose-950/50' };
+    case 'pw':
+      return { icon: <Key className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />, bg: 'bg-amber-100 dark:bg-amber-950/50' };
+    case 'role':
+      return { icon: <Shield className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />, bg: 'bg-amber-100 dark:bg-amber-950/50' };
+    case 'edit':
+      return { icon: <Pencil className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />, bg: 'bg-blue-100 dark:bg-blue-950/50' };
+    case 'del':
+      return { icon: <X className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />, bg: 'bg-rose-100 dark:bg-rose-950/50' };
+    case 'exp':
+      return { icon: <Download className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />, bg: 'bg-amber-100 dark:bg-amber-950/50' };
+    case 'sys':
+      return { icon: <SettingsIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />, bg: 'bg-slate-100 dark:bg-slate-800' };
+  }
+};
+
+export const formatDisplayDateGroup = (isoString: string) => {
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      d.getDate() === yesterday.getDate() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getFullYear() === yesterday.getFullYear();
+
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const thaiYear = d.getFullYear() + 543;
+    const formatted = `${d.getDate()} ${months[d.getMonth()]} ${thaiYear}`;
+
+    if (isToday) return `วันนี้ · ${formatted}`;
+    if (isYesterday) return `เมื่อวาน · ${formatted}`;
+    return formatted;
+  } catch {
+    return isoString;
+  }
+};
+
+export const formatTimeHHmm = (isoString?: string) => {
+  if (!isoString) return '-';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return '-';
+  }
+};
+
+const dateOnlyKey = (isoString: string) => {
+  try {
+    const d = new Date(isoString);
+    return isNaN(d.getTime()) ? isoString : d.toISOString().slice(0, 10);
+  } catch {
+    return isoString;
+  }
 };
 
 export const AuditLogTab: React.FC<AuditLogTabProps> = ({
@@ -117,28 +192,43 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   onViewDetail,
   isLoading,
 }) => {
+  const [activeTab, setActiveTab] = useState<QuickTab>('all');
+  const [selectedRange, setSelectedRange] = useState<number | 'all'>('all');
+  const [showSystemEvents, setShowSystemEvents] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Advanced filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('ทั้งหมด');
   const [selectedAction, setSelectedAction] = useState<string>('ทั้งหมด');
   const [selectedEntityType, setSelectedEntityType] = useState<string>('ทั้งหมด');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [availableModules, setAvailableModules] = useState<string[]>([]);
 
-  // โหลดรายชื่อโมดูลที่มีในระบบจริงเพื่อแสดงในตัวกรอง
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        const modules = await settingsService.getAuditLogModules();
-        if (modules && modules.length > 0) {
-          setAvailableModules(modules);
-        }
-      } catch {
-        // Fallback to static list
-      }
-    };
-    fetchModules();
-  }, []);
+  // Handle Range Selection (วันนี้ = 0, 7 วัน = 7, 30 วัน = 30)
+  const handleRangeChange = (days: number | 'all') => {
+    setSelectedRange(days);
+    if (days === 'all') {
+      setStartDate('');
+      setEndDate('');
+      onFilterChange({
+        startDate: undefined,
+        endDate: undefined,
+        search: searchQuery.trim() || undefined,
+      });
+    } else {
+      const now = new Date();
+      const end = now.toISOString().slice(0, 10);
+      const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      setStartDate(start);
+      setEndDate(end);
+      onFilterChange({
+        startDate: start,
+        endDate: end,
+        search: searchQuery.trim() || undefined,
+      });
+    }
+  };
 
   const handleApplyFilter = () => {
     onFilterChange({
@@ -152,396 +242,510 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   };
 
   const handleClearFilter = () => {
+    setSelectedRange('all');
     setStartDate('');
     setEndDate('');
     setSelectedUserId('ทั้งหมด');
     setSelectedAction('ทั้งหมด');
     setSelectedEntityType('ทั้งหมด');
     setSearchQuery('');
+    setActiveTab('all');
     onFilterChange({});
   };
 
+  // Filter pass function
+  const passesFilter = (item: AuditLogItem, tab: QuickTab) => {
+    const isSys = isSystemEvent(item);
+    if (!showSystemEvents && isSys && tab === 'all') {
+      return false;
+    }
+    if (tab === 'imp' && !isImportantLog(item)) return false;
+    if (tab === 'sec' && !isSecurityLog(item)) return false;
+    if (tab === 'data' && !isDataEditLog(item)) return false;
+    if (tab === 'sys' && !isSys) return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const hay = `${item.fullName} ${item.username} ${item.description} ${item.action} ${item.ipAddress} ${item.id}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  };
+
+  // Tab counts
+  const tabCounts = useMemo(() => {
+    return {
+      all: logs.filter((e) => passesFilter(e, 'all')).length,
+      imp: logs.filter((e) => passesFilter(e, 'imp')).length,
+      sec: logs.filter((e) => passesFilter(e, 'sec')).length,
+      data: logs.filter((e) => passesFilter(e, 'data')).length,
+      sys: logs.filter((e) => isSystemEvent(e)).length,
+    };
+  }, [logs, showSystemEvents, searchQuery]);
+
+  // Filtered logs
+  const displayLogs = useMemo(() => {
+    return logs.filter((e) => passesFilter(e, activeTab));
+  }, [logs, activeTab, showSystemEvents, searchQuery]);
+
+  // Group by date
+  const groupedLogs = useMemo(() => {
+    const map = new Map<string, AuditLogItem[]>();
+    displayLogs.forEach((item) => {
+      const key = dateOnlyKey(item.createdAt);
+      const arr = map.get(key) ?? [];
+      arr.push(item);
+      map.set(key, arr);
+    });
+    return Array.from(map.entries());
+  }, [displayLogs]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  // Dynamic visible page numbers (max 5 buttons centered around current page)
   const getPageNumbers = () => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
     let start = Math.max(1, currentPage - 2);
     let end = Math.min(totalPages, start + 4);
-    if (end - start < 4) {
-      start = Math.max(1, end - 4);
-    }
+    if (end - start < 4) start = Math.max(1, end - 4);
     const pages: number[] = [];
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
+    for (let i = start; i <= end; i++) pages.push(i);
     return pages;
   };
 
-  const formatLogDate = (isoString?: string) => {
-    if (!isoString) return '-';
-    try {
-      const d = new Date(isoString);
-      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      const thaiYear = d.getFullYear() + 543;
-      const day = d.getDate();
-      const month = months[d.getMonth()];
-      const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-      return `${day} ${month} ${thaiYear} - ${time}`;
-    } catch {
-      return isoString;
-    }
-  };
-
-  const getEntityDisplayName = (entityType: string) => {
-    const lower = entityType.toLowerCase();
-    return ENTITY_TRANSLATIONS[lower] || entityType;
-  };
-
-  const formatCellPreview = (val: string | null | undefined, action: string, isOld: boolean) => {
-    if (!val || val === 'null' || val === '<ว่าง>') return '-';
-
-    if (action === 'LOGIN' && !isOld) return 'เข้าสู่ระบบสำเร็จ';
-    if (action === 'LOGOUT' && !isOld) return 'ออกจากระบบ';
-
-    try {
-      if ((val.startsWith('{') && val.endsWith('}')) || (val.startsWith('[') && val.endsWith(']'))) {
-        const parsed = JSON.parse(val);
-        if (typeof parsed === 'object' && parsed !== null) {
-          const keys = Object.keys(parsed);
-          if (keys.length === 0) return '-';
-          if (keys.length === 1) {
-            const k = keys[0];
-            const translatedKey = FIELD_TRANSLATIONS[k.toLowerCase()] || k;
-            return `${translatedKey}: ${parsed[k]}`;
-          }
-          return keys
-            .slice(0, 2)
-            .map((k) => `${FIELD_TRANSLATIONS[k.toLowerCase()] || k}: ${parsed[k]}`)
-            .join(', ') + (keys.length > 2 ? ' ...' : '');
-        }
-      }
-    } catch {
-      // ignore json parse error
-    }
-
-    return val;
-  };
-
-  // รวมรายการโมดูลสำหรับ Dropdown โดยไม่ให้ซ้ำ
-  const moduleOptions = Array.from(
-    new Set([
-      'employee',
-      'user_account',
-      'role',
-      'approval_flow',
-      'leave_request',
-      'attendance_daily',
-      'announcement',
-      'certificate_request',
-      'employment_contract',
-      'salary_structure',
-      'auth',
-      ...availableModules.map((m) => m.toLowerCase()),
-    ])
-  );
-
   return (
-    <div className="space-y-4 font-sans">
-      {/* 1. Filter Card (ตรงตามรูปแบบ Figma) */}
-      <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* 1. วันที่ทำกิจกรรม (เริ่มต้น - สิ้นสุด) */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-              วันที่ทำกิจกรรม (เริ่มต้น - สิ้นสุด)
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-              />
-              <span className="text-slate-400 text-xs">-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-              />
-            </div>
-          </div>
+    <div className="space-y-3.5 font-sans animate-in fade-in duration-150">
+      {/* 1. Header (Title + Export button) */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+          บันทึกการใช้งานระบบ
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`h-8.5 px-3 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              showAdvanced
+                ? 'bg-slate-100 border-slate-300 text-slate-800'
+                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+            <span>ตัวกรองขั้นสูง</span>
+          </button>
 
-          {/* 2. ผู้ใช้งาน */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-              ผู้ใช้งาน
-            </label>
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
-            >
-              <option value="ทั้งหมด">ผู้ใช้งานทั้งหมด</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.username} ({u.fullName})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 3. ประเภทการกระทำ */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-              ประเภทการกระทำ
-            </label>
-            <select
-              value={selectedAction}
-              onChange={(e) => setSelectedAction(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
-            >
-              <option value="ทั้งหมด">การกระทำทั้งหมด</option>
-              <option value="INSERT">สร้างข้อมูลใหม่</option>
-              <option value="UPDATE">แก้ไขข้อมูล</option>
-              <option value="DELETE">ลบข้อมูล</option>
-              <option value="LOGIN">เข้าสู่ระบบ</option>
-              <option value="LOGOUT">ออกจากระบบ</option>
-              <option value="APPROVE">อนุมัติรายการ</option>
-              <option value="REJECT">ปฏิเสธรายการ</option>
-              <option value="EXPORT">ส่งออกข้อมูล</option>
-            </select>
-          </div>
-
-          {/* 4. ประเภทข้อมูล */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-              ประเภทข้อมูล
-            </label>
-            <select
-              value={selectedEntityType}
-              onChange={(e) => setSelectedEntityType(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
-            >
-              <option value="ทั้งหมด">ทุกประเภทข้อมูล</option>
-              {moduleOptions.map((mod) => (
-                <option key={mod} value={mod}>
-                  {getEntityDisplayName(mod)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Second Row: Search + Action buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-100">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
-              placeholder="ใส่คำค้นหา (คีย์เวิร์ด, บัญชีผู้ใช้, รหัสข้อมูล...)"
-              className="w-full h-9.5 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 justify-end">
-            <button
-              onClick={handleClearFilter}
-              className="h-9.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-              <span>ล้างค่าตัวกรอง</span>
-            </button>
-
-            <button
-              onClick={handleApplyFilter}
-              className="h-9.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>ค้นหาข้อมูลบันทึก</span>
-            </button>
-
-            <button
-              onClick={onExport}
-              className="h-9.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="ส่งออกไฟล์ข้อมูล CSV"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>ส่งออกข้อมูล</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onExport}
+            className="h-8.5 px-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <span>ส่งออก (ตามตัวกรอง)</span>
+          </button>
         </div>
       </div>
 
-      {/* 2. Audit Log Table (ตรงตามโครงสร้าง Figma พร้อม IP Address) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left border-collapse text-xs whitespace-nowrap">
-            <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 whitespace-nowrap">
-                <th className="py-3.5 px-4 min-w-[150px]">วันเวลา</th>
-                <th className="py-3.5 px-4 min-w-[140px]">ผู้ใช้งาน</th>
-                <th className="py-3.5 px-3 min-w-[90px] text-center">การกระทำ</th>
-                <th className="py-3.5 px-4 min-w-[130px]">ประเภทข้อมูล</th>
-                <th className="py-3.5 px-3 min-w-[90px]">รหัสข้อมูล</th>
-                <th className="py-3.5 px-3 min-w-[100px]">ฟิลด์ที่เปลี่ยน</th>
-                <th className="py-3.5 px-3 min-w-[90px]">ค่าเดิม</th>
-                <th className="py-3.5 px-4 min-w-[180px]">ค่าใหม่ / ข้อมูลเพิ่มเติม</th>
-              </tr>
-            </thead>
+      {/* 2. Top Filter Bar (Sticky friendly) */}
+      <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
+        {/* Row 1: Search + Segmented Range */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
+              placeholder="ค้นหา เช่น ชื่อผู้ใช้, รหัสข้อมูล, IP…"
+              className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+            />
+          </div>
 
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
-                    กำลังโหลดบันทึกการใช้งานระบบ...
-                  </td>
-                </tr>
-              ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
-                    ไม่พบบันทึกการใช้งานระบบที่ตรงกับเงื่อนไข
-                  </td>
-                </tr>
-              ) : (
-                logs.map((item) => {
-                  const actionInfo = ACTION_CONFIG[item.action] || {
-                    label: item.action,
-                    badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
-                  };
-
-                  const oldPreview = formatCellPreview(item.oldValue, item.action, true);
-                  const newPreview = item.description || formatCellPreview(item.newValue, item.action, false);
-
-                  return (
-                    <tr
-                      key={item.id}
-                      onClick={() => onViewDetail(item)}
-                      className="hover:bg-slate-50/70 transition-colors cursor-pointer"
-                    >
-                      {/* 1. วันเวลา */}
-                      <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">
-                        {formatLogDate(item.createdAt)}
-                      </td>
-
-                      {/* 2. ผู้ใช้งาน */}
-                      <td className="py-3.5 px-4 font-medium text-slate-800">
-                        <span>{item.username}</span>
-                        {item.fullName && (
-                          <span className="text-slate-400 font-normal ml-1">({item.fullName})</span>
-                        )}
-                      </td>
-
-                      {/* 3. การกระทำ (Pastel Badge) */}
-                      <td className="py-3.5 px-3 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${actionInfo.badgeClass}`}>
-                          {actionInfo.label}
-                        </span>
-                      </td>
-
-                      {/* 4. ประเภทข้อมูล */}
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">
-                        {getEntityDisplayName(item.entityType)}
-                      </td>
-
-                      {/* 5. รหัสข้อมูล */}
-                      <td className="py-3.5 px-3 font-mono text-[11px] text-slate-600">
-                        {item.entityId ? `#${item.entityId}` : '-'}
-                      </td>
-
-                      {/* 6. ฟิลด์ที่เปลี่ยน */}
-                      <td className="py-3.5 px-3 text-[11px] font-mono text-slate-600 truncate max-w-[120px]">
-                        {item.fieldName || '-'}
-                      </td>
-
-                      {/* 7. ค่าเดิม (สีแดงตาม Figma) */}
-                      <td className="py-3.5 px-3 text-[11px] font-mono text-rose-600 font-medium truncate max-w-[120px]">
-                        {oldPreview}
-                      </td>
-
-                      {/* 8. ค่าใหม่ / ข้อมูลเพิ่มเติม (สีเขียวตาม Figma) */}
-                      <td className="py-3.5 px-4 text-[11px] font-mono text-emerald-600 font-medium truncate max-w-[200px]">
-                        {newPreview}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          {/* Segmented Button (วันนี้ / 7 วัน / 30 วัน) */}
+          <div className="flex bg-slate-200/70 p-1 rounded-xl gap-0.5 shrink-0 text-xs">
+            <button
+              type="button"
+              onClick={() => handleRangeChange('all')}
+              className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                selectedRange === 'all'
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ทั้งหมด
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRangeChange(0)}
+              className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                selectedRange === 0
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              วันนี้
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRangeChange(7)}
+              className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                selectedRange === 7
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              7 วัน
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRangeChange(30)}
+              className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                selectedRange === 30
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              30 วัน
+            </button>
+          </div>
         </div>
 
-        {/* 3. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
-        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
-          {/* ซ้ายล่าง: Rows per page selector */}
-          <div className="flex items-center gap-2 text-slate-600">
-            <span>แสดง</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                if (onPageSizeChange) {
-                  onPageSizeChange(newSize);
-                }
-                onPageChange(1);
-              }}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
-            >
-              <option value={8}>8</option>
-              <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-            <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 text-[11px] ml-1">
-              (ทั้งหมด {totalCount.toLocaleString()} รายการ)
-            </span>
-          </div>
-
-          {/* ขวาล่าง: Pagination Buttons */}
-          <div className="flex items-center gap-1.5">
-            {/* Previous Page Button */}
+        {/* Row 2: Category Tabs + System Events Checkbox */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-              title="หน้าก่อนหน้า"
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'all'
+                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <Layers className="w-3.5 h-3.5" />
+              <span>ทั้งหมด</span>
+              <span className="opacity-80 font-normal">{tabCounts.all}</span>
             </button>
 
-            {/* Dynamic Page Numbers */}
-            {getPageNumbers().map((p) => (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
-                  currentPage === p
-                    ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
+            <button
+              type="button"
+              onClick={() => setActiveTab('imp')}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'imp'
+                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <AlertTriangle className={`w-3.5 h-3.5 ${activeTab === 'imp' ? 'text-amber-300' : 'text-amber-500'}`} />
+              <span>สำคัญ</span>
+              <span className="opacity-80 font-normal">{tabCounts.imp}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('sec')}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'sec'
+                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Shield className={`w-3.5 h-3.5 ${activeTab === 'sec' ? 'text-sky-300' : 'text-sky-500'}`} />
+              <span>ความปลอดภัย</span>
+              <span className="opacity-80 font-normal">{tabCounts.sec}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('data')}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'data'
+                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Pencil className={`w-3.5 h-3.5 ${activeTab === 'data' ? 'text-blue-300' : 'text-blue-500'}`} />
+              <span>แก้ไขข้อมูล</span>
+              <span className="opacity-80 font-normal">{tabCounts.data}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('sys')}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'sys'
+                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <SettingsIcon className={`w-3.5 h-3.5 ${activeTab === 'sys' ? 'text-slate-300' : 'text-slate-500'}`} />
+              <span>ระบบ</span>
+              <span className="opacity-80 font-normal">{tabCounts.sys}</span>
+            </button>
+          </div>
+
+          <label className="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showSystemEvents}
+              onChange={(e) => setShowSystemEvents(e.target.checked)}
+              className="rounded border-slate-300 text-[#0f2547] focus:ring-0 cursor-pointer"
+            />
+            <span>แสดงเหตุการณ์อัตโนมัติของระบบ</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Advanced Filter Collapse Box */}
+      {showAdvanced && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                วันที่เริ่มต้น - สิ้นสุด
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                />
+                <span className="text-slate-400 text-xs">-</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                ผู้ใช้งาน
+              </label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
               >
-                {p}
-              </button>
-            ))}
+                <option value="ทั้งหมด">ผู้ใช้งานทั้งหมด</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.username} ({u.fullName})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* Next Page Button */}
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                ประเภทการกระทำ
+              </label>
+              <select
+                value={selectedAction}
+                onChange={(e) => setSelectedAction(e.target.value)}
+                className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+              >
+                <option value="ทั้งหมด">ทั้งหมด</option>
+                <option value="INSERT">สร้างข้อมูลใหม่</option>
+                <option value="UPDATE">แก้ไขข้อมูล</option>
+                <option value="DELETE">ลบข้อมูล</option>
+                <option value="LOGIN">เข้าสู่ระบบ</option>
+                <option value="LOGIN_FAILED">เข้าสู่ระบบไม่สำเร็จ</option>
+                <option value="LOGOUT">ออกจากระบบ</option>
+                <option value="APPROVE">อนุมัติ</option>
+                <option value="REJECT">ปฏิเสธ</option>
+                <option value="EXPORT">ส่งออก</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                โมดูล
+              </label>
+              <select
+                value={selectedEntityType}
+                onChange={(e) => setSelectedEntityType(e.target.value)}
+                className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+              >
+                <option value="ทั้งหมด">ทุกประเภทข้อมูล</option>
+                <option value="employee">ข้อมูลพนักงาน</option>
+                <option value="user_account">บัญชีผู้ใช้งาน</option>
+                <option value="role">บทบาทและสิทธิ์</option>
+                <option value="approval_flow">สายการอนุมัติ</option>
+                <option value="leave_request">การลา</option>
+                <option value="attendance_daily">เวลาทำงาน</option>
+                <option value="document">เอกสาร</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
             <button
-              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage >= totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-              title="หน้าถัดไป"
+              type="button"
+              onClick={handleClearFilter}
+              className="h-8 px-3 text-slate-600 hover:bg-slate-50 text-xs font-semibold rounded-lg border border-slate-200 flex items-center gap-1"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3 h-3 text-slate-400" />
+              <span>ล้างค่า</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyFilter}
+              className="h-8 px-4 bg-[#0f2547] text-white text-xs font-semibold rounded-lg hover:bg-slate-800"
+            >
+              ปรับใช้ตัวกรอง
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Summary Count Text */}
+      <div className="text-xs text-slate-500 pt-0.5">
+        พบ {displayLogs.length} รายการ (จากทั้งหมด {totalCount.toLocaleString()} ในฐานข้อมูล)
+      </div>
+
+      {/* 3. Grouped Date List */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
+          กำลังโหลดบันทึกการใช้งานระบบ...
+        </div>
+      ) : displayLogs.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
+          ไม่พบรายการ ลองขยายช่วงเวลาหรือเปิดการแสดงเหตุการณ์ของระบบ
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {groupedLogs.map(([dk, dayItems]) => (
+            <div key={dk} className="space-y-1.5">
+              {/* Day Header with trailing line */}
+              <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-500 pl-0.5">
+                <span>{formatDisplayDateGroup(dayItems[0].createdAt)}</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              {/* Day List Container */}
+              <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs divide-y divide-slate-100 overflow-hidden">
+                {dayItems.map((item) => {
+                  const type = getLogType(item);
+                  const { icon, bg } = getIconElement(type);
+                  const isFail = item.action === 'LOGIN_FAILED';
+                  const isImp = isImportantLog(item);
+                  const isSys = isSystemEvent(item);
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onViewDetail(item)}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center gap-3 hover:bg-slate-50/80 transition-colors cursor-pointer group ${
+                        isSys ? 'opacity-65' : ''
+                      }`}
+                    >
+                      {/* Round Icon */}
+                      <span
+                        className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center shrink-0`}
+                      >
+                        {icon}
+                      </span>
+
+                      {/* Time */}
+                      <span className="text-xs text-slate-400 font-mono w-11 shrink-0">
+                        {formatTimeHHmm(item.createdAt)}
+                      </span>
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0 text-xs text-slate-700 truncate">
+                        <strong className="font-bold text-slate-900 mr-1.5">
+                          {item.fullName || item.username}
+                        </strong>
+                        <span>{item.description || item.action}</span>
+                      </div>
+
+                      {/* Status Badges */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isFail && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 flex items-center gap-1">
+                            <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
+                            <span>ล้มเหลว</span>
+                          </span>
+                        )}
+                        {isImp && !isFail && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
+                            <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
+                            <span>สำคัญ</span>
+                          </span>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 4. Footer Pagination */}
+      <div className="py-2.5 px-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-600">
+          <span>แสดง</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              const newSize = Number(e.target.value);
+              if (onPageSizeChange) onPageSizeChange(newSize);
+              onPageChange(1);
+            }}
+            className="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 shadow-2xs"
+          >
+            <option value={8}>8</option>
+            <option value={10}>10</option>
+            <option value={15}>15</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+          <span>แถวต่อหน้า</span>
+          <span className="text-slate-400 text-[11px]">
+            (ทั้งหมด {totalCount.toLocaleString()} รายการ)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage <= 1}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {getPageNumbers().map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onPageChange(p)}
+              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold ${
+                currentPage === p
+                  ? 'bg-[#0f2547] text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage >= totalPages}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>
