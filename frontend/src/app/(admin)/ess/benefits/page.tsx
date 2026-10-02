@@ -1,30 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
 import { EmployeeBenefitsUsageTab } from '@/components/employees/EmployeeBenefitsUsageTab';
-import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
-import { Gift, User, ShieldCheck, Sparkles, Loader2, Users } from 'lucide-react';
+import { Gift, User, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
 
 export default function MyBenefitsPage() {
-  const { user, isLoading: isAuthLoading, hasRole, hasPermission } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const searchParams = useSearchParams();
 
-  // Check if current user is HR or Admin who can view other employees' benefits
-  const canViewOthers = useMemo(() => {
-    return (
-      ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN', 'ADMIN'].some((r) => hasRole(r)) ||
-      hasPermission('EMP_VIEW') ||
-      hasPermission('ORG_BENEFIT_VIEW')
-    );
-  }, [hasRole, hasPermission]);
-
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [loadingEmployee, setLoadingEmployee] = useState(false);
@@ -37,26 +26,15 @@ export default function MyBenefitsPage() {
     });
   }, [setBreadcrumb]);
 
-  // Load employee list for HR/Admin switcher
-  useEffect(() => {
-    if (canViewOthers) {
-      employeeService.getAll().then((data: Employee[]) => {
-        if (Array.isArray(data)) {
-          setEmployees(data);
-        }
-      }).catch(console.error);
-    }
-  }, [canViewOthers]);
-
-  // Determine initial selected employee
+  // Determine initial selected employee (from query param or current user)
   useEffect(() => {
     const paramId = searchParams.get('employeeId');
-    if (paramId && canViewOthers) {
+    if (paramId) {
       setSelectedEmployeeId(Number(paramId));
     } else if (user?.employeeId) {
       setSelectedEmployeeId(user.employeeId);
     }
-  }, [searchParams, user, canViewOthers]);
+  }, [searchParams, user]);
 
   // Fetch selected employee details
   useEffect(() => {
@@ -118,26 +96,6 @@ export default function MyBenefitsPage() {
               </p>
             </div>
           </div>
-
-          {/* HR / Admin Switcher */}
-          {canViewOthers && employees.length > 0 && (
-            <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/20 flex flex-col sm:flex-row items-start sm:items-center gap-2 self-stretch md:self-auto">
-              <div className="flex items-center gap-1.5 text-xs text-blue-100 font-medium">
-                <Users className="w-3.5 h-3.5 text-cyan-300" />
-                <span>ดูข้อมูลพนักงาน:</span>
-              </div>
-              <div className="w-full sm:w-60 text-slate-800">
-                <EmployeeSelect
-                  employees={employees}
-                  value={selectedEmployeeId || ''}
-                  onChange={(val) => {
-                    if (val) setSelectedEmployeeId(Number(val));
-                  }}
-                  placeholder="ค้นหาพนักงานเพื่อดูสวัสดิการ..."
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Employee Info Bar */}
