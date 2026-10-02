@@ -519,13 +519,13 @@ export const ApprovalFlowsTab: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
               <div className="relative w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="ค้นหาสายการอนุมัติ..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 transition-all placeholder:text-slate-400"
+                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -534,7 +534,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <select
                   value={docTypeFilter}
                   onChange={(e) => setDocTypeFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
                 >
                   <option value="">ประเภทเอกสารทั้งหมด</option>
                   {DOCUMENT_TYPE_OPTIONS.map((dt) => (
@@ -543,7 +543,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
               </div>
 
               {/* Dept Filter */}
@@ -551,7 +551,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <select
                   value={deptFilter}
                   onChange={(e) => setDeptFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
                 >
                   <option value="">ทุกแผนก</option>
                   {departments.map((d) => (
@@ -560,7 +560,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
               </div>
 
               {/* Status Filter */}
@@ -568,13 +568,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
                 >
                   <option value="">สถานะ: ทั้งหมด</option>
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ปิดใช้งาน</option>
                 </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
               </div>
             </div>
 
@@ -590,11 +590,11 @@ export const ApprovalFlowsTab: React.FC = () => {
 
           {/* Flows Cards List */}
           {loadingFlows ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 shadow-xs">
               <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
             </div>
           ) : filteredFlows.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-400 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 shadow-xs">
               ยังไม่มีสายการอนุมัติในระบบ
             </div>
           ) : (
@@ -604,23 +604,23 @@ export const ApprovalFlowsTab: React.FC = () => {
                 return (
                   <div
                     key={flow.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition-all space-y-4"
+                    className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-xs hover:border-slate-300 transition-all space-y-4"
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-bold text-slate-800 text-base">{flow.flowName}</h3>
-                          <span className="text-slate-400 text-xs font-normal">{flow.flowCode}</span>
+                          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">{flow.flowName}</h3>
+                          <span className="text-slate-400 dark:text-slate-500 text-xs font-normal">{flow.flowCode}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
                           <span className="inline-flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-slate-400" />
+                            <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                             <span>{flow.departmentName ?? 'ทุกแผนก'}</span>
                           </span>
                           <span className="text-slate-300">•</span>
                           <span className="inline-flex items-center gap-1">
-                            <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                            <UserCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                             <span>{flow.levelName ?? 'ทุกระดับตำแหน่ง'}</span>
                           </span>
                         </div>
@@ -633,21 +633,21 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                     {/* Step Sequence Visualization */}
                     <div>
-                      <div className="text-xs text-slate-400 font-medium mb-2.5">ลำดับขั้นตอนการอนุมัติ</div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-2.5">ลำดับขั้นตอนการอนุมัติ</div>
                       {flow.steps.length === 0 ? (
-                        <div className="text-xs text-slate-400 italic bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3">
+                        <div className="text-xs text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-3">
                           ยังไม่มีขั้นตอนการอนุมัติ
                         </div>
                       ) : (
                         <div className="flex items-center flex-wrap gap-2.5">
                           {/* จุดเริ่มต้น: ผู้ยื่นคำขอ */}
-                          <div className="flex items-center gap-3 bg-white border border-dashed border-slate-300 rounded-xl px-4 py-2.5">
-                            <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                          <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5">
+                            <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
                               <Users className="w-3 h-3" />
                             </div>
                             <div className="min-w-0">
-                              <div className="text-xs font-bold text-slate-700">จุดเริ่มต้น</div>
-                              <div className="text-[10px] text-slate-400 font-medium mt-0.5">ผู้ยื่นคำขอ</div>
+                              <div className="text-xs font-bold text-slate-700 dark:text-slate-300">จุดเริ่มต้น</div>
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">ผู้ยื่นคำขอ</div>
                             </div>
                           </div>
                           <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
@@ -662,10 +662,10 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     {step.stepNo}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-slate-800 truncate">
+                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                                       {getApproverDisplay(step, employees, roles)}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                                       ไม่พบผู้อนุมัติ: {FALLBACK_ACTION_LABELS[step.fallbackAction ?? 'HR'] ?? step.fallbackAction}
                                     </div>
                                     {getDelegateDisplay(step, employees, roles) && (
@@ -693,8 +693,8 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
-                      <div className="text-xs text-slate-400 italic">
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700/60">
+                      <div className="text-xs text-slate-400 dark:text-slate-500 italic">
                         * ลำดับการอนุมัติจะดำเนินตามลูกศรชี้อ้างอิงจากซ้ายไปขวา
                       </div>
 
@@ -705,19 +705,16 @@ export const ApprovalFlowsTab: React.FC = () => {
                             type="button"
                             onClick={() => handleToggleStatus(flow)}
                             disabled={togglingId === flow.id}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              flow.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${ flow.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
                             }`}
                           >
                             <span
-                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                                flow.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-800 shadow-md ring-0 transition duration-200 ease-in-out ${ flow.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
                               }`}
                             />
                           </button>
                           <span
-                            className={`text-xs font-medium cursor-pointer ${
-                              flow.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
+                            className={`text-xs font-medium cursor-pointer ${ flow.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
                             }`}
                             onClick={() => handleToggleStatus(flow)}
                           >
@@ -729,7 +726,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openEditEditor(flow)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 rounded-lg transition-all cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                           <span>แก้ไข</span>
@@ -766,20 +763,20 @@ export const ApprovalFlowsTab: React.FC = () => {
           />
 
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-2xl bg-white shadow-2xl flex flex-col">
+            <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl flex flex-col">
               {/* Drawer Header */}
-              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
                 <div>
-                  <h2 className="text-base font-bold text-slate-800">
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
                     {editingFlow ? 'แก้ไขสายการอนุมัติ' : 'เพิ่มสายการอนุมัติใหม่'}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     กำหนดลำดับขั้นตอนและผู้มีสิทธิ์อนุมัติเอกสารในระบบ
                   </p>
                 </div>
                 <button
                   onClick={closeEditor}
-                  className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -789,8 +786,8 @@ export const ApprovalFlowsTab: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* 1. Quick Presets (แม่แบบสายการอนุมัติสำเร็จรูป) */}
                 {!editingFlow && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2.5">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
                       <Sparkles className="w-4 h-4 text-amber-500" />
                       <span>แม่แบบสายการอนุมัติสำเร็จรูป (เลือกเพื่อสร้างขั้นตอนรวดเร็ว)</span>
                     </div>
@@ -798,12 +795,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => applyPreset('TWO_TIER')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                        className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
                       >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                        <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046]">
                           สายอนุมัติ 2 ขั้นตอน
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                           หัวหน้าแผนกของผู้ยื่น ➔ ฝ่ายบุคคล
                         </div>
                       </button>
@@ -811,12 +808,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => applyPreset('THREE_TIER')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                        className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
                       >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                        <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046]">
                           สายอนุมัติ 3 ขั้นตอน
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                           หัวหน้าแผนก ➔ หัวหน้าฝ่ายของผู้ยื่น ➔ ผู้บริหาร
                         </div>
                       </button>
@@ -824,12 +821,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => applyPreset('DIRECT_HR')}
-                        className="p-2.5 bg-white border border-slate-200 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
+                        className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[#0B2046] hover:bg-slate-50/80 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
                       >
-                        <div className="text-[11px] font-bold text-slate-800 group-hover:text-[#0B2046]">
+                        <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046]">
                           ฝ่ายบุคคลตรง
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                           บทบาทฝ่ายบุคคลพิจารณาตรง
                         </div>
                       </button>
@@ -844,7 +841,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <GitMerge className="w-4 h-4 text-emerald-400" />
                       <span>ภาพจำลองเส้นทางการอนุมัติจริง</span>
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                       รวม {form.steps.length} ขั้นตอน
                     </span>
                   </div>
@@ -855,7 +852,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       ผู้ยื่นคำขอ
                     </div>
 
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
 
                     {/* Steps Nodes */}
                     {form.steps.map((step, idx) => (
@@ -868,7 +865,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             {getApproverDisplay(step, employees, roles)}
                           </span>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                       </React.Fragment>
                     ))}
 
@@ -881,19 +878,19 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                 {/* 3. General Form Fields */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     ข้อมูลทั่วไป
                   </h3>
 
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         ประเภทเอกสาร <span className="text-rose-500">*</span>
                       </label>
                       <select
                         value={form.documentType}
                         onChange={(e) => setForm({ ...form, documentType: e.target.value })}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none cursor-pointer"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
                       >
                         {DOCUMENT_TYPE_OPTIONS.map((dt, idx) => (
                           <option key={dt} value={dt}>
@@ -905,7 +902,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       ชื่อสายการอนุมัติ <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -913,13 +910,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                       value={form.flowName}
                       onChange={(e) => setForm({ ...form, flowName: e.target.value })}
                       placeholder="เช่น สายอนุมัติการลาทั่วไป - พนักงานประจำ"
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         แผนกที่บังคับใช้
                       </label>
                       <select
@@ -930,7 +927,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             departmentId: e.target.value ? Number(e.target.value) : null,
                           })
                         }
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none cursor-pointer"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">ทุกแผนก (ใช้ร่วมกัน)</option>
                         {departments.map((d) => (
@@ -942,7 +939,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         ระดับตำแหน่งที่บังคับใช้
                       </label>
                       <select
@@ -953,7 +950,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             levelId: e.target.value ? Number(e.target.value) : null,
                           })
                         }
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none cursor-pointer"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">ทุกระดับตำแหน่ง</option>
                         {levels.map((l) => (
@@ -966,7 +963,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       สถานะการใช้งาน
                     </label>
                     <div className="flex gap-4 items-center pt-1">
@@ -979,7 +976,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           onChange={() => setForm({ ...form, status: 'ACTIVE' })}
                           className="text-[#0B2046] focus:ring-[#0B2046]"
                         />
-                        <span className="text-slate-700">เปิดใช้งาน</span>
+                        <span className="text-slate-700 dark:text-slate-300">เปิดใช้งาน</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
@@ -990,20 +987,20 @@ export const ApprovalFlowsTab: React.FC = () => {
                           onChange={() => setForm({ ...form, status: 'INACTIVE' })}
                           className="text-[#0B2046] focus:ring-[#0B2046]"
                         />
-                        <span className="text-slate-700">ปิดการใช้งาน</span>
+                        <span className="text-slate-700 dark:text-slate-300">ปิดการใช้งาน</span>
                       </label>
                     </div>
                   </div>
                 </div>
 
                 {/* 4. Form Steps Builder */}
-                <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/60">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         ลำดับขั้นตอนการอนุมัติ ({form.steps.length}/{MAX_APPROVAL_STEPS} ขั้นตอน)
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                         ระบบจะส่งคำขอตามลำดับ 1 → 2 → 3 → 4 เมื่อขั้นตอนก่อนหน้าอนุมัติผ่าน (กำหนดได้สูงสุด {MAX_APPROVAL_STEPS} ขั้นตอน)
                       </p>
                     </div>
@@ -1022,14 +1019,14 @@ export const ApprovalFlowsTab: React.FC = () => {
                     {form.steps.map((step, idx) => (
                       <div
                         key={idx}
-                        className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 relative group"
+                        className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 relative group"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center">
                               {step.stepNo}
                             </span>
-                            <span className="text-xs font-bold text-slate-700">
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                               ลำดับที่ {step.stepNo}
                             </span>
                           </div>
@@ -1040,7 +1037,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               type="button"
                               disabled={idx === 0}
                               onClick={() => moveStep(idx, -1)}
-                              className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                              className="w-6 h-6 rounded flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
                               title="ย้ายขึ้น"
                             >
                               <ArrowUp className="w-3.5 h-3.5" />
@@ -1049,7 +1046,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               type="button"
                               disabled={idx === form.steps.length - 1}
                               onClick={() => moveStep(idx, 1)}
-                              className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                              className="w-6 h-6 rounded flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
                               title="ย้ายลง"
                             >
                               <ArrowDown className="w-3.5 h-3.5" />
@@ -1072,7 +1069,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         {/* Approver Type Selection */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               ประเภทผู้อนุมัติ
                             </label>
                             <select
@@ -1085,7 +1082,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   approverScope: 'ORG',
                                 });
                               }}
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               {!APPROVER_TYPE_OPTIONS.includes(step.approverType) && (
                                 <option value={step.approverType} disabled>
@@ -1101,7 +1098,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               ถ้าหาผู้อนุมัติไม่เจอ
                             </label>
                             <select
@@ -1109,7 +1106,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               onChange={(e) =>
                                 updateStep(idx, { fallbackAction: e.target.value, isRequired: e.target.value !== 'SKIP' })
                               }
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               {Object.entries(FALLBACK_ACTION_LABELS).map(([key, label]) => (
                                 <option key={key} value={key}>
@@ -1121,7 +1118,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         </div>
 
                         {APPROVER_TYPE_HINTS[step.approverType] && (
-                          <p className="text-[11px] text-slate-400 -mt-1">{APPROVER_TYPE_HINTS[step.approverType]}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 -mt-1">{APPROVER_TYPE_HINTS[step.approverType]}</p>
                         )}
                         {(step.fallbackAction ?? 'HR') === 'SKIP' && idx === form.steps.length - 1 && (
                           <p className="text-[11px] text-amber-600 -mt-1">
@@ -1132,7 +1129,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         {/* Extra selector when ApproverType is EMPLOYEE */}
                         {step.approverType === 'EMPLOYEE' && (
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               เลือกพนักงานผู้มีอำนาจอนุมัติ <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -1142,7 +1139,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   approverEmployeeId: e.target.value ? Number(e.target.value) : null,
                                 })
                               }
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               <option value="">-- กรุณาเลือกพนักงาน --</option>
                               {employees.map((emp) => (
@@ -1158,7 +1155,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         {/* Extra selector when ApproverType is ROLE */}
                         {step.approverType === 'ROLE' && (
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               เลือกบทบาทผู้มีสิทธิ์อนุมัติ <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -1168,7 +1165,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   approverRoleId: e.target.value ? Number(e.target.value) : null,
                                 })
                               }
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               <option value="">-- กรุณาเลือกบทบาท --</option>
                               {roles.map((r) => (
@@ -1178,13 +1175,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                               ))}
                             </select>
 
-                            <label className="block text-[11px] font-medium text-slate-600 mb-1 mt-3">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1 mt-3">
                               ขอบเขตผู้อนุมัติ
                             </label>
                             <select
                               value={step.approverScope ?? 'ORG'}
                               onChange={(e) => updateStep(idx, { approverScope: e.target.value })}
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
                                 <option key={key} value={key}>
@@ -1193,8 +1190,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               ))}
                             </select>
                             <p
-                              className={`text-[11px] mt-1 ${
-                                (step.approverScope ?? 'ORG') === 'ORG' ? 'text-amber-600' : 'text-slate-400'
+                              className={`text-[11px] mt-1 ${ (step.approverScope ?? 'ORG') === 'ORG' ? 'text-amber-600' : 'text-slate-400'
                               }`}
                             >
                               {APPROVER_SCOPE_HINTS[step.approverScope ?? 'ORG']}
@@ -1203,10 +1199,10 @@ export const ApprovalFlowsTab: React.FC = () => {
                         )}
 
                         {/* ผู้อนุมัติแทน (ไม่บังคับ) */}
-                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-3 space-y-2.5">
+                        <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 p-3 space-y-2.5">
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-medium text-slate-600 mb-1">ผู้อนุมัติแทน</label>
+                              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">ผู้อนุมัติแทน</label>
                               <select
                                 value={step.delegateType ?? ''}
                                 onChange={(e) =>
@@ -1217,7 +1213,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     delegateScope: 'ORG',
                                   })
                                 }
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                               >
                                 <option value="">ไม่มี</option>
                                 <option value="EMPLOYEE">ระบุตัวบุคคล</option>
@@ -1226,11 +1222,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                             </div>
                             {step.delegateType && (
                               <div>
-                                <label className="block text-[11px] font-medium text-slate-600 mb-1">อนุมัติแทนเมื่อ</label>
+                                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">อนุมัติแทนเมื่อ</label>
                                 <select
                                   value={step.delegateMode ?? 'WHEN_ABSENT'}
                                   onChange={(e) => updateStep(idx, { delegateMode: e.target.value })}
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                                 >
                                   {Object.entries(DELEGATE_MODE_LABELS).map(([key, label]) => (
                                     <option key={key} value={key}>
@@ -1248,7 +1244,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               onChange={(e) =>
                                 updateStep(idx, { delegateEmployeeId: e.target.value ? Number(e.target.value) : null })
                               }
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               <option value="">-- เลือกพนักงานผู้อนุมัติแทน --</option>
                               {employees
@@ -1269,7 +1265,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 onChange={(e) =>
                                   updateStep(idx, { delegateRoleId: e.target.value ? Number(e.target.value) : null })
                                 }
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                               >
                                 <option value="">-- เลือกบทบาทผู้อนุมัติแทน --</option>
                                 {roles.map((r) => (
@@ -1281,7 +1277,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               <select
                                 value={step.delegateScope ?? 'ORG'}
                                 onChange={(e) => updateStep(idx, { delegateScope: e.target.value })}
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                               >
                                 {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
                                   <option key={key} value={key}>
@@ -1292,7 +1288,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             </div>
                           )}
 
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
                             {!step.delegateType
                               ? 'ไม่บังคับ — กำหนดคนที่อนุมัติแทนได้ เช่น เมื่อผู้อนุมัติหลักลา'
                               : (step.delegateMode ?? 'WHEN_ABSENT') === 'ALWAYS'
@@ -1307,12 +1303,12 @@ export const ApprovalFlowsTab: React.FC = () => {
               </div>
 
               {/* Drawer Footer */}
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={closeEditor}
                   disabled={isSavingFlow}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer disabled:opacity-50"
                 >
                   ยกเลิก
                 </button>

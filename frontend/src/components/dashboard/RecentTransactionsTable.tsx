@@ -257,7 +257,7 @@ export const RecentTransactionsTable: React.FC = () => {
       case 'PENDING':
       case 'WAITING':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200">
             รออนุมัติ
           </span>
         );
@@ -269,7 +269,7 @@ export const RecentTransactionsTable: React.FC = () => {
         );
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
             ยกเลิกแล้ว
           </span>
         );
@@ -281,7 +281,7 @@ export const RecentTransactionsTable: React.FC = () => {
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
             {status}
           </span>
         );
@@ -289,14 +289,14 @@ export const RecentTransactionsTable: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full">
       {/* Table Header & Filters */}
-      <div className="p-5 border-b border-slate-100 space-y-3.5 shrink-0">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 space-y-3.5 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-slate-900">
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
             ประวัติการทำรายการล่าสุด
           </h2>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">
             * แสดงเฉพาะรายการส่วนบุคคลของคุณ
           </span>
         </div>
@@ -305,7 +305,7 @@ export const RecentTransactionsTable: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search Input */}
           <div className="relative min-w-[200px] flex-1">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
@@ -314,7 +314,7 @@ export const RecentTransactionsTable: React.FC = () => {
                 setCurrentPage(1);
               }}
               placeholder="ค้นหา รหัสเอกสาร หรือประเภท"
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-hidden focus:border-[#0B2046] focus:bg-white transition-all"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-500 focus:outline-hidden focus:border-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all"
             />
           </div>
 
@@ -325,7 +325,7 @@ export const RecentTransactionsTable: React.FC = () => {
               setDateRange(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
+            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
           >
             <option value="">เลือกช่วงวันที่ท่านต้องการ</option>
             <option value="THIS_MONTH">เดือนนี้</option>
@@ -340,7 +340,7 @@ export const RecentTransactionsTable: React.FC = () => {
               setSelectedType(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
+            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
           >
             <option value="ALL">ประเภท ทั้งหมด</option>
             <option value="ลาพักร้อน">ลาพักร้อน</option>
@@ -357,7 +357,7 @@ export const RecentTransactionsTable: React.FC = () => {
               setSelectedStatus(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
+            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
           >
             <option value="ALL">สถานะ ทั้งหมด</option>
             <option value="PENDING">รออนุมัติ</option>
@@ -371,8 +371,8 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Table Content */}
       <div className="overflow-x-auto flex-1 flex flex-col justify-between min-h-0">
-        <table className="w-full text-left text-xs text-slate-600 flex-1">
-          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100 shrink-0">
+        <table className="w-full text-left text-xs text-slate-600 dark:text-slate-400 flex-1">
+          <thead className="bg-slate-50/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0">
             <tr>
               <th className="py-3 px-5">รหัสเอกสาร</th>
               <th className="py-3 px-5">วันที่กรอกเอกสาร</th>
@@ -384,7 +384,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <tbody className="divide-y divide-slate-100 flex-1">
             {loading ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 className="w-6 h-6 text-[#0B2046] animate-spin" />
                     <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
@@ -393,11 +393,11 @@ export const RecentTransactionsTable: React.FC = () => {
               </tr>
             ) : paginatedItems.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-1.5 py-4">
                     <FileText className="w-8 h-8 text-slate-300 stroke-[1.5]" />
-                    <p className="text-sm font-medium text-slate-600">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
-                    <p className="text-xs text-slate-400">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
                   </div>
                 </td>
               </tr>
@@ -407,13 +407,13 @@ export const RecentTransactionsTable: React.FC = () => {
                   <td className="py-3.5 px-5 font-semibold text-[#0B2046]">
                     {item.documentCode}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-600">
+                  <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400">
                     {item.createdDate}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-700">
+                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300">
                     {item.duration}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-700">
+                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300">
                     {item.documentType}
                   </td>
                   <td className="py-3.5 px-5">
@@ -427,8 +427,8 @@ export const RecentTransactionsTable: React.FC = () => {
       </div>
 
       {/* Pagination Bar */}
-      <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 mt-auto shrink-0">
-        <div className="flex-1 text-[11px] text-slate-400">
+      <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-auto shrink-0">
+        <div className="flex-1 text-[11px] text-slate-400 dark:text-slate-500">
           {!loading && filtered.length > 0 && (
             <span>ทั้งหมด {filtered.length} รายการ</span>
           )}
@@ -440,25 +440,25 @@ export const RecentTransactionsTable: React.FC = () => {
             type="button"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage <= 1 || loading}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="text-xs font-semibold text-slate-700 min-w-[60px] text-center">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 min-w-[60px] text-center">
             {currentPage} / {totalPages} หน้า
           </span>
           <button
             type="button"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage >= totalPages || loading}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Right: Page Size display */}
-        <div className="flex-1 flex items-center justify-end gap-1.5 text-xs text-slate-500">
+        <div className="flex-1 flex items-center justify-end gap-1.5 text-xs text-slate-500 dark:text-slate-400">
           <span>แสดง</span>
           <select
             value={pageSize}
@@ -466,7 +466,7 @@ export const RecentTransactionsTable: React.FC = () => {
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="px-2 py-0.5 rounded border border-slate-200 bg-white font-medium cursor-pointer"
+            className="px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium cursor-pointer"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>

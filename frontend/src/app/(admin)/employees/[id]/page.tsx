@@ -173,7 +173,7 @@ export default function EmployeeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-28 text-slate-500 font-sans">
+      <div className="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400 font-sans">
         <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mb-3" />
         <p className="text-sm font-medium">กำลังโหลดข้อมูลพนักงาน...</p>
       </div>
@@ -186,8 +186,8 @@ export default function EmployeeDetailPage() {
         <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-lg font-bold text-slate-800 mb-1.5">ไม่พบข้อมูลพนักงาน</h2>
-        <p className="text-xs text-slate-500 mb-6">{errorMessage || 'ไม่พบรายการข้อมูลพนักงานที่ต้องการดูในระบบ'}</p>
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1.5">ไม่พบข้อมูลพนักงาน</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">{errorMessage || 'ไม่พบรายการข้อมูลพนักงานที่ต้องการดูในระบบ'}</p>
         <Link
           href="/employees"
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] text-white text-xs rounded-xl font-medium hover:bg-[#153468] transition-colors"
@@ -211,7 +211,7 @@ export default function EmployeeDetailPage() {
         {/* ============================================================ */}
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
+        <div className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
           {/* Avatar โปรไฟล์ พร้อมฟังก์ชันโฮเวอร์เพื่อแก้ไขรูป */}
           <div className="flex flex-col items-center">
             {/* ซ่อน File Input ไว้เปิดเมื่อคลิก */}
@@ -277,11 +277,11 @@ export default function EmployeeDetailPage() {
 
             {/* Badges: Employee Code & Status (ACTIVE / INACTIVE) */}
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-full font-mono">
+              <span className="px-3 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
                 {employee.employeeCode}
               </span>
               {employee.employmentStatus?.toUpperCase() === 'INACTIVE' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-slate-100 text-slate-500 text-[11px] font-semibold rounded-full">
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-semibold rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                   ไม่ได้ทำงาน
                 </span>
@@ -294,10 +294,10 @@ export default function EmployeeDetailPage() {
             </div>
 
             {/* Full Name & Position */}
-            <h1 className="text-lg font-bold text-slate-900 text-center tracking-tight">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight">
               {employee.prefix ? `${employee.prefix} ` : ''}{employee.firstName} {employee.lastName}
             </h1>
-            <p className="text-xs text-slate-400 text-center mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-0.5">
               {employee.positionName || '-'}
             </p>
           </div>
@@ -306,20 +306,20 @@ export default function EmployeeDetailPage() {
 
           {/* Section: การติดต่อ */}
           <div className="space-y-3.5">
-            <h2 className="text-[13px] font-bold text-slate-900">การติดต่อ</h2>
+            <h2 className="text-[13px] font-bold text-slate-900 dark:text-slate-100">การติดต่อ</h2>
 
             {/* อีเมล */}
             <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 text-slate-500 mt-0.5">
+              <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400 mt-0.5">
                 <Mail className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 font-medium">อีเมล</p>
-                <p className="text-xs font-semibold text-slate-800 break-all">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">อีเมล</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 break-all">
                   {employee.contact?.organizationEmail || employee.contact?.personalEmail || '-'}
                 </p>
                 {employee.contact?.organizationEmail && employee.contact?.personalEmail && (
-                  <p className="text-[10px] text-slate-400 mt-0.5 break-all">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 break-all">
                     ส่วนตัว: {employee.contact.personalEmail}
                   </p>
                 )}
@@ -328,12 +328,12 @@ export default function EmployeeDetailPage() {
 
             {/* เบอร์โทรศัพท์ */}
             <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 text-slate-500 mt-0.5">
+              <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400 mt-0.5">
                 <Phone className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 font-medium">เบอร์โทรศัพท์</p>
-                <p className="text-xs font-semibold text-slate-800 font-mono">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">เบอร์โทรศัพท์</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {formatPhoneNumber(employee.contact?.personalPhone)}
                 </p>
               </div>
@@ -341,12 +341,12 @@ export default function EmployeeDetailPage() {
 
             {/* ที่อยู่ */}
             <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 text-slate-500 mt-0.5">
+              <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400 mt-0.5">
                 <Home className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 font-medium">ที่อยู่</p>
-                <p className="text-xs font-semibold text-slate-800 leading-relaxed">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ที่อยู่</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
                   {primaryAddress
                     ? `${primaryAddress.addressLine || ''} ${primaryAddress.subDistrict || ''} ${primaryAddress.district || ''} ${primaryAddress.province || ''} ${primaryAddress.postalCode || ''}`.trim() || '-'
                     : '-'}
@@ -359,67 +359,67 @@ export default function EmployeeDetailPage() {
 
           {/* Section: ข้อมูลตำแหน่งงาน */}
           <div className="space-y-3">
-            <h2 className="text-[13px] font-bold text-slate-900">ข้อมูลตำแหน่งงาน</h2>
+            <h2 className="text-[13px] font-bold text-slate-900 dark:text-slate-100">ข้อมูลตำแหน่งงาน</h2>
 
             <div className="space-y-2.5">
               {/* ฝ่าย */}
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
                   ฝ
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-medium">ฝ่าย</p>
-                  <p className="text-xs font-semibold text-slate-800">{employee.divisionName || '-'}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ฝ่าย</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.divisionName || '-'}</p>
                 </div>
               </div>
 
               {/* แผนก */}
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
                   ผ
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-medium">แผนก</p>
-                  <p className="text-xs font-semibold text-slate-800">{employee.departmentName || '-'}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">แผนก</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.departmentName || '-'}</p>
                 </div>
               </div>
 
               {/* หัวหน้างานโดยตรง */}
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
                   ห
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-medium">หัวหน้างานโดยตรง</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างานโดยตรง</p>
                   {employee.managerEmployeeId ? (
                     <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-[#0B2046] hover:underline">
                       {employee.managerName || '-'}
                     </Link>
                   ) : (
-                    <p className="text-xs font-semibold text-slate-400">ยังไม่ได้กำหนด</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ยังไม่ได้กำหนด</p>
                   )}
                 </div>
               </div>
 
               {/* ทีม */}
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
                   ท
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-medium">ทีม</p>
-                  <p className="text-xs font-semibold text-slate-800">-</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ทีม</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">-</p>
                 </div>
               </div>
 
               {/* ตำแหน่ง */}
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
                   ต
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-medium">ตำแหน่ง</p>
-                  <p className="text-xs font-semibold text-slate-800">{employee.positionName || '-'}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ตำแหน่ง</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.positionName || '-'}</p>
                 </div>
               </div>
             </div>
@@ -429,9 +429,9 @@ export default function EmployeeDetailPage() {
         {/* ============================================================ */}
         {/* ขวา: Detail Content with Tabs                                */}
         {/* ============================================================ */}
-        <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
+        <div className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col h-full">
           {/* Top Bar: Tabs & Action Button */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-3.5 gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3.5 gap-3">
             {/* Tabs */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium">
               <button
@@ -537,103 +537,103 @@ export default function EmployeeDetailPage() {
               {/* --- คอลัมน์ที่ 1 --- */}
               <div className="space-y-5">
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">รหัสพนักงาน (Employee Code)</p>
-                  <p className="text-slate-600 font-mono">{employee.employeeCode || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">รหัสพนักงาน (Employee Code)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{employee.employeeCode || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">รหัสเครื่องสแกน (Biometric ID)</p>
-                  <p className="text-slate-600 font-mono">{employee.biometricId || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">รหัสเครื่องสแกน (Biometric ID)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{employee.biometricId || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">คำนำหน้า (Prefix)</p>
-                  <p className="text-slate-600">{employee.prefix || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">คำนำหน้า (Prefix)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.prefix || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">ชื่อ (First Name)</p>
-                  <p className="text-slate-600">{employee.firstName || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ชื่อ (First Name)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.firstName || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">นามสกุล (Last Name)</p>
-                  <p className="text-slate-600">{employee.lastName || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">นามสกุล (Last Name)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.lastName || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">เลขบัตรประชาชน (National ID)</p>
-                  <p className="text-slate-600 font-mono">{formatMaskedCitizenId(employee.citizenIdMasked)}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เลขบัตรประชาชน (National ID)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{formatMaskedCitizenId(employee.citizenIdMasked)}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">เพศ (Gender)</p>
-                  <p className="text-slate-600">
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เพศ (Gender)</p>
+                  <p className="text-slate-600 dark:text-slate-400">
                     {employee.gender || (employee.genderId === 1 || employee.prefix === 'นาย' ? 'ชาย' : (employee.genderId === 2 || employee.prefix === 'นางสาว' || employee.prefix === 'นาง' ? 'หญิง' : '-'))}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">สัญชาติ (Nationality)</p>
-                  <p className="text-slate-600">{employee.nationality || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สัญชาติ (Nationality)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.nationality || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">ศาสนา (Religion)</p>
-                  <p className="text-slate-600">{employee.religion || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ศาสนา (Religion)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.religion || '-'}</p>
                 </div>
               </div>
 
               {/* --- คอลัมน์ที่ 2 --- */}
               <div className="space-y-5">
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">วันเกิด (Date of Birth)</p>
-                  <p className="text-slate-600">{formatThaiDate(employee.birthDate)}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">วันเกิด (Date of Birth)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{formatThaiDate(employee.birthDate)}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">สถานภาพสมรส (Marital Status)</p>
-                  <p className="text-slate-600">{employee.maritalStatus || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สถานภาพสมรส (Marital Status)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.maritalStatus || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">สถานภาพทางทหาร (Military Status)</p>
-                  <p className="text-slate-600">{employee.militaryStatus || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สถานภาพทางทหาร (Military Status)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{employee.militaryStatus || '-'}</p>
                 </div>
 
                 {/* ที่อยู่แบบเจาะลึก */}
                 <div className="space-y-3 pt-1">
-                  <p className="text-slate-800 font-bold">ที่อยู่ (Address)</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold">ที่อยู่ (Address)</p>
 
                   <div className="space-y-3 pl-0.5">
                     <div>
-                      <p className="text-[11px] text-slate-500 font-medium mb-0.5">ประเภทที่อยู่</p>
-                      <p className="text-slate-600">{primaryAddress?.addressType || 'บ้านตัวเอง'}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ประเภทที่อยู่</p>
+                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.addressType || 'บ้านตัวเอง'}</p>
                     </div>
 
                     <div>
-                      <p className="text-[11px] text-slate-500 font-medium mb-0.5">บ้านเลขที่</p>
-                      <p className="text-slate-600">{primaryAddress?.addressLine || '-'}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">บ้านเลขที่</p>
+                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.addressLine || '-'}</p>
                     </div>
 
                     <div>
-                      <p className="text-[11px] text-slate-500 font-medium mb-0.5">ตำบล / แขวง</p>
-                      <p className="text-slate-600">{primaryAddress?.subDistrict || '-'}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ตำบล / แขวง</p>
+                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.subDistrict || '-'}</p>
                     </div>
 
                     <div>
-                      <p className="text-[11px] text-slate-500 font-medium mb-0.5">อำเภอ / เขต</p>
-                      <p className="text-slate-600">{primaryAddress?.district || '-'}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">อำเภอ / เขต</p>
+                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.district || '-'}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <p className="text-[11px] text-slate-500 font-medium mb-0.5">จังหวัด</p>
-                        <p className="text-slate-600">{primaryAddress?.province || '-'}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">จังหวัด</p>
+                        <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.province || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-slate-500 font-medium mb-0.5">รหัสไปรษณีย์</p>
-                        <p className="text-slate-600 font-mono">{primaryAddress?.postalCode || '-'}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">รหัสไปรษณีย์</p>
+                        <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryAddress?.postalCode || '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -643,43 +643,43 @@ export default function EmployeeDetailPage() {
               {/* --- คอลัมน์ที่ 3 --- */}
               <div className="space-y-5">
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">อีเมล์ (E-mail)</p>
-                  <p className="text-slate-600 break-all">{employee.contact?.personalEmail || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">อีเมล์ (E-mail)</p>
+                  <p className="text-slate-600 dark:text-slate-400 break-all">{employee.contact?.personalEmail || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">อีเมล์องค์กร (Organization email)</p>
-                  <p className="text-slate-600 break-all">{employee.contact?.organizationEmail || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">อีเมล์องค์กร (Organization email)</p>
+                  <p className="text-slate-600 dark:text-slate-400 break-all">{employee.contact?.organizationEmail || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">เบอร์โทรศัพท์ส่วนตัว (Phone number)</p>
-                  <p className="text-slate-600 font-mono">{formatPhoneNumber(employee.contact?.personalPhone)}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เบอร์โทรศัพท์ส่วนตัว (Phone number)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{formatPhoneNumber(employee.contact?.personalPhone)}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">ระดับวุฒิการศึกษา (Education level)</p>
-                  <p className="text-slate-600">{primaryEducation?.educationLevel || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ระดับวุฒิการศึกษา (Education level)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.educationLevel || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">ชื่อสถาบันการศึกษา (Institution)</p>
-                  <p className="text-slate-600">{primaryEducation?.institution || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ชื่อสถาบันการศึกษา (Institution)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.institution || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">สาขาวิชา (Major)</p>
-                  <p className="text-slate-600">{primaryEducation?.major || '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สาขาวิชา (Major)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.major || '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">ปีที่สำเร็จการศึกษา (Graduation year)</p>
-                  <p className="text-slate-600 font-mono">{primaryEducation?.graduationYear ? primaryEducation.graduationYear.toString() : '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ปีที่สำเร็จการศึกษา (Graduation year)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryEducation?.graduationYear ? primaryEducation.graduationYear.toString() : '-'}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold mb-1">เกรดเฉลี่ยสะสม (GPA)</p>
-                  <p className="text-slate-600 font-mono">{primaryEducation?.gpa ? Number(primaryEducation.gpa).toFixed(2) : '-'}</p>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เกรดเฉลี่ยสะสม (GPA)</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryEducation?.gpa ? Number(primaryEducation.gpa).toFixed(2) : '-'}</p>
                 </div>
               </div>
             </div>
@@ -692,11 +692,11 @@ export default function EmployeeDetailPage() {
             <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-[#0B2046]" />
-                <h3 className="font-bold text-slate-800 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
               </div>
 
               {!employee.familyMembers || employee.familyMembers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   ยังไม่มีข้อมูลสมาชิกครอบครัว
                 </div>
               ) : (
@@ -704,35 +704,35 @@ export default function EmployeeDetailPage() {
                   {employee.familyMembers.map((member, idx) => (
                     <div
                       key={member.id || idx}
-                      className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-2.5"
+                      className="p-4 bg-slate-50/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl space-y-2.5"
                     >
                       <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
                         <span className="font-bold text-[#0B2046]">
                           ลำดับที่ {idx + 1}: {member.relationshipType}
                         </span>
                         {member.maritalStatus && (
-                          <span className="text-[11px] text-slate-500">{member.maritalStatus}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{member.maritalStatus}</span>
                         )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-[11px]">
                         <div>
-                          <p className="text-slate-400">ชื่อ-นามสกุล</p>
-                          <p className="font-semibold text-slate-800">
+                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">
                             {member.prefix ? `${member.prefix} ` : ''}{member.firstName} {member.lastName || ''}
                           </p>
                         </div>
                         <div>
-                          <p className="text-slate-400">เลขบัตรประชาชน</p>
-                          <p className="font-mono text-slate-800">{member.citizenIdMasked || '-'}</p>
+                          <p className="text-slate-400 dark:text-slate-500">เลขบัตรประชาชน</p>
+                          <p className="font-mono text-slate-800 dark:text-slate-200">{member.citizenIdMasked || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-slate-400">วันเกิด</p>
-                          <p className="text-slate-800">{formatThaiDate(member.birthDate)}</p>
+                          <p className="text-slate-400 dark:text-slate-500">วันเกิด</p>
+                          <p className="text-slate-800 dark:text-slate-200">{formatThaiDate(member.birthDate)}</p>
                         </div>
                         <div>
-                          <p className="text-slate-400">สถานะการศึกษา</p>
-                          <p className="text-slate-800">{member.educationStatus || '-'}</p>
+                          <p className="text-slate-400 dark:text-slate-500">สถานะการศึกษา</p>
+                          <p className="text-slate-800 dark:text-slate-200">{member.educationStatus || '-'}</p>
                         </div>
                       </div>
                     </div>
@@ -749,11 +749,11 @@ export default function EmployeeDetailPage() {
             <div className="pt-6 flex-1 space-y-4 text-xs animate-in fade-in duration-150 max-w-4xl">
               <div className="flex items-center gap-2 mb-2">
                 <Phone className="w-4 h-4 text-[#0B2046]" />
-                <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
               </div>
 
               {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน
                 </div>
               ) : (
@@ -776,14 +776,14 @@ export default function EmployeeDetailPage() {
 
                       <div className="space-y-2 text-[11px]">
                         <div>
-                          <p className="text-slate-400">ชื่อ-นามสกุล</p>
-                          <p className="font-semibold text-slate-800 text-xs">
+                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
+                          <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                             {contact.prefix ? `${contact.prefix} ` : ''}{contact.firstName} {contact.lastName}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-slate-400">เบอร์โทรศัพท์ฉุกเฉิน</p>
+                          <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์ฉุกเฉิน</p>
                           <p className="font-mono text-sm font-bold text-[#0B2046]">
                             {formatPhoneNumber(contact.primaryPhone)}
                           </p>
@@ -791,14 +791,14 @@ export default function EmployeeDetailPage() {
 
                         {contact.secondaryPhone && (
                           <div>
-                            <p className="text-slate-400">เบอร์โทรศัพท์สำรอง</p>
-                            <p className="font-mono text-slate-700">{formatPhoneNumber(contact.secondaryPhone)}</p>
+                            <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์สำรอง</p>
+                            <p className="font-mono text-slate-700 dark:text-slate-300">{formatPhoneNumber(contact.secondaryPhone)}</p>
                           </div>
                         )}
 
                         <div>
-                          <p className="text-slate-400">ที่อยู่ผู้ติดต่อ</p>
-                          <p className="text-slate-700 leading-relaxed">{contact.address || '-'}</p>
+                          <p className="text-slate-400 dark:text-slate-500">ที่อยู่ผู้ติดต่อ</p>
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{contact.address || '-'}</p>
                         </div>
                       </div>
                     </div>
@@ -815,21 +815,21 @@ export default function EmployeeDetailPage() {
             <div className="pt-6 flex-1 max-w-xl space-y-5 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-[#0B2046]" />
-                <h3 className="font-bold text-slate-800 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
               </div>
 
               {employee.userAccount ? (
-                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 space-y-4">
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-slate-400 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
-                      <p className="font-bold text-slate-800 text-sm font-mono mt-0.5">
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm font-mono mt-0.5">
                         {employee.userAccount.username}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-slate-400 text-[11px]">สถานะบัญชี</p>
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สถานะบัญชี</p>
                       {employee.userAccount.status?.toUpperCase() === 'ACTIVE' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-semibold text-[11px] mt-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -846,8 +846,8 @@ export default function EmployeeDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
                     <div>
-                      <p className="text-slate-400 text-[11px]">บทบาทในระบบ (Role)</p>
-                      <p className="font-semibold text-slate-800 mt-0.5">
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">บทบาทในระบบ (Role)</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                         {employee.userAccount.roleNames && employee.userAccount.roleNames.length > 0
                           ? employee.userAccount.roleNames.join(', ')
                           : employee.userAccount.roles && employee.userAccount.roles.length > 0
@@ -857,8 +857,8 @@ export default function EmployeeDetailPage() {
                     </div>
 
                     <div>
-                      <p className="text-slate-400 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
-                      <p className="font-semibold text-slate-800 mt-0.5">
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                         {employee.userAccount.accessScope || 'SELF (ดูข้อมูลตนเอง)'}
                       </p>
                     </div>
@@ -866,8 +866,8 @@ export default function EmployeeDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
                     <div>
-                      <p className="text-slate-400 text-[11px]">เข้าสู่ระบบล่าสุด</p>
-                      <p className="text-slate-600 mt-0.5">
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">เข้าสู่ระบบล่าสุด</p>
+                      <p className="text-slate-600 dark:text-slate-400 mt-0.5">
                         {employee.userAccount.lastLoginAt
                           ? formatThaiDate(employee.userAccount.lastLoginAt)
                           : 'ยังไม่เคยเข้าสู่ระบบ'}
@@ -875,15 +875,15 @@ export default function EmployeeDetailPage() {
                     </div>
 
                     <div>
-                      <p className="text-slate-400 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
-                      <p className="text-slate-600 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
+                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
+                      <p className="text-slate-600 dark:text-slate-400 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  <p className="font-medium text-slate-600 mb-1">ยังไม่มีบัญชีผู้ใช้งานในระบบสำหรับพนักงานท่านนี้</p>
-                  <p className="text-[11px] text-slate-400">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีบัญชีผู้ใช้งานในระบบสำหรับพนักงานท่านนี้</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
                 </div>
               )}
             </div>

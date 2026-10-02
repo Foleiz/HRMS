@@ -185,7 +185,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 my-8">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700/60 my-8">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-[#0B2046] text-white">
           <div className="flex items-center gap-3">
@@ -230,12 +230,12 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 placeholder="ค้นหารหัส หรือชื่อสวัสดิการ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full sm:w-64 px-3.5 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 bg-white"
+                className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
               >
                 <option value="ALL">ทุกหมวดหมู่ ({benefits.length})</option>
                 <option value="STATUTORY">กฎหมายแรงงาน</option>
@@ -262,17 +262,17 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           {isFormOpen && (
             <form
               onSubmit={handleFormSubmit}
-              className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-in fade-in duration-200"
+              className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 animate-in fade-in duration-200"
             >
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
-                <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700/80 pb-2.5">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <Gift className="w-4 h-4 text-[#0B2046]" />
                   {editingItem ? 'แก้ไขสิทธิประโยชน์ / สวัสดิการ' : 'สร้างสิทธิประโยชน์ / สวัสดิการใหม่'}
                 </h3>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs text-slate-500 hover:text-slate-800"
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -280,7 +280,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     ชื่อสวัสดิการ (Benefit Name) *
                   </label>
                   <input
@@ -288,18 +288,18 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     value={benefitName}
                     onChange={(e) => setBenefitName(e.target.value)}
                     placeholder="เช่น ประกันสุขภาพกลุ่ม AIA, ค่าอาหารกลางวัน"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     หมวดหมู่สวัสดิการ
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 bg-white"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
                     <option value="HEALTH">สุขภาพ & ประกัน (HEALTH)</option>
                     <option value="ALLOWANCE">เบี้ยเลี้ยง & ช่วยเหลือ (ALLOWANCE)</option>
@@ -311,13 +311,13 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     สถานะการใช้งาน
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 bg-white"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
                     <option value="ACTIVE">เปิดใช้งาน (Active)</option>
                     <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
@@ -325,7 +325,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     คำอธิบาย / เงื่อนไขความคุ้มครอง
                   </label>
                   <input
@@ -333,7 +333,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="เช่น คุ้มครองผู้ป่วยในและนอก วงเงิน 30,000 บาท/ปี"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
                   />
                 </div>
               </div>
@@ -342,7 +342,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-3.5 py-1.5 text-xs text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors"
+                  className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors"
                 >
                   ยกเลิก
                 </button>
@@ -359,20 +359,20 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           )}
 
           {/* Benefits Table */}
-          <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white">
+          <div className="border border-slate-200/80 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
             {loading ? (
-              <div className="p-8 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <div className="p-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                 <span className="text-xs">กำลังโหลดสวัสดิการ...</span>
               </div>
             ) : filteredBenefits.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400">
+              <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
                 ไม่พบข้อมูลสวัสดิการที่ตรงกับเงื่อนไข
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold">
                     <th className="py-3 px-4">รหัส</th>
                     <th className="py-3 px-4">ชื่อสวัสดิการ & รายละเอียด</th>
                     <th className="py-3 px-4">หมวดหมู่</th>
@@ -386,12 +386,12 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.OTHER;
                     const CatIcon = cat.icon;
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700">
+                      <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/60 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
                           {item.benefitCode}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-900 flex items-center gap-2">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             <span>{item.benefitName}</span>
                             {item.isStatutory && (
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 font-medium">
@@ -400,7 +400,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                             )}
                           </div>
                           {item.description && (
-                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
                               {item.description}
                             </p>
                           )}
@@ -414,7 +414,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
                             {item.assignedTypesCount || 0} สัญญา
                           </span>
                         </td>
@@ -425,7 +425,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                               เปิดใช้งาน
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
                               <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                               ปิดใช้งาน
                             </span>
@@ -435,7 +435,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                               title="แก้ไข"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -469,18 +469,18 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
         {/* Delete Confirmation Dialog */}
         {deleteConfirmId && (
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-10">
-            <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-              <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-500" />
                 ยืนยันการลบสิทธิประโยชน์
               </h4>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 คุณแน่ใจหรือไม่ว่าต้องการลบสิทธิประโยชน์นี้? การกระทำนี้ไม่สามารถย้อนกลับได้
               </p>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   onClick={() => setDeleteConfirmId(null)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   ยกเลิก
                 </button>
@@ -498,11 +498,11 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>รวมทั้งสิ้น {benefits.length} สิทธิประโยชน์</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors shadow-2xs"
+            className="px-4 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shadow-2xs"
           >
             ปิดหน้าต่าง
           </button>

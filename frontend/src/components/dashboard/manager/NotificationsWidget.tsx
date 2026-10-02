@@ -98,7 +98,7 @@ export const NotificationsWidget: React.FC<NotificationsWidgetProps> = ({ role }
   const items = getItems();
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
       {/* Header: Coral / Rose */}
       <div className="bg-[#FF8080] text-white px-4 py-3 flex items-center justify-between">
         <h3 className="text-sm font-bold tracking-wide">การแจ้งเตือน</h3>
@@ -111,12 +111,12 @@ export const NotificationsWidget: React.FC<NotificationsWidgetProps> = ({ role }
           <Link
             key={idx}
             href={item.href}
-            className="flex items-center px-4 py-3 hover:bg-slate-50 transition-colors group"
+            className="flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 transition-colors group"
           >
-            <span className="text-lg font-black text-slate-900 w-9 text-center group-hover:text-[#0B2046] transition-colors">
+            <span className="text-lg font-black text-slate-900 dark:text-slate-100 w-9 text-center group-hover:text-[#0B2046] transition-colors">
               {loading ? '-' : item.count}
             </span>
-            <span className="text-xs font-medium text-slate-700 ml-2 group-hover:text-slate-900 transition-colors">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-2 group-hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100 transition-colors">
               {item.label}
             </span>
           </Link>

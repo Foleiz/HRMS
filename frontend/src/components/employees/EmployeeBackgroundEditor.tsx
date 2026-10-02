@@ -51,11 +51,11 @@ export default function EmployeeBackgroundEditor({
     <div className="max-w-4xl mx-auto space-y-8 text-xs animate-in fade-in duration-150">
       {/* ประวัติการศึกษา */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-[#0B2046]" />
-            <h3 className="font-bold text-slate-800 text-sm">ประวัติการศึกษา</h3>
-            <span className="text-[11px] text-slate-400">({educations.length} รายการ)</span>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">({educations.length} รายการ)</span>
           </div>
           <button
             type="button"
@@ -67,23 +67,23 @@ export default function EmployeeBackgroundEditor({
         </div>
 
         {educations.length === 0 && (
-          <p className="text-center text-slate-400 py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <p className="text-center text-slate-400 dark:text-slate-500 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             ยังไม่มีประวัติการศึกษา
           </p>
         )}
 
         {educations.map((edu, idx) => (
-          <div key={idx} className="relative p-4 rounded-xl border border-slate-200 bg-slate-50/50 grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div key={idx} className="relative p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 grid grid-cols-1 md:grid-cols-6 gap-3">
             <button
               type="button"
               onClick={() => onEducationsChange(educations.filter((_, i) => i !== idx))}
-              className="absolute top-2 right-2 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
               title="ลบรายการนี้"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <div className="md:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">ระดับการศึกษา <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ระดับการศึกษา <span className="text-rose-500">*</span></label>
               <select
                 value={edu.educationLevel}
                 onChange={(e) => updateEdu(idx, { educationLevel: e.target.value })}
@@ -99,7 +99,7 @@ export default function EmployeeBackgroundEditor({
               </select>
             </div>
             <div className="md:col-span-4 md:pr-6">
-              <label className="font-semibold text-slate-700 block mb-1">สถาบันการศึกษา <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">สถาบันการศึกษา <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 value={edu.institution}
@@ -109,7 +109,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-3">
-              <label className="font-semibold text-slate-700 block mb-1">สาขาวิชา</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">สาขาวิชา</label>
               <input
                 type="text"
                 value={edu.major ?? ''}
@@ -119,7 +119,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">ปีที่สำเร็จ (พ.ศ.)</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ปีที่สำเร็จ (พ.ศ.)</label>
               <select
                 value={edu.graduationYear ?? ''}
                 onChange={(e) => updateEdu(idx, { graduationYear: e.target.value ? Number(e.target.value) : undefined })}
@@ -132,7 +132,7 @@ export default function EmployeeBackgroundEditor({
               </select>
             </div>
             <div className="md:col-span-1">
-              <label className="font-semibold text-slate-700 block mb-1">เกรดเฉลี่ย</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">เกรดเฉลี่ย</label>
               <input
                 type="number"
                 step="0.01"
@@ -150,11 +150,11 @@ export default function EmployeeBackgroundEditor({
 
       {/* ประวัติการทำงาน */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-[#0B2046]" />
-            <h3 className="font-bold text-slate-800 text-sm">ประวัติการทำงาน</h3>
-            <span className="text-[11px] text-slate-400">({workExperiences.length} แห่ง)</span>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการทำงาน</h3>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">({workExperiences.length} แห่ง)</span>
           </div>
           <button
             type="button"
@@ -166,23 +166,23 @@ export default function EmployeeBackgroundEditor({
         </div>
 
         {workExperiences.length === 0 && (
-          <p className="text-center text-slate-400 py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <p className="text-center text-slate-400 dark:text-slate-500 py-6 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             ยังไม่มีประวัติการทำงาน
           </p>
         )}
 
         {workExperiences.map((work, idx) => (
-          <div key={idx} className="relative p-4 rounded-xl border border-slate-200 bg-slate-50/50 grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div key={idx} className="relative p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 grid grid-cols-1 md:grid-cols-6 gap-3">
             <button
               type="button"
               onClick={() => onWorkExperiencesChange(workExperiences.filter((_, i) => i !== idx))}
-              className="absolute top-2 right-2 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+              className="absolute top-2 right-2 p-1 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
               title="ลบรายการนี้"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <div className="md:col-span-3">
-              <label className="font-semibold text-slate-700 block mb-1">ชื่อบริษัท / องค์กร <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ชื่อบริษัท / องค์กร <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 value={work.companyName}
@@ -191,7 +191,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-3 md:pr-6">
-              <label className="font-semibold text-slate-700 block mb-1">ตำแหน่ง</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ตำแหน่ง</label>
               <input
                 type="text"
                 value={work.positionName ?? ''}
@@ -200,7 +200,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">วันที่เริ่มงาน</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันที่เริ่มงาน</label>
               <input
                 type="date"
                 value={work.startDate ?? ''}
@@ -209,7 +209,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">วันที่ออก</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันที่ออก</label>
               <input
                 type="date"
                 value={work.endDate ?? ''}
@@ -219,7 +219,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">เงินเดือนล่าสุด (บาท)</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">เงินเดือนล่าสุด (บาท)</label>
               <input
                 type="number"
                 min="0"
@@ -229,7 +229,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-6">
-              <label className="font-semibold text-slate-700 block mb-1">หน้าที่รับผิดชอบ</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">หน้าที่รับผิดชอบ</label>
               <textarea
                 rows={2}
                 value={work.jobDescription ?? ''}
@@ -238,7 +238,7 @@ export default function EmployeeBackgroundEditor({
               />
             </div>
             <div className="md:col-span-6">
-              <label className="font-semibold text-slate-700 block mb-1">เหตุผลที่ออก</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">เหตุผลที่ออก</label>
               <input
                 type="text"
                 value={work.leavingReason ?? ''}

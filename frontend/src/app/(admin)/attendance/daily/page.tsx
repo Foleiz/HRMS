@@ -1043,7 +1043,7 @@ function DailyAttendanceContent() {
   const renderStatusBadge = (status: string, isAbsent: boolean) => {
     if (status === 'LEAVE') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
           <span>ลา</span>
         </span>
@@ -1052,7 +1052,7 @@ function DailyAttendanceContent() {
 
     if (isAbsent || status === 'ABSENT') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
           <span>ขาดงาน</span>
         </span>
@@ -1062,56 +1062,56 @@ function DailyAttendanceContent() {
     switch (status) {
       case 'PRESENT':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>ตรงเวลา</span>
           </span>
         );
       case 'LATE':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             <span>มาสาย</span>
           </span>
         );
       case 'EARLY_LEAVE':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
             <span>ออกก่อนเวลา</span>
           </span>
         );
       case 'LATE_AND_EARLY':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             <span>สายและออกก่อน</span>
           </span>
         );
       case 'HOLIDAY':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
             <span>วันหยุดประเพณี</span>
           </span>
         );
       case 'OFF':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span>วันหยุดสัปดาห์</span>
           </span>
         );
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span>รอดำเนินการ</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
             <span>{status}</span>
           </span>
         );
@@ -1122,35 +1122,35 @@ function DailyAttendanceContent() {
     switch (status) {
       case 'IMPORTED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             สำเร็จครบถ้วน
           </span>
         );
       case 'PARTIAL':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
             สำเร็จบางส่วน
           </span>
         );
       case 'FAILED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
             <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
             ล้มเหลว
           </span>
         );
       case 'REVERTED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-            <XCircle className="w-3.5 h-3.5 text-slate-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:text-slate-400 dark:border-slate-700">
+            <XCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             ยกเลิกแล้ว
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
             {status}
           </span>
         );
@@ -1201,7 +1201,7 @@ function DailyAttendanceContent() {
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ตรวจบันทึกเวลาประจำวัน */}
           {canViewDaily && (
@@ -1272,12 +1272,12 @@ function DailyAttendanceContent() {
       {activeTab === 'daily' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {hasAnyBatch === false ? (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4 dark:bg-slate-800 dark:border-slate-700">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0B2046] flex items-center justify-center mb-4">
                 <FileSpreadsheet className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">ยังไม่มีข้อมูลบันทึกเวลาในระบบ</h3>
-              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+              <h3 className="text-base font-bold text-slate-800 mb-1 dark:text-slate-200">ยังไม่มีข้อมูลบันทึกเวลาในระบบ</h3>
+              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed dark:text-slate-400">
                 ระบบยังไม่มีข้อมูลการนำเข้าไฟล์บันทึกเวลา กรุณาอัปโหลดไฟล์ Excel หรือไฟล์จากเครื่องสแกนเพื่อเริ่มตรวจบันทึกเวลา
               </p>
               <button
@@ -1292,12 +1292,12 @@ function DailyAttendanceContent() {
           ) : (
             <>
               {/* Filter & Toolbar Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Search, Filters & Date Stepper */}
             <div className="flex items-center gap-2.5 shrink-0">
               {/* Search */}
               <div className="relative w-56 sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
@@ -1306,7 +1306,7 @@ function DailyAttendanceContent() {
                     setSearchKeyword(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -1318,7 +1318,7 @@ function DailyAttendanceContent() {
                   setSelectedDepartment(val === 'ALL' ? 'ALL' : Number(val));
                   setCurrentPage(1);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
               >
                 <option value="ALL">ทุกแผนก / สังกัด</option>
                 {departments.map((d) => (
@@ -1342,7 +1342,7 @@ function DailyAttendanceContent() {
                     setSelectedDate(newDate);
                     setCurrentPage(1);
                   }}
-                  className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-300"
                   title={
                     allowedDateRange.min && allowedDateRange.max
                       ? `เลือกได้เฉพาะช่วง ${formatThaiDate(allowedDateRange.min)} ถึง ${formatThaiDate(allowedDateRange.max)} ตามเอกสารที่นำเข้า`
@@ -1351,7 +1351,7 @@ function DailyAttendanceContent() {
                 />
 
                 {allowedDateRange.min && allowedDateRange.max && (
-                  <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 font-medium">
+                  <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 font-medium dark:bg-slate-700 dark:text-slate-300 dark:text-slate-400 dark:border-slate-700">
                     <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
                     <span>ช่วงข้อมูลในไฟล์: {formatThaiDate(allowedDateRange.min)} - {formatThaiDate(allowedDateRange.max)}</span>
                   </span>
@@ -1362,7 +1362,7 @@ function DailyAttendanceContent() {
               <button
                 onClick={handleRecalculate}
                 disabled={refreshing}
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="ประมวลผลคำนวณเวลาใหม่"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#0B2046]' : ''}`} />
@@ -1384,19 +1384,19 @@ function DailyAttendanceContent() {
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Total Employees */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-500">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                 <span className="text-xs font-medium">พนักงานทั้งหมด</span>
-                <Users className="w-4 h-4 text-slate-400" />
+                <Users className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-slate-900">{summary?.totalEmployees ?? 0}</div>
-                <div className="text-2xs text-slate-500 mt-0.5">ในระบบวันนี้</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{summary?.totalEmployees ?? 0}</div>
+                <div className="text-2xs text-slate-500 mt-0.5 dark:text-slate-400">ในระบบวันนี้</div>
               </div>
             </div>
 
             {/* 2. Present */}
-            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-emerald-700">
                 <span className="text-xs font-medium">มาตรงเวลา</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -1408,7 +1408,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 3. Late */}
-            <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-amber-700">
                 <span className="text-xs font-medium">มาสาย</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -1420,7 +1420,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 4. Early Leave */}
-            <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-purple-700">
                 <span className="text-xs font-medium">ออกก่อนเวลา</span>
                 <LogOut className="w-4 h-4 text-purple-500" />
@@ -1432,7 +1432,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 5. Absent */}
-            <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
               <div className="flex items-center justify-between text-rose-700">
                 <span className="text-xs font-medium">ขาดงาน</span>
                 <XCircle className="w-4 h-4 text-rose-500" />
@@ -1444,24 +1444,24 @@ function DailyAttendanceContent() {
             </div>
 
             {/* 6. Holiday / Off */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-500">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                 <span className="text-xs font-medium">วันหยุด</span>
                 <Calendar className="w-4 h-4 text-blue-500" />
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-slate-800">{summary?.holidayOrOffCount ?? 0}</div>
-                <div className="text-2xs text-slate-500 mt-0.5">วันหยุดบริษัท / ประจำสัปดาห์</div>
+                <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{summary?.holidayOrOffCount ?? 0}</div>
+                <div className="text-2xs text-slate-500 mt-0.5 dark:text-slate-400">วันหยุดบริษัท / ประจำสัปดาห์</div>
               </div>
             </div>
           </div>
 
           {/* Daily Table with whitespace-nowrap */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider">
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อ-นามสกุล</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
@@ -1476,17 +1476,17 @@ function DailyAttendanceContent() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {loading ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
                         กำลังโหลดข้อมูลบันทึกเวลา...
                       </td>
                     </tr>
                   ) : records.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <Clock className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         ไม่พบข้อมูลบันทึกเวลาสำหรับวันที่เลือก ({formatThaiDate(selectedDate)})
                         <div className="mt-3">
@@ -1502,30 +1502,30 @@ function DailyAttendanceContent() {
                     </tr>
                   ) : (
                     records.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                      <tr key={rec.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                           {rec.employeeCode}
                         </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                        <td className="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap dark:text-slate-200">
                           {rec.employeeName}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">
                           <div>{rec.departmentName || '-'}</div>
-                          <div className="text-2xs text-slate-400">{rec.positionName || '-'}</div>
+                          <div className="text-2xs text-slate-400 dark:text-slate-500">{rec.positionName || '-'}</div>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap dark:text-slate-300">
                           {rec.shiftName ? (
                             <span className="font-semibold">{rec.shiftName}</span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-400 dark:text-slate-500">-</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">
                           {rec.shiftTimeWindow || '-'}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {rec.actualIn ? (
-                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400">
                               {formatTimeStr(rec.actualIn)}
                             </span>
                           ) : (
@@ -1534,14 +1534,14 @@ function DailyAttendanceContent() {
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {rec.actualOut ? (
-                            <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">
+                            <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100 dark:bg-purple-900/20 dark:text-purple-400">
                               {formatTimeStr(rec.actualOut)}
                             </span>
                           ) : (
                             <span className="text-slate-300">-</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-center font-semibold text-slate-700 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-center font-semibold text-slate-700 whitespace-nowrap dark:text-slate-300">
                           {rec.workedMinutes > 0 ? (
                             <span>{Math.floor(rec.workedMinutes / 60)} ชม. {rec.workedMinutes % 60} น.</span>
                           ) : (
@@ -1573,7 +1573,7 @@ function DailyAttendanceContent() {
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => handleOpenAdjustmentModal(rec)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer dark:bg-blue-900/20 dark:text-blue-400"
                               title="ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน"
                             >
                               <ClipboardCheck className="w-3.5 h-3.5" />
@@ -1581,7 +1581,7 @@ function DailyAttendanceContent() {
                             </button>
                             <button
                               onClick={() => handleOpenEditModal(rec)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                               <span>แก้ไข</span>
@@ -1596,24 +1596,24 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700/60 dark:text-slate-400">
               <div>
-                แสดงหน้า <span className="font-bold text-slate-800">{currentPage}</span> จาก{' '}
-                <span className="font-bold text-slate-800">{totalPages || 1}</span> หน้า (รวม {totalCount} รายการ)
+                แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{currentPage}</span> จาก{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">{totalPages || 1}</span> หน้า (รวม {totalCount} รายการ)
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1631,14 +1631,14 @@ function DailyAttendanceContent() {
       {activeTab === 'import' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Upload Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
                   <HardDrive className="w-5 h-5 text-blue-600" />
                   อัปโหลดไฟล์ข้อมูลเวลาเข้างาน
                 </h2>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
                   นำเข้าไฟล์ Excel (.xlsx, .xls) หรือ CSV จากเครื่องสแกนเพื่อคำนวณเวลาเข้า-ออกงานให้อัตโนมัติ
                 </p>
               </div>
@@ -1669,23 +1669,23 @@ function DailyAttendanceContent() {
             <div className="p-6 space-y-6">
               {/* Period and Date Selection Card */}
               <div className="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-700/80">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-bold text-slate-800">
+                      <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         กำหนดวัน เดือน ปี และรอบการคำนวณ (Target Attendance Period)
                       </h3>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         ระบุเพื่อผูกข้อมูลเวลากับรอบเงินเดือน (Payroll) หรือใช้ประมวลผลสถิติประจำเดือนให้อัตโนมัติ
                       </p>
                     </div>
                   </div>
 
                   {/* Mode Selector Tabs */}
-                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto text-xs shadow-2xs">
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto text-xs shadow-2xs dark:bg-slate-800 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => setImportDateMode('period')}
@@ -1717,13 +1717,13 @@ function DailyAttendanceContent() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs max-w-xl">
                       {/* Year */}
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1.5">
+                        <label className="block font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
                           ปี (พ.ศ. / ค.ศ.)
                         </label>
                         <select
                           value={importYear}
                           onChange={(e) => setImportYear(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                         >
                           {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
                             <option key={y} value={y}>
@@ -1735,13 +1735,13 @@ function DailyAttendanceContent() {
 
                       {/* Month */}
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1.5">
+                        <label className="block font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
                           เดือน
                         </label>
                         <select
                           value={importMonth}
                           onChange={(e) => setImportMonth(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                         >
                           {THAI_MONTHS.map((mName, idx) => (
                             <option key={idx + 1} value={idx + 1}>
@@ -1763,7 +1763,7 @@ function DailyAttendanceContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 animate-in fade-in duration-150 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                     <div className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>
                       ระบบจะตรวจจับเดือนและปีจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
@@ -1800,8 +1800,8 @@ function DailyAttendanceContent() {
                       <FileSpreadsheet className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-base font-bold text-slate-900">{selectedFile.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">ขนาด: {formatFileSize(selectedFile.size)}</p>
+                      <p className="text-base font-bold text-slate-900 dark:text-slate-100">{selectedFile.name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">ขนาด: {formatFileSize(selectedFile.size)}</p>
                     </div>
                     <button
                       type="button"
@@ -1822,10 +1822,10 @@ function DailyAttendanceContent() {
                       <UploadCloud className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         ลากไฟล์มาวางที่นี่ หรือ <span className="text-blue-600 hover:underline">คลิกเพื่อเลือกไฟล์</span>
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
                         รองรับไฟล์ประเภท .xlsx, .xls หรือ .csv (ขนาดไม่เกิน 20MB)
                       </p>
                     </div>
@@ -1836,14 +1836,14 @@ function DailyAttendanceContent() {
               {/* Progress */}
               {isUploading && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                     <span className="flex items-center gap-2">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
                       กำลังส่งข้อมูลและประมวลผลกะการทำงาน...
                     </span>
                     <span>{uploadProgress}%</span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800">
                     <div
                       className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${uploadProgress}%` }}
@@ -1869,15 +1869,15 @@ function DailyAttendanceContent() {
                     {uploadResult.status === 'IMPORTED' && <CheckCircle2 className="w-6 h-6 text-emerald-600" />}
                     {uploadResult.status === 'PARTIAL' && <AlertTriangle className="w-6 h-6 text-amber-600" />}
                     {uploadResult.status === 'FAILED' && <AlertCircle className="w-6 h-6 text-rose-600" />}
-                    <h3 className="text-base font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                       {uploadResult.status === 'IMPORTED' && 'นำเข้าข้อมูลเวลาสำเร็จครบถ้วน!'}
                       {uploadResult.status === 'PARTIAL' && 'นำเข้าข้อมูลสำเร็จบางส่วน (พบข้อผิดพลาดบางรายการ)'}
                       {uploadResult.status === 'FAILED' && 'การนำเข้าล้มเหลว ไม่พบข้อมูลที่ถูกต้อง'}
                     </h3>
                     {getBatchStatusBadge(uploadResult.status)}
                   </div>
-                  <p className="text-xs text-slate-600">
-                    ไฟล์: <span className="font-semibold text-slate-900">{uploadResult.fileName}</span> | ชุดที่: #{uploadResult.batchId}
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    ไฟล์: <span className="font-semibold text-slate-900 dark:text-slate-100">{uploadResult.fileName}</span> | ชุดที่: #{uploadResult.batchId}
                     {uploadResult.dateFrom && uploadResult.dateTo && (
                       <> | ช่วงวันที่: <span className="font-semibold">{uploadResult.dateFrom} ถึง {uploadResult.dateTo}</span></>
                     )}
@@ -1945,7 +1945,7 @@ function DailyAttendanceContent() {
 
                   <button
                     onClick={() => setUploadResult(null)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-colors"
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-colors dark:text-slate-500"
                     title="ปิดกล่องแจ้งเตือนนี้"
                   >
                     <X className="w-4 h-4" />
@@ -1955,9 +1955,9 @@ function DailyAttendanceContent() {
 
               {/* Quick Metrics */}
               <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-200/60">
-                <div className="bg-white/80 p-3 rounded-xl border border-slate-200/80 text-center">
-                  <p className="text-xs font-semibold text-slate-500">จำนวนแถวทั้งหมด</p>
-                  <p className="text-xl font-black text-slate-900 mt-0.5">{uploadResult.totalRecords.toLocaleString()} แถว</p>
+                <div className="bg-white/80 p-3 rounded-xl border border-slate-200/80 text-center dark:border-slate-700/80">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">จำนวนแถวทั้งหมด</p>
+                  <p className="text-xl font-black text-slate-900 mt-0.5 dark:text-slate-100">{uploadResult.totalRecords.toLocaleString()} แถว</p>
                 </div>
                 <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 text-center">
                   <p className="text-xs font-semibold text-emerald-700">สำเร็จ</p>
@@ -1972,14 +1972,14 @@ function DailyAttendanceContent() {
           )}
 
           {/* Batch History Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 dark:border-slate-700/60">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
                   <FileText className="w-5 h-5 text-blue-600" />
                   ประวัติการนำเข้าไฟล์ย้อนหลัง
                 </h2>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
                   รายการชุดข้อมูลไฟล์บันทึกเวลาทั้งหมดที่เคยนำเข้าสู่ระบบ ({batchTotalCount.toLocaleString()} รายการ)
                 </p>
               </div>
@@ -1997,9 +1997,9 @@ function DailyAttendanceContent() {
                         loadBatches();
                       }
                     }}
-                    className="pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-56"
+                    className="pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-56 dark:border-slate-600 dark:text-slate-200 dark:placeholder:text-slate-500"
                   />
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 dark:text-slate-500" />
                 </div>
 
                 <select
@@ -2008,7 +2008,7 @@ function DailyAttendanceContent() {
                     setFilterSource(e.target.value);
                     setBatchPage(1);
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 bg-white"
+                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 bg-white dark:border-slate-600 dark:text-slate-200 dark:bg-slate-900"
                 >
                   <option value="ALL">แหล่งที่มา: ทั้งหมด</option>
                   <option value="FINGERPRINT">เครื่องสแกนลายนิ้วมือ</option>
@@ -2023,7 +2023,7 @@ function DailyAttendanceContent() {
                     setFilterBatchStatus(e.target.value);
                     setBatchPage(1);
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 bg-white"
+                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 bg-white dark:border-slate-600 dark:text-slate-200 dark:bg-slate-900"
                 >
                   <option value="ALL">สถานะ: ทั้งหมด</option>
                   <option value="IMPORTED">สำเร็จครบถ้วน</option>
@@ -2037,7 +2037,7 @@ function DailyAttendanceContent() {
                     setBatchPage(1);
                     loadBatches();
                   }}
-                  className="p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-400"
                   title="รีเฟรชตาราง"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingBatches ? 'animate-spin' : ''}`} />
@@ -2048,7 +2048,7 @@ function DailyAttendanceContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider">
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                     <th className="py-3.5 px-4 whitespace-nowrap">ชุดที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">วันที่นำเข้า</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อไฟล์</th>
@@ -2063,42 +2063,42 @@ function DailyAttendanceContent() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {isLoadingBatches ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
                         กำลังโหลดข้อมูลประวัติการนำเข้า...
                       </td>
                     </tr>
                   ) : batches.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400">
+                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         ไม่พบรายการประวัติการนำเข้าไฟล์
                       </td>
                     </tr>
                   ) : (
                     batches.map((batch) => (
-                      <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                      <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                           #{batch.id}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap dark:text-slate-300">
                           {formatDateTimeThai(batch.importedAt)}
                         </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 max-w-xs truncate whitespace-nowrap" title={batch.fileName || ''}>
+                        <td className="py-3.5 px-4 font-semibold text-slate-900 max-w-xs truncate whitespace-nowrap dark:text-slate-100" title={batch.fileName || ''}>
                           {batch.fileName || '-'}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-lg text-slate-700 bg-slate-100 border border-slate-200 text-2xs font-semibold">
+                        <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap dark:text-slate-300">
+                          <span className="px-2.5 py-1 rounded-lg text-slate-700 bg-slate-100 border border-slate-200 text-2xs font-semibold dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700">
                             {getSourceLabel(batch.source)}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">
                           {batch.deviceName || '-'}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">
                           {batch.dateFrom && batch.dateTo ? (
                             <span>{batch.dateFrom} ถึง {batch.dateTo}</span>
                           ) : batch.dateFrom ? (
@@ -2107,7 +2107,7 @@ function DailyAttendanceContent() {
                             '-'
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-center font-bold text-slate-800 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-center font-bold text-slate-800 whitespace-nowrap dark:text-slate-200">
                           {batch.totalRecords.toLocaleString()}
                         </td>
                         <td className="py-3.5 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
@@ -2117,28 +2117,28 @@ function DailyAttendanceContent() {
                           {batch.failedRecords > 0 ? (
                             <span className="text-rose-600">{batch.failedRecords.toLocaleString()}</span>
                           ) : (
-                            <span className="text-slate-400">0</span>
+                            <span className="text-slate-400 dark:text-slate-500">0</span>
                           )}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {getBatchStatusBadge(batch.status)}
                           {batch.status === 'REVERTED' && batch.revertedAt && (
-                            <div className="text-2xs text-slate-400 mt-1">
+                            <div className="text-2xs text-slate-400 mt-1 dark:text-slate-500">
                               {new Date(batch.revertedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
                               {batch.revertedByUserName ? ` โดย ${batch.revertedByUserName}` : ''}
                             </div>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">
                           {batch.importedByUserName || 'ระบบอัตโนมัติ'}
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
-                            {batch.status === 'REVERTED' && <span className="text-2xs text-slate-400">—</span>}
+                            {batch.status === 'REVERTED' && <span className="text-2xs text-slate-400 dark:text-slate-500">—</span>}
                             {batch.status !== 'REVERTED' && batch.failedRecords > 0 && (
                               <button
                                 onClick={() => handleOpenErrors(batch)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors dark:bg-rose-900/20 dark:text-rose-400"
                               >
                                 <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
                                 ดูข้อผิดพลาด
@@ -2148,7 +2148,7 @@ function DailyAttendanceContent() {
                             <>
                             <button
                               onClick={() => handleOpenTimeReview(batch)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer dark:bg-blue-900/20 dark:text-blue-400"
                               title="ดูข้อมูลบันทึกเวลาที่นำเข้าในชุดนี้"
                             >
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
@@ -2156,7 +2156,7 @@ function DailyAttendanceContent() {
                             </button>
                             <button
                               onClick={() => handleOpenRevertModal(batch)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
                               title="ยกเลิกการนำเข้า: ล้างเวลาจากไฟล์นี้และคืนสถานะวันทำงาน"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-rose-600" />
@@ -2174,20 +2174,20 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700/60 dark:text-slate-400">
               <div className="flex items-center gap-3">
                 <div>
-                  แสดงหน้า <span className="font-bold text-slate-800">{batchPage}</span> จาก{' '}
-                  <span className="font-bold text-slate-800">{batchTotalPages || 1}</span> หน้า
+                  แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{batchPage}</span> จาก{' '}
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{batchTotalPages || 1}</span> หน้า
                 </div>
                 {batchTotalPages > 1 && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-300">|</span>
-                    <span className="text-slate-600 font-medium">ไปที่หน้า:</span>
+                    <span className="text-slate-600 font-medium dark:text-slate-400">ไปที่หน้า:</span>
                     <select
                       value={batchPage}
                       onChange={(e) => setBatchPage(Number(e.target.value))}
-                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                     >
                       {Array.from({ length: batchTotalPages }, (_, i) => i + 1).map((p) => (
                         <option key={p} value={p}>
@@ -2203,14 +2203,14 @@ function DailyAttendanceContent() {
                 <button
                   disabled={batchPage <= 1}
                   onClick={() => setBatchPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   disabled={batchPage >= batchTotalPages}
                   onClick={() => setBatchPage((p) => Math.min(batchTotalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -2226,12 +2226,12 @@ function DailyAttendanceContent() {
       {activeTab === 'adjustments' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Toolbar & Filters */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700">
             {/* Left: Search & Status Filter */}
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               {/* Search */}
               <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ, รหัส หรือเหตุผล..."
@@ -2240,7 +2240,7 @@ function DailyAttendanceContent() {
                     setAdjustmentSearch(e.target.value);
                     setAdjustmentsPage(1);
                   }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200"
                 />
               </div>
 
@@ -2251,7 +2251,7 @@ function DailyAttendanceContent() {
                   setFilterAdjustmentStatus(e.target.value);
                   setAdjustmentsPage(1);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
               >
                 <option value="ALL">สถานะทั้งหมด</option>
                 <option value="PENDING">รอพิจารณา (Pending)</option>
@@ -2267,7 +2267,7 @@ function DailyAttendanceContent() {
                   loadPendingCount();
                 }}
                 disabled={adjustmentsLoading}
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${adjustmentsLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
@@ -2275,22 +2275,22 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Right: Quick Stats */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 self-end md:self-auto">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 self-end md:self-auto dark:text-slate-400">
               <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                 <span>รอพิจารณา: {pendingAdjustmentsCount} รายการ</span>
               </span>
-              <span className="text-slate-400">|</span>
+              <span className="text-slate-400 dark:text-slate-500">|</span>
               <span>ทั้งหมด {adjustmentsTotalCount} รายการ</span>
             </div>
           </div>
 
           {/* Adjustments Table Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs">
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs dark:border-slate-700/60 dark:text-slate-400">
                     <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
                     <th className="py-3 px-4">พนักงาน</th>
                     <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
@@ -2302,10 +2302,10 @@ function DailyAttendanceContent() {
                     <th className="py-3 px-4 text-right">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-slate-100 font-medium dark:divide-slate-700/60">
                   {adjustmentsLoading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-500">
+                      <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-6 h-6 animate-spin text-[#0B2046]" />
                           <span>กำลังโหลดรายการคำขอ...</span>
@@ -2314,45 +2314,45 @@ function DailyAttendanceContent() {
                     </tr>
                   ) : adjustments.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-500">
+                      <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <ClipboardCheck className="w-8 h-8 text-slate-300" />
-                          <p className="font-semibold text-slate-700">ไม่พบคำขอปรับปรุงเวลา</p>
-                          <p className="text-2xs text-slate-400">ยังไม่มีคำขอปรับปรุงเวลาที่ตรงตามเงื่อนไขค้นหา</p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">ไม่พบคำขอปรับปรุงเวลา</p>
+                          <p className="text-2xs text-slate-400 dark:text-slate-500">ยังไม่มีคำขอปรับปรุงเวลาที่ตรงตามเงื่อนไขค้นหา</p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     adjustments.map((adj) => (
-                      <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         {/* ID & Submitted At */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-900">REQ-{adj.id.toString().padStart(5, '0')}</div>
-                          <div className="text-2xs text-slate-400 mt-0.5">{formatDateTimeThai(adj.createdAt)}</div>
+                          <div className="font-bold text-slate-900 dark:text-slate-100">REQ-{adj.id.toString().padStart(5, '0')}</div>
+                          <div className="text-2xs text-slate-400 mt-0.5 dark:text-slate-500">{formatDateTimeThai(adj.createdAt)}</div>
                         </td>
 
                         {/* Employee */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800">{adj.employeeName}</div>
-                          <div className="text-2xs text-slate-400">
+                          <div className="font-bold text-slate-800 dark:text-slate-200">{adj.employeeName}</div>
+                          <div className="text-2xs text-slate-400 dark:text-slate-500">
                             {adj.employeeCode} {adj.departmentName ? `• ${adj.departmentName}` : ''}
                           </div>
                         </td>
 
                         {/* Work Date & Shift */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">{formatThaiDate(adj.workDate)}</div>
-                          <div className="text-2xs text-slate-400">{adj.shiftName || 'ไม่ระบุกะ'}</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(adj.workDate)}</div>
+                          <div className="text-2xs text-slate-400 dark:text-slate-500">{adj.shiftName || 'ไม่ระบุกะ'}</div>
                         </td>
 
                         {/* Original Times */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-2xs text-slate-600">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
+                          <div className="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                               เข้า: {adj.originalClockIn ? formatTimeStr(adj.originalClockIn) : '-'}
                             </span>
                             <span className="text-slate-300">→</span>
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                               ออก: {adj.originalClockOut ? formatTimeStr(adj.originalClockOut) : '-'}
                             </span>
                           </div>
@@ -2361,11 +2361,11 @@ function DailyAttendanceContent() {
                         {/* Adjusted Times */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 text-2xs font-bold">
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
                               เข้า: {adj.adjustedClockIn ? formatTimeStr(adj.adjustedClockIn) : '-'}
                             </span>
                             <span className="text-slate-300">→</span>
-                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400">
                               ออก: {adj.adjustedClockOut ? formatTimeStr(adj.adjustedClockOut) : '-'}
                             </span>
                           </div>
@@ -2373,7 +2373,7 @@ function DailyAttendanceContent() {
 
                         {/* Reason */}
                         <td className="py-3.5 px-4 max-w-xs">
-                          <p className="text-xs text-slate-700 truncate" title={adj.reason}>
+                          <p className="text-xs text-slate-700 truncate dark:text-slate-300" title={adj.reason}>
                             {adj.reason}
                           </p>
                         </td>
@@ -2381,36 +2381,36 @@ function DailyAttendanceContent() {
                         {/* Status Badge */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {adj.status === 'PENDING' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                               <span>รอพิจารณา</span>
                             </span>
                           )}
                           {adj.status === 'APPROVED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
                               <Check className="w-3 h-3 text-emerald-600" />
                               <span>อนุมัติแล้ว</span>
                             </span>
                           )}
                           {adj.status === 'REJECTED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
                               <X className="w-3 h-3 text-rose-600" />
                               <span>ไม่อนุมัติ</span>
                             </span>
                           )}
                           {adj.status === 'CANCELLED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
                               <span>ยกเลิกแล้ว</span>
                             </span>
                           )}
                         </td>
 
                         {/* Reviewer / Review Note */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-2xs text-slate-500">
+                        <td className="py-3.5 px-4 whitespace-nowrap text-2xs text-slate-500 dark:text-slate-400">
                           {adj.reviewedAt ? (
                             <div>
-                              <div className="font-semibold text-slate-700">{adj.reviewedByEmployeeName || 'ผู้ดูแลระบบ'}</div>
-                              <div className="text-slate-400 mt-0.5">{formatDateTimeThai(adj.reviewedAt)}</div>
+                              <div className="font-semibold text-slate-700 dark:text-slate-300">{adj.reviewedByEmployeeName || 'ผู้ดูแลระบบ'}</div>
+                              <div className="text-slate-400 mt-0.5 dark:text-slate-500">{formatDateTimeThai(adj.reviewedAt)}</div>
                             </div>
                           ) : (
                             <span className="text-slate-300">-</span>
@@ -2431,7 +2431,7 @@ function DailyAttendanceContent() {
                               </button>
                               <button
                                 onClick={() => handleOpenReviewModal(adj, 'REJECTED')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
                                 title="ปฏิเสธคำขอ"
                               >
                                 <X className="w-3.5 h-3.5" />
@@ -2439,7 +2439,7 @@ function DailyAttendanceContent() {
                               </button>
                             </div>
                           ) : (
-                            <span className="text-2xs text-slate-400 font-medium">สิ้นสุดแล้ว</span>
+                            <span className="text-2xs text-slate-400 font-medium dark:text-slate-500">สิ้นสุดแล้ว</span>
                           )}
                         </td>
                       </tr>
@@ -2450,7 +2450,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700/60 dark:text-slate-400">
               <div>
                 แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ (หน้า {adjustmentsPage} / {adjustmentsTotalPages})
               </div>
@@ -2458,14 +2458,14 @@ function DailyAttendanceContent() {
                 <button
                   disabled={adjustmentsPage <= 1}
                   onClick={() => setAdjustmentsPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   disabled={adjustmentsPage >= adjustmentsTotalPages}
                   onClick={() => setAdjustmentsPage((p) => Math.min(adjustmentsTotalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -2481,16 +2481,16 @@ function DailyAttendanceContent() {
       {activeTab === 'monthly' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter & Action Toolbar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Month, Year, Department, Search */}
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Month Selector */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
+                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <select
                   value={monthlyMonth}
                   onChange={(e) => setMonthlyMonth(Number(e.target.value))}
-                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold"
+                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold dark:text-slate-200"
                 >
                   {THAI_MONTHS.map((name, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -2501,12 +2501,12 @@ function DailyAttendanceContent() {
               </div>
 
               {/* Year Selector */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
                 <span>ปี</span>
                 <select
                   value={monthlyYear}
                   onChange={(e) => setMonthlyYear(Number(e.target.value))}
-                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold"
+                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-bold dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -2523,7 +2523,7 @@ function DailyAttendanceContent() {
                   const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
                   setMonthlyDepartment(val);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
               >
                 <option value="ALL">ทุกแผนก</option>
                 {departments.map((d) => (
@@ -2535,13 +2535,13 @@ function DailyAttendanceContent() {
 
               {/* Search */}
               <div className="relative w-48 sm:w-56">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
                   value={monthlySearch}
                   onChange={(e) => setMonthlySearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -2549,7 +2549,7 @@ function DailyAttendanceContent() {
               <button
                 onClick={loadMonthlySummary}
                 disabled={monthlyLoading}
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
@@ -2562,12 +2562,12 @@ function DailyAttendanceContent() {
                 type="button"
                 onClick={handleExportMonthlyCsv}
                 disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700"
               >
                 {monthlyExporting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600 dark:text-slate-400" />
                 ) : (
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                 )}
                 <span>ดาวน์โหลด CSV</span>
               </button>
@@ -2596,32 +2596,32 @@ function DailyAttendanceContent() {
           {/* Overview Metric Cards (6 Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Card 1: Total Employees */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">พนักงานทั้งหมด</span>
                 <Users className="w-4 h-4 text-blue-600" />
               </div>
-              <div className="text-xl font-black text-slate-900">
+              <div className="text-xl font-black text-slate-900 dark:text-slate-100">
                 {monthlyData ? monthlyData.totalEmployees.toLocaleString() : '-'}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5">ในรอบเดือนนี้</p>
+              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500">ในรอบเดือนนี้</p>
             </div>
 
             {/* Card 2: Total Planned Work Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานตามแผน</span>
-                <Calendar className="w-4 h-4 text-slate-600" />
+                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
               </div>
-              <div className="text-xl font-black text-slate-800">
+              <div className="text-xl font-black text-slate-800 dark:text-slate-200">
                 {monthlyData ? monthlyData.totalPlannedDays.toLocaleString() : '-'}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5">รวมทุกพนักงาน</p>
+              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500">รวมทุกพนักงาน</p>
             </div>
 
             {/* Card 3: Actual Work Days & Rate */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานจริง</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               </div>
@@ -2633,12 +2633,12 @@ function DailyAttendanceContent() {
                   </span>
                 )}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5">อัตราเข้างานเฉลี่ย</p>
+              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500">อัตราเข้างานเฉลี่ย</p>
             </div>
 
             {/* Card 4: Late Minutes */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">มาสายสะสม</span>
                 <Clock className="w-4 h-4 text-amber-600" />
               </div>
@@ -2646,14 +2646,14 @@ function DailyAttendanceContent() {
                 {monthlyData ? monthlyData.totalLateMinutes.toLocaleString() : '-'}
                 <span className="text-xs font-semibold text-amber-600 ml-1">นาที</span>
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5">
+              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500">
                 {monthlyData ? `${monthlyData.employees.reduce((acc, e) => acc + e.lateDays, 0)} ครั้ง` : '-'}
               </p>
             </div>
 
             {/* Card 5: Leave Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">ลางานสะสม</span>
                 <FileText className="w-4 h-4 text-blue-600" />
               </div>
@@ -2665,8 +2665,8 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Card 6: Absent Days */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 mb-1.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="flex items-center justify-between text-slate-500 mb-1.5 dark:text-slate-400">
                 <span className="text-2xs font-bold uppercase tracking-wider">ขาดงานสะสม</span>
                 <XCircle className="w-4 h-4 text-rose-600" />
               </div>
@@ -2674,20 +2674,20 @@ function DailyAttendanceContent() {
                 {monthlyData ? monthlyData.totalAbsentDays.toLocaleString() : '-'}
                 <span className="text-xs font-semibold text-rose-600 ml-1">วัน</span>
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5">ไม่รวมวันลาอนุมัติ</p>
+              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500">ไม่รวมวันลาอนุมัติ</p>
             </div>
           </div>
 
           {/* Table of Employees */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
             {/* Table Header / Subtitle */}
-            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
+            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50 dark:border-slate-700/60">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
                   <BarChart3 className="w-4 h-4 text-[#0B2046]" />
                   <span>สรุปเวลาทำงานประจำเดือน {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}</span>
                 </h3>
-                <p className="text-2xs text-slate-500 mt-0.5">
+                <p className="text-2xs text-slate-500 mt-0.5 dark:text-slate-400">
                   {monthlyData?.lastProcessedAt ? (
                     <span className="text-emerald-700 font-semibold">
                       ✓ ประมวลผลล่าสุดเมื่อ {new Date(monthlyData.lastProcessedAt).toLocaleString('th-TH')}
@@ -2699,7 +2699,7 @@ function DailyAttendanceContent() {
                   )}
                 </p>
               </div>
-              <div className="text-xs font-semibold text-slate-600">
+              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                 จำนวนพนักงาน: <span className="font-bold text-[#0B2046]">{filteredMonthlyEmployees.length}</span> คน
               </div>
             </div>
@@ -2708,7 +2708,7 @@ function DailyAttendanceContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider">
+                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:bg-slate-800/60 dark:text-slate-400">
                     <th className="py-3 px-3.5">รหัสพนักงาน</th>
                     <th className="py-3 px-3.5">ชื่อ-นามสกุล</th>
                     <th className="py-3 px-3.5">แผนก / ตำแหน่ง</th>
@@ -2722,10 +2722,10 @@ function DailyAttendanceContent() {
                     <th className="py-3 px-3 text-center">สถานะ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {monthlyLoading ? (
                     <tr>
-                      <td colSpan={11} className="py-12 text-center text-slate-400">
+                      <td colSpan={11} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                           <span className="text-xs">กำลังคำนวณและดึงข้อมูลสรุปประจำเดือน...</span>
@@ -2734,28 +2734,28 @@ function DailyAttendanceContent() {
                     </tr>
                   ) : filteredMonthlyEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="py-12 text-center text-slate-400">
+                      <td colSpan={11} className="py-12 text-center text-slate-400 dark:text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Users className="w-8 h-8 text-slate-300" />
-                          <span className="text-xs font-semibold text-slate-600">ไม่พบข้อมูลสรุปเวลาทำงานของพนักงาน</span>
-                          <span className="text-2xs text-slate-400">ลองเปลี่ยนเงื่อนไขการค้นหา หรือเลือกเดือน/ปีอื่น</span>
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">ไม่พบข้อมูลสรุปเวลาทำงานของพนักงาน</span>
+                          <span className="text-2xs text-slate-400 dark:text-slate-500">ลองเปลี่ยนเงื่อนไขการค้นหา หรือเลือกเดือน/ปีอื่น</span>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     filteredMonthlyEmployees.map((emp) => (
                       <tr key={emp.employeeId} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                        <td className="py-3 px-3.5 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                           {emp.employeeCode}
                         </td>
                         <td className="py-3 px-3.5 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">{emp.employeeName}</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">{emp.employeeName}</div>
                         </td>
-                        <td className="py-3 px-3.5 whitespace-nowrap text-2xs text-slate-500">
+                        <td className="py-3 px-3.5 whitespace-nowrap text-2xs text-slate-500 dark:text-slate-400">
                           <div>{emp.departmentName || '-'}</div>
-                          <div className="text-slate-400">{emp.positionName || '-'}</div>
+                          <div className="text-slate-400 dark:text-slate-500">{emp.positionName || '-'}</div>
                         </td>
-                        <td className="py-3 px-2 text-center font-bold text-slate-700">
+                        <td className="py-3 px-2 text-center font-bold text-slate-700 dark:text-slate-300">
                           {emp.totalWorkDays}
                         </td>
                         <td className="py-3 px-2 text-center font-bold text-emerald-700">
@@ -2767,7 +2767,7 @@ function DailyAttendanceContent() {
                               {emp.lateDays} ครั้ง ({emp.lateMinutes}น.)
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-400 dark:text-slate-500">-</span>
                           )}
                         </td>
                         <td className="py-3 px-2 text-center whitespace-nowrap">
@@ -2776,25 +2776,25 @@ function DailyAttendanceContent() {
                               {emp.earlyLeaveDays} ครั้ง ({emp.earlyLeaveMinutes}น.)
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-400 dark:text-slate-500">-</span>
                           )}
                         </td>
                         <td className="py-3 px-2 text-center">
                           {emp.leaveDays > 0 ? (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-2xs border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-2xs border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
                               {Number(emp.leaveDays).toFixed(1)} วัน
                             </span>
                           ) : (
-                            <span className="text-slate-400">0</span>
+                            <span className="text-slate-400 dark:text-slate-500">0</span>
                           )}
                         </td>
                         <td className="py-3 px-2 text-center">
                           {emp.absentDays > 0 ? (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-black text-2xs border border-rose-200">
+                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-black text-2xs border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
                               {emp.absentDays} วัน
                             </span>
                           ) : (
-                            <span className="text-slate-400">0</span>
+                            <span className="text-slate-400 dark:text-slate-500">0</span>
                           )}
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -2810,7 +2810,7 @@ function DailyAttendanceContent() {
                             >
                               {emp.attendanceRate}%
                             </span>
-                            <div className="w-14 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-14 bg-slate-100 rounded-full h-1.5 overflow-hidden dark:bg-slate-800">
                               <div
                                 className={`h-full rounded-full ${
                                   emp.attendanceRate >= 90
@@ -2826,12 +2826,12 @@ function DailyAttendanceContent() {
                         </td>
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           {emp.hasProcessedSummary ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                               <span>ประมวลผลแล้ว</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
                               <span>รอดำเนินการ</span>
                             </span>
                           )}
@@ -2849,22 +2849,22 @@ function DailyAttendanceContent() {
       {/* Edit Record Modal */}
       {editModalOpen && editingRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                   <Edit2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">แก้ไขข้อมูลบันทึกเวลา</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">แก้ไขข้อมูลบันทึกเวลา</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     {editingRecord.employeeCode} - {editingRecord.employeeName}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setEditModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2872,7 +2872,7 @@ function DailyAttendanceContent() {
 
             <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 dark:text-slate-300">
                   กะการทำงาน (Shift)
                 </label>
                 <select
@@ -2881,7 +2881,7 @@ function DailyAttendanceContent() {
                     const val = e.target.value ? Number(e.target.value) : undefined;
                     setEditForm((prev) => ({ ...prev, shiftId: val }));
                   }}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value="">ไม่ได้ระบุกะ</option>
                   {shifts.map((s) => (
@@ -2909,13 +2909,13 @@ function DailyAttendanceContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 dark:text-slate-300">
                   สถานะการเข้างาน (Status)
                 </label>
                 <select
                   value={editForm.status}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value="PRESENT">ตรงเวลา (PRESENT)</option>
                   <option value="LATE">มาสาย (LATE)</option>
@@ -2934,17 +2934,17 @@ function DailyAttendanceContent() {
                     type="checkbox"
                     checked={editForm.isAbsent}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, isAbsent: e.target.checked }))}
-                    className="w-4 h-4 rounded text-rose-600 border-slate-300 focus:ring-rose-500"
+                    className="w-4 h-4 rounded text-rose-600 border-slate-300 focus:ring-rose-500 dark:border-slate-600"
                   />
                   <span className="text-xs font-semibold text-rose-700">ระบุเป็น ขาดงาน (Absent)</span>
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -2965,24 +2965,24 @@ function DailyAttendanceContent() {
       {/* Manual Punch Modal */}
       {clockModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
                 <div className={`p-2 rounded-xl ${clockModalType === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-purple-50 text-purple-600'}`}>
                   {clockModalType === 'in' ? <LogIn className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     บันทึกเวลา{clockModalType === 'in' ? 'เข้างาน' : 'ออกงาน'}ด้วยตนเอง
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     วันที่ {formatThaiDate(selectedDate)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setClockModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2990,14 +2990,14 @@ function DailyAttendanceContent() {
 
             <form onSubmit={handleSaveQuickClock} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 dark:text-slate-300">
                   เลือกพนักงาน <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={clockEmpId}
                   onChange={(e) => setClockEmpId(Number(e.target.value))}
                   required
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value={0}>-- กรุณาเลือกพนักงาน --</option>
                   {records.map((r) => (
@@ -3016,11 +3016,11 @@ function DailyAttendanceContent() {
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setClockModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -3041,34 +3041,34 @@ function DailyAttendanceContent() {
       {/* Error Log Modal */}
       {selectedBatchForErrors && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 dark:border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200">
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     รายการข้อผิดพลาดของการนำเข้า (Error Logs)
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     ชุดที่ #{selectedBatchForErrors.id} | ไฟล์: {selectedBatchForErrors.fileName} ({errorTotalCount.toLocaleString()} รายการ)
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedBatchForErrors(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-5 overflow-y-auto flex-1">
-              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl dark:border-slate-700">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:bg-slate-800/60 dark:text-slate-400">
                       <th className="py-3 px-3.5 whitespace-nowrap text-center">แถวที่</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">ชื่อพนักงาน</th>
@@ -3077,36 +3077,36 @@ function DailyAttendanceContent() {
                       <th className="py-3 px-3.5 whitespace-nowrap text-rose-600">สาเหตุข้อผิดพลาด</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {isLoadingErrors ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                        <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-1" />
                           กำลังโหลด Error Logs...
                         </td>
                       </tr>
                     ) : errorLogs.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                        <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           ไม่พบรายการข้อผิดพลาดในชุดนี้
                         </td>
                       </tr>
                     ) : (
                       errorLogs.map((err) => (
                         <tr key={err.id} className="hover:bg-rose-50/30 transition-colors">
-                          <td className="py-3 px-3.5 text-center font-bold text-slate-700 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-center font-bold text-slate-700 whitespace-nowrap dark:text-slate-300">
                             {err.rowNumber}
                           </td>
-                          <td className="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                          <td className="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                             {err.employeeCode || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap dark:text-slate-200">
                             {err.employeeName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap dark:text-slate-400">
                             {err.departmentName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap dark:text-slate-400">
                             {err.rawPunchTimestamp || '-'}
                           </td>
                           <td className="py-3 px-3.5 font-semibold text-rose-600 whitespace-nowrap">
@@ -3120,8 +3120,8 @@ function DailyAttendanceContent() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs">
-              <span className="text-slate-500">
+            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs dark:border-slate-700">
+              <span className="text-slate-500 dark:text-slate-400">
                 แสดงหน้า {errorPage} จาก {errorTotalPages || 1} หน้า
               </span>
               <div className="flex items-center gap-2">
@@ -3132,7 +3132,7 @@ function DailyAttendanceContent() {
                     setErrorPage(nextP);
                     loadErrorLogs(selectedBatchForErrors.id, nextP);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
                 >
                   ย้อนกลับ
                 </button>
@@ -3143,7 +3143,7 @@ function DailyAttendanceContent() {
                     setErrorPage(nextP);
                     loadErrorLogs(selectedBatchForErrors.id, nextP);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
                 >
                   ถัดไป
                 </button>
@@ -3162,34 +3162,34 @@ function DailyAttendanceContent() {
       {/* Time Review Modal (ตรวจเวลา) */}
       {selectedBatchForReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-5xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="bg-white w-full max-w-5xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] dark:bg-slate-800 dark:border-slate-700">
             {/* Header */}
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 dark:border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
                   <Eye className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     ตรวจสอบเวลาเข้า-ออกงาน
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     ชุดที่ #{selectedBatchForReview.id} | ไฟล์: {selectedBatchForReview.fileName} ({batchRecordTotalCount.toLocaleString()} รายการ)
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedBatchForReview(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Search & Page Size Toolbar */}
-            <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3">
+            <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60 dark:bg-slate-900">
               <div className="relative flex-1 min-w-[220px] max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
@@ -3201,7 +3201,7 @@ function DailyAttendanceContent() {
                       loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
                     }
                   }}
-                  className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                  className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 {batchRecordSearch && (
                   <button
@@ -3211,7 +3211,7 @@ function DailyAttendanceContent() {
                       setBatchRecordPage(1);
                       loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, '');
                     }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full dark:text-slate-500"
                     title="ล้างคำค้นหา"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -3232,9 +3232,9 @@ function DailyAttendanceContent() {
                   ค้นหา
                 </button>
 
-                <div className="h-4 w-px bg-slate-200" />
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
 
-                <div className="flex items-center gap-2 text-xs text-slate-600">
+                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                   <span className="whitespace-nowrap font-medium">แสดงหน้าละ:</span>
                   <select
                     value={batchRecordPageSize}
@@ -3244,7 +3244,7 @@ function DailyAttendanceContent() {
                       setBatchRecordPage(1);
                       loadBatchRecords(selectedBatchForReview.id, 1, newSize, batchRecordSearch);
                     }}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer font-medium"
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                   >
                     <option value={10}>10 คน / หน้า</option>
                     <option value={20}>20 คน / หน้า</option>
@@ -3257,10 +3257,10 @@ function DailyAttendanceContent() {
 
             {/* Table */}
             <div className="p-5 overflow-y-auto flex-1">
-              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl dark:border-slate-700">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:bg-slate-800/60 dark:text-slate-400">
                       <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">ชื่อพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">แผนก</th>
@@ -3272,17 +3272,17 @@ function DailyAttendanceContent() {
                       <th className="py-3 px-3.5 whitespace-nowrap text-center">สถานะ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {isLoadingBatchRecords ? (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-400">
+                        <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-1" />
                           กำลังโหลดข้อมูล...
                         </td>
                       </tr>
                     ) : batchRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-400">
+                        <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           {batchRecordSearch
                             ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${batchRecordSearch}"`
                             : 'ไม่พบข้อมูลบันทึกเวลาในชุดนี้'}
@@ -3291,16 +3291,16 @@ function DailyAttendanceContent() {
                     ) : (
                       batchRecords.map((rec) => (
                         <tr key={rec.id} className="hover:bg-blue-50/20 transition-colors">
-                          <td className="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                          <td className="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                             {rec.employeeCode}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap dark:text-slate-200">
                             {rec.employeeName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap dark:text-slate-400">
                             {rec.departmentName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-700 whitespace-nowrap font-medium">
+                          <td className="py-3 px-3.5 text-slate-700 whitespace-nowrap font-medium dark:text-slate-300">
                             {rec.workDate
                               ? (() => {
                                   const d = new Date(rec.workDate);
@@ -3315,7 +3315,7 @@ function DailyAttendanceContent() {
                                 {rec.actualIn}
                               </span>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-400 dark:text-slate-500">-</span>
                             )}
                           </td>
                           <td className="py-3 px-3.5 text-center whitespace-nowrap">
@@ -3325,17 +3325,17 @@ function DailyAttendanceContent() {
                                 {rec.actualOut}
                               </span>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-400 dark:text-slate-500">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-3.5 text-center text-slate-700 whitespace-nowrap">
+                          <td className="py-3 px-3.5 text-center text-slate-700 whitespace-nowrap dark:text-slate-300">
                             {rec.isAbsent ? '-' : `${Math.floor(rec.workedMinutes / 60)}:${String(rec.workedMinutes % 60).padStart(2, '0')}`}
                           </td>
                           <td className="py-3 px-3.5 text-center whitespace-nowrap">
                             {rec.lateMinutes > 0 ? (
                               <span className="font-semibold text-amber-600">{rec.lateMinutes}</span>
                             ) : (
-                              <span className="text-slate-400">0</span>
+                              <span className="text-slate-400 dark:text-slate-500">0</span>
                             )}
                           </td>
                           <td className="py-3 px-3.5 text-center whitespace-nowrap">
@@ -3350,18 +3350,18 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Footer Pagination */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3 text-xs dark:border-slate-700">
               <div className="flex items-center gap-3">
-                <span className="text-slate-500">
-                  แสดงหน้า <strong className="font-bold text-slate-800">{batchRecordPage}</strong> จาก{' '}
-                  <strong className="font-bold text-slate-800">{batchRecordTotalPages || 1}</strong> หน้า
+                <span className="text-slate-500 dark:text-slate-400">
+                  แสดงหน้า <strong className="font-bold text-slate-800 dark:text-slate-200">{batchRecordPage}</strong> จาก{' '}
+                  <strong className="font-bold text-slate-800 dark:text-slate-200">{batchRecordTotalPages || 1}</strong> หน้า
                   {batchRecordTotalCount > 0 && ` (ทั้งหมด ${batchRecordTotalCount.toLocaleString()} รายการ)`}
                 </span>
 
                 {batchRecordTotalPages > 1 && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-300">|</span>
-                    <span className="text-slate-600 font-medium">ไปที่หน้า:</span>
+                    <span className="text-slate-600 font-medium dark:text-slate-400">ไปที่หน้า:</span>
                     <select
                       value={batchRecordPage}
                       onChange={(e) => {
@@ -3369,7 +3369,7 @@ function DailyAttendanceContent() {
                         setBatchRecordPage(targetP);
                         loadBatchRecords(selectedBatchForReview.id, targetP, batchRecordPageSize, batchRecordSearch);
                       }}
-                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                     >
                       {Array.from({ length: batchRecordTotalPages }, (_, i) => i + 1).map((p) => (
                         <option key={p} value={p}>
@@ -3389,7 +3389,7 @@ function DailyAttendanceContent() {
                     setBatchRecordPage(nextP);
                     loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   ย้อนกลับ
@@ -3401,7 +3401,7 @@ function DailyAttendanceContent() {
                     setBatchRecordPage(nextP);
                     loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
                 >
                   ถัดไป
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -3421,34 +3421,34 @@ function DailyAttendanceContent() {
       {/* Revert / Delete Batch Confirmation Modal */}
       {revertModalOpen && batchToRevert && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 dark:bg-slate-900 dark:border-slate-700/60">
             <div className="flex items-center gap-3 text-rose-600 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
                 <Trash2 className="w-6 h-6 text-rose-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">ยืนยันยกเลิกชุดข้อมูลนำเข้า?</h3>
-                <p className="text-xs text-slate-500">ชุดข้อมูล #{batchToRevert.id}</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ยืนยันยกเลิกชุดข้อมูลนำเข้า?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">ชุดข้อมูล #{batchToRevert.id}</p>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2 text-xs mb-4">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2 text-xs mb-4 dark:bg-slate-950 dark:border-slate-700/80">
               <div className="flex justify-between">
-                <span className="text-slate-500">ชื่อไฟล์:</span>
-                <span className="font-semibold text-slate-900 truncate max-w-[200px]" title={batchToRevert.fileName || ''}>
+                <span className="text-slate-500 dark:text-slate-400">ชื่อไฟล์:</span>
+                <span className="font-semibold text-slate-900 truncate max-w-[200px] dark:text-slate-100" title={batchToRevert.fileName || ''}>
                   {batchToRevert.fileName || '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">ช่วงวันที่ในเอกสาร:</span>
-                <span className="font-semibold text-slate-900">
+                <span className="text-slate-500 dark:text-slate-400">ช่วงวันที่ในเอกสาร:</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {batchToRevert.dateFrom && batchToRevert.dateTo
                     ? `${formatThaiDate(batchToRevert.dateFrom)} - ${formatThaiDate(batchToRevert.dateTo)}`
                     : batchToRevert.dateFrom || '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">รายการที่นำเข้าสำเร็จ:</span>
+                <span className="text-slate-500 dark:text-slate-400">รายการที่นำเข้าสำเร็จ:</span>
                 <span className="font-semibold text-emerald-600">
                   {batchToRevert.successRecords.toLocaleString()} รายการ
                 </span>
@@ -3477,7 +3477,7 @@ function DailyAttendanceContent() {
                   setRevertModalOpen(false);
                   setBatchToRevert(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 ยกเลิก
               </button>
@@ -3509,16 +3509,16 @@ function DailyAttendanceContent() {
       {/* ------------------------------------------------------------- */}
       {adjustmentModalOpen && targetRecordForAdjustment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 dark:bg-slate-900 dark:border-slate-700/60">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
                   <ClipboardCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     {targetRecordForAdjustment.employeeCode} - {targetRecordForAdjustment.employeeName}
                   </p>
                 </div>
@@ -3528,34 +3528,34 @@ function DailyAttendanceContent() {
                   setAdjustmentModalOpen(false);
                   setTargetRecordForAdjustment(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Context Info Box */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs dark:bg-slate-950 dark:border-slate-700/80">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">วันที่ปฏิบัติงาน:</span>
-                <span className="font-bold text-slate-900">
+                <span className="text-slate-500 dark:text-slate-400">วันที่ปฏิบัติงาน:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">
                   {formatThaiDate(targetRecordForAdjustment.workDate)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">แผนก / กะการทำงาน:</span>
-                <span className="font-semibold text-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">แผนก / กะการทำงาน:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {targetRecordForAdjustment.departmentName || '-'} ({targetRecordForAdjustment.shiftName || 'ไม่ระบุกะ'})
                 </span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500">เวลาเดิมในระบบ:</span>
+                <span className="text-slate-500 dark:text-slate-400">เวลาเดิมในระบบ:</span>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
+                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold dark:bg-slate-700 dark:text-slate-300">
                     เข้า: {targetRecordForAdjustment.actualIn ? formatTimeStr(targetRecordForAdjustment.actualIn) : 'ไม่มี'}
                   </span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
+                  <span className="text-slate-400 dark:text-slate-500">→</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold dark:bg-slate-700 dark:text-slate-300">
                     ออก: {targetRecordForAdjustment.actualOut ? formatTimeStr(targetRecordForAdjustment.actualOut) : 'ไม่มี'}
                   </span>
                 </div>
@@ -3579,7 +3579,7 @@ function DailyAttendanceContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 dark:text-slate-300">
                   เหตุผลในการขอปรับปรุงเวลา <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -3587,7 +3587,7 @@ function DailyAttendanceContent() {
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value)}
                   placeholder="ระบุเหตุผล เช่น ลืมสแกนนิ้วมือ, เครื่องสแกนขัดข้อง, ไปปฏิบัติงานนอกสถานที่ ฯลฯ"
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
                   required
                 />
               </div>
@@ -3608,7 +3608,7 @@ function DailyAttendanceContent() {
                     setAdjustmentModalOpen(false);
                     setTargetRecordForAdjustment(null);
                   }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -3640,9 +3640,9 @@ function DailyAttendanceContent() {
       {/* ------------------------------------------------------------- */}
       {reviewModalOpen && selectedAdjustmentForReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 dark:bg-slate-900 dark:border-slate-700/60">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
                 <div
                   className={`p-2.5 rounded-xl border ${
@@ -3658,12 +3658,12 @@ function DailyAttendanceContent() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {reviewAction === 'APPROVED'
                       ? 'ยืนยันอนุมัติคำขอปรับปรุงเวลา'
                       : 'ยืนยันปฏิเสธคำขอปรับปรุงเวลา'}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     คำขอ REQ-{selectedAdjustmentForReview.id.toString().padStart(5, '0')} • {selectedAdjustmentForReview.employeeName}
                   </p>
                 </div>
@@ -3673,29 +3673,29 @@ function DailyAttendanceContent() {
                   setReviewModalOpen(false);
                   setSelectedAdjustmentForReview(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-500 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Request Summary Box */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs dark:bg-slate-950 dark:border-slate-700/80">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">พนักงาน:</span>
-                <span className="font-bold text-slate-900">
+                <span className="text-slate-500 dark:text-slate-400">พนักงาน:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">
                   {selectedAdjustmentForReview.employeeCode} - {selectedAdjustmentForReview.employeeName}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">วันที่ทำงาน:</span>
-                <span className="font-semibold text-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">วันที่ทำงาน:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {formatThaiDate(selectedAdjustmentForReview.workDate)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">เวลาเดิม:</span>
-                <span className="text-slate-600 font-medium">
+                <span className="text-slate-500 dark:text-slate-400">เวลาเดิม:</span>
+                <span className="text-slate-600 font-medium dark:text-slate-400">
                   {selectedAdjustmentForReview.originalClockIn
                     ? formatTimeStr(selectedAdjustmentForReview.originalClockIn)
                     : '-'}{' '}
@@ -3706,8 +3706,8 @@ function DailyAttendanceContent() {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">เวลาใหม่ที่ขอปรับ:</span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                <span className="text-slate-500 dark:text-slate-400">เวลาใหม่ที่ขอปรับ:</span>
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400">
                   {selectedAdjustmentForReview.adjustedClockIn
                     ? formatTimeStr(selectedAdjustmentForReview.adjustedClockIn)
                     : '-'}{' '}
@@ -3718,8 +3718,8 @@ function DailyAttendanceContent() {
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500 block mb-1">เหตุผลที่ยื่น:</span>
-                <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 text-xs italic">
+                <span className="text-slate-500 block mb-1 dark:text-slate-400">เหตุผลที่ยื่น:</span>
+                <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 text-xs italic dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
                   &ldquo;{selectedAdjustmentForReview.reason}&rdquo;
                 </p>
               </div>
@@ -3727,7 +3727,7 @@ function DailyAttendanceContent() {
 
             {/* Review Note */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 dark:text-slate-300">
                 หมายเหตุ / คำชี้แจงจากผู้อนุมัติ (Optional)
               </label>
               <textarea
@@ -3735,7 +3735,7 @@ function DailyAttendanceContent() {
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติมประกอบการพิจารณา..."
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -3765,7 +3765,7 @@ function DailyAttendanceContent() {
                   setReviewModalOpen(false);
                   setSelectedAdjustmentForReview(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 ยกเลิก
               </button>
@@ -3808,7 +3808,7 @@ export default function DailyAttendancePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500">
           <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
           <p className="text-sm">กำลังโหลดข้อมูลบันทึกเวลา...</p>
         </div>

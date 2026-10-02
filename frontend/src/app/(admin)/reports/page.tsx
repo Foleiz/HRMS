@@ -368,7 +368,7 @@ export default function ReportsPage() {
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewHeadcount && (
             <button
@@ -443,23 +443,23 @@ export default function ReportsPage() {
       {activeTab === 'headcount' && canViewHeadcount && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 font-medium">วันที่:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">วันที่:</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 />
               </div>
 
               {/* Division Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Building2 className="w-4 h-4 text-slate-400" />
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <select
                   value={selectedDivision}
                   onChange={(e) => {
@@ -467,7 +467,7 @@ export default function ReportsPage() {
                     setSelectedDivision(val);
                     setSelectedDepartment('ALL');
                   }}
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">ฝ่ายทั้งหมด</option>
                   {divisions.map((div) => (
@@ -479,13 +479,13 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <select
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments
@@ -502,7 +502,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadDailyHeadcount}
                 disabled={isLoadingHeadcount}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingHeadcount ? 'animate-spin text-blue-600' : ''}`} />
@@ -529,27 +529,27 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {headcountData && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500">พนักงานทั้งหมด</span>
-                <div className="text-2xl font-extrabold text-slate-900">{headcountData.totalEmployees} คน</div>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+                <span className="text-xs text-slate-500 dark:text-slate-400">พนักงานทั้งหมด</span>
+                <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{headcountData.totalEmployees} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-emerald-600 font-medium">มาปฏิบัติงาน</span>
                 <div className="text-2xl font-extrabold text-emerald-600">{headcountData.totalPresent} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-amber-600 font-medium">มาสาย</span>
                 <div className="text-2xl font-extrabold text-amber-600">{headcountData.totalLate} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-rose-600 font-medium">ขาดงาน / ยังไม่ลงเวลา</span>
                 <div className="text-2xl font-extrabold text-rose-600">{headcountData.totalAbsent} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 lg:col-span-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 lg:col-span-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างาน</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%</div>
               </div>
@@ -558,13 +558,13 @@ export default function ReportsPage() {
 
           {/* Notice when current date has no check-ins yet */}
           {headcountData && headcountData.totalPresent === 0 && headcountData.totalEmployees > 0 && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400">
               <div>
-                <span className="font-semibold text-slate-800">วันที่ {selectedDate}:</span> ยังไม่มีรายการลงเวลาทำงานของพนักงานในระบบ (ข้อมูลการลงเวลาล่าสุดคือวันที่ 14 ก.ย. 2569)
+                <span className="font-semibold text-slate-800 dark:text-slate-200">วันที่ {selectedDate}:</span> ยังไม่มีรายการลงเวลาทำงานของพนักงานในระบบ (ข้อมูลการลงเวลาล่าสุดคือวันที่ 14 ก.ย. 2569)
               </div>
               <button
                 onClick={() => setSelectedDate('2026-09-14')}
-                className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 transition-colors shadow-xs whitespace-nowrap"
+                className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 transition-colors shadow-xs whitespace-nowrap dark:bg-slate-800 dark:border-slate-600 dark:hover:bg-slate-800 dark:text-slate-200"
               >
                 ดูข้อมูลวันที่ 14 ก.ย. 2569
               </button>
@@ -572,30 +572,30 @@ export default function ReportsPage() {
           )}
 
           {/* Table Breakdown by Department */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
                 ตารางสรุปอัตรากำลังคนจำแนกตามแผนก
               </h3>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
                 {headcountData?.departments.length || 0} แผนก
               </span>
             </div>
 
             {isLoadingHeadcount ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
                 กำลังโหลดข้อมูลอัตรากำลังคน...
               </div>
             ) : !headcountData || headcountData.departments.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm">
+              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500">
                 ไม่พบข้อมูลแผนกตามตัวกรองที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">รหัสแผนก</th>
                       <th className="py-3 px-4">ชื่อแผนก</th>
@@ -608,19 +608,19 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-center">อัตราการเข้างาน</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {headcountData.departments.map((dept) => (
-                      <tr key={dept.departmentId} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono text-xs font-semibold text-slate-700">
+                      <tr key={dept.departmentId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3 px-4 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
                           {dept.departmentCode}
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-900">
+                        <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
                           {dept.departmentName}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-500">
+                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
                           {dept.divisionName}
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800">
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
                           {dept.totalHeadcount}
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-emerald-600">
@@ -637,7 +637,7 @@ export default function ReportsPage() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <div className="inline-flex items-center gap-2">
-                            <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800">
                               <div
                                 className={`h-full rounded-full ${
                                   dept.attendanceRate >= 90
@@ -649,7 +649,7 @@ export default function ReportsPage() {
                                 style={{ width: `${Math.min(100, Math.max(0, dept.attendanceRate))}%` }}
                               ></div>
                             </div>
-                            <span className="text-xs font-bold text-slate-700 min-w-[36px]">
+                            <span className="text-xs font-bold text-slate-700 min-w-[36px] dark:text-slate-300">
                               {Math.min(100, Math.max(0, dept.attendanceRate))}%
                             </span>
                           </div>
@@ -670,15 +670,15 @@ export default function ReportsPage() {
       {activeTab === 'lateness' && canViewLateness && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <span className="text-xs text-slate-500 font-medium">เดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เดือน:</span>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -689,12 +689,12 @@ export default function ReportsPage() {
               </div>
 
               {/* Year Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <span className="text-xs text-slate-500 font-medium">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -705,13 +705,13 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <select
                   value={latenessDepartment}
                   onChange={(e) =>
                     setLatenessDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments.map((dept) => (
@@ -724,13 +724,13 @@ export default function ReportsPage() {
 
               {/* Search Box */}
               <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
                   value={latenessSearch}
                   onChange={(e) => setLatenessSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-48 sm:w-56"
+                  className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-48 sm:w-56 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                 />
               </div>
 
@@ -738,7 +738,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadMonthlyLateness}
                 disabled={isLoadingLateness}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingLateness ? 'animate-spin text-blue-600' : ''}`} />
@@ -765,24 +765,24 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {latenessData && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500">พนักงานที่ตรวจสอบ</span>
-                <div className="text-2xl font-extrabold text-slate-900">{latenessData.totalAuditedEmployees} คน</div>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+                <span className="text-xs text-slate-500 dark:text-slate-400">พนักงานที่ตรวจสอบ</span>
+                <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{latenessData.totalAuditedEmployees} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-amber-600 font-medium">การมาสายรวม</span>
                 <div className="text-2xl font-extrabold text-amber-600">{latenessData.totalLateOccurrences} ครั้ง</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-orange-600 font-medium">เวลารวมที่สาย</span>
                 <div className="text-2xl font-extrabold text-orange-600">
-                  {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400">นาที</span>
+                  {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">นาที</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างานเฉลี่ย</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%</div>
               </div>
@@ -790,30 +790,30 @@ export default function ReportsPage() {
           )}
 
           {/* Detailed Table per Employee */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <FileSpreadsheet className="w-4 h-4 text-amber-600" />
                 ตารางสรุปเวลาทำงานและการมาสายรายบุคคล
               </h3>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
                 {latenessData?.items.length || 0} คน
               </span>
             </div>
 
             {isLoadingLateness ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
                 กำลังโหลดรายงานการมาสาย...
               </div>
             ) : !latenessData || latenessData.items.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm">
+              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500">
                 ไม่พบข้อมูลพนักงานตามเงื่อนไขที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">พนักงาน</th>
                       <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
@@ -825,18 +825,18 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-center">อัตราการเข้างาน</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {latenessData.items.map((item) => (
-                      <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-900 block">{item.employeeName}</span>
-                          <span className="text-xs font-mono text-slate-400">รหัส {item.employeeCode}</span>
+                          <span className="font-semibold text-slate-900 block dark:text-slate-100">{item.employeeName}</span>
+                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {item.employeeCode}</span>
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-600">
-                          <span className="font-medium text-slate-800 block">{item.departmentName}</span>
-                          <span className="text-slate-400">{item.positionName}</span>
+                        <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
+                          <span className="font-medium text-slate-800 block dark:text-slate-200">{item.departmentName}</span>
+                          <span className="text-slate-400 dark:text-slate-500">{item.positionName}</span>
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800">
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
                           {item.totalWorkDays} วัน
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-emerald-600">
@@ -898,16 +898,16 @@ export default function ReportsPage() {
       {activeTab === 'tax' && canViewTax && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 font-medium">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={taxYear}
                   onChange={(e) => setTaxYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -918,13 +918,13 @@ export default function ReportsPage() {
               </div>
 
               {/* Month Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <CalendarDays className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 font-medium">งวดเดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">งวดเดือน:</span>
                 <select
                   value={taxMonth}
                   onChange={(e) => setTaxMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -935,14 +935,14 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Building2 className="w-4 h-4 text-slate-400" />
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <select
                   value={taxDepartment}
                   onChange={(e) =>
                     setTaxDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments.map((dept) => (
@@ -954,8 +954,8 @@ export default function ReportsPage() {
               </div>
 
               {/* Search Box */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Search className="w-4 h-4 text-slate-400" />
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ/รหัส/บัตรประชาชน..."
@@ -964,7 +964,7 @@ export default function ReportsPage() {
                     setTaxSearch(e.target.value);
                     setTaxPage(1);
                   }}
-                  className="text-xs text-slate-800 bg-transparent focus:outline-none w-44"
+                  className="text-xs text-slate-800 bg-transparent focus:outline-none w-44 dark:text-slate-200"
                 />
               </div>
 
@@ -972,7 +972,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadPayrollTax}
                 disabled={isLoadingTax}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingTax ? 'animate-spin text-blue-600' : ''}`} />
@@ -1014,78 +1014,78 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {taxData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-medium">เงินได้พึงประเมินรวม</span>
+                  <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
                   <DollarSign className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
                   {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
+                <div className="text-2xs text-slate-400 dark:text-slate-500">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-rose-600 font-medium">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
                   <Receipt className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
                   {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
                 </div>
                 <div className="text-2xs text-rose-500">
                   มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-600 font-medium">นำส่งประกันสังคม (สปส. 1-10)</span>
                   <ShieldCheck className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-blue-700">
                   {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-500 flex justify-between">
+                <div className="text-2xs text-slate-500 flex justify-between dark:text-slate-400">
                   <span>ลูกจ้าง: {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                   <span>นายจ้าง: {taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-emerald-600 font-medium">เงินเดือนสุทธินำจ่าย</span>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-700">
                   {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400">
-                  สถานะรอบ: <span className="font-semibold text-slate-700">{taxData.periodStatus}</span>
+                <div className="text-2xs text-slate-400 dark:text-slate-500">
+                  สถานะรอบ: <span className="font-semibold text-slate-700 dark:text-slate-300">{taxData.periodStatus}</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Detailed Tax & SSO Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                <h3 className="font-bold text-slate-800 text-sm">
+                <h3 className="font-bold text-slate-800 text-sm dark:text-slate-200">
                   ตารางจำแนกภาษีเงินได้หัก ณ ที่จ่าย และเงินสมทบประกันสังคมรายบุคคล
                 </h3>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   ทั้งหมด {filteredTaxItems.length} รายการ
                 </span>
                 {/* Rows per page */}
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span>แสดง</span>
                   <select
                     value={taxRowsPerPage}
@@ -1093,7 +1093,7 @@ export default function ReportsPage() {
                       setTaxRowsPerPage(Number(e.target.value));
                       setTaxPage(1);
                     }}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs bg-slate-50 focus:outline-none"
+                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs bg-slate-50 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                   >
                     <option value={5}>5</option>
                     <option value={10}>10</option>
@@ -1105,12 +1105,12 @@ export default function ReportsPage() {
             </div>
 
             {isLoadingTax ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานภาษีและประกันสังคม...
               </div>
             ) : filteredTaxItems.length === 0 ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 {taxData?.periodStatus === 'NONE'
                   ? `ไม่พบข้อมูลงวดการจ่ายเงินเดือนประจำเดือน ${thaiMonths[taxMonth - 1]} ${taxYear + 543}`
                   : 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา'}
@@ -1118,7 +1118,7 @@ export default function ReportsPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4 text-center w-12">ลำดับ</th>
                       <th className="py-3 px-4">พนักงาน</th>
@@ -1132,25 +1132,25 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-right text-emerald-700">เงินได้สุทธิ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {pagedTaxItems.map((item, idx) => {
                       const rowNum = (currentTaxPage - 1) * taxRowsPerPage + idx + 1;
                       const ssoTotal = item.ssoEmployee + item.ssoEmployer;
                       return (
-                        <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 px-4 text-center text-xs text-slate-400">{rowNum}</td>
+                        <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                          <td className="py-3 px-4 text-center text-xs text-slate-400 dark:text-slate-500">{rowNum}</td>
                           <td className="py-3 px-4">
-                            <span className="font-semibold text-slate-900 block">{item.employeeName}</span>
-                            <span className="text-xs font-mono text-slate-400">รหัส {item.employeeCode}</span>
+                            <span className="font-semibold text-slate-900 block dark:text-slate-100">{item.employeeName}</span>
+                            <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {item.employeeCode}</span>
                           </td>
-                          <td className="py-3 px-4 font-mono text-xs text-slate-600">
+                          <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
                             {item.citizenIdMasked}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-600">
-                            <span className="font-medium text-slate-800 block">{item.departmentName}</span>
-                            <span className="text-slate-400">{item.positionName}</span>
+                          <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
+                            <span className="font-medium text-slate-800 block dark:text-slate-200">{item.departmentName}</span>
+                            <span className="text-slate-400 dark:text-slate-500">{item.positionName}</span>
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-slate-900">
+                          <td className="py-3 px-4 text-right font-medium text-slate-900 dark:text-slate-100">
                             {item.grossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </td>
                           <td className="py-3 px-4 text-right font-semibold text-rose-600">
@@ -1178,7 +1178,7 @@ export default function ReportsPage() {
                   </tbody>
                   {/* Summary Footer */}
                   {taxData && (
-                    <tfoot className="bg-slate-100/80 text-xs font-bold text-slate-800 border-t-2 border-slate-200">
+                    <tfoot className="bg-slate-100/80 text-xs font-bold text-slate-800 border-t-2 border-slate-200 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700">
                       <tr>
                         <td colSpan={4} className="py-3 px-4 text-center">
                           รวมทั้งสิ้น ({filteredTaxItems.length} คน)
@@ -1220,7 +1220,7 @@ export default function ReportsPage() {
 
                 {/* Pagination Controls */}
                 {totalTaxPages > 1 && (
-                  <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700/60 dark:text-slate-400">
                     <span>
                       หน้า {currentTaxPage} จาก {totalTaxPages} (ทั้งหมด {filteredTaxItems.length} แถว)
                     </span>
@@ -1228,14 +1228,14 @@ export default function ReportsPage() {
                       <button
                         onClick={() => setTaxPage((p) => Math.max(1, p - 1))}
                         disabled={currentTaxPage <= 1}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:hover:bg-slate-800/40 dark:border-slate-700"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setTaxPage((p) => Math.min(totalTaxPages, p + 1))}
                         disabled={currentTaxPage >= totalTaxPages}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:hover:bg-slate-800/40 dark:border-slate-700"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -1259,16 +1259,16 @@ export default function ReportsPage() {
       {activeTab === 'turnover' && canViewTurnover && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 font-medium">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={turnoverYear}
                   onChange={(e) => setTurnoverYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -1279,13 +1279,13 @@ export default function ReportsPage() {
               </div>
 
               {/* Month Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <CalendarDays className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 font-medium">เดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เดือน:</span>
                 <select
                   value={turnoverMonth}
                   onChange={(e) => setTurnoverMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -1296,8 +1296,8 @@ export default function ReportsPage() {
               </div>
 
               {/* Division Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                <Building2 className="w-4 h-4 text-slate-400" />
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <select
                   value={turnoverDivision}
                   onChange={(e) => {
@@ -1305,7 +1305,7 @@ export default function ReportsPage() {
                     setTurnoverDivision(val);
                     setTurnoverDepartment('ALL');
                   }}
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">ฝ่ายทั้งหมด</option>
                   {divisions.map((div) => (
@@ -1317,13 +1317,13 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <select
                   value={turnoverDepartment}
                   onChange={(e) =>
                     setTurnoverDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none"
+                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments
@@ -1340,7 +1340,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadTurnover}
                 disabled={isLoadingTurnover}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingTurnover ? 'animate-spin text-blue-600' : ''}`} />
@@ -1367,42 +1367,42 @@ export default function ReportsPage() {
           {/* 5 Summary KPI Cards */}
           {turnoverData && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500 font-medium">พนักงานต้นงวด</span>
-                <div className="text-2xl font-extrabold text-slate-800">
-                  {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400">คน</span>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">พนักงานต้นงวด</span>
+                <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">
+                  {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-emerald-600 font-medium">เข้าใหม่ (New Hires)</span>
                   <UserPlus className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-600">
-                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400">คน</span>
+                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-rose-600 font-medium">ลาออก (Resigned)</span>
                   <UserMinus className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
-                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400">คน</span>
+                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">พนักงานสิ้นงวด</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
-                  {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400">คน</span>
+                  {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500 font-medium">Turnover / Retention</span>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">Turnover / Retention</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-extrabold text-amber-600">
                     {turnoverData.overallTurnoverRate}%
@@ -1416,30 +1416,30 @@ export default function ReportsPage() {
           )}
 
           {/* Department Breakdown Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
                 อัตราการเข้า-ออกของพนักงานจำแนกตามแผนก
               </h3>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
                 {turnoverData?.departmentTurnovers.length || 0} แผนก
               </span>
             </div>
 
             {isLoadingTurnover ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานอัตราการเข้า-ออกของพนักงาน...
               </div>
             ) : !turnoverData || turnoverData.departmentTurnovers.length === 0 ? (
-              <div className="p-12 text-center text-slate-400">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
                 ไม่พบข้อมูลแผนกตามเงื่อนไขที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">ฝ่าย</th>
                       <th className="py-3 px-4">รหัสแผนก</th>
@@ -1452,20 +1452,20 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-center">Retention Rate (%)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {turnoverData.departmentTurnovers.map((dept) => (
-                      <tr key={dept.departmentId} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 text-xs font-medium text-slate-500">{dept.divisionName}</td>
-                        <td className="py-3 px-4 font-mono text-xs text-slate-500">{dept.departmentCode}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-800">{dept.departmentName}</td>
-                        <td className="py-3 px-4 text-center text-slate-700">{dept.beginningHeadcount}</td>
+                      <tr key={dept.departmentId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">{dept.divisionName}</td>
+                        <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{dept.departmentCode}</td>
+                        <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{dept.departmentName}</td>
+                        <td className="py-3 px-4 text-center text-slate-700 dark:text-slate-300">{dept.beginningHeadcount}</td>
                         <td className="py-3 px-4 text-center font-bold text-emerald-600">
                           {dept.joinedCount > 0 ? dept.joinedCount : '-'}
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-rose-600">
                           {dept.resignedCount > 0 ? dept.resignedCount : '-'}
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-900">{dept.endingHeadcount}</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-slate-100">{dept.endingHeadcount}</td>
                         <td className="py-3 px-4 text-center">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -1502,20 +1502,20 @@ export default function ReportsPage() {
 
           {/* Event Logs Table */}
           {turnoverData && turnoverData.eventLogs.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-600" />
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
+                  <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   บันทึกประวัติการเคลื่อนไหวพนักงานประจำงวดเดือน
                 </h3>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   {turnoverData.eventLogs.length} รายการ
                 </span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">วันที่</th>
                       <th className="py-3 px-4">พนักงาน</th>
@@ -1524,30 +1524,30 @@ export default function ReportsPage() {
                       <th className="py-3 px-4">เหตุผล / หมายเหตุ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {turnoverData.eventLogs.map((ev, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono text-xs text-slate-600">{ev.eventDate}</td>
+                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">{ev.eventDate}</td>
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-900 block">{ev.employeeName}</span>
-                          <span className="text-xs font-mono text-slate-400">รหัส {ev.employeeCode}</span>
+                          <span className="font-semibold text-slate-900 block dark:text-slate-100">{ev.employeeName}</span>
+                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {ev.employeeCode}</span>
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-600">
-                          <span className="font-medium text-slate-800 block">{ev.departmentName}</span>
-                          <span className="text-slate-400">{ev.positionName}</span>
+                        <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
+                          <span className="font-medium text-slate-800 block dark:text-slate-200">{ev.departmentName}</span>
+                          <span className="text-slate-400 dark:text-slate-500">{ev.positionName}</span>
                         </td>
                         <td className="py-3 px-4 text-center">
                           {ev.eventType === 'JOINED' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
                               <UserPlus className="w-3 h-3" /> เริ่มงานใหม่
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
                               <UserMinus className="w-3 h-3" /> {ev.eventType === 'TERMINATED' ? 'เลิกจ้าง' : 'ลาออก'}
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-500">{ev.reason || '-'}</td>
+                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">{ev.reason || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

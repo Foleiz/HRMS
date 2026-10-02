@@ -134,7 +134,7 @@ function TablePagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
+    <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white dark:bg-slate-800">
       {/* Left: Summary and Page Size Selector */}
       <div className="flex flex-wrap items-center gap-3 text-slate-500">
         <span>

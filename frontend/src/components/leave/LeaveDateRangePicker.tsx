@@ -155,9 +155,9 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
       <button
         type="button"
         onClick={handleToggleOpen}
-        className={`${className} flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white cursor-pointer`}
+        className={`${className} flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800 cursor-pointer dark:text-slate-100`}
       >
-        <span className={startDate || endDate ? 'text-gray-800' : 'text-gray-400'}>
+        <span className={startDate || endDate ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500'}>
           {mode === 'single' ? (
             startDate ? formatThaiShort(startDate) : 'dd/mm/yyyy'
           ) : (
@@ -168,17 +168,17 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
             </>
           )}
         </span>
-        <CalendarIcon className="w-4 h-4 text-gray-400 shrink-0" />
+        <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-1.5 w-[320px] bg-white rounded-xl border border-gray-100 shadow-lg p-4">
+        <div className="absolute z-30 mt-1.5 w-[320px] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/60 shadow-lg p-4">
           {/* ─── Header: ปุ่มเลื่อนเดือน + ตัวเลือกเดือน/ปีแบบ dropdown grid ─── */}
           <div className="flex items-center justify-between mb-3">
             <button
               type="button"
               onClick={() => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -187,7 +187,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 type="button"
                 onClick={toggleMonthPicker}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-sm font-semibold transition-colors ${
-                  monthPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                  monthPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 {THAI_MONTHS_FULL[month]}
@@ -197,7 +197,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 type="button"
                 onClick={toggleYearPicker}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-sm font-semibold transition-colors ${
-                  yearPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                  yearPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 {year + 543}
@@ -207,7 +207,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
             <button
               type="button"
               onClick={() => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -217,7 +217,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
           <div className="relative">
             <div className="grid grid-cols-7 mb-1">
               {THAI_WEEKDAYS.map((w) => (
-                <div key={w} className="h-7 flex items-center justify-center text-[11px] font-medium text-gray-400">
+                <div key={w} className="h-7 flex items-center justify-center text-[11px] font-medium text-gray-400 dark:text-slate-500">
                   {w}
                 </div>
               ))}
@@ -240,11 +240,11 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 const isBandEdgeStart = inBand && dStr === bandStartValue;
                 const isBandEdgeEnd = inBand && dStr === bandEndValue;
 
-                let dayBtnClass = 'text-gray-700 hover:bg-white/70';
+                let dayBtnClass = 'text-gray-700 dark:text-slate-300 hover:bg-white/70';
                 if (isConfirmedStart || isConfirmedEnd) {
                   dayBtnClass = 'bg-[#0B2046] text-white font-semibold shadow-sm';
                 } else if (isPreviewHoverDay) {
-                  dayBtnClass = 'ring-2 ring-[#0B2046] text-[#0B2046] font-semibold bg-white';
+                  dayBtnClass = 'ring-2 ring-[#0B2046] text-[#0B2046] font-semibold bg-white dark:bg-slate-900';
                 } else if (isToday) {
                   dayBtnClass = 'ring-1 ring-[#0B2046]/60 text-[#0B2046] font-semibold';
                 }
@@ -253,7 +253,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                   <div
                     key={idx}
                     className={`h-9 flex items-center justify-center ${
-                      inBand ? (confirmedInBand ? 'bg-[#0B2046]/10' : 'bg-[#0B2046]/[0.06]') : ''
+                      inBand ? (confirmedInBand ? 'bg-[#0B2046]/10 dark:bg-[#0B2046]/30' : 'bg-[#0B2046]/[0.06]') : ''
                     } ${isBandEdgeStart ? 'rounded-l-full' : ''} ${isBandEdgeEnd ? 'rounded-r-full' : ''}`}
                   >
                     <button
@@ -272,7 +272,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
             </div>
 
             {monthPickerOpen && (
-              <div className="absolute top-0 left-0 right-0 z-20 bg-white rounded-xl shadow-lg border border-gray-100 p-3">
+              <div className="absolute top-0 left-0 right-0 z-20 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700/60 p-3">
                 <div className="grid grid-cols-4 gap-2">
                   {THAI_MONTHS_SHORT.map((m, i) => (
                     <button
@@ -283,7 +283,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                         setMonthPickerOpen(false);
                       }}
                       className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                        i === month ? 'bg-[#0B2046] text-white' : 'text-gray-600 hover:bg-gray-100'
+                        i === month ? 'bg-[#0B2046] text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       {m}
@@ -294,22 +294,22 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
             )}
 
             {yearPickerOpen && (
-              <div className="absolute top-0 left-0 right-0 z-20 bg-white rounded-xl shadow-lg border border-gray-100 p-3">
+              <div className="absolute top-0 left-0 right-0 z-20 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700/60 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <button
                     type="button"
                     onClick={() => setYearGridStart((y) => y - YEAR_GRID_SIZE)}
-                    className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-medium text-gray-500">
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
                     {yearGridStart + 543} – {yearGridStart + YEAR_GRID_SIZE - 1 + 543}
                   </span>
                   <button
                     type="button"
                     onClick={() => setYearGridStart((y) => y + YEAR_GRID_SIZE)}
-                    className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -324,7 +324,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                         setYearPickerOpen(false);
                       }}
                       className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                        y === year ? 'bg-[#0B2046] text-white' : 'text-gray-600 hover:bg-gray-100'
+                        y === year ? 'bg-[#0B2046] text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       {y + 543}
@@ -336,8 +336,8 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
           </div>
 
           {/* ─── Footer: วันเริ่มต้นที่เลือกไว้ + ปุ่มล้าง ─── */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-slate-700/60">
+            <span className="text-xs text-gray-500 dark:text-slate-400">
               {startDate
                 ? mode === 'single'
                   ? `วันที่เลือก: ${formatThaiShort(startDate)}`
@@ -350,7 +350,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 setHoverDate(null);
                 onChange('', '');
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" /> ล้าง
             </button>

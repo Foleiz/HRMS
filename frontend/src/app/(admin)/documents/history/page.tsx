@@ -436,7 +436,7 @@ export default function DocumentHistoryPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+          <div key={s.label} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4 flex items-center gap-3">
             <div className={`w-11 h-11 rounded-xl ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>{s.icon}</div>
             <div className="min-w-0">
               <div className="text-2xl font-bold text-gray-900">{s.value}</div>
@@ -471,7 +471,7 @@ export default function DocumentHistoryPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">

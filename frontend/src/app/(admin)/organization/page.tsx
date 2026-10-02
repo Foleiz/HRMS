@@ -242,7 +242,7 @@ export default function OrganizationPage() {
   }) => {
     const initial = name ? name.charAt(0) : '?';
     return (
-      <div className={`relative flex flex-col bg-white rounded-xl shadow-sm border ${
+      <div className={`relative flex flex-col bg-white rounded-xl shadow-sm border  dark:bg-slate-800${
         highlight ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'
       } w-52 shrink-0 overflow-hidden transition-all duration-200 hover:shadow-md`}>
         {/* Card Body */}
@@ -251,20 +251,20 @@ export default function OrganizationPage() {
             {avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 shrink-0" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0 ring-2 ring-slate-100">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0 ring-2 ring-slate-100 dark:text-slate-400">
                 {initial}
               </div>
             )}
             <div className="min-w-0">
-              <div className="font-bold text-slate-900 text-xs truncate leading-tight">{name}</div>
-              <div className="text-[10px] text-slate-500 truncate mt-0.5">{role}</div>
-              {subtitle && <div className="text-[10px] text-slate-400 truncate">{subtitle}</div>}
+              <div className="font-bold text-slate-900 text-xs truncate leading-tight dark:text-slate-100">{name}</div>
+              <div className="text-[10px] text-slate-500 truncate mt-0.5 dark:text-slate-400">{role}</div>
+              {subtitle && <div className="text-[10px] text-slate-400 truncate dark:text-slate-500">{subtitle}</div>}
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="border-t border-slate-100" />
+        <div className="border-t border-slate-100 dark:border-slate-700/60" />
 
         {/* Action Bar */}
         <div className="flex items-center justify-between px-3 py-1.5">
@@ -285,7 +285,7 @@ export default function OrganizationPage() {
                   toast.warning('ไม่พบข้อมูลเบอร์โทรศัพท์ของพนักงานรายนี้', 'ข้อมูลติดต่อ');
                 }
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors dark:text-slate-500"
             >
               <Phone className="w-3.5 h-3.5" />
             </button>
@@ -305,7 +305,7 @@ export default function OrganizationPage() {
                   toast.warning('ไม่พบข้อมูลอีเมลของพนักงานรายนี้', 'ข้อมูลติดต่อ');
                 }
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors dark:text-slate-500"
             >
               <Mail className="w-3.5 h-3.5" />
             </button>
@@ -328,7 +328,7 @@ export default function OrganizationPage() {
                   });
                 }
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:text-slate-500 dark:hover:bg-slate-800"
             >
               <MoreHorizontal className="w-3.5 h-3.5" />
             </button>
@@ -336,7 +336,7 @@ export default function OrganizationPage() {
           {onToggle && childCount !== undefined && childCount > 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggle(); }}
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <span>{childCount}</span>
               {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -404,7 +404,7 @@ export default function OrganizationPage() {
     name ? (
       renderEmployeeCell(name)
     ) : (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap dark:bg-amber-900/20 dark:text-amber-400">
         <AlertTriangle className="w-3 h-3" /> ยังไม่ได้ตั้งหัวหน้า
       </span>
     );
@@ -420,14 +420,14 @@ export default function OrganizationPage() {
     ) : null;
 
   const renderEmployeeCell = (name?: string | null) => {
-    if (!name) return <span className="text-slate-400">-</span>;
+    if (!name) return <span className="text-slate-400 dark:text-slate-500">-</span>;
     const initial = name.trim().charAt(0);
     return (
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full bg-blue-100 text-[#0B2046] flex items-center justify-center text-[10px] font-bold ring-1 ring-blue-200 shrink-0">
           {initial}
         </div>
-        <span className="font-medium text-slate-800 whitespace-nowrap">{name}</span>
+        <span className="font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">{name}</span>
       </div>
     );
   };
@@ -1018,7 +1018,7 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewStruct && (
             <button
@@ -1133,20 +1133,20 @@ export default function OrganizationPage() {
       </div>
 
       {/* 4. Tab Content Panels */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
             {renderMissingHeadBanner(divisions.filter((d) => d.status === 'ACTIVE' && !d.headEmployeeId).length, 'ฝ่าย')}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative max-w-sm w-full">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -1159,7 +1159,7 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr>
@@ -1173,33 +1173,33 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={8} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลฝ่าย...
                       </td>
                     </tr>
                   ) : filteredDivisions.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={8} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         ไม่พบข้อมูลฝ่าย
                       </td>
                     </tr>
                   ) : (
                     filteredDivisions.map((div) => (
                       <tr key={div.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{div.divisionCode}</td>
-                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{div.divisionName}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">{div.divisionCode}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">{div.divisionName}</td>
                         <td className="py-3 px-4 whitespace-nowrap">{renderHeadCell(div.headEmployeeName)}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 whitespace-nowrap dark:bg-indigo-900/20 dark:text-indigo-400">
                             {div.departmentCount} แผนก
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(div.createdAt)}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(div.updatedAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(div.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(div.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -1221,14 +1221,14 @@ export default function OrganizationPage() {
                             <button
                               onClick={() => handleOpenDivisionModal(div)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')}
                               title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1250,20 +1250,20 @@ export default function OrganizationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
                 <select
                   value={filterDivisionId}
                   onChange={(e) => setFilterDivisionId(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ALL">ทุกฝ่าย</option>
                   {divisions.map((d) => (
@@ -1283,7 +1283,7 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr>
@@ -1298,34 +1298,34 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลแผนก...
                       </td>
                     </tr>
                   ) : filteredDepartments.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         ไม่พบข้อมูลแผนก
                       </td>
                     </tr>
                   ) : (
                     filteredDepartments.map((dept) => (
                       <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{dept.departmentCode}</td>
-                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{dept.departmentName}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">{dept.departmentCode}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">{dept.departmentName}</td>
                         <td className="py-3 px-4 whitespace-nowrap">{renderHeadCell(dept.headEmployeeName)}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{dept.divisionName}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{dept.divisionName}</td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 whitespace-nowrap dark:bg-blue-900/20 dark:text-blue-400">
                             {dept.positionCount} ตำแหน่ง
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(dept.createdAt)}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(dept.updatedAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(dept.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(dept.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -1347,14 +1347,14 @@ export default function OrganizationPage() {
                             <button
                               onClick={() => handleOpenDeptModal(dept)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')}
                               title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1375,20 +1375,20 @@ export default function OrganizationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
                 <select
                   value={filterDeptId}
                   onChange={(e) => setFilterDeptId(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ALL">ทุกแผนก</option>
                   {departments.map((d) => (
@@ -1408,7 +1408,7 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr>
@@ -1423,34 +1423,34 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลตำแหน่ง...
                       </td>
                     </tr>
                   ) : filteredPositions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         ไม่พบข้อมูลตำแหน่ง
                       </td>
                     </tr>
                   ) : (
                     filteredPositions.map((pos) => (
                       <tr key={pos.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{pos.positionCode}</td>
-                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{pos.positionName}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{pos.departmentName}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{pos.divisionName || '-'}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">{pos.positionCode}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">{pos.positionName}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{pos.departmentName}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{pos.divisionName || '-'}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 whitespace-nowrap dark:bg-purple-900/20 dark:text-purple-400">
                             {pos.levelCode ? `${pos.levelCode} - ${pos.levelName}` : 'ไม่ระบุ'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(pos.createdAt)}</td>
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{formatThaiDate(pos.updatedAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -1472,14 +1472,14 @@ export default function OrganizationPage() {
                             <button
                               onClick={() => handleOpenPosModal(pos)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')}
                               title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1500,13 +1500,13 @@ export default function OrganizationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                 <div className="relative max-w-sm w-full">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -1520,11 +1520,11 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               ระดับพนักงานสำหรับจัดเกรดและโครงสร้างตำแหน่งในองค์กร
             </p>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr>
@@ -1534,25 +1534,25 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={4} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลระดับพนักงาน...
                       </td>
                     </tr>
                   ) : filteredLevels.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={4} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         ไม่พบข้อมูลระดับพนักงาน
                       </td>
                     </tr>
                   ) : (
                     filteredLevels.map((lvl) => (
                       <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">{lvl.levelCode}</td>
-                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">{lvl.levelName}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">{lvl.levelCode}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">{lvl.levelName}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -1574,14 +1574,14 @@ export default function OrganizationPage() {
                             <button
                               onClick={() => handleOpenLevelModal(lvl)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')}
                               title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1602,13 +1602,13 @@ export default function OrganizationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                 <div className="relative max-w-sm w-full">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -1616,7 +1616,7 @@ export default function OrganizationPage() {
                   <select
                     value={filterBenefitCategory}
                     onChange={(e) => setFilterBenefitCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300 dark:focus:ring-blue-500/20"
                   >
                     <option value="ALL">ทุกหมวดหมู่สวัสดิการ</option>
                     {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
@@ -1637,11 +1637,11 @@ export default function OrganizationPage() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               จัดการรายการสิทธิประโยชน์และสวัสดิการกลางขององค์กร สวัสดิการเหล่านี้จะถูกนำไปผูกกับประเภทสัญญาจ้างพนักงาน (Employee Types) ในหน้าจัดการประเภทพนักงาน
             </p>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr>
@@ -1654,17 +1654,17 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={7} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลสวัสดิการ...
                       </td>
                     </tr>
                   ) : filteredBenefits.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 whitespace-nowrap">
+                      <td colSpan={7} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
                         ไม่พบข้อมูลสวัสดิการ
                       </td>
                     </tr>
@@ -1674,12 +1674,12 @@ export default function OrganizationPage() {
                       const CatIcon = catInfo.icon;
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap dark:text-slate-100">
                             {ben.benefitCode}
                           </td>
-                          <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
+                          <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap dark:text-slate-200">
                             <div className="flex items-center gap-2">
-                              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                                 <CatIcon className="w-3.5 h-3.5" />
                               </span>
                               <span>{ben.benefitName}</span>
@@ -1690,16 +1690,16 @@ export default function OrganizationPage() {
                               {catInfo.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-500 max-w-xs truncate">
+                          <td className="py-3 px-4 text-slate-500 max-w-xs truncate dark:text-slate-400">
                             {ben.description || '-'}
                           </td>
                           <td className="py-3 px-4 text-center whitespace-nowrap">
                             {ben.isStatutory ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
                                 ⚖️ สิทธิตามกฎหมาย
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
                                 ⭐ สวัสดิการบริษัท
                               </span>
                             )}
@@ -1725,14 +1725,14 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleOpenBenefitModal(ben)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:hover:bg-slate-800"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
                                 title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1752,8 +1752,8 @@ export default function OrganizationPage() {
         {activeTab === 'company' && (
           <form onSubmit={handleSaveCompany} className="max-w-2xl space-y-5">
             {/* Logo Upload Section */}
-            <div className="flex items-center gap-5 p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
+            <div className="flex items-center gap-5 p-4 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0 dark:border-slate-600 dark:bg-slate-900">
                 {companyForm.logoData ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -1762,15 +1762,15 @@ export default function OrganizationPage() {
                     className="w-full h-full object-contain p-1"
                   />
                 ) : (
-                  <Building className="w-8 h-8 text-slate-400" />
+                  <Building className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                 )}
               </div>
               <div className="space-y-1.5 flex-1">
-                <label className="block text-xs font-semibold text-slate-800">ตราสัญลักษณ์ / โลโก้บริษัท (Logo)</label>
-                <p className="text-[11px] text-slate-500">รองรับไฟล์ PNG, JPG หรือ SVG ขนาดไม่เกิน 2MB</p>
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">ตราสัญลักษณ์ / โลโก้บริษัท (Logo)</label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">รองรับไฟล์ PNG, JPG หรือ SVG ขนาดไม่เกิน 2MB</p>
                 <div className="flex items-center gap-2 pt-1">
-                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors">
-                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-300">
+                    <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     อัปโหลดโลโก้
                     <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                   </label>
@@ -1789,30 +1789,30 @@ export default function OrganizationPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รหัสบริษัท (Company Code)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">รหัสบริษัท (Company Code)</label>
                 <input
                   type="text"
                   disabled
                   value={company?.companyCode || ''}
-                  className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-500 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700 dark:text-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริษัท (Company Name) *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อบริษัท (Company Name) *</label>
                 <input
                   type="text"
                   required
                   value={companyForm.companyName}
                   onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO)
                 </label>
                 <EmployeeSelect
@@ -1831,11 +1831,11 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะบริษัท</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะบริษัท</label>
                 <select
                   value={companyForm.status}
                   onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
                   <option value="INACTIVE">ปิดใช้งาน (INACTIVE)</option>
@@ -1845,45 +1845,45 @@ export default function OrganizationPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ (Phone)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">เบอร์โทรศัพท์ (Phone)</label>
                 <input
                   type="text"
                   value={companyForm.phone}
                   onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ (Email)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">อีเมลติดต่อ (Email)</label>
                 <input
                   type="email"
                   value={companyForm.email}
                   onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">ที่อยู่สำนักงานใหญ่ (Address)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ที่อยู่สำนักงานใหญ่ (Address)</label>
               <textarea
                 rows={3}
                 value={companyForm.address}
                 onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
               />
             </div>
 
             {/* Timestamps Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
               <div>
-                <span className="text-slate-500">วันที่สร้างระบบ: </span>
-                <span className="font-semibold text-slate-800">{formatThaiDate(company?.createdAt)}</span>
+                <span className="text-slate-500 dark:text-slate-400">วันที่สร้างระบบ: </span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(company?.createdAt)}</span>
               </div>
               <div>
-                <span className="text-slate-500">แก้ไขล่าสุดเมื่อ: </span>
-                <span className="font-semibold text-slate-800">{formatThaiDate(company?.updatedAt)}</span>
+                <span className="text-slate-500 dark:text-slate-400">แก้ไขล่าสุดเมื่อ: </span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(company?.updatedAt)}</span>
               </div>
             </div>
 
@@ -1902,15 +1902,15 @@ export default function OrganizationPage() {
         {activeTab === 'bank-accounts' && (
           <div className="space-y-6">
             {/* Header / Actions Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-700/60">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-blue-50 text-[#0B2046]">
                     <Landmark className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base leading-tight">บัญชีธนาคารบริษัท (สำหรับจ่ายเงินเดือน)</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <h3 className="font-bold text-slate-900 text-base leading-tight dark:text-slate-100">บัญชีธนาคารบริษัท (สำหรับจ่ายเงินเดือน)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                       จัดการบัญชีธนาคารของบริษัทสำหรับโอนจ่ายเงินเดือนพนักงาน (Payroll Direct Credit) และกำหนดบัญชีหลัก
                     </p>
                   </div>
@@ -1929,27 +1929,27 @@ export default function OrganizationPage() {
             {/* Search Filter */}
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <div className="relative flex-1 w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
             </div>
 
             {/* Bank Accounts Table */}
             {filteredBankAccounts.length === 0 ? (
-              <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
+              <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 dark:border-slate-700">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                   <Landmark className="w-6 h-6" />
                 </div>
-                <h4 className="text-sm font-bold text-slate-800 mb-1">
+                <h4 className="text-sm font-bold text-slate-800 mb-1 dark:text-slate-200">
                   {searchQuery ? 'ไม่พบข้อมูลบัญชีธนาคารที่ตรงกับคำค้นหา' : 'ยังไม่มีข้อมูลบัญชีธนาคารบริษัท'}
                 </h4>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 dark:text-slate-400">
                   {searchQuery ? 'ลองค้นหาด้วยคำอื่น หรือล้างคำค้นหา' : 'เพิ่มบัญชีธนาคารของบริษัทเพื่อใช้เป็นบัญชีต้นทางในการโอนจ่ายเงินเดือนพนักงาน'}
                 </p>
                 {!searchQuery && (
@@ -1964,10 +1964,10 @@ export default function OrganizationPage() {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm dark:border-slate-700">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                       <th className="py-3 px-4">ธนาคาร</th>
                       <th className="py-3 px-4">เลขที่บัญชี</th>
                       <th className="py-3 px-4">ชื่อบัญชี</th>
@@ -1976,7 +1976,7 @@ export default function OrganizationPage() {
                       <th className="py-3 px-4 text-right">จัดการ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                     {filteredBankAccounts.map((acc) => (
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4">
@@ -1985,22 +1985,22 @@ export default function OrganizationPage() {
                               {acc.bankCode || 'BK'}
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-900 leading-snug">{acc.bankName}</div>
-                              <div className="text-[11px] text-slate-400 font-mono">รหัสธนาคาร: {acc.bankCode}</div>
+                              <div className="font-semibold text-slate-900 leading-snug dark:text-slate-100">{acc.bankName}</div>
+                              <div className="text-[11px] text-slate-400 font-mono dark:text-slate-500">รหัสธนาคาร: {acc.bankCode}</div>
                             </div>
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className="font-mono font-bold text-slate-800 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200">
+                          <span className="font-mono font-bold text-slate-800 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200 dark:text-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
                             {acc.accountNumber}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 font-medium">
+                        <td className="py-3.5 px-4 text-slate-700 font-medium dark:text-slate-300">
                           {acc.accountName || '-'}
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           {acc.isPrimaryPayrollAccount ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs dark:bg-emerald-900/20 dark:text-emerald-400">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               บัญชีหลัก (Payroll Primary)
                             </span>
@@ -2008,7 +2008,7 @@ export default function OrganizationPage() {
                             <button
                               type="button"
                               onClick={() => handleSetPrimaryBankAccount(acc)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer dark:text-slate-400 dark:border-slate-700"
                               title="คลิกเพื่อตั้งบัญชีนี้เป็นบัญชีจ่ายเงินเดือนหลัก"
                             >
                               ตั้งเป็นบัญชีหลัก
@@ -2031,7 +2031,7 @@ export default function OrganizationPage() {
                             <button
                               type="button"
                               onClick={() => handleOpenBankAccountModal(acc)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                               title="แก้ไขข้อมูลบัญชี"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -2039,7 +2039,7 @@ export default function OrganizationPage() {
                             <button
                               type="button"
                               onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
-                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                               title="ลบบัญชี"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2059,30 +2059,30 @@ export default function OrganizationPage() {
       {/* 5. Create / Edit Modal (Division) */}
       {modalOpen && activeTab === 'divisions' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มฝ่ายใหม่' : 'แก้ไขข้อมูลฝ่าย'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อฝ่าย / สายงาน *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน *</label>
                 <input
                   type="text"
                   required
                   value={divisionForm.divisionName}
                   onChange={(e) => setDivisionForm({ ...divisionForm, divisionName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าฝ่าย</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">หัวหน้าฝ่าย</label>
                 <EmployeeSelect
                   employees={employees}
                   value={divisionForm.headEmployeeId || ''}
@@ -2099,22 +2099,22 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
                 <select
                   value={divisionForm.status}
                   onChange={(e) => setDivisionForm({ ...divisionForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>
@@ -2133,24 +2133,24 @@ export default function OrganizationPage() {
       {/* 6. Create / Edit Modal (Department) */}
       {modalOpen && activeTab === 'departments' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มแผนกใหม่' : 'แก้ไขข้อมูลแผนก'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveDept} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สังกัดฝ่าย *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สังกัดฝ่าย *</label>
                 <select
                   required
                   value={deptForm.divisionId}
                   onChange={(e) => setDeptForm({ ...deptForm, divisionId: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   {divisions.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -2161,18 +2161,18 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อแผนก *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อแผนก *</label>
                 <input
                   type="text"
                   required
                   value={deptForm.departmentName}
                   onChange={(e) => setDeptForm({ ...deptForm, departmentName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">หัวหน้าแผนก</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">หัวหน้าแผนก</label>
                 <EmployeeSelect
                   employees={employees}
                   value={deptForm.headEmployeeId || ''}
@@ -2189,22 +2189,22 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
                 <select
                   value={deptForm.status}
                   onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>
@@ -2223,24 +2223,24 @@ export default function OrganizationPage() {
       {/* 7. Create / Edit Modal (Position) */}
       {modalOpen && activeTab === 'positions' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มตำแหน่งใหม่' : 'แก้ไขข้อมูลตำแหน่ง'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSavePos} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สังกัดแผนก *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สังกัดแผนก *</label>
                 <select
                   required
                   value={posForm.departmentId}
                   onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -2251,11 +2251,11 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ระดับตำแหน่ง</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ระดับตำแหน่ง</label>
                 <select
                   value={posForm.employeeLevelId || ''}
                   onChange={(e) => setPosForm({ ...posForm, employeeLevelId: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="">-- ไม่ระบุระดับ --</option>
                   {levels.map((lvl) => (
@@ -2267,33 +2267,33 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อตำแหน่งงาน *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน *</label>
                 <input
                   type="text"
                   required
                   value={posForm.positionName}
                   onChange={(e) => setPosForm({ ...posForm, positionName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
                 <select
                   value={posForm.status}
                   onChange={(e) => setPosForm({ ...posForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ทำงานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ทำงาน</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>
@@ -2312,20 +2312,20 @@ export default function OrganizationPage() {
       {/* 7. Create / Edit Modal (Benefit) */}
       {modalOpen && activeTab === 'benefits' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 dark:text-slate-100">
                 <Gift className="w-4 h-4 text-[#0B2046]" />
                 {modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveBenefit} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   ชื่อสวัสดิการ / สิทธิประโยชน์ *
                 </label>
                 <input
@@ -2334,16 +2334,16 @@ export default function OrganizationPage() {
                   value={benefitForm.benefitName}
                   onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
                   placeholder="เช่น รถรับส่งพนักงาน"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่สวัสดิการ *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">หมวดหมู่สวัสดิการ *</label>
                 <select
                   value={benefitForm.category}
                   onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
                     <option key={key} value={key}>
@@ -2354,17 +2354,17 @@ export default function OrganizationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดเพิ่มเติม</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">รายละเอียดเพิ่มเติม</label>
                 <textarea
                   rows={3}
                   value={benefitForm.description || ''}
                   onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
                   placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
                 <input
                   type="checkbox"
                   id="isStatutory"
@@ -2372,28 +2372,28 @@ export default function OrganizationPage() {
                   onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
                   className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
                 />
-                <label htmlFor="isStatutory" className="text-xs text-slate-700 cursor-pointer select-none">
+                <label htmlFor="isStatutory" className="text-xs text-slate-700 cursor-pointer select-none dark:text-slate-300">
                   เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
                 </label>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
                 <select
                   value={benefitForm.status}
                   onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">เปิดใช้งาน</option>
                   <option value="INACTIVE">ปิดใช้งาน</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>
@@ -2412,19 +2412,19 @@ export default function OrganizationPage() {
       {/* 8. Create / Edit Modal (Employee Level) */}
       {modalOpen && activeTab === 'levels' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มระดับพนักงานใหม่' : 'แก้ไขข้อมูลระดับพนักงาน'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   ชื่อระดับพนักงาน *
                 </label>
                 <input
@@ -2433,27 +2433,27 @@ export default function OrganizationPage() {
                   value={levelForm.levelName}
                   onChange={(e) => setLevelForm({ ...levelForm, levelName: e.target.value })}
                   placeholder="เช่น พนักงานปฏิบัติการ, ผู้จัดการฝ่าย"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะ</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
                 <select
                   value={levelForm.status}
                   onChange={(e) => setLevelForm({ ...levelForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>
@@ -2517,7 +2517,7 @@ export default function OrganizationPage() {
 
           if (staffList.length === 0) {
             return (
-              <div className="mt-4 text-center text-xs text-slate-400 py-2">
+              <div className="mt-4 text-center text-xs text-slate-400 py-2 dark:text-slate-500">
                 ไม่มีพนักงานอื่นในแผนกนี้
               </div>
             );
@@ -2627,7 +2627,7 @@ export default function OrganizationPage() {
               )}
 
               {isDivExpanded && divDepts.length === 0 && (
-                <div className="mt-4 text-xs text-slate-400">ไม่มีแผนกในสังกัด</div>
+                <div className="mt-4 text-xs text-slate-400 dark:text-slate-500">ไม่มีแผนกในสังกัด</div>
               )}
             </div>
           );
@@ -2640,13 +2640,13 @@ export default function OrganizationPage() {
         return (
           <div className="-mx-6 -mb-6">
             {/* Header bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
                   <Network className="w-5 h-5 text-[#0B2046]" />
                   แผนผังองค์กร
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5 dark:text-slate-500">
                   {company?.companyName || 'บริษัท'} · {activeDivisions.length} ฝ่าย · {totalDepts} แผนก · {totalEmployees} คน
                 </p>
               </div>
@@ -2656,7 +2656,7 @@ export default function OrganizationPage() {
                     setActiveTab('divisions');
                     toast.info('เปลี่ยนไปยังหน้าจัดการฝ่าย เพื่อแก้ไขโครงสร้างองค์กร', 'จัดการโครงสร้าง');
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   แก้ไขโครงสร้าง
@@ -2667,7 +2667,7 @@ export default function OrganizationPage() {
                     setTimeout(() => window.print(), 300);
                   }}
                   title="พิมพ์ / ดาวน์โหลด PDF"
-                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <Download className="w-4 h-4" />
                 </button>
@@ -2680,7 +2680,7 @@ export default function OrganizationPage() {
                     toast.success('คัดลอกลิงก์แผนผังองค์กรสำเร็จ', 'แชร์');
                   }}
                   title="แชร์ลิงก์แผนผังองค์กร"
-                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -2688,15 +2688,15 @@ export default function OrganizationPage() {
             </div>
 
             {/* Toolbar: Search + expand all */}
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-slate-50/50 dark:border-slate-700/60">
               <div className="relative flex-1 max-w-xs">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาพนักงาน..."
                   value={orgSearch}
                   onChange={(e) => setOrgSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
               <button
@@ -2713,14 +2713,14 @@ export default function OrganizationPage() {
                     setExpandedNodes(allKeys);
                   }
                 }}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 {expandedNodes.size > 0 ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
               </button>
             </div>
 
             {/* Chart Canvas */}
-            <div className="relative overflow-auto bg-slate-100/80" style={{ minHeight: 520 }}>
+            <div className="relative overflow-auto bg-slate-100/80 dark:bg-slate-800/80" style={{ minHeight: 520 }}>
               <div
                 style={{ transform: `scale(${orgZoom})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', minWidth: 'max-content' }}
                 className="py-10 px-12 flex flex-col items-center"
@@ -2728,16 +2728,16 @@ export default function OrganizationPage() {
                 {loading ? (
                   <div className="flex flex-col items-center gap-3 py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
-                    <p className="text-sm text-slate-500">กำลังโหลดข้อมูล...</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">กำลังโหลดข้อมูล...</p>
                   </div>
                 ) : !ceoEmployee && !company?.ceoEmployeeName ? (
                   <div className="flex flex-col items-center gap-4 py-16 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center">
-                      <Users className="w-7 h-7 text-slate-400" />
+                    <div className="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center dark:bg-slate-700">
+                      <Users className="w-7 h-7 text-slate-400 dark:text-slate-500" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-700 text-sm">ยังไม่ได้กำหนด CEO</p>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="font-semibold text-slate-700 text-sm dark:text-slate-300">ยังไม่ได้กำหนด CEO</p>
+                      <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">
                         ไปที่ "ข้อมูลบริษัท" เพื่อกำหนดผู้บริหารสูงสุด
                       </p>
                     </div>
@@ -2777,7 +2777,7 @@ export default function OrganizationPage() {
                     )}
 
                     {activeDivisions.length === 0 && (
-                      <div className="mt-6 text-center text-xs text-slate-400">
+                      <div className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
                         ยังไม่มีฝ่ายในระบบ
                       </div>
                     )}
@@ -2789,17 +2789,17 @@ export default function OrganizationPage() {
               <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 z-10">
                 <button
                   onClick={() => setOrgZoom((z) => Math.min(z + 0.1, 1.5))}
-                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setOrgZoom((z) => Math.max(z - 0.1, 0.4))}
-                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <div className="w-8 text-center text-[10px] font-mono text-slate-400">
+                <div className="w-8 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500">
                   {Math.round(orgZoom * 100)}%
                 </div>
               </div>
@@ -2811,7 +2811,7 @@ export default function OrganizationPage() {
       {/* Modal: Employee Quick Info (from OrgChart) */}
       {selectedOrgPerson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700/60">
             {/* Modal Header / Banner */}
             <div className="relative bg-gradient-to-r from-[#0B2046] to-[#1e3a8a] p-5 text-white text-center">
               <button
@@ -2848,21 +2848,21 @@ export default function OrganizationPage() {
             {/* Modal Content */}
             <div className="p-5 space-y-3 text-xs">
               {selectedOrgPerson.empCode && (
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">รหัสพนักงาน:</span>
-                  <span className="font-semibold text-slate-800">{selectedOrgPerson.empCode}</span>
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                  <span className="text-slate-500 font-medium dark:text-slate-400">รหัสพนักงาน:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedOrgPerson.empCode}</span>
                 </div>
               )}
 
               {/* Phone Action */}
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                <span className="text-slate-500 font-medium flex items-center gap-1.5 dark:text-slate-400">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                   เบอร์โทรศัพท์:
                 </span>
                 {selectedOrgPerson.phone ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-slate-800">{selectedOrgPerson.phone}</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedOrgPerson.phone}</span>
                     <button
                       onClick={() => {
                         if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -2882,19 +2882,19 @@ export default function OrganizationPage() {
                     </a>
                   </div>
                 ) : (
-                  <span className="text-slate-400 italic">ไม่มีข้อมูล</span>
+                  <span className="text-slate-400 italic dark:text-slate-500">ไม่มีข้อมูล</span>
                 )}
               </div>
 
               {/* Email Action */}
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                <span className="text-slate-500 font-medium flex items-center gap-1.5 dark:text-slate-400">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                   อีเมล:
                 </span>
                 {selectedOrgPerson.email ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-slate-800 truncate max-w-[130px]" title={selectedOrgPerson.email}>
+                    <span className="font-semibold text-slate-800 truncate max-w-[130px] dark:text-slate-200" title={selectedOrgPerson.email}>
                       {selectedOrgPerson.email}
                     </span>
                     <button
@@ -2916,7 +2916,7 @@ export default function OrganizationPage() {
                     </a>
                   </div>
                 ) : (
-                  <span className="text-slate-400 italic">ไม่มีข้อมูล</span>
+                  <span className="text-slate-400 italic dark:text-slate-500">ไม่มีข้อมูล</span>
                 )}
               </div>
 
@@ -2924,7 +2924,7 @@ export default function OrganizationPage() {
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   onClick={() => setSelectedOrgPerson(null)}
-                  className="w-full py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors"
+                  className="w-full py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ปิดหน้าต่าง
                 </button>
@@ -2937,19 +2937,19 @@ export default function OrganizationPage() {
       {/* Modal: Create / Edit Company Bank Account */}
       {bankAccountModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-50 text-[#0B2046]">
                   <Landmark className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-slate-900 text-sm">
+                <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
                   {editingBankAccount ? 'แก้ไขบัญชีธนาคารบริษัท' : 'เพิ่มบัญชีธนาคารบริษัทใหม่'}
                 </h3>
               </div>
               <button
                 onClick={() => setBankAccountModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer dark:text-slate-500"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2958,12 +2958,12 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveBankAccount} className="space-y-4 pt-4">
               {/* ธนาคาร */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ธนาคารพาณิชย์ *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ *</label>
                 <select
                   required
                   value={bankAccountForm.bankId}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankId: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value={0} disabled>-- เลือกธนาคาร --</option>
                   {banks.map((b) => (
@@ -2976,31 +2976,31 @@ export default function OrganizationPage() {
 
               {/* เลขที่บัญชี */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">เลขที่บัญชีธนาคาร *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">เลขที่บัญชีธนาคาร *</label>
                 <input
                   type="text"
                   required
                   placeholder="เช่น 789-0-12345-6"
                   value={bankAccountForm.accountNumber}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               {/* ชื่อบัญชี */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">ชื่อบัญชี (Account Name)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อบัญชี (Account Name)</label>
                 <input
                   type="text"
                   placeholder="เช่น บจก. สยาม อินโนเวชั่น เทคโนโลยี"
                   value={bankAccountForm.accountName}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               {/* ตั้งเป็นบัญชีจ่ายเงินเดือนหลัก */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <input
                   type="checkbox"
                   id="isPrimaryPayrollAccount"
@@ -3009,8 +3009,8 @@ export default function OrganizationPage() {
                   className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
                 />
                 <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
-                  <span className="font-semibold text-slate-800 block">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
-                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                  <span className="font-semibold text-slate-800 block dark:text-slate-200">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5 dark:text-slate-400">
                     เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน
                   </span>
                 </label>
@@ -3018,11 +3018,11 @@ export default function OrganizationPage() {
 
               {/* สถานะ */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะการใช้งาน</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะการใช้งาน</label>
                 <select
                   value={bankAccountForm.status}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
                   <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
@@ -3030,12 +3030,12 @@ export default function OrganizationPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setBankAccountModalOpen(false)}
                   disabled={savingBankAccount}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -3057,21 +3057,21 @@ export default function OrganizationPage() {
 
       {deleteModalOpen && itemToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-slate-900 text-center text-sm mb-2">
+            <h3 className="font-bold text-slate-900 text-center text-sm mb-2 dark:text-slate-100">
               ยืนยันการลบข้อมูล?
             </h3>
-            <p className="text-xs text-slate-500 text-center mb-6">
-              คุณต้องการลบข้อมูล <span className="font-semibold text-slate-900">&quot;{itemToDelete.name}&quot;</span> ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+            <p className="text-xs text-slate-500 text-center mb-6 dark:text-slate-400">
+              คุณต้องการลบข้อมูล <span className="font-semibold text-slate-900 dark:text-slate-100">&quot;{itemToDelete.name}&quot;</span> ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
             </p>
 
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => { setDeleteModalOpen(false); setItemToDelete(null); }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium w-full"
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium w-full dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
               >
                 ยกเลิก
               </button>

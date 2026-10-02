@@ -242,7 +242,7 @@ export default function TransfersPage() {
   return (
     <div className="space-y-5 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs ตรงตามภาพและ Design System */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl shadow-2xs">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => (
             <Link
@@ -263,31 +263,31 @@ export default function TransfersPage() {
       {/* 2. Top Section: 3 Stat KPI Cards ตรงตาม Mockup 100% */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Card 1: คำขอรออนุมัติ */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div className="text-slate-600 font-medium text-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
+          <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
             คำขอรออนุมัติ
           </div>
-          <div className="bg-slate-100/90 text-slate-800 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-slate-100/90 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
             {stats.pendingRequestsCount}
           </div>
         </div>
 
         {/* Card 2: ย้ายแผนกเดือนนี้ */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="bg-[#fef3c7] text-[#92400e] text-xs font-semibold px-2 py-0.5 rounded-md">
               ย้ายแผนก
             </span>
-            <span className="text-slate-600 font-medium text-sm">เดือนนี้</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">เดือนนี้</span>
           </div>
-          <div className="bg-slate-100/90 text-slate-800 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-slate-100/90 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
             {stats.transfersThisMonthCount}
           </div>
         </div>
 
         {/* Card 3: เลื่อนตำแหน่งเดือนนี้ */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div className="text-slate-600 font-medium text-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
+          <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
             เลื่อนตำแหน่งเดือนนี้
           </div>
           <div className="bg-slate-100/90 text-[#16a34a] text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
@@ -308,9 +308,9 @@ export default function TransfersPage() {
       </div>
 
       {/* 4. Sub-Tabs & Filter / Table Container */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
         {/* Tab Switcher: คำขอย้าย/เลื่อนตำแหน่ง vs ประวัติรายบุคคล ตรงตาม Mockup */}
-        <div className="border-b border-slate-200 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="border-b border-slate-200 dark:border-slate-700 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex space-x-8 text-sm font-medium">
             <button
               onClick={() => {
@@ -400,7 +400,7 @@ export default function TransfersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal">
+                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
                   <th className="py-3.5 px-6 font-medium">เลขที่คำขอ</th>
                   <th className="py-3.5 px-6 font-medium">พนักงาน</th>
                   <th className="py-3.5 px-6 font-medium">จาก</th>
@@ -414,7 +414,7 @@ export default function TransfersPage() {
               <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                         <span>กำลังโหลดข้อมูลการโยกย้าย...</span>
@@ -423,13 +423,13 @@ export default function TransfersPage() {
                   </tr>
                 ) : paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       ไม่พบข้อมูลคำขอย้าย/เลื่อนตำแหน่ง
                     </td>
                   </tr>
                 ) : (
                   paginatedTransfers.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                       {/* เลขที่คำขอ และ ประเภทการบันทึก */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -452,7 +452,7 @@ export default function TransfersPage() {
                               คำสั่งย้อนหลัง
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200">
                               <GitPullRequest className="w-2.5 h-2.5" />
                               ขออนุมัติ
                             </span>
@@ -460,8 +460,8 @@ export default function TransfersPage() {
                         </div>
 
                         {item.orderNo && (
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            เลขที่: <span className="font-medium text-slate-700">{item.orderNo}</span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            เลขที่: <span className="font-medium text-slate-700 dark:text-slate-300">{item.orderNo}</span>
                           </p>
                         )}
 
@@ -483,17 +483,17 @@ export default function TransfersPage() {
 
                       {/* พนักงาน */}
                       <td className="py-4 px-6">
-                        <span className="font-semibold text-slate-800">{item.employeeName}</span>
-                        <span className="text-slate-400 font-normal"> · {item.employeeCode}</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.employeeName}</span>
+                        <span className="text-slate-400 dark:text-slate-500 font-normal"> · {item.employeeCode}</span>
                       </td>
 
                       {/* จาก */}
-                      <td className="py-4 px-6 text-slate-600 font-normal">
+                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 font-normal">
                         {item.fromDisplay}
                       </td>
 
                       {/* ไปยัง */}
-                      <td className="py-4 px-6 text-slate-800 font-medium">
+                      <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium">
                         {item.toDisplay}
                       </td>
 
@@ -504,18 +504,18 @@ export default function TransfersPage() {
                             {item.transferTypeDisplay}
                           </span>
                         ) : item.transferType === 'PROMOTION' ? (
-                          <span className="text-slate-800 text-xs font-medium">
+                          <span className="text-slate-800 dark:text-slate-200 text-xs font-medium">
                             {item.transferTypeDisplay}
                           </span>
                         ) : (
-                          <span className="text-slate-800 text-xs font-medium">
+                          <span className="text-slate-800 dark:text-slate-200 text-xs font-medium">
                             {item.transferTypeDisplay}
                           </span>
                         )}
                       </td>
 
                       {/* วันที่มีผล */}
-                      <td className="py-4 px-6 text-slate-600 font-normal">
+                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 font-normal">
                         {item.effectiveDateDisplay}
                       </td>
 
@@ -606,7 +606,7 @@ export default function TransfersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal">
+                <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
                   <th className="py-3.5 px-6 font-medium">รหัสพนักงาน</th>
                   <th className="py-3.5 px-6 font-medium">ชื่อ-นามสกุล</th>
                   <th className="py-3.5 px-6 font-medium">แผนก / สังกัด</th>
@@ -617,7 +617,7 @@ export default function TransfersPage() {
               <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                         <span>กำลังโหลดรายชื่อพนักงาน...</span>
@@ -626,7 +626,7 @@ export default function TransfersPage() {
                   </tr>
                 ) : filteredEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       ไม่พบข้อมูลพนักงาน
                     </td>
                   </tr>
@@ -634,17 +634,17 @@ export default function TransfersPage() {
                   filteredEmployees
                     .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                     .map((emp) => (
-                      <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-4 px-6 font-semibold text-slate-900">
+                      <tr key={emp.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-4 px-6 font-semibold text-slate-900 dark:text-slate-100">
                           {emp.employeeCode}
                         </td>
-                        <td className="py-4 px-6 font-medium text-slate-800">
+                        <td className="py-4 px-6 font-medium text-slate-800 dark:text-slate-200">
                           {emp.firstName} {emp.lastName}
                         </td>
-                        <td className="py-4 px-6 text-slate-600">
+                        <td className="py-4 px-6 text-slate-600 dark:text-slate-400">
                           {emp.departmentName || '-'}
                         </td>
-                        <td className="py-4 px-6 text-slate-800 font-medium">
+                        <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium">
                           {emp.positionName || '-'}
                         </td>
                         <td className="py-4 px-6 text-right">
@@ -672,7 +672,7 @@ export default function TransfersPage() {
         )}
 
         {/* 7. Pagination Footer (< 1 2 3 4 >) ตรงตาม Mockup 100% */}
-        <div className="py-4 px-6 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <div>
             แสดง{' '}
             {activeTab === 'transfers'

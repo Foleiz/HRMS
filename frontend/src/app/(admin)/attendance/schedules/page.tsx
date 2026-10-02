@@ -881,7 +881,7 @@ function SchedulesContent() {
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: มอบหมายกะให้พนักงาน */}
           <button
@@ -915,18 +915,18 @@ function SchedulesContent() {
       {activeTab === 'roster' && (
         <div className="space-y-6">
           {/* Filter & View Switcher Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Filters & Search */}
             <div className="flex items-center gap-2.5 shrink-0">
               {/* Search */}
               <div className="relative w-56 sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
                   value={assignmentSearch}
                   onChange={(e) => setAssignmentSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -935,7 +935,7 @@ function SchedulesContent() {
                 <select
                   value={assignmentDeptFilter}
                   onChange={(e) => setAssignmentDeptFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ALL">ทุกแผนก / สังกัด</option>
                   {departments.map((d) => (
@@ -955,7 +955,7 @@ function SchedulesContent() {
                     loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
                   }
                 }}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
@@ -964,7 +964,7 @@ function SchedulesContent() {
 
             {/* Right: View Mode Switcher & Actions */}
             <div className="flex items-center gap-2.5 shrink-0">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
                 <button
                   onClick={() => setAssignmentViewMode('list')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
@@ -989,7 +989,7 @@ function SchedulesContent() {
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
 
               <div className="flex items-center gap-2">
                 <button
@@ -997,9 +997,9 @@ function SchedulesContent() {
                     setBatchModalOpen(true);
                     setBatchResult(null);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs whitespace-nowrap dark:bg-slate-800 dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300"
                 >
-                  <Users className="w-3.5 h-3.5 text-slate-500" />
+                  <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span>มอบหมายกะกลุ่ม</span>
                 </button>
                 <button
@@ -1015,24 +1015,24 @@ function SchedulesContent() {
 
           {/* VIEW 0: REAL MONTHLY 7-DAY CALENDAR VIEW */}
           {assignmentViewMode === 'calendar' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4 dark:bg-slate-800 dark:border-slate-700/80">
               {/* Month Navigator & Shift Legends */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-700/60">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5 dark:bg-slate-800">
                     <button
                       onClick={prevMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
                       title="เดือนก่อนหน้า"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <div className="px-3 text-sm font-bold text-slate-800">
+                    <div className="px-3 text-sm font-bold text-slate-800 dark:text-slate-200">
                       {THAI_MONTHS[rosterMonth - 1]} {rosterYear + 543}
                     </div>
                     <button
                       onClick={nextMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition"
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
                       title="เดือนถัดไป"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -1045,19 +1045,19 @@ function SchedulesContent() {
                       setRosterYear(today.getFullYear());
                       setRosterMonth(today.getMonth() + 1);
                     }}
-                    className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition"
+                    className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition dark:bg-slate-700 dark:text-slate-300 dark:hover:text-slate-100"
                   >
                     วันนี้
                   </button>
 
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     แสดงภาพรวมการจัดเวร ({rosterData?.employees.length ?? 0} คน)
                   </span>
                 </div>
 
                 {/* Shift Badges Legend */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500">ประเภทกะ:</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">ประเภทกะ:</span>
                   {shifts.map((s) => {
                     const period = getShiftPeriodInfo(s);
                     const PeriodIcon = period.icon;
@@ -1077,19 +1077,19 @@ function SchedulesContent() {
 
               {/* Calendar 7-Day Grid */}
               {loadingRoster ? (
-                <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+                <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500">
                   <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
                   <p className="text-sm">กำลังโหลดปฏิทินการจัดเวร...</p>
                 </div>
               ) : (
-                <div className="rounded-lg border border-slate-200 overflow-hidden shadow-xs">
+                <div className="rounded-lg border border-slate-200 overflow-hidden shadow-xs dark:border-slate-700">
                   {/* Day of week headers: Mon - Sun */}
-                  <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center text-xs font-bold text-slate-600">
+                  <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center text-xs font-bold text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:bg-slate-800/60 dark:text-slate-400">
                     {['จันทร์ (Mon)', 'อังคาร (Tue)', 'พุธ (Wed)', 'พฤหัสบดี (Thu)', 'ศุกร์ (Fri)', 'เสาร์ (Sat)', 'อาทิตย์ (Sun)'].map(
                       (dayLabel, idx) => (
                         <div
                           key={dayLabel}
-                          className={`py-2.5 border-r border-slate-200 last:border-r-0 ${
+                          className={`py-2.5 border-r border-slate-200 last:border-r-0  dark:border-slate-700${
                             idx >= 5 ? 'bg-amber-50/60 text-amber-900' : ''
                           }`}
                         >
@@ -1100,7 +1100,7 @@ function SchedulesContent() {
                   </div>
 
                   {/* Month days cells */}
-                  <div className="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-px">
+                  <div className="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-px dark:bg-slate-700">
                     {monthCalendarGrid.map((cell, cellIdx) => {
                       if (!cell.isCurrentMonth) {
                         return (
@@ -1130,7 +1130,7 @@ function SchedulesContent() {
                       return (
                         <div
                           key={`day-${cell.dayNumber}`}
-                          className={`bg-white p-2 min-h-[115px] flex flex-col justify-between transition group hover:bg-slate-50/80 cursor-pointer ${
+                          className={`bg-white p-2 min-h-[115px] flex flex-col justify-between transition group hover:bg-slate-50/80 cursor-pointer  dark:bg-slate-900${
                             cell.isWeekend ? 'bg-amber-50/20' : ''
                           }`}
                           onClick={() =>
@@ -1158,7 +1158,7 @@ function SchedulesContent() {
 
                             <div className="flex items-center gap-1">
                               {dayShifts.length > 0 && (
-                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full dark:bg-slate-700 dark:text-slate-300 dark:text-slate-400">
                                   {dayShifts.length} คน
                                 </span>
                               )}
@@ -1168,7 +1168,7 @@ function SchedulesContent() {
                                   e.stopPropagation();
                                   openSingleAssignCreate(undefined, dateStr);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition dark:text-slate-500"
                                 title="มอบหมายกะในวันนี้"
                               >
                                 <Plus className="w-3 h-3" />
@@ -1190,14 +1190,14 @@ function SchedulesContent() {
                                   <div className="flex items-center gap-1 min-w-0 truncate">
                                     <PeriodIcon className="w-2.5 h-2.5 shrink-0" />
                                     <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
-                                    <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
+                                    <span className="truncate text-slate-700 dark:text-slate-300">{item.employeeName.split(' ')[0]}</span>
                                   </div>
                                 </div>
                               );
                             })}
 
                             {dayShifts.length > 3 && (
-                              <div className="text-[10px] font-semibold text-slate-500 group-hover:text-[#0B2046] text-right pt-0.5">
+                              <div className="text-[10px] font-semibold text-slate-500 group-hover:text-[#0B2046] text-right pt-0.5 dark:text-slate-400">
                                 + อีก {dayShifts.length - 3} คน
                               </div>
                             )}
@@ -1219,18 +1219,18 @@ function SchedulesContent() {
 
           {/* VIEW 2: DETAILED ASSIGNMENT LIST VIEW */}
           {assignmentViewMode === 'list' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
                 <div>
-                  <h3 className="font-bold text-slate-800 text-sm">รายการมอบหมายกะพนักงานทั้งหมด</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="font-bold text-slate-800 text-sm dark:text-slate-200">รายการมอบหมายกะพนักงานทั้งหมด</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     รายการการกำหนดกะแบบเฉพาะบุคคล ({filteredAssignments.length} รายการ)
                   </p>
                 </div>
               </div>
 
               {loadingAssignments ? (
-                <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+                <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500">
                   <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
                   <p className="text-sm">กำลังโหลดรายการมอบหมายกะ...</p>
                 </div>
@@ -1238,7 +1238,7 @@ function SchedulesContent() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                      <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                         <th className="p-3.5">รหัส / ชื่อพนักงาน</th>
                         <th className="p-3.5">แผนก / สังกัด</th>
                         <th className="p-3.5">กะการทำงาน</th>
@@ -1250,14 +1250,14 @@ function SchedulesContent() {
                         <th className="p-3.5 text-right">จัดการ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                       {filteredAssignments.map((a) => (
-                        <tr key={a.id} className="hover:bg-slate-50/60 transition">
+                        <tr key={a.id} className="hover:bg-slate-50/60 transition dark:hover:bg-slate-800/40">
                           <td className="p-3.5">
-                            <div className="font-semibold text-slate-900">{a.employeeName}</div>
-                            <div className="text-xs text-slate-500">{a.employeeCode}</div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">{a.employeeName}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">{a.employeeCode}</div>
                           </td>
-                          <td className="p-3.5 text-slate-600">
+                          <td className="p-3.5 text-slate-600 dark:text-slate-400">
                             {a.departmentName || '-'}
                           </td>
                           <td className="p-3.5">
@@ -1281,23 +1281,23 @@ function SchedulesContent() {
                             })()}
                           </td>
                           <td className="p-3.5">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200">
-                              <Calendar className="w-3 h-3 text-slate-400" />
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700">
+                              <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                               <span>{formatWorkDays(a.workDays)}</span>
                             </span>
                           </td>
-                          <td className="p-3.5 text-slate-600 font-mono text-xs">
+                          <td className="p-3.5 text-slate-600 font-mono text-xs dark:text-slate-400">
                             {a.startTime?.substring(0, 5)} - {a.endTime?.substring(0, 5)} น.
                             {a.isCrossDay && <span className="ml-1 text-purple-600 font-semibold">(ข้ามวัน)</span>}
                           </td>
-                          <td className="p-3.5 text-slate-700">
+                          <td className="p-3.5 text-slate-700 dark:text-slate-300">
                             {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
                             })}
                           </td>
-                          <td className="p-3.5 text-slate-700">
+                          <td className="p-3.5 text-slate-700 dark:text-slate-300">
                             {a.effectiveTo ? (
                               new Date(a.effectiveTo).toLocaleDateString('th-TH', {
                                 year: 'numeric',
@@ -1328,7 +1328,7 @@ function SchedulesContent() {
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => openSingleAssignEdit(a)}
-                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition dark:text-slate-400"
                                 title="แก้ไขช่วงเวลากะ"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -1343,7 +1343,7 @@ function SchedulesContent() {
                                   });
                                   setDeleteConfirmOpen(true);
                                 }}
-                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition dark:text-slate-400"
                                 title="ยกเลิกการมอบหมายกะ"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1356,9 +1356,9 @@ function SchedulesContent() {
                   </table>
                 </div>
               ) : (
-                <div className="py-16 text-center text-slate-400">
-                  <p className="text-base font-semibold text-slate-600">ไม่พบรายการมอบหมายกะ</p>
-                  <p className="text-xs text-slate-400 mt-1">ยังไม่มีการกำหนดกะเฉพาะบุคคลในระบบ</p>
+                <div className="py-16 text-center text-slate-400 dark:text-slate-500">
+                  <p className="text-base font-semibold text-slate-600 dark:text-slate-400">ไม่พบรายการมอบหมายกะ</p>
+                  <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">ยังไม่มีการกำหนดกะเฉพาะบุคคลในระบบ</p>
                 </div>
               )}
             </div>
@@ -1372,18 +1372,18 @@ function SchedulesContent() {
       {activeTab === 'shifts' && (
         <div className="space-y-6">
           {/* Shift Filter & View Switcher Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Filters & Search */}
             <div className="flex items-center gap-2.5 shrink-0">
               {/* Search */}
               <div className="relative w-56 sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหารหัส หรือชื่อกะการทำงาน..."
                   value={shiftSearchQuery}
                   onChange={(e) => setShiftSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -1392,7 +1392,7 @@ function SchedulesContent() {
                 <select
                   value={shiftFilterType}
                   onChange={(e) => setShiftFilterType(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ALL">ประเภทกะทั้งหมด</option>
                   <option value="MORNING">กะเช้า</option>
@@ -1406,7 +1406,7 @@ function SchedulesContent() {
                 <select
                   value={shiftFilterStatus}
                   onChange={(e) => setShiftFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ALL">สถานะทั้งหมด</option>
                   <option value="ACTIVE">เปิดใช้งาน</option>
@@ -1417,7 +1417,7 @@ function SchedulesContent() {
               {/* Refresh */}
               <button
                 onClick={loadShifts}
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                 title="รีเฟรชข้อมูลกะ"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingShifts ? 'animate-spin' : ''}`} />
@@ -1426,7 +1426,7 @@ function SchedulesContent() {
 
             {/* Right: View Switcher & Action */}
             <div className="flex items-center gap-2.5 shrink-0">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
                 <button
                   onClick={() => setShiftViewMode('grid')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
@@ -1451,7 +1451,7 @@ function SchedulesContent() {
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
 
               <button
                 onClick={openShiftCreate}
@@ -1465,15 +1465,15 @@ function SchedulesContent() {
 
           {/* Shift Content */}
           {loadingShifts ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
               <p className="text-sm">กำลังโหลดข้อมูลกะการทำงาน...</p>
             </div>
           ) : filteredShifts.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
+            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
               <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-              <p className="text-base font-semibold text-slate-700">ไม่พบข้อมูลกะการทำงานที่ค้นหา</p>
-              <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มกะการทำงานใหม่" เพื่อสร้างกะแรก</p>
+              <p className="text-base font-semibold text-slate-700 dark:text-slate-300">ไม่พบข้อมูลกะการทำงานที่ค้นหา</p>
+              <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มกะการทำงานใหม่" เพื่อสร้างกะแรก</p>
             </div>
           ) : shiftViewMode === 'grid' ? (
             /* GRID VIEW */
@@ -1481,12 +1481,12 @@ function SchedulesContent() {
               {filteredShifts.map((shift) => (
                 <div
                   key={shift.id}
-                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group"
+                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group dark:bg-slate-800"
                 >
                   <div>
                     {/* Card Header: Shift Name & Day/Night Badge */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <h3 className="font-bold text-slate-900 text-base group-hover:text-[#0B2046] transition truncate">
+                      <h3 className="font-bold text-slate-900 text-base group-hover:text-[#0B2046] transition truncate dark:text-slate-100">
                         {shift.shiftName}
                       </h3>
                       {(() => {
@@ -1504,10 +1504,10 @@ function SchedulesContent() {
                     </div>
 
                     {/* Time Window Display */}
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4">
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2 mb-4 dark:bg-slate-950 dark:border-slate-700/60">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">เวลาทำงาน:</span>
-                        <span className="font-bold font-mono text-slate-800 text-sm">
+                        <span className="text-slate-500 dark:text-slate-400">เวลาทำงาน:</span>
+                        <span className="font-bold font-mono text-slate-800 text-sm dark:text-slate-200">
                           {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)} น.
                           {shift.isCrossDay && (
                             <span className="ml-1.5 text-[11px] font-medium text-purple-600">(ข้ามวัน)</span>
@@ -1515,8 +1515,8 @@ function SchedulesContent() {
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
-                        <span className="text-slate-500">ชั่วโมงทำงานสุทธิ:</span>
-                        <span className="font-semibold text-slate-700">
+                        <span className="text-slate-500 dark:text-slate-400">ชั่วโมงทำงานสุทธิ:</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                           {shift.netWorkHours ?? 8} ชม. (พัก {shift.breakMinutes} นาที)
                         </span>
                       </div>
@@ -1524,15 +1524,15 @@ function SchedulesContent() {
 
                     {/* Separate Grace Times */}
                     <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
-                        <div className="text-slate-400 text-[11px]">ผ่อนปรนมาสาย:</div>
-                        <div className="font-semibold text-slate-700 mt-0.5">
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+                        <div className="text-slate-400 text-[11px] dark:text-slate-500">ผ่อนปรนมาสาย:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5 dark:text-slate-300">
                           {shift.lateGraceMinutes > 0 ? `${shift.lateGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
                         </div>
                       </div>
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
-                        <div className="text-slate-400 text-[11px]">ผ่อนปรนกลับก่อน:</div>
-                        <div className="font-semibold text-slate-700 mt-0.5">
+                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+                        <div className="text-slate-400 text-[11px] dark:text-slate-500">ผ่อนปรนกลับก่อน:</div>
+                        <div className="font-semibold text-slate-700 mt-0.5 dark:text-slate-300">
                           {shift.earlyLeaveGraceMinutes > 0 ? `${shift.earlyLeaveGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
                         </div>
                       </div>
@@ -1540,7 +1540,7 @@ function SchedulesContent() {
                   </div>
 
                   {/* Card Actions Footer */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between dark:border-slate-700/60">
                     <span
                       className={`inline-flex items-center gap-1 text-xs font-medium ${
                         shift.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
@@ -1560,7 +1560,7 @@ function SchedulesContent() {
                       items={[
                         {
                           label: 'ดูข้อมูลพนักงาน',
-                          icon: <Users className="w-4 h-4 text-slate-600 shrink-0" />,
+                          icon: <Users className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                           onClick: () => {
                             setSelectedShiftForEmployees(shift);
                             setEmployeeModalOpen(true);
@@ -1568,12 +1568,12 @@ function SchedulesContent() {
                         },
                         {
                           label: 'คัดลอกกะการทำงาน',
-                          icon: <Copy className="w-4 h-4 text-slate-600 shrink-0" />,
+                          icon: <Copy className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                           onClick: () => handleDuplicateShift(shift),
                         },
                         {
                           label: 'แก้ไขกะการทำงาน',
-                          icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />,
+                          icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                           onClick: () => openShiftEdit(shift),
                         },
                         {
@@ -1598,11 +1598,11 @@ function SchedulesContent() {
             </div>
           ) : (
             /* TABLE VIEW */
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
               <div className="overflow-x-auto min-h-[280px] pb-8">
                 <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                       <th className="p-3.5">รหัสกะ</th>
                       <th className="p-3.5">ชื่อกะการทำงาน</th>
                       <th className="p-3.5">ประเภทกะ</th>
@@ -1614,11 +1614,11 @@ function SchedulesContent() {
                       <th className="p-3.5 text-right w-16">จัดการ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {filteredShifts.map((s, index) => (
-                      <tr key={s.id} className="hover:bg-slate-50/60 transition">
-                        <td className="p-3.5 font-mono font-bold text-slate-800">{s.shiftCode}</td>
-                        <td className="p-3.5 font-semibold text-slate-900">{s.shiftName}</td>
+                      <tr key={s.id} className="hover:bg-slate-50/60 transition dark:hover:bg-slate-800/40">
+                        <td className="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200">{s.shiftCode}</td>
+                        <td className="p-3.5 font-semibold text-slate-900 dark:text-slate-100">{s.shiftName}</td>
                         <td className="p-3.5">
                           {(() => {
                             const period = getShiftPeriodInfo(s);
@@ -1633,17 +1633,17 @@ function SchedulesContent() {
                             );
                           })()}
                         </td>
-                        <td className="p-3.5 font-mono text-xs text-slate-700">
+                        <td className="p-3.5 font-mono text-xs text-slate-700 dark:text-slate-300">
                           {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
                           {s.isCrossDay && (
                             <span className="ml-1.5 text-[11px] text-purple-600 font-semibold">(ข้ามวัน)</span>
                           )}
                         </td>
-                        <td className="p-3.5 text-slate-600">{s.breakMinutes} นาที</td>
-                        <td className="p-3.5 text-slate-700">
+                        <td className="p-3.5 text-slate-600 dark:text-slate-400">{s.breakMinutes} นาที</td>
+                        <td className="p-3.5 text-slate-700 dark:text-slate-300">
                           {s.lateGraceMinutes > 0 ? `${s.lateGraceMinutes} นาที` : '-'}
                         </td>
-                        <td className="p-3.5 text-slate-700">
+                        <td className="p-3.5 text-slate-700 dark:text-slate-300">
                           {s.earlyLeaveGraceMinutes > 0 ? `${s.earlyLeaveGraceMinutes} นาที` : '-'}
                         </td>
                         <td className="p-3.5">
@@ -1669,7 +1669,7 @@ function SchedulesContent() {
                             items={[
                               {
                                 label: 'ดูข้อมูลพนักงาน',
-                                icon: <Users className="w-4 h-4 text-slate-600 shrink-0" />,
+                                icon: <Users className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                                 onClick: () => {
                                   setSelectedShiftForEmployees(s);
                                   setEmployeeModalOpen(true);
@@ -1677,12 +1677,12 @@ function SchedulesContent() {
                               },
                               {
                                 label: 'คัดลอกกะการทำงาน',
-                                icon: <Copy className="w-4 h-4 text-slate-600 shrink-0" />,
+                                icon: <Copy className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                                 onClick: () => handleDuplicateShift(s),
                               },
                               {
                                 label: 'แก้ไขกะการทำงาน',
-                                icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0" />,
+                                icon: <Edit2 className="w-4 h-4 text-slate-600 shrink-0 dark:text-slate-400" />,
                                 onClick: () => openShiftEdit(s),
                               },
                               {
@@ -1717,19 +1717,19 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {assignModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">
+                <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">
                   {assignModalMode === 'create' ? 'มอบหมายกะให้พนักงาน' : 'แก้ไขการมอบหมายกะ'}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                   กำหนดกะเฉพาะบุคคล (ป้องกันการกำหนดช่วงเวลาซ้อนทับอัตโนมัติ)
                 </p>
               </div>
               <button
                 onClick={() => setAssignModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition dark:text-slate-500"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1739,16 +1739,16 @@ function SchedulesContent() {
               {/* Employee Selection & Type Filter */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     เลือกพนักงาน <span className="text-rose-500">*</span>
                   </label>
                   {assignModalMode === 'create' && (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-slate-500">ประเภท:</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
                       <select
                         value={singleAssignTypeFilter}
                         onChange={(e) => setSingleAssignTypeFilter(e.target.value)}
-                        className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-200 rounded-md focus:outline-none text-slate-700 font-medium"
+                        className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-200 rounded-md focus:outline-none text-slate-700 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                       >
                         <option value="ALL">ทุกประเภทการจ้างงาน</option>
                         {employeeTypes.map((t) => (
@@ -1770,7 +1770,7 @@ function SchedulesContent() {
                           setSingleAssignSearch('');
                         }
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-left bg-slate-50 hover:bg-slate-100/70 border rounded-lg transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left bg-slate-50 hover:bg-slate-100/70 border rounded-lg transition-all  dark:bg-slate-950${
                         singleAssignDropdownOpen
                           ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white'
                           : 'border-slate-200 text-slate-800'
@@ -1781,23 +1781,23 @@ function SchedulesContent() {
                           <span className="shrink-0 px-1.5 py-0.5 text-[11px] font-mono font-bold bg-blue-100 text-blue-700 rounded">
                             {selectedSingleEmployee.employeeCode}
                           </span>
-                          <span className="text-sm font-medium text-slate-900 truncate">
+                          <span className="text-sm font-medium text-slate-900 truncate dark:text-slate-100">
                             {selectedSingleEmployee.fullName}
                           </span>
-                          <span className="text-xs text-slate-400 truncate hidden sm:inline">
+                          <span className="text-xs text-slate-400 truncate hidden sm:inline dark:text-slate-500">
                             ({selectedSingleEmployee.departmentName || 'ไม่ระบุแผนก'})
                           </span>
-                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded dark:bg-slate-700 dark:text-slate-300">
                             {selectedSingleEmployee.employeeTypeName || 'พนักงานประจำ'}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-400 flex items-center gap-2">
-                          <Search className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm text-slate-400 flex items-center gap-2 dark:text-slate-500">
+                          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                           ค้นหาหรือเลือกพนักงาน...
                         </span>
                       )}
-                      <div className="flex items-center gap-1 shrink-0 text-slate-400">
+                      <div className="flex items-center gap-1 shrink-0 text-slate-400 dark:text-slate-500">
                         {selectedSingleEmployee && (
                           <span
                             role="button"
@@ -1821,11 +1821,11 @@ function SchedulesContent() {
 
                     {/* Dropdown Menu */}
                     {singleAssignDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-100">
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-100 dark:bg-slate-800 dark:border-slate-700">
                         {/* Search Input Bar */}
-                        <div className="p-2 border-b border-slate-100 bg-slate-50/80">
+                        <div className="p-2 border-b border-slate-100 bg-slate-50/80 dark:bg-slate-800/60 dark:border-slate-700/60">
                           <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                             <input
                               ref={singleAssignSearchInputRef}
                               type="text"
@@ -1841,19 +1841,19 @@ function SchedulesContent() {
                                   }
                                 }
                               }}
-                              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400"
+                              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500"
                             />
                             {singleAssignSearch && (
                               <button
                                 type="button"
                                 onClick={() => setSingleAssignSearch('')}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 dark:text-slate-500"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
-                          <div className="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-500">
+                          <div className="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-500 dark:text-slate-400">
                             <span>พบ {filteredSingleAssignEmployees.length} คน</span>
                             {singleAssignTypeFilter !== 'ALL' && (
                               <span className="text-blue-600 font-medium">
@@ -1864,12 +1864,12 @@ function SchedulesContent() {
                         </div>
 
                         {/* List */}
-                        <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
+                        <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
                           {filteredSingleAssignEmployees.length === 0 ? (
                             <div className="py-6 px-4 text-center">
                               <Users className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
-                              <p className="text-xs font-medium text-slate-600">ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข</p>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 dark:text-slate-500">
                                 ลองเปลี่ยนคำค้นหา หรือเลือก &quot;ทุกประเภทการจ้างงาน&quot;
                               </p>
                             </div>
@@ -1892,20 +1892,20 @@ function SchedulesContent() {
                                 >
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 rounded border border-slate-200">
+                                      <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 rounded border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
                                         {emp.employeeCode}
                                       </span>
-                                      <span className="text-xs font-semibold text-slate-900 truncate">
+                                      <span className="text-xs font-semibold text-slate-900 truncate dark:text-slate-100">
                                         {emp.fullName}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500">
+                                    <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                                       <span className="truncate flex items-center gap-1">
-                                        <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                                        <Building2 className="w-3 h-3 text-slate-400 shrink-0 dark:text-slate-500" />
                                         {emp.departmentName || 'ไม่ระบุแผนก'}
                                       </span>
                                       <span className="text-slate-300">•</span>
-                                      <span className="shrink-0 px-1.5 py-0.2 text-[10px] bg-blue-50 text-blue-700 rounded font-medium">
+                                      <span className="shrink-0 px-1.5 py-0.2 text-[10px] bg-blue-50 text-blue-700 rounded font-medium dark:bg-blue-900/20 dark:text-blue-400">
                                         {emp.employeeTypeName || 'พนักงานประจำ'}
                                       </span>
                                     </div>
@@ -1922,12 +1922,12 @@ function SchedulesContent() {
                     )}
                   </div>
                 ) : (
-                  <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium flex items-center justify-between">
+                  <div className="px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-medium flex items-center justify-between dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                     <span>
                       {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.fullName ||
                         `พนักงานรหัส #${assignForm.employeeId}`}
                     </span>
-                    <span className="text-xs text-slate-500 font-normal">
+                    <span className="text-xs text-slate-500 font-normal dark:text-slate-400">
                       {assignableEmployees.find((e) => e.id === assignForm.employeeId)?.employeeTypeName || 'พนักงานประจำ'}
                     </span>
                   </div>
@@ -1936,13 +1936,13 @@ function SchedulesContent() {
 
               {/* Shift Selection */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   กะการทำงานเป้าหมาย <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={assignForm.shiftId}
                   onChange={(e) => setAssignForm({ ...assignForm, shiftId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   required
                 >
                   <option value="0">-- กรุณาเลือกกะการทำงาน --</option>
@@ -1958,26 +1958,26 @@ function SchedulesContent() {
               {/* Date Ranges */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={assignForm.effectiveFrom}
                     onChange={(e) => setAssignForm({ ...assignForm, effectiveFrom: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าไม่มีกำหนด)</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
+                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal dark:text-slate-500">(เว้นว่างถ้าไม่มีกำหนด)</span>
                   </label>
                   <input
                     type="date"
                     value={assignForm.effectiveTo || ''}
                     onChange={(e) => setAssignForm({ ...assignForm, effectiveTo: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -1985,7 +1985,7 @@ function SchedulesContent() {
               {/* Day of Week Selector */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
                   </label>
                   {/* Quick Preset Buttons */}
@@ -1993,21 +1993,21 @@ function SchedulesContent() {
                     <button
                       type="button"
                       onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       จ.-ศ.
                     </button>
                     <button
                       type="button"
                       onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       จ.-ส.
                     </button>
                     <button
                       type="button"
                       onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6, 0] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       ทุกวัน
                     </button>
@@ -2045,11 +2045,11 @@ function SchedulesContent() {
               </div>
 
               {/* Form Actions */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setAssignModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -2072,20 +2072,20 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {batchModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center dark:bg-indigo-900/20 dark:text-indigo-400">
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">มอบหมายกะแบบกลุ่ม (Batch Assignment)</h3>
-                  <p className="text-xs text-slate-500">จัดกะให้พนักงานทั้งแผนก หรือเลือกเฉพาะหลายคนพร้อมกันในครั้งเดียว</p>
+                  <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">มอบหมายกะแบบกลุ่ม (Batch Assignment)</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">จัดกะให้พนักงานทั้งแผนก หรือเลือกเฉพาะหลายคนพร้อมกันในครั้งเดียว</p>
                 </div>
               </div>
               <button
                 onClick={() => setBatchModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition dark:text-slate-500"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2094,9 +2094,9 @@ function SchedulesContent() {
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
               {/* Batch Result Report */}
               {batchResult && (
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">ผลการประมวลผลการจัดกะ:</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">ผลการประมวลผลการจัดกะ:</span>
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-emerald-700 font-semibold">สำเร็จ: {batchResult.successCount}</span>
                       <span className="text-rose-700 font-semibold">ข้อผิดพลาด: {batchResult.failedCount}</span>
@@ -2117,7 +2117,7 @@ function SchedulesContent() {
 
               {/* Target Type Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">เป้าหมายที่ต้องการมอบหมาย</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-2 dark:text-slate-300">เป้าหมายที่ต้องการมอบหมาย</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -2131,7 +2131,7 @@ function SchedulesContent() {
                     <Building2 className="w-5 h-5 shrink-0" />
                     <div>
                       <div className="text-xs font-bold">ตามรายแผนก</div>
-                      <div className="text-[11px] text-slate-500">มอบหมายให้พนักงานทุกคนในแผนก</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">มอบหมายให้พนักงานทุกคนในแผนก</div>
                     </div>
                   </button>
 
@@ -2147,7 +2147,7 @@ function SchedulesContent() {
                     <UserCheck className="w-5 h-5 shrink-0" />
                     <div>
                       <div className="text-xs font-bold">เลือกพนักงานเอง</div>
-                      <div className="text-[11px] text-slate-500">ติ๊กเลือกพนักงานเฉพาะกลุ่ม</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">ติ๊กเลือกพนักงานเฉพาะกลุ่ม</div>
                     </div>
                   </button>
                 </div>
@@ -2156,13 +2156,13 @@ function SchedulesContent() {
               {/* Department Option */}
               {batchTargetType === 'department' ? (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     เลือกแผนกเป้าหมาย <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={batchSelectedDept || ''}
                     onChange={(e) => setBatchSelectedDept(Number(e.target.value) || null)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   >
                     <option value="">-- กรุณาเลือกแผนก --</option>
                     {departments.map((d) => (
@@ -2176,7 +2176,7 @@ function SchedulesContent() {
                 /* Select Specific Employees */
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-700">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       เลือกพนักงาน ({batchSelectedEmpIds.length} คนที่เลือก)
                     </label>
                     <div className="flex items-center gap-2 text-xs">
@@ -2204,7 +2204,7 @@ function SchedulesContent() {
                       <button
                         type="button"
                         onClick={() => setBatchSelectedEmpIds([])}
-                        className="text-slate-500 hover:underline"
+                        className="text-slate-500 hover:underline dark:text-slate-400"
                       >
                         ล้างการเลือก
                       </button>
@@ -2214,13 +2214,13 @@ function SchedulesContent() {
                   {/* Search and Employee Type Filter Bar */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="relative">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type="text"
                         placeholder="พิมพ์กรองชื่อ หรือแผนก..."
                         value={empFilterKeyword}
                         onChange={(e) => setEmpFilterKeyword(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                       />
                     </div>
 
@@ -2228,7 +2228,7 @@ function SchedulesContent() {
                       <select
                         value={batchAssignTypeFilter}
                         onChange={(e) => setBatchAssignTypeFilter(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-slate-700 font-medium"
+                        className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-slate-700 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
                       >
                         <option value="ALL">ทุกประเภทการจ้างงาน</option>
                         {employeeTypes.map((t) => (
@@ -2240,7 +2240,7 @@ function SchedulesContent() {
                     </div>
                   </div>
 
-                  <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 p-1">
+                  <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 p-1 dark:border-slate-700 dark:divide-slate-700/60">
                     {assignableEmployees
                       .filter((e) => {
                         const matchSearch =
@@ -2256,7 +2256,7 @@ function SchedulesContent() {
                         return (
                           <label
                             key={emp.id}
-                            className="flex items-center gap-2.5 p-2 hover:bg-slate-50 rounded cursor-pointer text-xs"
+                            className="flex items-center gap-2.5 p-2 hover:bg-slate-50 rounded cursor-pointer text-xs dark:hover:bg-slate-800/40"
                           >
                             <input
                               type="checkbox"
@@ -2268,17 +2268,17 @@ function SchedulesContent() {
                                   setBatchSelectedEmpIds(batchSelectedEmpIds.filter((id) => id !== emp.id));
                                 }
                               }}
-                              className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]"
+                              className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046] dark:border-slate-600"
                             />
                             <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
                               <div className="truncate">
-                                <span className="font-semibold text-slate-800">{emp.fullName}</span>
-                                <span className="text-slate-400 text-[11px] ml-2 font-mono">{emp.employeeCode}</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">{emp.fullName}</span>
+                                <span className="text-slate-400 text-[11px] ml-2 font-mono dark:text-slate-500">{emp.employeeCode}</span>
                                 {emp.departmentName && (
-                                  <span className="text-slate-500 text-[11px] ml-1.5">({emp.departmentName})</span>
+                                  <span className="text-slate-500 text-[11px] ml-1.5 dark:text-slate-400">({emp.departmentName})</span>
                                 )}
                               </div>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 shrink-0 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
                                 {emp.employeeTypeName || 'พนักงานประจำ'}
                               </span>
                             </div>
@@ -2291,13 +2291,13 @@ function SchedulesContent() {
 
               {/* Choose Shift */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   กะการทำงานที่ต้องการมอบหมาย <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={batchShiftId}
                   onChange={(e) => setBatchShiftId(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -2310,25 +2310,25 @@ function SchedulesContent() {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={batchEffectiveFrom}
                     onChange={(e) => setBatchEffectiveFrom(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal">(เว้นว่างถ้าไม่มีกำหนดสิ้นสุด)</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
+                    สิ้นสุดวันที่ <span className="text-slate-400 font-normal dark:text-slate-500">(เว้นว่างถ้าไม่มีกำหนดสิ้นสุด)</span>
                   </label>
                   <input
                     type="date"
                     value={batchEffectiveTo}
                     onChange={(e) => setBatchEffectiveTo(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -2336,7 +2336,7 @@ function SchedulesContent() {
               {/* Day of Week Selector */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
                   </label>
                   {/* Quick Preset Buttons */}
@@ -2344,21 +2344,21 @@ function SchedulesContent() {
                     <button
                       type="button"
                       onClick={() => setBatchWorkDays([1, 2, 3, 4, 5])}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       จ.-ศ.
                     </button>
                     <button
                       type="button"
                       onClick={() => setBatchWorkDays([1, 2, 3, 4, 5, 6])}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       จ.-ส.
                     </button>
                     <button
                       type="button"
                       onClick={() => setBatchWorkDays([1, 2, 3, 4, 5, 6, 0])}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition dark:bg-slate-700 dark:text-slate-300"
                     >
                       ทุกวัน
                     </button>
@@ -2396,11 +2396,11 @@ function SchedulesContent() {
             </div>
 
             {/* Modal Actions */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setBatchModalOpen(false)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ปิดหน้าต่าง
               </button>
@@ -2424,19 +2424,19 @@ function SchedulesContent() {
       {shiftModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-4 animate-fade-in">
           <div className="min-h-full flex items-center justify-center py-4">
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg">
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between rounded-t-2xl">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg dark:bg-slate-800 dark:border-slate-700">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between rounded-t-2xl dark:border-slate-700/60">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">
+                  <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">
                     {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
                     กำหนดช่วงเวลาเข้า-ออก และเงื่อนไขการผ่อนปรนเวลา
                   </p>
                 </div>
                 <button
                   onClick={() => setShiftModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition dark:text-slate-500"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2463,7 +2463,7 @@ function SchedulesContent() {
               {/* Shift Code & Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     รหัสกะ <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -2475,7 +2475,7 @@ function SchedulesContent() {
                       if (shiftModalError) setShiftModalError(null);
                       setShiftForm({ ...shiftForm, shiftCode: e.target.value.toUpperCase() });
                     }}
-                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg font-mono focus:outline-none focus:ring-2 transition ${
+                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg font-mono focus:outline-none focus:ring-2 transition  dark:bg-slate-950${
                       shiftModalError && shiftModalError.includes('รหัสกะ')
                         ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20'
                         : 'border-slate-200 focus:ring-[#0B2046]/20 focus:border-[#0B2046]'
@@ -2483,7 +2483,7 @@ function SchedulesContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     ชื่อกะการทำงาน <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -2495,7 +2495,7 @@ function SchedulesContent() {
                       if (shiftModalError) setShiftModalError(null);
                       setShiftForm({ ...shiftForm, shiftName: e.target.value });
                     }}
-                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                    className={`w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg focus:outline-none focus:ring-2 transition  dark:bg-slate-950${
                       shiftModalError && shiftModalError.includes('ชื่อกะ')
                         ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20'
                         : 'border-slate-200 focus:ring-[#0B2046]/20 focus:border-[#0B2046]'
@@ -2505,18 +2505,18 @@ function SchedulesContent() {
               </div>
 
               {/* Working Hours with ThaiTimePicker */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3 dark:bg-slate-950 dark:border-slate-700/60">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700">กำหนดเวลาทำงาน</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">กำหนดเวลาทำงาน</span>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="checkbox"
                       id="isCrossDay"
                       checked={shiftForm.isCrossDay}
                       onChange={(e) => setShiftForm({ ...shiftForm, isCrossDay: e.target.checked })}
-                      className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046]"
+                      className="rounded border-slate-300 text-[#0B2046] focus:ring-[#0B2046] dark:border-slate-600"
                     />
-                    <label htmlFor="isCrossDay" className="text-xs font-medium text-slate-700 cursor-pointer">
+                    <label htmlFor="isCrossDay" className="text-xs font-medium text-slate-700 cursor-pointer dark:text-slate-300">
                       กะข้ามวัน (เช่น 20:00 - 05:00)
                     </label>
                   </div>
@@ -2524,7 +2524,7 @@ function SchedulesContent() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1">เวลาเริ่มงาน</label>
+                    <label className="block text-[11px] text-slate-500 mb-1 dark:text-slate-400">เวลาเริ่มงาน</label>
                     <ThaiTimePicker
                       value={shiftForm.startTime}
                       onChange={(val) => handleShiftTimeChange('startTime', val)}
@@ -2532,7 +2532,7 @@ function SchedulesContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1">เวลาเลิกงาน</label>
+                    <label className="block text-[11px] text-slate-500 mb-1 dark:text-slate-400">เวลาเลิกงาน</label>
                     <ThaiTimePicker
                       value={shiftForm.endTime}
                       onChange={(val) => handleShiftTimeChange('endTime', val)}
@@ -2542,7 +2542,7 @@ function SchedulesContent() {
                 </div>
 
                 {/* Duration summary badge */}
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>ชั่วโมงสุทธิโดยประมาณ:</span>
                   <span className="font-bold text-[#0B2046]">
                     {calcShiftDuration(
@@ -2558,7 +2558,7 @@ function SchedulesContent() {
 
               {/* Break Minutes */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                   เวลาพักกลางวัน / กะ (นาที)
                 </label>
                 <input
@@ -2567,14 +2567,14 @@ function SchedulesContent() {
                   max="180"
                   value={shiftForm.breakMinutes}
                   onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               {/* Separate Grace Times: Late & Early Leave */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     ผ่อนปรนมาสาย (นาที)
                   </label>
                   <input
@@ -2583,7 +2583,7 @@ function SchedulesContent() {
                     max="60"
                     value={shiftForm.lateGraceMinutes}
                     onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                   <div className="flex gap-1 mt-1.5">
                     {[0, 5, 10, 15].map((m) => (
@@ -2604,7 +2604,7 @@ function SchedulesContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
                     ผ่อนปรนกลับก่อน (นาที)
                   </label>
                   <input
@@ -2613,7 +2613,7 @@ function SchedulesContent() {
                     max="60"
                     value={shiftForm.earlyLeaveGraceMinutes}
                     onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                   <div className="flex gap-1 mt-1.5">
                     {[0, 5, 10, 15].map((m) => (
@@ -2636,11 +2636,11 @@ function SchedulesContent() {
 
               {/* Status */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">สถานะกะการทำงาน</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะกะการทำงาน</label>
                 <select
                   value={shiftForm.status}
                   onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ACTIVE">เปิดใช้งาน (Active)</option>
                   <option value="INACTIVE">ระงับการใช้งานชั่วคราว (Inactive)</option>
@@ -2648,11 +2648,11 @@ function SchedulesContent() {
               </div>
 
               {/* Actions */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setShiftModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   ยกเลิก
                 </button>
@@ -2676,18 +2676,18 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {employeeModalOpen && selectedShiftForEmployees && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">พนักงานในกะ: {selectedShiftForEmployees.shiftName}</h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">พนักงานในกะ: {selectedShiftForEmployees.shiftName}</h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5 dark:text-slate-400">
                   รหัส {selectedShiftForEmployees.shiftCode} ({selectedShiftForEmployees.startTime.substring(0, 5)} -{' '}
                   {selectedShiftForEmployees.endTime.substring(0, 5)} น.)
                 </p>
               </div>
               <button
                 onClick={() => setEmployeeModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition dark:text-slate-500"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2695,26 +2695,26 @@ function SchedulesContent() {
 
             <div className="p-5 max-h-80 overflow-y-auto">
               {assignments.filter((a) => a.shiftId === selectedShiftForEmployees.id).length === 0 ? (
-                <div className="py-8 text-center text-slate-400">
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
                   <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  <p className="text-sm font-medium text-slate-600">ยังไม่มีพนักงานที่ถูกมอบหมายกะนี้</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ยังไม่มีพนักงานที่ถูกมอบหมายกะนี้</p>
+                  <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">
                     สามารถไปที่ "แท็บ 1: มอบหมายกะให้พนักงาน" เพื่อเริ่มจัดเวรได้ทันที
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {assignments
                     .filter((a) => a.shiftId === selectedShiftForEmployees.id)
                     .map((a) => (
                       <div key={a.id} className="py-2.5 flex items-center justify-between">
                         <div>
-                          <div className="font-semibold text-slate-800 text-sm">{a.employeeName}</div>
-                          <div className="text-xs text-slate-500">
+                          <div className="font-semibold text-slate-800 text-sm dark:text-slate-200">{a.employeeName}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
                             {a.employeeCode} · {a.departmentName || '-'}
                           </div>
                         </div>
-                        <div className="text-right text-xs text-slate-500">
+                        <div className="text-right text-xs text-slate-500 dark:text-slate-400">
                           <div>
                             ตั้งแต่{' '}
                             {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
@@ -2739,11 +2739,11 @@ function SchedulesContent() {
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setEmployeeModalOpen(false)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ปิดหน้าต่าง
               </button>
@@ -2757,18 +2757,18 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {selectedCalendarDay && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center dark:bg-[#0B2046]/30">
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">
+                  <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">
                     ตารางจัดเวร: วันที่ {selectedCalendarDay.day} {THAI_MONTHS[selectedCalendarDay.month - 1]} {selectedCalendarDay.year + 543}
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     มีพนักงานได้รับมอบหมายกะทั้งหมด {selectedCalendarDay.shifts.length} คน
                   </p>
                 </div>
@@ -2790,7 +2790,7 @@ function SchedulesContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedCalendarDay(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition dark:text-slate-500 dark:hover:bg-slate-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2800,27 +2800,27 @@ function SchedulesContent() {
             {/* Body */}
             <div className="p-5 overflow-y-auto space-y-3 max-h-[60vh]">
               {selectedCalendarDay.shifts.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 space-y-2">
+                <div className="py-12 text-center text-slate-400 space-y-2 dark:text-slate-500">
                   <Calendar className="w-10 h-10 mx-auto text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-600">ไม่มีพนักงานที่ได้รับมอบหมายกะในวันนี้</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">ไม่มีพนักงานที่ได้รับมอบหมายกะในวันนี้</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
                     คุณสามารถกดปุ่ม "มอบหมายกะในวันนี้" ด้านบน เพื่อกำหนดกะให้พนักงาน
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden dark:divide-slate-700/60 dark:border-slate-700/60">
                   {selectedCalendarDay.shifts.map((item, idx) => (
                     <div
                       key={`${item.employeeId}-${idx}`}
-                      className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition"
+                      className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition dark:hover:bg-slate-800/40"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center dark:bg-slate-700 dark:text-slate-300">
                           {item.employeeName.charAt(0)}
                         </div>
                         <div>
-                          <div className="font-semibold text-sm text-slate-900">{item.employeeName}</div>
-                          <div className="text-xs text-slate-500">
+                          <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{item.employeeName}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
                             {item.employeeCode} {item.departmentName ? `· ${item.departmentName}` : ''}
                           </div>
                         </div>
@@ -2839,7 +2839,7 @@ function SchedulesContent() {
                             </span>
                           );
                         })()}
-                        <span className="font-mono text-xs text-slate-600">
+                        <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
                           {item.shift.startTime.substring(0, 5)} - {item.shift.endTime.substring(0, 5)} น.
                           {item.shift.isCrossDay && (
                             <span className="ml-1 text-[11px] font-normal text-purple-600">(ข้ามวัน)</span>
@@ -2853,11 +2853,11 @@ function SchedulesContent() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedCalendarDay(null)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ปิดหน้าต่าง
               </button>
@@ -2871,17 +2871,17 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {deleteConfirmOpen && itemToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
             <div className="text-center space-y-1">
-              <h3 className="font-bold text-slate-900 text-lg">{itemToDelete.title}</h3>
+              <h3 className="font-bold text-slate-900 text-lg dark:text-slate-100">{itemToDelete.title}</h3>
               {itemToDelete.subtitle && (
-                <p className="text-xs text-slate-500 font-medium">{itemToDelete.subtitle}</p>
+                <p className="text-xs text-slate-500 font-medium dark:text-slate-400">{itemToDelete.subtitle}</p>
               )}
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">
                 คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การดำเนินการนี้ไม่สามารถเรียกคืนได้
               </p>
             </div>
@@ -2893,7 +2893,7 @@ function SchedulesContent() {
                   setDeleteConfirmOpen(false);
                   setItemToDelete(null);
                 }}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ยกเลิก
               </button>
@@ -2918,7 +2918,7 @@ export default function SchedulesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500">
           <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
           <p className="text-sm">กำลังโหลดข้อมูลระบบการจัดตารางงาน...</p>
         </div>

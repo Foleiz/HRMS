@@ -20,7 +20,7 @@ export default function MyLeaveRequestPage() {
   return (
     <Suspense
       fallback={
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-20 text-center text-gray-400">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
           <div className="inline-flex items-center gap-2 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...
@@ -155,13 +155,13 @@ function MyLeaveRequestPageContent() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารการลา</h1>
-          <p className="text-sm text-gray-500 mt-0.5">กรอกแบบฟอร์มยื่นคำขอลา ติดตามสถานะได้ที่หน้าประวัติเอกสาร</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารการลา</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">กรอกแบบฟอร์มยื่นคำขอลา ติดตามสถานะได้ที่หน้าประวัติเอกสาร</p>
         </div>
         <button
           type="button"
           onClick={() => formRef.current?.reset()}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-medium transition-all shrink-0"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -171,7 +171,7 @@ function MyLeaveRequestPageContent() {
 
       {/* ยื่นคำขอลา — ฟอร์มแบบเต็มหน้าจอ */}
       {loading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-20 text-center text-gray-400">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
           <div className="inline-flex items-center gap-2 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...

@@ -157,14 +157,14 @@ export default function CreateContractModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="pt-6 pb-2 text-center relative px-6">
-          <h2 className="text-xl font-bold text-slate-800">สร้างสัญญาจ้างใหม่</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">สร้างสัญญาจ้างใหม่</h2>
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+            className="absolute top-5 right-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -182,7 +182,7 @@ export default function CreateContractModal({
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           {/* 1. พนักงาน * */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               พนักงาน <span className="text-rose-500">*</span>
             </label>
             <EmployeeSelect
@@ -197,7 +197,7 @@ export default function CreateContractModal({
           {/* 2. ประเภทสัญญา / การจ้างงาน * */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 ประเภทสัญญา / การจ้างงาน <span className="text-rose-500">*</span>
               </label>
               <Link
@@ -214,7 +214,7 @@ export default function CreateContractModal({
               value={employeeTypeId || ''}
               onChange={(e) => handleTypeSelectChange(e.target.value)}
               required
-              className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+              className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
             >
               {employeeTypes.length > 0 ? (
                 employeeTypes.map((t) => (
@@ -230,14 +230,14 @@ export default function CreateContractModal({
                 </>
               )}
             </select>
-            <p className="text-[11px] text-slate-500 mt-1">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               เมื่อถึงวันเริ่มสัญญา ระบบจะอัปเดตประเภทพนักงานของพนักงานคนนี้ตามสัญญาให้อัตโนมัติ
             </p>
           </div>
 
           {/* 3. วันที่เริ่มสัญญา * */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -246,15 +246,15 @@ export default function CreateContractModal({
                 value={startDate}
                 onChange={(e) => handleStartDateChange(e.target.value)}
                 required
-                className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all pr-10"
+                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all pr-10"
               />
-              <Calendar className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
           {/* 4. วันที่สิ้นสุด / */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่สิ้นสุด / ครบทดลองงาน
             </label>
             <div className="relative">
@@ -262,11 +262,11 @@ export default function CreateContractModal({
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all pr-10"
+                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all pr-10"
               />
-              <Calendar className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-            <p className="mt-1 text-xs text-slate-400 font-normal">
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-normal">
               เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด
             </p>
           </div>
@@ -277,7 +277,7 @@ export default function CreateContractModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-200/80 hover:bg-slate-300 transition-colors cursor-pointer"
+              className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200/80 hover:bg-slate-300 transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>

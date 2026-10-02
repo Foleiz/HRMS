@@ -119,13 +119,13 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
       checked ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
     }`}
   >
-    <div className="w-4 h-4 rounded-full bg-white shadow" />
+    <div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow" />
   </button>
 );
 
 const Section: React.FC<{ no: number; title: string; children: React.ReactNode }> = ({ no, title, children }) => (
-  <section className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 space-y-3.5">
-    <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+  <section className="rounded-2xl border border-gray-100 dark:border-slate-700/60 bg-gray-50/60 p-4 space-y-3.5">
+    <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-slate-200">
       <span className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] flex items-center justify-center">{no}</span>
       {title}
     </h4>
@@ -135,9 +135,9 @@ const Section: React.FC<{ no: number; title: string; children: React.ReactNode }
 
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
   <div>
-    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
     {children}
-    {hint && <p className="mt-1 text-[11px] text-gray-400">{hint}</p>}
+    {hint && <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500">{hint}</p>}
   </div>
 );
 
@@ -149,7 +149,7 @@ const NumberBox: React.FC<{
   step?: string;
   disabled?: boolean;
 }> = ({ value, onChange, unit, placeholder, step = '1', disabled }) => (
-  <div className={`flex items-center rounded-xl border bg-white ${disabled ? 'border-gray-100 opacity-50' : 'border-gray-200 focus-within:ring-2 focus-within:ring-blue-500'}`}>
+  <div className={`flex items-center rounded-xl border bg-white dark:bg-slate-800 ${disabled ? 'border-gray-100 dark:border-slate-700/60 opacity-50' : 'border-gray-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-blue-500'}`}>
     <input
       type="number"
       min="0"
@@ -160,11 +160,11 @@ const NumberBox: React.FC<{
       onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
       className="w-full min-w-0 px-3 py-2 bg-transparent text-sm outline-none rounded-xl"
     />
-    <span className="px-3 text-xs text-gray-400 whitespace-nowrap">{unit}</span>
+    <span className="px-3 text-xs text-gray-400 dark:text-slate-500 whitespace-nowrap">{unit}</span>
   </div>
 );
 
-const selectCls = 'w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none';
+const selectCls = 'w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none';
 
 /**
  * ฟอร์ม "สิทธิ์การลา" — ใครได้ลาประเภทนี้เท่าไหร่ และมีเงื่อนไขอะไร (ตัวเลขทั้งหมดอยู่ที่นี่ที่เดียว)
@@ -310,19 +310,19 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-gray-100">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-gray-100 dark:border-slate-700/60">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-800">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100">
+          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 text-sm">
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl whitespace-pre-line">{error}</div>}
+          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl whitespace-pre-line dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
           {/* 1. ใช้กับใคร */}
           <Section no={1} title="ใช้กับใคร">
@@ -332,7 +332,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                   value={leaveTypeId}
                   disabled={isEditing}
                   onChange={(e) => handleLeaveTypeChange(Number(e.target.value))}
-                  className={`${selectCls} ${isEditing ? 'bg-gray-50 text-gray-500' : ''}`}
+                  className={`${selectCls} ${isEditing ? 'bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-slate-400' : ''}`}
                 >
                   {leaveTypes.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -359,7 +359,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 </select>
               </Field>
             </div>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-gray-400 dark:text-slate-500">
               ถ้ามีหลายรายการตรงกับพนักงาน ระบบใช้รายการที่เจาะจงที่สุด (ระบุประเภท/ระดับ) ก่อน · ประเภทการลา + กลุ่มพนักงานเดียวกันสร้างซ้ำไม่ได้
             </p>
             {!isEditing && (
@@ -385,8 +385,8 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 <NumberBox value={form.minimumServiceDays} onChange={(v) => set('minimumServiceDays', v)} unit="วัน" />
               </Field>
               <Field label="ระหว่างทดลองงาน">
-                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 bg-white">
-                  <span className="text-sm text-gray-700">{form.isAllowedDuringProbation ? 'ใช้สิทธิ์ได้' : 'ยังใช้สิทธิ์ไม่ได้'}</span>
+                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                  <span className="text-sm text-gray-700 dark:text-slate-300">{form.isAllowedDuringProbation ? 'ใช้สิทธิ์ได้' : 'ยังใช้สิทธิ์ไม่ได้'}</span>
                   <Toggle checked={form.isAllowedDuringProbation} onChange={(v) => set('isAllowedDuringProbation', v)} />
                 </div>
               </Field>
@@ -425,10 +425,10 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 <NumberBox value={form.maxLifetimeOccurrences} onChange={(v) => set('maxLifetimeOccurrences', v)} unit="ครั้ง" placeholder="ไม่จำกัด" />
               </Field>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-2.5">
+            <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 space-y-2.5">
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-sm text-gray-700">
-                  <FileCheck2 className="w-4 h-4 text-gray-400" /> ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)
+                <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                  <FileCheck2 className="w-4 h-4 text-gray-400 dark:text-slate-500" /> ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)
                 </span>
                 <Toggle checked={form.isDocumentRequired} onChange={(v) => set('isDocumentRequired', v)} />
               </div>
@@ -444,8 +444,8 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 4. ยกยอด */}
           <Section no={4} title="ยกยอดวันลาข้ามปี">
-            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 bg-white">
-              <span className="text-sm text-gray-700">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
+            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <span className="text-sm text-gray-700 dark:text-slate-300">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
               <Toggle checked={form.isCarryForwardAllowed} onChange={(v) => set('isCarryForwardAllowed', v)} />
             </div>
             {form.isCarryForwardAllowed && (
@@ -461,7 +461,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           </Section>
 
           <Field label="เริ่มมีผลตั้งแต่วันที่">
-            <input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} className="w-48 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </Field>
 
           {/* สรุป */}
@@ -471,7 +471,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-1">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl">
               ยกเลิก
             </button>
             <button type="submit" disabled={loading} className="px-6 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl flex items-center gap-2">

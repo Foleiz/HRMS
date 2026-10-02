@@ -354,12 +354,12 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className={`bg-white border-r border-slate-200/80 flex flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
+      className={`bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-700/80 flex flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* 1. Header: Logo & System Name */}
-      <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all ${isCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}>
+      <div className={`h-20 flex items-center border-b border-slate-100/80 dark:border-slate-700/80 transition-all ${isCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}>
         {!isCollapsed && (
           <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
             {/* Logo Badge Icon (3 avatars in navy square) */}
@@ -368,8 +368,8 @@ export const Sidebar: React.FC = () => {
             </div>
 
             <div className="leading-tight select-none">
-              <div className="text-[15px] font-bold text-slate-900 tracking-tight">Human</div>
-              <div className="text-[15px] font-bold text-[#0B2046] tracking-tight">Resource</div>
+              <div className="text-[15px] font-bold text-slate-900 dark:text-slate-100 tracking-tight">Human</div>
+              <div className="text-[15px] font-bold text-[#0B2046] dark:text-blue-400 tracking-tight">Resource</div>
             </div>
           </Link>
         )}
@@ -378,7 +378,7 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={toggleSidebar}
           title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
-          className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
+          className="w-8 h-8 rounded-lg bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center transition-colors shrink-0"
         >
           {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
@@ -388,7 +388,7 @@ export const Sidebar: React.FC = () => {
       {!isCollapsed && (
         <div className="px-4 pt-4 pb-2">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
               <Search className="w-4 h-4" />
             </div>
             <input
@@ -396,7 +396,7 @@ export const Sidebar: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาเมนู..."
-              className="w-full pl-9 pr-3 py-2 bg-[#F1F5F9] border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
             />
           </div>
         </div>
@@ -405,7 +405,7 @@ export const Sidebar: React.FC = () => {
       {/* 3. Navigation Menu Items Grouped by Category */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
         {filteredGroups.length === 0 && (
-          <div className="py-8 text-center text-xs text-slate-400">
+          <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
             {!isCollapsed && 'ไม่พบเมนูที่ค้นหา'}
           </div>
         )}
@@ -414,11 +414,11 @@ export const Sidebar: React.FC = () => {
           <div key={group.category} className="space-y-1">
             {/* Category Header Label */}
             {!isCollapsed ? (
-              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider select-none">
+              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider select-none">
                 {group.category}
               </div>
             ) : (
-              groupIndex > 0 && <div className="my-2 border-t border-slate-100 mx-2" />
+              groupIndex > 0 && <div className="my-2 border-t border-slate-100 dark:border-slate-700/80 mx-2" />
             )}
 
             {/* Menu Items */}
@@ -435,10 +435,10 @@ export const Sidebar: React.FC = () => {
                   className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
                     active
                       ? 'bg-[#0B2046] text-white shadow-xs font-semibold'
-                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                   } ${isCollapsed ? 'justify-center px-0 py-2.5' : ''}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                   {!isCollapsed && <span className="truncate">{item.title}</span>}
                 </Link>
               );
@@ -448,22 +448,22 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* 4. Bottom User Profile Card (like in modern sidebar design) */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+      <div className="p-3 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/50">
         {!isCollapsed ? (
           <Link
             href="/profile"
             onClick={handleSelectMenu}
-            className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100/80 transition-colors group"
+            className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 text-[#0B2046] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15">
+              <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-400 font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15 dark:border-blue-500/20">
                 {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-800 truncate leading-tight group-hover:text-[#0B2046]">
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight group-hover:text-[#0B2046] dark:group-hover:text-blue-400">
                   {user?.fullName || user?.username || 'ผู้ใช้งาน'}
                 </p>
-                <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate leading-tight mt-0.5">
                   {user?.roles?.[0] || 'พนักงาน'}
                 </p>
               </div>
@@ -474,9 +474,9 @@ export const Sidebar: React.FC = () => {
             href="/profile"
             onClick={handleSelectMenu}
             title={user?.fullName || user?.username || 'โปรไฟล์'}
-            className="flex justify-center p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="flex justify-center p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 text-[#0B2046] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15">
+            <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-400 font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15 dark:border-blue-500/20">
               {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
             </div>
           </Link>

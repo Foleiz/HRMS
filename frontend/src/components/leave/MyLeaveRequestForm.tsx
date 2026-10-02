@@ -363,68 +363,68 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   return (
     <form onSubmit={handleSubmit}>
       {error && (
-        <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>
+        <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>
       )}
 
       {/* คอลัมน์ซ้าย/ขวาแยกการ์ด กว้างเท่ากัน และสูงเท่ากัน (grid ยืดทั้งสองฝั่งให้เท่าฝั่งที่สูงกว่า) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
         {/* ─── Left column ─────────────────────────────── */}
         <div className="flex flex-col gap-5">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลทั่วไป</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลทั่วไป</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ยื่น</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ยื่น</label>
                 <input
                   type="text"
                   readOnly
                   value={formatThaiDate(new Date())}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลพนักงาน</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลพนักงาน</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อ-นามสกุล</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล</label>
                 <input
                   type="text"
                   readOnly
                   value={profile.fullName}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ตำแหน่ง</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
                 <input
                   type="text"
                   readOnly
                   value={profile.positionTitle || '-'}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">แผนก/สังกัด</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">แผนก/สังกัด</label>
                 <input
                   type="text"
                   readOnly
                   value={profile.departmentName || '-'}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex-1 space-y-5">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 flex-1 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">ประสงค์ขอลา *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอลา *</label>
               <select
                 value={leaveTypeId}
                 onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 required
               >
                 <option value="">-- เลือกประเภทการลา --</option>
@@ -443,13 +443,13 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 })}
               </select>
               {leaveTypes.length === 0 && (
-                <p className="text-xs text-gray-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
               )}
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">เหตุผล</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">เหตุผล</label>
                 <span className="text-2xs text-gray-300">{reason.length}/{REASON_MAX_LENGTH}</span>
               </div>
               <textarea
@@ -458,19 +458,19 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                 rows={3}
                 placeholder="ระบุเหตุผลการลา (ถ้ามี)"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
               />
             </div>
           </div>
         </div>
 
         {/* ─── Right column ─────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-full flex flex-col gap-5">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 h-full flex flex-col gap-5">
           {/* flex-wrap แทน grid 50/50 เพราะกล่องปฏิทินมีความกว้างคงที่ (320px) เพื่อให้พอดีกับป็อปอัพปฏิทิน
               ถ้าใช้ grid แบ่งครึ่งจะทำให้ล้นทับตัวเลือก "รูปแบบการลา" เมื่อพื้นที่ไม่พอ — flex-wrap จะดันตัวเลือกไปขึ้นบรรทัดใหม่แทนการซ้อนทับ */}
           <div className="flex flex-wrap items-start gap-3">
             <div className="shrink-0">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่ลา *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ลา *</label>
               {leaveFormat === 'FULL_DAY' ? (
                 <LeaveDateRangePicker
                   startDate={startDate}
@@ -488,13 +488,13 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             </div>
 
             <div className="shrink-0">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">รูปแบบการลา</label>
-              <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">รูปแบบการลา</label>
+              <div className="inline-flex rounded-xl border border-gray-200 dark:border-slate-700 p-1 bg-gray-50 dark:bg-slate-950">
                 <button
                   type="button"
                   onClick={() => setLeaveFormat('FULL_DAY')}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    leaveFormat === 'FULL_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
+                    leaveFormat === 'FULL_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
                   }`}
                 >
                   <Sun className="w-3.5 h-3.5" /> เต็มวัน
@@ -503,7 +503,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   type="button"
                   onClick={() => setLeaveFormat('HALF_DAY')}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    leaveFormat === 'HALF_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500'
+                    leaveFormat === 'HALF_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
                   }`}
                 >
                   <Clock3 className="w-3.5 h-3.5" /> ครึ่งวัน
@@ -513,8 +513,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">มีกำหนด (วัน)</label>
-            <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">มีกำหนด (วัน)</label>
+            <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400">
               {isCalculatingDays
                 ? 'กำลังคำนวณ...'
                 : leaveDays > 0
@@ -524,11 +524,11 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                     : 'คำนวณอัตโนมัติ'}
             </div>
             {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
-              <p className="mt-1 text-2xs text-gray-400">
+              <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500">
                 วันหยุดบริษัทในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
               </p>
             )}
-            <p className="mt-1 text-2xs text-gray-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
+            <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
           {/* แสดงตลอด — ยังไม่เลือกประเภทจะแสดงเป็น "-" แทนตัวเลข */}
@@ -538,19 +538,19 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               {hasSelectedType ? ` (${leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})` : ''}
             </p>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400">ลามาแล้ว</div>
-                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400 dark:text-slate-500">ลามาแล้ว</div>
+                <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
               </div>
-              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400">ลาครั้ง</div>
-                <div className="text-sm font-bold text-gray-800">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400 dark:text-slate-500">ลาครั้ง</div>
+                <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
               </div>
-              <div className="bg-white rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400">รวมเป็น</div>
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
+                <div className="text-[11px] text-gray-400 dark:text-slate-500">รวมเป็น</div>
                 <div
                   className={`text-sm font-bold ${
-                    !hasSelectedType ? 'text-gray-800' : withinQuota ? 'text-emerald-600' : 'text-red-600'
+                    !hasSelectedType ? 'text-gray-800 dark:text-slate-200' : withinQuota ? 'text-emerald-600' : 'text-red-600'
                   }`}
                 >
                   {hasSelectedType ? `${projectedTotalDays} วัน` : '-'}
@@ -571,8 +571,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
           <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-1.5">
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                <Phone className="w-3.5 h-3.5 text-gray-400" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
+              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
               </label>
               <span className="text-2xs text-gray-300">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
             </div>
@@ -582,7 +582,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
               rows={2}
               placeholder="สถานที่/เบอร์ติดต่อระหว่างลา"
-              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
+              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
             />
           </div>
 
@@ -592,7 +592,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               <p className="text-xs text-amber-700 mb-3">
                 ตามเงื่อนไขของการลาประเภทนี้ ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์) ก่อนยื่นคำขอ
               </p>
-              <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-amber-300 bg-white text-sm text-gray-500 cursor-pointer hover:bg-amber-50/50 transition-colors">
+              <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-amber-300 bg-white dark:bg-slate-900 text-sm text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-amber-50/50 transition-colors">
                 <Paperclip className="w-4 h-4 shrink-0" />
                 <span className="truncate">{attachment ? attachment.name : 'เลือกไฟล์...'}</span>
                 <input
@@ -609,8 +609,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
       {/* ─── ผลตรวจเงื่อนไขการลา ─────────────────────── */}
       {currentValidation?.policySummary && (
-        <p className="mt-6 text-xs text-gray-500">
-          <span className="font-medium text-gray-600">เงื่อนไขของการลาประเภทนี้:</span> {currentValidation.policySummary}
+        <p className="mt-6 text-xs text-gray-500 dark:text-slate-400">
+          <span className="font-medium text-gray-600 dark:text-slate-400">เงื่อนไขของการลาประเภทนี้:</span> {currentValidation.policySummary}
         </p>
       )}
       {validationErrors.length > 0 && (
@@ -625,12 +625,12 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       )}
 
       {/* ─── Actions ─────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
+      <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-slate-700/60">
         <button
           type="button"
           onClick={() => setShowPreview(true)}
           disabled={loading || savingDraft}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
         >
           <FileText className="w-3.5 h-3.5" />
           ดูตัวอย่างเอกสาร
@@ -639,7 +639,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           type="button"
           onClick={handleSaveDraft}
           disabled={loading || savingDraft}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
         >
           {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           บันทึกแบบร่าง

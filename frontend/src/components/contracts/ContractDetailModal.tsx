@@ -38,21 +38,21 @@ export default function ContractDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B2046] flex items-center justify-center">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">รายละเอียดสัญญาจ้าง</h3>
-              <p className="text-xs text-slate-500">รหัสสัญญา #{contract.id}</p>
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">รายละเอียดสัญญาจ้าง</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">รหัสสัญญา #{contract.id}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -60,35 +60,35 @@ export default function ContractDetailModal({
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60">
             <div>
-              <span className="text-slate-400 text-xs block">ชื่อพนักงาน</span>
-              <span className="font-semibold text-slate-800">{contract.employeeName}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">ชื่อพนักงาน</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{contract.employeeName}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">รหัสพนักงาน</span>
-              <span className="font-semibold text-slate-800">{contract.employeeCode}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">รหัสพนักงาน</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{contract.employeeCode}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">แผนก / ตำแหน่ง</span>
-              <span className="text-slate-700">{contract.departmentName || '-'} / {contract.positionTitle || '-'}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">แผนก / ตำแหน่ง</span>
+              <span className="text-slate-700 dark:text-slate-300">{contract.departmentName || '-'} / {contract.positionTitle || '-'}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">ประเภทสัญญา</span>
-              <span className="font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-xs inline-block">
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">ประเภทสัญญา</span>
+              <span className="font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded text-xs inline-block">
                 {contract.employeeTypeName || contract.contractTypeDisplay}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">วันที่เริ่มสัญญา</span>
-              <span className="text-slate-700 font-medium">{contract.startDateDisplay}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">วันที่เริ่มสัญญา</span>
+              <span className="text-slate-700 dark:text-slate-300 font-medium">{contract.startDateDisplay}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">สิ้นสุด / ครบทดลองงาน</span>
-              <span className="text-slate-700 font-medium">{contract.effectiveEndDateDisplay || '-'}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">สิ้นสุด / ครบทดลองงาน</span>
+              <span className="text-slate-700 dark:text-slate-300 font-medium">{contract.effectiveEndDateDisplay || '-'}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-xs block">สถานะสัญญา</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs block">สถานะสัญญา</span>
               <span className="flex items-center gap-1.5 font-medium text-xs mt-0.5">
                 {contract.status === 'ACTIVE' ? (
                   <>
@@ -98,14 +98,14 @@ export default function ContractDetailModal({
                 ) : (
                   <>
                     <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                    <span className="text-slate-600">{contract.statusDisplay}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{contract.statusDisplay}</span>
                   </>
                 )}
               </span>
             </div>
             {contract.terminationDate && (
               <div>
-                <span className="text-slate-400 text-xs block">วันที่สิ้นสุดจริง</span>
+                <span className="text-slate-400 dark:text-slate-500 text-xs block">วันที่สิ้นสุดจริง</span>
                 <span className="text-rose-600 font-medium">{contract.terminationReason || 'สิ้นสุดสัญญา'}</span>
               </div>
             )}
@@ -119,21 +119,21 @@ export default function ContractDetailModal({
                 ยืนยันการสิ้นสุด/บอกเลิกสัญญาจ้าง
               </h4>
               <div>
-                <label className="block text-xs text-slate-700 font-medium mb-1">เหตุผลในการสิ้นสุดสัญญา *</label>
+                <label className="block text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">เหตุผลในการสิ้นสุดสัญญา *</label>
                 <input
                   type="text"
                   value={terminateReason}
                   onChange={(e) => setTerminateReason(e.target.value)}
                   placeholder="เช่น สิ้นสุดระยะเวลาตามสัญญา, ลาออก, ไม่ผ่านการทดลองงาน"
                   required
-                  className="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                  className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowTerminateForm(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 bg-slate-200 rounded-lg hover:bg-slate-300"
+                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300"
                 >
                   ยกเลิก
                 </button>
@@ -151,7 +151,7 @@ export default function ContractDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/30">
           {contract.status === 'ACTIVE' && !showTerminateForm ? (
             <button
               type="button"
@@ -166,7 +166,7 @@ export default function ContractDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+            className="px-5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors"
           >
             ปิด
           </button>

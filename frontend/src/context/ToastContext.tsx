@@ -183,7 +183,7 @@ function ToastCard({
           <path d="M8.5 12.5l2.5 2.5 5-5" />
         </svg>
       ),
-      progressColor: 'bg-white/40',
+      progressColor: 'bg-white dark:bg-slate-800/40',
     },
     // Vibrant Rose for error alerts
     error: {
@@ -204,7 +204,7 @@ function ToastCard({
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       ),
-      progressColor: 'bg-white/40',
+      progressColor: 'bg-white dark:bg-slate-800/40',
     },
     // Vibrant Amber for warnings
     warning: {
@@ -225,7 +225,7 @@ function ToastCard({
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
       ),
-      progressColor: 'bg-white/40',
+      progressColor: 'bg-white dark:bg-slate-800/40',
     },
     // Deep Enterprise Navy for general info
     info: {
@@ -246,7 +246,7 @@ function ToastCard({
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
       ),
-      progressColor: 'bg-white/40',
+      progressColor: 'bg-white dark:bg-slate-800/40',
     },
   };
 
@@ -277,7 +277,7 @@ function ToastCard({
         <button
           type="button"
           onClick={onDismiss}
-          className="shrink-0 p-1 text-white/85 hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
+          className="shrink-0 p-1 text-white/85 hover:text-white hover:bg-white dark:bg-slate-800/10 rounded-md transition-colors cursor-pointer"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" strokeWidth={2} />

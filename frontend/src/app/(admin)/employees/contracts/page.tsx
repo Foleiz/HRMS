@@ -155,7 +155,7 @@ export default function ContractsPage() {
   return (
     <div className="space-y-5 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs ตรงตาม Figma & Mockup */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl shadow-2xs">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => (
             <Link
@@ -187,21 +187,21 @@ export default function ContractsPage() {
       {/* 4. KPI Stat Cards (3 Cards ตรงตาม Mockup) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: ทดลองงาน */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-sm font-medium text-slate-500 mb-1">ทดลองงาน</h4>
-            <p className="text-xs text-slate-400">พนักงานที่อยู่ระหว่างทดลองงาน</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">พนักงานที่อยู่ระหว่างทดลองงาน</p>
           </div>
-          <div className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.probationCount}
           </div>
         </div>
 
         {/* Card 2: ประจำ */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-sm font-medium text-slate-500 mb-1">ประจำ</h4>
-            <p className="text-xs text-slate-400">พนักงานประจำที่ได้รับการบรรจุ</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">พนักงานประจำที่ได้รับการบรรจุ</p>
           </div>
           <div className="bg-rose-50 text-rose-500 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.permanentCount}
@@ -209,10 +209,10 @@ export default function ContractsPage() {
         </div>
 
         {/* Card 3: ใกล้ครบทดลองงาน (7 วัน) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-sm font-medium text-slate-500 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
-            <p className="text-xs text-slate-400">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
           </div>
           <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.probationExpiring7DaysCount}
@@ -221,9 +221,9 @@ export default function ContractsPage() {
       </div>
 
       {/* 5. Sub-Tabs & Filter / Search Controls */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
         {/* Tab Header ตรงตาม Mockup */}
-        <div className="border-b border-slate-200 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="border-b border-slate-200 dark:border-slate-700 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex space-x-8 text-sm font-medium">
             <button
               className="pb-3 border-b-2 border-[#0B2046] text-[#0B2046] font-bold"
@@ -274,7 +274,7 @@ export default function ContractsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal">
+              <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
                 <th className="py-3.5 px-6 font-medium">พนักงาน</th>
                 <th className="py-3.5 px-6 font-medium">ประเภทสัญญา</th>
                 <th className="py-3.5 px-6 font-medium">เริ่มสัญญา</th>
@@ -286,7 +286,7 @@ export default function ContractsPage() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
                       <span>กำลังโหลดข้อมูลสัญญาจ้างงาน...</span>
@@ -295,15 +295,15 @@ export default function ContractsPage() {
                 </tr>
               ) : paginatedContracts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     ไม่พบข้อมูลสัญญาจ้างงาน
                   </td>
                 </tr>
               ) : (
                 paginatedContracts.map((contract) => (
-                  <tr key={contract.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                     {/* พนักงาน: อรวรรณ ใจดี · EMP-0142 */}
-                    <td className="py-4 px-6 text-slate-800 font-medium whitespace-nowrap">
+                    <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/employees/${contract.employeeId}`}
@@ -311,23 +311,23 @@ export default function ContractsPage() {
                         >
                           {contract.employeeName}
                         </Link>
-                        <span className="text-slate-400 font-normal">·</span>
-                        <span className="text-slate-500 font-normal text-xs">{contract.employeeCode}</span>
+                        <span className="text-slate-400 dark:text-slate-500 font-normal">·</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{contract.employeeCode}</span>
                       </div>
                     </td>
 
                     {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง, ฝึกงาน */}
-                    <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
+                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {contract.employeeTypeName || contract.contractTypeDisplay}
                     </td>
 
                     {/* เริ่มสัญญา: 01/07/2569 */}
-                    <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
+                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {contract.startDateDisplay}
                     </td>
 
                     {/* สิ้นสุด / ครบทดลองงาน: 30/09/2569, - */}
-                    <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
+                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {contract.effectiveEndDateDisplay || '-'}
                     </td>
 
@@ -344,7 +344,7 @@ export default function ContractsPage() {
                           รออนุมัติ
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                           สิ้นสุดแล้ว
                         </span>
@@ -400,7 +400,7 @@ export default function ContractsPage() {
         </div>
 
         {/* 7. Pagination Footer ตรงตาม Mockup (< 1 2 3 4 >) */}
-        <div className="py-4 px-6 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <div>
             แสดง {paginatedContracts.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} ถึง{' '}
             {Math.min(currentPage * pageSize, contracts.length)} จาก {contracts.length} รายการ

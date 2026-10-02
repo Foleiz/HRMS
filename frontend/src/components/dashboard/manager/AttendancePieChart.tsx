@@ -176,9 +176,9 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
     .filter(Boolean);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col items-center justify-between flex-1 h-full min-h-[220px]">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs p-4 flex flex-col items-center justify-between flex-1 h-full min-h-[220px]">
       <div className="w-full text-left shrink-0">
-        <h4 className="text-xs font-bold text-slate-800">
+        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
           สถานะการเข้าทำงานวันนี้
         </h4>
       </div>
@@ -186,9 +186,9 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
       {/* SVG Pie Chart */}
       <div className="my-auto py-3 relative flex items-center justify-center">
         {loading ? (
-          <div className="w-32 h-32 rounded-full border-4 border-slate-100 border-t-[#0B2046] animate-spin" />
+          <div className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-700/60 border-t-[#0B2046] animate-spin" />
         ) : slices.length === 0 ? (
-          <div className="w-32 h-32 rounded-full border-4 border-slate-200 flex items-center justify-center text-[10px] text-slate-400 text-center px-2">
+          <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-500 text-center px-2">
             ยังไม่มีข้อมูลลงเวลา
           </div>
         ) : (
@@ -208,9 +208,9 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
       </div>
 
       {/* Color Legend */}
-      <div className="w-full space-y-1.5 pt-3 border-t border-slate-100 text-[11px] mt-auto shrink-0">
+      <div className="w-full space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-[11px] mt-auto shrink-0">
         {data.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-slate-600">
+          <div key={idx} className="flex items-center justify-between text-slate-600 dark:text-slate-400">
             <div className="flex items-center gap-2">
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -218,9 +218,9 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
               />
               <span className="font-medium">{item.label}</span>
             </div>
-            <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
               <span>{loading ? '-' : `${item.count} คน`}</span>
-              <span className="text-slate-400 font-normal">
+              <span className="text-slate-400 dark:text-slate-500 font-normal">
                 ({loading ? '-' : `${item.percentage}%`})
               </span>
             </div>

@@ -63,15 +63,15 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-            <h3 className="text-base font-semibold text-gray-800">ปรับยอดวันลาพนักงาน</h3>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ปรับยอดวันลาพนักงาน</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -79,30 +79,30 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl dark:bg-red-900/20 dark:text-red-400">
               {error}
             </div>
           )}
 
           {/* Employee & Leave Info Card */}
-          <div className="p-4 bg-slate-50 rounded-xl space-y-1.5 border border-slate-100 text-sm">
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl space-y-1.5 border border-slate-100 dark:border-slate-700/60 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">พนักงาน:</span>
-              <span className="font-semibold text-gray-800">{balance.employeeName} ({balance.employeeCode})</span>
+              <span className="text-gray-500 dark:text-slate-400">พนักงาน:</span>
+              <span className="font-semibold text-gray-800 dark:text-slate-200">{balance.employeeName} ({balance.employeeCode})</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">ประเภทการลา:</span>
-              <span className="font-medium text-gray-800">{balance.leaveTypeName}</span>
+              <span className="text-gray-500 dark:text-slate-400">ประเภทการลา:</span>
+              <span className="font-medium text-gray-800 dark:text-slate-200">{balance.leaveTypeName}</span>
             </div>
-            <div className="flex justify-between pt-1 border-t border-slate-200">
-              <span className="text-gray-500">คงเหลือปัจจุบัน:</span>
+            <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
+              <span className="text-gray-500 dark:text-slate-400">คงเหลือปัจจุบัน:</span>
               <span className="font-bold text-blue-600">{currentRemaining} วัน</span>
             </div>
           </div>
 
           {/* Type of Adjustment: Add or Deduct */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">ประเภทการปรับยอด</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประเภทการปรับยอด</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -110,7 +110,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
                 className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
                   !isDeduct
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 + เพิ่มสิทธิ์วันลา
@@ -121,7 +121,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
                 className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
                   isDeduct
                     ? 'bg-rose-50 text-rose-700 border-rose-300'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 - ลดสิทธิ์วันลา
@@ -131,7 +131,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
 
           {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
               จำนวนวัน {isDeduct ? '(ลดลง)' : '(เพิ่มขึ้น)'}
             </label>
             <input
@@ -141,7 +141,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
               placeholder="เช่น 1 หรือ 2.5"
               value={amount}
               onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -156,7 +156,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
 
           {/* Reason */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
               เหตุผลการปรับยอด (หมายเหตุ)
             </label>
             <textarea
@@ -164,7 +164,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
               placeholder="เช่น ได้รับโควตาพิเศษจากโครงการ, แก้ไขข้อผิดพลาดปีก่อน"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -174,7 +174,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors"
             >
               ยกเลิก
             </button>

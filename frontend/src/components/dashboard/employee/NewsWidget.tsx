@@ -71,7 +71,7 @@ export const NewsWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full min-h-0">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full min-h-0">
       {/* Header: Soft Blue */}
       <div className="bg-[#6D8EB8] text-white px-4 py-3 flex items-center justify-between shrink-0">
         <h3 className="text-sm font-bold tracking-wide">ข่าวสารและประกาศ</h3>
@@ -81,11 +81,11 @@ export const NewsWidget: React.FC = () => {
       {/* News Content Area */}
       <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
         {loading ? (
-          <div className="py-6 text-center text-xs text-slate-400">
+          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
             กำลังโหลดข่าวสาร...
           </div>
         ) : newsList.length === 0 ? (
-          <div className="py-6 text-center text-xs text-slate-400">
+          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
             ยังไม่มีข่าวสารหรือประกาศใหม่ในขณะนี้
           </div>
         ) : (
@@ -95,7 +95,7 @@ export const NewsWidget: React.FC = () => {
               return (
                 <div
                   key={item.id}
-                  className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all"
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden transition-all"
                 >
                   <button
                     type="button"
@@ -103,20 +103,20 @@ export const NewsWidget: React.FC = () => {
                     className="w-full p-2.5 flex items-center justify-between text-left hover:bg-slate-100/70 transition-colors cursor-pointer"
                   >
                     <div className="flex flex-col pr-2">
-                      <span className="text-xs font-bold text-slate-800 line-clamp-1">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
                         {item.title}
                       </span>
-                      <span className="text-[10px] text-slate-400">{item.date}</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{item.date}</span>
                     </div>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${
                         isExpanded ? 'rotate-180' : ''
                       }`}
                     />
                   </button>
 
                   {isExpanded && (
-                    <div className="px-2.5 pb-2.5 pt-0 text-[11px] text-slate-500 leading-relaxed border-t border-slate-100">
+                    <div className="px-2.5 pb-2.5 pt-0 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-700/60">
                       <p className="line-clamp-4 mt-1">{item.details}</p>
                     </div>
                   )}
@@ -129,7 +129,7 @@ export const NewsWidget: React.FC = () => {
         {/* Read More Link */}
         <Link
           href="/my-news"
-          className="pt-2 text-xs font-semibold text-[#0B2046] hover:text-blue-700 flex items-center justify-end gap-1 transition-colors cursor-pointer mt-auto border-t border-slate-100 shrink-0"
+          className="pt-2 text-xs font-semibold text-[#0B2046] hover:text-blue-700 dark:text-blue-400 flex items-center justify-end gap-1 transition-colors cursor-pointer mt-auto border-t border-slate-100 dark:border-slate-700/60 shrink-0"
         >
           <span>อ่านทั้งหมด</span>
           <ArrowRight className="w-3.5 h-3.5" />

@@ -166,9 +166,9 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#0B2046] text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 bg-[#0B2046] text-white">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-white/10 rounded-xl">
               <Sparkles className="w-4 h-4 text-cyan-300" />
@@ -203,7 +203,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* 2. ชื่อประเภทสัญญา */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               ชื่อประเภทสัญญา/การจ้างงาน <span className="text-rose-500">*</span>
             </label>
             <input
@@ -212,20 +212,20 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               value={typeName}
               onChange={(e) => setTypeName(e.target.value)}
               placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก"
-              className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+              className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
             />
           </div>
 
           {/* 3. รูปแบบค่าตอบแทน & สถานะ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 รูปแบบค่าตอบแทน <span className="text-rose-500">*</span>
               </label>
               <select
                 value={wageType}
                 onChange={(e) => setWageType(e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+                className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               >
                 <option value="MONTHLY">รายเดือน</option>
                 <option value="DAILY">รายวัน</option>
@@ -235,13 +235,13 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 สถานะการใช้งาน
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+                className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               >
                 <option value="ACTIVE">เปิดใช้งาน</option>
                 <option value="INACTIVE">ปิดการใช้งาน</option>
@@ -250,12 +250,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           </div>
 
           {/* 4. สิทธิประโยชน์และสวัสดิการแบบ Dynamic */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
                 สิทธิประโยชน์และสวัสดิการที่ได้รับ
-                <span className="text-[11px] font-normal text-slate-500">
+                <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
                   ({selectedBenefitIds.length} รายการที่เลือก)
                 </span>
               </label>
@@ -273,12 +273,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             </div>
 
             {loadingBenefits ? (
-              <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+              <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-[#0B2046]" />
                 กำลังโหลดรายการสวัสดิการ...
               </div>
             ) : availableBenefits.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">ไม่พบสิทธิประโยชน์ในระบบ</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 py-2">ไม่พบสิทธิประโยชน์ในระบบ</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 max-h-48 overflow-y-auto">
                 {availableBenefits.map((b) => {
@@ -286,9 +286,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   return (
                     <label
                       key={b.id}
-                      className={`flex items-start gap-2.5 p-2 rounded-xl border transition-all cursor-pointer ${
-                        isChecked
-                          ? 'bg-white border-[#0B2046]/30 shadow-2xs'
+                      className={`flex items-start gap-2.5 p-2 rounded-xl border transition-all cursor-pointer ${ isChecked ? 'bg-white border-[#0B2046]/30 shadow-2xs'
                           : 'bg-white/60 border-slate-200/70 hover:bg-white'
                       }`}
                     >
@@ -296,14 +294,14 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleBenefit(b.id)}
-                        className="w-4 h-4 mt-0.5 rounded text-[#0B2046] border-slate-300 focus:ring-[#0B2046]"
+                        className="w-4 h-4 mt-0.5 rounded text-[#0B2046] border-slate-300 dark:border-slate-600 focus:ring-[#0B2046]"
                       />
                       <div className="flex-1">
-                        <span className="text-slate-800 font-medium block leading-tight">
+                        <span className="text-slate-800 dark:text-slate-200 font-medium block leading-tight">
                           {b.benefitName}
                         </span>
                         {b.description && (
-                          <span className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
                             {b.description}
                           </span>
                         )}
@@ -316,11 +314,11 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           </div>
 
           {/* Modal Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>

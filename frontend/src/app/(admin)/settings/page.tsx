@@ -469,7 +469,7 @@ export default function SettingsPage() {
   return (
     <div className={`space-y-4 font-sans ${activeTab === 'roles' ? 'pb-2' : 'pb-12'}`}>
       {/* 1. Sub-Navigation Tabs (ตรงตามรูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ผู้ใช้งาน */}
           {canViewUsersTab && (
@@ -478,7 +478,7 @@ export default function SettingsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'users'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               ผู้ใช้งาน
@@ -492,7 +492,7 @@ export default function SettingsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'roles'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               บทบาทและสิทธิ์
@@ -506,7 +506,7 @@ export default function SettingsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'audit-log'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               บันทึกการใช้งานระบบ
@@ -520,7 +520,7 @@ export default function SettingsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'approval-flows'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               สายการอนุมัติ

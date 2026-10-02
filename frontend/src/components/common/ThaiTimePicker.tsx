@@ -220,9 +220,9 @@ function WheelColumn({ items, selected, onSelect, isOpen }: WheelColumnProps) {
             style={{ height: `${ITEM_HEIGHT}px` }}
             className={`flex items-center justify-center font-mono transition-all duration-200 ease-out select-none ${
               isSelected
-                ? 'text-2xl font-black text-slate-900 scale-110 tracking-wide'
+                ? 'text-2xl font-black text-slate-900 dark:text-slate-100 scale-110 tracking-wide'
                 : distance === 1
-                ? 'text-base font-semibold text-slate-400 opacity-60 scale-95'
+                ? 'text-base font-semibold text-slate-400 dark:text-slate-500 opacity-60 scale-95'
                 : 'text-xs font-medium text-slate-300 opacity-20 scale-85'
             }`}
           >
@@ -372,7 +372,7 @@ export default function ThaiTimePicker({
       {/* Label Header */}
       {label && (
         <div className="mb-1.5">
-          <label className="block text-xs font-semibold text-slate-700">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
             {label} {required && <span className="text-rose-500">*</span>}
           </label>
         </div>
@@ -381,13 +381,13 @@ export default function ThaiTimePicker({
       {/* Trigger Box with Direct Keyboard Typing + Dropdown Toggle */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs transition-all cursor-pointer ${
-          isOpen ? 'ring-2 ring-[#0B2046]/20 border-[#0B2046] bg-white shadow-sm' : 'hover:bg-slate-100/80'
+        className={`w-full flex items-center justify-between px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 dark:border-slate-700 rounded-xl text-xs transition-all cursor-pointer ${
+          isOpen ? 'ring-2 ring-[#0B2046]/20 border-[#0B2046] bg-white dark:bg-slate-800 shadow-sm' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
         } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       >
         {/* Left: Clock Icon + Typing Inputs */}
         <div className="flex items-center gap-2 font-mono">
-          <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+          <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
 
           {/* Hour Direct Typing Input */}
           <input
@@ -400,10 +400,10 @@ export default function ThaiTimePicker({
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์ชั่วโมง (00-23)"
-            className="w-8 text-center font-black font-mono text-slate-900 bg-white border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] transition-all cursor-text"
+            className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all cursor-text"
           />
 
-          <span className="font-bold text-slate-400 select-none">:</span>
+          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">:</span>
 
           {/* Minute Direct Typing Input */}
           <input
@@ -417,15 +417,15 @@ export default function ThaiTimePicker({
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์นาที (00-59)"
-            className="w-8 text-center font-black font-mono text-slate-900 bg-white border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] transition-all cursor-text"
+            className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all cursor-text"
           />
 
-          <span className="font-sans font-semibold text-slate-500 text-[11px] select-none">น.</span>
+          <span className="font-sans font-semibold text-slate-500 dark:text-slate-400 text-[11px] select-none">น.</span>
         </div>
 
         {/* Right: Chevron Arrow */}
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+          className={`w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-[#0B2046]' : ''
           }`}
         />
@@ -436,35 +436,35 @@ export default function ThaiTimePicker({
         <div
           className={`absolute ${
             dropdownAlign === 'right' ? 'right-0' : 'left-0'
-          } top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 p-3.5 animate-in fade-in zoom-in-95 duration-150 select-none`}
+          } top-full mt-1.5 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 p-3.5 animate-in fade-in zoom-in-95 duration-150 select-none dark:text-slate-100`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs">
-            <span className="font-bold text-slate-800 flex items-center gap-1.5">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-700/60 text-xs">
+            <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-[#0B2046]" />
               <span>เลือกเวลา (24 ชม.)</span>
             </span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-bold text-[#0B2046] hover:text-blue-800 px-2.5 py-0.5 rounded-lg hover:bg-slate-100 transition-colors"
+              className="text-xs font-bold text-[#0B2046] hover:text-blue-800 px-2.5 py-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               เสร็จสิ้น
             </button>
           </div>
 
           {/* Column Titles: ชม. และ น. */}
-          <div className="grid grid-cols-2 gap-2 text-center text-xs font-bold text-slate-500 mb-1">
+          <div className="grid grid-cols-2 gap-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
             <div>ชม.</div>
             <div>น.</div>
           </div>
 
           {/* Wheel Frame Area */}
-          <div className="relative bg-slate-50/80 rounded-xl border border-slate-200/80 overflow-hidden shadow-inner">
+          <div className="relative bg-slate-50/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-inner">
             {/* Center Selection Highlight Box */}
             <div
               style={{ top: `${PADDING}px`, height: `${ITEM_HEIGHT}px` }}
-              className="absolute left-2 right-2 bg-white rounded-lg shadow-sm border border-slate-200/90 pointer-events-none z-0 transition-all duration-200"
+              className="absolute left-2 right-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200/90 pointer-events-none z-0 transition-all duration-200"
             />
 
             {/* Top & Bottom Smooth Gradient Fade Masks */}
@@ -489,10 +489,10 @@ export default function ThaiTimePicker({
           </div>
 
           {/* Quick Minute Selection Presets with Live Time Badge */}
-          <div className="mt-2.5 pt-2 border-t border-slate-100">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-semibold text-slate-400">ปุ่มลัดนาที:</span>
-              <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">ปุ่มลัดนาที:</span>
+              <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                 {selectedHour}:{selectedMinute} น.
               </span>
             </div>
@@ -505,8 +505,8 @@ export default function ThaiTimePicker({
                   className={`py-1 rounded-lg text-xs font-mono font-bold transition-all duration-150 ${
                     selectedMinute === m
                       ? 'bg-[#0B2046] text-white shadow-xs scale-105'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  } dark:bg-slate-700 dark:text-slate-300`}
                 >
                   :{m} น.
                 </button>

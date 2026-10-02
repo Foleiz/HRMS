@@ -30,7 +30,7 @@ const ACTION_LABEL: Record<string, { label: string; className: string }> = {
   MOVE: { label: 'เปลี่ยนตำแหน่ง/สังกัด', className: 'bg-violet-50 text-violet-700 border-violet-200' },
 };
 
-const Empty = () => <span className="text-slate-400 italic">(ว่าง)</span>;
+const Empty = () => <span className="text-slate-400 dark:text-slate-500 italic">(ว่าง)</span>;
 
 /** ตารางรายละเอียด: แก้ไข = ช่อง | เดิม | ใหม่, เพิ่ม/ลบ = ช่อง | ข้อมูล */
 function ChangeTable({ entry }: { entry: HistoryEntry }) {
@@ -39,7 +39,7 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
     return (
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-slate-50 text-slate-500">
+          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
             <th className="text-left font-medium px-3 py-1.5 w-[32%]">ข้อมูล</th>
             <th className="text-left font-medium px-3 py-1.5">ค่าเดิม</th>
             <th className="w-6" />
@@ -53,14 +53,14 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
               entry.action === 'MOVE' && c.oldValue == null && (c.field.startsWith('ตำแหน่งเดิม') || c.field.startsWith('ตำแหน่งใหม่'));
             return (
               <tr key={i}>
-                <td className="px-3 py-2 text-slate-600 align-top">{c.field}</td>
+                <td className="px-3 py-2 text-slate-600 dark:text-slate-400 align-top">{c.field}</td>
                 {onlyInfo ? (
-                  <td colSpan={3} className="px-3 py-2 text-slate-800 font-medium">{c.newValue ?? <Empty />}</td>
+                  <td colSpan={3} className="px-3 py-2 text-slate-800 dark:text-slate-200 font-medium">{c.newValue ?? <Empty />}</td>
                 ) : (
                   <>
-                    <td className="px-3 py-2 text-slate-500 align-top whitespace-pre-line break-words">{c.oldValue ?? <Empty />}</td>
+                    <td className="px-3 py-2 text-slate-500 dark:text-slate-400 align-top whitespace-pre-line break-words">{c.oldValue ?? <Empty />}</td>
                     <td className="align-top pt-2.5"><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></td>
-                    <td className="px-3 py-2 text-slate-900 font-medium align-top whitespace-pre-line break-words">{c.newValue ?? <Empty />}</td>
+                    <td className="px-3 py-2 text-slate-900 dark:text-slate-100 font-medium align-top whitespace-pre-line break-words">{c.newValue ?? <Empty />}</td>
                   </>
                 )}
               </tr>
@@ -77,7 +77,7 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
           const removed = c.newValue == null && c.oldValue != null;
           return (
             <tr key={i}>
-              <td className="px-3 py-2 text-slate-600 align-top w-[32%]">
+              <td className="px-3 py-2 text-slate-600 dark:text-slate-400 align-top w-[32%]">
                 {c.field === 'เพิ่ม' ? (
                   <span className="text-emerald-700">+ เพิ่ม</span>
                 ) : c.field === 'ลบ' ? (
@@ -150,7 +150,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     <div className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4">
       <div className="flex items-center gap-2">
         <History className="w-4 h-4 text-[#0B2046]" />
-        <h3 className="font-bold text-slate-800 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
       </div>
 
       {!loading && !error && entries.length > 0 && (
@@ -158,8 +158,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           <button
             type="button"
             onClick={() => setCategory('ALL')}
-            className={`px-3 py-1 rounded-full border cursor-pointer ${
-              category === 'ALL' ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            className={`px-3 py-1 rounded-full border cursor-pointer ${ category === 'ALL' ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
             ทั้งหมด ({entries.length})
@@ -169,8 +168,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               key={key}
               type="button"
               onClick={() => setCategory(key)}
-              className={`px-3 py-1 rounded-full border cursor-pointer ${
-                category === key ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              className={`px-3 py-1 rounded-full border cursor-pointer ${ category === key ? 'bg-[#0B2046] text-white border-[#0B2046]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
               }`}
             >
               {c.label} ({c.count})
@@ -180,7 +178,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       )}
 
       {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 gap-2">
+        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
         </div>
       ) : error ? (
@@ -188,26 +186,26 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-slate-400 py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        <p className="text-center text-slate-400 dark:text-slate-500 py-10 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
           ยังไม่มีประวัติการเปลี่ยนแปลง
         </p>
       ) : (
-        <ol className="relative border-l border-slate-200 ml-2 space-y-4">
+        <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-2 space-y-4">
           {filtered.map((e, idx) => {
             const action = ACTION_LABEL[e.action] ?? ACTION_LABEL.UPDATE;
             return (
               <li key={`${e.at}-${idx}`} className="ml-4">
                 <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full bg-[#0B2046] ring-4 ring-white" />
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-slate-800">{formatDateTime(e.at)}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{e.category}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDateTime(e.at)}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300">{e.category}</span>
                   <span className={`px-2 py-0.5 rounded-full border text-[10px] font-medium ${action.className}`}>{action.label}</span>
-                  <span className="inline-flex items-center gap-1 text-slate-400">
+                  <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
                     <User className="w-3 h-3" /> {e.changedBy || 'ระบบ'}
                   </span>
                 </div>
-                {e.summary && <p className="mt-1.5 text-sm text-slate-800 font-medium">{e.summary}</p>}
-                <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
+                {e.summary && <p className="mt-1.5 text-sm text-slate-800 dark:text-slate-200 font-medium">{e.summary}</p>}
+                <div className="mt-2 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <ChangeTable entry={e} />
                 </div>
               </li>
