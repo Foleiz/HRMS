@@ -263,7 +263,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
           </div>
 
           <div className="flex items-center justify-between gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
-            <div className="flex items-center bg-slate-100 rounded-xl p-1 text-xs">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-900 rounded-xl p-1 border border-slate-200 dark:border-slate-800 text-xs">
               {(['TH', 'EN'] as Lang[]).map((l) => (
                 <button
                   key={l}

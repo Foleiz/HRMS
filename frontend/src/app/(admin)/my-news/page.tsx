@@ -340,7 +340,7 @@ export default function MyNewsCalendarPage() {
         </div>
 
         {/* View Mode Switcher: วันนี้ | สัปดาห์ | เดือน */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 border border-slate-200/60 text-xs font-semibold">
           <button
             type="button"
             onClick={handleGoToday}
