@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -302,13 +302,11 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
   }, [filtered]);
 
   return (
-    <div className="pt-6 flex-1 animate-in fade-in duration-150 space-y-4">
+    <div className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4">
       {/* Title */}
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
-          <History className="w-4 h-4" />
-        </div>
-        <h3 className="font-bold text-slate-800 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+      <div className="flex items-center gap-2 mb-2">
+        <History className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
       </div>
 
       {/* Category chips with Lucide icons */}

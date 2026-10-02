@@ -24,6 +24,7 @@ import {
   KeyRound,
   X,
   Pencil,
+  User,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { authService } from '@/services/authService';
@@ -565,7 +566,13 @@ export default function EmployeeDetailView({
           {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
           {/* ============================================================ */}
           {activeTab === 'personal' && (
-            <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-7 gap-x-8 text-xs animate-in fade-in duration-150">
+            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลส่วนตัว (Personal Info)</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-7 gap-x-8">
               {/* --- คอลัมน์ที่ 1 --- */}
               <div className="space-y-5">
                 <div>
@@ -739,6 +746,7 @@ export default function EmployeeDetailView({
                   <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryEducation?.gpa ? Number(primaryEducation.gpa).toFixed(2) : '-'}</p>
                 </div>
               </div>
+            </div>
             </div>
           )}
 
@@ -1065,9 +1073,7 @@ export default function EmployeeDetailView({
           {/* TAB 8: ประวัติการเปลี่ยนแปลง (Change History) - Merged        */}
           {/* ============================================================ */}
           {activeTab === 'history' && (
-            <div className="w-full flex-1">
-              <EmployeeChangeHistoryTab employeeId={employee.id} />
-            </div>
+            <EmployeeChangeHistoryTab employeeId={employee.id} />
           )}
         </div>
       </div>
