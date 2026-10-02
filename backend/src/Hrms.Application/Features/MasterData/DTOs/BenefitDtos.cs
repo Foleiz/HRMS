@@ -62,6 +62,22 @@ public class EmployeeBenefitUsageSummaryDto
     public List<BenefitUsageItemDto> Benefits { get; set; } = new();
 }
 
+public class EmployeeBenefitOverviewDto
+{
+    public long EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? DepartmentName { get; set; }
+    public string? PositionTitle { get; set; }
+    public string? EmployeeTypeName { get; set; }
+    public int Year { get; set; }
+    public int TotalBenefitsCount { get; set; }
+    public decimal TotalQuota { get; set; }
+    public decimal TotalUsed { get; set; }
+    public decimal TotalRemaining { get; set; }
+    public List<BenefitUsageItemDto> Benefits { get; set; } = new();
+}
+
 public class BenefitUsageItemDto
 {
     public long BenefitItemId { get; set; }
@@ -69,6 +85,7 @@ public class BenefitUsageItemDto
     public string BenefitName { get; set; } = string.Empty;
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
+    public string PayoutType { get; set; } = "REIMBURSEMENT";
     public decimal QuotaAmount { get; set; }
     public string Frequency { get; set; } = "YEARLY";
     public decimal UsedAmount { get; set; }

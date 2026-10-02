@@ -92,6 +92,20 @@ public class BenefitsController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงภาพรวมยอดสวัสดิการพนักงานทุกคน (HR Overview / Accordion List)
+    /// </summary>
+    [HttpGet("balances")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBenefitOverviewDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBenefitOverviewDto>>>> GetBalances(
+        [FromQuery] int? year,
+        [FromQuery] string? search,
+        CancellationToken cancellationToken)
+    {
+        var result = await _benefitService.GetEmployeesBenefitOverviewAsync(year, search, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBenefitOverviewDto>>.Ok(result));
+    }
+
+    /// <summary>
     /// ดึงข้อมูลสรุปโควตาและการใช้สิทธิ์สวัสดิการรายบุคคลของพนักงาน
     /// </summary>
     [HttpGet("usage/{employeeId:long}")]

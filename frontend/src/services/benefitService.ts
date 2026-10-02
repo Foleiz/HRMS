@@ -38,6 +38,15 @@ export const benefitService = {
     await apiClient.delete<ApiResponse<null>>(`/benefits/${id}`);
   },
 
+  // ดึงภาพรวมสวัสดิการของพนักงานทุกคน (HR Overview / Accordion List)
+  async getEmployeesBenefitOverview(params?: { year?: number; search?: string }): Promise<import('@/types/benefit').EmployeeBenefitOverview[]> {
+    const res = await apiClient.get<ApiResponse<import('@/types/benefit').EmployeeBenefitOverview[]>>(
+      '/benefits/balances',
+      { params }
+    );
+    return res.data.data;
+  },
+
   // ดึงข้อมูลสรุปโควตาและการใช้สิทธิ์สวัสดิการของพนักงาน
   async getEmployeeUsageSummary(employeeId: number, year?: number) {
     const res = await apiClient.get<ApiResponse<import('@/types/benefit').EmployeeBenefitUsageSummary>>(

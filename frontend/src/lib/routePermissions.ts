@@ -53,6 +53,11 @@ export const ROUTE_RULES: RouteRule[] = [
     title: 'สวัสดิการของฉัน (ESS)',
     requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
   },
+  {
+    matchPrefix: '/benefits/balances',
+    title: 'ยอดสวัสดิการพนักงาน',
+    requiredPermissions: ['ORG_BENEFIT_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
+  },
 
   {
     matchPrefix: '/attendance/daily',

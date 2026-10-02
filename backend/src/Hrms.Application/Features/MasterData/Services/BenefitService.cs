@@ -283,6 +283,7 @@ public class BenefitService : IBenefitService
                 BenefitName = bItem.BenefitName,
                 Category = bItem.Category,
                 Description = bItem.Description,
+                PayoutType = bItem.PayoutType,
                 QuotaAmount = quota,
                 Frequency = tb.Frequency,
                 UsedAmount = used,
@@ -315,6 +316,136 @@ public class BenefitService : IBenefitService
             MaxedOutBenefitsCount = benefitItemsDto.Count(b => b.IsMaxedOut),
             Benefits = benefitItemsDto
         };
+    }
+
+    public async Task<List<EmployeeBenefitOverviewDto>> GetEmployeesBenefitOverviewAsync(int? year = null, string? search = null, CancellationToken cancellationToken = default)
+    {
+        int targetYear = year ?? DateTime.UtcNow.Year;
+
+        var employeesQuery = _context.Employees
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.EmployeeType)
+                    .ThenInclude(et => et!.EmployeeTypeBenefits)
+                        .ThenInclude(etb => etb.BenefitItem)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Department)
+            .Include(e => e.Assignments)
+                .ThenInclude(a => a.Position)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            employeesQuery = employeesQuery.Where(e =>
+                e.EmployeeCode.ToLower().Contains(s) ||
+                (e.FirstName + " " + e.LastName).ToLower().Contains(s) ||
+                e.Assignments.Any(a => a.IsCurrent && (
+                    (a.Department != null && a.Department.DepartmentName.ToLower().Contains(s)) ||
+                    (a.Position != null && a.Position.PositionName.ToLower().Contains(s))
+                ))
+            );
+        }
+
+        var employees = await employeesQuery
+            .OrderBy(e => e.EmployeeCode)
+            .ToListAsync(cancellationToken);
+
+        // Fetch all approved claims for all matching employees in targetYear
+        var employeeIds = employees.Select(e => e.Id).ToList();
+        var allClaims = await _context.EmployeeBenefitClaims
+            .AsNoTracking()
+            .Where(c => employeeIds.Contains(c.EmployeeId) && c.ClaimYear == targetYear && c.Status == "APPROVED")
+            .ToListAsync(cancellationToken);
+
+        var claimsByEmpAndBenefit = allClaims
+            .GroupBy(c => new { c.EmployeeId, c.BenefitItemId })
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var overviewList = new List<EmployeeBenefitOverviewDto>();
+
+        foreach (var emp in employees)
+        {
+            var currentAssignment = emp.Assignments?.FirstOrDefault(a => a.IsCurrent) 
+                ?? emp.Assignments?.FirstOrDefault();
+
+            var empType = currentAssignment?.EmployeeType;
+            var typeBenefits = empType?.EmployeeTypeBenefits?
+                .Where(etb => etb.IsActive && etb.BenefitItem != null && etb.BenefitItem.Status == "ACTIVE")
+                .ToList() ?? new List<EmployeeTypeBenefit>();
+
+            var benefitItemsDto = new List<BenefitUsageItemDto>();
+
+            foreach (var tb in typeBenefits)
+            {
+                var bItem = tb.BenefitItem;
+                var key = new { EmployeeId = emp.Id, BenefitItemId = bItem.Id };
+                var itemClaims = claimsByEmpAndBenefit.GetValueOrDefault(key, new List<EmployeeBenefitClaim>());
+
+                decimal used = itemClaims.Sum(c => c.Amount);
+                decimal quota = tb.CoverageAmount;
+                decimal remaining = quota > 0 ? Math.Max(0, quota - used) : 0;
+                decimal percentage = quota > 0 ? Math.Min(100, Math.Round((used / quota) * 100, 1)) : (used > 0 ? 100 : 0);
+                bool isMaxed = quota > 0 && used >= quota;
+
+                string statusText = "ได้รับสิทธิ์ตามระเบียบบริษัท";
+                if (tb.Frequency == "YEARLY" || quota > 0)
+                {
+                    if (isMaxed)
+                        statusText = "ใช้เต็มโควตาแล้ว (100%)";
+                    else if (percentage >= 70)
+                        statusText = $"ใกล้ครบโควตา ({percentage}%)";
+                    else if (used > 0)
+                        statusText = $"ยังไม่ครบโควตา ({percentage}%)";
+                    else
+                        statusText = "ยังไม่ได้ใช้สิทธิ์";
+                }
+                else if (bItem.Category == "ALLOWANCE")
+                {
+                    statusText = "คำนวณอัตโนมัติผ่านเงินเดือน";
+                }
+
+                benefitItemsDto.Add(new BenefitUsageItemDto
+                {
+                    BenefitItemId = bItem.Id,
+                    BenefitCode = bItem.BenefitCode,
+                    BenefitName = bItem.BenefitName,
+                    Category = bItem.Category,
+                    Description = bItem.Description,
+                    PayoutType = bItem.PayoutType,
+                    QuotaAmount = quota,
+                    Frequency = tb.Frequency,
+                    UsedAmount = used,
+                    RemainingAmount = remaining,
+                    UsagePercentage = percentage,
+                    IsMaxedOut = isMaxed,
+                    StatusText = statusText,
+                    ClaimCount = itemClaims.Count,
+                    LastClaimDate = itemClaims.OrderByDescending(c => c.ClaimDate).Select(c => (DateOnly?)c.ClaimDate).FirstOrDefault()
+                });
+            }
+
+            decimal totalQuota = benefitItemsDto.Where(b => b.Frequency == "YEARLY").Sum(b => b.QuotaAmount);
+            decimal totalUsed = benefitItemsDto.Sum(b => b.UsedAmount);
+            decimal totalRemaining = benefitItemsDto.Where(b => b.Frequency == "YEARLY").Sum(b => b.RemainingAmount);
+
+            overviewList.Add(new EmployeeBenefitOverviewDto
+            {
+                EmployeeId = emp.Id,
+                EmployeeCode = emp.EmployeeCode,
+                EmployeeName = emp.FullName,
+                DepartmentName = currentAssignment?.Department?.DepartmentName ?? "-",
+                PositionTitle = currentAssignment?.Position?.PositionName ?? "-",
+                EmployeeTypeName = empType?.TypeName ?? "-",
+                Year = targetYear,
+                TotalBenefitsCount = benefitItemsDto.Count,
+                TotalQuota = totalQuota,
+                TotalUsed = totalUsed,
+                TotalRemaining = totalRemaining,
+                Benefits = benefitItemsDto
+            });
+        }
+
+        return overviewList;
     }
 
     public async Task<List<BenefitClaimDto>> GetEmployeeClaimsAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default)

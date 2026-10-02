@@ -166,6 +166,17 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
+        title: 'ยอดสวัสดิการพนักงาน',
+        href: '/benefits/balances',
+        matchPrefix: '/benefits/balances',
+        icon: Gift,
+        requiredPermissions: [
+          'ORG_BENEFIT_VIEW',
+          'EMP_PROFILE_VIEW',
+          'EMP_VIEW',
+        ],
+      },
+      {
         title: 'โครงสร้างองค์กร',
         href: '/organization',
         matchPrefix: '/organization',

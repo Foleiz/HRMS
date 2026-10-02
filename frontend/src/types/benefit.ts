@@ -53,6 +53,7 @@ export interface BenefitUsageItem {
   benefitName: string;
   category: string;
   description?: string | null;
+  payoutType?: string;
   quotaAmount: number;
   frequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   usedAmount: number;
@@ -62,6 +63,21 @@ export interface BenefitUsageItem {
   statusText: string;
   claimCount: number;
   lastClaimDate?: string | null;
+}
+
+export interface EmployeeBenefitOverview {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionTitle?: string | null;
+  employeeTypeName?: string | null;
+  year: number;
+  totalBenefitsCount: number;
+  totalQuota: number;
+  totalUsed: number;
+  totalRemaining: number;
+  benefits: BenefitUsageItem[];
 }
 
 export interface EmployeeBenefitUsageSummary {
