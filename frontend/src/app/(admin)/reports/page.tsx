@@ -376,7 +376,7 @@ export default function ReportsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'headcount'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               อัตรากำลังคนประจำวัน
@@ -389,7 +389,7 @@ export default function ReportsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'lateness'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               รายงานการมาสายประจำเดือน
@@ -402,7 +402,7 @@ export default function ReportsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'tax'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               ภาษีและประกันสังคม (ภ.ง.ด.1 / สปส. 1-10)
@@ -415,7 +415,7 @@ export default function ReportsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'turnover'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               อัตราการเข้า-ออกงาน (Turnover Rate)
@@ -428,7 +428,7 @@ export default function ReportsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'leave'
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               การลา
@@ -447,19 +447,19 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">วันที่:</span>
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">วันที่:</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 />
               </div>
 
               {/* Division Filter */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <select
                   value={selectedDivision}
                   onChange={(e) => {
@@ -467,7 +467,7 @@ export default function ReportsPage() {
                     setSelectedDivision(val);
                     setSelectedDepartment('ALL');
                   }}
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">ฝ่ายทั้งหมด</option>
                   {divisions.map((div) => (
@@ -485,7 +485,7 @@ export default function ReportsPage() {
                   onChange={(e) =>
                     setSelectedDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments
@@ -502,7 +502,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadDailyHeadcount}
                 disabled={isLoadingHeadcount}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingHeadcount ? 'animate-spin text-blue-600' : ''}`} />
@@ -558,13 +558,13 @@ export default function ReportsPage() {
 
           {/* Notice when current date has no check-ins yet */}
           {headcountData && headcountData.totalPresent === 0 && headcountData.totalEmployees > 0 && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400">
               <div>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">วันที่ {selectedDate}:</span> ยังไม่มีรายการลงเวลาทำงานของพนักงานในระบบ (ข้อมูลการลงเวลาล่าสุดคือวันที่ 14 ก.ย. 2569)
               </div>
               <button
                 onClick={() => setSelectedDate('2026-09-14')}
-                className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 transition-colors shadow-xs whitespace-nowrap dark:bg-slate-800 dark:border-slate-600 dark:hover:bg-slate-800 dark:text-slate-200"
+                className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors shadow-xs whitespace-nowrap dark:bg-slate-800 dark:border-slate-600 dark:hover:bg-slate-800 dark:text-slate-200"
               >
                 ดูข้อมูลวันที่ 14 ก.ย. 2569
               </button>
@@ -574,28 +574,28 @@ export default function ReportsPage() {
           {/* Table Breakdown by Department */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
                 ตารางสรุปอัตรากำลังคนจำแนกตามแผนก
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
+              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 {headcountData?.departments.length || 0} แผนก
               </span>
             </div>
 
             {isLoadingHeadcount ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
                 กำลังโหลดข้อมูลอัตรากำลังคน...
               </div>
             ) : !headcountData || headcountData.departments.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500 dark:text-slate-400">
                 ไม่พบข้อมูลแผนกตามตัวกรองที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">รหัสแผนก</th>
                       <th className="py-3 px-4">ชื่อแผนก</th>
@@ -649,7 +649,7 @@ export default function ReportsPage() {
                                 style={{ width: `${Math.min(100, Math.max(0, dept.attendanceRate))}%` }}
                               ></div>
                             </div>
-                            <span className="text-xs font-bold text-slate-700 min-w-[36px] dark:text-slate-300">
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 min-w-[36px] dark:text-slate-300">
                               {Math.min(100, Math.max(0, dept.attendanceRate))}%
                             </span>
                           </div>
@@ -674,11 +674,11 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เดือน:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -690,11 +690,11 @@ export default function ReportsPage() {
 
               {/* Year Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -711,7 +711,7 @@ export default function ReportsPage() {
                   onChange={(e) =>
                     setLatenessDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments.map((dept) => (
@@ -724,7 +724,7 @@ export default function ReportsPage() {
 
               {/* Search Box */}
               <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
@@ -738,7 +738,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadMonthlyLateness}
                 disabled={isLoadingLateness}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingLateness ? 'animate-spin text-blue-600' : ''}`} />
@@ -778,7 +778,7 @@ export default function ReportsPage() {
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-orange-600 font-medium">เวลารวมที่สาย</span>
                 <div className="text-2xl font-extrabold text-orange-600">
-                  {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">นาที</span>
+                  {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">นาที</span>
                 </div>
               </div>
 
@@ -792,28 +792,28 @@ export default function ReportsPage() {
           {/* Detailed Table per Employee */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <FileSpreadsheet className="w-4 h-4 text-amber-600" />
                 ตารางสรุปเวลาทำงานและการมาสายรายบุคคล
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
+              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 {latenessData?.items.length || 0} คน
               </span>
             </div>
 
             {isLoadingLateness ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
                 กำลังโหลดรายงานการมาสาย...
               </div>
             ) : !latenessData || latenessData.items.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 text-sm dark:text-slate-500 dark:text-slate-400">
                 ไม่พบข้อมูลพนักงานตามเงื่อนไขที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">พนักงาน</th>
                       <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
@@ -829,12 +829,12 @@ export default function ReportsPage() {
                     {latenessData.items.map((item) => (
                       <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-900 block dark:text-slate-100">{item.employeeName}</span>
-                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {item.employeeCode}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 block dark:text-slate-100">{item.employeeName}</span>
+                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500 dark:text-slate-400">รหัส {item.employeeCode}</span>
                         </td>
                         <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-medium text-slate-800 block dark:text-slate-200">{item.departmentName}</span>
-                          <span className="text-slate-400 dark:text-slate-500">{item.positionName}</span>
+                          <span className="font-medium text-slate-800 dark:text-slate-200 block dark:text-slate-200">{item.departmentName}</span>
+                          <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">{item.positionName}</span>
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
                           {item.totalWorkDays} วัน
@@ -902,12 +902,12 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={taxYear}
                   onChange={(e) => setTaxYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -919,12 +919,12 @@ export default function ReportsPage() {
 
               {/* Month Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">งวดเดือน:</span>
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">งวดเดือน:</span>
                 <select
                   value={taxMonth}
                   onChange={(e) => setTaxMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -936,13 +936,13 @@ export default function ReportsPage() {
 
               {/* Department Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <select
                   value={taxDepartment}
                   onChange={(e) =>
                     setTaxDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments.map((dept) => (
@@ -955,7 +955,7 @@ export default function ReportsPage() {
 
               {/* Search Box */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ/รหัส/บัตรประชาชน..."
@@ -964,7 +964,7 @@ export default function ReportsPage() {
                     setTaxSearch(e.target.value);
                     setTaxPage(1);
                   }}
-                  className="text-xs text-slate-800 bg-transparent focus:outline-none w-44 dark:text-slate-200"
+                  className="text-xs text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none w-44 dark:text-slate-200"
                 />
               </div>
 
@@ -972,7 +972,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadPayrollTax}
                 disabled={isLoadingTax}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingTax ? 'animate-spin text-blue-600' : ''}`} />
@@ -1016,14 +1016,14 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
                   <DollarSign className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
                   {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400 dark:text-slate-500">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
+                <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
@@ -1033,7 +1033,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
                   {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
                 <div className="text-2xs text-rose-500">
                   มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
@@ -1047,9 +1047,9 @@ export default function ReportsPage() {
                 </div>
                 <div className="text-2xl font-extrabold text-blue-700">
                   {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-500 flex justify-between dark:text-slate-400">
+                <div className="text-2xs text-slate-500 dark:text-slate-400 flex justify-between dark:text-slate-400">
                   <span>ลูกจ้าง: {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                   <span>นายจ้าง: {taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                 </div>
@@ -1062,9 +1062,9 @@ export default function ReportsPage() {
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-700">
                   {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500">บาท</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400 dark:text-slate-500">
+                <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   สถานะรอบ: <span className="font-semibold text-slate-700 dark:text-slate-300">{taxData.periodStatus}</span>
                 </div>
               </div>
@@ -1076,12 +1076,12 @@ export default function ReportsPage() {
             <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                <h3 className="font-bold text-slate-800 text-sm dark:text-slate-200">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm dark:text-slate-200">
                   ตารางจำแนกภาษีเงินได้หัก ณ ที่จ่าย และเงินสมทบประกันสังคมรายบุคคล
                 </h3>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   ทั้งหมด {filteredTaxItems.length} รายการ
                 </span>
                 {/* Rows per page */}
@@ -1105,12 +1105,12 @@ export default function ReportsPage() {
             </div>
 
             {isLoadingTax ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานภาษีและประกันสังคม...
               </div>
             ) : filteredTaxItems.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 {taxData?.periodStatus === 'NONE'
                   ? `ไม่พบข้อมูลงวดการจ่ายเงินเดือนประจำเดือน ${thaiMonths[taxMonth - 1]} ${taxYear + 543}`
                   : 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา'}
@@ -1118,7 +1118,7 @@ export default function ReportsPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4 text-center w-12">ลำดับ</th>
                       <th className="py-3 px-4">พนักงาน</th>
@@ -1138,17 +1138,17 @@ export default function ReportsPage() {
                       const ssoTotal = item.ssoEmployee + item.ssoEmployer;
                       return (
                         <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
-                          <td className="py-3 px-4 text-center text-xs text-slate-400 dark:text-slate-500">{rowNum}</td>
+                          <td className="py-3 px-4 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{rowNum}</td>
                           <td className="py-3 px-4">
-                            <span className="font-semibold text-slate-900 block dark:text-slate-100">{item.employeeName}</span>
-                            <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {item.employeeCode}</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100 block dark:text-slate-100">{item.employeeName}</span>
+                            <span className="text-xs font-mono text-slate-400 dark:text-slate-500 dark:text-slate-400">รหัส {item.employeeCode}</span>
                           </td>
                           <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
                             {item.citizenIdMasked}
                           </td>
                           <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
-                            <span className="font-medium text-slate-800 block dark:text-slate-200">{item.departmentName}</span>
-                            <span className="text-slate-400 dark:text-slate-500">{item.positionName}</span>
+                            <span className="font-medium text-slate-800 dark:text-slate-200 block dark:text-slate-200">{item.departmentName}</span>
+                            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">{item.positionName}</span>
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-slate-900 dark:text-slate-100">
                             {item.grossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -1178,7 +1178,7 @@ export default function ReportsPage() {
                   </tbody>
                   {/* Summary Footer */}
                   {taxData && (
-                    <tfoot className="bg-slate-100/80 text-xs font-bold text-slate-800 border-t-2 border-slate-200 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700">
+                    <tfoot className="bg-slate-100/80 text-xs font-bold text-slate-800 dark:text-slate-200 border-t-2 border-slate-200 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700">
                       <tr>
                         <td colSpan={4} className="py-3 px-4 text-center">
                           รวมทั้งสิ้น ({filteredTaxItems.length} คน)
@@ -1220,7 +1220,7 @@ export default function ReportsPage() {
 
                 {/* Pagination Controls */}
                 {totalTaxPages > 1 && (
-                  <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700/60 dark:text-slate-400">
+                  <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
                     <span>
                       หน้า {currentTaxPage} จาก {totalTaxPages} (ทั้งหมด {filteredTaxItems.length} แถว)
                     </span>
@@ -1263,12 +1263,12 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">ปี:</span>
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
                 <select
                   value={turnoverYear}
                   onChange={(e) => setTurnoverYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
@@ -1280,12 +1280,12 @@ export default function ReportsPage() {
 
               {/* Month Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เดือน:</span>
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
                 <select
                   value={turnoverMonth}
                   onChange={(e) => setTurnoverMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -1297,7 +1297,7 @@ export default function ReportsPage() {
 
               {/* Division Filter */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <select
                   value={turnoverDivision}
                   onChange={(e) => {
@@ -1305,7 +1305,7 @@ export default function ReportsPage() {
                     setTurnoverDivision(val);
                     setTurnoverDepartment('ALL');
                   }}
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">ฝ่ายทั้งหมด</option>
                   {divisions.map((div) => (
@@ -1323,7 +1323,7 @@ export default function ReportsPage() {
                   onChange={(e) =>
                     setTurnoverDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="text-xs font-medium text-slate-700 bg-transparent focus:outline-none dark:text-slate-300"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
                 >
                   <option value="ALL">แผนกทั้งหมด</option>
                   {departments
@@ -1340,7 +1340,7 @@ export default function ReportsPage() {
               <button
                 onClick={loadTurnover}
                 disabled={isLoadingTurnover}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingTurnover ? 'animate-spin text-blue-600' : ''}`} />
@@ -1368,9 +1368,9 @@ export default function ReportsPage() {
           {turnoverData && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">พนักงานต้นงวด</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">พนักงานต้นงวด</span>
                 <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">
-                  {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
+                  {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
                 </div>
               </div>
 
@@ -1380,7 +1380,7 @@ export default function ReportsPage() {
                   <UserPlus className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-600">
-                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
+                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
                 </div>
               </div>
 
@@ -1390,19 +1390,19 @@ export default function ReportsPage() {
                   <UserMinus className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
-                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
+                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
                 </div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">พนักงานสิ้นงวด</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
-                  {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
+                  {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
                 </div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">Turnover / Retention</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">Turnover / Retention</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-extrabold text-amber-600">
                     {turnoverData.overallTurnoverRate}%
@@ -1418,28 +1418,28 @@ export default function ReportsPage() {
           {/* Department Breakdown Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
                 อัตราการเข้า-ออกของพนักงานจำแนกตามแผนก
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
+              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 {turnoverData?.departmentTurnovers.length || 0} แผนก
               </span>
             </div>
 
             {isLoadingTurnover ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานอัตราการเข้า-ออกของพนักงาน...
               </div>
             ) : !turnoverData || turnoverData.departmentTurnovers.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 ไม่พบข้อมูลแผนกตามเงื่อนไขที่เลือก
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">ฝ่าย</th>
                       <th className="py-3 px-4">รหัสแผนก</th>
@@ -1470,7 +1470,7 @@ export default function ReportsPage() {
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
                               dept.turnoverRate === 0
-                                ? 'bg-slate-50 text-slate-600 border border-slate-200'
+                                ? 'bg-slate-50 text-slate-600 dark:text-slate-400 border border-slate-200'
                                 : dept.turnoverRate <= 5
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -1504,18 +1504,18 @@ export default function ReportsPage() {
           {turnoverData && turnoverData.eventLogs.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                   <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   บันทึกประวัติการเคลื่อนไหวพนักงานประจำงวดเดือน
                 </h3>
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   {turnoverData.eventLogs.length} รายการ
                 </span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700">
                     <tr>
                       <th className="py-3 px-4">วันที่</th>
                       <th className="py-3 px-4">พนักงาน</th>
@@ -1529,12 +1529,12 @@ export default function ReportsPage() {
                       <tr key={idx} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">{ev.eventDate}</td>
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-900 block dark:text-slate-100">{ev.employeeName}</span>
-                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {ev.employeeCode}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 block dark:text-slate-100">{ev.employeeName}</span>
+                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500 dark:text-slate-400">รหัส {ev.employeeCode}</span>
                         </td>
                         <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-medium text-slate-800 block dark:text-slate-200">{ev.departmentName}</span>
-                          <span className="text-slate-400 dark:text-slate-500">{ev.positionName}</span>
+                          <span className="font-medium text-slate-800 dark:text-slate-200 block dark:text-slate-200">{ev.departmentName}</span>
+                          <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">{ev.positionName}</span>
                         </td>
                         <td className="py-3 px-4 text-center">
                           {ev.eventType === 'JOINED' ? (

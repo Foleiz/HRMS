@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check, X, User } from 'lucide-react';
@@ -111,7 +111,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
             : 'border-slate-200 dark:border-slate-700 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 dark:hover:border-slate-600'
         } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900 dark:bg-slate-900' : 'cursor-pointer'}`}
       >
-        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>
+        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500 dark:text-slate-400'}`}>
           {selectedEmployee ? (
             <>
               <span>
@@ -128,7 +128,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           )}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 dark:text-slate-500 transition-transform shrink-0 ${
+          className={`w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 transition-transform shrink-0 ${
             isOpen ? 'rotate-180 text-[#0B2046]' : ''
           }`}
         />
@@ -140,7 +140,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           {/* กล่องค้นหา (Search Input) */}
           <div className="p-2.5 border-b border-slate-100 dark:border-slate-700/60 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/70">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -163,7 +163,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 p-0.5 rounded"
+                  className="absolute right-2.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-0.5 rounded"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -178,12 +178,12 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 onClick={() => handleSelect('')}
                 className="px-3.5 py-2.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 cursor-pointer italic flex items-center gap-2"
               >
-                <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span>{emptyLabel}</span>
               </li>
             )}
             {filteredEmployees.length === 0 ? (
-              <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+              <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 ไม่พบข้อมูลพนักงานที่ตรงกับ "{searchQuery}"
               </li>
             ) : (
@@ -209,7 +209,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                         {emp.fullName || `${emp.firstName} ${emp.lastName}`}
                       </span>
                       {emp.employeeCode && (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 font-normal shrink-0">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal shrink-0">
                           ({emp.employeeCode})
                         </span>
                       )}

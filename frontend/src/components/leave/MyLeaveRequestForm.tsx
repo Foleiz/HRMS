@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
@@ -443,7 +443,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 })}
               </select>
               {leaveTypes.length === 0 && (
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
               )}
             </div>
 
@@ -524,11 +524,11 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                     : 'คำนวณอัตโนมัติ'}
             </div>
             {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
-              <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500">
+              <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500 dark:text-slate-400">
                 วันหยุดบริษัทในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
               </p>
             )}
-            <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
+            <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500 dark:text-slate-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
           {/* แสดงตลอด — ยังไม่เลือกประเภทจะแสดงเป็น "-" แทนตัวเลข */}
@@ -539,15 +539,15 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             </p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500">ลามาแล้ว</div>
+                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">ลามาแล้ว</div>
                 <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
               </div>
               <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500">ลาครั้ง</div>
+                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">ลาครั้ง</div>
                 <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
               </div>
               <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500">รวมเป็น</div>
+                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">รวมเป็น</div>
                 <div
                   className={`text-sm font-bold ${
                     !hasSelectedType ? 'text-gray-800 dark:text-slate-200' : withinQuota ? 'text-emerald-600' : 'text-red-600'
@@ -572,7 +572,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-1.5">
               <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
+                <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 dark:text-slate-400" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
               </label>
               <span className="text-2xs text-gray-300">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
             </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { DashboardRole } from '../DashboardHeader';
@@ -188,7 +188,7 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
         {loading ? (
           <div className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-700/60 border-t-[#0B2046] animate-spin" />
         ) : slices.length === 0 ? (
-          <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-500 text-center px-2">
+          <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 text-center px-2">
             ยังไม่มีข้อมูลลงเวลา
           </div>
         ) : (
@@ -220,7 +220,7 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
             </div>
             <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
               <span>{loading ? '-' : `${item.count} คน`}</span>
-              <span className="text-slate-400 dark:text-slate-500 font-normal">
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">
                 ({loading ? '-' : `${item.percentage}%`})
               </span>
             </div>

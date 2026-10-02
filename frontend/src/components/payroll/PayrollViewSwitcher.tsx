@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Users, Landmark, Layers, ShieldCheck } from 'lucide-react';
@@ -63,7 +63,7 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'ALL'
                 ? 'bg-white dark:bg-slate-900 text-indigo-700 shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -75,7 +75,7 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'HR'
                 ? 'bg-white dark:bg-slate-900 text-blue-700 shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'FINANCE'
                 ? 'bg-white dark:bg-slate-900 text-emerald-700 shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />

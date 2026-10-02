@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ export const ApprovalNavTabs: React.FC<ApprovalNavTabsProps> = () => {
               key={tab.href}
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${ isTabActive ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               {tab.title}

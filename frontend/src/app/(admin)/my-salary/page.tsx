@@ -163,7 +163,7 @@ export default function MySalaryPage() {
         <div className="flex h-[60vh] items-center justify-center">
           <div className="text-center space-y-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mx-auto" />
-            <p className="text-xs text-slate-500 font-medium">กำลังโหลดรายละเอียดเงินเดือน...</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำลังโหลดรายละเอียดเงินเดือน...</p>
           </div>
         </div>
       );
@@ -184,10 +184,10 @@ export default function MySalaryPage() {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 รายละเอียดเงินเดือน – {detailData?.periodMonthName || 'สิงหาคม 2569'}
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {detailData?.employeeName} ({detailData?.employeeCode}) · {detailData?.positionName} · {detailData?.departmentName}
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function MySalaryPage() {
             </button>
 
             {/* Top Right Security Notice Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 dark:text-slate-300 border border-slate-200 text-[11px] font-medium shadow-xs">
               <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>รหัสเปิดไฟล์: วันเกิด (ววดดปปปป)</span>
             </div>
@@ -233,7 +233,7 @@ export default function MySalaryPage() {
                   detailData.earnings.map((item, idx) => (
                     <div key={idx} className="py-3 flex items-start justify-between gap-4">
                       <div>
-                        <span className="text-xs font-medium text-slate-800 block">
+                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
                           {item.itemName}
                         </span>
                         {item.subDescription && (
@@ -242,7 +242,7 @@ export default function MySalaryPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-semibold text-slate-900 font-mono text-right shrink-0">
+                      <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 font-mono text-right shrink-0">
                         {formatMoney(item.amount)}
                       </span>
                     </div>
@@ -254,8 +254,8 @@ export default function MySalaryPage() {
 
               {/* Total Earnings Bottom Line */}
               <div className="border-t-2 border-slate-800 pt-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">รวมรายได้</span>
-                <span className="text-sm font-bold text-slate-900 font-mono">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายได้</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
                   {formatMoney(detailData?.totalGrossIncome)}
                 </span>
               </div>
@@ -272,7 +272,7 @@ export default function MySalaryPage() {
                   detailData.deductions.map((item, idx) => (
                     <div key={idx} className="py-3 flex items-start justify-between gap-4">
                       <div>
-                        <span className="text-xs font-medium text-slate-800 block">
+                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
                           {item.itemName}
                         </span>
                         {item.subDescription && (
@@ -293,7 +293,7 @@ export default function MySalaryPage() {
 
               {/* Total Deductions Bottom Line */}
               <div className="border-t-2 border-slate-800 pt-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">รวมรายการหัก</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายการหัก</span>
                 <span className="text-sm font-bold text-rose-600 font-mono">
                   -{formatMoney(detailData?.totalDeductions)}
                 </span>
@@ -306,25 +306,25 @@ export default function MySalaryPage() {
           {/* ========================================================= */}
           <div className="bg-[#EBF5FB]/80 border border-sky-100 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <span className="text-xs font-medium text-slate-600 block">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 block">
                 เงินเดือนสุทธิได้รับ
               </span>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-mono">
                   {formatMoney(detailData?.netPayableSalary)}
                 </span>
-                <span className="text-sm font-semibold text-slate-700">บาท</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">บาท</span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:items-end gap-1 text-xs text-slate-600">
+            <div className="flex flex-col sm:items-end gap-1 text-xs text-slate-600 dark:text-slate-400">
               <div>
                 <span>โอนวันที่ </span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {detailData?.paymentDateThai || '-'}
                 </span>
               </div>
-              <div className="font-mono text-slate-500 text-[11px]">
+              <div className="font-mono text-slate-500 dark:text-slate-400 text-[11px]">
                 เลขบัญชี {detailData?.bankAccountMasked} ({detailData?.bankName})
               </div>
             </div>
@@ -382,7 +382,7 @@ export default function MySalaryPage() {
           {/* Card 2: รายได้รวม - White Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 รายได้รวม
               </span>
               <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -391,7 +391,7 @@ export default function MySalaryPage() {
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-mono">
                   {formatMoneyInt(overview?.latestGrossIncome)}
                 </span>
                 <span className="text-xs font-medium text-slate-400">บาท</span>
@@ -405,7 +405,7 @@ export default function MySalaryPage() {
           {/* Card 3: รายการหักรวม - White Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 รายการหักรวม
               </span>
               <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
@@ -414,7 +414,7 @@ export default function MySalaryPage() {
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-mono">
                   {formatMoneyInt(overview?.latestTotalDeductions)}
                 </span>
                 <span className="text-xs font-medium text-slate-400">บาท</span>
@@ -428,7 +428,7 @@ export default function MySalaryPage() {
           {/* Card 4: ยอดสะสมทั้งปี (YTD) - White Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 ยอดสะสมทั้งปี (YTD)
               </span>
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
@@ -437,7 +437,7 @@ export default function MySalaryPage() {
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-mono">
                   {formatMoneyInt(overview?.ytdTotalGross)}
                 </span>
                 <span className="text-xs font-medium text-slate-400">บาท</span>
@@ -460,7 +460,7 @@ export default function MySalaryPage() {
             {/* Table Header with Search */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   ประวัติสลิปเงินเดือน
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
@@ -479,7 +479,7 @@ export default function MySalaryPage() {
                     setCurrentPage(1);
                   }}
                   placeholder="ค้นหาเดือน / พ.ศ."
-                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 text-xs bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                 />
               </div>
             </div>
@@ -488,7 +488,7 @@ export default function MySalaryPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50">
+                  <tr className="border-b border-slate-100 text-slate-500 dark:text-slate-400 font-semibold bg-slate-50/50">
                     <th className="py-3 px-3.5 whitespace-nowrap">เดือน-ปี</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-right">รายได้รวม</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-right">รายการหักรวม</th>
@@ -506,19 +506,19 @@ export default function MySalaryPage() {
                         className="hover:bg-slate-50/70 transition-colors group cursor-pointer"
                         onClick={() => handleSelectSlip(row.payrollId)}
                       >
-                        <td className="py-3.5 px-3.5 font-semibold text-slate-900 whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           {row.periodMonthName}
                         </td>
-                        <td className="py-3.5 px-3.5 text-right font-mono text-slate-700 whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {formatMoney(row.totalGrossIncome)}
                         </td>
                         <td className="py-3.5 px-3.5 text-right font-mono text-rose-600 whitespace-nowrap">
                           {formatMoney(row.totalDeductions)}
                         </td>
-                        <td className="py-3.5 px-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           {formatMoney(row.netPayableSalary)}
                         </td>
-                        <td className="py-3.5 px-3.5 text-center text-slate-600 whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-center text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {row.paymentDateThai}
                         </td>
                         <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
@@ -570,16 +570,16 @@ export default function MySalaryPage() {
           </div>
 
           {/* Pagination & Page Size Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-slate-600">แสดงผล</span>
+              <span className="text-slate-600 dark:text-slate-400">แสดงผล</span>
               <select
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
+                className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
               >
                 <option value={5}>5 รายการ / หน้า</option>
                 <option value={8}>8 รายการ / หน้า</option>
@@ -596,7 +596,7 @@ export default function MySalaryPage() {
               <button
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="px-2 py-1 rounded border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 &lt;
               </button>
@@ -609,7 +609,7 @@ export default function MySalaryPage() {
                     className={`w-7 h-7 rounded text-xs font-semibold cursor-pointer ${
                       currentPage === p
                         ? 'bg-[#0B2046] text-white'
-                        : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        : 'border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                     }`}
                   >
                     {p}
@@ -619,7 +619,7 @@ export default function MySalaryPage() {
               <button
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="px-2 py-1 rounded border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 &gt;
               </button>
@@ -631,7 +631,7 @@ export default function MySalaryPage() {
         <div className="lg:col-span-4 space-y-6">
           {/* Top Chart: Pie / Donut Chart */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <PieChartIcon className="w-3.5 h-3.5 text-[#0B2046]" />
               สัดส่วนเงินเดือนงวดล่าสุด
             </h3>
@@ -678,13 +678,13 @@ export default function MySalaryPage() {
             </div>
 
             {/* Chart Legend */}
-            <div className="space-y-1.5 text-[11px] text-slate-600 pt-1 border-t border-slate-100">
+            <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
                   <span>เงินเดือนพื้นฐาน</span>
                 </div>
-                <span className="font-semibold text-slate-800 font-mono">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {formatMoney(overview?.chartData?.baseSalaryAmount)}
                 </span>
               </div>
@@ -693,7 +693,7 @@ export default function MySalaryPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
                   <span>ค่าล่วงเวลา / เบี้ยขยัน</span>
                 </div>
-                <span className="font-semibold text-slate-800 font-mono">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {formatMoney(
                     (overview?.chartData?.overtimeAmount || 0) +
                       (overview?.chartData?.allowanceAmount || 0)
@@ -705,7 +705,7 @@ export default function MySalaryPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6]" />
                   <span>รายการหักรวม</span>
                 </div>
-                <span className="font-semibold text-slate-800 font-mono">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {formatMoney(overview?.chartData?.deductionsAmount)}
                 </span>
               </div>
@@ -714,7 +714,7 @@ export default function MySalaryPage() {
 
           {/* Bottom Chart: Bar Chart */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <TrendingUp className="w-3.5 h-3.5 text-[#0B2046]" />
               แนวโน้มเงินเดือนสุทธิ
             </h3>
@@ -750,7 +750,7 @@ export default function MySalaryPage() {
                         className="w-3.5 bg-[#F59E0B] rounded-t transition-all hover:opacity-80"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-medium">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                       {t.monthLabel}
                     </span>
                   </div>
@@ -763,7 +763,7 @@ export default function MySalaryPage() {
             </div>
 
             {/* Legend for Bar Chart */}
-            <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500">
+            <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded bg-[#10B981]" /> รายได้รวม
               </span>

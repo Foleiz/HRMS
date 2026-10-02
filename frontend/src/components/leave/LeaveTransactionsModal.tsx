@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, History, PlusCircle, MinusCircle, RefreshCw } from 'lucide-react';
@@ -102,7 +102,7 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+            className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -113,26 +113,26 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
           {/* Summary Box */}
           <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-700/60 text-center">
             <div>
-              <span className="text-[11px] text-gray-400 dark:text-slate-500 block">สิทธิ์ + ยกมา</span>
+              <span className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400 block">สิทธิ์ + ยกมา</span>
               <span className="text-sm font-bold text-gray-800 dark:text-slate-200">{balance.annualQuotaDays + balance.activeCarriedForwardDays} วัน</span>
             </div>
             <div>
-              <span className="text-[11px] text-gray-400 dark:text-slate-500 block">ใช้ไป</span>
+              <span className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400 block">ใช้ไป</span>
               <span className="text-sm font-bold text-rose-600">{balance.usedDays} วัน</span>
             </div>
             <div>
-              <span className="text-[11px] text-gray-400 dark:text-slate-500 block">คงเหลือ</span>
+              <span className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400 block">คงเหลือ</span>
               <span className="text-sm font-bold text-blue-600">{balance.netRemainingLeaveDays} วัน</span>
             </div>
           </div>
 
           {/* Timeline list */}
           {loading ? (
-            <div className="py-12 flex justify-center items-center gap-2 text-gray-400 dark:text-slate-500 text-sm">
+            <div className="py-12 flex justify-center items-center gap-2 text-gray-400 dark:text-slate-500 dark:text-slate-400 text-sm">
               <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดประวัติ...
             </div>
           ) : transactions.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 dark:text-slate-500 text-sm">
+            <div className="py-12 text-center text-gray-400 dark:text-slate-500 dark:text-slate-400 text-sm">
               ยังไม่มีประวัติการทำรายการ
             </div>
           ) : (
@@ -145,7 +145,7 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       {getTransactionBadge(tx.transactionType, tx.amount)}
-                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                      <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">
                         {new Date(tx.createdAt).toLocaleDateString('th-TH', {
                           day: 'numeric',
                           month: 'short',
@@ -157,7 +157,7 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
                     </div>
                     {tx.note && <p className="text-xs text-gray-600 dark:text-slate-400 pl-1">{tx.note}</p>}
                     {tx.createdByEmployeeName && (
-                      <p className="text-[11px] text-gray-400 dark:text-slate-500 pl-1">โดย: {tx.createdByEmployeeName}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400 pl-1">โดย: {tx.createdByEmployeeName}</p>
                     )}
                   </div>
                   <div className={`text-sm font-bold ${tx.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>

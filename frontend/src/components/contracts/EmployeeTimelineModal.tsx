@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
@@ -58,7 +58,7 @@ export default function EmployeeTimelineModal({
           </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -67,7 +67,7 @@ export default function EmployeeTimelineModal({
         {/* Content Body ตรงตาม Mockup 100% */}
         <div className="p-7 max-h-[70vh] overflow-y-auto">
           {loading ? (
-            <div className="py-16 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center gap-2">
+            <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
               <span className="text-xs">กำลังโหลดไทม์ไลน์ตำแหน่งงาน...</span>
             </div>
@@ -77,7 +77,7 @@ export default function EmployeeTimelineModal({
               <span>{error}</span>
             </div>
           ) : timeline.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 text-sm">
               ไม่พบข้อมูลประวัติตำแหน่งงานของพนักงานคนนี้
             </div>
           ) : (

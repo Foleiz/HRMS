@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { UserProfile } from '@/types/auth';
@@ -45,7 +45,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
               className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                 isActive
                   ? 'bg-[#0B2046] text-white shadow-xs font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100 hover:bg-white dark:bg-slate-800/60'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100 hover:bg-white dark:bg-slate-800/60'
               }`}
             >
               {ROLE_LABELS[role].title}

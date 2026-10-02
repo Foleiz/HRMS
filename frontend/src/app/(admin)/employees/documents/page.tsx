@@ -146,7 +146,7 @@ export default function ExpiringDocumentsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               {tab.title}
@@ -163,8 +163,8 @@ export default function ExpiringDocumentsPage() {
               <FileClock className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-slate-700">ใกล้หมดอายุ</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">ใกล้หมดอายุ</h4>
+              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
             </div>
           </div>
           <div className="text-2xl font-bold text-amber-600">{counts.expiring}</div>
@@ -175,8 +175,8 @@ export default function ExpiringDocumentsPage() {
               <FileX2 className="w-5 h-5 text-rose-600" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-slate-700">หมดอายุแล้ว</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">หมดอายุแล้ว</h4>
+              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
             </div>
           </div>
           <div className="text-2xl font-bold text-rose-600">{counts.expired}</div>
@@ -228,7 +228,7 @@ export default function ExpiringDocumentsPage() {
       {/* ตาราง */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden text-xs">
         {loading ? (
-          <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+          <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
           </div>
         ) : error ? (
@@ -236,7 +236,7 @@ export default function ExpiringDocumentsPage() {
             <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 dark:text-slate-500">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
+          <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px]">
@@ -258,12 +258,12 @@ export default function ExpiringDocumentsPage() {
                     <tr key={doc.id} className="hover:bg-slate-50/60">
                       <td className="px-4 py-3">
                         <p className="font-semibold text-slate-800 dark:text-slate-200">{doc.employeeName || '-'}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{doc.employeeCode}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono">{doc.employeeCode}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{doc.departmentName || '-'}</td>
                       <td className="px-4 py-3">
                         <p className="text-slate-800 dark:text-slate-200">{doc.documentTypeName}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 break-all max-w-[220px]">{doc.fileName}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 break-all max-w-[220px]">{doc.fileName}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatDate(doc.expiryDate)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -285,7 +285,7 @@ export default function ExpiringDocumentsPage() {
                               title="ดาวน์โหลด"
                               onClick={() => handleDownload(doc)}
                               disabled={downloadingId === doc.id}
-                              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
                             >
                               {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             </button>
@@ -293,7 +293,7 @@ export default function ExpiringDocumentsPage() {
                           <Link
                             href={`/employees/${doc.employeeId}?tab=documents`}
                             title="เปิดแฟ้มเอกสารพนักงาน"
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#0B2046]"
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-[#0B2046]"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Link>

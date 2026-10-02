@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, ArrowUpRight, ArrowDownRight, User, Building2, Briefcase } from 'lucide-react';
@@ -114,7 +114,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -134,11 +134,11 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
           <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60">
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
               <span className="truncate">{employee.departmentName || 'ไม่ระบุแผนก'}</span>
             </div>
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
               <span className="truncate">{employee.positionName || 'ไม่ระบุตำแหน่ง'}</span>
             </div>
           </div>
@@ -204,7 +204,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                       : 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800'
                   }`}
                 />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500">฿</span>
+                <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">฿</span>
               </div>
               {minSalary != null && (
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -280,7 +280,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               onChange={(e) => setEffectiveFrom(e.target.value)}
               className="w-full text-sm px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
               ระบบจะปิดการใช้งานเงินเดือนเดิมในวันก่อนหน้าวันที่มีผลนี้ให้อัตโนมัติ
             </p>
           </div>
@@ -304,7 +304,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
             >
               ยกเลิก
             </button>

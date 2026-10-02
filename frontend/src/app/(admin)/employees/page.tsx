@@ -618,8 +618,8 @@ export default function EmployeesPage() {
       isMono ? 'font-mono' : ''
     } ${
       hasError
-        ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 placeholder:text-rose-300 focus:outline-none focus:border-rose-600 focus:ring-rose-500/30'
-        : 'border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]'
+        ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 dark:text-slate-100 placeholder:text-rose-300 focus:outline-none focus:border-rose-600 focus:ring-rose-500/30'
+        : 'border border-slate-200 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]'
     }`;
   };
 
@@ -811,7 +811,7 @@ export default function EmployeesPage() {
     const status = emp.employmentStatus?.toUpperCase() ?? 'ACTIVE';
     if (status === 'INACTIVE') {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 font-medium whitespace-nowrap">
+        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-slate-300"></span>
           ไม่ได้ทำงาน
         </span>
@@ -874,7 +874,7 @@ export default function EmployeesPage() {
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
                     ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
                 {tab.title}
@@ -895,7 +895,7 @@ export default function EmployeesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาพนักงาน"
-              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
             />
           </div>
 
@@ -905,7 +905,7 @@ export default function EmployeesPage() {
               <select
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
               >
                 <option value="ALL">ทุกแผนก</option>
                 {departments.map((dept) => (
@@ -1100,14 +1100,14 @@ export default function EmployeesPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#0B2046] mb-2" />
                     กำลังโหลดข้อมูลพนักงาน...
                   </td>
                 </tr>
               ) : paginatedEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     ไม่พบข้อมูลพนักงานในระบบ
                   </td>
                 </tr>
@@ -1126,7 +1126,7 @@ export default function EmployeesPage() {
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <div className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{emp.employeeCode}</div>
                         {emp.biometricId && (
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
                             <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 font-sans font-medium">สแกน:</span>
                             <span className="font-semibold text-slate-600 dark:text-slate-400">{emp.biometricId}</span>
                           </div>
@@ -1196,7 +1196,7 @@ export default function EmployeesPage() {
                           {/* ชื่อเต็ม */}
                           <Link
                             href={`/employees/${emp.id}`}
-                            className="font-medium text-slate-800 hover:text-[#0B2046] hover:underline"
+                            className="font-medium text-slate-800 dark:text-slate-200 hover:text-[#0B2046] hover:underline"
                           >
                             {emp.prefix} {emp.firstName} {emp.lastName}
                           </Link>
@@ -1257,9 +1257,9 @@ export default function EmployeesPage() {
                               <Link
                                 href={`/employees/${emp.id}`}
                                 onClick={close}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors font-medium"
                               >
-                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                                 <span>ดูข้อมูลพนักงาน</span>
                               </Link>
 
@@ -1267,19 +1267,19 @@ export default function EmployeesPage() {
                               <Link
                                 href={`/employees/${emp.id}/edit`}
                                 onClick={close}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors font-medium"
                               >
-                                <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                                 <span>แก้ไขข้อมูลพนักงาน</span>
                               </Link>
 
                               {/* 4. เปลี่ยนสถานะการจ้างงาน */}
                               {hasPermission('EMP_MANAGE') && (
                                 <div className="border-t border-slate-100 dark:border-slate-700/60 pt-1">
-                                  <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">เปลี่ยนสถานะ</p>
+                                  <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wide">เปลี่ยนสถานะ</p>
                                   {[
                                     { value: 'ACTIVE', label: 'ทำงานอยู่', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                                    { value: 'INACTIVE', label: 'ไม่ได้ทำงาน', color: 'text-slate-500', dot: 'bg-slate-300' },
+                                    { value: 'INACTIVE', label: 'ไม่ได้ทำงาน', color: 'text-slate-500 dark:text-slate-400', dot: 'bg-slate-300' },
                                   ].map((s) => {
                                     const isCurrentStatus = (emp.employmentStatus?.toUpperCase() ?? 'ACTIVE') === s.value;
                                     return (
@@ -1343,7 +1343,7 @@ export default function EmployeesPage() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
               <option value={5}>5</option>
               <option value={8}>8</option>
@@ -1352,7 +1352,7 @@ export default function EmployeesPage() {
               <option value={50}>50</option>
             </select>
             <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">
               (ทั้งหมด {filteredEmployees.length} รายการ)
             </span>
           </div>
@@ -1363,7 +1363,7 @@ export default function EmployeesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
               title="หน้าก่อนหน้า"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -1377,7 +1377,7 @@ export default function EmployeesPage() {
                 className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
                   currentPage === p
                     ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 {p}
@@ -1388,7 +1388,7 @@ export default function EmployeesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
               title="หน้าถัดไป"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -1412,14 +1412,14 @@ export default function EmployeesPage() {
               </div>
               <button
                 onClick={() => setCommentModalEmp(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-400"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs text-slate-500 block">
+              <label className="text-xs text-slate-500 dark:text-slate-400 block">
                 ระบุหมายเหตุ/ข้อควรระวังสำหรับ HR หรือ Admin (เช่น พนักงานคนนี้ป่วยห้ามใช้งานหนัก):
               </label>
               <textarea
@@ -1427,7 +1427,7 @@ export default function EmployeesPage() {
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
                 placeholder="พิมพ์คอมเมนต์ตรงนี้..."
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
               />
             </div>
 
@@ -1445,7 +1445,7 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => setCommentModalEmp(null)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-lg"
                 >
                   ยกเลิก
                 </button>
@@ -1473,12 +1473,12 @@ export default function EmployeesPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedEmployee.fullName}</h3>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">รหัส: {selectedEmployee.employeeCode}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono">รหัส: {selectedEmployee.employeeCode}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsDetailOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-400"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1487,25 +1487,25 @@ export default function EmployeesPage() {
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 block">เลขบัตรประชาชน (PDPA Masked)</span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block">เลขบัตรประชาชน (PDPA Masked)</span>
                   <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm mt-0.5 block">
                     {selectedEmployee.citizenIdMasked || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 block">วันเดือนปีเกิด</span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block">วันเดือนปีเกิด</span>
                   <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
                     {selectedEmployee.birthDate || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 block">อีเมล</span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block">อีเมล</span>
                   <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
                     {selectedEmployee.contact?.organizationEmail || selectedEmployee.contact?.personalEmail || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 dark:text-slate-500 block">เบอร์โทรศัพท์</span>
+                  <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block">เบอร์โทรศัพท์</span>
                   <span className="font-mono font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
                     {formatPhoneNumber(selectedEmployee.contact?.personalPhone)}
                   </span>
@@ -1528,7 +1528,7 @@ export default function EmployeesPage() {
             <div className="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-700/60 flex justify-end">
               <button
                 onClick={() => setIsDetailOpen(false)}
-                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg"
+                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg"
               >
                 ปิดหน้าต่าง
               </button>
@@ -1549,8 +1549,8 @@ export default function EmployeesPage() {
                   onClick={() => setActiveModalTab('personal')}
                   className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
                     activeModalTab === 'personal'
-                      ? 'border-slate-900 text-slate-900'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                      ? 'border-slate-900 text-slate-900 dark:text-slate-100'
+                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span>ข้อมูลส่วนตัว</span>
@@ -1565,8 +1565,8 @@ export default function EmployeesPage() {
                   onClick={() => setActiveModalTab('family')}
                   className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
                     activeModalTab === 'family'
-                      ? 'border-slate-900 text-slate-900'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                      ? 'border-slate-900 text-slate-900 dark:text-slate-100'
+                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span>ข้อมูลครอบครัว</span>
@@ -1581,8 +1581,8 @@ export default function EmployeesPage() {
                   onClick={() => setActiveModalTab('emergency')}
                   className={`pb-3 text-xs sm:text-[13px] font-bold transition-all border-b-2 flex items-center gap-1.5 ${
                     activeModalTab === 'emergency'
-                      ? 'border-slate-900 text-slate-900'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                      ? 'border-slate-900 text-slate-900 dark:text-slate-100'
+                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span>ผู้ติดต่อกรณีฉุกเฉิน</span>
@@ -1597,7 +1597,7 @@ export default function EmployeesPage() {
               <button
                 type="button"
                 onClick={handleCloseCreateModal}
-                className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1 -mt-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1 -mt-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title="ปิดหน้าต่าง"
               >
                 <X className="w-5 h-5" />
@@ -1626,7 +1626,7 @@ export default function EmployeesPage() {
                       {/* Column 1 */}
                       <div className="space-y-3.5">
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
                             <span className="ml-2 text-[10px] font-normal text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-full px-2 py-0.5">
                               สร้างรหัสให้อัตโนมัติ
@@ -1638,14 +1638,14 @@ export default function EmployeesPage() {
                             value={formData.employeeCode}
                             className="w-full px-3.5 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-300 font-mono font-semibold cursor-not-allowed select-none"
                           />
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                             รหัสพนักงานถูกกำหนดให้อัตโนมัติโดยระบบ ไม่สามารถแก้ไขได้
                           </p>
                           {renderFieldError('employeeCode')}
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             รหัสเครื่องสแกนนิ้ว (Biometric ID)
                           </label>
                           <input
@@ -1658,14 +1658,14 @@ export default function EmployeesPage() {
                             }}
                             className={getFieldClass('biometricId', true)}
                           />
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
                             รหัสเครื่องสแกน/ทาบบัตร (สำหรับ Merge ไฟล์เวลาเข้างานอัตโนมัติ)
                           </p>
                           {renderFieldError('biometricId')}
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ตำแหน่ง <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1691,7 +1691,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ประเภทพนักงาน <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1713,7 +1713,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1740,7 +1740,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ชื่อ (First Name) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -1757,7 +1757,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             นามสกุล (Last Name) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -1774,7 +1774,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -1793,7 +1793,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             เพศ (Gender) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1812,7 +1812,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สัญชาติ (Nationality) <span className="text-rose-500">*</span>
                           </label>
                           <NationalitySelect
@@ -1827,7 +1827,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ศาสนา (Religion) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1852,7 +1852,7 @@ export default function EmployeesPage() {
                       {/* Column 2 */}
                       <div className="space-y-3.5">
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -1868,7 +1868,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1889,7 +1889,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -1910,7 +1910,7 @@ export default function EmployeesPage() {
 
                         {/* ที่อยู่ (Address) */}
                         <div className="pt-1 space-y-3">
-                          <label className="font-semibold text-slate-700 block">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block">
                             ที่อยู่ (Address) <span className="text-rose-500">*</span>
                           </label>
 
@@ -1921,7 +1921,7 @@ export default function EmployeesPage() {
                             </span>
                             <div className={`flex flex-wrap items-center gap-3 p-1.5 rounded-lg transition-all ${hasAttemptedSubmit && formErrors.addressType ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : ''}`}>
                               {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                                <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                                <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 text-xs">
                                   <input
                                     type="radio"
                                     name="addressType"
@@ -2033,7 +2033,7 @@ export default function EmployeesPage() {
                       {/* Column 3 */}
                       <div className="space-y-3.5">
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             อีเมล (E-mail) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2050,7 +2050,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2067,7 +2067,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2085,7 +2085,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ระดับวุฒิการศึกษา (Education level) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -2108,7 +2108,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ชื่อสถาบันการศึกษา (Institution) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2125,7 +2125,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สาขาวิชา (Major) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2142,7 +2142,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ปีที่สำเร็จการศึกษา (Graduation year) <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -2162,7 +2162,7 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-1">
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -2188,7 +2188,7 @@ export default function EmployeesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
                         <div className="space-y-3.5">
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               ชื่อธนาคาร (Bank name) <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -2222,14 +2222,14 @@ export default function EmployeesPage() {
 
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <label className="font-semibold text-slate-700">
+                              <label className="font-semibold text-slate-700 dark:text-slate-300">
                                 เลขที่บัญชี (Account Number) <span className="text-rose-500">*</span>
                               </label>
                               <span
                                 className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
                                   formData.accountNumber?.length === getRequiredBankDigits(formData.bankName)
                                     ? 'bg-emerald-50 text-emerald-600 font-medium'
-                                    : 'bg-slate-100 text-slate-500'
+                                    : 'bg-slate-100 text-slate-500 dark:text-slate-400'
                                 }`}
                               >
                                 {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
@@ -2278,7 +2278,7 @@ export default function EmployeesPage() {
                               className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
                                 activeFamilyIndex === idx
                                   ? 'bg-slate-900 text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  : 'bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                               } ${memberHasErrors ? 'ring-2 ring-rose-500 border border-rose-500' : ''}`}
                             >
                               {idx + 1}
@@ -2293,7 +2293,7 @@ export default function EmployeesPage() {
                         <button
                           type="button"
                           onClick={handleAddFamilyMember}
-                          className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
+                          className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
                           title="เพิ่มสมาชิกครอบครัวคนถัดไป"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -2314,7 +2314,7 @@ export default function EmployeesPage() {
                       {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -2338,7 +2338,7 @@ export default function EmployeesPage() {
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -2362,7 +2362,7 @@ export default function EmployeesPage() {
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               ชื่อ (First Name) <span className="text-rose-500">*</span>
                             </label>
                             <input
@@ -2381,7 +2381,7 @@ export default function EmployeesPage() {
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               นามสกุล (Last Name) <span className="text-rose-500">*</span>
                             </label>
                             <input
@@ -2400,7 +2400,7 @@ export default function EmployeesPage() {
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
                             </label>
                             <input
@@ -2421,7 +2421,7 @@ export default function EmployeesPage() {
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                             </label>
                             <input
@@ -2455,7 +2455,7 @@ export default function EmployeesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                         </label>
                         <select
@@ -2485,7 +2485,7 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                         </label>
                         <select
@@ -2511,7 +2511,7 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ชื่อ (First Name) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -2534,7 +2534,7 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           นามสกุล (Last Name) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -2557,7 +2557,7 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           เบอร์โทร (Phone number) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -2581,7 +2581,7 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ที่อยู่ (Address) <span className="text-rose-500">*</span>
                         </label>
                         <input

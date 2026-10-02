@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Plus, Trash2, Eye, EyeOff, ShieldCheck, User } from 'lucide-react';
@@ -247,7 +247,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
             </h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -273,11 +273,11 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="เช่น USER001"
-                className={`w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-500' : ''
+                className={`w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-500 dark:text-slate-400' : ''
                 }`}
               />
               {isEditMode && (
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">ชื่อผู้ใช้งานไม่สามารถเปลี่ยนแปลงได้</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ชื่อผู้ใช้งานไม่สามารถเปลี่ยนแปลงได้</p>
               )}
             </div>
 
@@ -294,12 +294,12 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="เช่น 123456"
-                    className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                    className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-600"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -342,7 +342,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 value={corporateEmail}
                 onChange={(e) => setCorporateEmail(e.target.value)}
                 placeholder="เช่น wichai.s@enterprise.co.th"
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               />
             </div>
 
@@ -352,7 +352,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   เลือกบทบาท <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">กำหนดได้หลายบทบาท</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">กำหนดได้หลายบทบาท</span>
               </div>
 
               {roles.length === 0 ? (

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -62,7 +62,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   UPDATE: { label: 'แก้ไขข้อมูล', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   DELETE: { label: 'ลบข้อมูล', color: 'bg-rose-50 text-rose-700 border-rose-200' },
   LOGIN: { label: 'เข้าสู่ระบบ', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  LOGOUT: { label: 'ออกจากระบบ', color: 'bg-slate-100 text-slate-600 border-slate-200' },
+  LOGOUT: { label: 'ออกจากระบบ', color: 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200' },
   APPROVE: { label: 'อนุมัติรายการ', color: 'bg-purple-50 text-purple-700 border-purple-200' },
   REJECT: { label: 'ปฏิเสธรายการ', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   EXPORT: { label: 'ส่งออกข้อมูล', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
@@ -185,7 +185,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
 
   const actionInfo = ACTION_LABELS[log.action] || {
     label: log.action,
-    color: 'bg-slate-100 text-slate-700 border-slate-200',
+    color: 'bg-slate-100 text-slate-700 dark:text-slate-300 border-slate-200',
   };
 
   return (
@@ -214,14 +214,14 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span>{formatDate(log.createdAt)}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -232,16 +232,16 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           {/* Metadata Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
             <div>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">ผู้ดำเนินการ</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">ผู้ดำเนินการ</span>
               <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
                 <span className="truncate">{log.fullName || log.username}</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">@{log.username}</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 block truncate">@{log.username}</span>
             </div>
 
             <div>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">การกระทำ</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">การกระทำ</span>
               <div>
                 <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${actionInfo.color}`}>
                   {actionInfo.label}
@@ -250,7 +250,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             </div>
 
             <div>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">โมดูล / ตาราง</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-0.5">โมดูล / ตาราง</span>
               <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                 {log.entityType}
               </div>
@@ -276,7 +276,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                 onClick={() => setViewMode('diff')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${ viewMode === 'diff'
                     ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 <TableIcon className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                 onClick={() => setViewMode('json')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${ viewMode === 'json'
                     ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 <Code2 className="w-3.5 h-3.5" />
@@ -298,7 +298,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             <button
               type="button"
               onClick={handleCopyJson}
-              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
@@ -341,7 +341,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                                 {row.label}
                               </span>
                               {row.label !== row.key && (
-                                <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 block">
+                                <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 block">
                                   {row.key}
                                 </span>
                               )}

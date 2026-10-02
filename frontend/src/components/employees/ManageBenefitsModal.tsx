@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -31,7 +31,7 @@ const CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> 
   ALLOWANCE: { label: 'เบี้ยเลี้ยง & ช่วยเหลือ', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Coins },
   WELLNESS: { label: 'กิจกรรม & สันทนาการ', color: 'bg-pink-50 text-pink-700 border-pink-200', icon: Smile },
   FINANCIAL: { label: 'การเงิน & กองทุน', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Coins },
-  OTHER: { label: 'ทั่วไป / อื่นๆ', color: 'bg-slate-50 text-slate-700 border-slate-200', icon: HelpCircle },
+  OTHER: { label: 'ทั่วไป / อื่นๆ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200', icon: HelpCircle },
 };
 
 export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
@@ -272,7 +272,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800"
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200"
                 >
                   ยกเลิก
                 </button>
@@ -361,12 +361,12 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           {/* Benefits Table */}
           <div className="border border-slate-200/80 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
             {loading ? (
-              <div className="p-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+              <div className="p-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
                 <span className="text-xs">กำลังโหลดสวัสดิการ...</span>
               </div>
             ) : filteredBenefits.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
+              <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 ไม่พบข้อมูลสวัสดิการที่ตรงกับเงื่อนไข
               </div>
             ) : (
@@ -400,7 +400,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                             )}
                           </div>
                           {item.description && (
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                               {item.description}
                             </p>
                           )}
@@ -425,7 +425,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                               เปิดใช้งาน
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                               ปิดใช้งาน
                             </span>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -40,7 +40,7 @@ export const DocumentsSubNav: React.FC = () => {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 isActive
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:border-slate-300'
               }`}
             >
               {tab.title}

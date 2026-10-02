@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -164,7 +164,7 @@ export default function ContractsPage() {
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
                   ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
               {tab.title}
@@ -189,8 +189,8 @@ export default function ContractsPage() {
         {/* Card 1: ทดลองงาน */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 mb-1">ทดลองงาน</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">พนักงานที่อยู่ระหว่างทดลองงาน</p>
+            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ทดลองงาน</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">พนักงานที่อยู่ระหว่างทดลองงาน</p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.probationCount}
@@ -200,8 +200,8 @@ export default function ContractsPage() {
         {/* Card 2: ประจำ */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 mb-1">ประจำ</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">พนักงานประจำที่ได้รับการบรรจุ</p>
+            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ประจำ</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">พนักงานประจำที่ได้รับการบรรจุ</p>
           </div>
           <div className="bg-rose-50 text-rose-500 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.permanentCount}
@@ -211,8 +211,8 @@ export default function ContractsPage() {
         {/* Card 3: ใกล้ครบทดลองงาน (7 วัน) */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
+            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
           </div>
           <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.probationExpiring7DaysCount}
@@ -248,7 +248,7 @@ export default function ContractsPage() {
             <select
               value={selectedContractType}
               onChange={(e) => setSelectedContractType(e.target.value)}
-              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
             >
               <option value="ALL">ประเภทสัญญาทั้งหมด</option>
               <option value="PROBATION">ทดลองงาน</option>
@@ -260,7 +260,7 @@ export default function ContractsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
             >
               <option value="ALL">สถานะทั้งหมด</option>
               <option value="ACTIVE">ใช้งาน</option>
@@ -274,7 +274,7 @@ export default function ContractsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 text-xs font-normal">
+              <tr className="border-b border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs font-normal">
                 <th className="py-3.5 px-6 font-medium">พนักงาน</th>
                 <th className="py-3.5 px-6 font-medium">ประเภทสัญญา</th>
                 <th className="py-3.5 px-6 font-medium">เริ่มสัญญา</th>
@@ -286,7 +286,7 @@ export default function ContractsPage() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
                       <span>กำลังโหลดข้อมูลสัญญาจ้างงาน...</span>
@@ -295,7 +295,7 @@ export default function ContractsPage() {
                 </tr>
               ) : paginatedContracts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                     ไม่พบข้อมูลสัญญาจ้างงาน
                   </td>
                 </tr>
@@ -311,7 +311,7 @@ export default function ContractsPage() {
                         >
                           {contract.employeeName}
                         </Link>
-                        <span className="text-slate-400 dark:text-slate-500 font-normal">·</span>
+                        <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">·</span>
                         <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{contract.employeeCode}</span>
                       </div>
                     </td>
@@ -344,7 +344,7 @@ export default function ContractsPage() {
                           รออนุมัติ
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                           สิ้นสุดแล้ว
                         </span>
@@ -420,7 +420,7 @@ export default function ContractsPage() {
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
                   page === currentPage
                     ? 'bg-[#0B2046] text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
                 {page}

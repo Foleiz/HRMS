@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Sparkles } from 'lucide-react';
@@ -281,7 +281,7 @@ export const CalendarWidget: React.FC = () => {
             </span>
           </div>
           {eventsThisMonth.length > 0 && (
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
               {eventsThisMonth.length} วันสำคัญ
             </span>
           )}
@@ -324,10 +324,10 @@ export const CalendarWidget: React.FC = () => {
           <div className="mt-1.5 p-1.5 rounded-xl bg-slate-50/70 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px]">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-400">
-                <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 {selectedDay ? `${selectedDay} ${monthName}` : 'ไม่มีวันที่เลือก'}
               </span>
-              <span className="text-[9.5px] text-slate-400 dark:text-slate-500">ไม่มีวันหยุด/กิจกรรม</span>
+              <span className="text-[9.5px] text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีวันหยุด/กิจกรรม</span>
             </div>
             {nextUpcomingEventThisMonth && (
               <div className="mt-1 pt-1 border-t border-slate-200/50 flex items-center gap-1 text-[10px]">

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -297,7 +297,7 @@ export default function EmployeeDetailPage() {
             <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight">
               {employee.prefix ? `${employee.prefix} ` : ''}{employee.firstName} {employee.lastName}
             </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 text-center mt-0.5">
               {employee.positionName || '-'}
             </p>
           </div>
@@ -314,12 +314,12 @@ export default function EmployeeDetailPage() {
                 <Mail className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">อีเมล</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">อีเมล</p>
                 <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 break-all">
                   {employee.contact?.organizationEmail || employee.contact?.personalEmail || '-'}
                 </p>
                 {employee.contact?.organizationEmail && employee.contact?.personalEmail && (
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 break-all">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5 break-all">
                     ส่วนตัว: {employee.contact.personalEmail}
                   </p>
                 )}
@@ -332,7 +332,7 @@ export default function EmployeeDetailPage() {
                 <Phone className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">เบอร์โทรศัพท์</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">เบอร์โทรศัพท์</p>
                 <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {formatPhoneNumber(employee.contact?.personalPhone)}
                 </p>
@@ -345,7 +345,7 @@ export default function EmployeeDetailPage() {
                 <Home className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ที่อยู่</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">ที่อยู่</p>
                 <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
                   {primaryAddress
                     ? `${primaryAddress.addressLine || ''} ${primaryAddress.subDistrict || ''} ${primaryAddress.district || ''} ${primaryAddress.province || ''} ${primaryAddress.postalCode || ''}`.trim() || '-'
@@ -368,7 +368,7 @@ export default function EmployeeDetailPage() {
                   ฝ
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ฝ่าย</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">ฝ่าย</p>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.divisionName || '-'}</p>
                 </div>
               </div>
@@ -379,7 +379,7 @@ export default function EmployeeDetailPage() {
                   ผ
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">แผนก</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">แผนก</p>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.departmentName || '-'}</p>
                 </div>
               </div>
@@ -390,13 +390,13 @@ export default function EmployeeDetailPage() {
                   ห
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างานโดยตรง</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">หัวหน้างานโดยตรง</p>
                   {employee.managerEmployeeId ? (
                     <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-[#0B2046] hover:underline">
                       {employee.managerName || '-'}
                     </Link>
                   ) : (
-                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ยังไม่ได้กำหนด</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400">ยังไม่ได้กำหนด</p>
                   )}
                 </div>
               </div>
@@ -407,7 +407,7 @@ export default function EmployeeDetailPage() {
                   ท
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ทีม</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">ทีม</p>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">-</p>
                 </div>
               </div>
@@ -418,7 +418,7 @@ export default function EmployeeDetailPage() {
                   ต
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ตำแหน่ง</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">ตำแหน่ง</p>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.positionName || '-'}</p>
                 </div>
               </div>
@@ -440,7 +440,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'personal'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 ข้อมูลส่วนตัว
@@ -452,7 +452,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'family'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 ข้อมูลครอบครัว
@@ -464,7 +464,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'emergency'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 ผู้ติดต่อกรณีฉุกเฉิน
@@ -476,7 +476,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'background'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 การศึกษา & ประวัติการทำงาน
@@ -488,7 +488,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'tax'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 ภาษี & ประกันสังคม
@@ -500,7 +500,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'user'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 ข้อมูลผู้ใช้งาน
@@ -512,7 +512,7 @@ export default function EmployeeDetailPage() {
                 className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer ${
                   activeTab === 'documents'
                     ? 'border-[#0B2046] text-[#0B2046]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                 }`}
               >
                 เอกสาร
@@ -696,7 +696,7 @@ export default function EmployeeDetailPage() {
               </div>
 
               {!employee.familyMembers || employee.familyMembers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   ยังไม่มีข้อมูลสมาชิกครอบครัว
                 </div>
               ) : (
@@ -717,21 +717,21 @@ export default function EmployeeDetailPage() {
 
                       <div className="grid grid-cols-2 gap-3 text-[11px]">
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ชื่อ-นามสกุล</p>
                           <p className="font-semibold text-slate-800 dark:text-slate-200">
                             {member.prefix ? `${member.prefix} ` : ''}{member.firstName} {member.lastName || ''}
                           </p>
                         </div>
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">เลขบัตรประชาชน</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">เลขบัตรประชาชน</p>
                           <p className="font-mono text-slate-800 dark:text-slate-200">{member.citizenIdMasked || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">วันเกิด</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">วันเกิด</p>
                           <p className="text-slate-800 dark:text-slate-200">{formatThaiDate(member.birthDate)}</p>
                         </div>
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">สถานะการศึกษา</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">สถานะการศึกษา</p>
                           <p className="text-slate-800 dark:text-slate-200">{member.educationStatus || '-'}</p>
                         </div>
                       </div>
@@ -753,7 +753,7 @@ export default function EmployeeDetailPage() {
               </div>
 
               {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน
                 </div>
               ) : (
@@ -776,14 +776,14 @@ export default function EmployeeDetailPage() {
 
                       <div className="space-y-2 text-[11px]">
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ชื่อ-นามสกุล</p>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                             {contact.prefix ? `${contact.prefix} ` : ''}{contact.firstName} {contact.lastName}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์ฉุกเฉิน</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">เบอร์โทรศัพท์ฉุกเฉิน</p>
                           <p className="font-mono text-sm font-bold text-[#0B2046]">
                             {formatPhoneNumber(contact.primaryPhone)}
                           </p>
@@ -791,13 +791,13 @@ export default function EmployeeDetailPage() {
 
                         {contact.secondaryPhone && (
                           <div>
-                            <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์สำรอง</p>
+                            <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">เบอร์โทรศัพท์สำรอง</p>
                             <p className="font-mono text-slate-700 dark:text-slate-300">{formatPhoneNumber(contact.secondaryPhone)}</p>
                           </div>
                         )}
 
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">ที่อยู่ผู้ติดต่อ</p>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400">ที่อยู่ผู้ติดต่อ</p>
                           <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{contact.address || '-'}</p>
                         </div>
                       </div>
@@ -822,14 +822,14 @@ export default function EmployeeDetailPage() {
                 <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
                       <p className="font-bold text-slate-800 dark:text-slate-200 text-sm font-mono mt-0.5">
                         {employee.userAccount.username}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สถานะบัญชี</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">สถานะบัญชี</p>
                       {employee.userAccount.status?.toUpperCase() === 'ACTIVE' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-semibold text-[11px] mt-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -846,7 +846,7 @@ export default function EmployeeDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">บทบาทในระบบ (Role)</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">บทบาทในระบบ (Role)</p>
                       <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                         {employee.userAccount.roleNames && employee.userAccount.roleNames.length > 0
                           ? employee.userAccount.roleNames.join(', ')
@@ -857,7 +857,7 @@ export default function EmployeeDetailPage() {
                     </div>
 
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
                       <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                         {employee.userAccount.accessScope || 'SELF (ดูข้อมูลตนเอง)'}
                       </p>
@@ -866,7 +866,7 @@ export default function EmployeeDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">เข้าสู่ระบบล่าสุด</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">เข้าสู่ระบบล่าสุด</p>
                       <p className="text-slate-600 dark:text-slate-400 mt-0.5">
                         {employee.userAccount.lastLoginAt
                           ? formatThaiDate(employee.userAccount.lastLoginAt)
@@ -875,15 +875,15 @@ export default function EmployeeDetailPage() {
                     </div>
 
                     <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
+                      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
                       <p className="text-slate-600 dark:text-slate-400 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีบัญชีผู้ใช้งานในระบบสำหรับพนักงานท่านนี้</p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
                 </div>
               )}
             </div>

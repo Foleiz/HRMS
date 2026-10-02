@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -140,7 +140,7 @@ export const Navbar: React.FC = () => {
 
         <div className="flex items-center gap-1.5 text-sm">
           <span className="text-slate-500 dark:text-slate-400 font-normal">{breadcrumb.section}</span>
-          <span className="text-slate-400 dark:text-slate-600">/</span>
+          <span className="text-slate-400 dark:text-slate-600 dark:text-slate-400">/</span>
           <span className="text-slate-900 dark:text-slate-100 font-semibold">{breadcrumb.page}</span>
         </div>
       </div>
@@ -154,7 +154,7 @@ export const Navbar: React.FC = () => {
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title={theme === 'dark' ? 'สลับเป็นโหมดกลางวัน' : 'สลับเป็นโหมดกลางคืน'}
-          className="w-9 h-9 rounded-full bg-[#F1F5F9] dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors"
+          className="w-9 h-9 rounded-full bg-[#F1F5F9] dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100 dark:hover:text-white flex items-center justify-center transition-colors"
         >
           {mounted && theme === 'dark' ? (
             <Sun className="w-4 h-4" />
@@ -180,7 +180,7 @@ export const Navbar: React.FC = () => {
                 {user.fullName || user.username}
               </span>
 
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
             </button>
 
             {/* Dropdown Menu */}
@@ -190,7 +190,7 @@ export const Navbar: React.FC = () => {
                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                     {user.fullName || user.username}
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">@{user.username}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">@{user.username}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {user.roles.map((r) => (
                       <span

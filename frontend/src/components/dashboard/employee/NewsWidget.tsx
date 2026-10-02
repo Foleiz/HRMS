@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -81,11 +81,11 @@ export const NewsWidget: React.FC = () => {
       {/* News Content Area */}
       <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
         {loading ? (
-          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
             กำลังโหลดข่าวสาร...
           </div>
         ) : newsList.length === 0 ? (
-          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
             ยังไม่มีข่าวสารหรือประกาศใหม่ในขณะนี้
           </div>
         ) : (
@@ -106,10 +106,10 @@ export const NewsWidget: React.FC = () => {
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
                         {item.title}
                       </span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{item.date}</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400">{item.date}</span>
                     </div>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0 transition-transform duration-200 ${
                         isExpanded ? 'rotate-180' : ''
                       }`}
                     />

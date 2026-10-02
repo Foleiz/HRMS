@@ -3,7 +3,7 @@
 import React from 'react';
 import { Landmark, ShieldCheck } from 'lucide-react';
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
 
 export interface TaxSsoValues {
   socialSecurityNo?: string;
@@ -54,7 +54,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <Landmark className="w-4 h-4 text-[#0B2046]" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 cursor-pointer md:col-span-2">
@@ -87,7 +87,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
               onChange={(e) => set({ parentDeductionCount: count(e.target.value, 4) })}
               className={INPUT}
             />
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">บิดามารดาของตนเองและคู่สมรส สูงสุด 4 คน</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">บิดามารดาของตนเองและคู่สมรส สูงสุด 4 คน</p>
           </div>
           <div>
             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนผู้พิการ/ทุพพลภาพที่ดูแล</label>

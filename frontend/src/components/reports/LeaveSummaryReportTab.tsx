@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Building2, Calendar, CalendarDays, FileSpreadsheet, Loader2, Users } from 'lucide-react';
@@ -82,7 +82,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ปี:</span>
             <select
               value={year}
@@ -97,7 +97,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             </select>
           </div>
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-            <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
@@ -111,7 +111,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               ))}
             </select>
           </div>
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500" />}
+          {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500 dark:text-slate-400" />}
         </div>
         {canExport && (
           <button
@@ -168,7 +168,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">แยกตามประเภทการลา</h3>
               {data.byType.length === 0 ? (
-                <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
               ) : (
                 <div className="space-y-3">
                   {data.byType.map((t) => (
@@ -193,7 +193,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
             {matrix.depts.length === 0 ? (
-              <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -233,7 +233,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">พนักงานที่ลามากที่สุด 10 อันดับ</h3>
             {data.topEmployees.length === 0 ? (
-              <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -248,10 +248,10 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                 <tbody>
                   {data.topEmployees.map((e, i) => (
                     <tr key={e.employeeId} className="border-t border-slate-100 dark:border-slate-700/60">
-                      <td className="py-2 px-3 text-slate-400 dark:text-slate-500">{i + 1}</td>
+                      <td className="py-2 px-3 text-slate-400 dark:text-slate-500 dark:text-slate-400">{i + 1}</td>
                       <td className="py-2 px-3">
                         <div className="font-medium text-slate-800 dark:text-slate-200">{e.employeeName}</div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500">{e.employeeCode}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{e.employeeCode}</div>
                       </td>
                       <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{e.departmentName || '-'}</td>
                       <td className="py-2 px-3 text-right font-semibold">{fmt(e.days)}</td>

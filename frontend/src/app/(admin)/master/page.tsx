@@ -267,8 +267,8 @@ export default function MasterDataHubPage() {
       {/* Top Banner */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
-          <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
             ศูนย์กลางการกำหนดค่าตัวเลือกอ้างอิงและประเภทเอกสารประกอบในระบบ HRMS
           </p>
         </div>
@@ -277,7 +277,7 @@ export default function MasterDataHubPage() {
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="p-2.5 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             title="รีเฟรชข้อมูล"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#0B2046]' : ''}`} />
@@ -357,13 +357,13 @@ export default function MasterDataHubPage() {
 
       {/* Search Input Bar */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
         <input
           type="text"
           placeholder="พิมพ์คำค้นหา..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
         />
       </div>
 
@@ -373,7 +373,7 @@ export default function MasterDataHubPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-3 px-4 w-16">ID</th>
                   <th className="py-3 px-4">รหัสประเภทเอกสาร</th>
                   <th className="py-3 px-4">ชื่อประเภทเอกสาร</th>
@@ -387,7 +387,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredDocTypes.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลประเภทเอกสารแนบ
                     </td>
                   </tr>
@@ -396,7 +396,7 @@ export default function MasterDataHubPage() {
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
-                        <span className="font-mono font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           {item.documentCode}
                         </span>
                       </td>
@@ -407,11 +407,11 @@ export default function MasterDataHubPage() {
                             ต้องระบุวันหมดอายุ
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-[11px] dark:text-slate-500">-</span>
+                          <span className="text-slate-400 text-[11px] dark:text-slate-500 dark:text-slate-400">-</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-center text-slate-600 dark:text-slate-400">
-                        {item.validityMonths ? `${item.validityMonths} เดือน` : <span className="text-slate-400 text-[11px] dark:text-slate-500">-</span>}
+                        {item.validityMonths ? `${item.validityMonths} เดือน` : <span className="text-slate-400 text-[11px] dark:text-slate-500 dark:text-slate-400">-</span>}
                       </td>
                       <td className="py-3.5 px-4 text-center text-slate-600 dark:text-slate-400">{item.notifyBeforeDays ?? 30} วัน</td>
                       <td className="py-3.5 px-4 text-center">
@@ -419,7 +419,7 @@ export default function MasterDataHubPage() {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                             item.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border-slate-200'
                           }`}
                         >
                           {item.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
@@ -429,14 +429,14 @@ export default function MasterDataHubPage() {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.documentName)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -458,7 +458,7 @@ export default function MasterDataHubPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อสัญชาติ</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -467,7 +467,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredNationalities.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลสัญชาติ
                     </td>
                   </tr>
@@ -480,14 +480,14 @@ export default function MasterDataHubPage() {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.nationalityName)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -509,7 +509,7 @@ export default function MasterDataHubPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อศาสนา</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -518,7 +518,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredReligions.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลศาสนา
                     </td>
                   </tr>
@@ -531,14 +531,14 @@ export default function MasterDataHubPage() {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.religionName)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -560,7 +560,7 @@ export default function MasterDataHubPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อสถานภาพสมรส</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -569,7 +569,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredMaritalStatuses.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลสถานภาพสมรส
                     </td>
                   </tr>
@@ -582,14 +582,14 @@ export default function MasterDataHubPage() {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.maritalStatusName)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -611,7 +611,7 @@ export default function MasterDataHubPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">รหัสธนาคาร</th>
                   <th className="py-3 px-4">ชื่อธนาคาร</th>
@@ -622,7 +622,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredBanks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลธนาคาร
                     </td>
                   </tr>
@@ -631,7 +631,7 @@ export default function MasterDataHubPage() {
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
-                        <span className="font-mono font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           {item.bankCode}
                         </span>
                       </td>
@@ -641,7 +641,7 @@ export default function MasterDataHubPage() {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                             item.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border-slate-200'
                           }`}
                         >
                           {item.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
@@ -651,14 +651,14 @@ export default function MasterDataHubPage() {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.bankName)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -679,10 +679,10 @@ export default function MasterDataHubPage() {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 text-sm dark:text-slate-100">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
                 {modalMode === 'create' ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -691,7 +691,7 @@ export default function MasterDataHubPage() {
               {activeTab === 'document-types' && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                       ชื่อประเภทเอกสาร *
                     </label>
                     <input
@@ -700,7 +700,7 @@ export default function MasterDataHubPage() {
                       value={docForm.documentName}
                       onChange={(e) => setDocForm({ ...docForm, documentName: e.target.value })}
                       placeholder="เช่น หนังสือเดินทาง (Passport)"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     />
                   </div>
 
@@ -712,14 +712,14 @@ export default function MasterDataHubPage() {
                       onChange={(e) => setDocForm({ ...docForm, isExpiryRequired: e.target.checked })}
                       className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
                     />
-                    <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 cursor-pointer select-none dark:text-slate-300">
+                    <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none dark:text-slate-300">
                       เอกสารนี้ต้องระบุวันหมดอายุ
                     </label>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">อายุเอกสาร (เดือน)</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">อายุเอกสาร (เดือน)</label>
                       <input
                         type="number"
                         min={1}
@@ -729,12 +729,12 @@ export default function MasterDataHubPage() {
                           setDocForm({ ...docForm, validityMonths: e.target.value ? Number(e.target.value) : null })
                         }
                         placeholder="ไม่กำหนด"
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
+                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) *</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) *</label>
                       <input
                         type="number"
                         min={1}
@@ -744,18 +744,18 @@ export default function MasterDataHubPage() {
                         onChange={(e) =>
                           setDocForm({ ...docForm, notifyBeforeDays: e.target.value ? Number(e.target.value) : null })
                         }
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500">แจ้งพนักงานและฝ่ายบุคคลก่อนหมดอายุ</p>
+                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">แจ้งพนักงานและฝ่ายบุคคลก่อนหมดอายุ</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
                     <select
                       value={docForm.status}
                       onChange={(e) => setDocForm({ ...docForm, status: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     >
                       <option value="ACTIVE">เปิดใช้งาน</option>
                       <option value="INACTIVE">ปิดใช้งาน</option>
@@ -766,42 +766,42 @@ export default function MasterDataHubPage() {
 
               {activeTab === 'nationalities' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อสัญชาติ *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสัญชาติ *</label>
                   <input
                     type="text"
                     required
                     value={simpleNameInput}
                     onChange={(e) => setSimpleNameInput(e.target.value)}
                     placeholder="เช่น ไทย, ญี่ปุ่น, อเมริกัน..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                   />
                 </div>
               )}
 
               {activeTab === 'religions' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อศาสนา *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา *</label>
                   <input
                     type="text"
                     required
                     value={simpleNameInput}
                     onChange={(e) => setSimpleNameInput(e.target.value)}
                     placeholder="เช่น พุทธ, คริสต์, อิสลาม..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                   />
                 </div>
               )}
 
               {activeTab === 'marital-statuses' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส *</label>
                   <input
                     type="text"
                     required
                     value={simpleNameInput}
                     onChange={(e) => setSimpleNameInput(e.target.value)}
                     placeholder="เช่น โสด, สมรส, หย่าร้าง..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                   />
                 </div>
               )}
@@ -809,7 +809,7 @@ export default function MasterDataHubPage() {
               {activeTab === 'banks' && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">รหัสธนาคาร *</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสธนาคาร *</label>
                     <input
                       type="text"
                       required
@@ -817,28 +817,28 @@ export default function MasterDataHubPage() {
                       value={bankForm.bankCode}
                       onChange={(e) => setBankForm({ ...bankForm, bankCode: e.target.value.toUpperCase() })}
                       placeholder="เช่น KBANK, SCB, BBL"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">ชื่อธนาคาร *</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อธนาคาร *</label>
                     <input
                       type="text"
                       required
                       value={bankForm.bankName}
                       onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
                       placeholder="เช่น ธนาคารกสิกรไทย"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">สถานะ</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
                     <select
                       value={bankForm.status}
                       onChange={(e) => setBankForm({ ...bankForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     >
                       <option value="ACTIVE">เปิดใช้งาน</option>
                       <option value="INACTIVE">ปิดใช้งาน</option>
@@ -851,7 +851,7 @@ export default function MasterDataHubPage() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
                 >
                   ยกเลิก
                 </button>

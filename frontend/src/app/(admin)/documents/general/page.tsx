@@ -326,15 +326,15 @@ export default function GeneralDocumentPage() {
       {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เอกสารทั่วไป</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารทั่วไป</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             ยื่นคำขอถึงฝ่ายบุคคล เช่น ขอแก้ไขข้อมูล ขอบัตรพนักงาน หรือส่งเอกสาร — คำขอจะผ่านสายการอนุมัติที่ตั้งไว้
           </p>
         </div>
         <button
           type="button"
           onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
@@ -361,24 +361,24 @@ export default function GeneralDocumentPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป & กล่องแนบเอกสาร (ตาม Figma) ─── */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-5">
-            <h3 className="text-sm font-bold text-gray-900">ข้อมูลทั่วไป</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลทั่วไป</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* ชื่อพนักงาน * (กรอกอัตโนมัติตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ชื่อพนักงาน *</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อพนักงาน *</label>
                 <input
                   type="text"
                   readOnly
                   value={profile.fullName}
                   placeholder="กรอกอัตโนมัติ"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 cursor-not-allowed font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed font-medium"
                 />
               </div>
 
               {/* วันที่ออก (ใช้ปฏิทิน LeaveDateRangePicker ตามคำสั่งผู้ใช้) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">วันที่ออก</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ออก</label>
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"
@@ -390,7 +390,7 @@ export default function GeneralDocumentPage() {
 
               {/* ประเภทเอกสาร (เช่น สำเนาบัตรประชาชน ตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">ประเภทเอกสาร *</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ประเภทเอกสาร *</label>
                 {!isCustomType ? (
                   <select
                     value={documentType}
@@ -424,7 +424,7 @@ export default function GeneralDocumentPage() {
                     <button
                       type="button"
                       onClick={() => setIsCustomType(false)}
-                      className="px-2.5 py-2.5 text-xs text-gray-400 hover:text-gray-700 border border-gray-200 rounded-xl"
+                      className="px-2.5 py-2.5 text-xs text-gray-400 hover:text-gray-700 dark:text-slate-300 border border-gray-200 rounded-xl"
                       title="เลือกจากรายการเดิม"
                     >
                       ✕
@@ -436,7 +436,7 @@ export default function GeneralDocumentPage() {
               {/* วันหมดอายุ */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-500">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
                     วันหมดอายุ{expiryRequired ? ' *' : ' (ถ้ามี)'}
                   </label>
                   {effectiveExpiry && (
@@ -446,7 +446,7 @@ export default function GeneralDocumentPage() {
                         setExpiryDate('');
                         setExpiryTouched(true);
                       }}
-                      className="text-[11px] text-gray-400 hover:text-gray-700"
+                      className="text-[11px] text-gray-400 hover:text-gray-700 dark:text-slate-300"
                     >
                       ล้างวันที่
                     </button>
@@ -471,8 +471,8 @@ export default function GeneralDocumentPage() {
             {/* กล่องแนบเอกสาร (สีเหลืองอ่อนพาสเทลตาม Figma: bg-amber-50 / bg-[#FEF9C3]) */}
             <div className="bg-[#FEF9C3]/80 border border-[#FDE047] rounded-2xl p-5 space-y-3">
               <div>
-                <h4 className="text-sm font-bold text-gray-900">แนบเอกสาร</h4>
-                <p className="text-xs text-gray-600 mt-0.5">กรุณาแนบเอกสารด้านล่างนี้</p>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-slate-100">แนบเอกสาร</h4>
+                <p className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">กรุณาแนบเอกสารด้านล่างนี้</p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-xl border border-amber-200">
@@ -486,15 +486,15 @@ export default function GeneralDocumentPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   เลือกไฟล์
                 </button>
-                <div className="flex-1 px-2 py-1 text-xs text-gray-500 truncate flex items-center justify-between">
+                <div className="flex-1 px-2 py-1 text-xs text-gray-500 dark:text-slate-400 truncate flex items-center justify-between">
                   <span className="truncate">
                     {selectedFile ? (
-                      <span className="text-gray-800 font-medium flex items-center gap-1.5">
+                      <span className="text-gray-800 dark:text-slate-200 font-medium flex items-center gap-1.5">
                         <Paperclip className="w-3.5 h-3.5 text-blue-500" />
                         {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
                       </span>
@@ -513,19 +513,19 @@ export default function GeneralDocumentPage() {
                   )}
                 </div>
               </div>
-              <p className="text-2xs text-gray-500">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
+              <p className="text-2xs text-gray-500 dark:text-slate-400">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
             </div>
           </div>
 
           {/* ─── ฝั่งขวา: รายละเอียดของเอกสาร (ตาม Figma) ─── */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-900">รายละเอียดของเอกสาร</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">รายละเอียดของเอกสาร</h3>
 
               {/* เอกสารนี้ใช้สำหรับ * (Textarea ตาม Figma พร้อม counter 0/160) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
                     เอกสารนี้ใช้สำหรับ *
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
@@ -546,7 +546,7 @@ export default function GeneralDocumentPage() {
               {/* หมายเหตุเพิ่มเติม */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-500">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
                     หมายเหตุเพิ่มเติม (ถ้ามี)
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
@@ -571,18 +571,18 @@ export default function GeneralDocumentPage() {
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
-            <Eye className="w-4 h-4 text-gray-500" />
+            <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
             ดูตัวอย่าง
           </button>
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
           >
-            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500" />}
+            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
             บันทึกแบบร่าง
           </button>
           <button
@@ -608,10 +608,10 @@ export default function GeneralDocumentPage() {
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
               ยื่นคำร้องเอกสารทั่วไปสำเร็จ!
             </h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
               คำร้องขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
@@ -628,7 +628,7 @@ export default function GeneralDocumentPage() {
               <button
                 type="button"
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
               </button>

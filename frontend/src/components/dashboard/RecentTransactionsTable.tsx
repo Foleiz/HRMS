@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react';
@@ -296,7 +296,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
             ประวัติการทำรายการล่าสุด
           </h2>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
             * แสดงเฉพาะรายการส่วนบุคคลของคุณ
           </span>
         </div>
@@ -305,7 +305,7 @@ export const RecentTransactionsTable: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search Input */}
           <div className="relative min-w-[200px] flex-1">
-            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
@@ -314,7 +314,7 @@ export const RecentTransactionsTable: React.FC = () => {
                 setCurrentPage(1);
               }}
               placeholder="ค้นหา รหัสเอกสาร หรือประเภท"
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-500 focus:outline-hidden focus:border-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-500 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all"
             />
           </div>
 
@@ -384,7 +384,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <tbody className="divide-y divide-slate-100 flex-1">
             {loading ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 className="w-6 h-6 text-[#0B2046] animate-spin" />
                     <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
@@ -393,11 +393,11 @@ export const RecentTransactionsTable: React.FC = () => {
               </tr>
             ) : paginatedItems.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-1.5 py-4">
                     <FileText className="w-8 h-8 text-slate-300 stroke-[1.5]" />
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
                   </div>
                 </td>
               </tr>
@@ -428,7 +428,7 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Pagination Bar */}
       <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-auto shrink-0">
-        <div className="flex-1 text-[11px] text-slate-400 dark:text-slate-500">
+        <div className="flex-1 text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
           {!loading && filtered.length > 0 && (
             <span>ทั้งหมด {filtered.length} รายการ</span>
           )}

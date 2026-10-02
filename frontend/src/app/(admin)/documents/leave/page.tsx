@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -20,7 +20,7 @@ export default function MyLeaveRequestPage() {
   return (
     <Suspense
       fallback={
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500 dark:text-slate-400">
           <div className="inline-flex items-center gap-2 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...
@@ -171,7 +171,7 @@ function MyLeaveRequestPageContent() {
 
       {/* ยื่นคำขอลา — ฟอร์มแบบเต็มหน้าจอ */}
       {loading ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500 dark:text-slate-400">
           <div className="inline-flex items-center gap-2 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...

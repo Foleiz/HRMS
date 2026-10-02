@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
@@ -299,7 +299,7 @@ export const PayrollItemModal: React.FC<Props> = ({
           <button
             onClick={onClose}
             type="button"
-            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -453,10 +453,10 @@ export const PayrollItemModal: React.FC<Props> = ({
                   }`}
                 />
                 {calculationType === 'FIXED' && (
-                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 dark:text-slate-500 font-medium">฿</span>
+                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">฿</span>
                 )}
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1 block">
                 {calculationType === 'FIXED'
                   ? 'ระบุยอดเงินคงที่ที่จ่ายหรือหักในสลิปเงินเดือน'
                   : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}

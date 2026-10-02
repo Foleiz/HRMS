@@ -309,13 +309,13 @@ export default function EssAttendancePage() {
         );
       case 'OFF':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200">
             วันหยุดประจำสัปดาห์
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-50 text-slate-500 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-50 text-slate-500 dark:text-slate-400 border border-slate-200">
             ยังไม่ลงเวลา
           </span>
         );
@@ -344,12 +344,12 @@ export default function EssAttendancePage() {
         );
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200">
             <RotateCcw className="w-3 h-3" /> ยกเลิกแล้ว
           </span>
         );
       default:
-        return <span className="text-xs text-slate-500">{status}</span>;
+        return <span className="text-xs text-slate-500 dark:text-slate-400">{status}</span>;
     }
   };
 
@@ -377,7 +377,7 @@ export default function EssAttendancePage() {
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'history'
                 ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
             ตรวจบันทึกเวลาของฉัน
@@ -389,7 +389,7 @@ export default function EssAttendancePage() {
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'adjustments'
                 ? 'border-[#0B2046] text-[#0B2046] font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
             <span>คำขอปรับปรุงเวลา</span>
@@ -411,7 +411,7 @@ export default function EssAttendancePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-[#0052CC]" />
-              <span className="font-semibold text-slate-800 text-sm">เลือกเดือนที่ต้องการดู:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">เลือกเดือนที่ต้องการดู:</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -445,8 +445,8 @@ export default function EssAttendancePage() {
           {monthlySummary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500">วันทำงานทั้งหมด</span>
-                <div className="text-2xl font-bold text-slate-800">{monthlySummary.totalWorkDays} วัน</div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">วันทำงานทั้งหมด</span>
+                <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{monthlySummary.totalWorkDays} วัน</div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
@@ -477,7 +477,7 @@ export default function EssAttendancePage() {
           {/* History Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
               <span className="text-xs text-slate-400">{historyList.length} รายการ</span>
             </div>
 
@@ -493,7 +493,7 @@ export default function EssAttendancePage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4">วันที่</th>
                       <th className="py-3 px-4">กะการทำงาน</th>
@@ -508,18 +508,18 @@ export default function EssAttendancePage() {
                   <tbody className="divide-y divide-slate-100">
                     {historyList.map((rec) => (
                       <tr key={rec.id || rec.workDate} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-medium text-slate-800">
+                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
                           {formatThaiDate(rec.workDate)}
                           <span className="block text-xs font-mono text-slate-400">{rec.workDate}</span>
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-600">
-                          <span className="font-semibold block text-slate-700">{rec.shiftName || 'กะปกติ'}</span>
+                        <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
+                          <span className="font-semibold block text-slate-700 dark:text-slate-300">{rec.shiftName || 'กะปกติ'}</span>
                           <span className="text-slate-400 font-mono">{rec.shiftTimeWindow || '-'}</span>
                         </td>
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800">
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
                           {formatTime(rec.actualIn)}
                         </td>
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800">
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
                           {formatTime(rec.actualOut)}
                         </td>
                         <td className="py-3 px-4 text-xs font-mono">
@@ -565,7 +565,7 @@ export default function EssAttendancePage() {
       {activeTab === 'adjustments' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="font-bold text-slate-800 text-sm">ประวัติคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
             <span className="text-xs text-slate-400">{adjustmentsList.length} รายการ</span>
           </div>
 
@@ -581,7 +581,7 @@ export default function EssAttendancePage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">วันที่ขอปรับ</th>
                     <th className="py-3 px-4">เวลาเดิม</th>
@@ -595,16 +595,16 @@ export default function EssAttendancePage() {
                 <tbody className="divide-y divide-slate-100">
                   {adjustmentsList.map((adj) => (
                     <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800">
+                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                         {adj.workDate}
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs text-slate-500">
+                      <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">
                         {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
                       </td>
                       <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-700">
                         {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-600 max-w-xs truncate" title={adj.reason}>
+                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={adj.reason}>
                         {adj.reason}
                       </td>
                       <td className="py-3 px-4">
@@ -646,11 +646,11 @@ export default function EssAttendancePage() {
                 <div className="p-2 rounded-xl bg-blue-50 text-[#0052CC]">
                   <FileEdit className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-slate-900 text-base">ยื่นคำขอปรับปรุงเวลาเข้า-ออก</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">ยื่นคำขอปรับปรุงเวลาเข้า-ออก</h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -658,7 +658,7 @@ export default function EssAttendancePage() {
 
             <form onSubmit={handleSubmitAdjustment} className="mt-4 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">วันที่ทำงานที่ต้องการปรับ</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันที่ทำงานที่ต้องการปรับ</label>
                 <input
                   type="date"
                   required
@@ -680,7 +680,7 @@ export default function EssAttendancePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">เวลาเข้างานที่ขอปรับ</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาเข้างานที่ขอปรับ</label>
                   <input
                     type="time"
                     required
@@ -690,7 +690,7 @@ export default function EssAttendancePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">เวลาออกงานที่ขอปรับ</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาออกงานที่ขอปรับ</label>
                   <input
                     type="time"
                     required
@@ -702,7 +702,7 @@ export default function EssAttendancePage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                   เหตุผลการขอปรับปรุงเวลา <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -719,7 +719,7 @@ export default function EssAttendancePage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors"
                 >
                   ยกเลิก
                 </button>
