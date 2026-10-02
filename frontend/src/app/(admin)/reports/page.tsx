@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -368,7 +368,7 @@ export default function ReportsPage() {
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewHeadcount && (
             <button
@@ -443,7 +443,7 @@ export default function ReportsPage() {
       {activeTab === 'headcount' && canViewHeadcount && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -529,27 +529,27 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {headcountData && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-slate-500 dark:text-slate-400">พนักงานทั้งหมด</span>
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{headcountData.totalEmployees} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-emerald-600 font-medium">มาปฏิบัติงาน</span>
                 <div className="text-2xl font-extrabold text-emerald-600">{headcountData.totalPresent} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-amber-600 font-medium">มาสาย</span>
                 <div className="text-2xl font-extrabold text-amber-600">{headcountData.totalLate} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-rose-600 font-medium">ขาดงาน / ยังไม่ลงเวลา</span>
                 <div className="text-2xl font-extrabold text-rose-600">{headcountData.totalAbsent} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 lg:col-span-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 col-span-2 lg:col-span-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างาน</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%</div>
               </div>
@@ -572,7 +572,7 @@ export default function ReportsPage() {
           )}
 
           {/* Table Breakdown by Department */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
@@ -670,7 +670,7 @@ export default function ReportsPage() {
       {activeTab === 'lateness' && canViewLateness && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -765,24 +765,24 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {latenessData && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-slate-500 dark:text-slate-400">พนักงานที่ตรวจสอบ</span>
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{latenessData.totalAuditedEmployees} คน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-amber-600 font-medium">การมาสายรวม</span>
                 <div className="text-2xl font-extrabold text-amber-600">{latenessData.totalLateOccurrences} ครั้ง</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-orange-600 font-medium">เวลารวมที่สาย</span>
                 <div className="text-2xl font-extrabold text-orange-600">
                   {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">นาที</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">อัตราการเข้างานเฉลี่ย</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%</div>
               </div>
@@ -790,7 +790,7 @@ export default function ReportsPage() {
           )}
 
           {/* Detailed Table per Employee */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <FileSpreadsheet className="w-4 h-4 text-amber-600" />
@@ -898,7 +898,7 @@ export default function ReportsPage() {
       {activeTab === 'tax' && canViewTax && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -1014,7 +1014,7 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {taxData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
                   <DollarSign className="w-4 h-4 text-blue-600" />
@@ -1026,7 +1026,7 @@ export default function ReportsPage() {
                 <div className="text-2xs text-slate-400 dark:text-slate-500">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-rose-600 font-medium">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
                   <Receipt className="w-4 h-4 text-rose-600" />
@@ -1040,7 +1040,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-600 font-medium">นำส่งประกันสังคม (สปส. 1-10)</span>
                   <ShieldCheck className="w-4 h-4 text-blue-600" />
@@ -1055,7 +1055,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-emerald-600 font-medium">เงินเดือนสุทธินำจ่าย</span>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -1072,7 +1072,7 @@ export default function ReportsPage() {
           )}
 
           {/* Detailed Tax & SSO Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
@@ -1259,7 +1259,7 @@ export default function ReportsPage() {
       {activeTab === 'turnover' && canViewTurnover && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -1367,14 +1367,14 @@ export default function ReportsPage() {
           {/* 5 Summary KPI Cards */}
           {turnoverData && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-slate-500 font-medium dark:text-slate-400">พนักงานต้นงวด</span>
                 <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">
                   {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-emerald-600 font-medium">เข้าใหม่ (New Hires)</span>
                   <UserPlus className="w-4 h-4 text-emerald-600" />
@@ -1384,7 +1384,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-rose-600 font-medium">ลาออก (Resigned)</span>
                   <UserMinus className="w-4 h-4 text-rose-600" />
@@ -1394,14 +1394,14 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-blue-600 font-medium">พนักงานสิ้นงวด</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
                   {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <span className="text-xs text-slate-500 font-medium dark:text-slate-400">Turnover / Retention</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-extrabold text-amber-600">
@@ -1416,7 +1416,7 @@ export default function ReportsPage() {
           )}
 
           {/* Department Breakdown Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
@@ -1502,7 +1502,7 @@ export default function ReportsPage() {
 
           {/* Event Logs Table */}
           {turnoverData && turnoverData.eventLogs.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
                 <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-slate-200">
                   <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -1560,3 +1560,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

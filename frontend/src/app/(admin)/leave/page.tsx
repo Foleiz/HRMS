@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -495,7 +495,7 @@ export default function LeaveManagementPage() {
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4 text-center">หมวดในใบลา</th>
                     <th className="py-3.5 px-4 text-center">รับค่าจ้าง</th>
@@ -520,7 +520,7 @@ export default function LeaveManagementPage() {
                     </tr>
                   ) : (
                     leaveTypes.map((type) => (
-                      <tr key={type.id} className="hover:bg-gray-50/60 transition-colors">
+                      <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
                           <div className="font-semibold text-gray-800">{type.leaveName}</div>
                         </td>
@@ -602,7 +602,7 @@ export default function LeaveManagementPage() {
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-slate-800/70 border-b border-gray-100 text-xs font-semibold text-gray-500">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
                     <th className="py-3.5 px-4">ใช้กับ</th>
                     <th className="py-3.5 px-4 text-center">สิทธิ์/ปี</th>
@@ -630,7 +630,7 @@ export default function LeaveManagementPage() {
                     </tr>
                   ) : (
                     leavePolicies.map((policy) => (
-                      <tr key={policy.id} className="hover:bg-gray-50/60 transition-colors">
+                      <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
                           <span className="font-semibold text-gray-800">{policy.leaveTypeName}</span>
                         </td>
@@ -699,7 +699,7 @@ export default function LeaveManagementPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 {/* Year Select */}
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200">
                   <Calendar className="w-4 h-4 text-gray-500" />
                   <span className="text-xs font-medium text-gray-600">ประจำปี:</span>
                   <select
@@ -723,21 +723,21 @@ export default function LeaveManagementPage() {
                     placeholder="ค้นหาชื่อ, รหัส, แผนก..."
                     value={balanceSearch}
                     onChange={(e) => setBalanceSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
 
                 {/* Expand / Collapse All */}
-                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200">
                   <button
                     onClick={expandAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white transition-all flex items-center gap-1"
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all flex items-center gap-1"
                   >
                     <ChevronsUpDown className="w-3.5 h-3.5" /> ขยายทั้งหมด
                   </button>
                   <button
                     onClick={collapseAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white transition-all"
+                    className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all"
                   >
                     ยุบทั้งหมด
                   </button>
@@ -792,8 +792,8 @@ export default function LeaveManagementPage() {
                       key={emp.employeeId}
                       className={`rounded-2xl border transition-all overflow-hidden ${
                         isExpanded
-                          ? 'bg-white border-blue-200 shadow-sm'
-                          : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-xs'
+                          ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-700 shadow-sm'
+                          : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-xs'
                       }`}
                     >
                       {/* Master Row Header */}
@@ -831,7 +831,7 @@ export default function LeaveManagementPage() {
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-11 sm:pl-0">
                           <div className="text-left sm:text-right">
                             <span className="text-[11px] text-gray-400 block">สิทธิ์ที่เปิด</span>
-                            <span className="text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
+                            <span className="text-xs font-semibold text-gray-700 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-200">
                               {emp.balances.length} ประเภท
                             </span>
                           </div>
@@ -855,10 +855,10 @@ export default function LeaveManagementPage() {
                       {/* Expanded Sub-Table */}
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-1 bg-slate-50/70 border-t border-gray-100 animate-in fade-in duration-150">
-                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 bg-white shadow-xs">
+                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100 font-semibold text-gray-500">
+                                <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-100 font-semibold text-gray-500">
                                   <th className="py-2.5 px-4">ประเภทการลา</th>
                                   <th className="py-2.5 px-3 text-center">สิทธิ์ปีนี้</th>
                                   <th className="py-2.5 px-3 text-center">ยกมา</th>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -408,7 +408,7 @@ export default function EssAttendancePage() {
       {activeTab === 'history' && (
         <div className="space-y-6">
           {/* Month / Year Filter & Monthly Summary Cards */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-[#0052CC]" />
               <span className="font-semibold text-slate-800 text-sm">เลือกเดือนที่ต้องการดู:</span>
@@ -640,7 +640,7 @@ export default function EssAttendancePage() {
       ───────────────────────────────────────────────────────────── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-150 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-150 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-blue-50 text-[#0052CC]">
@@ -739,3 +739,4 @@ export default function EssAttendancePage() {
     </div>
   );
 }
+

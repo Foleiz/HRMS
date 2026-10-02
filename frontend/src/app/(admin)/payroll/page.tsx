@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -150,7 +150,7 @@ function TablePagination({
               onPageSizeChange(newSize);
               onPageChange(1);
             }}
-            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs transition-colors"
+            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs transition-colors"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -1444,7 +1444,7 @@ export default function PayrollPage() {
 
 
       {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {visibleNavTabs.map((t) => (
             <button
@@ -1477,7 +1477,7 @@ export default function PayrollPage() {
           {/* 4 Stacked Full-Width Status Cards */}
           <div className="space-y-3">
             {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs flex items-center justify-between relative hover:border-slate-200 transition-all">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between relative hover:border-slate-200 transition-all">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
                 <div className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -1502,7 +1502,7 @@ export default function PayrollPage() {
             </div>
 
             {/* Card 2: พนักงานที่คำนวณแล้ว */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 font-medium">พนักงานที่คำนวณแล้ว</span>
                 <div className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -1519,7 +1519,7 @@ export default function PayrollPage() {
             </div>
 
             {/* Card 3: รอตรวจสอบ/อนุมัติ */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 font-medium">รอตรวจสอบ/อนุมัติ</span>
                 <div className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -1534,7 +1534,7 @@ export default function PayrollPage() {
             </div>
 
             {/* Card 4: กำหนดปิดรอบถัดไป */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 font-medium">กำหนดปิดรอบถัดไป</span>
                 <div className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -1552,7 +1552,7 @@ export default function PayrollPage() {
           </div>
 
           {/* Section: รอบเงินเดือนล่าสุด */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-xs">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-base font-bold text-slate-900">รอบเงินเดือนล่าสุด</h2>
               <button
@@ -1619,7 +1619,7 @@ export default function PayrollPage() {
 
       {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) - Matches media_1789453480755.png === */}
       {activeTab === 'structures' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-4">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
           {/* Header matching mockup: Title on left, "+ เพิ่ม" button on right */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -1629,7 +1629,7 @@ export default function PayrollPage() {
                   onClick={() => setStructureSubTab('positions')}
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'positions'
-                      ? 'bg-white text-slate-900 shadow-xs'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -1639,7 +1639,7 @@ export default function PayrollPage() {
                   onClick={() => setStructureSubTab('employees')}
                   className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     structureSubTab === 'employees'
-                      ? 'bg-white text-slate-900 shadow-xs'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -1814,14 +1814,14 @@ export default function PayrollPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleFilterEmployees()}
-                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800"
                       />
                     </div>
 
                     <select
                       value={selectedDeptId}
                       onChange={(e) => setSelectedDeptId(e.target.value)}
-                      className="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+                      className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800"
                     >
                       <option value="">-- ทุกแผนก --</option>
                       {departments.map((d) => (
@@ -1950,7 +1950,7 @@ export default function PayrollPage() {
               className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 itemsSubTab === 'EARNING'
                   ? 'bg-[#0B2046] text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
               รายการรายได้
@@ -1960,7 +1960,7 @@ export default function PayrollPage() {
               className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 itemsSubTab === 'DEDUCTION'
                   ? 'bg-[#0B2046] text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
               รายการรายหัก
@@ -1969,13 +1969,13 @@ export default function PayrollPage() {
 
           {/* 2 Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
               <span className="text-xs text-slate-500 font-medium">รายการทั้งหมด</span>
               <div className="text-2xl font-bold text-slate-900 mt-1">
                 {payrollItems.filter((i) => i.itemType === itemsSubTab).length} รายการ
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
               <span className="text-xs text-slate-500 font-medium">เปิดใช้งานอยู่</span>
               <div className="text-2xl font-bold text-slate-900 mt-1">
                 {
@@ -2002,7 +2002,7 @@ export default function PayrollPage() {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -2212,7 +2212,7 @@ export default function PayrollPage() {
           <div className="space-y-4">
             {/* ── TOP ROLE BANNER (Visible only to Admin to switch perspectives) ── */}
             {isAdmin && (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
@@ -2243,7 +2243,7 @@ export default function PayrollPage() {
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'HR'
-                            ? 'bg-white text-slate-900 shadow-xs'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
@@ -2260,7 +2260,7 @@ export default function PayrollPage() {
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'FINANCE'
-                            ? 'bg-white text-slate-900 shadow-xs'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
@@ -2277,7 +2277,7 @@ export default function PayrollPage() {
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           processSubTab === 'APPROVER'
-                            ? 'bg-white text-slate-900 shadow-xs'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
@@ -2357,7 +2357,7 @@ export default function PayrollPage() {
             )}
 
             {/* ── SUB-HEADER BAR (Dropdown & Actions) ── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   {!isAdmin && (
@@ -2515,7 +2515,7 @@ export default function PayrollPage() {
                             value={effectiveBonusYear}
                             onChange={(e) => setBonusPayoutYear(Number(e.target.value))}
                             disabled={isAddingBonus}
-                            className="h-full px-2 text-xs bg-white text-slate-700 border-r border-amber-200"
+                            className="h-full px-2 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-r border-amber-200 dark:border-amber-800"
                             title="ปีของโบนัสที่อนุมัติแล้ว"
                           >
                             {[defaultBonusYear - 1, defaultBonusYear, defaultBonusYear + 1].map((y) => (
@@ -2678,7 +2678,7 @@ export default function PayrollPage() {
 
                 {/* 3 Stat Cards for HR */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">พนักงานในรอบ</span>
                     <div className="text-2xl font-bold text-emerald-700 mt-1">
                       {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
@@ -2686,7 +2686,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">ทุกแผนก</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">ข้อมูลยังไม่ครบ</span>
                     <div className={`text-2xl font-bold mt-1 ${pendingCheckCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                       {pendingCheckCount} <span className="text-sm font-normal text-slate-500">คน</span>
@@ -2696,7 +2696,7 @@ export default function PayrollPage() {
                     </span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">วันลารวมในรอบ</span>
                     <div className="text-2xl font-bold text-emerald-700 mt-1">
                       {totalLeaveDays} <span className="text-sm font-normal text-slate-500">วัน</span>
@@ -2706,7 +2706,7 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Table: HR Data Input Verification */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-sm text-slate-900">รายการพนักงานและข้อมูลนำเข้า</h3>
                     <span className="text-xs text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
@@ -2815,7 +2815,7 @@ export default function PayrollPage() {
 
                 {/* 4 Stat Cards for Finance */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">ยอดจ่ายรวม (Gross)</span>
                     <div className="text-2xl font-bold text-amber-700 mt-1">
                       ฿{totalGross.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -2823,7 +2823,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">{totalEmployees} คน</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
                     <div className="text-2xl font-bold text-rose-600 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -2831,7 +2831,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">กำหนดนำส่ง 7 ก.ย. 2569</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">ยอดโอนสุทธิ (Net Pay)</span>
                     <div className="text-2xl font-bold text-emerald-600 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -2841,7 +2841,7 @@ export default function PayrollPage() {
                     </span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">สถานะการโอน</span>
                     <div className="text-2xl font-bold text-slate-900 mt-1">
                       {transferredCount} / {totalEmployees}
@@ -2853,7 +2853,7 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Table: Finance Disbursement & Banking */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-sm text-slate-900">รายการจ่ายเงินเดือน</h3>
                     <span className="text-xs text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
@@ -2966,7 +2966,7 @@ export default function PayrollPage() {
 
                 {/* 4 Stat Cards for Approver */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">งบประมาณเงินเดือนสุทธิรวม</span>
                     <div className="text-2xl font-bold text-emerald-600 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -2974,7 +2974,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">ยอดที่ต้องจ่ายจริง</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">ภาระภาษีและประกันสังคม</span>
                     <div className="text-2xl font-bold text-rose-600 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -2982,7 +2982,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">ภ.ง.ด.1 + SSO รวม</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">จำนวนพนักงานทั้งหมด</span>
                     <div className="text-2xl font-bold text-slate-900 mt-1">
                       {totalEmployees} <span className="text-sm font-normal text-slate-500">คน</span>
@@ -2990,7 +2990,7 @@ export default function PayrollPage() {
                     <span className="text-[11px] text-slate-400 mt-1 block">ได้รับการคำนวณครบถ้วน</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 font-medium">สถานะการตรวจทาน</span>
                     <div className="text-base font-bold text-indigo-700 mt-2">
                       {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
@@ -3005,7 +3005,7 @@ export default function PayrollPage() {
 
 
                 {/* Table: Approver Overview */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-sm text-slate-900">สรุปภาพรวมรายบุคคล</h3>
                     <span className="text-xs text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
@@ -3078,7 +3078,7 @@ export default function PayrollPage() {
         <div className="space-y-5">
 
           {/* ── Header ── */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -3174,7 +3174,7 @@ export default function PayrollPage() {
 
           {/* ── PHASE 2a: BANK_BATCH ── */}
           {selectedPeriod?.paymentMethod === 'BANK_BATCH' && selectedPeriod?.status !== 'CLOSED' && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Building2 className="w-5 h-5 text-blue-600" />
                 <h3 className="font-bold text-slate-900">วิธีการจ่าย: ส่งไฟล์ธนาคาร (Bank Batch)</h3>
@@ -3354,14 +3354,14 @@ export default function PayrollPage() {
                       <span>✓ ฝ่ายการเงินได้แนบสลิป/ใบเสร็จของธนาคารแล้ว ({selectedPeriod?.bankReceiptFileName || 'receipt'})</span>
                       <button
                         onClick={handleDownloadBankReceipt}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-medium cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-white dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg text-xs font-medium cursor-pointer"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>ดาวน์โหลด</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-600 mt-3">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs text-slate-600 mt-3">
                       <span>⏳ รอดำเนินการ: ฝ่ายการเงินตรวจสอบและแนบสลิปโอนเงินรวมของธนาคาร (ขั้นตอนที่ 3)</span>
                     </div>
                   )
@@ -3397,7 +3397,7 @@ export default function PayrollPage() {
 
           {/* ── PHASE 2b: DIRECT_TRANSFER ── */}
           {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
               {/* Header */}
               <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -3555,7 +3555,7 @@ export default function PayrollPage() {
 
           {/* ── No Period Selected ── */}
           {!selectedPeriod && (
-            <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-12 text-center">
               <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-slate-400 text-sm">กรุณาเลือกรอบเงินเดือนก่อน</p>
               <button
@@ -3570,7 +3570,7 @@ export default function PayrollPage() {
           {/* ── MODAL: Upload Slip + Mark Transferred ── */}
           {slipModalOpen && slipModalTarget && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900">📎 แนบสลิปการโอนเงิน</h3>
                   <button onClick={() => setSlipModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer text-xl leading-none">×</button>
@@ -3666,7 +3666,7 @@ export default function PayrollPage() {
           {/* ── MODAL: CEO Confirm Payment ── */}
           {confirmPaymentModalOpen && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="text-center">
                   <div className="text-5xl mb-3">🔐</div>
                   <h3 className="text-lg font-bold text-slate-900">
@@ -3750,7 +3750,7 @@ export default function PayrollPage() {
 
       {/* === TAB 7: ภาษี & ประกันสังคม (Tax & SSO Tab) === */}
       {activeTab === 'tax-sso' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-8">
           {/* Header Actions for CSV Reports */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
@@ -4061,7 +4061,7 @@ export default function PayrollPage() {
       {/* Modal: Create Payroll Period */}
       {isCreatePeriodModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">สร้างรอบเงินเดือนใหม่</h3>
               <button
@@ -4099,7 +4099,7 @@ export default function PayrollPage() {
                     setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value });
                   }}
                   placeholder="เช่น รอบเดือนสิงหาคม 2569"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
                   💡 ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)
@@ -4114,7 +4114,7 @@ export default function PayrollPage() {
                     required
                     value={newPeriodForm.year}
                     onChange={(e) => handleYearChange(parseInt(e.target.value) || 2026)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                   />
                 </div>
                 <div>
@@ -4122,7 +4122,7 @@ export default function PayrollPage() {
                   <select
                     value={newPeriodForm.month}
                     onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
                   >
                     {THAI_MONTH_NAMES.map((name, idx) => (
                       <option key={idx + 1} value={idx + 1}>
@@ -4178,7 +4178,7 @@ export default function PayrollPage() {
                     required
                     value={newPeriodForm.startDate}
                     onChange={(e) => setNewPeriodForm({ ...newPeriodForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
                 <div>
@@ -4188,7 +4188,7 @@ export default function PayrollPage() {
                     required
                     value={newPeriodForm.endDate}
                     onChange={(e) => setNewPeriodForm({ ...newPeriodForm, endDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
               </div>
@@ -4199,7 +4199,7 @@ export default function PayrollPage() {
                   type="date"
                   value={newPeriodForm.paymentDate}
                   onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
               </div>
 
@@ -4323,3 +4323,4 @@ export default function PayrollPage() {
     </div>
   );
 }
+

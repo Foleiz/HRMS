@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -881,7 +881,7 @@ function SchedulesContent() {
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: มอบหมายกะให้พนักงาน */}
           <button
@@ -969,7 +969,7 @@ function SchedulesContent() {
                   onClick={() => setAssignmentViewMode('list')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     assignmentViewMode === 'list'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-blue-300 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -980,7 +980,7 @@ function SchedulesContent() {
                   onClick={() => setAssignmentViewMode('calendar')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     assignmentViewMode === 'calendar'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-blue-300 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1015,14 +1015,14 @@ function SchedulesContent() {
 
           {/* VIEW 0: REAL MONTHLY 7-DAY CALENDAR VIEW */}
           {assignmentViewMode === 'calendar' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4 dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden space-y-4 p-4 dark:bg-slate-800 dark:border-slate-700/80">
               {/* Month Navigator & Shift Legends */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-700/60">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center bg-slate-100 rounded-lg p-0.5 dark:bg-slate-800">
                     <button
                       onClick={prevMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white dark:hover:bg-slate-700 rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
                       title="เดือนก่อนหน้า"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -1032,7 +1032,7 @@ function SchedulesContent() {
                     </div>
                     <button
                       onClick={nextMonth}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
+                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white dark:hover:bg-slate-700 rounded-md transition dark:text-slate-400 dark:hover:text-slate-100"
                       title="เดือนถัดไป"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -1219,7 +1219,7 @@ function SchedulesContent() {
 
           {/* VIEW 2: DETAILED ASSIGNMENT LIST VIEW */}
           {assignmentViewMode === 'list' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm dark:text-slate-200">รายการมอบหมายกะพนักงานทั้งหมด</h3>
@@ -1431,7 +1431,7 @@ function SchedulesContent() {
                   onClick={() => setShiftViewMode('grid')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     shiftViewMode === 'grid'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-blue-300 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1442,7 +1442,7 @@ function SchedulesContent() {
                   onClick={() => setShiftViewMode('table')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
                     shiftViewMode === 'table'
-                      ? 'bg-white text-[#0B2046] shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-blue-300 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1465,12 +1465,12 @@ function SchedulesContent() {
 
           {/* Shift Content */}
           {loadingShifts ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center text-slate-400 gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-slate-400 gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
               <p className="text-sm">กำลังโหลดข้อมูลกะการทำงาน...</p>
             </div>
           ) : filteredShifts.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500">
               <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
               <p className="text-base font-semibold text-slate-700 dark:text-slate-300">ไม่พบข้อมูลกะการทำงานที่ค้นหา</p>
               <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มกะการทำงานใหม่" เพื่อสร้างกะแรก</p>
@@ -1481,7 +1481,7 @@ function SchedulesContent() {
               {filteredShifts.map((shift) => (
                 <div
                   key={shift.id}
-                  className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group dark:bg-slate-800"
+                  className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group dark:bg-slate-800"
                 >
                   <div>
                     {/* Card Header: Shift Name & Day/Night Badge */}
@@ -1598,7 +1598,7 @@ function SchedulesContent() {
             </div>
           ) : (
             /* TABLE VIEW */
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
               <div className="overflow-x-auto min-h-[280px] pb-8">
                 <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                   <thead>
@@ -1717,7 +1717,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {assignModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
                 <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">
@@ -1772,7 +1772,7 @@ function SchedulesContent() {
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 text-left bg-slate-50 hover:bg-slate-100/70 border rounded-lg transition-all  dark:bg-slate-950${
                         singleAssignDropdownOpen
-                          ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white'
+                          ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white dark:bg-slate-800'
                           : 'border-slate-200 text-slate-800'
                       }`}
                     >
@@ -1821,7 +1821,7 @@ function SchedulesContent() {
 
                     {/* Dropdown Menu */}
                     {singleAssignDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-100 dark:bg-slate-800 dark:border-slate-700">
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-100 dark:bg-slate-800 dark:border-slate-700">
                         {/* Search Input Bar */}
                         <div className="p-2 border-b border-slate-100 bg-slate-50/80 dark:bg-slate-800/60 dark:border-slate-700/60">
                           <div className="relative">
@@ -1841,7 +1841,7 @@ function SchedulesContent() {
                                   }
                                 }
                               }}
-                              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500"
+                              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-[#0B2046] focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500"
                             />
                             {singleAssignSearch && (
                               <button
@@ -2072,7 +2072,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {batchModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center dark:bg-indigo-900/20 dark:text-indigo-400">
@@ -2424,7 +2424,7 @@ function SchedulesContent() {
       {shiftModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-4 animate-fade-in">
           <div className="min-h-full flex items-center justify-center py-4">
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg dark:bg-slate-800 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg dark:bg-slate-800 dark:border-slate-700">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between rounded-t-2xl dark:border-slate-700/60">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">
@@ -2676,7 +2676,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {employeeModalOpen && selectedShiftForEmployees && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <div>
                 <h3 className="font-bold text-slate-900 text-base dark:text-slate-100">พนักงานในกะ: {selectedShiftForEmployees.shiftName}</h3>
@@ -2757,7 +2757,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {selectedCalendarDay && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
@@ -2871,7 +2871,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {deleteConfirmOpen && itemToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
@@ -2928,3 +2928,4 @@ export default function SchedulesPage() {
     </Suspense>
   );
 }
+

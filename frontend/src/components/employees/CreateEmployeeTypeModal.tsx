@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -287,7 +287,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                     <label
                       key={b.id}
                       className={`flex items-start gap-2.5 p-2 rounded-xl border transition-all cursor-pointer ${ isChecked ? 'bg-white border-[#0B2046]/30 shadow-2xs'
-                          : 'bg-white/60 border-slate-200/70 hover:bg-white'
+                          : 'bg-white/60 border-slate-200/70 hover:bg-white dark:bg-slate-800'
                       }`}
                     >
                       <input
@@ -336,3 +336,4 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     </div>
   );
 };
+

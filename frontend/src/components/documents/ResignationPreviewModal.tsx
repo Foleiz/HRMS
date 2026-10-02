@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -519,7 +519,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
       <div className="resignation-modal no-print fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
         <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 text-slate-800">
               <FileText className="w-5 h-5 text-[#0B2046]" />
               <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลาออก (ต้นฉบับ PDF)</h3>
@@ -630,3 +630,4 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
     </>
   );
 };
+

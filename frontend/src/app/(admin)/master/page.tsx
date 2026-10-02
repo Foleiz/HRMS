@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -265,7 +265,7 @@ export default function MasterDataHubPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Top Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
           <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
@@ -299,7 +299,7 @@ export default function MasterDataHubPage() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'document-types'
               ? 'bg-[#0B2046] text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -311,7 +311,7 @@ export default function MasterDataHubPage() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'nationalities'
               ? 'bg-[#0B2046] text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function MasterDataHubPage() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'religions'
               ? 'bg-[#0B2046] text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
           <Heart className="w-4 h-4" />
@@ -335,7 +335,7 @@ export default function MasterDataHubPage() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'marital-statuses'
               ? 'bg-[#0B2046] text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
           <Users2 className="w-4 h-4" />
@@ -347,7 +347,7 @@ export default function MasterDataHubPage() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'banks'
               ? 'bg-[#0B2046] text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
           <Landmark className="w-4 h-4" />
@@ -363,13 +363,13 @@ export default function MasterDataHubPage() {
           placeholder="พิมพ์คำค้นหา..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
         />
       </div>
 
       {/* Tab 1: Document Types Table */}
       {activeTab === 'document-types' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -454,7 +454,7 @@ export default function MasterDataHubPage() {
 
       {/* Tab 2: Nationalities Table */}
       {activeTab === 'nationalities' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -505,7 +505,7 @@ export default function MasterDataHubPage() {
 
       {/* Tab 3: Religions Table */}
       {activeTab === 'religions' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -556,7 +556,7 @@ export default function MasterDataHubPage() {
 
       {/* Tab 4: Marital Statuses Table */}
       {activeTab === 'marital-statuses' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -607,7 +607,7 @@ export default function MasterDataHubPage() {
 
       {/* Tab 5: Banks Table */}
       {activeTab === 'banks' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -871,3 +871,4 @@ export default function MasterDataHubPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -788,7 +788,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   value={searchModuleQuery}
                   onChange={(e) => setSearchModuleQuery(e.target.value)}
                   placeholder="ค้นหากลุ่มหรือสิทธิ์..."
-                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
                 />
                 {searchModuleQuery && (
                   <button
@@ -890,7 +890,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             return (
                               <div
                                 key={mod.moduleCode}
-                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${ modActive ? 'bg-white' : 'bg-slate-50/30'
+                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${ modActive ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/30'
                                 }`}
                               >
                                 {/* Left: Module Title & Subtitle */}
@@ -1144,3 +1144,4 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     </div>
   );
 };
+

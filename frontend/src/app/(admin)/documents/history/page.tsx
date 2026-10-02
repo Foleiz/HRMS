@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
@@ -450,13 +450,13 @@ export default function DocumentHistoryPage() {
       <div className="flex items-center gap-2">
         <button
           onClick={handleExport}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-medium transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-xs font-medium transition-all"
         >
           <Download className="w-3.5 h-3.5" /> ส่งออก
         </button>
         <button
           onClick={fetchData}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-medium transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 rounded-xl text-xs font-medium transition-all"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> รีเฟรช
         </button>
@@ -489,7 +489,7 @@ export default function DocumentHistoryPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60">
                     <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">รหัสเอกสาร</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ยื่นเอกสาร</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ลา</th>
@@ -502,7 +502,7 @@ export default function DocumentHistoryPage() {
                   {pagedDocuments.map((doc) => {
                     const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
                     return (
-                      <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors">
+                      <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
                         <td className="px-5 py-4 font-medium whitespace-nowrap">
                           <button
                             type="button"
@@ -618,7 +618,7 @@ export default function DocumentHistoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> ก่อนหน้า
                 </button>
@@ -636,7 +636,7 @@ export default function DocumentHistoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   ถัดไป <ChevronRight className="w-3.5 h-3.5" />
                 </button>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -157,7 +157,7 @@ export default function LeaveBalancesPage() {
       <div className="flex items-center justify-end gap-3">
         {/* Thai Buddhist Year Dropdown */}
         <div className="relative inline-block">
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 hover:border-slate-300 transition-colors">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 hover:border-slate-300 transition-colors">
             <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <select
               value={selectedYear}
@@ -196,7 +196,7 @@ export default function LeaveBalancesPage() {
           {Array.from({ length: 8 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
             >
               <div className="flex items-center justify-between">
                 <div className="h-3 w-28 bg-slate-200 rounded" />
@@ -384,3 +384,4 @@ export default function LeaveBalancesPage() {
     </div>
   );
 }
+

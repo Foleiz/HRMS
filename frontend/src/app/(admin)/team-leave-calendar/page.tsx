@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -209,7 +209,7 @@ export default function TeamLeaveCalendarPage() {
   return (
     <div className="space-y-4 pb-12">
       {/* Header */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-[#0B2046]" />
@@ -267,7 +267,7 @@ export default function TeamLeaveCalendarPage() {
                   setSelectedDay(null);
                 }}
                 className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                  view === m ? 'bg-white shadow-sm text-[#0B2046]' : 'text-slate-500'
+                  view === m ? 'bg-white dark:bg-slate-700 shadow-sm text-[#0B2046] dark:text-blue-300' : 'text-slate-500'
                 }`}
               >
                 {m === 'month' ? 'รายเดือน' : 'รายสัปดาห์'}
@@ -280,7 +280,7 @@ export default function TeamLeaveCalendarPage() {
       {/* Navigation + summary */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => move(-1)} className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50">
+          <button onClick={() => move(-1)} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
@@ -288,11 +288,11 @@ export default function TeamLeaveCalendarPage() {
               setAnchor(new Date());
               setSelectedDay(null);
             }}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium hover:bg-slate-50"
+            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium hover:bg-slate-50"
           >
             วันนี้
           </button>
-          <button onClick={() => move(1)} className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50">
+          <button onClick={() => move(1)} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50">
             <ChevronRight className="w-4 h-4" />
           </button>
           <span className="ml-2 text-sm font-bold text-slate-800">{title}</span>
@@ -325,7 +325,7 @@ export default function TeamLeaveCalendarPage() {
 
       <div className="flex flex-col xl:flex-row gap-4">
         {/* Calendar grid */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
             {WEEK_DAYS.map((d, i) => (
               <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500'}`}>
@@ -347,7 +347,7 @@ export default function TeamLeaveCalendarPage() {
                   onClick={() => setSelectedDay(key === selectedDay ? null : key)}
                   className={`text-left border-b border-r border-slate-100 p-1.5 align-top flex flex-col gap-1 ${
                     view === 'month' ? 'min-h-[104px]' : 'min-h-[320px]'
-                  } ${outside ? 'bg-slate-50/60' : 'bg-white'} ${
+                  } ${outside ? 'bg-slate-50/60' : 'bg-white dark:bg-slate-800'} ${
                     key === selectedDay ? 'ring-2 ring-inset ring-blue-400' : 'hover:bg-blue-50/40'
                   }`}
                 >
@@ -372,7 +372,7 @@ export default function TeamLeaveCalendarPage() {
 
         {/* Day detail */}
         {selectedDay && (
-          <div className="xl:w-80 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 h-fit">
+          <div className="xl:w-80 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 h-fit">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-slate-800">ผู้ลาวันที่ {thaiDate(selectedDay)}</h2>
               <button onClick={() => setSelectedDay(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
@@ -416,3 +416,4 @@ export default function TeamLeaveCalendarPage() {
     </div>
   );
 }
+

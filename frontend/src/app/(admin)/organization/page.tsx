@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -242,7 +242,7 @@ export default function OrganizationPage() {
   }) => {
     const initial = name ? name.charAt(0) : '?';
     return (
-      <div className={`relative flex flex-col bg-white rounded-xl shadow-sm border  dark:bg-slate-800${
+      <div className={`relative flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border  dark:bg-slate-800${
         highlight ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'
       } w-52 shrink-0 overflow-hidden transition-all duration-200 hover:shadow-md`}>
         {/* Card Body */}
@@ -1018,7 +1018,7 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewStruct && (
             <button
@@ -1133,7 +1133,7 @@ export default function OrganizationPage() {
       </div>
 
       {/* 4. Tab Content Panels */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
@@ -1769,7 +1769,7 @@ export default function OrganizationPage() {
                 <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">ตราสัญลักษณ์ / โลโก้บริษัท (Logo)</label>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">รองรับไฟล์ PNG, JPG หรือ SVG ขนาดไม่เกิน 2MB</p>
                 <div className="flex items-center gap-2 pt-1">
-                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-300">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-300">
                     <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     อัปโหลดโลโก้
                     <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
@@ -2696,7 +2696,7 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาพนักงาน..."
                   value={orgSearch}
                   onChange={(e) => setOrgSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
               <button
@@ -2789,13 +2789,13 @@ export default function OrganizationPage() {
               <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 z-10">
                 <button
                   onClick={() => setOrgZoom((z) => Math.min(z + 0.1, 1.5))}
-                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
+                  className="w-8 h-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setOrgZoom((z) => Math.max(z - 0.1, 0.4))}
-                  className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
+                  className="w-8 h-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-400"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
@@ -2811,7 +2811,7 @@ export default function OrganizationPage() {
       {/* Modal: Employee Quick Info (from OrgChart) */}
       {selectedOrgPerson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700/60">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700/60">
             {/* Modal Header / Banner */}
             <div className="relative bg-gradient-to-r from-[#0B2046] to-[#1e3a8a] p-5 text-white text-center">
               <button
@@ -3088,3 +3088,4 @@ export default function OrganizationPage() {
     </div>
   );
 }
+

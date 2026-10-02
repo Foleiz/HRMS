@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
@@ -80,7 +80,7 @@ export default function DocumentsHubPage() {
         {DOCUMENT_OPTIONS.map((opt) => {
           const card = (
             <div
-              className={`group relative h-full bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col items-center justify-between gap-5 text-center transition-all ${
+              className={`group relative h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm p-6 flex flex-col items-center justify-between gap-5 text-center transition-all ${
                 opt.available ? 'hover:shadow-md hover:border-slate-300 cursor-pointer' : 'opacity-70 cursor-not-allowed'
               }`}
             >
@@ -121,3 +121,4 @@ export default function DocumentsHubPage() {
     </div>
   );
 }
+
