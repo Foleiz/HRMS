@@ -81,6 +81,7 @@ import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { PayrollViewSwitcher, PayrollViewMode } from '@/components/payroll/PayrollViewSwitcher';
+import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 
 type ActiveTab =
   | 'overview'
@@ -2883,7 +2884,7 @@ export default function PayrollPage() {
                               <td className="py-4 px-5">
                                 <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
                                 <div className="text-[11px] font-mono text-slate-400">
-                                  {pr.accountNumber ? `xxx-x-x${pr.accountNumber.slice(-4)}-x` : 'xxx-x-x4821-x'}
+                                  <MaskedDataViewer value={pr.accountNumber || '1234567890'} type="bankAccount" />
                                 </div>
                               </td>
                               <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
@@ -3474,7 +3475,9 @@ export default function PayrollPage() {
                               {item.bankName ? (
                                 <>
                                   <div className="font-semibold text-slate-700 dark:text-slate-300">{item.bankName}</div>
-                                  <div className="font-mono text-[11px] text-slate-400 mt-0.5">{item.accountNumber}</div>
+                                  <div className="font-mono text-[11px] text-slate-400 mt-0.5">
+                                    <MaskedDataViewer value={item.accountNumber} type="bankAccount" />
+                                  </div>
                                   {item.accountName && <div className="text-[11px] text-slate-400">{item.accountName}</div>}
                                 </>
                               ) : (

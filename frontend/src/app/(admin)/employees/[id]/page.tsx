@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -23,6 +23,7 @@ import { getAvatarUrl } from '@/lib/api-client';
 import { useAuth } from '@/context/AuthContext';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
+import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 
 
 const formatThaiDate = (dateStr?: string) => {
@@ -563,7 +564,7 @@ export default function EmployeeDetailPage() {
 
                 <div>
                   <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เลขบัตรประชาชน (National ID)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{formatMaskedCitizenId(employee.citizenIdMasked)}</p>
+                  <MaskedDataViewer value={employee.citizenIdMasked} type="citizenId" />
                 </div>
 
                 <div>
