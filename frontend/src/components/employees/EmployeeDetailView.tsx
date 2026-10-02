@@ -300,7 +300,7 @@ export default function EmployeeDetailView({
   ] as const;
 
   return (
-    <div className="font-sans">
+    <div className="font-sans space-y-3.5">
       {/* Hidden file inputs for avatar & signature */}
       <input
         type="file"
@@ -317,8 +317,20 @@ export default function EmployeeDetailView({
         className="hidden"
       />
 
+      {/* Top Action Header: ปุ่มแก้ไขข้อมูลที่มุมขวาบนนอก Panel */}
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={handleEditClick}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#153468] text-white text-xs font-medium rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          <span>{editButtonLabel}</span>
+        </button>
+      </div>
+
       {/* 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch min-h-[calc(100vh-128px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch min-h-[calc(100vh-170px)]">
         {/* ============================================================ */}
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
@@ -531,10 +543,9 @@ export default function EmployeeDetailView({
         {/* ขวา: Detail Content with Merged Tabs                         */}
         {/* ============================================================ */}
         <div className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
-          {/* Top Bar: Tabs & Action Button */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3.5 gap-3">
-            {/* Tabs (Horizontal Scrollable for responsiveness) */}
-            <div className="flex items-center gap-x-5 gap-y-2 text-xs font-medium overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+          {/* Top Bar: Tabs (ขยายเต็มพื้นที่ ไม่ถูกปุ่มเบียด) */}
+          <div className="border-b border-slate-100 dark:border-slate-700/60 pb-3.5">
+            <div className="flex items-center gap-x-5 gap-y-2 text-xs font-medium overflow-x-auto w-full scrollbar-none">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -550,16 +561,6 @@ export default function EmployeeDetailView({
                 </button>
               ))}
             </div>
-
-            {/* Action Button: แก้ไขข้อมูล */}
-            <button
-              type="button"
-              onClick={handleEditClick}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#0B2046] text-white text-xs font-medium rounded-lg hover:bg-[#153468] transition-colors shadow-2xs cursor-pointer shrink-0"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>{editButtonLabel}</span>
-            </button>
           </div>
 
           {/* ============================================================ */}
