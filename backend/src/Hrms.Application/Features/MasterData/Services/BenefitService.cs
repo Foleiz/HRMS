@@ -51,6 +51,9 @@ public class BenefitService : IBenefitService
             Category = b.Category,
             Description = b.Description,
             IsStatutory = b.IsStatutory,
+            DefaultCoverageAmount = b.DefaultCoverageAmount,
+            DefaultFrequency = b.DefaultFrequency,
+            PayoutType = b.PayoutType,
             Status = b.Status,
             AssignedTypesCount = assignmentCounts.GetValueOrDefault(b.Id, 0),
             CreatedAt = b.CreatedAt,
@@ -79,12 +82,16 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            DefaultCoverageAmount = benefit.DefaultCoverageAmount,
+            DefaultFrequency = benefit.DefaultFrequency,
+            PayoutType = benefit.PayoutType,
             Status = benefit.Status,
             AssignedTypesCount = count,
             CreatedAt = benefit.CreatedAt,
             UpdatedAt = benefit.UpdatedAt
         };
     }
+
 
     public async Task<BenefitItemDto> CreateAsync(CreateBenefitItemRequest request, CancellationToken cancellationToken = default)
     {
@@ -109,6 +116,9 @@ public class BenefitService : IBenefitService
             Category = string.IsNullOrWhiteSpace(request.Category) ? "OTHER" : request.Category.Trim().ToUpper(),
             Description = request.Description?.Trim(),
             IsStatutory = request.IsStatutory,
+            DefaultCoverageAmount = request.DefaultCoverageAmount,
+            DefaultFrequency = string.IsNullOrWhiteSpace(request.DefaultFrequency) ? "YEARLY" : request.DefaultFrequency.Trim().ToUpper(),
+            PayoutType = string.IsNullOrWhiteSpace(request.PayoutType) ? "REIMBURSEMENT" : request.PayoutType.Trim().ToUpper(),
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -125,6 +135,9 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            DefaultCoverageAmount = benefit.DefaultCoverageAmount,
+            DefaultFrequency = benefit.DefaultFrequency,
+            PayoutType = benefit.PayoutType,
             Status = benefit.Status,
             AssignedTypesCount = 0,
             CreatedAt = benefit.CreatedAt,
@@ -147,6 +160,11 @@ public class BenefitService : IBenefitService
         benefit.Category = string.IsNullOrWhiteSpace(request.Category) ? "OTHER" : request.Category.Trim().ToUpper();
         benefit.Description = request.Description?.Trim();
         benefit.IsStatutory = request.IsStatutory;
+        benefit.DefaultCoverageAmount = request.DefaultCoverageAmount;
+        if (!string.IsNullOrWhiteSpace(request.DefaultFrequency))
+            benefit.DefaultFrequency = request.DefaultFrequency.Trim().ToUpper();
+        if (!string.IsNullOrWhiteSpace(request.PayoutType))
+            benefit.PayoutType = request.PayoutType.Trim().ToUpper();
         benefit.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper();
         benefit.UpdatedAt = DateTime.UtcNow;
 
@@ -164,6 +182,9 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            DefaultCoverageAmount = benefit.DefaultCoverageAmount,
+            DefaultFrequency = benefit.DefaultFrequency,
+            PayoutType = benefit.PayoutType,
             Status = benefit.Status,
             AssignedTypesCount = count,
             CreatedAt = benefit.CreatedAt,

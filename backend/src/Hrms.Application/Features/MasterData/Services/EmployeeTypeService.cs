@@ -200,14 +200,24 @@ public class EmployeeTypeService : IEmployeeTypeService
 
         if (assignments != null && assignments.Any())
         {
+            var benefitItemsMap = await _dbContext.BenefitItems
+                .Where(b => benefitIds.Contains(b.Id))
+                .ToDictionaryAsync(b => b.Id, cancellationToken);
+
             foreach (var a in assignments)
             {
+                var defaultItem = benefitItemsMap.GetValueOrDefault(a.BenefitItemId);
+                var covAmount = a.CoverageAmount > 0 ? a.CoverageAmount : (defaultItem?.DefaultCoverageAmount ?? 0);
+                var freq = !string.IsNullOrWhiteSpace(a.Frequency) 
+                    ? a.Frequency.Trim().ToUpper() 
+                    : (defaultItem?.DefaultFrequency ?? "MONTHLY");
+
                 _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
                 {
                     EmployeeTypeId = entity.Id,
                     BenefitItemId = a.BenefitItemId,
-                    CoverageAmount = a.CoverageAmount,
-                    Frequency = string.IsNullOrWhiteSpace(a.Frequency) ? "MONTHLY" : a.Frequency.Trim().ToUpper(),
+                    CoverageAmount = covAmount,
+                    Frequency = freq,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -216,14 +226,19 @@ public class EmployeeTypeService : IEmployeeTypeService
         }
         else if (benefitIds != null && benefitIds.Any())
         {
+            var benefitItemsMap = await _dbContext.BenefitItems
+                .Where(b => benefitIds.Contains(b.Id))
+                .ToDictionaryAsync(b => b.Id, cancellationToken);
+
             foreach (var bId in benefitIds)
             {
+                var defaultItem = benefitItemsMap.GetValueOrDefault(bId);
                 _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
                 {
                     EmployeeTypeId = entity.Id,
                     BenefitItemId = bId,
-                    CoverageAmount = 0,
-                    Frequency = "MONTHLY",
+                    CoverageAmount = defaultItem?.DefaultCoverageAmount ?? 0,
+                    Frequency = defaultItem?.DefaultFrequency ?? "MONTHLY",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -286,14 +301,24 @@ public class EmployeeTypeService : IEmployeeTypeService
 
             if (assignments != null && assignments.Any())
             {
+                var benefitItemsMap = await _dbContext.BenefitItems
+                    .Where(b => benefitIds.Contains(b.Id))
+                    .ToDictionaryAsync(b => b.Id, cancellationToken);
+
                 foreach (var a in assignments)
                 {
+                    var defaultItem = benefitItemsMap.GetValueOrDefault(a.BenefitItemId);
+                    var covAmount = a.CoverageAmount > 0 ? a.CoverageAmount : (defaultItem?.DefaultCoverageAmount ?? 0);
+                    var freq = !string.IsNullOrWhiteSpace(a.Frequency) 
+                        ? a.Frequency.Trim().ToUpper() 
+                        : (defaultItem?.DefaultFrequency ?? "MONTHLY");
+
                     _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
                     {
                         EmployeeTypeId = id,
                         BenefitItemId = a.BenefitItemId,
-                        CoverageAmount = a.CoverageAmount,
-                        Frequency = string.IsNullOrWhiteSpace(a.Frequency) ? "MONTHLY" : a.Frequency.Trim().ToUpper(),
+                        CoverageAmount = covAmount,
+                        Frequency = freq,
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     });
@@ -301,14 +326,19 @@ public class EmployeeTypeService : IEmployeeTypeService
             }
             else
             {
+                var benefitItemsMap = await _dbContext.BenefitItems
+                    .Where(b => benefitIds.Contains(b.Id))
+                    .ToDictionaryAsync(b => b.Id, cancellationToken);
+
                 foreach (var bId in benefitIds)
                 {
+                    var defaultItem = benefitItemsMap.GetValueOrDefault(bId);
                     _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
                     {
                         EmployeeTypeId = id,
                         BenefitItemId = bId,
-                        CoverageAmount = 0,
-                        Frequency = "MONTHLY",
+                        CoverageAmount = defaultItem?.DefaultCoverageAmount ?? 0,
+                        Frequency = defaultItem?.DefaultFrequency ?? "MONTHLY",
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     });

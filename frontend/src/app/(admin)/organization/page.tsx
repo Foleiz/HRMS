@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -477,6 +477,9 @@ export default function OrganizationPage() {
     category: 'HEALTH',
     description: '',
     isStatutory: false,
+    defaultCoverageAmount: 0,
+    defaultFrequency: 'YEARLY',
+    payoutType: 'REIMBURSEMENT',
     status: 'ACTIVE',
   });
 
@@ -723,6 +726,9 @@ export default function OrganizationPage() {
         category: item.category || 'HEALTH',
         description: item.description || '',
         isStatutory: item.isStatutory,
+        defaultCoverageAmount: item.defaultCoverageAmount ?? 0,
+        defaultFrequency: item.defaultFrequency || 'YEARLY',
+        payoutType: item.payoutType || 'REIMBURSEMENT',
         status: item.status,
       });
     } else {
@@ -733,6 +739,9 @@ export default function OrganizationPage() {
         category: 'HEALTH',
         description: '',
         isStatutory: false,
+        defaultCoverageAmount: 0,
+        defaultFrequency: 'YEARLY',
+        payoutType: 'REIMBURSEMENT',
         status: 'ACTIVE',
       });
     }
@@ -749,6 +758,9 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
+          defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
+          defaultFrequency: benefitForm.defaultFrequency,
+          payoutType: benefitForm.payoutType,
           status: benefitForm.status,
         });
         showSuccess('เพิ่มสวัสดิการของบริษัทสำเร็จ');
@@ -758,6 +770,9 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
+          defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
+          defaultFrequency: benefitForm.defaultFrequency,
+          payoutType: benefitForm.payoutType,
           status: benefitForm.status,
         });
         showSuccess('แก้ไขสวัสดิการสำเร็จ');
@@ -1648,7 +1663,7 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">รายละเอียด</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">โควตาวงเงินเริ่มต้น & รูปแบบ</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">ประเภทสิทธิ์</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
@@ -1672,6 +1687,13 @@ export default function OrganizationPage() {
                     filteredBenefits.map((ben) => {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
                       const CatIcon = catInfo.icon;
+                      const freqLabel = ben.defaultFrequency === 'MONTHLY' ? 'ด.' : ben.defaultFrequency === 'YEARLY' ? 'ปี' : ben.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
+                      const payoutBadge = ben.payoutType === 'PAYROLL' 
+                        ? { label: 'จ่ายในเงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
+                        : ben.payoutType === 'IN_KIND'
+                        ? { label: 'ตามระเบียบบริษัท', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' }
+                        : { label: 'ยื่นเบิกตามบิล', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' };
+
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">
@@ -1682,7 +1704,12 @@ export default function OrganizationPage() {
                               <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600 dark:text-slate-400 dark:bg-slate-700 dark:text-slate-300">
                                 <CatIcon className="w-3.5 h-3.5" />
                               </span>
-                              <span>{ben.benefitName}</span>
+                              <div>
+                                <div>{ben.benefitName}</div>
+                                {ben.description && (
+                                  <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
@@ -1690,8 +1717,17 @@ export default function OrganizationPage() {
                               {catInfo.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-500 dark:text-slate-400 max-w-xs truncate dark:text-slate-400">
-                            {ben.description || '-'}
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                {ben.defaultCoverageAmount > 0 
+                                  ? `${Number(ben.defaultCoverageAmount).toLocaleString()} บ./${freqLabel}`
+                                  : 'ตามสิทธิ์'}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${payoutBadge.cls}`}>
+                                {payoutBadge.label}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-3 px-4 text-center whitespace-nowrap">
                             {ben.isStatutory ? (
@@ -2362,6 +2398,62 @@ export default function OrganizationPage() {
                   placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
+              </div>
+
+              {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    รูปแบบการให้สิทธิ์ / เบิกจ่าย *
+                  </label>
+                  <select
+                    value={benefitForm.payoutType || 'REIMBURSEMENT'}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                  >
+                    <option value="REIMBURSEMENT">ยื่นเบิกตามใบเสร็จ (Reimbursement ผ่านระบบ ESS)</option>
+                    <option value="PAYROLL">จ่ายผ่านเงินเดือน (Payroll Allowance เช่น ค่าครองชีพ/ค่าอาหาร)</option>
+                    <option value="IN_KIND">สวัสดิการคุ้มครอง / ตามระเบียบบริษัท (In-Kind เช่น ประกัน/รถรับส่ง)</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      วงเงินมาตรฐาน (บาท)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      value={benefitForm.defaultCoverageAmount ?? 0}
+                      onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
+                      placeholder="0 = ไม่จำกัด/ตามระเบียบ"
+                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      รอบการให้สิทธิ์
+                    </label>
+                    <select
+                      value={benefitForm.defaultFrequency || 'YEARLY'}
+                      onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                    >
+                      <option value="YEARLY">ต่อปี (Yearly)</option>
+                      <option value="MONTHLY">ต่อเดือน (Monthly)</option>
+                      <option value="DAILY">ต่อวัน (Daily)</option>
+                      <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">

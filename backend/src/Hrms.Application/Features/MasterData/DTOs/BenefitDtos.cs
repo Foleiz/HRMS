@@ -8,6 +8,9 @@ public class BenefitItemDto
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; }
+    public decimal DefaultCoverageAmount { get; set; } = 0;
+    public string DefaultFrequency { get; set; } = "YEARLY";
+    public string PayoutType { get; set; } = "REIMBURSEMENT"; // REIMBURSEMENT, PAYROLL, IN_KIND
     public string Status { get; set; } = "ACTIVE";
     public int AssignedTypesCount { get; set; }
     public decimal CoverageAmount { get; set; } = 0;
@@ -24,6 +27,9 @@ public class CreateBenefitItemRequest
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; } = false;
+    public decimal DefaultCoverageAmount { get; set; } = 0;
+    public string DefaultFrequency { get; set; } = "YEARLY";
+    public string PayoutType { get; set; } = "REIMBURSEMENT";
     public string Status { get; set; } = "ACTIVE";
 }
 
@@ -33,8 +39,12 @@ public class UpdateBenefitItemRequest
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; }
+    public decimal DefaultCoverageAmount { get; set; } = 0;
+    public string DefaultFrequency { get; set; } = "YEARLY";
+    public string PayoutType { get; set; } = "REIMBURSEMENT";
     public string Status { get; set; } = "ACTIVE";
 }
+
 
 public class EmployeeBenefitUsageSummaryDto
 {

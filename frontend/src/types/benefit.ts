@@ -14,6 +14,9 @@ export interface BenefitItem {
   description?: string | null;
   isStatutory: boolean;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  defaultCoverageAmount: number;
+  defaultFrequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
+  payoutType: 'REIMBURSEMENT' | 'PAYROLL' | 'IN_KIND' | string;
   coverageAmount?: number;
   frequency?: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   assignedTypesCount?: number;
@@ -28,6 +31,9 @@ export interface CreateBenefitPayload {
   description?: string;
   isStatutory?: boolean;
   status?: string;
+  defaultCoverageAmount?: number;
+  defaultFrequency?: string;
+  payoutType?: string;
 }
 
 export interface UpdateBenefitPayload {
@@ -36,6 +42,9 @@ export interface UpdateBenefitPayload {
   description?: string;
   isStatutory?: boolean;
   status?: string;
+  defaultCoverageAmount?: number;
+  defaultFrequency?: string;
+  payoutType?: string;
 }
 
 export interface BenefitUsageItem {

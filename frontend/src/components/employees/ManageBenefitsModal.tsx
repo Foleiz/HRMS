@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -52,6 +52,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
   const [category, setCategory] = useState('HEALTH');
   const [description, setDescription] = useState('');
   const [isStatutory, setIsStatutory] = useState(false);
+  const [defaultCoverageAmount, setDefaultCoverageAmount] = useState<number>(0);
+  const [defaultFrequency, setDefaultFrequency] = useState<string>('YEARLY');
+  const [payoutType, setPayoutType] = useState<string>('REIMBURSEMENT');
   const [status, setStatus] = useState('ACTIVE');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -88,6 +91,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setCategory('HEALTH');
     setDescription('');
     setIsStatutory(false);
+    setDefaultCoverageAmount(0);
+    setDefaultFrequency('YEARLY');
+    setPayoutType('REIMBURSEMENT');
     setStatus('ACTIVE');
     setErrorMessage(null);
   };
@@ -104,6 +110,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setCategory(item.category || 'HEALTH');
     setDescription(item.description || '');
     setIsStatutory(item.isStatutory);
+    setDefaultCoverageAmount(item.defaultCoverageAmount ?? 0);
+    setDefaultFrequency(item.defaultFrequency || 'YEARLY');
+    setPayoutType(item.payoutType || 'REIMBURSEMENT');
     setStatus(item.status);
     setIsFormOpen(true);
     setErrorMessage(null);
@@ -127,6 +136,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           category,
           description: description.trim() || undefined,
           isStatutory,
+          defaultCoverageAmount: Number(defaultCoverageAmount) || 0,
+          defaultFrequency,
+          payoutType,
           status,
         };
         await benefitService.update(editingItem.id, payload);
@@ -138,6 +150,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           category,
           description: description.trim() || undefined,
           isStatutory,
+          defaultCoverageAmount: Number(defaultCoverageAmount) || 0,
+          defaultFrequency,
+          payoutType,
           status,
         };
         await benefitService.create(payload);
@@ -324,6 +339,53 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    รูปแบบการให้สิทธิ์ / เบิกจ่าย *
+                  </label>
+                  <select
+                    value={payoutType}
+                    onChange={(e) => setPayoutType(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                  >
+                    <option value="REIMBURSEMENT">ยื่นเบิกตามบิล (Reimbursement ผ่าน ESS)</option>
+                    <option value="PAYROLL">จ่ายในรอบเงินเดือน (Payroll Allowance)</option>
+                    <option value="IN_KIND">สวัสดิการคุ้มครอง / ตามระเบียบ (In-Kind)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วงเงินมาตรฐาน (บาท)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={defaultCoverageAmount}
+                    onChange={(e) => setDefaultCoverageAmount(Number(e.target.value) || 0)}
+                    placeholder="0 = ตามระเบียบ/ไม่จำกัด"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    รอบการให้สิทธิ์
+                  </label>
+                  <select
+                    value={defaultFrequency}
+                    onChange={(e) => setDefaultFrequency(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                  >
+                    <option value="YEARLY">ต่อปี (Yearly)</option>
+                    <option value="MONTHLY">ต่อเดือน (Monthly)</option>
+                    <option value="DAILY">ต่อวัน (Daily)</option>
+                    <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                  </select>
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     คำอธิบาย / เงื่อนไขความคุ้มครอง
@@ -376,6 +438,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     <th className="py-3 px-4">รหัส</th>
                     <th className="py-3 px-4">ชื่อสวัสดิการ & รายละเอียด</th>
                     <th className="py-3 px-4">หมวดหมู่</th>
+                    <th className="py-3 px-4">โควตาวงเงินมาตรฐาน</th>
                     <th className="py-3 px-4 text-center">ประเภทสัญญาที่ผูก</th>
                     <th className="py-3 px-4 text-center">สถานะ</th>
                     <th className="py-3 px-4 text-right">การจัดการ</th>
@@ -385,6 +448,13 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   {filteredBenefits.map((item) => {
                     const cat = CATEGORY_MAP[item.category] || CATEGORY_MAP.OTHER;
                     const CatIcon = cat.icon;
+                    const freqLabel = item.defaultFrequency === 'MONTHLY' ? 'ด.' : item.defaultFrequency === 'YEARLY' ? 'ปี' : item.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
+                    const payoutBadge = item.payoutType === 'PAYROLL' 
+                      ? { label: 'เงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
+                      : item.payoutType === 'IN_KIND'
+                      ? { label: 'ตามระเบียบ', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' }
+                      : { label: 'ยื่นเบิกตามบิล', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' };
+
                     return (
                       <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/60 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
@@ -412,6 +482,18 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                             <CatIcon className="w-3 h-3" />
                             {cat.label}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                              {item.defaultCoverageAmount > 0 
+                                ? `${Number(item.defaultCoverageAmount).toLocaleString()} บ./${freqLabel}`
+                                : 'ตามสิทธิ์'}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${payoutBadge.cls}`}>
+                              {payoutBadge.label}
+                            </span>
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">

@@ -1032,8 +1032,12 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Category).HasColumnName("category").IsRequired().HasMaxLength(50);
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.IsStatutory).HasColumnName("is_statutory").HasDefaultValue(false);
+            entity.Property(e => e.DefaultCoverageAmount).HasColumnName("default_coverage_amount").HasPrecision(12, 2).HasDefaultValue(0);
+            entity.Property(e => e.DefaultFrequency).HasColumnName("default_frequency").HasMaxLength(20).HasDefaultValue("YEARLY");
+            entity.Property(e => e.PayoutType).HasColumnName("payout_type").HasMaxLength(30).HasDefaultValue("REIMBURSEMENT");
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("ACTIVE");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
             entity.HasIndex(e => e.BenefitCode).IsUnique();
         });
