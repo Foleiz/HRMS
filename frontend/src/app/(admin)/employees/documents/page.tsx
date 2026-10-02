@@ -239,7 +239,7 @@ export default function ExpiringDocumentsPage() {
           <div className="py-16 text-center text-slate-400">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px]">
+            <table className="w-full min-w-[860px] whitespace-nowrap">
               <thead className="bg-slate-50 text-slate-500 text-[11px]">
                 <tr className="whitespace-nowrap">
                   <th className="text-left font-semibold px-4 py-2.5">พนักงาน</th>

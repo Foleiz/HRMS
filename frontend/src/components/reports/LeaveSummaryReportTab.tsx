@@ -196,7 +196,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               <p className="text-sm text-slate-400">ไม่มีข้อมูล</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px] text-sm">
+                <table className="w-full min-w-[600px] text-sm whitespace-nowrap">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
                       <th className="text-left py-2 px-3">แผนก</th>
@@ -236,7 +236,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               <p className="text-sm text-slate-400">ไม่มีข้อมูล</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[500px] text-sm">
+                <table className="w-full min-w-[500px] text-sm whitespace-nowrap">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
                       <th className="text-left py-2 px-3 w-10">#</th>

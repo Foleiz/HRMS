@@ -240,7 +240,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
           {/* Table of Brackets */}
           <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[650px] text-left border-collapse text-xs">
+              <table className="w-full min-w-[650px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-100/80 border-b border-slate-200 font-semibold text-slate-700 whitespace-nowrap">
                     <th className="py-3 px-3 w-12 text-center">ขั้น</th>

@@ -1670,7 +1670,7 @@ export default function PayrollPage() {
             return (
               <div className="space-y-4">
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                  <table className="w-full min-w-[650px] text-left border-collapse">
+                  <table className="w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                         <th className="py-3.5 px-5">ระดับพนักงาน</th>
@@ -1846,7 +1846,7 @@ export default function PayrollPage() {
 
                 {/* Table */}
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                  <table className="w-full min-w-[750px] text-left border-collapse">
+                  <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                         <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
@@ -2004,7 +2004,7 @@ export default function PayrollPage() {
           {/* Table Container */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left border-collapse">
+              <table className="w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">รายการ</th>
@@ -2712,7 +2712,7 @@ export default function PayrollPage() {
                     <span className="text-xs text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] text-left border-collapse">
+                    <table className="w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">พนักงาน</th>
@@ -2859,7 +2859,7 @@ export default function PayrollPage() {
                     <span className="text-xs text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[750px] text-left border-collapse">
+                    <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">พนักงาน</th>
@@ -3011,7 +3011,7 @@ export default function PayrollPage() {
                     <span className="text-xs text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] text-left border-collapse">
+                    <table className="w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">รหัสพนักงาน</th>
@@ -3440,7 +3440,7 @@ export default function PayrollPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[750px] text-left border-collapse">
+                  <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                         <th className="py-3 px-4">พนักงาน</th>
@@ -3843,7 +3843,7 @@ export default function PayrollPage() {
             </div>
 
             <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full min-w-[700px] text-left border-collapse">
+              <table className="w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                     <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
@@ -3919,7 +3919,7 @@ export default function PayrollPage() {
             </div>
 
             <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full min-w-[800px] text-left border-collapse">
+              <table className="w-full min-w-[800px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                     <th className="py-3.5 px-4">ชื่อเกณฑ์</th>

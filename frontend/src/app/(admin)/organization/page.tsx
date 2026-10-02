@@ -1160,7 +1160,7 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full min-w-[850px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสฝ่าย</th>
@@ -1284,7 +1284,7 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full min-w-[900px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสแผนก</th>
@@ -1409,7 +1409,7 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full min-w-[950px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
@@ -1525,7 +1525,7 @@ export default function OrganizationPage() {
             </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full min-w-[500px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
@@ -1642,7 +1642,7 @@ export default function OrganizationPage() {
             </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full min-w-[850px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
@@ -1965,7 +1965,7 @@ export default function OrganizationPage() {
               </div>
             ) : (
               <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+                <table className="w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                       <th className="py-3 px-4">ธนาคาร</th>

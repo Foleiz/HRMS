@@ -80,7 +80,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
           ) : (
             <div className="space-y-4">
               <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                <table className="w-full min-w-[600px] text-left border-collapse">
+                <table className="w-full min-w-[600px] text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                       <th className="py-3 px-4">สถานะ</th>

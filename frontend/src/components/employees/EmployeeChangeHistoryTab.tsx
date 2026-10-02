@@ -38,7 +38,7 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
   if (hasBoth) {
     return (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[450px] text-xs">
+        <table className="w-full min-w-[450px] text-xs whitespace-nowrap">
           <thead>
             <tr className="bg-slate-50 text-slate-500 whitespace-nowrap">
               <th className="text-left font-medium px-3 py-1.5 w-[32%]">ข้อมูล</th>
@@ -74,7 +74,7 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs">
+      <table className="w-full min-w-[400px] text-xs whitespace-nowrap">
         <tbody className="divide-y divide-slate-100">
           {entry.changes.map((c, i) => {
             const removed = c.newValue == null && c.oldValue != null;
