@@ -38,9 +38,9 @@ function ChangeTable({ entry }: { entry: HistoryEntry }) {
   if (hasBoth) {
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full min-w-[450px] text-xs">
           <thead>
-            <tr className="bg-slate-50 text-slate-500">
+            <tr className="bg-slate-50 text-slate-500 whitespace-nowrap">
               <th className="text-left font-medium px-3 py-1.5 w-[32%]">ข้อมูล</th>
               <th className="text-left font-medium px-3 py-1.5">ค่าเดิม</th>
               <th className="w-6" />

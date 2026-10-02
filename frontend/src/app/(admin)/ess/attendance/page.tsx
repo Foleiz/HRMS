@@ -494,17 +494,17 @@ export default function EssAttendancePage() {
               <>
                 {/* Desktop View: Full Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="py-3 px-4">วันที่</th>
-                        <th className="py-3 px-4">กะการทำงาน</th>
-                        <th className="py-3 px-4">เวลาเข้าจริง</th>
-                        <th className="py-3 px-4">เวลาออกจริง</th>
-                        <th className="py-3 px-4">มาสาย</th>
-                        <th className="py-3 px-4">ออกก่อน</th>
-                        <th className="py-3 px-4">สถานะ</th>
-                        <th className="py-3 px-4 text-center">จัดการ</th>
+                  <table className="w-full min-w-[750px] text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่</th>
+                        <th className="py-3 px-4 whitespace-nowrap">กะการทำงาน</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาเข้าจริง</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาออกจริง</th>
+                        <th className="py-3 px-4 whitespace-nowrap">มาสาย</th>
+                        <th className="py-3 px-4 whitespace-nowrap">ออกก่อน</th>
+                        <th className="py-3 px-4 whitespace-nowrap">สถานะ</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -642,16 +642,16 @@ export default function EssAttendancePage() {
               <>
                 {/* Desktop View: Full Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="py-3 px-4">วันที่ขอปรับ</th>
-                        <th className="py-3 px-4">เวลาเดิม</th>
-                        <th className="py-3 px-4">เวลาที่ขอปรับ</th>
-                        <th className="py-3 px-4">เหตุผล</th>
-                        <th className="py-3 px-4">สถานะคำขอ</th>
-                        <th className="py-3 px-4">วันที่ยื่นคำขอ</th>
-                        <th className="py-3 px-4 text-center">จัดการ</th>
+                  <table className="w-full min-w-[700px] text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่ขอปรับ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาเดิม</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เวลาที่ขอปรับ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">เหตุผล</th>
+                        <th className="py-3 px-4 whitespace-nowrap">สถานะคำขอ</th>
+                        <th className="py-3 px-4 whitespace-nowrap">วันที่ยื่นคำขอ</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

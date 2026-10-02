@@ -481,9 +481,9 @@ export default function WorkCalendarPage() {
 
             {/* Holidays Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[600px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap text-center w-12">ลำดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">วันที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อวันหยุด</th>

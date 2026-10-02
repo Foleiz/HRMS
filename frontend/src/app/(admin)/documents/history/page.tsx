@@ -488,15 +488,15 @@ export default function DocumentHistoryPage() {
           <>
             {/* Desktop View: Full Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[750px] text-sm whitespace-nowrap">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">รหัสเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ยื่นเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">วันที่ลา</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">ประเภทเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">สถานะเอกสาร</th>
-                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">การจัดการ</th>
+                  <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">รหัสเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ยื่นเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">ประเภทเอกสาร</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">สถานะเอกสาร</th>
+                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">

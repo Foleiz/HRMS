@@ -486,9 +486,9 @@ export default function MySalaryPage() {
 
             {/* Desktop View: Slips History Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[700px] text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50">
+                  <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50 whitespace-nowrap">
                     <th className="py-3 px-3.5 whitespace-nowrap">เดือน-ปี</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-right">รายได้รวม</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-right">รายการหักรวม</th>

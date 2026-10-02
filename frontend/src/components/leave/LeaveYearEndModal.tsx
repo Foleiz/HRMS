@@ -160,9 +160,9 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
               </div>
 
               <div className="border border-gray-100 rounded-xl overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[650px] text-sm">
                   <thead className="bg-gray-50 text-xs text-gray-500">
-                    <tr>
+                    <tr className="whitespace-nowrap">
                       <th className="text-left px-3 py-2">พนักงาน</th>
                       <th className="text-left px-3 py-2">ประเภทการลา</th>
                       <th className="text-right px-3 py-2">คงเหลือ</th>

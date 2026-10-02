@@ -321,9 +321,9 @@ export default function EmployeeTypesPage() {
               <p className="text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
             </div>
           ) : (
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[850px] text-left text-xs border-collapse">
               <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
-                <tr>
+                <tr className="whitespace-nowrap">
                   <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
                   <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทสัญญา / การจ้างงาน</th>
                   <th className="py-3 px-4 whitespace-nowrap">รูปแบบค่าตอบแทน</th>

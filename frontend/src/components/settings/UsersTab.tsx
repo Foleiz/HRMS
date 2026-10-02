@@ -176,9 +176,9 @@ export const UsersTab: React.FC<UsersTabProps> = ({
       {/* 2. User Accounts Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[850px] text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase">
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase whitespace-nowrap">
                 <th className="py-3.5 px-4 w-12 text-center">ลำดับ</th>
                 <th className="py-3.5 px-4 min-w-[120px]">ชื่อผู้ใช้งาน</th>
                 <th className="py-3.5 px-4 min-w-[180px]">ชื่อ-นามสกุล</th>

@@ -1160,9 +1160,9 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อฝ่าย / สายงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าฝ่าย</th>
@@ -1284,9 +1284,9 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[900px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าแผนก</th>
@@ -1409,9 +1409,9 @@ export default function OrganizationPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[950px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
@@ -1525,9 +1525,9 @@ export default function OrganizationPage() {
             </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[500px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
@@ -1642,9 +1642,9 @@ export default function OrganizationPage() {
             </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[850px] text-left text-xs border-collapse">
                 <thead className="bg-[#0B2046] text-white font-semibold">
-                  <tr>
+                  <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
@@ -1965,9 +1965,9 @@ export default function OrganizationPage() {
               </div>
             ) : (
               <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full min-w-[700px] text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                       <th className="py-3 px-4">ธนาคาร</th>
                       <th className="py-3 px-4">เลขที่บัญชี</th>
                       <th className="py-3 px-4">ชื่อบัญชี</th>

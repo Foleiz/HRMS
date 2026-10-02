@@ -552,7 +552,7 @@ export default function AnnouncementsPage() {
           {/* Announcements Table */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
+              <table className="w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
@@ -937,8 +937,8 @@ export default function AnnouncementsPage() {
                           </div>
                         ) : (
                           <>
-                            <div className="border border-slate-100 rounded-xl overflow-hidden shadow-2xs">
-                              <table className="w-full text-left text-xs whitespace-nowrap">
+                            <div className="border border-slate-100 rounded-xl overflow-x-auto shadow-2xs">
+                              <table className="w-full min-w-[500px] text-left text-xs whitespace-nowrap">
                                 <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase sticky top-0 border-b border-slate-100">
                                   <tr>
                                     <th className="py-2.5 px-3.5">รหัสพนักงาน</th>

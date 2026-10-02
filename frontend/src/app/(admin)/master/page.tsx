@@ -371,9 +371,9 @@ export default function MasterDataHubPage() {
       {activeTab === 'document-types' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-16">ID</th>
                   <th className="py-3 px-4">รหัสประเภทเอกสาร</th>
                   <th className="py-3 px-4">ชื่อประเภทเอกสาร</th>
@@ -456,9 +456,9 @@ export default function MasterDataHubPage() {
       {activeTab === 'nationalities' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อสัญชาติ</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -507,9 +507,9 @@ export default function MasterDataHubPage() {
       {activeTab === 'religions' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อศาสนา</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -558,9 +558,9 @@ export default function MasterDataHubPage() {
       {activeTab === 'marital-statuses' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">ชื่อสถานภาพสมรส</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
@@ -609,9 +609,9 @@ export default function MasterDataHubPage() {
       {activeTab === 'banks' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">รหัสธนาคาร</th>
                   <th className="py-3 px-4">ชื่อธนาคาร</th>

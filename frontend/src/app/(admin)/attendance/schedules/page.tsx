@@ -1240,7 +1240,7 @@ function SchedulesContent() {
                 </div>
               ) : filteredAssignments.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                  <table className="w-full min-w-[900px] text-sm text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
                         <th className="p-3.5">รหัส / ชื่อพนักงาน</th>
@@ -1604,7 +1604,7 @@ function SchedulesContent() {
             /* TABLE VIEW */
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
               <div className="overflow-x-auto min-h-[280px] pb-8">
-                <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                <table className="w-full min-w-[900px] text-sm text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold">
                       <th className="p-3.5">รหัสกะ</th>

@@ -371,9 +371,9 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full min-w-[700px] text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                       <th className="py-3 px-4">รหัส</th>
                       <th className="py-3 px-4">ชื่อสวัสดิการ & รายละเอียด</th>
                       <th className="py-3 px-4">หมวดหมู่</th>

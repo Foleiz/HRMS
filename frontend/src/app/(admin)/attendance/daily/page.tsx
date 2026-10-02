@@ -1459,9 +1459,9 @@ function DailyAttendanceContent() {
           {/* Daily Table with whitespace-nowrap */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[1000px] text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider">
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อ-นามสกุล</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
@@ -2046,9 +2046,9 @@ function DailyAttendanceContent() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[1050px] text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider">
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">ชุดที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">วันที่นำเข้า</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อไฟล์</th>
@@ -2288,9 +2288,9 @@ function DailyAttendanceContent() {
           {/* Adjustments Table Card */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs">
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs whitespace-nowrap">
                     <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
                     <th className="py-3 px-4">พนักงาน</th>
                     <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
@@ -2706,9 +2706,9 @@ function DailyAttendanceContent() {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider">
+                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider whitespace-nowrap">
                     <th className="py-3 px-3.5">รหัสพนักงาน</th>
                     <th className="py-3 px-3.5">ชื่อ-นามสกุล</th>
                     <th className="py-3 px-3.5">แผนก / ตำแหน่ง</th>
@@ -3066,9 +3066,9 @@ function DailyAttendanceContent() {
 
             <div className="p-5 overflow-y-auto flex-1">
               <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full min-w-[650px] text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold whitespace-nowrap">
                       <th className="py-3 px-3.5 whitespace-nowrap text-center">แถวที่</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">ชื่อพนักงาน</th>
@@ -3258,9 +3258,9 @@ function DailyAttendanceContent() {
             {/* Table */}
             <div className="p-5 overflow-y-auto flex-1">
               <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full min-w-[800px] text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold whitespace-nowrap">
                       <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">ชื่อพนักงาน</th>
                       <th className="py-3 px-3.5 whitespace-nowrap">แผนก</th>

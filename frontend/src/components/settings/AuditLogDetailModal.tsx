@@ -320,10 +320,10 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           {viewMode === 'diff' && (
             <div className="space-y-3">
               {isJsonDiff && diffRows.length > 0 ? (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                  <table className="w-full text-left text-xs border-collapse">
+                <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                  <table className="w-full min-w-[500px] text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+                      <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold text-[11px] whitespace-nowrap">
                         <th className="py-2.5 px-3 w-1/4">ชื่อฟิลด์</th>
                         <th className="py-2.5 px-3 w-5/12 text-rose-700 bg-rose-50/50">ค่าเดิมก่อนแก้ไข</th>
                         <th className="py-2.5 px-3 w-5/12 text-emerald-700 bg-emerald-50/50">ค่าใหม่หลังแก้ไข</th>

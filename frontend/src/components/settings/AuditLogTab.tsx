@@ -382,9 +382,9 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       {/* 2. Audit Log Table (ตรงตามโครงสร้าง Figma พร้อม IP Address) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[900px] text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500">
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 whitespace-nowrap">
                 <th className="py-3.5 px-4 min-w-[150px]">วันเวลา</th>
                 <th className="py-3.5 px-4 min-w-[140px]">ผู้ใช้งาน</th>
                 <th className="py-3.5 px-3 min-w-[90px] text-center">การกระทำ</th>
