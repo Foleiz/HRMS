@@ -158,8 +158,8 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
     setIsOpen(false);
   }, [setIsOpen]);
 
-  const defaultTriggerClasses = `p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center ${
-    isOpen ? 'bg-slate-100 text-slate-700' : 'hover:bg-slate-100'
+  const defaultTriggerClasses = `p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center ${
+    isOpen ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
   }`;
 
   return (
@@ -181,7 +181,7 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
         <div
           ref={menuRef}
           style={menuStyle}
-          className={`bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 text-xs font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto ${menuClassName}`}
+          className={`bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 py-1.5 text-xs font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto ${menuClassName}`}
           onClick={(e) => e.stopPropagation()}
         >
           {typeof children === 'function' ? (
@@ -191,7 +191,7 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
           ) : items && items.length > 0 ? (
             items.map((item, idx) => {
               if (item.divider) {
-                return <div key={`div-${idx}`} className="my-1 border-t border-slate-100" />;
+                return <div key={`div-${idx}`} className="my-1 border-t border-slate-100 dark:border-slate-700/60" />;
               }
 
               if (item.href) {
@@ -205,8 +205,8 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
                     }}
                     className={`w-full px-3.5 py-2 text-left flex items-center gap-2.5 transition-colors cursor-pointer font-medium ${
                       item.danger
-                        ? 'text-rose-600 hover:bg-rose-50'
-                        : 'text-slate-700 hover:bg-slate-50'
+                        ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                     } ${item.className || ''}`}
                   >
                     {item.icon}
@@ -231,8 +231,8 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
                       : 'cursor-pointer'
                   } ${
                     item.danger
-                      ? 'text-rose-600 hover:bg-rose-50'
-                      : 'text-slate-700 hover:bg-slate-50'
+                      ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                   } ${item.className || ''}`}
                 >
                   {item.icon}

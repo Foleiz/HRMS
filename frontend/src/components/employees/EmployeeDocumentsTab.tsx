@@ -223,10 +223,10 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <FolderOpen className="w-4 h-4 text-[#0B2046]" />
-          <h3 className="font-bold text-slate-800 text-sm">แฟ้มเอกสารพนักงาน</h3>
-          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px]">ทั้งหมด {summary.total}</span>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">แฟ้มเอกสารพนักงาน</h3>
+          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300 text-[11px]">ทั้งหมด {summary.total}</span>
           {summary.expiring > 0 && (
-            <span className="px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 text-[11px]">
+            <span className="px-2 py-0.5 rounded-full border bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 text-[11px]">
               ใกล้หมดอายุ {summary.expiring}
             </span>
           )}
@@ -250,7 +250,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
 
       {/* รายการ */}
       {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 gap-2">
+        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดเอกสาร...
         </div>
       ) : error ? (
@@ -258,15 +258,15 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
       ) : documents.length === 0 ? (
-        <div className="p-10 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        <div className="p-10 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
           <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-          <p className="font-medium text-slate-600 mb-1">ยังไม่มีเอกสารในแฟ้มของพนักงานท่านนี้</p>
+          <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีเอกสารในแฟ้มของพนักงานท่านนี้</p>
           <p className="text-[11px]">เอกสารจากคำขอเอกสารทั่วไปที่อนุมัติแล้วจะถูกเก็บเข้าแฟ้มนี้อัตโนมัติ</p>
         </div>
       ) : (
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
           <table className="w-full min-w-[760px]">
-            <thead className="bg-slate-50 text-slate-500 text-[11px]">
+            <thead className="bg-slate-50 dark:bg-slate-800/60  text-slate-500 dark:text-slate-400 text-[11px]">
               <tr>
                 <th className="text-left font-semibold px-4 py-2.5">ประเภทเอกสาร</th>
                 <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
@@ -280,28 +280,28 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
               {documents.map((doc) => {
                 const badge = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
                 return (
-                  <tr key={doc.id} className="hover:bg-slate-50/60 align-top">
+                  <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/60 align-top">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800">{doc.documentTypeName}</p>
-                      {doc.remarks && <p className="text-[11px] text-slate-400 mt-0.5 break-words max-w-[220px]">{doc.remarks}</p>}
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">{doc.documentTypeName}</p>
+                      {doc.remarks && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 break-words max-w-[220px]">{doc.remarks}</p>}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-slate-700 break-all max-w-[200px]">{doc.fileName || '-'}</p>
-                      <p className="text-[11px] text-slate-400">{formatSize(doc.fileSize)}</p>
+                      <p className="text-slate-700 dark:text-slate-300 break-all max-w-[200px]">{doc.fileName || '-'}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">{formatSize(doc.fileSize)}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(doc.issuedDate)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatDate(doc.issuedDate)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <p className="text-slate-600">{formatDate(doc.expiryDate)}</p>
+                      <p className="text-slate-600 dark:text-slate-400">{formatDate(doc.expiryDate)}</p>
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
                         {badge.label}
                         {doc.expiryStatus === 'EXPIRING_SOON' && doc.daysToExpiry != null ? ` (อีก ${doc.daysToExpiry} วัน)` : ''}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-slate-700">
+                      <p className="text-slate-700 dark:text-slate-300">
                         {doc.sourceRequestNo ? `คำขอ ${doc.sourceRequestNo}` : 'ฝ่ายบุคคลอัปโหลด'}
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
                         {formatDate(doc.uploadedAt)}
                         {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
                       </p>
@@ -314,7 +314,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                             title="ดาวน์โหลด"
                             onClick={() => handleDownload(doc)}
                             disabled={downloadingId === doc.id}
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
                           >
                             {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                           </button>
@@ -324,7 +324,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                             type="button"
                             title="ลบ"
                             onClick={() => setDeleteTarget(doc)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -342,23 +342,23 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
       {/* Modal เพิ่มเอกสาร */}
       {showUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg text-xs">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 text-sm">เพิ่มเอกสารเข้าแฟ้มพนักงาน</h3>
-              <button type="button" onClick={() => setShowUpload(false)} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
-                <X className="w-4 h-4 text-slate-500" />
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg text-xs">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">เพิ่มเอกสารเข้าแฟ้มพนักงาน</h3>
+              <button type="button" onClick={() => setShowUpload(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                <X className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   ประเภทเอกสาร <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={typeId}
                   onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
                 >
                   <option value="">-- เลือกประเภทเอกสาร --</option>
                   {docTypes.map((t) => (
@@ -370,16 +370,16 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   ไฟล์เอกสาร <span className="text-rose-500">*</span>
                 </label>
                 <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={handlePickFile} />
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full flex items-center gap-2 px-3 py-3 border border-dashed border-slate-300 rounded-xl hover:border-[#0B2046] hover:bg-slate-50 cursor-pointer text-left"
+                  className="w-full flex items-center gap-2 px-3 py-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl hover:border-[#0B2046] hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer text-left"
                 >
-                  <Upload className="w-4 h-4 text-slate-400 shrink-0" />
+                  <Upload className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
                   <span className={`break-all ${file ? 'text-slate-800' : 'text-slate-400'}`}>
                     {file ? `${file.name} (${formatSize(file.size)})` : 'เลือกไฟล์ PDF, JPG, PNG, DOC (ไม่เกิน 5 MB)'}
                   </span>
@@ -388,16 +388,16 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">วันที่ออกเอกสาร</label>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">วันที่ออกเอกสาร</label>
                   <input
                     type="date"
                     value={issuedDate}
                     onChange={(e) => setIssuedDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                     วันหมดอายุ {selectedType?.isExpiryRequired && <span className="text-rose-500">*</span>}
                   </label>
                   <input
@@ -405,30 +405,30 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                     value={effectiveExpiry}
                     min={issuedDate || undefined}
                     onChange={(e) => setExpiryDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none"
                   />
                   {!expiryDate && autoExpiry && (
-                    <p className="text-[10px] text-slate-400 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">หมายเหตุ</label>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
                 <textarea
                   rows={2}
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none resize-none break-words"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none resize-none break-words"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100">
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
               >
                 ยกเลิก
               </button>

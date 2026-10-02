@@ -209,7 +209,7 @@ export default function LeaveBalancesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: ลาป่วยปีนี้ไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาป่วยปีนี้ไปแล้ว
@@ -220,7 +220,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.sickLeave ? `${summary.sickLeave.usedDays}/${summary.sickLeave.quotaDays}` : '0/30'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -229,7 +229,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 2: ลากิจปีนี้ไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลากิจปีนี้ไปแล้ว
@@ -240,7 +240,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.personalLeave ? `${summary.personalLeave.usedDays}/${summary.personalLeave.quotaDays}` : '0/3'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -249,7 +249,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 3: ลาพักร้อนปีนี้ไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาพักร้อนปีนี้ไปแล้ว
@@ -260,7 +260,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.annualLeave ? `${summary.annualLeave.usedDays}/${summary.annualLeave.quotaDays}` : '0/6'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -269,7 +269,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 4: ลาพิเศษปีนี้ไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาพิเศษปีนี้ไปแล้ว
@@ -280,7 +280,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.specialLeave ? `${summary.specialLeave.usedDays}/${summary.specialLeave.quotaDays}` : '0/10'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -289,7 +289,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 5: ลาบวชไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาบวชไปแล้ว
@@ -300,7 +300,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.ordinationLeave ? `${summary.ordinationLeave.usedDays}/${summary.ordinationLeave.quotaDays}` : '0/30'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -315,7 +315,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 6: ลาเกณฑ์ทหารไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาเกณฑ์ทหารไปแล้ว
@@ -326,7 +326,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.militaryLeave ? `${summary.militaryLeave.usedDays}/${summary.militaryLeave.quotaDays}` : '0/365'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -341,7 +341,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 7: ลาคลอดไปแล้ว */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ลาคลอดไปแล้ว
@@ -352,7 +352,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary?.maternityLeave ? `${summary.maternityLeave.usedDays}/${summary.maternityLeave.quotaDays}` : '0/98'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">วัน</span>
@@ -361,7 +361,7 @@ export default function LeaveBalancesPage() {
           </div>
 
           {/* Card 8: เวลาทำ OT ทั้งหมด */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 เวลาทำ OT ทั้งหมด
@@ -372,7 +372,7 @@ export default function LeaveBalancesPage() {
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {summary ? summary.totalOvertimeHours : '0'}
                 </span>
                 <span className="text-xs font-medium text-slate-400">ชั่วโมง</span>

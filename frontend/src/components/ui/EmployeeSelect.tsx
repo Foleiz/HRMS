@@ -103,22 +103,22 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full h-11 px-3.5 bg-white border rounded-xl text-sm flex items-center justify-between text-left transition-all ${
+        className={`w-full h-11 px-3.5 bg-white dark:bg-slate-800 dark:bg-slate-800 border rounded-xl text-sm flex items-center justify-between text-left transition-all ${
           hasError
             ? 'border-rose-300 ring-2 ring-rose-500/20'
             : isOpen
-            ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20'
-            : 'border-slate-200 hover:border-slate-300'
-        } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}`}
+            ? 'border-[#0B2046] ring-2 ring-blue-500/20'
+            : 'border-slate-200 dark:border-slate-700 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 dark:hover:border-slate-600'
+        } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900 dark:bg-slate-900' : 'cursor-pointer'}`}
       >
-        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
+        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>
           {selectedEmployee ? (
             <>
               <span>
                 {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
               </span>
               {selectedEmployee.employeeCode && (
-                <span className="text-xs text-slate-500 font-normal">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
                   ({selectedEmployee.employeeCode})
                 </span>
               )}
@@ -128,7 +128,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           )}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${
+          className={`w-4 h-4 text-slate-400 dark:text-slate-500 transition-transform shrink-0 ${
             isOpen ? 'rotate-180 text-[#0B2046]' : ''
           }`}
         />
@@ -136,18 +136,18 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
 
       {/* เมนูค้นหาและรายการ Dropdown Popover */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* กล่องค้นหา (Search Input) */}
-          <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
+          <div className="p-2.5 border-b border-slate-100 dark:border-slate-700/60 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/70">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
-                className="w-full h-9 pl-9 pr-8 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-9 pl-9 pr-8 bg-white dark:bg-slate-800 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 dark:text-slate-200 placeholder-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -163,7 +163,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                  className="absolute right-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 p-0.5 rounded"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -176,14 +176,14 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
             {!required && !searchQuery && (
               <li
                 onClick={() => handleSelect('')}
-                className="px-3.5 py-2.5 text-xs text-slate-500 hover:bg-slate-50 cursor-pointer italic flex items-center gap-2"
+                className="px-3.5 py-2.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 cursor-pointer italic flex items-center gap-2"
               >
-                <X className="w-3.5 h-3.5 text-slate-400" />
+                <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <span>{emptyLabel}</span>
               </li>
             )}
             {filteredEmployees.length === 0 ? (
-              <li className="px-4 py-8 text-center text-xs text-slate-400">
+              <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
                 ไม่พบข้อมูลพนักงานที่ตรงกับ "{searchQuery}"
               </li>
             ) : (
@@ -195,13 +195,13 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                     onClick={() => handleSelect(emp.id)}
                     className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-[#0B2046]/10 text-[#0B2046] font-medium'
-                        : 'hover:bg-slate-50 text-slate-700'
+                        ? 'bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] font-medium'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 dark:text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                        isSelected ? 'bg-[#0B2046] text-white' : 'bg-slate-100 text-slate-500'
+                        isSelected ? 'bg-[#0B2046] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}>
                         <User className="w-3.5 h-3.5" />
                       </div>
@@ -209,7 +209,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                         {emp.fullName || `${emp.firstName} ${emp.lastName}`}
                       </span>
                       {emp.employeeCode && (
-                        <span className="text-xs text-slate-400 font-normal shrink-0">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-normal shrink-0">
                           ({emp.employeeCode})
                         </span>
                       )}

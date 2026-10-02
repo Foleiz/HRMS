@@ -105,16 +105,16 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">ปรับฐานเงินเดือนพนักงาน</h3>
-            <p className="text-xs text-slate-500 mt-0.5">บันทึกอัตราเงินเดือนใหม่พร้อมวันที่มีผล</p>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">ปรับฐานเงินเดือนพนักงาน</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกอัตราเงินเดือนใหม่พร้อมวันที่มีผล</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -123,22 +123,22 @@ export const AdjustSalaryModal: React.FC<Props> = ({
         {/* Employee Summary Card */}
         <div className="mx-6 mt-5 p-4 bg-slate-50/80 border border-slate-200/70 rounded-2xl space-y-2.5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center font-bold text-sm">
               {employee.employeeCode.slice(-3)}
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-sm">{employee.employeeName}</h4>
-              <p className="text-xs text-slate-500 font-mono">{employee.employeeCode}</p>
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">{employee.employeeName}</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{employee.employeeCode}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60">
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span className="truncate">{employee.departmentName || 'ไม่ระบุแผนก'}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span className="truncate">{employee.positionName || 'ไม่ระบุตำแหน่ง'}</span>
             </div>
           </div>
@@ -149,14 +149,14 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
                 isOutOfRange
                   ? 'bg-rose-50/90 border-rose-200 text-rose-700'
-                  : 'text-slate-500 bg-white border-slate-200'
+                  : 'text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
               }`}
             >
               <span className="flex items-center gap-1 font-medium">
                 {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
                 กรอบเงินเดือนตามตำแหน่ง:
               </span>
-              <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 font-bold' : 'text-slate-700'}`}>
+              <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                 ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
               </span>
             </div>
@@ -166,7 +166,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-sm dark:bg-red-900/20 dark:text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -175,14 +175,14 @@ export const AdjustSalaryModal: React.FC<Props> = ({
           {/* Current vs New Salary */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5">เงินเดือนปัจจุบัน</label>
-              <div className="px-3.5 py-2.5 bg-slate-100 rounded-xl text-sm font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">เงินเดือนปัจจุบัน</label>
+              <div className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {currentSalaryNum > 0 ? `฿${currentSalaryNum.toLocaleString()}` : 'ยังไม่มีข้อมูล'}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 เงินเดือนใหม่ <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -201,10 +201,10 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                   className={`w-full text-sm pl-3.5 pr-8 py-2.5 rounded-xl focus:outline-none transition-all font-semibold ${
                     isOutOfRange
                       ? 'border-2 border-rose-500 bg-rose-50/20 text-rose-900 focus:ring-2 focus:ring-rose-400'
-                      : 'bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-[#0B2046] focus:bg-white'
+                      : 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800'
                   }`}
                 />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-400">฿</span>
+                <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500">฿</span>
               </div>
               {minSalary != null && (
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -214,7 +214,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                       setBaseSalary(String(minSalary));
                       if (error) setError(null);
                     }}
-                    className="text-[11px] text-[#0B2046] hover:bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium inline-flex items-center gap-1 transition-colors"
+                    className="text-[11px] text-[#0B2046] hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-medium inline-flex items-center gap-1 transition-colors"
                   >
                     <span>⚡ ใช้ขั้นต่ำ: ฿{minSalary.toLocaleString()}</span>
                   </button>
@@ -225,7 +225,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                         setBaseSalary(String(maxSalary));
                         if (error) setError(null);
                       }}
-                      className="text-[11px] text-slate-500 hover:bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium transition-colors"
+                      className="text-[11px] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-medium transition-colors"
                     >
                       สูงสุด: ฿{maxSalary.toLocaleString()}
                     </button>
@@ -270,7 +270,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
           {/* Effective Date */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่มีผลบังคับใช้ <span className="text-red-500">*</span>
             </label>
             <input
@@ -278,16 +278,16 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               required
               value={effectiveFrom}
               onChange={(e) => setEffectiveFrom(e.target.value)}
-              className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800"
+              className="w-full text-sm px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
               ระบบจะปิดการใช้งานเงินเดือนเดิมในวันก่อนหน้าวันที่มีผลนี้ให้อัตโนมัติ
             </p>
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               เหตุผลหรือบันทึกการปรับเงินเดือน
             </label>
             <textarea
@@ -295,16 +295,16 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               placeholder="เช่น ปรับประจำปี, ผ่านการทดลองงาน, เลื่อนตำแหน่ง..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full text-sm px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white transition-all text-slate-800 resize-none"
+              className="w-full text-sm px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200 resize-none"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
             >
               ยกเลิก
             </button>

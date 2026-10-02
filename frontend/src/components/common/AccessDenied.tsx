@@ -20,12 +20,12 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
   onBackAction,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[420px] p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-      <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-4 shadow-xs">
+    <div className="flex flex-col items-center justify-center min-h-[420px] p-8 text-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+      <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-4 shadow-xs">
         <ShieldAlert className="w-8 h-8" />
       </div>
-      <h3 className="text-base font-bold text-slate-900 mb-2">{title}</h3>
-      <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">{title}</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed">
         {message}
       </p>
       {onBackAction ? (

@@ -251,11 +251,11 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   return (
     <div className="space-y-4 font-sans">
       {/* 1. Filter Card (ตรงตามรูปแบบ Figma) */}
-      <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
+      <div className="bg-white dark:bg-slate-800 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-3.5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* 1. วันที่ทำกิจกรรม (เริ่มต้น - สิ้นสุด) */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
               วันที่ทำกิจกรรม (เริ่มต้น - สิ้นสุด)
             </label>
             <div className="flex items-center gap-1.5">
@@ -263,27 +263,27 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-9 px-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               />
-              <span className="text-slate-400 text-xs">-</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-9 px-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               />
             </div>
           </div>
 
           {/* 2. ผู้ใช้งาน */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
               ผู้ใช้งาน
             </label>
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
+              className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 cursor-pointer"
             >
               <option value="ทั้งหมด">ผู้ใช้งานทั้งหมด</option>
               {users.map((u) => (
@@ -296,13 +296,13 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
 
           {/* 3. ประเภทการกระทำ */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
               ประเภทการกระทำ
             </label>
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
+              className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 cursor-pointer"
             >
               <option value="ทั้งหมด">การกระทำทั้งหมด</option>
               <option value="INSERT">สร้างข้อมูลใหม่</option>
@@ -318,13 +318,13 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
 
           {/* 4. ประเภทข้อมูล */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
               ประเภทข้อมูล
             </label>
             <select
               value={selectedEntityType}
               onChange={(e) => setSelectedEntityType(e.target.value)}
-              className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] cursor-pointer"
+              className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 cursor-pointer"
             >
               <option value="ทั้งหมด">ทุกประเภทข้อมูล</option>
               {moduleOptions.map((mod) => (
@@ -337,25 +337,25 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
         </div>
 
         {/* Second Row: Search + Action buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
               placeholder="ใส่คำค้นหา (คีย์เวิร์ด, บัญชีผู้ใช้, รหัสข้อมูล...)"
-              className="w-full h-9.5 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              className="w-full h-9.5 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
 
           <div className="flex items-center gap-2 shrink-0 justify-end">
             <button
               onClick={handleClearFilter}
-              className="h-9.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="h-9.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span>ล้างค่าตัวกรอง</span>
             </button>
 
@@ -369,10 +369,10 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
 
             <button
               onClick={onExport}
-              className="h-9.5 px-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="h-9.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               title="ส่งออกไฟล์ข้อมูล CSV"
             >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>ส่งออกข้อมูล</span>
             </button>
           </div>
@@ -380,11 +380,11 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       </div>
 
       {/* 2. Audit Log Table (ตรงตามโครงสร้าง Figma พร้อม IP Address) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500">
+              <tr className="bg-slate-50/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400">
                 <th className="py-3.5 px-4 min-w-[150px]">วันเวลา</th>
                 <th className="py-3.5 px-4 min-w-[140px]">ผู้ใช้งาน</th>
                 <th className="py-3.5 px-3 min-w-[90px] text-center">การกระทำ</th>
@@ -396,16 +396,16 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
                     กำลังโหลดบันทึกการใช้งานระบบ...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
                     ไม่พบบันทึกการใช้งานระบบที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
@@ -426,15 +426,15 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                       className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                     >
                       {/* 1. วันเวลา */}
-                      <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                         {formatLogDate(item.createdAt)}
                       </td>
 
                       {/* 2. ผู้ใช้งาน */}
-                      <td className="py-3.5 px-4 font-medium text-slate-800">
+                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
                         <span>{item.username}</span>
                         {item.fullName && (
-                          <span className="text-slate-400 font-normal ml-1">({item.fullName})</span>
+                          <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">({item.fullName})</span>
                         )}
                       </td>
 
@@ -446,17 +446,17 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                       </td>
 
                       {/* 4. ประเภทข้อมูล */}
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                         {getEntityDisplayName(item.entityType)}
                       </td>
 
                       {/* 5. รหัสข้อมูล */}
-                      <td className="py-3.5 px-3 font-mono text-[11px] text-slate-600">
+                      <td className="py-3.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
                         {item.entityId ? `#${item.entityId}` : '-'}
                       </td>
 
                       {/* 6. ฟิลด์ที่เปลี่ยน */}
-                      <td className="py-3.5 px-3 text-[11px] font-mono text-slate-600 truncate max-w-[120px]">
+                      <td className="py-3.5 px-3 text-[11px] font-mono text-slate-600 dark:text-slate-400 truncate max-w-[120px]">
                         {item.fieldName || '-'}
                       </td>
 
@@ -478,9 +478,9 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
         </div>
 
         {/* 3. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
-        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
+        <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white dark:bg-slate-800">
           {/* ซ้ายล่าง: Rows per page selector */}
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
             <span>แสดง</span>
             <select
               value={pageSize}
@@ -491,7 +491,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 }
                 onPageChange(1);
               }}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
               <option value={8}>8</option>
               <option value={10}>10</option>
@@ -500,7 +500,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               <option value={50}>50</option>
             </select>
             <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 text-[11px] ml-1">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
               (ทั้งหมด {totalCount.toLocaleString()} รายการ)
             </span>
           </div>
@@ -511,7 +511,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             <button
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage <= 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors"
               title="หน้าก่อนหน้า"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -522,9 +522,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               <button
                 key={p}
                 onClick={() => onPageChange(p)}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
-                  currentPage === p
-                    ? 'bg-[#0B2046] text-white shadow-xs'
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${ currentPage === p ? 'bg-[#0B2046] text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -536,7 +534,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             <button
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage >= totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors"
               title="หน้าถัดไป"
             >
               <ChevronRight className="w-3.5 h-3.5" />

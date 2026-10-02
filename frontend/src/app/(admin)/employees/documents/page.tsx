@@ -137,7 +137,7 @@ export default function ExpiringDocumentsPage() {
 
   return (
     <div className="space-y-5 font-sans pb-12">
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl shadow-2xs">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => (
             <Link
@@ -157,26 +157,26 @@ export default function ExpiringDocumentsPage() {
 
       {/* สรุป */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
               <FileClock className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-slate-700">ใกล้หมดอายุ</h4>
-              <p className="text-xs text-slate-400">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
             </div>
           </div>
           <div className="text-2xl font-bold text-amber-600">{counts.expiring}</div>
         </div>
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
               <FileX2 className="w-5 h-5 text-rose-600" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-slate-700">หมดอายุแล้ว</h4>
-              <p className="text-xs text-slate-400">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
             </div>
           </div>
           <div className="text-2xl font-bold text-rose-600">{counts.expired}</div>
@@ -226,9 +226,9 @@ export default function ExpiringDocumentsPage() {
       </div>
 
       {/* ตาราง */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden text-xs">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden text-xs">
         {loading ? (
-          <div className="py-16 flex items-center justify-center text-slate-400 gap-2">
+          <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
           </div>
         ) : error ? (
@@ -236,11 +236,11 @@ export default function ExpiringDocumentsPage() {
             <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-slate-400">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
+          <div className="py-16 text-center text-slate-400 dark:text-slate-500">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px]">
-              <thead className="bg-slate-50 text-slate-500 text-[11px]">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px]">
                 <tr>
                   <th className="text-left font-semibold px-4 py-2.5">พนักงาน</th>
                   <th className="text-left font-semibold px-4 py-2.5">แผนก</th>
@@ -257,21 +257,21 @@ export default function ExpiringDocumentsPage() {
                   return (
                     <tr key={doc.id} className="hover:bg-slate-50/60">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-800">{doc.employeeName || '-'}</p>
-                        <p className="text-[11px] text-slate-400 font-mono">{doc.employeeCode}</p>
+                        <p className="font-semibold text-slate-800 dark:text-slate-200">{doc.employeeName || '-'}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{doc.employeeCode}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{doc.departmentName || '-'}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{doc.departmentName || '-'}</td>
                       <td className="px-4 py-3">
-                        <p className="text-slate-800">{doc.documentTypeName}</p>
-                        <p className="text-[11px] text-slate-400 break-all max-w-[220px]">{doc.fileName}</p>
+                        <p className="text-slate-800 dark:text-slate-200">{doc.documentTypeName}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 break-all max-w-[220px]">{doc.fileName}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(doc.expiryDate)}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatDate(doc.expiryDate)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-medium ${
                             expired
                               ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-amber-50 text-amber-700 dark:text-amber-400 border-amber-200'
                           }`}
                         >
                           {expired ? `หมดอายุแล้ว ${Math.abs(days)} วัน` : `อีก ${days} วัน`}

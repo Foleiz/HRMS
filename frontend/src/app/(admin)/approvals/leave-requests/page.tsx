@@ -789,7 +789,7 @@ export default function LeaveRequestsApprovalPage() {
       </div>
 
       {/* Filters & Control Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4">
         <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
@@ -853,7 +853,7 @@ export default function LeaveRequestsApprovalPage() {
       )}
 
       {/* Table Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">

@@ -169,7 +169,7 @@ export default function EmployeeTypesPage() {
   return (
     <div className="space-y-5 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs matching Design System */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl shadow-2xs">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => {
             const isActive = tab.active;
@@ -213,11 +213,11 @@ export default function EmployeeTypesPage() {
       {/* 3. Header Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
             <Layers className="w-5 h-5 text-[#0B2046]" />
             ประเภทการจ้างงานและสัญญาจ้าง
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             กำหนดประเภทสัญญาจ้าง รูปแบบการจ่ายค่าตอบแทน และสิทธิประโยชน์พนักงานในองค์กร
           </p>
         </div>
@@ -239,21 +239,21 @@ export default function EmployeeTypesPage() {
       {/* 4. KPI Stat Cards (3 Cards matching theme) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: ประเภทสัญญาทั้งหมด */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-slate-500 mb-1">ประเภทสัญญาทั้งหมด</h4>
-            <p className="text-xs text-slate-400">ประเภทการจ้างงานที่กำหนดในระบบ</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">ประเภทการจ้างงานที่กำหนดในระบบ</p>
           </div>
-          <div className="bg-blue-50 text-[#0B2046] px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-blue-50 dark:bg-blue-900/20 text-[#0B2046] px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.totalTypes}
           </div>
         </div>
 
         {/* Card 2: จ่ายค่าจ้างรายเดือน */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-slate-500 mb-1">จ่ายค่าจ้างรายเดือน</h4>
-            <p className="text-xs text-slate-400">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
           </div>
           <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.monthlyWageCount}
@@ -261,10 +261,10 @@ export default function EmployeeTypesPage() {
         </div>
 
         {/* Card 3: รายวัน / รายชั่วโมง / เบี้ยเลี้ยง */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-slate-500 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
-            <p className="text-xs text-slate-400">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
           </div>
           <div className="bg-purple-50 text-purple-600 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.otherWageCount}
@@ -273,12 +273,12 @@ export default function EmployeeTypesPage() {
       </div>
 
       {/* 5. Main Card Container with Filters & Table */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
         {/* Top Filter Bar */}
-        <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700">รายการประเภทสัญญา</span>
-            <span className="text-xs text-slate-400">({types.length} รายการ)</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">รายการประเภทสัญญา</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">({types.length} รายการ)</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -310,19 +310,19 @@ export default function EmployeeTypesPage() {
         {/* Data Table */}
         <div className="overflow-x-auto min-h-[300px]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-xs">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mb-2" />
               <span>กำลังโหลดข้อมูลประเภทสัญญา...</span>
             </div>
           ) : paginatedTypes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-xs">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
               <FileCheck2 className="w-10 h-10 text-slate-300 mb-2" />
-              <p className="font-medium text-slate-600">ไม่พบข้อมูลประเภทสัญญา</p>
-              <p className="text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
+              <p className="font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประเภทสัญญา</p>
+              <p className="text-slate-400 dark:text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทสัญญาใหม่</p>
             </div>
           ) : (
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
+              <thead className="bg-slate-50/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
                   <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทสัญญา / การจ้างงาน</th>
@@ -340,14 +340,14 @@ export default function EmployeeTypesPage() {
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                       {/* รหัสประเภท */}
-                      <td className="py-3.5 px-5 font-mono font-semibold text-slate-900 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-bold border border-slate-200">
+                      <td className="py-3.5 px-5 font-mono font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-[11px] font-bold border border-slate-200 dark:border-slate-700">
                           {item.typeCode}
                         </span>
                       </td>
 
                       {/* ชื่อประเภท */}
-                      <td className="py-3.5 px-4 font-medium text-slate-800">
+                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
                         {item.typeName}
                       </td>
 
@@ -393,7 +393,7 @@ export default function EmployeeTypesPage() {
                             item.hasProvidentFund ? (
                             <>
                               {item.hasSocialSecurity && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200/80 text-[10px]">
                                   ประกันสังคม
                                 </span>
                               )}
@@ -403,7 +403,7 @@ export default function EmployeeTypesPage() {
                                 </span>
                               )}
                               {item.hasOvertime && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/80 text-[10px]">
                                   คิดโอที (OT)
                                 </span>
                               )}
@@ -414,14 +414,14 @@ export default function EmployeeTypesPage() {
                               )}
                             </>
                           ) : (
-                            <span className="text-slate-400 text-[11px]">- ไม่มี -</span>
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">- ไม่มี -</span>
                           )}
                         </div>
                       </td>
 
                       {/* จำนวนสัญญาที่ใช้งาน */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                        <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
                           {item.activeContractsCount}
                         </span>
                       </td>
@@ -474,7 +474,7 @@ export default function EmployeeTypesPage() {
         </div>
 
         {/* Table Footer with Pagination */}
-        <div className="border-t border-slate-100 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+        <div className="border-t border-slate-100 dark:border-slate-700/60 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div>
             แสดง {types.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} ถึง{' '}
             {Math.min(currentPage * pageSize, types.length)} จากทั้งหมด {types.length} รายการ

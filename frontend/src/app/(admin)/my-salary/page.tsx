@@ -219,7 +219,7 @@ export default function MySalaryPage() {
         {/* ========================================================= */}
         {/* MAIN SLIP BREAKDOWN CARD (Matching Figma 2 Exactly)      */}
         {/* ========================================================= */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm space-y-8">
           {/* Earnings & Deductions 2 Columns Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
             {/* LEFT COLUMN: รายได้ (Earnings) */}
@@ -347,7 +347,7 @@ export default function MySalaryPage() {
           {Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
             >
               <div className="h-4 w-28 bg-slate-200 rounded" />
               <div className="h-8 w-36 bg-slate-200 rounded mt-4" />
@@ -380,7 +380,7 @@ export default function MySalaryPage() {
           </div>
 
           {/* Card 2: รายได้รวม - White Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 รายได้รวม
@@ -403,7 +403,7 @@ export default function MySalaryPage() {
           </div>
 
           {/* Card 3: รายการหักรวม - White Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 รายการหักรวม
@@ -426,7 +426,7 @@ export default function MySalaryPage() {
           </div>
 
           {/* Card 4: ยอดสะสมทั้งปี (YTD) - White Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-medium text-slate-500">
                 ยอดสะสมทั้งปี (YTD)
@@ -455,7 +455,7 @@ export default function MySalaryPage() {
       {/* ========================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* LEFT COLUMN: ประวัติสลิปเงินเดือน (8 Cols) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
           <div className="space-y-5 flex-1">
             {/* Table Header with Search */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -630,7 +630,7 @@ export default function MySalaryPage() {
         {/* RIGHT COLUMN: 2 Visual Charts (4 Cols - Matching Figma 1) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Top Chart: Pie / Donut Chart */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
               <PieChartIcon className="w-3.5 h-3.5 text-[#0B2046]" />
               สัดส่วนเงินเดือนงวดล่าสุด
@@ -713,7 +713,7 @@ export default function MySalaryPage() {
           </div>
 
           {/* Bottom Chart: Bar Chart */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
               <TrendingUp className="w-3.5 h-3.5 text-[#0B2046]" />
               แนวโน้มเงินเดือนสุทธิ

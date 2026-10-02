@@ -82,12 +82,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-in fade-in duration-150`}>
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 p-6 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-700 p-6 animate-in zoom-in-95 duration-200">
         {/* Close icon button */}
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="absolute top-5 right-5 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" />
         </button>
@@ -100,12 +100,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug px-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2 leading-snug px-2">
             {title}
           </h3>
 
           {/* Message (supports multiline / paragraphs) */}
-          <div className="text-sm text-gray-500 mb-6 leading-relaxed whitespace-pre-line px-2">
+          <div className="text-sm text-gray-500 dark:text-slate-400 mb-6 leading-relaxed whitespace-pre-line px-2">
             {message}
           </div>
 
@@ -116,7 +116,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 {cancelText}
               </button>

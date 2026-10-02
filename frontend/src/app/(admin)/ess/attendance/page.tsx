@@ -369,7 +369,7 @@ export default function EssAttendancePage() {
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
           <button
@@ -444,17 +444,17 @@ export default function EssAttendancePage() {
           {/* 4 Stat Cards */}
           {monthlySummary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
                 <span className="text-xs text-slate-500">วันทำงานทั้งหมด</span>
                 <div className="text-2xl font-bold text-slate-800">{monthlySummary.totalWorkDays} วัน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
                 <span className="text-xs text-emerald-600 font-medium">เข้างานตรงเวลา</span>
                 <div className="text-2xl font-bold text-emerald-600">{monthlySummary.presentCount} วัน</div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
                 <span className="text-xs text-amber-600 font-medium">มาสาย</span>
                 <div className="text-2xl font-bold text-amber-600">
                   {monthlySummary.lateCount} ครั้ง{' '}
@@ -462,7 +462,7 @@ export default function EssAttendancePage() {
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
                 <span className="text-xs text-rose-600 font-medium">ขาดงาน / ออกก่อน</span>
                 <div className="text-2xl font-bold text-rose-600">
                   {monthlySummary.absentCount} วัน{' '}
@@ -475,7 +475,7 @@ export default function EssAttendancePage() {
           )}
 
           {/* History Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
               <span className="text-xs text-slate-400">{historyList.length} รายการ</span>
@@ -563,7 +563,7 @@ export default function EssAttendancePage() {
           5. TAB CONTENT: Adjustment Requests
       ───────────────────────────────────────────────────────────── */}
       {activeTab === 'adjustments' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <h3 className="font-bold text-slate-800 text-sm">ประวัติคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
             <span className="text-xs text-slate-400">{adjustmentsList.length} รายการ</span>

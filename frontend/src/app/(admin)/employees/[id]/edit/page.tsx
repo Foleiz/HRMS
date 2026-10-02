@@ -395,7 +395,7 @@ export default function EmployeeEditPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-28 text-slate-500 font-sans">
+      <div className="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400 font-sans">
         <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mb-3" />
         <p className="text-sm font-medium">กำลังโหลดข้อมูลสำหรับแก้ไข...</p>
       </div>
@@ -405,7 +405,7 @@ export default function EmployeeEditPage() {
   return (
     <div className="space-y-4 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma) */}
-      <div className="border-b border-slate-200 bg-white px-4 -mt-2 rounded-t-2xl shadow-2xs">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => {
             const isActive = tab.active;
@@ -428,11 +428,11 @@ export default function EmployeeEditPage() {
       </div>
 
       {/* 2. Main Edit Card Container */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 lg:p-8 shadow-xs min-h-[calc(100vh-210px)] flex flex-col justify-between">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 p-6 lg:p-8 shadow-xs min-h-[calc(100vh-210px)] flex flex-col justify-between">
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-6">
           <div className="space-y-6">
             {/* Card Tabs: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว */}
-            <div className="flex items-center gap-8 border-b border-slate-100 pb-3 text-xs font-semibold">
+            <div className="flex items-center gap-8 border-b border-slate-100 dark:border-slate-700/60 pb-3 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveTab('personal')}
@@ -540,7 +540,7 @@ export default function EmployeeEditPage() {
                       onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                       รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)
                     </p>
                   </div>
@@ -556,7 +556,7 @@ export default function EmployeeEditPage() {
                       placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
                       excludeEmployeeIds={[employeeId]}
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                       ใช้กับขั้นอนุมัติ &quot;หัวหน้างานตรง&quot; ในสายการอนุมัติ
                     </p>
                   </div>
@@ -578,11 +578,11 @@ export default function EmployeeEditPage() {
                         ))}
                       </select>
                     ) : (
-                      <div className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+                      <div className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
                         {formData.employeeType || '-'}
                       </div>
                     )}
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                       {canEditEmployeeType
                         ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
                         : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
@@ -660,7 +660,7 @@ export default function EmployeeEditPage() {
                       onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                       ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้
                     </p>
                   </div>
@@ -813,7 +813,7 @@ export default function EmployeeEditPage() {
 
                     {/* ประเภทที่อยู่ Radio Buttons */}
                     <div>
-                      <span className="text-slate-500 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
                       <div className="flex flex-wrap items-center gap-3">
                         {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
                           <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
@@ -833,7 +833,7 @@ export default function EmployeeEditPage() {
 
                     {/* บ้านเลขที่ */}
                     <div>
-                      <span className="text-slate-500 text-[11px] block mb-1">
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         บ้านเลขที่ <span className="text-rose-500">*</span>
                       </span>
                       <input
@@ -847,7 +847,7 @@ export default function EmployeeEditPage() {
 
                     {/* ตำบล / แขวง */}
                     <div>
-                      <span className="text-slate-500 text-[11px] block mb-1">
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         ตำบล / แขวง <span className="text-rose-500">*</span>
                       </span>
                       <input
@@ -861,7 +861,7 @@ export default function EmployeeEditPage() {
 
                     {/* อำเภอ / เขต */}
                     <div>
-                      <span className="text-slate-500 text-[11px] block mb-1">
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         อำเภอ / เขต <span className="text-rose-500">*</span>
                       </span>
                       <input
@@ -876,7 +876,7 @@ export default function EmployeeEditPage() {
                     {/* จังหวัด และ รหัสไปรษณีย์ */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-slate-500 text-[11px] block mb-1">
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                           จังหวัด <span className="text-rose-500">*</span>
                         </span>
                         <input
@@ -888,7 +888,7 @@ export default function EmployeeEditPage() {
                         />
                       </div>
                       <div>
-                        <span className="text-slate-500 text-[11px] block mb-1">
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                           รหัสไปรษณีย์ <span className="text-rose-500">*</span>
                         </span>
                         <input
@@ -911,9 +911,9 @@ export default function EmployeeEditPage() {
             {/* ============================================================ */}
             {activeTab === 'family' && (
               <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                   <Users className="w-4 h-4 text-[#0B2046]" />
-                  <h3 className="font-bold text-slate-800 text-sm">สมาชิกในครอบครัว</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">สมาชิกในครอบครัว</h3>
                 </div>
 
                 <div className="space-y-4">
@@ -938,7 +938,7 @@ export default function EmployeeEditPage() {
                     <button
                       type="button"
                       onClick={handleAddFamilyMember}
-                      className="w-7 h-7 rounded-full border border-slate-300 hover:border-slate-800 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
+                      className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
                       title="เพิ่มสมาชิกครอบครัวคนถัดไป"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -957,7 +957,7 @@ export default function EmployeeEditPage() {
 
                   {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
                   {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 p-5 border border-slate-200/80 rounded-xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 dark:bg-slate-950/70 p-5 border border-slate-200/80 dark:border-slate-700/80 rounded-xl">
                       <div>
                         <label className="font-semibold text-slate-700 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
@@ -1074,9 +1074,9 @@ export default function EmployeeEditPage() {
             {/* ============================================================ */}
             {activeTab === 'emergency' && (
               <div className="max-w-3xl mx-auto space-y-6 text-xs animate-in fade-in duration-150">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                   <Phone className="w-4 h-4 text-[#0B2046]" />
-                  <h3 className="font-bold text-slate-800 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-sky-50/40 p-5 border border-sky-100 rounded-xl">
@@ -1232,7 +1232,7 @@ export default function EmployeeEditPage() {
           </div>
 
           {/* Bottom Actions Bar (ยกเลิก & บันทึกข้อมูล) ตรงตาม Figma */}
-          <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => router.push(`/employees/${employeeId}`)}

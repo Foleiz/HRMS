@@ -171,14 +171,14 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
       return val ? (
         <span className="text-emerald-700 font-semibold">จริง (เปิดใช้งาน)</span>
       ) : (
-        <span className="text-slate-500 font-semibold">เท็จ (ปิดใช้งาน)</span>
+        <span className="text-slate-500 dark:text-slate-400 font-semibold">เท็จ (ปิดใช้งาน)</span>
       );
     }
     if (typeof val === 'object') {
       return <pre className="font-mono text-[10px] whitespace-pre-wrap">{JSON.stringify(val, null, 2)}</pre>;
     }
     if (val === '[REDACTED]') {
-      return <span className="text-amber-700 font-mono bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">ปกปิดข้อมูลความลับ</span>;
+      return <span className="text-amber-700 dark:text-amber-400 font-mono bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded border border-amber-200">ปกปิดข้อมูลความลับ</span>;
     }
     return String(val);
   };
@@ -197,31 +197,31 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
       />
 
       {/* Modal Card */}
-      <div className="relative bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+        <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between shrink-0 bg-white dark:bg-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   รายละเอียดการเปลี่ยนแปลงข้อมูล
                 </h3>
-                <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-lg bg-slate-100 text-slate-600">
+                <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-lg bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300">
                   #{log.id}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <span>{formatDate(log.createdAt)}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -230,18 +230,18 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-5 text-xs overflow-y-auto">
           {/* Metadata Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
             <div>
-              <span className="text-[10px] font-medium text-slate-400 block mb-0.5">ผู้ดำเนินการ</span>
-              <div className="font-semibold text-slate-800 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">ผู้ดำเนินการ</span>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
                 <span className="truncate">{log.fullName || log.username}</span>
               </div>
-              <span className="text-[10px] text-slate-400 block truncate">@{log.username}</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">@{log.username}</span>
             </div>
 
             <div>
-              <span className="text-[10px] font-medium text-slate-400 block mb-0.5">การกระทำ</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">การกระทำ</span>
               <div>
                 <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${actionInfo.color}`}>
                   {actionInfo.label}
@@ -250,12 +250,12 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             </div>
 
             <div>
-              <span className="text-[10px] font-medium text-slate-400 block mb-0.5">โมดูล / ตาราง</span>
-              <div className="font-semibold text-slate-800 truncate">
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block mb-0.5">โมดูล / ตาราง</span>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                 {log.entityType}
               </div>
               {log.entityId && (
-                <span className="text-[10px] text-slate-500 font-mono">ID: #{log.entityId}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">ID: #{log.entityId}</span>
               )}
             </div>
           </div>
@@ -269,13 +269,12 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           )}
 
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setViewMode('diff')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  viewMode === 'diff'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${ viewMode === 'diff'
                     ? 'bg-[#0B2046] text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
@@ -286,8 +285,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('json')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  viewMode === 'json'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${ viewMode === 'json'
                     ? 'bg-[#0B2046] text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
@@ -300,7 +298,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             <button
               type="button"
               onClick={handleCopyJson}
-              className="text-[11px] font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
@@ -320,10 +318,10 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           {viewMode === 'diff' && (
             <div className="space-y-3">
               {isJsonDiff && diffRows.length > 0 ? (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+                      <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-[11px]">
                         <th className="py-2.5 px-3 w-1/4">ชื่อฟิลด์</th>
                         <th className="py-2.5 px-3 w-5/12 text-rose-700 bg-rose-50/50">ค่าเดิมก่อนแก้ไข</th>
                         <th className="py-2.5 px-3 w-5/12 text-emerald-700 bg-emerald-50/50">ค่าใหม่หลังแก้ไข</th>
@@ -335,16 +333,15 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                         return (
                           <tr
                             key={row.key}
-                            className={`hover:bg-slate-50/80 transition-colors ${
-                              isChanged ? 'bg-amber-50/20' : ''
+                            className={`hover:bg-slate-50/80 transition-colors ${ isChanged ? 'bg-amber-50/20' : ''
                             }`}
                           >
                             <td className="py-2.5 px-3 align-top">
-                              <span className="font-semibold text-slate-800 block">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 block">
                                 {row.label}
                               </span>
                               {row.label !== row.key && (
-                                <span className="font-mono text-[10px] text-slate-400 block">
+                                <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 block">
                                   {row.key}
                                 </span>
                               )}
@@ -390,7 +387,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           {viewMode === 'json' && (
             <div className="space-y-3 font-mono text-[11px]">
               <div>
-                <span className="text-[11px] font-bold text-slate-700 block mb-1 font-sans">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1 font-sans">
                   ข้อมูลเดิม (ค่าดิบ):
                 </span>
                 <pre className="p-3 bg-slate-900 text-slate-100 rounded-xl overflow-x-auto max-h-48 leading-relaxed">
@@ -407,7 +404,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
               </div>
 
               <div>
-                <span className="text-[11px] font-bold text-slate-700 block mb-1 font-sans">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1 font-sans">
                   ข้อมูลใหม่ (ค่าดิบ):
                 </span>
                 <pre className="p-3 bg-slate-900 text-slate-100 rounded-xl overflow-x-auto max-h-48 leading-relaxed">
@@ -427,10 +424,10 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-100 flex justify-end bg-slate-50/60 shrink-0">
+        <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/60 flex justify-end bg-slate-50/60 shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
           >
             ปิดหน้าต่าง
           </button>

@@ -121,19 +121,19 @@ export const NotificationBell: React.FC = () => {
     if (t.includes('PROBATION') || t.includes('CONTRACT')) {
       return <UserCheck className="w-4 h-4 text-teal-600" />;
     }
-    return <AlertCircle className="w-4 h-4 text-slate-600" />;
+    return <AlertCircle className="w-4 h-4 text-slate-600 dark:text-slate-400" />;
   };
 
   const getBgColor = (type: string) => {
     const t = type.toUpperCase();
-    if (t.includes('LEAVE')) return 'bg-blue-50';
+    if (t.includes('LEAVE')) return 'bg-blue-50 dark:bg-blue-900/20';
     if (t.includes('APPROVAL')) return 'bg-emerald-50';
-    if (t.includes('ANNOUNCEMENT')) return 'bg-amber-50';
+    if (t.includes('ANNOUNCEMENT')) return 'bg-amber-50 dark:bg-amber-900/20';
     if (t.includes('PAYROLL')) return 'bg-indigo-50';
     if (t.includes('TIME') || t.includes('ATTENDANCE')) return 'bg-purple-50';
     if (t.includes('DOCUMENT_EXPIRY')) return 'bg-orange-50';
     if (t.includes('PROBATION') || t.includes('CONTRACT')) return 'bg-teal-50';
-    return 'bg-slate-100';
+    return 'bg-slate-100 dark:bg-slate-800';
   };
 
   return (
@@ -146,7 +146,7 @@ export const NotificationBell: React.FC = () => {
           setIsOpen(!isOpen);
           if (!isOpen) fetchSummary();
         }}
-        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors relative cursor-pointer"
+        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100 flex items-center justify-center transition-colors relative cursor-pointer"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
@@ -158,11 +158,11 @@ export const NotificationBell: React.FC = () => {
 
       {/* Notifications Dropdown Popover */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-900">การแจ้งเตือน</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">การแจ้งเตือน</span>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
                   {unreadCount} รายการใหม่
@@ -190,17 +190,17 @@ export const NotificationBell: React.FC = () => {
           {/* List */}
           <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
-              <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+              <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
                 <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
                 <span>กำลังโหลดการแจ้งเตือน...</span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-12 px-4 text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-2">
                   <Inbox className="w-5 h-5 stroke-[1.5]" />
                 </div>
-                <p className="text-xs font-semibold text-slate-700">ไม่มีการแจ้งเตือนในขณะนี้</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">คุณจะได้รับการแจ้งเตือนเมื่อมีคำขอหรือข่าวสารใหม่</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">ไม่มีการแจ้งเตือนในขณะนี้</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">คุณจะได้รับการแจ้งเตือนเมื่อมีคำขอหรือข่าวสารใหม่</p>
               </div>
             ) : (
               notifications.map((item) => (
@@ -208,7 +208,7 @@ export const NotificationBell: React.FC = () => {
                   key={item.id}
                   onClick={() => handleItemClick(item)}
                   className={`p-3.5 hover:bg-slate-50/90 transition-colors cursor-pointer flex gap-3 items-start relative group ${
-                    !item.isRead ? 'bg-blue-50/30' : ''
+                    !item.isRead ? 'bg-blue-50 dark:bg-blue-900/20/30' : ''
                   }`}
                 >
                   {/* Unread indicator dot */}
@@ -223,21 +223,21 @@ export const NotificationBell: React.FC = () => {
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <h4 className={`text-xs ${!item.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'} leading-tight line-clamp-1`}>
+                    <h4 className={`text-xs ${!item.isRead ? 'font-bold text-slate-900 dark:text-slate-100' : 'font-medium text-slate-700 dark:text-slate-300'} leading-tight line-clamp-1`}>
                       {item.title}
                     </h4>
                     {item.message && (
-                      <p className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                         {item.message}
                       </p>
                     )}
-                    <span className="text-[10px] text-slate-400 mt-1.5 block">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 block">
                       {item.timeAgo}
                     </span>
                   </div>
 
                   {/* Arrow on hover */}
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition-colors shrink-0 mt-1" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 dark:text-slate-400 transition-colors shrink-0 mt-1" />
                 </div>
               ))
             )}
@@ -245,8 +245,8 @@ export const NotificationBell: React.FC = () => {
 
           {/* Footer Link */}
           {notifications.length > 0 && (
-            <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center">
-              <span className="text-[10px] text-slate-400">
+            <div className="p-2 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 text-center">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">
                 คลิกที่รายการแจ้งเตือนเพื่อเปิดดูข้อมูลและนำทางไปยังหน้าที่เกี่ยวข้อง
               </span>
             </div>

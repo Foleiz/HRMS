@@ -29,16 +29,16 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
   return (
     <div className="max-w-3xl mx-auto space-y-8 text-xs animate-in fade-in duration-150">
       <section className="space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
-          <h3 className="font-bold text-slate-800 text-sm">ประกันสังคม</h3>
-          <span className="text-[11px] text-slate-500 font-normal">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประกันสังคม</h3>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
             (ใช้เลขเดียวกับเลขประจำตัวประชาชน 13 หลัก)
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">โรงพยาบาลตามสิทธิ์</label>
+            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">โรงพยาบาลตามสิทธิ์</label>
             <input
               type="text"
               value={values.hospitalName}
@@ -51,23 +51,23 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <Landmark className="w-4 h-4 text-[#0B2046]" />
-          <h3 className="font-bold text-slate-800 text-sm">ข้อมูลลดหย่อนภาษี</h3>
-          <span className="text-[11px] text-slate-400">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50/60 cursor-pointer md:col-span-2">
+          <label className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 cursor-pointer md:col-span-2">
             <input
               type="checkbox"
               checked={values.spouseHasIncome}
               onChange={(e) => set({ spouseHasIncome: e.target.checked })}
               className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
             />
-            <span className="text-slate-700">คู่สมรสมีเงินได้ (ไม่ใช้สิทธิ์ลดหย่อนคู่สมรส)</span>
+            <span className="text-slate-700 dark:text-slate-300">คู่สมรสมีเงินได้ (ไม่ใช้สิทธิ์ลดหย่อนคู่สมรส)</span>
           </label>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">จำนวนบุตรที่ใช้ลดหย่อน</label>
+            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนบุตรที่ใช้ลดหย่อน</label>
             <input
               type="number"
               min={0}
@@ -78,7 +78,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">จำนวนบิดามารดาที่ใช้ลดหย่อน</label>
+            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนบิดามารดาที่ใช้ลดหย่อน</label>
             <input
               type="number"
               min={0}
@@ -87,10 +87,10 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
               onChange={(e) => set({ parentDeductionCount: count(e.target.value, 4) })}
               className={INPUT}
             />
-            <p className="text-[11px] text-slate-400 mt-1">บิดามารดาของตนเองและคู่สมรส สูงสุด 4 คน</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">บิดามารดาของตนเองและคู่สมรส สูงสุด 4 คน</p>
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">จำนวนผู้พิการ/ทุพพลภาพที่ดูแล</label>
+            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนผู้พิการ/ทุพพลภาพที่ดูแล</label>
             <input
               type="number"
               min={0}

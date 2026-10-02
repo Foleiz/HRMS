@@ -33,21 +33,21 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-medium">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               สิทธิ์และมุมมองการทำงาน:
             </span>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
               {getRoleBadge()}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {currentMode === 'ALL' && 'แสดงผลข้อมูลรวมทั้งงาน HR (สวัสดิการ/คำนวณ) และงานการเงิน (โอนเงิน/ภาษี)'}
             {currentMode === 'HR' && 'แสดงเฉพาะรายการสวัสดิการ รายได้ รายหัก คำนวณเงินเดือน และ E-Payslip'}
             {currentMode === 'FINANCE' && 'แสดงเฉพาะสรุปยอดโอน การส่งออกไฟล์ธนาคาร ภาษี ประกันสังคม และสลิปการโอน'}
@@ -56,14 +56,14 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
       </div>
 
       {(isCombined || userRoles.includes('ADMIN') || userRoles.includes('CEO')) && (
-        <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
           <button
             type="button"
             onClick={() => onModeChange('ALL')}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'ALL'
-                ? 'bg-white text-indigo-700 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                ? 'bg-white dark:bg-slate-900 text-indigo-700 shadow-xs font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -74,8 +74,8 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
             onClick={() => onModeChange('HR')}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'HR'
-                ? 'bg-white text-blue-700 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                ? 'bg-white dark:bg-slate-900 text-blue-700 shadow-xs font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -86,8 +86,8 @@ export const PayrollViewSwitcher: React.FC<PayrollViewSwitcherProps> = ({
             onClick={() => onModeChange('FINANCE')}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               currentMode === 'FINANCE'
-                ? 'bg-white text-emerald-700 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                ? 'bg-white dark:bg-slate-900 text-emerald-700 shadow-xs font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60'
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />

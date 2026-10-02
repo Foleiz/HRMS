@@ -25,16 +25,16 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-1">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-slate-500">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
           มุมมองแดชบอร์ด:
         </span>
-        <span className="text-xs font-bold text-[#0B2046] bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+        <span className="text-xs font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
           {ROLE_LABELS[activeRole].badge}
         </span>
       </div>
 
       {/* Quick Role Switcher Buttons */}
-      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
         {(Object.keys(ROLE_LABELS) as DashboardRole[]).map((role) => {
           const isActive = activeRole === role;
           return (
@@ -45,7 +45,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
               className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                 isActive
                   ? 'bg-[#0B2046] text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100 hover:bg-white dark:bg-slate-800/60'
               }`}
             >
               {ROLE_LABELS[role].title}

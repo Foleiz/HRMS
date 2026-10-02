@@ -79,15 +79,15 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span className="text-xs text-slate-500 font-medium">ปี:</span>
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
+            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ปี:</span>
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
               {[0, 1, 2, 3].map((i) => (
                 <option key={i} value={currentYear - i}>
@@ -96,12 +96,12 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-            <Building2 className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
+            <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
               <option value="">ทุกแผนก</option>
               {departments.map((d) => (
@@ -111,7 +111,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               ))}
             </select>
           </div>
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+          {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500" />}
         </div>
         {canExport && (
           <button
@@ -134,13 +134,13 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               { label: 'พนักงานที่ลา', value: fmt(data.employeesOnLeave), icon: Users, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'รออนุมัติ', value: fmt(data.pendingRequests), icon: Loader2, color: 'text-amber-600 bg-amber-50' },
             ].map((k) => (
-              <div key={k.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+              <div key={k.label} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.color}`}>
                   <k.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500">{k.label}</div>
-                  <div className="text-xl font-bold text-slate-800">{k.value}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{k.label}</div>
+                  <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{k.value}</div>
                 </div>
               </div>
             ))}
@@ -148,38 +148,38 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Monthly trend */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-slate-800 mb-4">แนวโน้มวันลารายเดือน (วัน)</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">แนวโน้มวันลารายเดือน (วัน)</h3>
               <div className="flex items-end gap-2 h-44">
                 {data.byMonth.map((m) => (
                   <div key={m.key} className="flex-1 flex flex-col items-center gap-1 h-full justify-end" title={`${m.label}: ${fmt(m.days)} วัน / ${m.requests} ใบ`}>
-                    <span className="text-[10px] text-slate-500">{m.days > 0 ? fmt(m.days) : ''}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.days > 0 ? fmt(m.days) : ''}</span>
                     <div
                       className="w-full rounded-t-md bg-[#0B2046]/80"
                       style={{ height: `${(m.days / maxMonth) * 100}%`, minHeight: m.days > 0 ? 4 : 0 }}
                     />
-                    <span className="text-[10px] text-slate-500">{m.label}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* By type */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-slate-800 mb-4">แยกตามประเภทการลา</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">แยกตามประเภทการลา</h3>
               {data.byType.length === 0 ? (
-                <p className="text-sm text-slate-400">ไม่มีข้อมูล</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
               ) : (
                 <div className="space-y-3">
                   {data.byType.map((t) => (
                     <div key={t.key}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-700">{t.label}</span>
-                        <span className="text-slate-500">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{t.label}</span>
+                        <span className="text-slate-500 dark:text-slate-400">
                           {fmt(t.days)} วัน · {t.requests} ใบ · {t.employees} คน
                         </span>
                       </div>
-                      <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
                         <div className="h-2 rounded-full bg-blue-500" style={{ width: `${(t.days / maxType) * 100}%` }} />
                       </div>
                     </div>
@@ -190,15 +190,15 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           </div>
 
           {/* Department x Type */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-4">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
             {matrix.depts.length === 0 ? (
-              <p className="text-sm text-slate-400">ไม่มีข้อมูล</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50">
+                    <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">
                       <th className="text-left py-2 px-3">แผนก</th>
                       {matrix.types.map((t) => (
                         <th key={t} className="text-right py-2 px-3 whitespace-nowrap">
@@ -210,17 +210,17 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   </thead>
                   <tbody>
                     {data.byDepartment.map((d) => (
-                      <tr key={d.key} className="border-t border-slate-100">
-                        <td className="py-2 px-3 font-medium text-slate-700">{d.label}</td>
+                      <tr key={d.key} className="border-t border-slate-100 dark:border-slate-700/60">
+                        <td className="py-2 px-3 font-medium text-slate-700 dark:text-slate-300">{d.label}</td>
                         {matrix.types.map((t) => {
                           const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
                           return (
-                            <td key={t} className={`py-2 px-3 text-right ${v > 0 ? 'text-slate-700' : 'text-slate-300'}`}>
+                            <td key={t} className={`py-2 px-3 text-right ${v > 0 ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300'}`}>
                               {fmt(v)}
                             </td>
                           );
                         })}
-                        <td className="py-2 px-3 text-right font-semibold text-slate-800">{fmt(d.days)}</td>
+                        <td className="py-2 px-3 text-right font-semibold text-slate-800 dark:text-slate-200">{fmt(d.days)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,14 +230,14 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           </div>
 
           {/* Top employees */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-4">พนักงานที่ลามากที่สุด 10 อันดับ</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">พนักงานที่ลามากที่สุด 10 อันดับ</h3>
             {data.topEmployees.length === 0 ? (
-              <p className="text-sm text-slate-400">ไม่มีข้อมูล</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">ไม่มีข้อมูล</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 bg-slate-50">
+                  <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">
                     <th className="text-left py-2 px-3 w-10">#</th>
                     <th className="text-left py-2 px-3">พนักงาน</th>
                     <th className="text-left py-2 px-3">แผนก</th>
@@ -247,13 +247,13 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                 </thead>
                 <tbody>
                   {data.topEmployees.map((e, i) => (
-                    <tr key={e.employeeId} className="border-t border-slate-100">
-                      <td className="py-2 px-3 text-slate-400">{i + 1}</td>
+                    <tr key={e.employeeId} className="border-t border-slate-100 dark:border-slate-700/60">
+                      <td className="py-2 px-3 text-slate-400 dark:text-slate-500">{i + 1}</td>
                       <td className="py-2 px-3">
-                        <div className="font-medium text-slate-800">{e.employeeName}</div>
-                        <div className="text-xs text-slate-400">{e.employeeCode}</div>
+                        <div className="font-medium text-slate-800 dark:text-slate-200">{e.employeeName}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500">{e.employeeCode}</div>
                       </td>
-                      <td className="py-2 px-3 text-slate-600">{e.departmentName || '-'}</td>
+                      <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{e.departmentName || '-'}</td>
                       <td className="py-2 px-3 text-right font-semibold">{fmt(e.days)}</td>
                       <td className="py-2 px-3 text-right">{e.requests}</td>
                     </tr>

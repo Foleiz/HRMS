@@ -114,18 +114,18 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-slate-100 animate-in slide-in-from-right duration-300">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700/60 animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex items-start justify-between">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-900">{record.employeeName}</h3>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{record.employeeName}</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">
               {record.employeeCode} · {record.departmentName} · payroll_detail
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -134,7 +134,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
               <span className="text-xs">กำลังโหลดรายละเอียด...</span>
             </div>
@@ -142,22 +142,22 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
             <>
               {/* รายได้ (Earnings) */}
               <div>
-                <h4 className="text-xs font-bold text-slate-600 mb-2">รายได้</h4>
-                <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-white">
+                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">รายได้</h4>
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl divide-y divide-slate-100 overflow-hidden bg-white dark:bg-slate-800">
                   {earnings.length > 0 ? (
                     earnings.map((item) => (
                       <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
                         <div>
-                          <div className="font-medium text-slate-800">
+                          <div className="font-medium text-slate-800 dark:text-slate-200">
                             {item.itemName}
                             {item.isManual && <ManualBadge source={item.source} />}
                           </div>
                           {item.subtext && (
-                            <div className="text-[11px] text-slate-400 mt-0.5">{item.subtext}</div>
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{item.subtext}</div>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-semibold text-slate-900 font-mono">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
                             ฿{item.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                           </div>
                           {canEdit && item.isManual && (
@@ -167,7 +167,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       </div>
                     ))
                   ) : (
-                    <div className="p-3.5 text-center text-xs text-slate-400">
+                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500">
                       {record.status === 'DRAFT' ? 'ยังไม่ได้ประมวลผล' : 'ไม่มีรายการรายได้'}
                     </div>
                   )}
@@ -176,24 +176,24 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
               {/* รายการหัก (Deductions) */}
               <div>
-                <h4 className="text-xs font-bold text-slate-600 mb-2">รายการหัก</h4>
-                <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-white">
+                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">รายการหัก</h4>
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl divide-y divide-slate-100 overflow-hidden bg-white dark:bg-slate-800">
                   {deductions.length > 0 ? (
                     deductions.map((item) => {
                       const absAmount = Math.abs(item.amount);
                       return (
                         <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
                           <div>
-                            <div className="font-medium text-slate-800">
+                            <div className="font-medium text-slate-800 dark:text-slate-200">
                               {item.itemName}
                               {item.isManual && <ManualBadge source={item.source} />}
                             </div>
                             {item.subtext && (
-                              <div className="text-[11px] text-slate-400 mt-0.5">{item.subtext}</div>
+                              <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{item.subtext}</div>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="font-semibold text-slate-900 font-mono">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
                               -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             </div>
                             {canEdit && item.isManual && (
@@ -204,7 +204,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       );
                     })
                   ) : (
-                    <div className="p-3.5 text-center text-xs text-slate-400">
+                    <div className="p-3.5 text-center text-xs text-slate-400 dark:text-slate-500">
                       {record.status === 'DRAFT' ? 'ยังไม่ได้ประมวลผล' : 'ไม่มีรายการหัก'}
                     </div>
                   )}
@@ -212,9 +212,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
               </div>
 
               {/* เงินเดือนสุทธิ (net_salary) */}
-              <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-white shadow-2xs">
-                <span className="text-xs font-semibold text-slate-700">เงินเดือนสุทธิ (net_salary)</span>
-                <span className="text-sm font-bold text-slate-900 font-mono">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center justify-between bg-white dark:bg-slate-800 shadow-2xs">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ (net_salary)</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                     : '-'}
@@ -223,13 +223,13 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
               {/* เพิ่มรายการรายได้/รายหักแบบระบุเอง (เฉพาะรอบ DRAFT/REVIEW) */}
               {canEdit && (
-                <div className="border border-dashed border-slate-300 rounded-xl p-4 space-y-3 bg-slate-50/50">
-                  <h4 className="text-xs font-bold text-slate-600">เพิ่มรายการรายได้ / รายหัก (ระบุเอง)</h4>
+                <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50">
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">เพิ่มรายการรายได้ / รายหัก (ระบุเอง)</h4>
                   <select
                     value={newItemId}
                     onChange={(e) => setNewItemId(e.target.value)}
                     disabled={saving}
-                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                    className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                   >
                     <option value="">-- เลือกรายการ --</option>
                     <optgroup label="รายได้">
@@ -252,7 +252,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       value={newAmount}
                       onChange={(e) => setNewAmount(e.target.value)}
                       disabled={saving}
-                      className="w-36 h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                      className="w-36 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                     />
                     <input
                       type="text"
@@ -261,7 +261,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       onChange={(e) => setNewNote(e.target.value)}
                       disabled={saving}
                       maxLength={200}
-                      className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white"
+                      className="flex-1 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                     />
                   </div>
                   {error && <p className="text-[11px] text-rose-600">{error}</p>}
@@ -273,7 +273,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                     <span>{saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}</span>
                   </button>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
                     ประกันสังคม ภาษี และยอดสุทธิ จะถูกคำนวณใหม่ตามการตั้งค่า &quot;คิดภาษี / คิดประกันสังคม&quot; ของรายการที่เลือก
                   </p>
                 </div>
@@ -290,7 +290,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 };
 
 const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => (
-  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle">
+  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
     {source === 'BONUS' ? 'โบนัส' : 'ระบุเอง'}
   </span>
 );

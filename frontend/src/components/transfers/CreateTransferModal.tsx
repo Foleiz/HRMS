@@ -200,14 +200,14 @@ export default function CreateTransferModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0">
           <div>
-            <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
               {recordType === 'ARCHIVE' ? 'บันทึกคำสั่งย้ายย้อนหลัง' : 'สร้างคำขอย้าย / เลื่อนตำแหน่ง'}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
               {recordType === 'ARCHIVE'
                 ? 'บันทึกประวัติคำสั่งแต่งตั้ง/โยกย้าย พร้อมแนบไฟล์เอกสาร'
                 : 'ยื่นคำขอย้ายแผนกเพื่อดำเนินการตามสายการอนุมัติ'}
@@ -215,7 +215,7 @@ export default function CreateTransferModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -231,7 +231,7 @@ export default function CreateTransferModal({
           )}
 
           {/* Mode Segmented Switcher */}
-          <div className="bg-slate-100 p-1 rounded-xl flex gap-1">
+          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex gap-1">
             <button
               type="button"
               onClick={() => {
@@ -240,8 +240,8 @@ export default function CreateTransferModal({
               }}
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 recordType === 'REQUEST'
-                  ? 'bg-white text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
               }`}
             >
               <GitPullRequest className="w-3.5 h-3.5" />
@@ -255,8 +255,8 @@ export default function CreateTransferModal({
               }}
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 recordType === 'ARCHIVE'
-                  ? 'bg-white text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
               }`}
             >
               <Archive className="w-3.5 h-3.5" />
@@ -289,7 +289,7 @@ export default function CreateTransferModal({
 
           {/* 1. พนักงาน * (Searchable Combobox) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               พนักงาน <span className="text-rose-500">*</span>
             </label>
             <EmployeeSelect
@@ -304,13 +304,13 @@ export default function CreateTransferModal({
 
           {/* 2. ประเภทคำขอ * */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               ประเภทคำขอ <span className="text-rose-500">*</span>
             </label>
             <select
               value={transferType}
               onChange={(e) => setTransferType(e.target.value)}
-              className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               required
             >
               <option value="DEPARTMENT_TRANSFER">ย้ายแผนก</option>
@@ -322,7 +322,7 @@ export default function CreateTransferModal({
 
           {/* 3. จากตำแหน่ง/แผนกเดิม (Auto-filled read-only) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               จากตำแหน่ง/แผนกเดิม
             </label>
             <input
@@ -330,13 +330,13 @@ export default function CreateTransferModal({
               readOnly
               value={fromDisplay}
               placeholder="เช่น ฝ่ายขาย"
-              className="w-full h-10 px-3.5 bg-slate-100/80 border border-slate-200 rounded-xl text-xs text-slate-600 focus:outline-none cursor-not-allowed"
+              className="w-full h-10 px-3.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-none cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
             />
           </div>
 
           {/* 4. ไปยัง * (แผนก + ตำแหน่งเป้าหมาย) */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               ไปยัง <span className="text-rose-500">*</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -346,7 +346,7 @@ export default function CreateTransferModal({
                   setToDepartmentId(e.target.value);
                   setToPositionId('');
                 }}
-                className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                 required
               >
                 <option value="">เลือกแผนกเป้าหมาย...</option>
@@ -360,7 +360,7 @@ export default function CreateTransferModal({
               <select
                 value={toPositionId}
                 onChange={(e) => setToPositionId(e.target.value)}
-                className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                 required
               >
                 <option value="">เลือกตำแหน่งเป้าหมาย...</option>
@@ -376,7 +376,7 @@ export default function CreateTransferModal({
           {/* 5. วันที่มีผล และ เลขที่คำสั่ง */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700 block">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
                 วันที่มีผล <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -384,15 +384,15 @@ export default function CreateTransferModal({
                   type="date"
                   value={effectiveDate}
                   onChange={(e) => setEffectiveDate(e.target.value)}
-                  className="w-full h-10 pl-3.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                  className="w-full h-10 pl-3.5 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                   required
                 />
-                <Calendar className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700 block">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
                 เลขที่คำสั่ง {recordType === 'ARCHIVE' && <span className="text-rose-500">*</span>}
               </label>
               <input
@@ -400,7 +400,7 @@ export default function CreateTransferModal({
                 value={orderNo}
                 onChange={(e) => setOrderNo(e.target.value)}
                 placeholder={recordType === 'ARCHIVE' ? 'เช่น คำสั่งที่ 15/2569' : 'เช่น คำสั่งที่ 15/2569 (ถ้ามี)'}
-                className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                 required={recordType === 'ARCHIVE'}
               />
             </div>
@@ -408,7 +408,7 @@ export default function CreateTransferModal({
 
           {/* 6. หัวหน้างานสายตรงเป้าหมาย (ถ้ามี) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               หัวหน้างานสายตรงใหม่ (ถ้ามี)
             </label>
             <EmployeeSelect
@@ -423,17 +423,17 @@ export default function CreateTransferModal({
 
           {/* 7. อัปโหลดไฟล์เอกสารคำสั่งย้าย (สำหรับ RecordType = ARCHIVE หรือแนบประกอบคำขอ) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center justify-between">
               <span>
                 เอกสารคำสั่งแต่งตั้ง/โยกย้าย {recordType === 'ARCHIVE' ? '(แนบไฟล์หลักฐาน)' : '(แนบเอกสารเพิ่มเติมถ้ามี)'}
               </span>
-              <span className="text-[11px] text-slate-400 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
             </label>
 
             {!attachedFile ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-[#0B2046]/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-slate-50"
+                className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#0B2046]/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-slate-50 dark:hover:bg-slate-800/40"
               >
                 <input
                   ref={fileInputRef}
@@ -442,19 +442,19 @@ export default function CreateTransferModal({
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
-                <p className="text-xs text-slate-700 font-medium">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
+                <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 mx-auto mb-1.5" />
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
               </div>
             ) : (
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="truncate">
-                    <p className="text-xs font-medium text-slate-800 truncate">{attachedFile.name}</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">{attachedFile.name}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
                       {(attachedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
@@ -462,7 +462,7 @@ export default function CreateTransferModal({
                 <button
                   type="button"
                   onClick={removeFile}
-                  className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                  className="text-slate-400 dark:text-slate-500 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
                   title="ลบไฟล์"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -473,7 +473,7 @@ export default function CreateTransferModal({
 
           {/* 8. เหตุผล / หมายเหตุ */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 block">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
               เหตุผลการโอนย้าย / หมายเหตุ
             </label>
             <textarea
@@ -481,7 +481,7 @@ export default function CreateTransferModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="ระบุเหตุผลความจำเป็นในการโยกย้าย..."
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
             />
           </div>
 
@@ -493,21 +493,21 @@ export default function CreateTransferModal({
                 id="autoApprove"
                 checked={autoApprove}
                 onChange={(e) => setAutoApprove(e.target.checked)}
-                className="w-4 h-4 text-[#0B2046] border-slate-300 rounded focus:ring-[#0B2046]"
+                className="w-4 h-4 text-[#0B2046] border-slate-300 dark:border-slate-600 rounded focus:ring-[#0B2046]"
               />
-              <label htmlFor="autoApprove" className="text-xs text-slate-600 cursor-pointer">
+              <label htmlFor="autoApprove" className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
                 อนุมัติและปรับปรุงประวัติตำแหน่งงานทันที (Auto-Approve ข้ามสายการอนุมัติ)
               </label>
             </div>
           )}
 
           {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl text-xs font-medium text-slate-600 bg-slate-200/70 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-200/70 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>

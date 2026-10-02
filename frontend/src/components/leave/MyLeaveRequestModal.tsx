@@ -123,13 +123,13 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
-          <h3 className="text-lg font-semibold text-gray-800 text-center flex-1">ยื่นคำขอลา</h3>
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between shrink-0">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 text-center flex-1">ยื่นคำขอลา</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -138,17 +138,17 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">ประเภทการลา</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประเภทการลา</label>
             <select
               value={leaveTypeId}
               onChange={(e) => setLeaveTypeId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               required
             >
               <option value="">-- เลือกประเภทการลา --</option>
@@ -162,46 +162,46 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่เริ่มลา</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่เริ่มลา</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่สิ้นสุด</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่สิ้นสุด</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 required
               />
             </div>
           </div>
 
           {leaveDays > 0 && (
-            <p className="text-xs text-gray-500 -mt-3">
-              รวมทั้งหมด <span className="font-semibold text-gray-700">{leaveDays} วัน</span>
+            <p className="text-xs text-gray-500 dark:text-slate-400 -mt-3">
+              รวมทั้งหมด <span className="font-semibold text-gray-700 dark:text-slate-300">{leaveDays} วัน</span>
             </p>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">เหตุผลการลา</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">เหตุผลการลา</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               placeholder="ระบุเหตุผลการลา (ถ้ามี)"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
               ไฟล์แนบ (เช่น ใบรับรองแพทย์)
               {isDocumentRecommended && (
                 <span className="ml-2 text-xs text-amber-600 font-normal">
@@ -209,7 +209,7 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
                 </span>
               )}
             </label>
-            <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
+            <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 text-sm text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
               <Paperclip className="w-4 h-4 shrink-0" />
               <span className="truncate">{attachment ? attachment.name : 'เลือกไฟล์แนบ...'}</span>
               <input
@@ -226,7 +226,7 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors"
             >
               ยกเลิก
             </button>

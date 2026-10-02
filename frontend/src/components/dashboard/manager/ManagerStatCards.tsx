@@ -345,12 +345,12 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           key={idx}
           className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-4 flex flex-col justify-between shadow-xs min-h-[90px] transition-all`}
         >
-          <span className="text-xs font-bold text-slate-700">{card.title}</span>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{card.title}</span>
           <div className="flex items-baseline justify-center gap-1.5 my-1">
-            <span className="text-2xl font-black text-slate-900 tracking-tight">
+            <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               {loading ? '-' : card.value}
             </span>
-            <span className="text-xs font-semibold text-slate-600">{card.unit}</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{card.unit}</span>
           </div>
         </div>
       ))}

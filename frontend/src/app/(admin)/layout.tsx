@@ -24,10 +24,10 @@ export default function AdminLayout({
   // แสดง Loading ระหว่างตรวจสอบเซสชัน
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-center space-y-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mx-auto" />
-          <p className="text-xs text-slate-500 font-medium">กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...</p>
         </div>
       </div>
     );
@@ -39,7 +39,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
+    <div className="flex h-screen bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar />

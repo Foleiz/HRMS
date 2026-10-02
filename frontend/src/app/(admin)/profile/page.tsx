@@ -483,11 +483,11 @@ function ProfilePageContent() {
         {/* LEFT COLUMN: Profile Summary Card (Matching Mockup 1 & 3) */}
         {/* ========================================================= */}
         <div className="lg:col-span-4 xl:col-span-3">
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden sticky top-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden sticky top-6">
             {/* Top Avatar Banner */}
-            <div className="p-6 text-center border-b border-slate-100">
+            <div className="p-6 text-center border-b border-slate-100 dark:border-slate-700/60">
               <div className="relative inline-block mx-auto mb-4">
-                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-slate-50 shadow-sm bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-400">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-slate-50 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -507,7 +507,7 @@ function ProfilePageContent() {
                   onClick={() => avatarFileInputRef.current?.click()}
                   disabled={isUploadingAvatar}
                   title="เปลี่ยนรูปโปรไฟล์"
-                  className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer border-2 border-white"
+                  className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer border-2 border-white dark:border-slate-800"
                 >
                   {isUploadingAvatar ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -519,48 +519,48 @@ function ProfilePageContent() {
 
               {/* Employee Code & Status Badges */}
               <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 font-mono">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
                   {employee?.employeeCode || 'DEV-001'}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70 flex items-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-green-900/20 text-emerald-700 dark:text-green-400 border border-emerald-200/70 dark:border-green-800/50 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Active
                 </span>
               </div>
 
               {/* Full Name & Position */}
-              <h2 className="text-base font-bold text-slate-900 mt-2">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2">
                 {employee?.prefix ? `${employee.prefix} ` : ''}
                 {employee?.firstName} {employee?.lastName}
               </h2>
-              <p className="text-xs font-medium text-slate-500 mt-0.5">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                 {employee?.positionName || 'Software Engineer'}
               </p>
             </div>
 
             {/* Contact Information Section */}
-            <div className="p-5 border-b border-slate-100 space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 space-y-3.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
                 <Phone className="w-3.5 h-3.5 text-[#0B2046]" />
                 ข้อมูลติดต่อ
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div>
-                  <span className="text-slate-400 block mb-0.5">อีเมล</span>
-                  <span className="text-slate-800 font-medium break-all">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">อีเมล</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium break-all">
                     {formData.email || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">เบอร์โทรศัพท์</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">เบอร์โทรศัพท์</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {formData.phone || '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">ที่อยู่ปัจจุบัน</span>
-                  <span className="text-slate-700 leading-relaxed block">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">ที่อยู่ปัจจุบัน</span>
+                  <span className="text-slate-700 dark:text-slate-300 leading-relaxed block">
                     {formData.address || '-'}
                   </span>
                 </div>
@@ -569,35 +569,35 @@ function ProfilePageContent() {
 
             {/* Job Position Information Section */}
             <div className="p-5 space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
                 <Briefcase className="w-3.5 h-3.5 text-[#0B2046]" />
                 ข้อมูลตำแหน่งงาน
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div>
-                  <span className="text-slate-400 block mb-0.5">ฝ่าย</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">ฝ่าย</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {employee?.divisionName || 'ฝ่ายเทคโนโลยีสารสนเทศ'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">แผนก</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">แผนก</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {employee?.departmentName || 'แผนกพัฒนาซอฟต์แวร์'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">วันที่เริ่มงาน</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">วันที่เริ่มงาน</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {employee?.createdAt
                       ? new Date(employee.createdAt).toLocaleDateString('th-TH')
                       : '01/01/2023'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">โรงพยาบาลประกันสังคม</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-slate-400 dark:text-slate-500 block mb-0.5">โรงพยาบาลประกันสังคม</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-medium">
                     {formData.hospitalName || employee?.socialSecurity?.hospitalName || '-'}
                   </span>
                 </div>
@@ -617,7 +617,7 @@ function ProfilePageContent() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                 activeTab === 'profile'
                   ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
               }`}
             >
               <UserCheck className="w-4 h-4" />
@@ -629,7 +629,7 @@ function ProfilePageContent() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                 activeTab === 'account'
                   ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -641,7 +641,7 @@ function ProfilePageContent() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                 activeTab === 'history'
                   ? 'bg-[#0B2046] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/80'
               }`}
             >
               <History className="w-4 h-4" />
@@ -653,8 +653,8 @@ function ProfilePageContent() {
           {activeTab === 'profile' && (
             <div className="space-y-6 animate-in fade-in duration-150">
               {/* Card 1: ข้อมูลส่วนตัว */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <User className="w-4 h-4 text-[#0B2046]" />
                   ข้อมูลส่วนตัว
                 </h3>
@@ -662,13 +662,13 @@ function ProfilePageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* คำนำหน้า */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       คำนำหน้า <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.prefix}
                       onChange={(e) => handleInputChange('prefix', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     >
                       <option value="นาย">นาย</option>
                       <option value="นาง">นาง</option>
@@ -678,7 +678,7 @@ function ProfilePageContent() {
 
                   {/* ชื่อ */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       ชื่อ <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -686,13 +686,13 @@ function ProfilePageContent() {
                       value={formData.firstName}
                       onChange={(e) => handleInputChange('firstName', e.target.value)}
                       placeholder="ชื่อจริง"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* นามสกุล */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       นามสกุล <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -700,13 +700,13 @@ function ProfilePageContent() {
                       value={formData.lastName}
                       onChange={(e) => handleInputChange('lastName', e.target.value)}
                       placeholder="นามสกุล"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* วันเกิด */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       วันเกิด
                     </label>
                     <div className="relative">
@@ -714,20 +714,20 @@ function ProfilePageContent() {
                         type="date"
                         value={formData.birthDate}
                         onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                        className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                       />
                     </div>
                   </div>
 
                   {/* เพศ */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       เพศ
                     </label>
                     <select
                       value={formData.gender}
                       onChange={(e) => handleInputChange('gender', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     >
                       <option value="ชาย">ชาย</option>
                       <option value="หญิง">หญิง</option>
@@ -737,13 +737,13 @@ function ProfilePageContent() {
 
                   {/* สถานะภาพ */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       สถานะภาพ
                     </label>
                     <select
                       value={formData.maritalStatus}
                       onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     >
                       {maritalStatuses.length > 0 ? (
                         maritalStatuses.map((m) => (
@@ -764,7 +764,7 @@ function ProfilePageContent() {
 
                   {/* คู่สมรส */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       คู่สมรส
                     </label>
                     <input
@@ -772,13 +772,13 @@ function ProfilePageContent() {
                       value={formData.spouse}
                       onChange={(e) => handleInputChange('spouse', e.target.value)}
                       placeholder="ชื่อ-นามสกุลคู่สมรส"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* จำนวนบุตร */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       จำนวนบุตร
                     </label>
                     <input
@@ -786,13 +786,13 @@ function ProfilePageContent() {
                       min="0"
                       value={formData.numberOfChildren}
                       onChange={(e) => handleInputChange('numberOfChildren', parseInt(e.target.value) || 0)}
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* บิดา */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       บิดา
                     </label>
                     <input
@@ -800,13 +800,13 @@ function ProfilePageContent() {
                       value={formData.father}
                       onChange={(e) => handleInputChange('father', e.target.value)}
                       placeholder="ชื่อ-นามสกุลบิดา"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* มารดา */}
                   <div className="md:col-span-3">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       มารดา
                     </label>
                     <input
@@ -821,8 +821,8 @@ function ProfilePageContent() {
               </div>
 
               {/* Card 2: ข้อมูลติดต่อ */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Phone className="w-4 h-4 text-[#0B2046]" />
                   ข้อมูลติดต่อ
                 </h3>
@@ -830,7 +830,7 @@ function ProfilePageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* อีเมล */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       อีเมล
                     </label>
                     <input
@@ -838,13 +838,13 @@ function ProfilePageContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       placeholder="example@company.com"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* เบอร์โทรศัพท์ */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       เบอร์โทรศัพท์
                     </label>
                     <input
@@ -852,13 +852,13 @@ function ProfilePageContent() {
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="081-234-5678"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* ที่อยู่ปัจจุบัน */}
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       ที่อยู่ปัจจุบัน
                     </label>
                     <textarea
@@ -873,9 +873,9 @@ function ProfilePageContent() {
               </div>
 
               {/* Card 3: ข้อมูลตำแหน่งงาน (Read-only ตาม Mockup) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-[#0B2046]" />
                     ข้อมูลตำแหน่งงาน
                   </h3>
@@ -933,8 +933,8 @@ function ProfilePageContent() {
               </div>
 
               {/* Card 4: บัญชีธนาคาร (Mockup 2) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#0B2046]" />
                   บัญชีธนาคาร
                 </h3>
@@ -942,7 +942,7 @@ function ProfilePageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* ธนาคาร */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">ธนาคาร</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">ธนาคาร</label>
                     <select
                       value={formData.bankName}
                       onChange={(e) => handleInputChange('bankName', e.target.value)}
@@ -963,7 +963,7 @@ function ProfilePageContent() {
 
                   {/* เลขที่บัญชี */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">เลขที่บัญชี</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">เลขที่บัญชี</label>
                     <input
                       type="text"
                       value={formData.accountNumber}
@@ -976,9 +976,9 @@ function ProfilePageContent() {
               </div>
 
               {/* Card 5: สิทธิประโยชน์และประกันสังคม */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
                     สิทธิประโยชน์และประกันสังคม
                   </h3>
@@ -990,7 +990,7 @@ function ProfilePageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* โรงพยาบาลประกันสังคม */}
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                       โรงพยาบาลประกันสังคม
                     </label>
                     <input
@@ -998,7 +998,7 @@ function ProfilePageContent() {
                       value={formData.hospitalName}
                       onChange={(e) => handleInputChange('hospitalName', e.target.value)}
                       placeholder="เช่น โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย"
-                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     />
                     <p className="text-[11px] text-slate-400 mt-1">
                       สถานพยาบาลหลักที่ลงทะเบียนไว้ตามสิทธิประกันสังคม (เลขประจำตัวผู้ประกันตนใช้เลขเดียวกันกับบัตรประจำตัวประชาชน)
@@ -1008,9 +1008,9 @@ function ProfilePageContent() {
               </div>
 
               {/* Card 6: ลายเซ็นดิจิทัล (Digital Signature - Mockup 2) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <FileSignature className="w-4 h-4 text-[#0B2046]" />
                     ลายเซ็นดิจิทัล
                   </h3>
@@ -1105,9 +1105,9 @@ function ProfilePageContent() {
           {/* TAB 2: จัดการบัญชี (Mockup 3) */}
           {activeTab === 'account' && (
             <div className="space-y-6 animate-in fade-in duration-150">
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-6">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">จัดการบัญชี</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">จัดการบัญชี</h3>
                   <p className="text-xs text-slate-500 mt-1">
                     ตั้งค่าชื่อผู้ใช้งานและรหัสผ่านสำหรับเข้าสู่ระบบ
                   </p>
@@ -1122,7 +1122,7 @@ function ProfilePageContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Username */}
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                         ชื่อผู้ใช้
                       </label>
                       <div className="relative">
@@ -1130,7 +1130,7 @@ function ProfilePageContent() {
                           type="text"
                           disabled
                           value={user?.username || 'user_001'}
-                          className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-600 font-mono cursor-not-allowed"
+                          className="w-full h-9.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-mono cursor-not-allowed"
                         />
                         <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3" />
                       </div>
@@ -1138,7 +1138,7 @@ function ProfilePageContent() {
 
                     {/* Password */}
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                         รหัสผ่าน
                       </label>
                       <div className="flex items-center gap-2">
@@ -1147,14 +1147,14 @@ function ProfilePageContent() {
                             type="password"
                             disabled
                             value="••••••••••••"
-                            className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs bg-slate-50 text-slate-600 font-mono tracking-widest cursor-not-allowed"
+                            className="w-full h-9.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-mono tracking-widest cursor-not-allowed"
                           />
                         </div>
 
                         <button
                           type="button"
                           onClick={() => setIsPasswordModalOpen(true)}
-                          className="px-4 h-9.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                          className="px-4 h-9.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer shrink-0"
                         >
                           เปลี่ยนรหัสผ่าน
                         </button>
@@ -1180,14 +1180,14 @@ function ProfilePageContent() {
       {/* ========================================================= */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center">
                   <KeyRound className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">เปลี่ยนรหัสผ่าน</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">เปลี่ยนรหัสผ่าน</h3>
               </div>
               <button
                 onClick={() => setIsPasswordModalOpen(false)}
@@ -1210,7 +1210,7 @@ function ProfilePageContent() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="กรอกรหัสผ่านปัจจุบัน"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     required
                   />
                   <button
@@ -1238,7 +1238,7 @@ function ProfilePageContent() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     required
                   />
                   <button
@@ -1266,7 +1266,7 @@ function ProfilePageContent() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500/20"
                     required
                   />
                   <button

@@ -80,10 +80,10 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
       <div
         className={`relative flex items-center w-full rounded-lg transition-all text-xs ${
           hasError
-            ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900'
+            ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 dark:text-slate-100'
             : isOpen
-            ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white text-slate-800'
-            : 'border border-slate-200 bg-white text-slate-800 hover:border-slate-300'
+            ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+            : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:border-slate-600'
         } ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-text'} ${className}`}
         onClick={() => {
           if (!disabled) {
@@ -92,7 +92,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
           }
         }}
       >
-        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none shrink-0" />
+        <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none shrink-0" />
 
         <input
           ref={inputRef}
@@ -109,7 +109,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
             setSearchQuery('');
           }}
           onKeyDown={handleKeyDown}
-          className="w-full pl-8 pr-14 py-2 bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+          className="w-full pl-8 pr-14 py-2 bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
         />
 
         {/* Action Icons: Clear & Chevron */}
@@ -118,7 +118,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors cursor-pointer"
               title="ล้างสัญชาติที่เลือก"
             >
               <X className="w-3 h-3" />
@@ -136,7 +136,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
                 }
               }
             }}
-            className="p-1 text-slate-400 hover:text-slate-600 transition-transform cursor-pointer"
+            className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 transition-transform cursor-pointer"
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -145,26 +145,26 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
 
       {/* Floating Dropdown Options Menu */}
       {isOpen && !disabled && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200/90 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           {/* Header Info */}
-          <div className="px-3 py-1.5 border-b border-slate-100 bg-slate-50/80 text-[11px] text-slate-500 flex justify-between items-center">
+          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/80 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between items-center">
             <span>พบทั้งหมด {filteredNationalities.length} สัญชาติ</span>
             {searchQuery ? (
               <span className="text-[#0B2046] font-medium truncate max-w-[150px]">
                 ค้นหา: &quot;{searchQuery}&quot;
               </span>
             ) : (
-              <span className="text-slate-400">พิมพ์เพื่อค้นหา</span>
+              <span className="text-slate-400 dark:text-slate-500">พิมพ์เพื่อค้นหา</span>
             )}
           </div>
 
           {/* Nationalities List */}
           <div className="max-h-56 overflow-y-auto divide-y divide-slate-50 text-xs">
             {filteredNationalities.length === 0 ? (
-              <div className="py-6 px-4 text-center text-slate-400">
+              <div className="py-6 px-4 text-center text-slate-400 dark:text-slate-500">
                 <Search className="w-5 h-5 mx-auto mb-1.5 opacity-40" />
                 <p className="text-xs">ไม่พบสัญชาติที่ตรงกับ &quot;{searchQuery}&quot;</p>
-                <p className="text-[11px] text-slate-400 mt-1">ลองพิมพ์ชื่อประเทศ เช่น ไทย, ญี่ปุ่น, อังกฤษ หรือ english</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">ลองพิมพ์ชื่อประเทศ เช่น ไทย, ญี่ปุ่น, อังกฤษ หรือ english</p>
               </div>
             ) : (
               filteredNationalities.map((item) => {
@@ -176,8 +176,8 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
                     onClick={() => handleSelect(item.name)}
                     className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-50 text-[#0B2046] font-semibold'
-                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-[#0B2046] font-semibold'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 dark:text-slate-100'
                     }`}
                   >
                     <span>{item.name}</span>

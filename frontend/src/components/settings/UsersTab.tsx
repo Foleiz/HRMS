@@ -122,17 +122,17 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   return (
     <div className="space-y-4">
       {/* 1. Filter Bar & Action Header */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/70 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/70 shadow-xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search Input */}
           <form onSubmit={handleSearchSubmit} className="relative min-w-[240px] flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="ค้นหาผู้ใช้งาน, อีเมล..."
-              className="w-full h-10 pl-9 pr-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] transition-all"
+              className="w-full h-10 pl-9 pr-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
             />
           </form>
 
@@ -140,7 +140,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           <select
             value={selectedStatus}
             onChange={handleStatusChange}
-            className="h-10 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+            className="h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
           >
             <option value="ทั้งหมด">สถานะทั้งหมด</option>
             <option value="ACTIVE">ใช้งานอยู่</option>
@@ -152,7 +152,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           <select
             value={selectedRole}
             onChange={handleRoleChange}
-            className="h-10 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+            className="h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
           >
             <option value="ทั้งหมด">บทบาททั้งหมด</option>
             {roles.map((r) => (
@@ -174,11 +174,11 @@ export const UsersTab: React.FC<UsersTabProps> = ({
       </div>
 
       {/* 2. User Accounts Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase">
+              <tr className="bg-slate-50/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
                 <th className="py-3.5 px-4 w-12 text-center">ลำดับ</th>
                 <th className="py-3.5 px-4 min-w-[120px]">ชื่อผู้ใช้งาน</th>
                 <th className="py-3.5 px-4 min-w-[180px]">ชื่อ-นามสกุล</th>
@@ -190,16 +190,16 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:text-slate-300">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
                     กำลังโหลดข้อมูลผู้ใช้งาน...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
                     ไม่พบข้อมูลบัญชีผู้ใช้งาน
                   </td>
                 </tr>
@@ -208,27 +208,27 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                   const rowNumber = (currentPage - 1) * pageSize + idx + 1;
 
                   return (
-                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/50 transition-colors">
                       {/* 1. ลำดับ */}
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-medium">
+                      <td className="py-3.5 px-4 text-center text-slate-400 dark:text-slate-500 font-medium">
                         {rowNumber}
                       </td>
 
                       {/* 2. ชื่อผู้ใช้งาน */}
-                      <td className="py-3.5 px-4 font-bold text-slate-800 tracking-tight">
+                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                         {user.username}
                       </td>
 
                       {/* 3. ชื่อ-นามสกุล + Avatar + แผนก/ตำแหน่ง */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200 dark:border-slate-700">
                             {user.fullName.charAt(0) || <User className="w-4 h-4" />}
                           </div>
                           <div className="leading-tight">
-                            <div className="font-semibold text-slate-800">{user.fullName}</div>
+                            <div className="font-semibold text-slate-800 dark:text-slate-200">{user.fullName}</div>
                             {(user.departmentName || user.positionName) && (
-                              <div className="text-[10px] text-slate-400 mt-0.5">
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                                 {user.positionName ? user.positionName : ''}
                                 {user.departmentName ? ` • ${user.departmentName}` : ''}
                               </div>
@@ -238,7 +238,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 4. อีเมลองค์กร */}
-                      <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                         {user.corporateEmail || '-'}
                       </td>
 
@@ -248,7 +248,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                           {user.roles.map((r, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 bg-blue-50/80 text-blue-700 border border-blue-200/60 rounded text-[10px] font-semibold tracking-wide"
+                              className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20/80 text-blue-700 dark:text-blue-400 border border-blue-200/60 rounded text-[10px] font-semibold tracking-wide"
                             >
                               {r.roleCode}
                             </span>
@@ -265,7 +265,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                           </span>
                         )}
                         {user.status === 'INACTIVE' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                             ไม่ได้ใช้งาน
                           </span>
@@ -279,7 +279,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 7. เข้าสู่ระบบล่าสุด */}
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">
                         {formatLastLogin(user.lastLoginAt)}
                       </td>
 
@@ -291,7 +291,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                           items={[
                             {
                               label: 'แก้ไขข้อมูล / บทบาท',
-                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
+                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />,
                               onClick: () => onEditUserClick(user),
                             },
                             {
@@ -302,7 +302,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                             {
                               divider: true,
                               label: user.status === 'ACTIVE' ? 'ระงับการใช้งาน' : 'เปิดใช้งานบัญชี',
-                              icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
+                              icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
                               className: user.status === 'ACTIVE' ? 'text-slate-600' : 'text-emerald-600',
                               onClick: () => onToggleStatusClick(user, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'),
                             },
@@ -335,9 +335,9 @@ export const UsersTab: React.FC<UsersTabProps> = ({
         </div>
 
         {/* 3. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
-        <div className="py-3 px-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white">
+        <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white dark:bg-slate-800">
           {/* ซ้ายล่าง: Rows per page selector */}
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
             <span>แสดง</span>
             <select
               value={pageSize}
@@ -348,7 +348,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 }
                 onPageChange(1);
               }}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
               <option value={5}>5</option>
               <option value={8}>8</option>
@@ -359,7 +359,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               <option value={100}>100</option>
             </select>
             <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 text-[11px] ml-1">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
               (ทั้งหมด {totalCount.toLocaleString()} บัญชีผู้ใช้งาน)
             </span>
           </div>
@@ -369,7 +369,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
             <button
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage <= 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
               title="หน้าก่อนหน้า"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -380,16 +380,14 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 <button
                   key={idx}
                   onClick={() => onPageChange(p)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    p === currentPage
-                      ? 'bg-[#0B2046] text-white shadow-xs'
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${ p === currentPage ? 'bg-[#0B2046] text-white shadow-xs'
                       : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {p}
                 </button>
               ) : (
-                <span key={idx} className="w-6 text-center text-slate-400 select-none">
+                <span key={idx} className="w-6 text-center text-slate-400 dark:text-slate-500 select-none">
                   ...
                 </span>
               )
@@ -398,7 +396,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
             <button
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage >= totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
               title="หน้าถัดไป"
             >
               <ChevronRight className="w-3.5 h-3.5" />

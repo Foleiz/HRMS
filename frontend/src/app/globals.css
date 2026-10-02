@@ -1,9 +1,17 @@
 @import "tailwindcss";
 
+/* Dark mode variant for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #F8FAFC;
   --foreground: #1E293B;
   --font-sans: var(--font-prompt), sans-serif;
+}
+
+.dark {
+  --background: #0F172A;
+  --foreground: #F1F5F9;
 }
 
 body {
@@ -26,6 +34,13 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748B;
 }
 
 @keyframes shrinkWidth {

@@ -88,20 +88,20 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Lock className="w-5 h-5 text-[#0B2046]" />
-            <h3 className="text-base font-semibold text-gray-800">ปิดยอดวันลาสิ้นปี {year + 543}</h3>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ปิดยอดวันลาสิ้นปี {year + 543}</h3>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+          <button onClick={handleClose} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {loading && (
-            <div className="py-16 text-center text-gray-400 flex items-center justify-center gap-2">
+            <div className="py-16 text-center text-gray-400 dark:text-slate-500 flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" /> กำลังคำนวณตัวอย่าง...
             </div>
           )}
@@ -131,13 +131,13 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
               )}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="text-xs text-gray-500">รายการยอดที่มีคงเหลือ</div>
-                  <div className="text-lg font-bold text-gray-800">{data.balanceCount}</div>
+                <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-950 p-3">
+                  <div className="text-xs text-gray-500 dark:text-slate-400">รายการยอดที่มีคงเหลือ</div>
+                  <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{data.balanceCount}</div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="text-xs text-gray-500">คงเหลือรวม (วัน)</div>
-                  <div className="text-lg font-bold text-gray-800">{fmt(data.totalRemainingDays)}</div>
+                <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-950 p-3">
+                  <div className="text-xs text-gray-500 dark:text-slate-400">คงเหลือรวม (วัน)</div>
+                  <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{fmt(data.totalRemainingDays)}</div>
                 </div>
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
                   <div className="text-xs text-emerald-700">ยกไปปีหน้า (วัน)</div>
@@ -150,18 +150,18 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
               </div>
 
               <div className="relative w-72">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="ค้นหาชื่อ, รหัส, ประเภทการลา..."
-                  className="w-full pl-9 pr-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm"
+                  className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-950 rounded-xl border border-gray-200 dark:border-slate-700 text-sm"
                 />
               </div>
 
-              <div className="border border-gray-100 rounded-xl overflow-x-auto">
+              <div className="border border-gray-100 dark:border-slate-700/60 rounded-xl overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-xs text-gray-500">
+                  <thead className="bg-gray-50 dark:bg-slate-950 text-xs text-gray-500 dark:text-slate-400">
                     <tr>
                       <th className="text-left px-3 py-2">พนักงาน</th>
                       <th className="text-left px-3 py-2">ประเภทการลา</th>
@@ -175,7 +175,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                   <tbody>
                     {rows.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="text-center text-gray-400 py-8">
+                        <td colSpan={7} className="text-center text-gray-400 dark:text-slate-500 py-8">
                           ไม่มียอดคงเหลือที่ต้องปิด
                         </td>
                       </tr>
@@ -183,19 +183,19 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                     {rows.map((r) => (
                       <tr key={r.balanceId} className="border-t border-gray-50">
                         <td className="px-3 py-2">
-                          <div className="font-medium text-gray-800">{r.employeeName}</div>
-                          <div className="text-xs text-gray-400">{r.employeeCode}</div>
+                          <div className="font-medium text-gray-800 dark:text-slate-200">{r.employeeName}</div>
+                          <div className="text-xs text-gray-400 dark:text-slate-500">{r.employeeCode}</div>
                         </td>
-                        <td className="px-3 py-2 text-gray-700">{r.leaveTypeName}</td>
+                        <td className="px-3 py-2 text-gray-700 dark:text-slate-300">{r.leaveTypeName}</td>
                         <td className="px-3 py-2 text-right">{fmt(r.remainingDays)}</td>
-                        <td className="px-3 py-2 text-right text-gray-500">
+                        <td className="px-3 py-2 text-right text-gray-500 dark:text-slate-400">
                           {r.carryForwardAllowed ? fmt(r.carryForwardMaxDays ?? 0) : 'ไม่ยกยอด'}
                         </td>
                         <td className="px-3 py-2 text-right font-semibold text-emerald-700">{fmt(r.carryDays)}</td>
-                        <td className={`px-3 py-2 text-right ${r.forfeitDays > 0 ? 'font-semibold text-rose-600' : 'text-gray-400'}`}>
+                        <td className={`px-3 py-2 text-right ${r.forfeitDays > 0 ? 'font-semibold text-rose-600' : 'text-gray-400 dark:text-slate-500'}`}>
                           {fmt(r.forfeitDays)}
                         </td>
-                        <td className="px-3 py-2 text-gray-500">{thaiDate(r.carryForwardExpiry)}</td>
+                        <td className="px-3 py-2 text-gray-500 dark:text-slate-400">{thaiDate(r.carryForwardExpiry)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -211,7 +211,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="หมายเหตุ (ถ้ามี)"
-                    className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
               )}
@@ -222,8 +222,8 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-          <button onClick={handleClose} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-700/60 flex justify-end gap-2">
+          <button onClick={handleClose} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900">
             ปิดหน้าต่าง
           </button>
           {data?.canClose && !confirming && (

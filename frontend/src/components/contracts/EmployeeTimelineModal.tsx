@@ -47,10 +47,10 @@ export default function EmployeeTimelineModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header ตรงตาม Mockup: ไทม์ไลน์ตำแหน่งของ {ชื่อ} · {รหัส} */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
-          <h3 className="text-base font-medium text-slate-800">
+        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-700/60">
+          <h3 className="text-base font-medium text-slate-800 dark:text-slate-200">
             ไทม์ไลน์ตำแหน่งของ{' '}
             <span className="text-[#16a34a] font-semibold">
               {employeeName} · {employeeCode}
@@ -58,7 +58,7 @@ export default function EmployeeTimelineModal({
           </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -67,7 +67,7 @@ export default function EmployeeTimelineModal({
         {/* Content Body ตรงตาม Mockup 100% */}
         <div className="p-7 max-h-[70vh] overflow-y-auto">
           {loading ? (
-            <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+            <div className="py-16 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
               <span className="text-xs">กำลังโหลดไทม์ไลน์ตำแหน่งงาน...</span>
             </div>
@@ -77,7 +77,7 @@ export default function EmployeeTimelineModal({
               <span>{error}</span>
             </div>
           ) : timeline.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-sm">
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
               ไม่พบข้อมูลประวัติตำแหน่งงานของพนักงานคนนี้
             </div>
           ) : (
@@ -98,9 +98,7 @@ export default function EmployeeTimelineModal({
 
                     {/* จุด Node ของไทม์ไลน์: วงกลมกลวง (อดีต) / วงกลมทึบสีดำ (ปัจจุบัน) */}
                     <span
-                      className={`absolute left-[-24px] top-[3px] flex items-center justify-center w-4 h-4 rounded-full transition-all ${
-                        isCurrent
-                          ? 'bg-slate-900 border-2 border-slate-900'
+                      className={`absolute left-[-24px] top-[3px] flex items-center justify-center w-4 h-4 rounded-full transition-all ${ isCurrent ? 'bg-slate-900 border-2 border-slate-900'
                           : 'bg-white border-2 border-slate-700'
                       }`}
                     />
@@ -108,13 +106,13 @@ export default function EmployeeTimelineModal({
                     {/* เนื้อหาไทม์ไลน์ตรงตามรูป Mockup */}
                     <div className="flex-1">
                       {/* 1. ช่วงเวลา: 01/03/2567 – 31/07/2569 */}
-                      <div className="text-xs text-slate-600 font-normal">
+                      <div className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                         {item.dateRangeDisplay}
                       </div>
 
                       {/* 2. ชื่อตำแหน่ง + Badge ปัจจุบัน */}
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="font-semibold text-sm text-slate-900">
+                        <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">
                           {item.positionName}
                         </span>
                         {isCurrent && (
@@ -125,7 +123,7 @@ export default function EmployeeTimelineModal({
                       </div>
 
                       {/* 3. สังกัดสายงาน / แผนก / สาขา · หัวหน้างาน */}
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {item.hierarchyDisplay}
                       </div>
                     </div>
@@ -137,11 +135,11 @@ export default function EmployeeTimelineModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-7 py-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-end px-7 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-slate-700 bg-slate-200/80 hover:bg-slate-300 rounded-xl transition-colors"
+            className="px-5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200/80 hover:bg-slate-300 rounded-xl transition-colors"
           >
             ปิด
           </button>

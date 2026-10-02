@@ -288,10 +288,10 @@ export const PayrollItemModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 text-center">
-          <h3 className="text-lg font-bold text-slate-900">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {item
               ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
               : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`}
@@ -299,7 +299,7 @@ export const PayrollItemModal: React.FC<Props> = ({
           <button
             onClick={onClose}
             type="button"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -308,7 +308,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs dark:bg-red-900/20 dark:text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -317,46 +317,46 @@ export const PayrollItemModal: React.FC<Props> = ({
           {/* Item Code (only when creating) */}
           {!item && (
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">รหัสรายการ (เช่น INC_BONUS)</label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_BONUS)</label>
               <input
                 type="text"
                 required
                 placeholder="เช่น INC_OTHER"
                 value={itemCode}
                 onChange={(e) => setItemCode(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 uppercase"
+                className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 uppercase"
               />
             </div>
           )}
 
           {/* Item Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1.5">ชื่อรายการ</label>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ</label>
             <input
               type="text"
               required
               placeholder="เช่น เบี้ยเลี้ยงพิเศษ"
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
+              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1.5">คำอธิบายย่อ</label>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">คำอธิบายย่อ</label>
             <input
               type="text"
               placeholder="เช่น จ่ายตามที่ปฏิบัติงานนอกสถานที่"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800"
+              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
             />
           </div>
 
           {/* Calculation Type */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               ประเภทการคำนวณ
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -372,7 +372,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                   className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
                     calculationType === opt.id
                       ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40'
                   }`}
                 >
                   {opt.label}
@@ -383,16 +383,16 @@ export const PayrollItemModal: React.FC<Props> = ({
 
           {/* If FORMULA is chosen: Show Formula Template selector and clean Summary Card */}
           {calculationType === 'FORMULA' ? (
-            <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+            <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl">
               <div>
-                <label className="block text-xs font-semibold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
                   <Calculator className="w-3.5 h-3.5 text-blue-700" />
                   <span>รูปแบบสูตรมาตรฐานของระบบ (Formula Template)</span>
                 </label>
                 <select
                   value={formulaTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 font-semibold"
+                  className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
                 >
                   {availableTemplates.map((tpl) => (
                     <option key={tpl.code} value={tpl.code}>
@@ -403,14 +403,14 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
 
               {selectedTemplate && (
-                <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2.5 shadow-2xs">
+                <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-2xs">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">เกณฑ์ / สูตรคำนวณ:</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">เกณฑ์ / สูตรคำนวณ:</span>
                     <span className="font-bold text-[#0B2046] font-mono bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200">
                       {selectedTemplate.defaultValue}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed pt-2 border-t border-slate-100 flex items-start gap-1.5">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-start gap-1.5">
                     <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
                     <span>{selectedTemplate.hint}</span>
                   </p>
@@ -419,7 +419,7 @@ export const PayrollItemModal: React.FC<Props> = ({
 
               {formulaTemplate === 'CUSTOM_FORMULA' && (
                 <div className="pt-1">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     ระบุสูตรหรือเกณฑ์กำหนดเอง
                   </label>
                   <input
@@ -427,14 +427,14 @@ export const PayrollItemModal: React.FC<Props> = ({
                     placeholder="เช่น (ฐานเงินเดือน x 2%) หรือ ตามสัญญาพิเศษ"
                     value={formulaValue}
                     onChange={(e) => setFormulaValue(e.target.value)}
-                    className="w-full text-xs px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-800"
+                    className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-800 dark:text-slate-200"
                   />
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {calculationType === 'FIXED' ? 'จำนวนเงินคงที่ (บาท)' : 'เกณฑ์การคิด / บันทึกช่วยจำ'}
               </label>
               <div className="relative">
@@ -448,15 +448,15 @@ export const PayrollItemModal: React.FC<Props> = ({
                   }
                   value={formulaValue}
                   onChange={(e) => setFormulaValue(e.target.value)}
-                  className={`w-full text-xs py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 ${
+                  className={`w-full text-xs py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 ${
                     calculationType === 'FIXED' ? 'pl-7 pr-3 font-semibold' : 'px-3.5'
                   }`}
                 />
                 {calculationType === 'FIXED' && (
-                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-medium">฿</span>
+                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 dark:text-slate-500 font-medium">฿</span>
                 )}
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
                 {calculationType === 'FIXED'
                   ? 'ระบุยอดเงินคงที่ที่จ่ายหรือหักในสลิปเงินเดือน'
                   : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}
@@ -466,30 +466,30 @@ export const PayrollItemModal: React.FC<Props> = ({
 
           {/* Checkboxes: คิดภาษี & คิดประกันสังคม */}
           <div className="flex items-center gap-6 pt-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 checked={isTaxable}
                 onChange={(e) => setIsTaxable(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
               />
               <span>คิดภาษี</span>
             </label>
 
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 checked={isSocialSecurityCalculated}
                 onChange={(e) => setIsSocialSecurityCalculated(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
               />
               <span>คิดประกันสังคม</span>
             </label>
           </div>
 
           {/* เปิดการใช้งานรายการนี้ (Toggle Switch) */}
-          <div className="flex items-center justify-between pt-2 pb-1 border-t border-slate-100">
-            <span className="text-xs font-medium text-slate-800">เปิดใช้งานรายการนี้</span>
+          <div className="flex items-center justify-between pt-2 pb-1 border-t border-slate-100 dark:border-slate-700/60">
+            <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดใช้งานรายการนี้</span>
             <button
               type="button"
               role="switch"
@@ -500,7 +500,7 @@ export const PayrollItemModal: React.FC<Props> = ({
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
                   isActive ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -512,7 +512,7 @@ export const PayrollItemModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer text-center"
+              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-all cursor-pointer text-center"
             >
               ยกเลิก
             </button>

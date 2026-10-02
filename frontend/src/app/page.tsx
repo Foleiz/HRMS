@@ -92,7 +92,7 @@ export default function HomePage() {
 
   if (user && !hasAnyPermission) {
     return (
-      <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
+      <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans text-slate-800 dark:text-slate-200">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Navbar />
@@ -110,7 +110,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans text-slate-800 dark:text-slate-200">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar />
@@ -127,18 +127,18 @@ export default function HomePage() {
 
               {!hasDataModulePermission ? (
                 /* กล่องแจ้งเตือนเมื่อติ๊กเฉพาะแดชบอร์ด แต่ไม่ได้เลือกหัวข้อข้อมูลอื่นใด */
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center my-2">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-5 shadow-xs">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-8 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center my-2">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-5 shadow-xs">
                     <ShieldAlert className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2.5">
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2.5">
                     คุณไม่มีสิทธิ์การเข้าถึงข้อมูล
                   </h3>
-                  <p className="text-sm text-slate-500 max-w-lg leading-relaxed mb-6">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-lg leading-relaxed mb-6">
                     บทบาทของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงข้อมูลสถิติหรือโมดูลใดๆ ในระบบ 
                     หากต้องการดูข้อมูลสรุป กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอเปิดสิทธิ์ในโมดูลที่ต้องการใช้งาน
                   </p>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-medium">
                     <Lock className="w-3.5 h-3.5 text-slate-400" />
                     <span>จำกัดสิทธิ์การแสดงผลเฉพาะโมดูลที่ได้รับอนุญาต</span>
                   </div>
