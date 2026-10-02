@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -48,7 +48,7 @@ export default function MySalaryPage() {
   // Search & Pagination
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(5);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Breadcrumb sync
   useEffect(() => {
@@ -659,11 +659,11 @@ export default function MySalaryPage() {
                 }}
                 className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs"
               >
-                <option value={5}>5 รายการ / หน้า</option>
-                <option value={8}>8 รายการ / หน้า</option>
                 <option value={10}>10 รายการ / หน้า</option>
-                <option value={12}>12 รายการ / หน้า</option>
                 <option value={20}>20 รายการ / หน้า</option>
+                <option value={50}>50 รายการ / หน้า</option>
+                <option value={100}>100 รายการ / หน้า</option>
+                <option value={200}>200 รายการ / หน้า</option>
               </select>
               <span className="text-slate-400">
                 (แสดง {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ)

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
@@ -64,7 +64,7 @@ export default function TransfersPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -672,25 +672,43 @@ export default function TransfersPage() {
         )}
 
         {/* 7. Pagination Footer (< 1 2 3 4 >) ตรงตาม Mockup 100% */}
-        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <div>
-            แสดง{' '}
-            {activeTab === 'transfers'
-              ? paginatedTransfers.length > 0
+        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span>แสดง</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
+            <span>แถวต่อหน้า</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+              (แสดง{' '}
+              {activeTab === 'transfers'
+                ? paginatedTransfers.length > 0
+                  ? (currentPage - 1) * pageSize + 1
+                  : 0
+                : filteredEmployees.length > 0
                 ? (currentPage - 1) * pageSize + 1
-                : 0
-              : filteredEmployees.length > 0
-              ? (currentPage - 1) * pageSize + 1
-              : 0}{' '}
-            ถึง{' '}
-            {activeTab === 'transfers'
-              ? Math.min(currentPage * pageSize, filteredTransfers.length)
-              : Math.min(currentPage * pageSize, filteredEmployees.length)}{' '}
-            จาก{' '}
-            {activeTab === 'transfers'
-              ? filteredTransfers.length
-              : filteredEmployees.length}{' '}
-            รายการ
+                : 0}{' '}
+              ถึง{' '}
+              {activeTab === 'transfers'
+                ? Math.min(currentPage * pageSize, filteredTransfers.length)
+                : Math.min(currentPage * pageSize, filteredEmployees.length)}{' '}
+              จาก{' '}
+              {activeTab === 'transfers'
+                ? filteredTransfers.length
+                : filteredEmployees.length}{' '}
+              รายการ)
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">

@@ -405,7 +405,7 @@ public class AttendanceImportService : IAttendanceImportService
         var total = await q.CountAsync(cancellationToken);
 
         var page = query.Page > 0 ? query.Page : 1;
-        var pageSize = query.PageSize > 0 ? query.PageSize : 20;
+        var pageSize = query.PageSize > 0 ? query.PageSize : 10;
 
         var items = await q.OrderByDescending(b => b.ImportedAt)
             .Skip((page - 1) * pageSize)

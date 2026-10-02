@@ -102,7 +102,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var page = filter.Page < 1 ? 1 : filter.Page;
-        var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
+        var pageSize = filter.PageSize < 1 ? 10 : filter.PageSize;
 
         var items = await query
             .OrderBy(a => a.Employee != null ? a.Employee.EmployeeCode : "")

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -1095,9 +1095,11 @@ export default function ReportsPage() {
                     }}
                     className="border border-slate-200 rounded-lg px-2 py-1 text-xs bg-slate-50 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                   >
-                    <option value={5}>5</option>
                     <option value={10}>10</option>
                     <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
                   </select>
                   <span>แถว</span>
                 </div>

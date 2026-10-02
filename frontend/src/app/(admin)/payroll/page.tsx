@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -106,7 +106,7 @@ function TablePagination({
   totalCount,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [5, 10, 20, 50],
+  pageSizeOptions = [10, 20, 50, 100, 200],
   unitText = 'คน',
 }: TablePaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -1786,7 +1786,7 @@ export default function PayrollPage() {
                     setStructurePageSize(newSize);
                     setStructurePage(1);
                   }}
-                  pageSizeOptions={[5, 10, 20, 50]}
+                  pageSizeOptions={[10, 20, 50, 100, 200]}
                   unitText="รายการ"
                 />
               </div>
@@ -1931,7 +1931,7 @@ export default function PayrollPage() {
                     setEmployeeSalaryPageSize(newSize);
                     setEmployeeSalaryPage(1);
                   }}
-                  pageSizeOptions={[5, 10, 20, 50]}
+                  pageSizeOptions={[10, 20, 50, 100, 200]}
                   unitText="คน"
                 />
               </div>
@@ -2791,7 +2791,7 @@ export default function PayrollPage() {
                       setProcessPageSize(newSize);
                       setProcessPage(1);
                     }}
-                    pageSizeOptions={[5, 10, 20, 50]}
+                    pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
                   />
                 </div>
@@ -2938,7 +2938,7 @@ export default function PayrollPage() {
                       setProcessPageSize(newSize);
                       setProcessPage(1);
                     }}
-                    pageSizeOptions={[5, 10, 20, 50]}
+                    pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
                   />
                 </div>
@@ -3063,7 +3063,7 @@ export default function PayrollPage() {
                       setProcessPageSize(newSize);
                       setProcessPage(1);
                     }}
-                    pageSizeOptions={[5, 10, 20, 50]}
+                    pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
                   />
                 </div>

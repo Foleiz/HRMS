@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -701,11 +701,11 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             }}
             className="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 shadow-2xs"
           >
-            <option value={8}>8</option>
             <option value={10}>10</option>
-            <option value={15}>15</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
           </select>
           <span>แถวต่อหน้า</span>
           <span className="text-slate-400 text-[11px]">

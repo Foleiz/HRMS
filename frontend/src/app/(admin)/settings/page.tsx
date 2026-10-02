@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Users, Shield, History, ArrowLeft } from 'lucide-react';
@@ -135,7 +135,7 @@ export default function SettingsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [auditLogTotalCount, setAuditLogTotalCount] = useState(0);
   const [auditLogPage, setAuditLogPage] = useState(1);
-  const [auditLogPageSize, setAuditLogPageSize] = useState(15);
+  const [auditLogPageSize, setAuditLogPageSize] = useState(10);
   const [auditLogFilters, setAuditLogFilters] = useState<{
     startDate?: string;
     endDate?: string;

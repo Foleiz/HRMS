@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -350,13 +350,11 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               }}
               className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
-              <option value={5}>5</option>
-              <option value={8}>8</option>
               <option value={10}>10</option>
-              <option value={15}>15</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
+              <option value={200}>200</option>
             </select>
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">

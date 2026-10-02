@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
@@ -155,6 +155,7 @@ function DailyAttendanceContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [dailyPageSize, setDailyPageSize] = useState(10);
 
   // Filter States (Daily Records)
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -228,7 +229,7 @@ function DailyAttendanceContent() {
   const [batchRecords, setBatchRecords] = useState<BatchAttendanceRecord[]>([]);
   const [isLoadingBatchRecords, setIsLoadingBatchRecords] = useState<boolean>(false);
   const [batchRecordPage, setBatchRecordPage] = useState<number>(1);
-  const [batchRecordPageSize, setBatchRecordPageSize] = useState<number>(20);
+  const [batchRecordPageSize, setBatchRecordPageSize] = useState<number>(10);
   const [batchRecordSearch, setBatchRecordSearch] = useState<string>('');
   const [batchRecordTotalPages, setBatchRecordTotalPages] = useState<number>(1);
   const [batchRecordTotalCount, setBatchRecordTotalCount] = useState<number>(0);
@@ -238,6 +239,7 @@ function DailyAttendanceContent() {
   const [adjustmentsTotalCount, setAdjustmentsTotalCount] = useState(0);
   const [adjustmentsTotalPages, setAdjustmentsTotalPages] = useState(1);
   const [adjustmentsPage, setAdjustmentsPage] = useState(1);
+  const [adjustmentsPageSize, setAdjustmentsPageSize] = useState(10);
   const [adjustmentsLoading, setAdjustmentsLoading] = useState(false);
   const [pendingAdjustmentsCount, setPendingAdjustmentsCount] = useState(0);
   const [filterAdjustmentStatus, setFilterAdjustmentStatus] = useState<string>('ALL');
@@ -380,7 +382,7 @@ function DailyAttendanceContent() {
           status: selectedStatus === 'ALL' ? undefined : selectedStatus,
           search: searchKeyword.trim() || undefined,
           page: currentPage,
-          pageSize: 20,
+          pageSize: dailyPageSize,
         }),
       ]);
 
@@ -394,7 +396,7 @@ function DailyAttendanceContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, selectedDepartment, selectedStatus, searchKeyword, currentPage]);
+  }, [selectedDate, selectedDepartment, selectedStatus, searchKeyword, currentPage, dailyPageSize]);
 
   useEffect(() => {
     if (activeTab === 'daily') {
@@ -861,7 +863,7 @@ function DailyAttendanceContent() {
         status: filterAdjustmentStatus === 'ALL' ? undefined : filterAdjustmentStatus,
         search: adjustmentSearch.trim() || undefined,
         page: adjustmentsPage,
-        pageSize: 20,
+        pageSize: adjustmentsPageSize,
       });
       setAdjustments(res.items || []);
       setAdjustmentsTotalPages(res.totalPages || 1);
@@ -872,7 +874,7 @@ function DailyAttendanceContent() {
     } finally {
       setAdjustmentsLoading(false);
     }
-  }, [filterAdjustmentStatus, adjustmentSearch, adjustmentsPage]);
+  }, [filterAdjustmentStatus, adjustmentSearch, adjustmentsPage, adjustmentsPageSize]);
 
   // Trigger loads on tab change or filter
   useEffect(() => {
@@ -1596,10 +1598,28 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-              <div>
-                แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{currentPage}</span> จาก{' '}
-                <span className="font-bold text-slate-800 dark:text-slate-200">{totalPages || 1}</span> หน้า (รวม {totalCount} รายการ)
+            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>แสดง</span>
+                <select
+                  value={dailyPageSize}
+                  onChange={(e) => {
+                    setDailyPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+                <span>แถวต่อหน้า</span>
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+                  (แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{currentPage}</span> จาก{' '}
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{totalPages || 1}</span> หน้า - รวม {totalCount} รายการ)
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -2450,9 +2470,27 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-              <div>
-                แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ (หน้า {adjustmentsPage} / {adjustmentsTotalPages})
+            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>แสดง</span>
+                <select
+                  value={adjustmentsPageSize}
+                  onChange={(e) => {
+                    setAdjustmentsPageSize(Number(e.target.value));
+                    setAdjustmentsPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+                <span>แถวต่อหน้า</span>
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+                  (แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ - หน้า {adjustmentsPage} / {adjustmentsTotalPages})
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -3250,6 +3288,7 @@ function DailyAttendanceContent() {
                     <option value={20}>20 คน / หน้า</option>
                     <option value={50}>50 คน / หน้า</option>
                     <option value={100}>100 คน / หน้า</option>
+                    <option value={200}>200 คน / หน้า</option>
                   </select>
                 </div>
               </div>

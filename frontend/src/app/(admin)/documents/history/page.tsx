@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
@@ -77,7 +77,7 @@ interface MyDocumentRow {
   canCancel?: boolean;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 
 export default function DocumentHistoryPage() {
   const { user } = useAuth();
@@ -96,7 +96,7 @@ export default function DocumentHistoryPage() {
   const [generalRequests, setGeneralRequests] = useState<GeneralDocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
 
   // Document Preview Modals State
   const [isLeavePreviewOpen, setIsLeavePreviewOpen] = useState(false);

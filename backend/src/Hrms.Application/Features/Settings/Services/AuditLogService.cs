@@ -94,7 +94,7 @@ public class AuditLogService : IAuditLogService
         var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         int page = filter.Page > 0 ? filter.Page : 1;
-        int pageSize = filter.PageSize > 0 ? filter.PageSize : 15;
+        int pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
 
         var entities = await baseQuery
             .OrderByDescending(a => a.CreatedAt)

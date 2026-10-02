@@ -55,7 +55,7 @@ public class AnnouncementService : IAnnouncementService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var page = Math.Max(1, filter.Page);
-        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+        var pageSize = Math.Clamp(filter.PageSize > 0 ? filter.PageSize : 10, 1, 200);
 
         var items = await query
             .OrderByDescending(a => a.IsPinned)

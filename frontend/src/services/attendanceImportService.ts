@@ -70,7 +70,7 @@ export const attendanceImportService = {
     if (filter.pageSize) params.pageSize = filter.pageSize;
 
     const res = await apiClient.get<ApiResponse<PagedImportBatchResult>>('/attendance/import/batches', { params });
-    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0 };
+    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 };
   },
 
   /**

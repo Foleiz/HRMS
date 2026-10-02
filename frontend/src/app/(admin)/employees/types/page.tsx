@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
@@ -58,7 +58,7 @@ export default function EmployeeTypesPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(10);
 
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
@@ -475,9 +475,27 @@ export default function EmployeeTypesPage() {
 
         {/* Table Footer with Pagination */}
         <div className="border-t border-slate-100 dark:border-slate-700/60 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <div>
-            แสดง {types.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} ถึง{' '}
-            {Math.min(currentPage * pageSize, types.length)} จากทั้งหมด {types.length} รายการ
+          <div className="flex items-center gap-2">
+            <span>แสดง</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
+            <span>แถวต่อหน้า</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+              (แสดง {types.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} ถึง{' '}
+              {Math.min(currentPage * pageSize, types.length)} จากทั้งหมด {types.length} รายการ)
+            </span>
           </div>
 
           <div className="flex items-center space-x-1">

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -149,7 +149,7 @@ export default function AnnouncementsPage() {
   const [priorityFilter, setPriorityFilter] = useState('');
   const [pinnedFilter, setPinnedFilter] = useState<boolean | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const pageSize = 15;
+  const [pageSize, setPageSize] = useState(10);
 
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -734,29 +734,47 @@ export default function AnnouncementsPage() {
             </div>
 
             {/* Pagination */}
-            {totalCount > pageSize && (
-              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                <span>ทั้งหมด {totalCount} รายการ (หน้า {page} จาก {Math.ceil(totalCount / pageSize)})</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={page >= Math.ceil(totalCount / pageSize)}
-                    onClick={() => setPage(page + 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>แสดง</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+                <span>แถวต่อหน้า</span>
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+                  (ทั้งหมด {totalCount} รายการ - หน้า {page} จาก {Math.max(1, Math.ceil(totalCount / pageSize))})
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= Math.max(1, Math.ceil(totalCount / pageSize))}
+                  onClick={() => setPage(page + 1)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

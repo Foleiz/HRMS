@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
@@ -149,7 +149,7 @@ export default function EmployeesPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(8);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   // Sorting state
   const [sortField, setSortField] = useState<string>('employeeCode');
@@ -1345,11 +1345,11 @@ export default function EmployeesPage() {
               }}
               className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
             >
-              <option value={5}>5</option>
-              <option value={8}>8</option>
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
             </select>
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">

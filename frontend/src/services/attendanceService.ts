@@ -26,7 +26,7 @@ export const attendanceService = {
     if (filter.pageSize) params.pageSize = filter.pageSize;
 
     const res = await apiClient.get<ApiResponse<PagedAttendanceResult>>('/attendance/daily', { params });
-    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0 };
+    return res.data.data || { items: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 };
   },
 
   /**

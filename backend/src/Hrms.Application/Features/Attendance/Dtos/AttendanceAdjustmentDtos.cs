@@ -51,7 +51,7 @@ public class AdjustmentFilterDto
     public long? EmployeeId { get; set; }
     public string? Search { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 10;
 }
 
 public class PagedAdjustmentResult

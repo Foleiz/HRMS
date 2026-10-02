@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react';
@@ -93,7 +93,7 @@ export const RecentTransactionsTable: React.FC = () => {
   const [dateRange, setDateRange] = useState('');
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [transactions, setTransactions] = useState<RecentTransactionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -468,9 +468,11 @@ export const RecentTransactionsTable: React.FC = () => {
             }}
             className="px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium cursor-pointer"
           >
-            <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
           </select>
           <span>เอกสาร</span>
         </div>
