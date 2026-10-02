@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -3113,21 +3113,21 @@ export default function PayrollPage() {
 
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                <div className="text-[11px] text-slate-400 font-medium">พนักงานทั้งหมด</div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">พนักงานทั้งหมด</div>
                 <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0} คน</div>
               </div>
-              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                <div className="text-[11px] text-emerald-600 font-medium">โอนแล้ว</div>
-                <div className="text-lg font-bold text-emerald-700 mt-0.5">{transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0} คน</div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">โอนแล้ว</div>
+                <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0} คน</div>
               </div>
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                <div className="text-[11px] text-amber-600 font-medium">รอโอน</div>
-                <div className="text-lg font-bold text-amber-700 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (selectedPeriod?.employeeCount ?? 0) - (selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-100 dark:border-amber-800/40">
+                <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">รอโอน</div>
+                <div className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (selectedPeriod?.employeeCount ?? 0) - (selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
               </div>
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                <div className="text-[11px] text-blue-600 font-medium">รวมยอดทั้งหมด</div>
-                <div className="text-base font-bold text-blue-900 mt-0.5">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-800/40">
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">รวมยอดทั้งหมด</div>
+                <div className="text-base font-bold text-blue-900 dark:text-blue-300 mt-0.5">
                   ฿{(transferList?.totalNetSalary ?? selectedPeriod?.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
               </div>
