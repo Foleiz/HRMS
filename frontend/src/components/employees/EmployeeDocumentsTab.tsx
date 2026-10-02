@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -280,10 +280,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
               {documents.map((doc) => {
                 const badge = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
                 return (
-                  <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/60 align-top">
+                  <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 align-top">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{doc.documentTypeName}</p>
-                      {doc.remarks && <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5 break-words max-w-[220px]">{doc.remarks}</p>}
+                      <p className="font-semibold text-slate-800 dark:text-slate-200" title={doc.remarks || undefined}>
+                        {doc.documentTypeName}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-slate-700 dark:text-slate-300 break-all max-w-[200px]">{doc.fileName || '-'}</p>
