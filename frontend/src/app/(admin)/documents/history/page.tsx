@@ -486,7 +486,8 @@ export default function DocumentHistoryPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop View: Full Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
@@ -594,6 +595,116 @@ export default function DocumentHistoryPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile View: Stacked Cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {pagedDocuments.map((doc) => {
+                const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                const hasAttachments = !!doc.documents && doc.documents.length > 0;
+                const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
+                const hasCancel = doc.status === 'PENDING';
+                const hasDelete = doc.status === 'DRAFT';
+
+                return (
+                  <div key={doc.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDocumentPreview(doc)}
+                          className="text-[#0B2046] hover:text-blue-600 font-bold text-sm text-left flex items-center gap-1.5"
+                        >
+                          <span>{doc.code}</span>
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+                        <span className="text-2xs text-slate-400 block mt-0.5">
+                          ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
+                        </span>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                        {statusConf.icon}
+                        {statusConf.label}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">ประเภท:</span>
+                        <span className="font-semibold text-slate-800">{doc.documentType}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">ช่วงวันที่:</span>
+                        <span className="font-medium text-slate-700">{doc.detailDate}</span>
+                      </div>
+                      {doc.rejectReason && (
+                        <div className="text-2xs text-rose-600 pt-1 border-t border-slate-200/60">
+                          เหตุผลที่ปฏิเสธ: {doc.rejectReason}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDocumentPreview(doc)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium active:scale-95 transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ดูตัวอย่างเอกสาร
+                      </button>
+
+                      <ActionDropdown
+                        menuClassName="w-56"
+                        triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
+                        items={[
+                          ...(hasAttachments || hasEdit || hasCancel || hasDelete
+                            ? []
+                            : []),
+                          ...(hasAttachments
+                            ? doc.documents!.map((d) => ({
+                                label: d.fileName ?? 'เอกสารแนบ',
+                                icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
+                                onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
+                              }))
+                            : []),
+                          ...(hasAttachments && (hasEdit || hasCancel || hasDelete) ? [{ divider: true, label: '' }] : []),
+                          ...(hasEdit
+                            ? [
+                                {
+                                  label: 'แก้ไขต่อ',
+                                  icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+                                  href: doc.editUrl!,
+                                  className: 'text-blue-600 hover:bg-blue-50',
+                                },
+                              ]
+                            : []),
+                          ...(hasCancel
+                            ? [
+                                {
+                                  label: 'ถอนคำขอ',
+                                  icon: <Ban className="w-3.5 h-3.5 text-red-600 shrink-0" />,
+                                  danger: true,
+                                  onClick: () => handleCancel(doc),
+                                },
+                              ]
+                            : []),
+                          ...(hasDelete
+                            ? [
+                                {
+                                  label: 'ลบ',
+                                  icon: <Trash2 className="w-3.5 h-3.5 text-red-600 shrink-0" />,
+                                  danger: true,
+                                  onClick: () => handleDelete(doc),
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Pagination */}

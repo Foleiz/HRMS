@@ -56,3 +56,21 @@ input[type="reset"]:disabled {
   cursor: not-allowed;
 }
 
+/* Mobile & Touch Optimizations */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Smooth horizontal scrollbar hiding for swipeable tabs & mobile menus */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
