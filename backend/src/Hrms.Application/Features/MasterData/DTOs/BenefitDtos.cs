@@ -10,6 +10,8 @@ public class BenefitItemDto
     public bool IsStatutory { get; set; }
     public string Status { get; set; } = "ACTIVE";
     public int AssignedTypesCount { get; set; }
+    public decimal CoverageAmount { get; set; } = 0;
+    public string Frequency { get; set; } = "MONTHLY";
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

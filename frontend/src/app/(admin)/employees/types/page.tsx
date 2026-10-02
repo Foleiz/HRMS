@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
@@ -377,6 +377,8 @@ export default function EmployeeTypesPage() {
                               } else if (b.category === 'WELLNESS') {
                                 badgeColor = 'bg-pink-50 text-pink-700 border-pink-200/80';
                               }
+                              const amt = Number(b.coverageAmount) || 0;
+                              const freqLabel = b.frequency === 'DAILY' ? 'บ./วัน' : b.frequency === 'YEARLY' ? 'บ./ปี' : 'บ./ด.';
                               return (
                                 <span
                                   key={b.id}
@@ -384,6 +386,11 @@ export default function EmployeeTypesPage() {
                                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
                                 >
                                   {b.benefitName}
+                                  {amt > 0 && (
+                                    <span className="font-mono font-bold opacity-85">
+                                      ({amt.toLocaleString()} {freqLabel})
+                                    </span>
+                                  )}
                                 </span>
                               );
                             })

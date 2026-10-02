@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -34,6 +34,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   // Dynamic Benefits
   const [availableBenefits, setAvailableBenefits] = useState<BenefitItem[]>([]);
   const [selectedBenefitIds, setSelectedBenefitIds] = useState<number[]>([]);
+  const [benefitDetails, setBenefitDetails] = useState<Record<number, { coverageAmount: number; frequency: string }>>({});
   const [loadingBenefits, setLoadingBenefits] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,9 +68,17 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
       setWageType(initialData.wageType || 'MONTHLY');
       setStatus(initialData.status || 'ACTIVE');
 
-      // Initialize selected benefit IDs
+      // Initialize selected benefit IDs & details
       if (initialData.benefits && initialData.benefits.length > 0) {
         setSelectedBenefitIds(initialData.benefits.map((b) => b.id));
+        const details: Record<number, { coverageAmount: number; frequency: string }> = {};
+        initialData.benefits.forEach((b) => {
+          details[b.id] = {
+            coverageAmount: b.coverageAmount ?? 0,
+            frequency: b.frequency ?? (b.category === 'ALLOWANCE' && b.benefitCode.includes('MEAL') ? 'DAILY' : b.category === 'HEALTH' ? 'YEARLY' : 'MONTHLY'),
+          };
+        });
+        setBenefitDetails(details);
       } else {
         // Fallback to statutory flags if benefits array empty
         const ids: number[] = [];
@@ -99,9 +108,33 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   if (!isOpen) return null;
 
   const toggleBenefit = (id: number) => {
-    setSelectedBenefitIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    setSelectedBenefitIds((prev) => {
+      const willSelect = !prev.includes(id);
+      if (willSelect) {
+        const item = availableBenefits.find((b) => b.id === id);
+        setBenefitDetails((d) => ({
+          ...d,
+          [id]: d[id] || {
+            coverageAmount: item?.category === 'ALLOWANCE' ? 50 : item?.category === 'HEALTH' ? 2000 : 0,
+            frequency: item?.category === 'ALLOWANCE' && item?.benefitCode.includes('MEAL') ? 'DAILY' : item?.category === 'HEALTH' ? 'YEARLY' : 'MONTHLY',
+          },
+        }));
+        return [...prev, id];
+      } else {
+        return prev.filter((item) => item !== id);
+      }
+    });
+  };
+
+  const updateBenefitDetail = (id: number, field: 'coverageAmount' | 'frequency', val: any) => {
+    setBenefitDetails((prev) => ({
+      ...prev,
+      [id]: {
+        coverageAmount: prev[id]?.coverageAmount ?? 0,
+        frequency: prev[id]?.frequency ?? 'MONTHLY',
+        [field]: val,
+      },
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,6 +154,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     const hasOT = selectedCodes.includes('OT');
     const hasPVD = selectedCodes.includes('PVD');
 
+    const benefitAssignments = selectedBenefitIds.map((id) => ({
+      benefitItemId: id,
+      coverageAmount: Number(benefitDetails[id]?.coverageAmount) || 0,
+      frequency: benefitDetails[id]?.frequency || 'MONTHLY',
+    }));
+
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
@@ -135,6 +174,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           hasProvidentFund: hasPVD,
           status,
           benefitItemIds: selectedBenefitIds,
+          benefitAssignments,
         });
       } else {
         await onSubmit({
@@ -147,6 +187,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           hasProvidentFund: hasPVD,
           status,
           benefitItemIds: selectedBenefitIds,
+          benefitAssignments,
         });
       }
       onClose();
@@ -280,33 +321,79 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             ) : availableBenefits.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 py-2">ไม่พบสิทธิประโยชน์ในระบบ</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 max-h-48 overflow-y-auto">
+              <div className="space-y-2 text-xs pt-1 max-h-56 overflow-y-auto pr-1">
                 {availableBenefits.map((b) => {
                   const isChecked = selectedBenefitIds.includes(b.id);
+                  const isMonetary = b.category === 'ALLOWANCE' || b.category === 'HEALTH' || b.category === 'FINANCIAL';
+
                   return (
-                    <label
+                    <div
                       key={b.id}
-                      className={`flex items-start gap-2.5 p-2 rounded-xl border transition-all cursor-pointer ${ isChecked ? 'bg-white border-[#0B2046]/30 shadow-2xs'
-                          : 'bg-white/60 border-slate-200/70 hover:bg-white dark:bg-slate-800'
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        isChecked
+                          ? 'bg-white dark:bg-slate-800 border-[#0B2046]/40 dark:border-blue-500/40 shadow-2xs'
+                          : 'bg-white/60 dark:bg-slate-800/60 border-slate-200/70 dark:border-slate-700/70 hover:bg-white dark:hover:bg-slate-800'
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleBenefit(b.id)}
-                        className="w-4 h-4 mt-0.5 rounded text-[#0B2046] border-slate-300 dark:border-slate-600 focus:ring-[#0B2046]"
-                      />
-                      <div className="flex-1">
-                        <span className="text-slate-800 dark:text-slate-200 font-medium block leading-tight">
-                          {b.benefitName}
-                        </span>
-                        {b.description && (
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                            {b.description}
-                          </span>
-                        )}
-                      </div>
-                    </label>
+                      <label className="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleBenefit(b.id)}
+                          className="w-4 h-4 mt-0.5 rounded text-[#0B2046] border-slate-300 dark:border-slate-600 focus:ring-[#0B2046]"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-800 dark:text-slate-200 font-semibold leading-tight">
+                              {b.benefitName}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                              {b.category}
+                            </span>
+                          </div>
+                          {b.description && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
+                              {b.description}
+                            </span>
+                          )}
+                        </div>
+                      </label>
+
+                      {/* Configurable Amount & Frequency when Selected */}
+                      {isChecked && isMonetary && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap sm:flex-nowrap items-center gap-2 pl-6">
+                          <div className="flex-1 min-w-[120px]">
+                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+                              จำนวนเงิน / วงเงิน (บาท)
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              step={b.category === 'ALLOWANCE' ? '10' : '100'}
+                              value={benefitDetails[b.id]?.coverageAmount ?? 0}
+                              onChange={(e) => updateBenefitDetail(b.id, 'coverageAmount', Number(e.target.value))}
+                              className="w-full h-7 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <div className="w-full sm:w-52">
+                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+                              รอบการคำนวณ / จ่าย
+                            </label>
+                            <select
+                              value={benefitDetails[b.id]?.frequency ?? 'MONTHLY'}
+                              onChange={(e) => updateBenefitDetail(b.id, 'frequency', e.target.value)}
+                              className="w-full h-7 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            >
+                              <option value="DAILY">บาท / วันทำงานจริง (เข้าสลิป)</option>
+                              <option value="MONTHLY">บาท / เดือน (เข้าสลิป)</option>
+                              <option value="YEARLY">บาท / ปี (วงเงินคุ้มครอง)</option>
+                              <option value="PER_OCCURRENCE">บาท / ครั้งที่เบิก</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

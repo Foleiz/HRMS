@@ -29,6 +29,7 @@ public class CreateEmployeeTypeRequest
     public bool HasProvidentFund { get; set; } = false;
     public string Status { get; set; } = "ACTIVE";
     public List<long>? BenefitItemIds { get; set; }
+    public List<EmployeeTypeBenefitAssignmentDto>? BenefitAssignments { get; set; }
 }
 
 public class UpdateEmployeeTypeRequest
@@ -41,6 +42,14 @@ public class UpdateEmployeeTypeRequest
     public bool HasProvidentFund { get; set; } = false;
     public string Status { get; set; } = "ACTIVE";
     public List<long>? BenefitItemIds { get; set; }
+    public List<EmployeeTypeBenefitAssignmentDto>? BenefitAssignments { get; set; }
+}
+
+public class EmployeeTypeBenefitAssignmentDto
+{
+    public long BenefitItemId { get; set; }
+    public decimal CoverageAmount { get; set; } = 0;
+    public string Frequency { get; set; } = "MONTHLY"; // DAILY, MONTHLY, YEARLY, PER_OCCURRENCE
 }
 
 public class EmployeeTypeStatsDto

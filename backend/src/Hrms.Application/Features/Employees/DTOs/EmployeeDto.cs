@@ -77,6 +77,7 @@ public class EmployeeDto
     public List<FamilyMemberDto> FamilyMembers { get; set; } = new();
     public List<EmergencyContactDto> EmergencyContacts { get; set; } = new();
     public EmployeeUserAccountDto? UserAccount { get; set; }
+    public List<Hrms.Application.Features.MasterData.DTOs.BenefitItemDto> Benefits { get; set; } = new();
 }
 
 public class EmployeeUserAccountDto

@@ -1,3 +1,5 @@
+import { BenefitItem } from './benefit';
+
 export interface EmployeeContact {
   personalPhone?: string;
   personalEmail?: string;
@@ -91,6 +93,7 @@ export interface Employee {
   familyMembers?: FamilyMember[];
   emergencyContacts?: EmergencyContact[];
   userAccount?: EmployeeUserAccount | null;
+  benefits?: BenefitItem[];
 }
 
 export interface EmployeeUserAccount {

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Camera,
   CheckCircle2,
+  Gift,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
@@ -424,6 +425,59 @@ export default function EmployeeDetailPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Section: สิทธิประโยชน์และสวัสดิการ (Benefits Summary) */}
+          <hr className="my-5 border-slate-100 dark:border-slate-700/60" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Gift className="w-3.5 h-3.5 text-[#0B2046] dark:text-cyan-400" />
+                สิทธิประโยชน์ & สวัสดิการ
+              </h2>
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md">
+                {employee.employeeType || 'พนักงานประจำ'}
+              </span>
+            </div>
+
+            {employee.benefits && employee.benefits.length > 0 ? (
+              <div className="space-y-1.5 pt-1">
+                {employee.benefits.map((b) => {
+                  const amt = Number(b.coverageAmount) || 0;
+                  const freqLabel = b.frequency === 'DAILY' ? 'บ./วัน' : b.frequency === 'YEARLY' ? 'บ./ปี' : 'บ./ด.';
+                  return (
+                    <div
+                      key={b.id}
+                      className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 text-xs flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-800 dark:text-slate-200 truncate leading-tight">
+                          {b.benefitName}
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                          {b.category === 'ALLOWANCE' ? 'เงินช่วยเหลือ / เบี้ยเลี้ยง' : b.category === 'STATUTORY' ? 'กฎหมายแรงงาน' : 'สวัสดิการคุ้มครอง'}
+                        </p>
+                      </div>
+                      {amt > 0 ? (
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                          {amt.toLocaleString()} {freqLabel}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 shrink-0">
+                          ได้รับสิทธิ์
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 text-center">
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  สิทธิ์ตามประเภท {employee.employeeType || 'พนักงานประจำ'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

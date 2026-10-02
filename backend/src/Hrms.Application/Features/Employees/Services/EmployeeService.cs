@@ -213,6 +213,8 @@ public class EmployeeService : IEmployeeService
                 .ThenInclude(a => a.Division)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.EmployeeType)
+                    .ThenInclude(t => t!.EmployeeTypeBenefits)
+                        .ThenInclude(etb => etb.BenefitItem)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.ManagerEmployee)
             .Include(e => e.Signatures)
@@ -1561,7 +1563,21 @@ public class EmployeeService : IEmployeeService
                     : (e.UserAccount.UserRoles.Any(ur => ur.Role.RoleCode == "HR" || ur.Role.RoleCode == "MANAGER")
                         ? "DEPARTMENT (เข้าถึงข้อมูลระดับแผนก)"
                         : "SELF (ดูข้อมูลตนเอง)")
-            } : null
+            } : null,
+            Benefits = currentAssignment?.EmployeeType?.EmployeeTypeBenefits?
+                .Where(etb => etb.IsActive && etb.BenefitItem != null)
+                .Select(etb => new Hrms.Application.Features.MasterData.DTOs.BenefitItemDto
+                {
+                    Id = etb.BenefitItem.Id,
+                    BenefitCode = etb.BenefitItem.BenefitCode,
+                    BenefitName = etb.BenefitItem.BenefitName,
+                    Category = etb.BenefitItem.Category,
+                    Description = etb.BenefitItem.Description,
+                    IsStatutory = etb.BenefitItem.IsStatutory,
+                    Status = etb.BenefitItem.Status,
+                    CoverageAmount = etb.CoverageAmount,
+                    Frequency = etb.Frequency
+                }).ToList() ?? new()
         };
     }
 

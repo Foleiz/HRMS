@@ -10,6 +10,7 @@ public class EmployeeTypeBenefit
     public long EmployeeTypeId { get; set; }
     public long BenefitItemId { get; set; }
     public decimal CoverageAmount { get; set; } = 0;
+    public string Frequency { get; set; } = "MONTHLY"; // DAILY, MONTHLY, YEARLY, PER_OCCURRENCE
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

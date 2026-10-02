@@ -1046,6 +1046,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id").IsRequired();
             entity.Property(e => e.BenefitItemId).HasColumnName("benefit_item_id").IsRequired();
             entity.Property(e => e.CoverageAmount).HasColumnName("coverage_amount").HasColumnType("numeric(12,2)").HasDefaultValue(0);
+            entity.Property(e => e.Frequency).HasColumnName("frequency").HasMaxLength(20).HasDefaultValue("MONTHLY");
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
 

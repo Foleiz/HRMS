@@ -14,6 +14,8 @@ export interface BenefitItem {
   description?: string | null;
   isStatutory: boolean;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  coverageAmount?: number;
+  frequency?: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   assignedTypesCount?: number;
   createdAt?: string;
   updatedAt?: string;

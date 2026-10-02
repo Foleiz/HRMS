@@ -16,6 +16,12 @@ export interface EmployeeType {
   benefits?: BenefitItem[];
 }
 
+export interface EmployeeTypeBenefitAssignment {
+  benefitItemId: number;
+  coverageAmount: number;
+  frequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
+}
+
 export interface CreateEmployeeTypePayload {
   typeCode: string;
   typeName: string;
@@ -26,6 +32,7 @@ export interface CreateEmployeeTypePayload {
   hasProvidentFund: boolean;
   status: string;
   benefitItemIds?: number[];
+  benefitAssignments?: EmployeeTypeBenefitAssignment[];
 }
 
 export interface UpdateEmployeeTypePayload {
@@ -37,6 +44,7 @@ export interface UpdateEmployeeTypePayload {
   hasProvidentFund: boolean;
   status: string;
   benefitItemIds?: number[];
+  benefitAssignments?: EmployeeTypeBenefitAssignment[];
 }
 
 export interface EmployeeTypeStats {

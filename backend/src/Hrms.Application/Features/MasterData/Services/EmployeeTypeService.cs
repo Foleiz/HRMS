@@ -71,6 +71,8 @@ public class EmployeeTypeService : IEmployeeTypeService
                     Description = etb.BenefitItem.Description,
                     IsStatutory = etb.BenefitItem.IsStatutory,
                     Status = etb.BenefitItem.Status,
+                    CoverageAmount = etb.CoverageAmount,
+                    Frequency = etb.Frequency,
                     CreatedAt = etb.BenefitItem.CreatedAt,
                     UpdatedAt = etb.BenefitItem.UpdatedAt
                 }).ToList()
@@ -130,6 +132,8 @@ public class EmployeeTypeService : IEmployeeTypeService
                     Description = etb.BenefitItem.Description,
                     IsStatutory = etb.BenefitItem.IsStatutory,
                     Status = etb.BenefitItem.Status,
+                    CoverageAmount = etb.CoverageAmount,
+                    Frequency = etb.Frequency,
                     CreatedAt = etb.BenefitItem.CreatedAt,
                     UpdatedAt = etb.BenefitItem.UpdatedAt
                 }).ToList()
@@ -173,10 +177,15 @@ public class EmployeeTypeService : IEmployeeTypeService
             UpdatedAt = DateTime.UtcNow
         };
 
-        if (request.BenefitItemIds != null && request.BenefitItemIds.Any())
+        var assignments = request.BenefitAssignments;
+        var benefitIds = assignments != null
+            ? assignments.Select(a => a.BenefitItemId).Distinct().ToList()
+            : request.BenefitItemIds?.Distinct().ToList();
+
+        if (benefitIds != null && benefitIds.Any())
         {
             var selectedCodes = await _dbContext.BenefitItems
-                .Where(b => request.BenefitItemIds.Contains(b.Id))
+                .Where(b => benefitIds.Contains(b.Id))
                 .Select(b => b.BenefitCode)
                 .ToListAsync(cancellationToken);
 
@@ -189,14 +198,32 @@ public class EmployeeTypeService : IEmployeeTypeService
         _dbContext.EmployeeTypes.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (request.BenefitItemIds != null && request.BenefitItemIds.Any())
+        if (assignments != null && assignments.Any())
         {
-            foreach (var bId in request.BenefitItemIds.Distinct())
+            foreach (var a in assignments)
+            {
+                _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                {
+                    EmployeeTypeId = entity.Id,
+                    BenefitItemId = a.BenefitItemId,
+                    CoverageAmount = a.CoverageAmount,
+                    Frequency = string.IsNullOrWhiteSpace(a.Frequency) ? "MONTHLY" : a.Frequency.Trim().ToUpper(),
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else if (benefitIds != null && benefitIds.Any())
+        {
+            foreach (var bId in benefitIds)
             {
                 _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
                 {
                     EmployeeTypeId = entity.Id,
                     BenefitItemId = bId,
+                    CoverageAmount = 0,
+                    Frequency = "MONTHLY",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -234,10 +261,15 @@ public class EmployeeTypeService : IEmployeeTypeService
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper();
         entity.UpdatedAt = DateTime.UtcNow;
 
-        if (request.BenefitItemIds != null)
+        var assignments = request.BenefitAssignments;
+        var benefitIds = assignments != null
+            ? assignments.Select(a => a.BenefitItemId).Distinct().ToList()
+            : request.BenefitItemIds?.Distinct().ToList();
+
+        if (benefitIds != null)
         {
             var selectedCodes = await _dbContext.BenefitItems
-                .Where(b => request.BenefitItemIds.Contains(b.Id))
+                .Where(b => benefitIds.Contains(b.Id))
                 .Select(b => b.BenefitCode)
                 .ToListAsync(cancellationToken);
 
@@ -252,15 +284,35 @@ public class EmployeeTypeService : IEmployeeTypeService
 
             _dbContext.EmployeeTypeBenefits.RemoveRange(currentBenefits);
 
-            foreach (var bId in request.BenefitItemIds.Distinct())
+            if (assignments != null && assignments.Any())
             {
-                _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                foreach (var a in assignments)
                 {
-                    EmployeeTypeId = id,
-                    BenefitItemId = bId,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                });
+                    _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                    {
+                        EmployeeTypeId = id,
+                        BenefitItemId = a.BenefitItemId,
+                        CoverageAmount = a.CoverageAmount,
+                        Frequency = string.IsNullOrWhiteSpace(a.Frequency) ? "MONTHLY" : a.Frequency.Trim().ToUpper(),
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+            else
+            {
+                foreach (var bId in benefitIds)
+                {
+                    _dbContext.EmployeeTypeBenefits.Add(new EmployeeTypeBenefit
+                    {
+                        EmployeeTypeId = id,
+                        BenefitItemId = bId,
+                        CoverageAmount = 0,
+                        Frequency = "MONTHLY",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
             }
         }
 
