@@ -25,7 +25,6 @@ import { useAuth } from '@/context/AuthContext';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
-import { EmployeeBenefitsUsageTab } from '@/components/employees/EmployeeBenefitsUsageTab';
 
 
 const formatThaiDate = (dateStr?: string) => {
@@ -79,12 +78,13 @@ export default function EmployeeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  // เปิดแท็บเอกสารหรือสวัสดิการได้โดยตรงจากลิงก์ เช่น /employees/5?tab=benefits
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax' | 'user' | 'documents' | 'benefits'>(() => {
+  // เปิดแท็บเอกสารได้โดยตรงจากลิงก์ เช่น /employees/5?tab=documents
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax' | 'user' | 'documents'>(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'documents' || tab === 'benefits') return tab;
+    if (tab === 'documents') return tab;
     return 'personal';
   });
+
 
   const { hasRole } = useAuth();
   const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
@@ -438,13 +438,12 @@ export default function EmployeeDetailPage() {
                   <Gift className="w-3.5 h-3.5 text-[#0B2046] dark:text-cyan-400" />
                   สิทธิประโยชน์ & สวัสดิการ
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('benefits')}
-                  className="text-[10px] font-semibold text-[#0B2046] dark:text-cyan-400 hover:underline cursor-pointer"
+                <Link
+                  href={`/ess/benefits?employeeId=${employee.id}`}
+                  className="text-[10px] font-semibold text-[#0B2046] dark:text-cyan-400 hover:underline"
                 >
                   ดูโควตา & การใช้สิทธิ์ →
-                </button>
+                </Link>
               </div>
 
               {employee.benefits && employee.benefits.length > 0 ? (
@@ -453,11 +452,11 @@ export default function EmployeeDetailPage() {
                     const amt = Number(b.coverageAmount) || 0;
                     const freqLabel = b.frequency === 'DAILY' ? 'บ./วัน' : b.frequency === 'YEARLY' ? 'บ./ปี' : 'บ./ด.';
                     return (
-                      <div
+                      <Link
                         key={b.id}
-                        onClick={() => setActiveTab('benefits')}
-                        className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 text-xs flex items-center justify-between gap-2 hover:border-blue-400 dark:hover:border-blue-600 transition-colors cursor-pointer"
-                        title="คลิกเพื่อดูรายละเอียดโควตาและการใช้สิทธิ์"
+                        href={`/ess/benefits?employeeId=${employee.id}`}
+                        className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 text-xs flex items-center justify-between gap-2 hover:border-blue-400 dark:hover:border-blue-600 transition-colors block"
+                        title="คลิกเพื่อดูรายละเอียดโควตาและการใช้สิทธิ์ในหน้าสวัสดิการของฉัน (ESS)"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-slate-800 dark:text-slate-200 truncate leading-tight">
@@ -476,35 +475,34 @@ export default function EmployeeDetailPage() {
                             ได้รับสิทธิ์
                           </span>
                         )}
-                      </div>
+                      </Link>
                     );
                   })}
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('benefits')}
-                    className="w-full mt-2 py-2 px-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[#0B2046] dark:text-cyan-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  <Link
+                    href={`/ess/benefits?employeeId=${employee.id}`}
+                    className="w-full mt-2 py-2 px-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[#0B2046] dark:text-cyan-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Gift className="w-3.5 h-3.5" />
-                    <span>ตรวจสอบโควตาและการใช้สิทธิ์ →</span>
-                  </button>
+                    <span>ตรวจสอบโควตาและการใช้สิทธิ์ (ESS) →</span>
+                  </Link>
                 </div>
               ) : (
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
                   <p className="text-xs text-slate-400 dark:text-slate-500">
                     สิทธิ์ตามประเภท {employee.employeeType || 'พนักงานประจำ'}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('benefits')}
-                    className="text-xs text-[#0B2046] dark:text-cyan-400 font-semibold hover:underline"
+                  <Link
+                    href={`/ess/benefits?employeeId=${employee.id}`}
+                    className="text-xs text-[#0B2046] dark:text-cyan-400 font-semibold hover:underline block"
                   >
-                    ดูรายละเอียดสวัสดิการ →
-                  </button>
+                    ดูรายละเอียดสวัสดิการ (ESS) →
+                  </Link>
                 </div>
               )}
             </div>
           </div>
+
 
 
         {/* ============================================================ */}
@@ -598,21 +596,8 @@ export default function EmployeeDetailPage() {
               >
                 เอกสาร
               </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('benefits')}
-                className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'benefits'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
-                }`}
-              >
-                <Gift className="w-3.5 h-3.5" />
-                <span>สวัสดิการ & การใช้สิทธิ์</span>
-              </button>
-
             </div>
+
 
             {/* แก้ไขข้อมูล Button */}
             <button
@@ -993,16 +978,8 @@ export default function EmployeeDetailPage() {
           {activeTab === 'documents' && (
             <EmployeeDocumentsTab employeeId={employee.id} canManage={canManageDocuments} />
           )}
-
-          {activeTab === 'benefits' && (
-            <div className="pt-6 flex-1 animate-in fade-in duration-150">
-              <EmployeeBenefitsUsageTab
-                employeeId={employee.id}
-                employeeName={employee.fullName}
-              />
-            </div>
-          )}
         </div>
+
 
       </div>
     </div>

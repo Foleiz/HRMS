@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -76,6 +76,9 @@ export const Navbar: React.FC = () => {
 
     // 4. บันทึกเวลาของฉัน (ESS)
     if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
+
+    // สวัสดิการของฉัน (ESS)
+    if (pathname.startsWith('/ess/benefits')) return { section: 'สวัสดิการของฉัน', page: 'ภาพรวมโควตาและการใช้สิทธิ์' };
 
     // 5. ยื่นเอกสาร (Documents)
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
