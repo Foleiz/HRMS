@@ -17,6 +17,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { benefitService } from '@/services/benefitService';
+import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 
 interface ManageBenefitsModalProps {
@@ -56,6 +57,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
   const [defaultCoverageAmount, setDefaultCoverageAmount] = useState<number>(0);
   const [defaultFrequency, setDefaultFrequency] = useState<string>('YEARLY');
   const [payoutType, setPayoutType] = useState<string>('REIMBURSEMENT');
+  const [payrollItemId, setPayrollItemId] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState('ACTIVE');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -96,6 +98,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setDefaultCoverageAmount(0);
     setDefaultFrequency('YEARLY');
     setPayoutType('REIMBURSEMENT');
+    setPayrollItemId(undefined);
     setStatus('ACTIVE');
     setErrorMessage(null);
   };
@@ -116,6 +119,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setDefaultCoverageAmount(item.defaultCoverageAmount ?? 0);
     setDefaultFrequency(item.defaultFrequency || 'YEARLY');
     setPayoutType(item.payoutType || 'REIMBURSEMENT');
+    setPayrollItemId(item.payrollItemId ?? undefined);
     setStatus(item.status);
     setIsFormOpen(true);
     setErrorMessage(null);
@@ -144,6 +148,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           defaultFrequency,
           payoutType,
           status,
+          payrollItemId,
         };
         await benefitService.update(editingItem.id, payload);
         setSuccessMessage('แก้ไขสิทธิประโยชน์สำเร็จ');
@@ -159,6 +164,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           defaultFrequency,
           payoutType,
           status,
+          payrollItemId,
         };
         await benefitService.create(payload);
         setSuccessMessage('เพิ่มสิทธิประโยชน์/สวัสดิการใหม่สำเร็จ');
@@ -357,6 +363,13 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
                     <option value="PAYROLL">จ่ายในรอบเงินเดือน</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    จ่ายผ่านรายการ (บนสลิปเงินเดือน)
+                  </label>
+                  <PayCodeSelect value={payrollItemId} onChange={setPayrollItemId} isNew={!editingItem} />
                 </div>
 
                 <div>

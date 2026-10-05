@@ -978,6 +978,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 {
                     // action ล่าสุดเพิ่งถูก Add (ยังไม่ SaveChanges) — หาใน Local ก่อน
                     claim.ApprovedAt = DateTime.UtcNow;
+                    claim.PaymentStatus = Hrms.Application.Features.MasterData.Services.BenefitPayCode.InitialPaymentStatus(
+                        await _context.BenefitItems.Where(b => b.Id == claim.BenefitItemId).Select(b => b.PayoutType).FirstOrDefaultAsync(cancellationToken));
                     claim.ApprovedByEmployeeId = _context.ApprovalActions.Local
                         .Concat(instance.Actions)
                         .Where(a => a.ApprovalInstanceId == instance.Id && a.ActionDecision == "APPROVE")

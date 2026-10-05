@@ -21,6 +21,12 @@ export interface BenefitItem {
   coverageAmount?: number;
   frequency?: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   assignedTypesCount?: number;
+  /** รายการได้-หักที่ใช้จ่ายสวัสดิการนี้ */
+  payrollItemId?: number | null;
+  payrollItemCode?: string | null;
+  payrollItemName?: string | null;
+  payrollItemIsTaxable?: boolean | null;
+  payrollItemIsSocialSecurity?: boolean | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -36,6 +42,8 @@ export interface CreateBenefitPayload {
   defaultCoverageAmount?: number;
   defaultFrequency?: string;
   payoutType?: string;
+  /** ไม่ส่งตอนสร้าง = ระบบสร้างรหัสรายได้ให้ / ไม่ส่งตอนแก้ = คงเดิม */
+  payrollItemId?: number;
 }
 
 export interface UpdateBenefitPayload {
@@ -48,6 +56,8 @@ export interface UpdateBenefitPayload {
   defaultCoverageAmount?: number;
   defaultFrequency?: string;
   payoutType?: string;
+  /** ไม่ส่งตอนสร้าง = ระบบสร้างรหัสรายได้ให้ / ไม่ส่งตอนแก้ = คงเดิม */
+  payrollItemId?: number;
 }
 
 export interface BenefitUsageItem {
@@ -127,6 +137,10 @@ export interface BenefitClaim {
   fileName?: string | null;
   /** true = พนักงานยื่นเบิกเอง / false = ฝ่ายบุคคลบันทึกให้ */
   isSelfRequest?: boolean;
+  /** UNPAID รอสรุปรอบ / IN_PAYROLL อยู่ในรอบ / PAID จ่ายแล้ว / NOT_APPLICABLE ไม่มีการจ่ายเงิน */
+  paymentStatus?: string | null;
+  payrollPeriodYear?: number | null;
+  payrollPeriodMonth?: number | null;
 }
 
 /** พนักงานยื่นเบิกสวัสดิการเอง (ESS) */
@@ -188,5 +202,7 @@ export interface CreateBenefitClaimPayload {
   remarks?: string;
   attachmentFileName?: string;
   attachmentUrl?: string;
+  /** true (ค่าเริ่มต้น) = จ่ายผ่านเงินเดือนรอบถัดไป / false = จ่ายนอกระบบไปแล้ว */
+  payViaPayroll?: boolean;
 }
 

@@ -1040,6 +1040,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
 
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.PayrollItemId).HasColumnName("payroll_item_id");
+            entity.HasOne(e => e.PayrollItem)
+                .WithMany()
+                .HasForeignKey(e => e.PayrollItemId)
+                .OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(e => e.BenefitCode).IsUnique();
         });
 
@@ -1126,6 +1131,15 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.ApprovalInstance)
                 .WithMany()
                 .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // การจ่ายผ่านรอบเงินเดือน (scripts/benefit_payroll_link.sql)
+            entity.Property(e => e.PaymentStatus).HasColumnName("payment_status").HasMaxLength(20);
+            entity.Property(e => e.PayrollPeriodId).HasColumnName("payroll_period_id");
+            entity.Property(e => e.PaidAt).HasColumnName("paid_at");
+            entity.HasOne(e => e.PayrollPeriod)
+                .WithMany()
+                .HasForeignKey(e => e.PayrollPeriodId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasIndex(e => new { e.EmployeeId, e.ClaimYear });

@@ -156,6 +156,8 @@ export interface PayrollItem {
   isTaxable: boolean;
   isSocialSecurityCalculated: boolean;
   status: string;
+  /** สวัสดิการที่จ่ายผ่านรายการนี้ (ยอดมาจากสวัสดิการ) */
+  linkedBenefitNames?: string[];
 }
 
 export interface PayrollPeriod {

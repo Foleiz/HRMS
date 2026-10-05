@@ -17,10 +17,13 @@ public class BenefitItem
     public string DefaultFrequency { get; set; } = "YEARLY"; // DAILY, MONTHLY, YEARLY, PER_OCCURRENCE
     public string PayoutType { get; set; } = "REIMBURSEMENT"; // REIMBURSEMENT, PAYROLL, IN_KIND
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
+    /// <summary>จ่ายผ่านรายการได้-หักตัวไหน (ชื่อบนสลิป / ภาษี / ประกันสังคม ตั้งที่รายการนั้น)</summary>
+    public long? PayrollItemId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
     public ICollection<EmployeeTypeBenefit> EmployeeTypeBenefits { get; set; } = new List<EmployeeTypeBenefit>();
+    public PayrollItem? PayrollItem { get; set; }
 }

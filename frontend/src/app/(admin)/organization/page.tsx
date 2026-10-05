@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
+import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
 import { companyBankAccountService } from '@/services/companyBankAccountService';
@@ -732,6 +733,7 @@ export default function OrganizationPage() {
         defaultFrequency: item.defaultFrequency || 'YEARLY',
         payoutType: item.payoutType || 'REIMBURSEMENT',
         status: item.status,
+        payrollItemId: item.payrollItemId ?? undefined,
       });
     } else {
       setModalMode('create');
@@ -766,6 +768,7 @@ export default function OrganizationPage() {
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
+          payrollItemId: benefitForm.payrollItemId,
         });
         showSuccess('เพิ่มสวัสดิการของบริษัทสำเร็จ');
       } else if (benefitForm.id) {
@@ -779,6 +782,7 @@ export default function OrganizationPage() {
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
+          payrollItemId: benefitForm.payrollItemId,
         });
         showSuccess('แก้ไขสวัสดิการสำเร็จ');
       }
@@ -2438,6 +2442,17 @@ export default function OrganizationPage() {
                       <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
                       <option value="PAYROLL">จ่ายในเงินเดือน</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      จ่ายผ่านรายการ (บนสลิปเงินเดือน)
+                    </label>
+                    <PayCodeSelect
+                      value={benefitForm.payrollItemId}
+                      onChange={(id) => setBenefitForm({ ...benefitForm, payrollItemId: id })}
+                      isNew={modalMode === 'create'}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">

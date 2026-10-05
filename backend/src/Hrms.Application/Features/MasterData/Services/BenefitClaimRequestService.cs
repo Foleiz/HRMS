@@ -173,6 +173,8 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
             if (!IsHrApprover) throw new ForbiddenException("คำขอนี้ต้องให้ฝ่ายบุคคลเป็นผู้อนุมัติ");
             if (claim.EmployeeId == me) throw new ForbiddenException("ไม่สามารถอนุมัติคำขอของตัวเองได้");
             claim.Status = "APPROVED";
+            claim.PaymentStatus = BenefitPayCode.InitialPaymentStatus(await _context.BenefitItems
+                .Where(b => b.Id == claim.BenefitItemId).Select(b => b.PayoutType).FirstOrDefaultAsync(cancellationToken));
             claim.ApprovedAt = DateTime.UtcNow;
             claim.ApprovedByEmployeeId = me;
             claim.ApprovedByUserId = _currentUser.UserId;

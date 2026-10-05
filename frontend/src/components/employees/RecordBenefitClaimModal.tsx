@@ -73,6 +73,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   const [serviceProvider, setServiceProvider] = useState('');
   const [remarks, setRemarks] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [payViaPayroll, setPayViaPayroll] = useState(true);
 
   // Find currently selected benefit item to display live quota check
   const activeBenefit = benefits.find((b) => b.benefitItemId === Number(selectedBenefitId));
@@ -155,6 +156,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
         remarks: remarks.trim() || undefined,
         attachmentFileName,
         attachmentUrl,
+        payViaPayroll: activeBenefit?.payoutType === 'IN_KIND' ? undefined : payViaPayroll,
       };
 
       await benefitService.createClaim(payload);
@@ -338,6 +340,23 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
             />
           </div>
+
+          {!isSelf && activeBenefit?.payoutType !== 'IN_KIND' && (
+            <label className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60">
+              <input
+                type="checkbox"
+                checked={payViaPayroll}
+                onChange={(e) => setPayViaPayroll(e.target.checked)}
+                className="mt-0.5 cursor-pointer"
+              />
+              <span>
+                <span className="font-semibold">จ่ายผ่านเงินเดือนรอบถัดไป</span>
+                <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                  ไม่เลือก = จ่ายให้พนักงานไปแล้วนอกระบบเงินเดือน (บันทึกเป็นจ่ายแล้ว)
+                </span>
+              </span>
+            </label>
+          )}
 
           {/* แนบเอกสารประกอบหรือใบรับรองแพทย์ */}
           <div>

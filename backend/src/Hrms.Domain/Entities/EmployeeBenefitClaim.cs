@@ -31,6 +31,13 @@ public class EmployeeBenefitClaim
     public string? FileMimeType { get; set; }
     public long? FileSize { get; set; }
     public byte[]? FileData { get; set; }
+    /// <summary>
+    /// สถานะการจ่าย (หลังอนุมัติ): UNPAID = รอสรุปในรอบเงินเดือน, IN_PAYROLL = อยู่ในรอบ (PayrollPeriodId),
+    /// PAID = จ่ายแล้วนอกระบบเงินเดือน, NOT_APPLICABLE = สวัสดิการแบบสิ่งของ — null = ยังไม่อนุมัติ
+    /// </summary>
+    public string? PaymentStatus { get; set; }
+    public long? PayrollPeriodId { get; set; }
+    public DateTime? PaidAt { get; set; }
     public long? ApprovedByUserId { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -42,4 +49,5 @@ public class EmployeeBenefitClaim
     public virtual UserAccount? ApprovedByUser { get; set; }
     public virtual Employee? ApprovedByEmployee { get; set; }
     public virtual ApprovalInstance? ApprovalInstance { get; set; }
+    public virtual PayrollPeriod? PayrollPeriod { get; set; }
 }

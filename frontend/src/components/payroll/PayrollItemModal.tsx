@@ -191,7 +191,8 @@ export const PayrollItemModal: React.FC<Props> = ({
       const t = item.itemType || defaultType;
       setItemType(t);
       const calcType = item.calculationType || 'FIXED';
-      setCalculationType(calcType);
+      // รายได้คงที่รายเดือนย้ายไปตั้งที่เมนูสวัสดิการแล้ว รายการรายได้จึงไม่ใช้แบบ FIXED
+      setCalculationType(t === 'EARNING' && calcType === 'FIXED' ? 'MANUAL' : calcType);
       setFormulaTemplate(item.formulaTemplate || '');
       setFormulaValue(item.formulaValue || '');
       setIsTaxable(item.isTaxable);
@@ -202,7 +203,7 @@ export const PayrollItemModal: React.FC<Props> = ({
       setItemName('');
       setDescription('');
       setItemType(defaultType);
-      setCalculationType('FIXED');
+      setCalculationType(defaultType === 'EARNING' ? 'MANUAL' : 'FIXED');
       setFormulaTemplate('');
       setFormulaValue('');
       setIsTaxable(true);
@@ -213,6 +214,8 @@ export const PayrollItemModal: React.FC<Props> = ({
   }, [item, defaultType, isOpen]);
 
   if (!isOpen) return null;
+
+  const linkedBenefits = item?.linkedBenefitNames ?? [];
 
   // Filter templates for current item type
   const availableTemplates = FORMULA_TEMPLATES.filter(
@@ -364,7 +367,10 @@ export const PayrollItemModal: React.FC<Props> = ({
                 { id: 'FIXED', label: 'จำนวนคงที่' },
                 { id: 'FORMULA', label: 'สูตรคำนวณ' },
                 { id: 'MANUAL', label: 'กำหนดเอง' },
-              ].map((opt) => (
+              ]
+                .filter((opt) => !(itemType === 'EARNING' && opt.id === 'FIXED'))
+                .filter((opt) => !(linkedBenefits.length > 0 && opt.id !== 'MANUAL'))
+                .map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
@@ -380,6 +386,16 @@ export const PayrollItemModal: React.FC<Props> = ({
               ))}
             </div>
           </div>
+
+          {linkedBenefits.length > 0 ? (
+            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
+              ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงินและผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
+            </div>
+          ) : itemType === 'EARNING' ? (
+            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300">
+              เงินได้คงที่รายเดือน (เช่น ค่าเดินทาง ค่าโทรศัพท์) ให้ตั้งเป็นสวัสดิการแบบ &quot;เบี้ยเลี้ยง&quot; ที่เมนูสวัสดิการ แล้วเลือกรายการรายได้นี้เป็นรหัสในสลิป
+            </div>
+          ) : null}
 
           {/* If FORMULA is chosen: Show Formula Template selector and clean Summary Card */}
           {calculationType === 'FORMULA' ? (

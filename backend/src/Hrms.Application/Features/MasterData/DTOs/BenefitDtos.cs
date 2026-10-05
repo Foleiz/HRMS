@@ -14,6 +14,12 @@ public class BenefitItemDto
     public string PayoutType { get; set; } = "REIMBURSEMENT"; // REIMBURSEMENT, PAYROLL, IN_KIND
     public string Status { get; set; } = "ACTIVE";
     public int AssignedTypesCount { get; set; }
+    /// <summary>รายการได้-หักที่ใช้จ่ายสวัสดิการนี้ (ภาษี/ประกันสังคมตั้งที่รายการนั้น)</summary>
+    public long? PayrollItemId { get; set; }
+    public string? PayrollItemCode { get; set; }
+    public string? PayrollItemName { get; set; }
+    public bool? PayrollItemIsTaxable { get; set; }
+    public bool? PayrollItemIsSocialSecurity { get; set; }
     public decimal CoverageAmount { get; set; } = 0;
     public string Frequency { get; set; } = "MONTHLY";
     public DateTime CreatedAt { get; set; }
@@ -33,6 +39,8 @@ public class CreateBenefitItemRequest
     public string DefaultFrequency { get; set; } = "YEARLY";
     public string PayoutType { get; set; } = "REIMBURSEMENT";
     public string Status { get; set; } = "ACTIVE";
+    /// <summary>ไม่ส่ง = ระบบสร้างรหัสรายได้ BEN_xxx ให้</summary>
+    public long? PayrollItemId { get; set; }
 }
 
 public class UpdateBenefitItemRequest
@@ -46,6 +54,8 @@ public class UpdateBenefitItemRequest
     public string DefaultFrequency { get; set; } = "YEARLY";
     public string PayoutType { get; set; } = "REIMBURSEMENT";
     public string Status { get; set; } = "ACTIVE";
+    /// <summary>ไม่ส่ง = คงรายการเดิม</summary>
+    public long? PayrollItemId { get; set; }
 }
 
 
@@ -130,6 +140,10 @@ public class BenefitClaimDto
     public string? FileName { get; set; }
     /// <summary>true = พนักงานยื่นเบิกเอง / false = ฝ่ายบุคคลบันทึกให้</summary>
     public bool IsSelfRequest { get; set; }
+    /// <summary>UNPAID / IN_PAYROLL / PAID / NOT_APPLICABLE (IN_PAYROLL ในรอบที่ล็อกแล้วแสดงเป็น PAID)</summary>
+    public string? PaymentStatus { get; set; }
+    public int? PayrollPeriodYear { get; set; }
+    public int? PayrollPeriodMonth { get; set; }
 }
 
 /// <summary>พนักงานยื่นเบิกสวัสดิการเอง (ESS)</summary>
@@ -209,5 +223,7 @@ public class CreateBenefitClaimRequest
     public string? Remarks { get; set; }
     public string? AttachmentFileName { get; set; }
     public string? AttachmentUrl { get; set; }
+    /// <summary>true (ค่าเริ่มต้น) = จ่ายผ่านเงินเดือนรอบถัดไป / false = จ่ายนอกระบบไปแล้ว</summary>
+    public bool PayViaPayroll { get; set; } = true;
 }
 

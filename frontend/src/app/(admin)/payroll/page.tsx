@@ -2073,6 +2073,14 @@ export default function PayrollPage() {
                             {item.description && (
                               <div className="text-[11px] text-slate-400 mt-0.5">{item.description}</div>
                             )}
+                            {item.linkedBenefitNames && item.linkedBenefitNames.length > 0 && (
+                              <div
+                                className="inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
+                                title={item.linkedBenefitNames.join(', ')}
+                              >
+                                ใช้กับสวัสดิการ: {item.linkedBenefitNames.join(', ')}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3.5 px-5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${

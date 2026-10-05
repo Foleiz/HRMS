@@ -43,7 +43,7 @@ public class BenefitService : IBenefitService
             .ThenBy(b => b.Id)
             .ToListAsync(cancellationToken);
 
-        return benefits.Select(b => new BenefitItemDto
+        var dtos = benefits.Select(b => new BenefitItemDto
         {
             Id = b.Id,
             BenefitCode = b.BenefitCode,
@@ -57,9 +57,41 @@ public class BenefitService : IBenefitService
             PayoutType = b.PayoutType,
             Status = b.Status,
             AssignedTypesCount = assignmentCounts.GetValueOrDefault(b.Id, 0),
+            PayrollItemId = b.PayrollItemId,
             CreatedAt = b.CreatedAt,
             UpdatedAt = b.UpdatedAt
         }).ToList();
+        await FillPayCodesAsync(dtos, cancellationToken);
+        return dtos;
+    }
+
+    /// <summary>เติมชื่อ/ภาษี/ประกันสังคมของรายการได้-หักที่สวัสดิการผูกไว้</summary>
+    private async Task FillPayCodesAsync(List<BenefitItemDto> dtos, CancellationToken cancellationToken)
+    {
+        var ids = dtos.Where(d => d.PayrollItemId.HasValue).Select(d => d.PayrollItemId!.Value).Distinct().ToList();
+        if (ids.Count == 0) return;
+        var items = await _context.PayrollItems.AsNoTracking()
+            .Where(p => ids.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+        foreach (var d in dtos)
+        {
+            if (d.PayrollItemId is long pid && items.TryGetValue(pid, out var p))
+            {
+                d.PayrollItemCode = p.ItemCode;
+                d.PayrollItemName = p.ItemName;
+                d.PayrollItemIsTaxable = p.IsTaxable;
+                d.PayrollItemIsSocialSecurity = p.IsSocialSecurityCalculated;
+            }
+        }
+    }
+
+    /// <summary>ผูกสวัสดิการกับรายการได้-หักที่เลือก (ตรวจว่าใช้ได้)</summary>
+    private async Task LinkPayCodeAsync(BenefitItem benefit, long payrollItemId, CancellationToken cancellationToken)
+    {
+        var item = await _context.PayrollItems.FirstOrDefaultAsync(p => p.Id == payrollItemId, cancellationToken)
+            ?? throw new ValidationException("ไม่พบรายการได้-หักที่เลือก");
+        BenefitPayCode.ValidateLinkable(item);
+        benefit.PayrollItemId = item.Id;
     }
 
     public async Task<BenefitItemDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -75,7 +107,7 @@ public class BenefitService : IBenefitService
             .AsNoTracking()
             .CountAsync(etb => etb.BenefitItemId == id && etb.IsActive, cancellationToken);
 
-        return new BenefitItemDto
+        var dto = new BenefitItemDto
         {
             Id = benefit.Id,
             BenefitCode = benefit.BenefitCode,
@@ -89,9 +121,12 @@ public class BenefitService : IBenefitService
             PayoutType = benefit.PayoutType,
             Status = benefit.Status,
             AssignedTypesCount = count,
+            PayrollItemId = benefit.PayrollItemId,
             CreatedAt = benefit.CreatedAt,
             UpdatedAt = benefit.UpdatedAt
         };
+        await FillPayCodesAsync(new List<BenefitItemDto> { dto }, cancellationToken);
+        return dto;
     }
 
 
@@ -127,26 +162,17 @@ public class BenefitService : IBenefitService
             UpdatedAt = DateTime.UtcNow
         };
 
+        if (request.PayrollItemId.HasValue)
+            await LinkPayCodeAsync(benefit, request.PayrollItemId.Value, cancellationToken);
+
         _context.BenefitItems.Add(benefit);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new BenefitItemDto
-        {
-            Id = benefit.Id,
-            BenefitCode = benefit.BenefitCode,
-            BenefitName = benefit.BenefitName,
-            Category = benefit.Category,
-            Description = benefit.Description,
-            IsStatutory = benefit.IsStatutory,
-            IsDocumentRequired = benefit.IsDocumentRequired,
-            DefaultCoverageAmount = benefit.DefaultCoverageAmount,
-            DefaultFrequency = benefit.DefaultFrequency,
-            PayoutType = benefit.PayoutType,
-            Status = benefit.Status,
-            AssignedTypesCount = 0,
-            CreatedAt = benefit.CreatedAt,
-            UpdatedAt = benefit.UpdatedAt
-        };
+        // ไม่ได้เลือกรายการ → สร้างรหัสรายได้ BEN_xxx ให้ แล้วผูกไว้
+        if (!benefit.PayrollItemId.HasValue)
+            await BenefitPayCode.EnsureAsync(_context, benefit, cancellationToken);
+
+        return await GetByIdAsync(benefit.Id, cancellationToken);
     }
 
     public async Task<BenefitItemDto> UpdateAsync(long id, UpdateBenefitItemRequest request, CancellationToken cancellationToken = default)
@@ -172,6 +198,8 @@ public class BenefitService : IBenefitService
             benefit.PayoutType = request.PayoutType.Trim().ToUpper();
         benefit.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper();
         benefit.UpdatedAt = DateTime.UtcNow;
+        if (request.PayrollItemId.HasValue && request.PayrollItemId != benefit.PayrollItemId)
+            await LinkPayCodeAsync(benefit, request.PayrollItemId.Value, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -179,7 +207,7 @@ public class BenefitService : IBenefitService
             .AsNoTracking()
             .CountAsync(etb => etb.BenefitItemId == id && etb.IsActive, cancellationToken);
 
-        return new BenefitItemDto
+        var dto = new BenefitItemDto
         {
             Id = benefit.Id,
             BenefitCode = benefit.BenefitCode,
@@ -193,9 +221,12 @@ public class BenefitService : IBenefitService
             PayoutType = benefit.PayoutType,
             Status = benefit.Status,
             AssignedTypesCount = count,
+            PayrollItemId = benefit.PayrollItemId,
             CreatedAt = benefit.CreatedAt,
             UpdatedAt = benefit.UpdatedAt
         };
+        await FillPayCodesAsync(new List<BenefitItemDto> { dto }, cancellationToken);
+        return dto;
     }
 
     public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
@@ -515,7 +546,14 @@ public class BenefitService : IBenefitService
                 RequestNo = c.RequestNo,
                 RejectReason = c.RejectReason,
                 FileName = c.FileName,
-                IsSelfRequest = c.RequestedByEmployeeId != null
+                IsSelfRequest = c.RequestedByEmployeeId != null,
+                PaymentStatus = c.PaymentStatus == "IN_PAYROLL" && c.PayrollPeriod != null
+                                && (c.PayrollPeriod.Status == "APPROVED" || c.PayrollPeriod.Status == "PROCESSING"
+                                    || c.PayrollPeriod.Status == "PAID" || c.PayrollPeriod.Status == "CLOSED")
+                    ? "PAID"
+                    : c.PaymentStatus,
+                PayrollPeriodYear = c.PayrollPeriod != null ? (int?)c.PayrollPeriod.Year : null,
+                PayrollPeriodMonth = c.PayrollPeriod != null ? (int?)c.PayrollPeriod.Month : null
             })
             .ToListAsync(cancellationToken);
     }
@@ -582,6 +620,9 @@ public class BenefitService : IBenefitService
             Status = "APPROVED",
             ApprovedByUserId = approvedByUserId,
             ApprovedAt = DateTime.UtcNow,
+            // ฝ่ายบุคคลบันทึกให้: ค่าเริ่มต้นจ่ายผ่านเงินเดือนรอบถัดไป, เลือก "จ่ายแล้ว" ได้ถ้าจ่ายนอกระบบไปแล้ว
+            PaymentStatus = request.PayViaPayroll ? BenefitPayCode.InitialPaymentStatus(benefitItem.PayoutType) : BenefitPayCode.PaymentPaid,
+            PaidAt = request.PayViaPayroll ? null : DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -618,6 +659,15 @@ public class BenefitService : IBenefitService
         var claim = await _context.EmployeeBenefitClaims.FirstOrDefaultAsync(c => c.Id == claimId, cancellationToken);
         if (claim == null)
             throw new NotFoundException($"ไม่พบรายการเบิกสวัสดิการรหัส ID: {claimId}");
+
+        // อยู่ในรอบเงินเดือนที่ล็อกแล้ว = จ่ายไปแล้ว ลบไม่ได้
+        if (claim.PaymentStatus == BenefitPayCode.PaymentInPayroll && claim.PayrollPeriodId.HasValue)
+        {
+            var periodStatus = await _context.PayrollPeriods.AsNoTracking()
+                .Where(p => p.Id == claim.PayrollPeriodId.Value).Select(p => p.Status).FirstOrDefaultAsync(cancellationToken);
+            if (periodStatus != null && BenefitPayCode.LockedPeriodStatuses.Contains(periodStatus))
+                throw new ValidationException("รายการนี้จ่ายผ่านรอบเงินเดือนที่ปิดแล้ว ลบไม่ได้");
+        }
 
         // คำขอที่ยังค้างในสายการอนุมัติ → ปิดสายด้วย ไม่ให้ค้างในคิวผู้อนุมัติ
         if (claim.ApprovalInstanceId.HasValue)

@@ -1,6 +1,7 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Attendance.Services;
+using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -885,9 +886,16 @@ public class SalaryService : ISalaryService
         }
 
         var list = await query.OrderBy(i => i.Id).ToListAsync(cancellationToken);
+        var linked = (await _context.BenefitItems.AsNoTracking()
+                .Where(b => b.PayrollItemId != null)
+                .Select(b => new { PayrollItemId = b.PayrollItemId!.Value, b.BenefitName })
+                .ToListAsync(cancellationToken))
+            .GroupBy(x => x.PayrollItemId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.BenefitName).ToList());
 
         return list.Select(i => new PayrollItemDto
         {
+            LinkedBenefitNames = linked.GetValueOrDefault(i.Id) ?? new List<string>(),
             Id = i.Id,
             ItemCode = i.ItemCode,
             ItemName = i.ItemName,
@@ -909,6 +917,8 @@ public class SalaryService : ISalaryService
 
         if (string.IsNullOrWhiteSpace(request.ItemName))
             throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
+
+        EnsureNotFixedEarning(request.ItemType, request.CalculationType);
 
         var codeUpper = request.ItemCode.Trim().ToUpper();
         var exists = await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken);
@@ -957,6 +967,12 @@ public class SalaryService : ISalaryService
         if (string.IsNullOrWhiteSpace(request.ItemName))
             throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
 
+        if (entity.CalculationType != "FIXED")
+            EnsureNotFixedEarning(entity.ItemType, request.CalculationType);
+        if (await _context.BenefitItems.AnyAsync(b => b.PayrollItemId == entity.Id, cancellationToken)
+            && (request.CalculationType.ToUpper() == "FIXED" || !string.IsNullOrWhiteSpace(request.FormulaTemplate)))
+            throw new BusinessRuleException("รายการนี้ใช้จ่ายสวัสดิการอยู่ (ยอดมาจากสวัสดิการ) ตั้งเป็นยอดคงที่หรือสูตรไม่ได้");
+
         entity.ItemName = request.ItemName.Trim();
         entity.Description = request.Description;
         entity.CalculationType = request.CalculationType.ToUpper();
@@ -990,8 +1006,20 @@ public class SalaryService : ISalaryService
         if (entity == null)
             throw new NotFoundException("PayrollItem", id);
 
+        var linkedBenefit = await _context.BenefitItems.Where(b => b.PayrollItemId == id).Select(b => b.BenefitName).FirstOrDefaultAsync(cancellationToken);
+        if (linkedBenefit != null)
+            throw new BusinessRuleException($"รายการนี้ใช้จ่ายสวัสดิการ '{linkedBenefit}' อยู่ กรุณาเปลี่ยนรายการในสวัสดิการก่อนลบ");
+
         _context.PayrollItems.Remove(entity);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>รายได้แบบยอดคงที่จ่ายทุกคน → ให้ตั้งผ่านสวัสดิการแทน (กันจ่ายซ้ำ/เลือกกลุ่มได้)</summary>
+    private static void EnsureNotFixedEarning(string? itemType, string? calculationType)
+    {
+        if (string.Equals(itemType, "EARNING", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(calculationType, "FIXED", StringComparison.OrdinalIgnoreCase))
+            throw new BusinessRuleException("รายได้แบบยอดคงที่ให้ตั้งที่เมนูสวัสดิการ (เลือกประเภทพนักงานที่ได้และยอดได้) แล้วผูกกับรายการได้นี้แทน");
     }
 
     #endregion
@@ -1623,6 +1651,50 @@ public class SalaryService : ISalaryService
             .Where(i => !systemItemIds.Contains(i.Id) && IsAutoCalculatedItem(i))
             .ToList();
 
+        // รายการที่ผูกกับสวัสดิการ: ยอดมาจากสวัสดิการเท่านั้น ไม่คิดซ้ำจากรายการได้-หัก
+        var benefitLinkedItemIds = (await _context.BenefitItems.AsNoTracking()
+                .Where(b => b.PayrollItemId != null)
+                .Select(b => b.PayrollItemId!.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+        autoItems.RemoveAll(i => benefitLinkedItemIds.Contains(i.Id));
+
+        // ===== คำขอเบิกสวัสดิการที่อนุมัติแล้ว: สรุปจ่ายในรอบนี้ (ตัดรอบที่วันกำหนดจ่าย) =====
+        var claimCutoff = period.PaymentDate ?? period.EndDate;
+        var claimCutoffUtc = DateTime.SpecifyKind(claimCutoff.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc).AddHours(-7);
+        var releasedClaimIds = await _context.EmployeeBenefitClaims
+            .Where(c => c.PayrollPeriodId == period.Id && c.PaymentStatus == BenefitPayCode.PaymentInPayroll)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+        var payableClaims = await _context.EmployeeBenefitClaims.AsNoTracking()
+            .Where(c => c.Status == "APPROVED" && c.ApprovedAt != null && c.ApprovedAt < claimCutoffUtc
+                        && (c.PaymentStatus == BenefitPayCode.PaymentUnpaid || releasedClaimIds.Contains(c.Id)))
+            .Select(c => new PayableClaim(c.Id, c.EmployeeId, c.BenefitItemId, c.Amount, c.RequestNo))
+            .ToListAsync(cancellationToken);
+        var claimBenefitIds = payableClaims.Select(c => c.BenefitItemId).Distinct().ToList();
+        var claimBenefits = await _context.BenefitItems.AsNoTracking()
+            .Where(b => claimBenefitIds.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id, cancellationToken);
+
+        // อัปเดตสถานะการจ่ายผ่าน stub (ไม่โหลดไฟล์ใบเสร็จ) — บันทึกพร้อมผลคำนวณทั้งรอบ
+        var claimStubs = new Dictionary<long, EmployeeBenefitClaim>();
+        EmployeeBenefitClaim ClaimStub(long id, bool wasInThisPeriod)
+        {
+            if (claimStubs.TryGetValue(id, out var stub)) return stub;
+            stub = wasInThisPeriod
+                ? new EmployeeBenefitClaim { Id = id, PaymentStatus = BenefitPayCode.PaymentInPayroll, PayrollPeriodId = period.Id }
+                : new EmployeeBenefitClaim { Id = id, PaymentStatus = BenefitPayCode.PaymentUnpaid };
+            _context.EmployeeBenefitClaims.Attach(stub);
+            claimStubs[id] = stub;
+            return stub;
+        }
+        foreach (var id in releasedClaimIds)
+        {
+            var stub = ClaimStub(id, true);
+            stub.PaymentStatus = BenefitPayCode.PaymentUnpaid;
+            stub.PayrollPeriodId = null;
+        }
+
         var employeeIds = employees.Select(e => e.Id).ToList();
         var attendance = await _context.AttendanceMonthlySummaries
             .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
@@ -1805,6 +1877,26 @@ public class SalaryService : ISalaryService
                 }
             }
 
+            // ===== 3.2 คำขอเบิกสวัสดิการที่อนุมัติแล้ว: 1 บรรทัดต่อรายการได้-หักที่ผูกไว้ (เงินได้ไม่ประจำ) =====
+            var claimLines = new Dictionary<long, (PayrollItem Item, decimal Amount, List<string> Refs)>();
+            foreach (var c in payableClaims.Where(c => c.EmployeeId == emp.Id))
+            {
+                if (!claimBenefits.TryGetValue(c.BenefitItemId, out var claimBenefit)) continue;
+                var payItem = await BenefitPayCode.EnsureAsync(_context, claimBenefit, cancellationToken);
+                var cur = claimLines.TryGetValue(payItem.Id, out var found) ? found : (payItem, 0m, new List<string>());
+                cur.Refs.Add(string.IsNullOrEmpty(c.RequestNo) ? $"#{c.Id}" : c.RequestNo);
+                claimLines[payItem.Id] = (cur.Item, cur.Amount + c.Amount, cur.Refs);
+
+                var stub = ClaimStub(c.Id, releasedClaimIds.Contains(c.Id));
+                stub.PaymentStatus = BenefitPayCode.PaymentInPayroll;
+                stub.PayrollPeriodId = period.Id;
+            }
+            foreach (var cl in claimLines.Values)
+            {
+                lines.Add(new CalcLine(cl.Item, cl.Amount, null, null,
+                    $"เบิกสวัสดิการ {cl.Refs.Count} รายการ: {string.Join(", ", cl.Refs)}", IsRegular: false));
+            }
+
             // ===== 4. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
             var manualDetails = payroll.Details.Where(IsManualDetail).ToList();
             foreach (var d in manualDetails)
@@ -1896,6 +1988,8 @@ public class SalaryService : ISalaryService
     #region Payroll Calculation Helpers
 
     /// <summary>บรรทัดรายได้/รายหักระหว่างคำนวณ (IsRegular = เงินได้ประจำทุกเดือน ใช้ประมาณการภาษีทั้งปี)</summary>
+    private sealed record PayableClaim(long Id, long EmployeeId, long BenefitItemId, decimal Amount, string? RequestNo);
+
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
@@ -2099,29 +2193,8 @@ public class SalaryService : ISalaryService
     }
 
     /// <summary>หาหรือสร้างรายการเงินเดือนสำหรับสวัสดิการพนักงาน (หมวด ALLOWANCE / เบี้ยเลี้ยง)</summary>
-    private async Task<PayrollItem> EnsureBenefitPayrollItemAsync(BenefitItem benefit, CancellationToken cancellationToken)
-    {
-        string code = $"BEN_{benefit.BenefitCode.ToUpperInvariant()}";
-        var existing = await _context.PayrollItems.FirstOrDefaultAsync(p => p.ItemCode == code, cancellationToken);
-        if (existing != null) return existing;
-
-        var newItem = new PayrollItem
-        {
-            ItemCode = code,
-            ItemName = benefit.BenefitName,
-            Description = $"สวัสดิการพนักงาน: {benefit.Description ?? benefit.BenefitName}",
-            ItemType = "EARNING",
-            CalculationType = "FORMULA",
-            FormulaTemplate = null,
-            FormulaValue = null,
-            IsTaxable = false,
-            IsSocialSecurityCalculated = false,
-            Status = "ACTIVE"
-        };
-        _context.PayrollItems.Add(newItem);
-        await _context.SaveChangesAsync(cancellationToken);
-        return newItem;
-    }
+    private Task<PayrollItem> EnsureBenefitPayrollItemAsync(BenefitItem benefit, CancellationToken cancellationToken) =>
+        BenefitPayCode.EnsureAsync(_context, benefit, cancellationToken);
 
     /// <summary>
     /// ภาษีเงินได้ทั้งปี: หักค่าใช้จ่าย 50% ไม่เกิน 100,000 / ลดหย่อนส่วนตัว 60,000 / เงินสมทบประกันสังคมทั้งปี
@@ -2312,6 +2385,13 @@ public class SalaryService : ISalaryService
                 $"ไม่สามารถลบรอบเงินเดือนในสถานะ '{period.Status}' ได้ " +
                 "เนื่องจากรอบเงินเดือนได้ถูกส่งต่อไปยังขั้นตอนตรวจสอบ/อนุมัติ/จ่ายเงินแล้ว (สามารถลบได้เฉพาะสถานะ 'DRAFT' หรือ 'REVIEW' เท่านั้น)");
         }
+
+        // คำขอเบิกที่อยู่ในรอบนี้ → กลับไปรอสรุปรอบถัดไป
+        await _context.EmployeeBenefitClaims
+            .Where(c => c.PayrollPeriodId == period.Id && c.PaymentStatus == BenefitPayCode.PaymentInPayroll)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.PaymentStatus, BenefitPayCode.PaymentUnpaid)
+                .SetProperty(c => c.PayrollPeriodId, (long?)null), cancellationToken);
 
         // Clean up payroll details and payroll records
         foreach (var pr in period.Payrolls)

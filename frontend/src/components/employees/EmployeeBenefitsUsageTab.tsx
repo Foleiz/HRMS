@@ -29,6 +29,25 @@ import {
   Paperclip,
 } from 'lucide-react';
 
+function paymentStatusLabel(c: BenefitClaim): string {
+  switch (c.paymentStatus) {
+    case 'UNPAID':
+      return 'รอสรุปรอบเงินเดือน';
+    case 'IN_PAYROLL':
+      return c.payrollPeriodYear && c.payrollPeriodMonth
+        ? `อยู่ในรอบ ${c.payrollPeriodMonth}/${c.payrollPeriodYear + 543}`
+        : 'อยู่ในรอบเงินเดือน';
+    case 'PAID':
+      return c.payrollPeriodYear && c.payrollPeriodMonth
+        ? `จ่ายแล้ว (รอบ ${c.payrollPeriodMonth}/${c.payrollPeriodYear + 543})`
+        : 'จ่ายแล้ว';
+    case 'NOT_APPLICABLE':
+      return 'ไม่มีการจ่ายเงิน';
+    default:
+      return '';
+  }
+}
+
 const CLAIM_STATUS_BADGE: Record<string, { label: string; className: string }> = {
   APPROVED: {
     label: 'อนุมัติแล้ว',
@@ -505,6 +524,11 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         {c.status === 'REJECTED' && c.rejectReason && (
                           <span className="block mt-0.5 text-[10px] text-rose-500 max-w-[10rem] mx-auto truncate" title={c.rejectReason}>
                             {c.rejectReason}
+                          </span>
+                        )}
+                        {c.status === 'APPROVED' && c.paymentStatus && (
+                          <span className="block mt-1 text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            {paymentStatusLabel(c)}
                           </span>
                         )}
                       </td>

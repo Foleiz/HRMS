@@ -34,6 +34,8 @@ public class PayrollItemDto
     public bool IsTaxable { get; set; }
     public bool IsSocialSecurityCalculated { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    /// <summary>สวัสดิการที่จ่ายผ่านรายการนี้ (ยอดมาจากสวัสดิการ ไม่ได้คำนวณจากรายการนี้เอง)</summary>
+    public List<string> LinkedBenefitNames { get; set; } = new();
 }
 
 public class CreatePayrollItemRequest
