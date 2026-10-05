@@ -35,6 +35,9 @@ import {
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { bankService } from '@/services/bankService';
+import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
+import { organizationService } from '@/services/organizationService';
+import type { Position } from '@/types/organization';
 import type { Bank } from '@/types/api';
 
 interface DepartmentItem {
@@ -92,7 +95,7 @@ export const autoFormatPhone = (val: string): string => {
 
 
 export default function EmployeesPage() {
-  const { user, hasPermission, getDataScope } = useAuth();
+  const { user, hasPermission, hasRole, getDataScope } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -101,6 +104,18 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // สัญชาติ / ศาสนา / สถานภาพสมรส จากเมนู ข้อมูลหลัก
+  const lookups = useMasterLookups();
+
+  // ตำแหน่งจากโครงสร้างองค์กร (เฉพาะที่เปิดใช้งาน) — ไม่ใช้รายชื่อตายตัว
+  const [positions, setPositions] = useState<Position[]>([]);
+  useEffect(() => {
+    organizationService
+      .getPositions()
+      .then((list) => setPositions(list.filter((p) => p.status === 'ACTIVE')))
+      .catch(() => setPositions([]));
+  }, []);
 
   // ธนาคารจากข้อมูลหลัก (ใช้ตรวจจำนวนหลักเลขบัญชีตามที่ตั้งไว้ในข้อมูลหลัก)
   const [banks, setBanks] = useState<Bank[]>([]);
@@ -179,7 +194,7 @@ export default function EmployeesPage() {
     citizenId: '',
     gender: '',
     nationality: 'ไทย',
-    religion: 'พุทธ',
+    religion: '',
     birthDate: '',
     maritalStatus: '',
     militaryStatus: '',
@@ -436,7 +451,6 @@ export default function EmployeesPage() {
     'citizenId',
     'gender',
     'nationality',
-    'religion',
     'birthDate',
     'maritalStatus',
     'militaryStatus',
@@ -501,7 +515,6 @@ export default function EmployeesPage() {
 
     if (!data.gender || data.gender === 'เลือกเพศ') errors.gender = 'กรุณาเลือกเพศ';
     if (!data.nationality || data.nationality === 'เลือกสัญชาติ') errors.nationality = 'กรุณาเลือกสัญชาติ';
-    if (!data.religion || data.religion === 'เลือกศาสนา') errors.religion = 'กรุณาเลือกศาสนา';
     if (!data.birthDate?.trim()) errors.birthDate = 'กรุณาเลือกวันเกิด';
     if (!data.maritalStatus || data.maritalStatus === 'เลือกสถานภาพ') errors.maritalStatus = 'กรุณาเลือกสถานภาพสมรส';
     if (!data.militaryStatus || data.militaryStatus === 'เลือกสถานภาพทางทหาร') errors.militaryStatus = 'กรุณาเลือกสถานภาพทางทหาร';
@@ -719,8 +732,12 @@ export default function EmployeesPage() {
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
-        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
+        // ศาสนาเป็นข้อมูลอ่อนไหว (PDPA) → ไม่บังคับ และไม่ใส่ค่าให้เอง
+        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
+        religionId: lookupId(lookups.religions, formData.religion),
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
+        maritalStatusId: lookupId(lookups.maritalStatuses, formData.maritalStatus),
+        nationalityId: lookupId(lookups.nationalities, formData.nationality),
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
         educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
         institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
@@ -728,6 +745,7 @@ export default function EmployeesPage() {
         bankId: banks.find((b) => b.bankName === formData.bankName)?.id,
         accountNumber: formData.accountNumber?.trim() ? formData.accountNumber.replace(/\D/g, '') : undefined,
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
+        positionId: formData.positionId,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
         addresses: [addressItem],
         familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()).map((f) => ({
@@ -914,7 +932,7 @@ export default function EmployeesPage() {
 
         {/* Right Side: + เพิ่มพนักงาน Button */}
         <div className="w-full sm:w-auto flex justify-end">
-          {hasPermission('EMP_MANAGE') && (
+          {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_CREATE')) && (
             <button
               onClick={handleOpenCreateModal}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
@@ -1268,7 +1286,7 @@ export default function EmployeesPage() {
                               </Link>
 
                               {/* 4. เปลี่ยนสถานะการจ้างงาน */}
-                              {hasPermission('EMP_MANAGE') && (
+                              {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_EDIT')) && (
                                 <div className="border-t border-slate-100 dark:border-slate-700/60 pt-1">
                                   <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wide">เปลี่ยนสถานะ</p>
                                   {[
@@ -1301,7 +1319,7 @@ export default function EmployeesPage() {
                               )}
 
                               {/* 5. ลบข้อมูล */}
-                              {hasPermission('EMP_MANAGE') && (
+                              {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_EDIT')) && (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -1663,24 +1681,34 @@ export default function EmployeesPage() {
                             ตำแหน่ง <span className="text-rose-500">*</span>
                           </label>
                           <select
-                            value={formData.positionName}
+                            value={formData.positionId ?? ''}
                             onChange={(e) => {
-                              setFormData({ ...formData, positionName: e.target.value });
+                              const id = e.target.value ? Number(e.target.value) : undefined;
+                              const pos = positions.find((p) => p.id === id);
+                              setFormData({ ...formData, positionId: id, positionName: pos?.positionName || '' });
                               clearFieldError('positionName');
                             }}
                             className={`${getFieldClass('positionName')} cursor-pointer`}
                           >
                             <option value="">เลือกตำแหน่ง</option>
-                            <option value="ผู้จัดการแผนกสรรหา">ผู้จัดการแผนกสรรหา</option>
-                            <option value="หัวหน้าทีมนักพัฒนา">หัวหน้าทีมนักพัฒนา</option>
-                            <option value="เจ้าหน้าที่ยิงโฆษณาออนไลน์">เจ้าหน้าที่ยิงโฆษณาออนไลน์</option>
-                            <option value="ผู้จัดการลูกค้ารายใหญ่">ผู้จัดการลูกค้ารายใหญ่</option>
-                            <option value="สมุห์บัญชี">สมุห์บัญชี</option>
-                            <option value="ผู้ควบคุมคลังสินค้า">ผู้ควบคุมคลังสินค้า</option>
-                            <option value="วิศวกรควบคุมคุณภาพ">วิศวกรควบคุมคุณภาพ</option>
-                            <option value="นักพัฒนาซอฟต์แวร์">นักพัฒนาซอฟต์แวร์</option>
-                            <option value="เจ้าหน้าที่ฝ่ายบุคคล">เจ้าหน้าที่ฝ่ายบุคคล</option>
+                            {Array.from(new Set(positions.map((p) => p.departmentName))).map((dept) => (
+                              <optgroup key={dept} label={dept || 'ไม่ระบุแผนก'}>
+                                {positions
+                                  .filter((p) => p.departmentName === dept)
+                                  .map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.positionName}
+                                      {p.headcountPlan != null
+                                        ? ` (${p.filledCount ?? 0}/${p.headcountPlan}${(p.vacantCount ?? 0) === 0 ? ' เต็ม' : ''})`
+                                        : ''}
+                                    </option>
+                                  ))}
+                              </optgroup>
+                            ))}
                           </select>
+                          {positions.length === 0 && (
+                            <p className="text-[11px] text-amber-600 mt-1">ยังไม่มีตำแหน่ง — สร้างที่เมนู โครงสร้างองค์กร → จัดการตำแหน่ง</p>
+                          )}
                           {renderFieldError('positionName')}
                         </div>
 
@@ -1822,7 +1850,7 @@ export default function EmployeesPage() {
 
                         <div>
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                            ศาสนา (Religion) <span className="text-rose-500">*</span>
+                            ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
                           </label>
                           <select
                             value={formData.religion}
@@ -1832,12 +1860,12 @@ export default function EmployeesPage() {
                             }}
                             className={`${getFieldClass('religion')} cursor-pointer`}
                           >
-                            <option value="">เลือกศาสนา</option>
-                            <option value="พุทธ">พุทธ</option>
-                            <option value="คริสต์">คริสต์</option>
-                            <option value="อิสลาม">อิสลาม</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
-                            <option value="ไม่ระบุ">ไม่ระบุ</option>
+                            <option value="">ไม่ระบุ</option>
+                            {lookups.religions.map((r) => (
+                              <option key={r.id ?? r.name} value={r.name}>
+                                {r.name}
+                              </option>
+                            ))}
                           </select>
                           {renderFieldError('religion')}
                         </div>
@@ -1874,10 +1902,11 @@ export default function EmployeesPage() {
                             className={`${getFieldClass('maritalStatus')} cursor-pointer`}
                           >
                             <option value="">เลือกสถานภาพ</option>
-                            <option value="โสด">โสด</option>
-                            <option value="สมรส">สมรส</option>
-                            <option value="หย่าร้าง">หย่าร้าง</option>
-                            <option value="หม้าย">หม้าย</option>
+                            {lookups.maritalStatuses.map((m) => (
+                              <option key={m.id ?? m.name} value={m.name}>
+                                {m.name}
+                              </option>
+                            ))}
                           </select>
                           {renderFieldError('maritalStatus')}
                         </div>

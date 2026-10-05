@@ -480,8 +480,7 @@ public class EmployeeTransferService : IEmployeeTransferService
                 EffectiveFrom = transfer.EffectiveDate,
                 EffectiveTo = null,
                 IsCurrent = true,
-                WageType = currentAssign?.WageType ?? "MONTHLY",
-                WorkScheduleId = currentAssign?.WorkScheduleId
+                WageType = currentAssign?.WageType ?? "MONTHLY"
             };
 
             _context.EmployeeAssignments.Add(newAssignment);

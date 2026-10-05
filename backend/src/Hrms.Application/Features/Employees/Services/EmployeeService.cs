@@ -263,8 +263,8 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์สร้างพนักงาน
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        // 1. ตรวจสอบสิทธิ์สร้างพนักงาน (EMP_PROFILE_CREATE ในตารางสิทธิ์ / EMP_MANAGE แบบเดิม)
+        if (!_currentUserService.HasPermission("EMP_PROFILE_CREATE") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างข้อมูลพนักงาน");
         }
@@ -314,6 +314,17 @@ public class EmployeeService : IEmployeeService
 
         var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
 
+        // รหัสอ้างอิงข้อมูลหลัก: ใช้ที่ส่งมา หรือหาจากชื่อในเมนู ข้อมูลหลัก
+        var createNationalityId = request.NationalityId
+            ?? (string.IsNullOrWhiteSpace(request.Nationality) ? null
+                : await _dbContext.Nationalities.AsNoTracking().Where(x => x.NationalityName == request.Nationality.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var createReligionId = request.ReligionId
+            ?? (string.IsNullOrWhiteSpace(request.Religion) ? null
+                : await _dbContext.Religions.AsNoTracking().Where(x => x.ReligionName == request.Religion.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var createMaritalStatusId = request.MaritalStatusId
+            ?? (string.IsNullOrWhiteSpace(request.MaritalStatus) ? null
+                : await _dbContext.MaritalStatusTypes.AsNoTracking().Where(x => x.MaritalStatusName == request.MaritalStatus.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+
         var employee = new Employee
         {
             EmployeeCode = request.EmployeeCode.Trim(),
@@ -328,11 +339,11 @@ public class EmployeeService : IEmployeeService
             Gender = gender,
             GenderId = genderId,
             Nationality = request.Nationality,
-            NationalityId = request.NationalityId,
-            Religion = request.Religion,
-            ReligionId = request.ReligionId,
+            NationalityId = createNationalityId,
+            Religion = string.IsNullOrWhiteSpace(request.Religion) ? null : request.Religion.Trim(),
+            ReligionId = createReligionId,
             MaritalStatus = request.MaritalStatus,
-            MaritalStatusId = request.MaritalStatusId,
+            MaritalStatusId = createMaritalStatusId,
             MilitaryStatus = request.MilitaryStatus,
             IsTopLevel = request.IsTopLevel,
             SpouseHasIncome = request.SpouseHasIncome,
@@ -475,26 +486,10 @@ public class EmployeeService : IEmployeeService
             });
         }
 
-        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
-        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment) — ต้องเลือกตำแหน่งที่มีในโครงสร้างองค์กร (ไม่สร้างตำแหน่งใหม่ให้เอง)
+        if (request.PositionId is > 0 || !string.IsNullOrWhiteSpace(request.PositionName))
         {
-            var pos = await _dbContext.Positions
-                .Include(p => p.Department)
-                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
-
-            if (pos == null)
-            {
-                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
-                pos = new Position
-                {
-                    DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
-                    PositionName = request.PositionName.Trim(),
-                    Status = "ACTIVE"
-                };
-                _dbContext.Positions.Add(pos);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
+            var pos = await ResolvePositionAsync(request.PositionId, request.PositionName, null, cancellationToken);
 
             var deptId = pos.DepartmentId;
             var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
@@ -872,25 +867,9 @@ public class EmployeeService : IEmployeeService
             await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        if (request.PositionId is > 0 || !string.IsNullOrWhiteSpace(request.PositionName))
         {
-            var pos = await _dbContext.Positions
-                .Include(p => p.Department)
-                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
-
-            if (pos == null)
-            {
-                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
-                pos = new Position
-                {
-                    DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
-                    PositionName = request.PositionName.Trim(),
-                    Status = "ACTIVE"
-                };
-                _dbContext.Positions.Add(pos);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
+            var pos = await ResolvePositionAsync(request.PositionId, request.PositionName, currentAssignment?.PositionId, cancellationToken);
 
             var deptId = pos.DepartmentId;
             var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
@@ -901,9 +880,13 @@ public class EmployeeService : IEmployeeService
 
             if (currentAssignment != null)
             {
-                currentAssignment.PositionId = pos.Id;
-                currentAssignment.DepartmentId = deptId;
-                currentAssignment.DivisionId = divId;
+                // ตำแหน่งเดิม = ไม่แตะแผนก/ฝ่าย (การย้ายแผนกให้ทำผ่านเมนูการโอนย้ายเพื่อเก็บประวัติ)
+                if (currentAssignment.PositionId != pos.Id)
+                {
+                    currentAssignment.PositionId = pos.Id;
+                    currentAssignment.DepartmentId = deptId;
+                    currentAssignment.DivisionId = divId;
+                }
                 if (!string.IsNullOrWhiteSpace(request.EmployeeType))
                 {
                     await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
@@ -971,7 +954,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงาน");
         }
@@ -991,7 +974,7 @@ public class EmployeeService : IEmployeeService
     /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, INACTIVE</summary>
     public async Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
             throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะพนักงาน");
 
         var allowedStatuses = new[] { "ACTIVE", "INACTIVE" };
@@ -1369,6 +1352,37 @@ public class EmployeeService : IEmployeeService
         }
 
         return managerId.Value;
+    }
+
+    /// <summary>
+    /// หาตำแหน่งจากโครงสร้างองค์กร: ใช้รหัสที่ส่งมา หรือชื่อที่ตรงทุกตัว (ไม่จับคู่แบบ "มีคำนี้อยู่")
+    /// ชื่อซ้ำหลายแผนก → ใช้ตำแหน่งเดิมของพนักงานถ้าตรง ไม่งั้นให้เลือกจากรายการ / ไม่พบ → แจ้งให้สร้างที่โครงสร้างองค์กรก่อน
+    /// </summary>
+    private async Task<Position> ResolvePositionAsync(long? positionId, string? positionName, long? currentPositionId, CancellationToken cancellationToken)
+    {
+        if (positionId is > 0)
+        {
+            var byId = await _dbContext.Positions.Include(p => p.Department)
+                .FirstOrDefaultAsync(p => p.Id == positionId.Value, cancellationToken)
+                ?? throw new BusinessRuleException("ไม่พบตำแหน่งที่เลือกในโครงสร้างองค์กร");
+            if (byId.Id != currentPositionId && !string.Equals(byId.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+                throw new BusinessRuleException($"ตำแหน่ง {byId.PositionName} ปิดการใช้งานแล้ว");
+            return byId;
+        }
+
+        var key = (positionName ?? string.Empty).Trim().ToLower();
+        var matches = await _dbContext.Positions.Include(p => p.Department)
+            .Where(p => p.PositionName.Trim().ToLower() == key)
+            .ToListAsync(cancellationToken);
+        if (matches.Count == 0)
+            throw new BusinessRuleException($"ไม่พบตำแหน่ง '{positionName?.Trim()}' ในโครงสร้างองค์กร กรุณาสร้างตำแหน่งที่เมนู โครงสร้างองค์กร → จัดการตำแหน่ง ก่อน");
+        var current = matches.FirstOrDefault(p => p.Id == currentPositionId);
+        if (current != null) return current;
+        var active = matches.Where(p => string.Equals(p.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (active.Count == 1) return active[0];
+        if (active.Count == 0)
+            throw new BusinessRuleException($"ตำแหน่ง {positionName?.Trim()} ปิดการใช้งานแล้ว");
+        throw new BusinessRuleException($"มีตำแหน่งชื่อ '{positionName?.Trim()}' หลายแผนก กรุณาเลือกตำแหน่งจากรายการ");
     }
 
     // ===================== บัญชีธนาคาร =====================

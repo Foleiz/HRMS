@@ -681,6 +681,7 @@ export default function OrganizationPage() {
         positionCode: pos.positionCode,
         positionName: pos.positionName,
         status: pos.status,
+        headcountPlan: pos.headcountPlan ?? null,
       });
     } else {
       setModalMode('create');
@@ -690,6 +691,7 @@ export default function OrganizationPage() {
         positionCode: '',
         positionName: '',
         status: 'ACTIVE',
+        headcountPlan: null,
       });
     }
     setModalOpen(true);
@@ -707,6 +709,7 @@ export default function OrganizationPage() {
           employeeLevelId: posForm.employeeLevelId,
           positionName: posForm.positionName,
           status: posForm.status,
+          headcountPlan: posForm.headcountPlan ?? null,
         });
         showSuccess('แก้ไขข้อมูลตำแหน่งงานสำเร็จ');
       }
@@ -1441,6 +1444,7 @@ export default function OrganizationPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สังกัดฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ระดับพนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap text-center">อัตรากำลัง (มีคน/อัตรา)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขวันที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
@@ -1450,14 +1454,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={10} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลตำแหน่ง...
                       </td>
                     </tr>
                   ) : filteredPositions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={10} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         ไม่พบข้อมูลตำแหน่ง
                       </td>
                     </tr>
@@ -1472,6 +1476,24 @@ export default function OrganizationPage() {
                           <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 whitespace-nowrap dark:bg-purple-900/20 dark:text-purple-400">
                             {pos.levelCode ? `${pos.levelCode} - ${pos.levelName}` : 'ไม่ระบุ'}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap text-center">
+                          {pos.headcountPlan != null ? (
+                            <span
+                              className={`font-mono font-semibold ${
+                                (pos.filledCount ?? 0) > pos.headcountPlan
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : (pos.vacantCount ?? 0) === 0
+                                    ? 'text-slate-600 dark:text-slate-300'
+                                    : 'text-emerald-600 dark:text-emerald-400'
+                              }`}
+                              title={(pos.filledCount ?? 0) > pos.headcountPlan ? 'เกินอัตรากำลัง' : `ว่าง ${pos.vacantCount ?? 0} อัตรา`}
+                            >
+                              {pos.filledCount ?? 0}/{pos.headcountPlan}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">{pos.filledCount ?? 0} คน · ไม่กำหนด</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.createdAt)}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.updatedAt)}</td>
@@ -2325,6 +2347,20 @@ export default function OrganizationPage() {
                   required
                   value={posForm.positionName}
                   onChange={(e) => setPosForm({ ...posForm, positionName: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">อัตรากำลัง (คน)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={posForm.headcountPlan ?? ''}
+                  onChange={(e) =>
+                    setPosForm({ ...posForm, headcountPlan: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })
+                  }
+                  placeholder="เว้นว่าง = ไม่กำหนด"
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>

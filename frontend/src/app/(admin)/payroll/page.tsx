@@ -261,36 +261,21 @@ export default function PayrollPage() {
     hasPermission('PAYROLL_SLIP_VIEW') ||
     hasRole('ADMIN');
 
-  const isCEO =
-    user?.roles?.includes('CEO') ||
-    user?.roles?.includes('ADMIN') ||
-    user?.username?.toLowerCase().includes('ceo') ||
-    user?.username?.toLowerCase().includes('approver') ||
-    hasRole('CEO') ||
-    hasRole('ADMIN');
+  // บทบาทในหน้าเงินเดือน — ใช้ชุดรหัสสิทธิ์เดียวกับ backend (PayrollAccess.cs) ไม่ดูจากชื่อบทบาทหรือชื่อผู้ใช้
+  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const PAYROLL_HR_PERMS = ['PAYROLL_CALC_CREATE', 'PAYROLL_CALC_EDIT', 'PAYROLL_HR_CREATE', 'PAYROLL_HR_EDIT'];
+  const PAYROLL_FINANCE_PERMS = [
+    'PAYROLL_FINANCE_CREATE', 'PAYROLL_FINANCE_EDIT', 'PAYROLL_FINANCE_APPROVE',
+    'PAYROLL_BANK_CREATE', 'PAYROLL_BANK_EDIT', 'PAYROLL_TAX_EDIT', 'PAYROLL_TAX_MANAGE',
+  ];
+  const PAYROLL_APPROVER_PERMS = ['APPROVAL_PAYROLL_APPROVE', 'PAYROLL_ADMIN_APPROVE', 'PAYROLL_CALC_APPROVE', 'PAYROLL_APPROVE'];
+  const hasHrPayrollPerm = PAYROLL_HR_PERMS.some((p) => hasPermission(p));
+  const hasFinancePayrollPerm = PAYROLL_FINANCE_PERMS.some((p) => hasPermission(p));
+  const hasApproverPayrollPerm = PAYROLL_APPROVER_PERMS.some((p) => hasPermission(p));
 
-  const isFinance =
-    user?.roles?.some((r: string) => 
-      r.toLowerCase().includes('finance') || 
-      r.toLowerCase().includes('account') || 
-      r.toUpperCase() === 'PAYROLL_ADMIN'
-    ) ||
-    user?.username?.toLowerCase().includes('finance') ||
-    user?.username?.toLowerCase().includes('account') ||
-    user?.roles?.includes('ADMIN') ||
-    hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN') ||
-    hasPermission('PAYROLL_TAX_VIEW') ||
-    hasPermission('APPROVAL_PAYROLL_APPROVE');
-
-  const isHR =
-    user?.roles?.some((r: string) => r.toLowerCase().includes('hr')) ||
-    user?.username?.toLowerCase().includes('hr') ||
-    hasRole('HR_MGR') ||
-    hasRole('HR_ADMIN') ||
-    user?.roles?.includes('ADMIN') ||
-    hasRole('ADMIN') ||
-    hasPermission('PAYROLL_CALC_CREATE');
+  const isCEO = isAdmin || hasApproverPayrollPerm;
+  const isFinance = isAdmin || hasFinancePayrollPerm;
+  const isHR = isAdmin || hasHrPayrollPerm;
 
   const canAccessHrView =
     hasPermission('PAYROLL_HR_VIEW') ||
@@ -335,37 +320,10 @@ export default function PayrollPage() {
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
   const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE' | 'APPROVER'>('HR');
 
-  // Auto-detect role strictly from logged-in user profile & assigned permissions
-  const usernameLower = user?.username?.toLowerCase() || '';
-  const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
-  const isAdmin =
-    userRolesList.includes('ADMIN') ||
-    userRolesList.includes('SYSTEM_SUPER') ||
-    userRolesList.includes('SUPER_ADMIN') ||
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
-    hasRole('SUPER_ADMIN') ||
-    usernameLower === 'admin';
-  // isStrictHrUser: detect จาก username หรือ role ที่มี HR
-  const isStrictHrUser =
-    usernameLower.includes('hr') ||
-    userRolesList.some(r => r.includes('HR')) ||
-    (!isAdmin && (hasPermission('PAYROLL_CALC_CREATE') || hasPermission('TIME_DAILY_VIEW')));
-  // isStrictFinanceUser: detect จาก role name ที่ชัดเจน หรือ permission เฉพาะ Finance
-  // ไม่นับ PAYROLL_TAX_VIEW เพราะ HR ก็มี permission นี้ด้วย
-  // และต้องไม่ใช่ HR user ด้วย (HR มีสิทธิ์ทุก PAYROLL permission เช่นกัน)
-  const isStrictFinanceUser =
-    !isStrictHrUser && (
-      usernameLower.includes('finance') ||
-      usernameLower.includes('account') ||
-      usernameLower.includes('chon') ||
-      userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT')) ||
-      (!isAdmin && hasPermission('APPROVAL_PAYROLL_APPROVE'))
-    );
-  const isStrictCeoUser =
-    usernameLower.includes('ceo') ||
-    usernameLower.includes('approver') ||
-    (userRolesList.includes('CEO') && !isAdmin);
+  // ผู้ใช้ที่มีหน้าที่เดียว (ไม่ใช่ admin) → เปิดมุมมองของหน้าที่นั้นให้อัตโนมัติ
+  const isStrictHrUser = !isAdmin && hasHrPayrollPerm && !hasFinancePayrollPerm && !hasApproverPayrollPerm;
+  const isStrictFinanceUser = !isAdmin && hasFinancePayrollPerm && !hasHrPayrollPerm;
+  const isStrictCeoUser = !isAdmin && hasApproverPayrollPerm && !hasHrPayrollPerm && !hasFinancePayrollPerm;
 
   useEffect(() => {
     if (canAccessFinanceView && !canAccessHrView && !canAccessApproverView) {

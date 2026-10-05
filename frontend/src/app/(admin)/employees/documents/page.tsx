@@ -38,7 +38,8 @@ export default function ExpiringDocumentsPage() {
   const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
   const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
   const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
-  const isHr = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
+  // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_VIEW) แทนการดูชื่อบทบาท
+  const isHr = hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_VIEW');
 
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },

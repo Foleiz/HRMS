@@ -1,4 +1,5 @@
 using Hrms.Application.Common.Exceptions;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Auth.Dtos;
 using Microsoft.EntityFrameworkCore;
@@ -152,9 +153,9 @@ public class AuthService : IAuthService
             throw new ValidationException("กรุณากรอกรหัสผ่านใหม่");
         }
 
-        if (request.NewPassword.Length < 6)
+        if (request.NewPassword.Length < PasswordPolicy.MinLength)
         {
-            throw new ValidationException("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+            throw new ValidationException(PasswordPolicy.TooShortMessage);
         }
 
         if (request.NewPassword != request.ConfirmPassword)

@@ -32,6 +32,26 @@ public class JwtTokenService : ITokenService
 
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
+        var claims = BuildClaims(user);
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = expiresAt,
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = credentials
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return (tokenHandler.WriteToken(token), expiresAt);
+    }
+
+    /// <summary>Claims ของผู้ใช้ (ใช้ตอนออก token และตอนโหลดสิทธิ์ล่าสุดในแต่ละคำขอ)</summary>
+    public static List<Claim> BuildClaims(UserInfoDto user)
+    {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -62,18 +82,6 @@ public class JwtTokenService : ITokenService
             claims.Add(new Claim($"scope:{scope.PermissionCode}", scope.DataVisibilityScope));
         }
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = expiresAt,
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = credentials
-        };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-
-        return (tokenHandler.WriteToken(token), expiresAt);
+        return claims;
     }
 }

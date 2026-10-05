@@ -172,6 +172,10 @@ export interface CreateEmployeePayload {
   genderId?: number;
   nationality?: string;
   religion?: string;
+  /** รหัสอ้างอิงจากข้อมูลหลัก (ส่งคู่กับชื่อ) */
+  religionId?: number;
+  nationalityId?: number;
+  maritalStatusId?: number;
 
   // ข้อมูลส่วนบุคคล & ที่อยู่
   birthDate?: string;

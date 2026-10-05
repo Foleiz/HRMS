@@ -114,6 +114,12 @@ public class PositionDto
     public string PositionCode { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE";
+    /// <summary>อัตรากำลังที่อนุมัติ (null = ไม่กำหนด)</summary>
+    public int? HeadcountPlan { get; set; }
+    /// <summary>จำนวนพนักงานที่ทำงานอยู่ในตำแหน่งนี้ตอนนี้</summary>
+    public int FilledCount { get; set; }
+    /// <summary>อัตราว่าง (null = ไม่กำหนดอัตรากำลัง)</summary>
+    public int? VacantCount => HeadcountPlan.HasValue ? Math.Max(0, HeadcountPlan.Value - FilledCount) : null;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -126,6 +132,7 @@ public class CreatePositionDto
     public string? PositionCode { get; set; }
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE";
+    public int? HeadcountPlan { get; set; }
 }
 
 public class UpdatePositionDto
@@ -134,6 +141,7 @@ public class UpdatePositionDto
     public long? EmployeeLevelId { get; set; }
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE";
+    public int? HeadcountPlan { get; set; }
 }
 #endregion
 

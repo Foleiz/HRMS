@@ -12,7 +12,6 @@ public class AttendanceDaily
     public long EmployeeId { get; set; }
     public DateOnly WorkDate { get; set; }
     public long? ShiftId { get; set; }
-    public long? WorkScheduleId { get; set; }
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public DateTime? ActualIn { get; set; }
@@ -27,7 +26,6 @@ public class AttendanceDaily
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual Shift? Shift { get; set; }
-    public virtual WorkSchedule? WorkSchedule { get; set; }
     public virtual AttendanceImportBatch? ImportBatch { get; set; }
     public virtual ICollection<AttendanceAdjustment> Adjustments { get; set; } = new List<AttendanceAdjustment>();
 }

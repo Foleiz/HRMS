@@ -131,7 +131,7 @@ export default function EmployeeDetailView({
     }
   };
   const searchParams = useSearchParams();
-  const { hasRole, user } = useAuth();
+  const { hasRole, hasPermission, user } = useAuth();
 
   // Tab State
   const [activeTab, setActiveTab] = useState<EmployeeDetailTab>(() => {
@@ -146,7 +146,9 @@ export default function EmployeeDetailView({
     return 'personal';
   });
 
-  const canManageDocuments = ['HR', 'HR_ADMIN', 'HR_MGR', 'SUPER_ADMIN', 'SYS_ADMIN'].some((r) => hasRole(r));
+  // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_CREATE / EMP_DOC_EDIT)
+  const canManageDocuments =
+    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_CREATE') || hasPermission('EMP_DOC_EDIT');
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -269,8 +271,8 @@ export default function EmployeeDetailView({
       toast.warning('กรุณากรอกรหัสผ่านใหม่');
       return;
     }
-    if (newPassword.length < 6) {
-      toast.warning('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+    if (newPassword.length < 8) {
+      toast.warning('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -1233,7 +1235,7 @@ export default function EmployeeDetailView({
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
+                    placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
                     className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     required
                   />

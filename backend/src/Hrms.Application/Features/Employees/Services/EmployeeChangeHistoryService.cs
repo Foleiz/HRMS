@@ -85,7 +85,7 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
         ["RelationshipType"] = "ความสัมพันธ์", ["Relationship"] = "ความสัมพันธ์", ["EducationStatus"] = "สถานะการศึกษา", ["Occupation"] = "อาชีพ",
         ["PrimaryPhone"] = "เบอร์โทร", ["SecondaryPhone"] = "เบอร์โทรสำรอง", ["Address"] = "ที่อยู่",
         ["DivisionId"] = "ฝ่าย", ["DepartmentId"] = "แผนก", ["PositionId"] = "ตำแหน่ง", ["EmployeeLevelId"] = "ระดับ", ["EmployeeTypeId"] = "ประเภทพนักงาน",
-        ["WorkScheduleId"] = "ตารางงาน", ["ManagerEmployeeId"] = "หัวหน้างานโดยตรง", ["EffectiveFrom"] = "มีผลตั้งแต่", ["EffectiveTo"] = "สิ้นสุดวันที่",
+        ["ManagerEmployeeId"] = "หัวหน้างานโดยตรง", ["EffectiveFrom"] = "มีผลตั้งแต่", ["EffectiveTo"] = "สิ้นสุดวันที่",
         ["WageType"] = "ประเภทค่าจ้าง",
         ["DocumentTypeId"] = "ประเภทเอกสาร", ["FileName"] = "ไฟล์", ["IssuedDate"] = "วันที่ออกเอกสาร", ["ExpiryDate"] = "วันหมดอายุ", ["Remarks"] = "หมายเหตุ",
     };

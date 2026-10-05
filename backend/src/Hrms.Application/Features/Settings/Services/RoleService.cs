@@ -20,6 +20,7 @@ public class RoleService : IRoleService
     public static void InvalidateMatrixCache(long? roleId = null)
     {
         _allRolesCache = null;
+        Hrms.Application.Common.Utilities.UserAccessVersion.Bump(); // สิทธิ์ที่แก้มีผลกับคำขอถัดไปทันที
         if (roleId.HasValue)
         {
             _matrixCache.TryRemove(roleId.Value, out _);

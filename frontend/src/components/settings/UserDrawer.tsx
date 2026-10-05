@@ -181,6 +181,10 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
       setErrorMsg('กรุณากรอกรหัสผ่าน');
       return;
     }
+    if (!isEditMode && password.length < 8) {
+      setErrorMsg('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+      return;
+    }
 
     if (selectedRoles.length === 0) {
       setErrorMsg('กรุณาเลือกบทบาทอย่างน้อย 1 บทบาท');
@@ -308,7 +312,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                   <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
                     <ShieldCheck className={`w-3.5 h-3.5 ${password.length >= 8 ? 'text-emerald-500' : 'text-amber-500'}`} />
                     <span className={password.length >= 8 ? 'text-emerald-600' : 'text-amber-600'}>
-                      {password.length >= 8 ? 'ระดับความปลอดภัย: แข็งแรง' : 'ระดับความปลอดภัย: ปานกลาง (แนะนำ 8 ตัวอักษรขึ้นไป)'}
+                      {password.length >= 8 ? 'ความยาวผ่านเกณฑ์' : `ต้องมีอย่างน้อย 8 ตัวอักษร (ตอนนี้ ${password.length})`}
                     </span>
                   </div>
                 )}

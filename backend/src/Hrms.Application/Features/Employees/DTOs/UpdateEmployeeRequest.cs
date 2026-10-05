@@ -88,7 +88,8 @@ public class UpdateEmployeeRequest
     // กรณีฉุกเฉินติดต่อใคร
     public CreateEmergencyContactDto? EmergencyContact { get; set; }
 
-    // ตำแหน่งงานและการจ้างงาน
+    // ตำแหน่งงานและการจ้างงาน (ส่ง PositionId จากโครงสร้างองค์กร; PositionName ต้องตรงทุกตัว)
+    public long? PositionId { get; set; }
     public string? PositionName { get; set; }
     public string? EmployeeType { get; set; }
     public string? DepartmentName { get; set; }

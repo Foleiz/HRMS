@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
+import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
 import type { Bank } from '@/types/api';
 import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience, EmployeeBankAccount } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -125,6 +126,9 @@ function EmployeeEditPageContent() {
   const [managerId, setManagerId] = useState<number | ''>('');
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
+  // สัญชาติ / ศาสนา / สถานภาพสมรส จากเมนู ข้อมูลหลัก
+  const lookups = useMasterLookups();
+
   // ธนาคารจากข้อมูลหลัก + บัญชีที่รอยืนยัน (ถ้ามี)
   const [banks, setBanks] = useState<Bank[]>([]);
   const [pendingBank, setPendingBank] = useState<EmployeeBankAccount | null>(null);
@@ -144,7 +148,7 @@ function EmployeeEditPageContent() {
     citizenId: '',
     gender: '',
     nationality: 'ไทย',
-    religion: 'พุทธ',
+    religion: '',
     birthDate: '',
     maritalStatus: '',
     militaryStatus: '',
@@ -239,7 +243,7 @@ function EmployeeEditPageContent() {
           citizenId: emp.citizenIdMasked || '',
           gender: emp.gender || (emp.genderId === 1 || emp.prefix === 'นาย' ? 'ชาย' : (emp.genderId === 2 || emp.prefix === 'นางสาว' || emp.prefix === 'นาง' ? 'หญิง' : '')),
           nationality: emp.nationality === 'ไทย' ? 'ไทย (Thai)' : (emp.nationality || 'ไทย (Thai)'),
-          religion: emp.religion || 'พุทธ',
+          religion: emp.religion || '',
           birthDate: emp.birthDate ? emp.birthDate.substring(0, 10) : '',
           maritalStatus: emp.maritalStatus || '',
           militaryStatus: emp.militaryStatus || '',
@@ -260,6 +264,7 @@ function EmployeeEditPageContent() {
           bankId: primaryBank?.bankId,
           bankName: primaryBank?.bankName || '',
           accountNumber: primaryBank?.accountNumber || '',
+          positionId: emp.positionId,
           positionName: emp.positionName || '',
           employeeType: emp.employeeType || '',
           familyMembers:
@@ -383,8 +388,11 @@ function EmployeeEditPageContent() {
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
-        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
+        // ศาสนาเป็นข้อมูลอ่อนไหว (PDPA) → ไม่บังคับ และไม่ใส่ค่าให้เอง
+        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
+        religionId: lookupId(lookups.religions, formData.religion),
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
+        maritalStatusId: lookupId(lookups.maritalStatuses, formData.maritalStatus),
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
         educationLevel: undefined,
         institution: undefined,
@@ -750,18 +758,22 @@ function EmployeeEditPageContent() {
                   {/* ศาสนา */}
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      ศาสนา (Religion) <span className="text-rose-500">*</span>
+                      ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
                     </label>
                     <select
                       value={formData.religion}
                       onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
-                      <option value="พุทธ">พุทธ</option>
-                      <option value="คริสต์">คริสต์</option>
-                      <option value="อิสลาม">อิสลาม</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                      <option value="ไม่ระบุ">ไม่ระบุ</option>
+                      <option value="">ไม่ระบุ</option>
+                      {lookups.religions.map((r) => (
+                        <option key={r.id ?? r.name} value={r.name}>
+                          {r.name}
+                        </option>
+                      ))}
+                      {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
+                        <option value={formData.religion}>{formData.religion}</option>
+                      )}
                     </select>
                   </div>
 
@@ -776,10 +788,14 @@ function EmployeeEditPageContent() {
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกสถานภาพ</option>
-                      <option value="โสด">โสด</option>
-                      <option value="สมรส">สมรส</option>
-                      <option value="หย่าร้าง">หย่าร้าง</option>
-                      <option value="หม้าย">หม้าย</option>
+                      {lookups.maritalStatuses.map((m) => (
+                        <option key={m.id ?? m.name} value={m.name}>
+                          {m.name}
+                        </option>
+                      ))}
+                      {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
+                        <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
+                      )}
                     </select>
                   </div>
 

@@ -1,38 +1,3 @@
-export interface WorkSchedule {
-  id: number;
-  scheduleCode: string;
-  scheduleName: string;
-  workStart?: string | null;
-  workEnd?: string | null;
-  breakMinutes: number;
-  lateGraceMinutes: number;
-  earlyLeaveGraceMinutes: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  workHours?: number | null;
-  netWorkHours?: number | null;
-}
-
-export interface CreateWorkScheduleRequest {
-  scheduleCode: string;
-  scheduleName: string;
-  workStart?: string | null;
-  workEnd?: string | null;
-  breakMinutes: number;
-  lateGraceMinutes: number;
-  earlyLeaveGraceMinutes: number;
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface UpdateWorkScheduleRequest {
-  scheduleName: string;
-  workStart?: string | null;
-  workEnd?: string | null;
-  breakMinutes: number;
-  lateGraceMinutes: number;
-  earlyLeaveGraceMinutes: number;
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
 export interface EmployeeShift {
   id: number;
   employeeId: number;

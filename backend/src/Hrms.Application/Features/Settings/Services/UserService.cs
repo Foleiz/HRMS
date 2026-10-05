@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Hrms.Application.Common.Exceptions;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Settings.Dtos;
@@ -21,6 +22,7 @@ public class UserService : IUserService
     public static void InvalidateUsersCache()
     {
         _usersCache.Clear();
+        Hrms.Application.Common.Utilities.UserAccessVersion.Bump(); // สถานะ/บทบาทผู้ใช้มีผลกับคำขอถัดไปทันที
     }
 
     public UserService(
@@ -142,6 +144,10 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(request.Password))
         {
             throw new ValidationException("กรุณากรอกรหัสผ่าน");
+        }
+        if (request.Password.Length < PasswordPolicy.MinLength)
+        {
+            throw new ValidationException(PasswordPolicy.TooShortMessage);
         }
 
         if (request.EmployeeId <= 0)
@@ -303,6 +309,10 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
             throw new ValidationException("กรุณากรอกรหัสผ่านใหม่");
+        }
+        if (request.NewPassword.Length < PasswordPolicy.MinLength)
+        {
+            throw new ValidationException(PasswordPolicy.TooShortMessage);
         }
 
         var user = await _dbContext.UserAccounts.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);

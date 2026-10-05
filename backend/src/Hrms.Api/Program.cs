@@ -56,6 +56,8 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddSingleton<IAesEncryptionService, AesEncryptionService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<UserAccessLoader>();
 builder.Services.AddScoped<IDataScopeService, DataScopeService>();
 
 // 3. Application Services DI
@@ -68,7 +70,6 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ICompanyBankAccountService, CompanyBankAccountService>();
 builder.Services.AddScoped<IWorkCalendarService, WorkCalendarService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
-builder.Services.AddScoped<IWorkScheduleService, WorkScheduleService>();
 builder.Services.AddScoped<IEmployeeShiftService, EmployeeShiftService>();
 builder.Services.AddScoped<IAttendanceDailyService, AttendanceDailyService>();
 builder.Services.AddScoped<IAttendanceImportService, AttendanceImportService>();
@@ -110,6 +111,16 @@ builder.Services.AddScoped<IResignationService, ResignationService>();
 
 
 // 4. JWT Authentication
+// กุญแจลับต้องตั้งในค่า config เสมอเมื่อไม่ใช่เครื่องพัฒนา (ห้ามใช้ค่าตั้งต้นที่เขียนไว้ในโค้ด)
+if (!builder.Environment.IsDevelopment())
+{
+    foreach (var requiredKey in new[] { "Jwt:SecretKey", "Encryption:SecretKey" })
+    {
+        if (string.IsNullOrWhiteSpace(builder.Configuration[requiredKey]))
+            throw new InvalidOperationException($"ยังไม่ได้ตั้งค่า {requiredKey} (ตั้งผ่าน appsettings หรือ environment variable ก่อนเปิดระบบ)");
+    }
+}
+
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "HrmsSecretKeyForEnterpriseSystemSecurity2026!@#VeryLongKeyForHmacSha256";
 builder.Services.AddAuthentication(options =>
 {
@@ -129,6 +140,28 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["Jwt:Audience"] ?? "HrmsClient",
         ClockSkew = TimeSpan.Zero
+    };
+    // ใช้สถานะ/สิทธิ์ล่าสุดจากฐานข้อมูลทุกคำขอ: บัญชีที่ถูกระงับหรือลบจะใช้ token เดิมต่อไม่ได้
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async ctx =>
+        {
+            var sub = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                      ?? ctx.Principal?.FindFirst("sub")?.Value;
+            if (!long.TryParse(sub, out var userId))
+            {
+                ctx.Fail("token ไม่ถูกต้อง");
+                return;
+            }
+            var loader = ctx.HttpContext.RequestServices.GetRequiredService<UserAccessLoader>();
+            var principal = await loader.LoadAsync(userId, JwtBearerDefaults.AuthenticationScheme, ctx.HttpContext.RequestAborted);
+            if (principal == null)
+            {
+                ctx.Fail("บัญชีถูกระงับหรือไม่มีในระบบแล้ว");
+                return;
+            }
+            ctx.Principal = principal;
+        }
     };
 });
 
