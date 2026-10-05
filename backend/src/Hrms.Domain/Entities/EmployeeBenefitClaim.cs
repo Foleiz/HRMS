@@ -15,6 +15,8 @@ public class EmployeeBenefitClaim
     public string? ReceiptNumber { get; set; }
     public string? ServiceProvider { get; set; }
     public string? Remarks { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public string? AttachmentUrl { get; set; }
     public string Status { get; set; } = "APPROVED"; // PENDING, APPROVED, REJECTED
     public long? ApprovedByUserId { get; set; }
     public DateTime? ApprovedAt { get; set; }

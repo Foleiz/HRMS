@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
-import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
 
 interface RecordBenefitClaimModalProps {
   isOpen: boolean;
@@ -15,6 +15,14 @@ interface RecordBenefitClaimModalProps {
   benefits: BenefitUsageItem[];
   preSelectedBenefitId?: number | null;
 }
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
 
 export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = ({
   isOpen,
@@ -42,6 +50,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   const [receiptNumber, setReceiptNumber] = useState('');
   const [serviceProvider, setServiceProvider] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
 
   // Find currently selected benefit item to display live quota check
   const activeBenefit = benefits.find((b) => b.benefitItemId === Number(selectedBenefitId));
@@ -71,10 +80,27 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
       }
     }
 
+    if (activeBenefit?.isDocumentRequired && !attachment) {
+      setErrorMsg('สวัสดิการประเภทนี้ บังคับแนบเอกสารประกอบหรือใบรับรองแพทย์ กรุณาแนบไฟล์ก่อนบันทึกรายการ');
+      return;
+    }
+
     setErrorMsg(null);
     setSubmitting(true);
 
     try {
+      let attachmentUrl: string | undefined;
+      let attachmentFileName: string | undefined;
+
+      if (attachment) {
+        attachmentFileName = attachment.name;
+        try {
+          attachmentUrl = await fileToBase64(attachment);
+        } catch {
+          attachmentUrl = undefined;
+        }
+      }
+
       const payload: CreateBenefitClaimPayload = {
         employeeId,
         benefitItemId: Number(selectedBenefitId),
@@ -84,6 +110,8 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
         receiptNumber: receiptNumber.trim() || undefined,
         serviceProvider: serviceProvider.trim() || undefined,
         remarks: remarks.trim() || undefined,
+        attachmentFileName,
+        attachmentUrl,
       };
 
       await benefitService.createClaim(payload);
@@ -149,11 +177,28 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               <option value="">-- กรุณาเลือกสวัสดิการ --</option>
               {claimableBenefits.map((b) => (
                 <option key={b.benefitItemId} value={b.benefitItemId}>
-                  {b.benefitName} {b.quotaAmount > 0 ? `(คงเหลือ ${b.remainingAmount.toLocaleString()} บ.)` : ''}
+                  {b.benefitName}
+                  {b.isDocumentRequired ? ' [บังคับแนบเอกสาร]' : ''}
+                  {b.quotaAmount > 0 ? ` (คงเหลือ ${b.remainingAmount.toLocaleString()} บ.)` : ''}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* Alert if Benefit Requires Supporting Document */}
+          {activeBenefit?.isDocumentRequired && (
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block text-amber-900 dark:text-amber-100">
+                  ⚠️ สวัสดิการนี้บังคับแนบเอกสารประกอบหรือใบรับรองแพทย์
+                </span>
+                <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                  กรุณาแนบไฟล์ใบรับรองแพทย์ หรือใบเสร็จรับเงินตัวจริง/สำเนาเพื่อประกอบการเบิกจ่าย
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Live Quota Balance Banner */}
           {activeBenefit && (
@@ -244,6 +289,69 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               placeholder="เช่น รพ.กรุงเทพ, คลินิกทันตกรรมสยาม"
               className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
             />
+          </div>
+
+          {/* แนบเอกสารประกอบหรือใบรับรองแพทย์ */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-slate-400" />
+                เอกสารประกอบ / ใบรับรองแพทย์
+                {activeBenefit?.isDocumentRequired && (
+                  <span className="text-rose-500 font-bold">* (บังคับแนบ)</span>
+                )}
+              </span>
+              {activeBenefit?.isDocumentRequired && (
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800">
+                  บังคับแนบ
+                </span>
+              )}
+            </label>
+            <label
+              className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl border border-dashed transition-all cursor-pointer ${
+                activeBenefit?.isDocumentRequired && !attachment
+                  ? 'border-amber-400 bg-amber-50/50 dark:border-amber-600/60 dark:bg-amber-950/30 hover:border-amber-500'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0B2046] dark:hover:border-blue-500'
+              }`}
+            >
+              <Paperclip
+                className={`w-4 h-4 shrink-0 ${
+                  attachment ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
+                }`}
+              />
+              <span
+                className={`text-xs truncate flex-1 ${
+                  attachment
+                    ? 'font-medium text-slate-800 dark:text-slate-200'
+                    : 'text-slate-400 dark:text-slate-500'
+                }`}
+              >
+                {attachment ? attachment.name : 'เลือกไฟล์แนบ (เช่น ใบรับรองแพทย์, ใบเสร็จ, เอกสารประกอบ)...'}
+              </span>
+              {attachment && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setAttachment(null);
+                  }}
+                  className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
+                  title="ลบไฟล์แนบ"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+              />
+            </label>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+              รองรับไฟล์รูปภาพและ PDF (ขนาดไม่เกิน 10MB)
+            </p>
           </div>
 
           {/* หมายเหตุ / รายละเอียด */}

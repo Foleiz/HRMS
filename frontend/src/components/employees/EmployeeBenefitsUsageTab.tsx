@@ -23,6 +23,7 @@ import {
   Wallet,
   Coins,
   History,
+  Paperclip,
 } from 'lucide-react';
 
 interface EmployeeBenefitsUsageTabProps {
@@ -252,9 +253,16 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         {getCategoryIcon(b.category)}
                       </div>
                       <div>
-                        <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
-                          {b.benefitName}
-                        </h5>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+                            {b.benefitName}
+                          </h5>
+                          {b.isDocumentRequired && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              📎 บังคับแนบเอกสาร
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-slate-400 dark:text-slate-500">
                           {b.category === 'HEALTH'
                             ? 'สวัสดิการสุขภาพ'
@@ -395,7 +403,28 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         {c.serviceProvider || '-'}
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
-                        {c.receiptNumber || '-'}
+                        <div>{c.receiptNumber || '-'}</div>
+                        {c.attachmentFileName && (
+                          <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-sans">
+                            <Paperclip className="w-3 h-3 shrink-0" />
+                            {c.attachmentUrl ? (
+                              <a
+                                href={c.attachmentUrl}
+                                download={c.attachmentFileName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hover:underline truncate max-w-[120px]"
+                                title={c.attachmentFileName}
+                              >
+                                {c.attachmentFileName}
+                              </a>
+                            ) : (
+                              <span className="truncate max-w-[120px]" title={c.attachmentFileName}>
+                                {c.attachmentFileName}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate">
                         {c.remarks || '-'}

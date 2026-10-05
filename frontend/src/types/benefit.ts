@@ -13,6 +13,7 @@ export interface BenefitItem {
   category: BenefitCategory | string;
   description?: string | null;
   isStatutory: boolean;
+  isDocumentRequired?: boolean;
   status: 'ACTIVE' | 'INACTIVE' | string;
   defaultCoverageAmount: number;
   defaultFrequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
@@ -30,6 +31,7 @@ export interface CreateBenefitPayload {
   category: string;
   description?: string;
   isStatutory?: boolean;
+  isDocumentRequired?: boolean;
   status?: string;
   defaultCoverageAmount?: number;
   defaultFrequency?: string;
@@ -41,6 +43,7 @@ export interface UpdateBenefitPayload {
   category: string;
   description?: string;
   isStatutory?: boolean;
+  isDocumentRequired?: boolean;
   status?: string;
   defaultCoverageAmount?: number;
   defaultFrequency?: string;
@@ -54,6 +57,7 @@ export interface BenefitUsageItem {
   category: string;
   description?: string | null;
   payoutType?: string;
+  isDocumentRequired?: boolean;
   quotaAmount: number;
   frequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   usedAmount: number;
@@ -110,6 +114,8 @@ export interface BenefitClaim {
   receiptNumber?: string | null;
   serviceProvider?: string | null;
   remarks?: string | null;
+  attachmentFileName?: string | null;
+  attachmentUrl?: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | string;
   approvedByName?: string | null;
   approvedAt?: string | null;
@@ -125,5 +131,7 @@ export interface CreateBenefitClaimPayload {
   receiptNumber?: string;
   serviceProvider?: string;
   remarks?: string;
+  attachmentFileName?: string;
+  attachmentUrl?: string;
 }
 

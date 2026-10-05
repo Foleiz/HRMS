@@ -8,6 +8,7 @@ public class BenefitItemDto
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; }
+    public bool IsDocumentRequired { get; set; } = false;
     public decimal DefaultCoverageAmount { get; set; } = 0;
     public string DefaultFrequency { get; set; } = "YEARLY";
     public string PayoutType { get; set; } = "REIMBURSEMENT"; // REIMBURSEMENT, PAYROLL, IN_KIND
@@ -27,6 +28,7 @@ public class CreateBenefitItemRequest
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; } = false;
+    public bool IsDocumentRequired { get; set; } = false;
     public decimal DefaultCoverageAmount { get; set; } = 0;
     public string DefaultFrequency { get; set; } = "YEARLY";
     public string PayoutType { get; set; } = "REIMBURSEMENT";
@@ -39,6 +41,7 @@ public class UpdateBenefitItemRequest
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public bool IsStatutory { get; set; }
+    public bool IsDocumentRequired { get; set; } = false;
     public decimal DefaultCoverageAmount { get; set; } = 0;
     public string DefaultFrequency { get; set; } = "YEARLY";
     public string PayoutType { get; set; } = "REIMBURSEMENT";
@@ -86,6 +89,7 @@ public class BenefitUsageItemDto
     public string Category { get; set; } = "OTHER";
     public string? Description { get; set; }
     public string PayoutType { get; set; } = "REIMBURSEMENT";
+    public bool IsDocumentRequired { get; set; } = false;
     public decimal QuotaAmount { get; set; }
     public string Frequency { get; set; } = "YEARLY";
     public decimal UsedAmount { get; set; }
@@ -113,6 +117,8 @@ public class BenefitClaimDto
     public string? ReceiptNumber { get; set; }
     public string? ServiceProvider { get; set; }
     public string? Remarks { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public string? AttachmentUrl { get; set; }
     public string Status { get; set; } = "APPROVED";
     public string? ApprovedByName { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -129,5 +135,7 @@ public class CreateBenefitClaimRequest
     public string? ReceiptNumber { get; set; }
     public string? ServiceProvider { get; set; }
     public string? Remarks { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public string? AttachmentUrl { get; set; }
 }
 
