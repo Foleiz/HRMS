@@ -269,50 +269,68 @@ export default function PayrollPage() {
     hasRole('CEO') ||
     hasRole('ADMIN');
 
-  const isFinance =
-    user?.roles?.some((r: string) => 
-      r.toLowerCase().includes('finance') || 
-      r.toLowerCase().includes('account') || 
-      r.toUpperCase() === 'PAYROLL_ADMIN'
-    ) ||
-    user?.username?.toLowerCase().includes('finance') ||
-    user?.username?.toLowerCase().includes('account') ||
-    user?.roles?.includes('ADMIN') ||
+  // Role & Permissions access checks for views
+  const usernameLower = user?.username?.toLowerCase() || '';
+  const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
+  const isAdmin =
+    userRolesList.includes('ADMIN') ||
+    userRolesList.includes('SYSTEM_SUPER') ||
+    userRolesList.includes('SUPER_ADMIN') ||
     hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN') ||
-    hasPermission('PAYROLL_TAX_VIEW') ||
-    hasPermission('APPROVAL_PAYROLL_APPROVE');
+    hasRole('SYSTEM_SUPER') ||
+    hasRole('SUPER_ADMIN') ||
+    usernameLower === 'admin';
 
-  const isHR =
-    user?.roles?.some((r: string) => r.toLowerCase().includes('hr')) ||
-    user?.username?.toLowerCase().includes('hr') ||
-    hasRole('HR_MGR') ||
-    hasRole('HR_ADMIN') ||
-    user?.roles?.includes('ADMIN') ||
-    hasRole('ADMIN') ||
-    hasPermission('PAYROLL_CALC_CREATE');
-
-  const canAccessHrView =
+  // Check if role has configured any of the 3 explicit view permissions
+  const hasConfiguredExplicitViews =
     hasPermission('PAYROLL_HR_VIEW') ||
-    hasPermission('PAYROLL_CALC_VIEW') ||
-    isHR ||
-    hasRole('ADMIN') ||
-    user?.roles?.includes('ADMIN');
-
-  const canAccessFinanceView =
     hasPermission('PAYROLL_FINANCE_VIEW') ||
-    hasPermission('PAYROLL_TAX_VIEW') ||
-    isFinance ||
-    hasRole('ADMIN') ||
-    user?.roles?.includes('ADMIN');
+    hasPermission('PAYROLL_ADMIN_VIEW');
 
+  // 1. HR View:
+  // - Admin
+  // - Explicit PAYROLL_HR_VIEW permission
+  // - Fallback for unconfigured role: only if no explicit view permissions exist
+  const canAccessHrView =
+    isAdmin ||
+    hasPermission('PAYROLL_HR_VIEW') ||
+    (!hasConfiguredExplicitViews && (
+      hasRole('HR_MGR') ||
+      hasRole('HR_ADMIN') ||
+      userRolesList.some(r => r.includes('HR')) ||
+      usernameLower.includes('hr')
+    ));
+
+  // 2. Finance View:
+  // - Admin
+  // - Explicit PAYROLL_FINANCE_VIEW permission
+  // - Fallback for unconfigured role: only if no explicit view permissions exist
+  const canAccessFinanceView =
+    isAdmin ||
+    hasPermission('PAYROLL_FINANCE_VIEW') ||
+    (!hasConfiguredExplicitViews && (
+      hasRole('PAYROLL_ADMIN') ||
+      userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT')) ||
+      usernameLower.includes('finance') ||
+      usernameLower.includes('account')
+    ));
+
+  // 3. Approver (CEO) View:
+  // - Admin
+  // - Explicit PAYROLL_ADMIN_VIEW permission
+  // - Fallback for unconfigured role: only if no explicit view permissions exist
   const canAccessApproverView =
+    isAdmin ||
     hasPermission('PAYROLL_ADMIN_VIEW') ||
-    hasPermission('PAYROLL_APPROVE') ||
-    hasPermission('APPROVAL_PAYROLL_VIEW') ||
-    isCEO ||
-    hasRole('ADMIN') ||
-    user?.roles?.includes('ADMIN');
+    (!hasConfiguredExplicitViews && (
+      hasRole('CEO') ||
+      userRolesList.some(r => r.includes('CEO')) ||
+      usernameLower.includes('ceo') ||
+      hasPermission('APPROVAL_PAYROLL_VIEW')
+    ));
+
+  const isFinance = canAccessFinanceView;
+  const isHR = canAccessHrView;
 
   const canEditTax =
     hasPermission('PAYROLL_TAX_EDIT') ||
@@ -335,65 +353,24 @@ export default function PayrollPage() {
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
   const [processSubTab, setProcessSubTab] = useState<'HR' | 'FINANCE' | 'APPROVER'>('HR');
 
-  // Auto-detect role strictly from logged-in user profile & assigned permissions
-  const usernameLower = user?.username?.toLowerCase() || '';
-  const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
-  const isAdmin =
-    userRolesList.includes('ADMIN') ||
-    userRolesList.includes('SYSTEM_SUPER') ||
-    userRolesList.includes('SUPER_ADMIN') ||
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
-    hasRole('SUPER_ADMIN') ||
-    usernameLower === 'admin';
-  // isStrictHrUser: detect จาก username หรือ role ที่มี HR
-  const isStrictHrUser =
-    usernameLower.includes('hr') ||
-    userRolesList.some(r => r.includes('HR')) ||
-    (!isAdmin && (hasPermission('PAYROLL_CALC_CREATE') || hasPermission('TIME_DAILY_VIEW')));
-  // isStrictFinanceUser: detect จาก role name ที่ชัดเจน หรือ permission เฉพาะ Finance
-  // ไม่นับ PAYROLL_TAX_VIEW เพราะ HR ก็มี permission นี้ด้วย
-  // และต้องไม่ใช่ HR user ด้วย (HR มีสิทธิ์ทุก PAYROLL permission เช่นกัน)
-  const isStrictFinanceUser =
-    !isStrictHrUser && (
-      usernameLower.includes('finance') ||
-      usernameLower.includes('account') ||
-      usernameLower.includes('chon') ||
-      userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT')) ||
-      (!isAdmin && hasPermission('APPROVAL_PAYROLL_APPROVE'))
-    );
-  const isStrictCeoUser =
-    usernameLower.includes('ceo') ||
-    usernameLower.includes('approver') ||
-    (userRolesList.includes('CEO') && !isAdmin);
-
   useEffect(() => {
-    if (canAccessFinanceView && !canAccessHrView && !canAccessApproverView) {
+    if (canAccessFinanceView && !canAccessHrView) {
       setProcessSubTab('FINANCE');
       setViewMode('FINANCE');
     } else if (canAccessApproverView && !canAccessHrView && !canAccessFinanceView) {
       setProcessSubTab('APPROVER');
       setViewMode('ALL');
-    } else if (isStrictFinanceUser && !isStrictHrUser) {
-      setProcessSubTab('FINANCE');
-      setViewMode('FINANCE');
-    } else if (isStrictCeoUser && !isStrictHrUser) {
-      setProcessSubTab('APPROVER');
-      setViewMode('ALL');
-    } else if (isStrictHrUser && !isStrictFinanceUser) {
+    } else if (canAccessHrView) {
       setProcessSubTab('HR');
       setViewMode('HR');
-    } else if (isStrictFinanceUser) {
+    } else if (canAccessFinanceView) {
       setProcessSubTab('FINANCE');
       setViewMode('FINANCE');
-    } else if (isStrictCeoUser) {
+    } else if (canAccessApproverView) {
       setProcessSubTab('APPROVER');
       setViewMode('ALL');
-    } else {
-      setProcessSubTab('HR');
-      setViewMode('ALL');
     }
-  }, [user?.username, canAccessHrView, canAccessFinanceView, canAccessApproverView, isStrictHrUser, isStrictFinanceUser, isStrictCeoUser]);
+  }, [canAccessHrView, canAccessFinanceView, canAccessApproverView]);
 
   useEffect(() => {
     setBreadcrumb({ section: 'เงินเดือน', page: getTabLabel(activeTab) });
@@ -435,15 +412,15 @@ export default function PayrollPage() {
   // Auto-align process subtab when period status changes to match the active workflow stage
   useEffect(() => {
     if (selectedPeriod?.status === 'SUBMITTED_TO_FINANCE') {
-      if (isFinance || isStrictFinanceUser) {
+      if (canAccessFinanceView) {
         setProcessSubTab('FINANCE');
       }
     } else if (selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') {
-      if (isCEO || isStrictCeoUser) {
+      if (canAccessApproverView) {
         setProcessSubTab('APPROVER');
       }
     }
-  }, [selectedPeriod?.id, selectedPeriod?.status, isFinance, isStrictFinanceUser, isCEO, isStrictCeoUser]);
+  }, [selectedPeriod?.id, selectedPeriod?.status, canAccessFinanceView, canAccessApproverView]);
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
   const [isPeriodLoading, setIsPeriodLoading] = useState(false);
   const [selectedPayrollRecord, setSelectedPayrollRecord] = useState<PayrollRecord | null>(null);
@@ -2246,8 +2223,8 @@ export default function PayrollPage() {
 
         return (
           <div className="space-y-4">
-            {/* ── TOP ROLE BANNER (Visible only to Admin to switch perspectives) ── */}
-            {isAdmin && (
+            {/* ── TOP ROLE BANNER (Visible to Admin or users with multiple view permissions) ── */}
+            {(isAdmin || [canAccessHrView, canAccessFinanceView, canAccessApproverView].filter(Boolean).length > 1) && (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
@@ -2343,6 +2320,18 @@ export default function PayrollPage() {
                           if (s.tabKey === 'BANK') {
                             setActiveTab('bank-transfer');
                           } else {
+                            if (s.tabKey === 'HR' && !canAccessHrView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายบุคคล (HR)');
+                              return;
+                            }
+                            if (s.tabKey === 'FINANCE' && !canAccessFinanceView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายการเงิน (Finance)');
+                              return;
+                            }
+                            if (s.tabKey === 'APPROVER' && !canAccessApproverView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างผู้บริหาร / Admin');
+                              return;
+                            }
                             setProcessSubTab(s.tabKey);
                             setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
                           }
@@ -2396,7 +2385,7 @@ export default function PayrollPage() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  {!isAdmin && (
+                  {(!isAdmin && [canAccessHrView, canAccessFinanceView, canAccessApproverView].filter(Boolean).length <= 1) && (
                     <div className="mb-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-400">เงินเดือน / ประมวลเงินเดือน</span>
@@ -2565,7 +2554,7 @@ export default function PayrollPage() {
 
                 {/* Top Action Buttons contextualized by View */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {processSubTab === 'HR' && (
+                  {processSubTab === 'HR' && canAccessHrView && (
                     <>
                       <button
                         onClick={handleOpenCreatePeriodModal}
@@ -2755,7 +2744,32 @@ export default function PayrollPage() {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* 🟢 VIEW 1: HR VIEW (Pre-Payroll Verification)                  */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {processSubTab === 'HR' && (
+            {processSubTab === 'HR' && !canAccessHrView && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center">
+                <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center mb-3">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  ไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายบุคคล (HR)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  บทบาทของคุณได้รับสิทธิ์เฉพาะหน้าต่างฝ่ายการเงิน (Finance)
+                </p>
+                {canAccessFinanceView && (
+                  <button
+                    onClick={() => {
+                      setProcessSubTab('FINANCE');
+                      setViewMode('FINANCE');
+                    }}
+                    className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl cursor-pointer"
+                  >
+                    ไปยังหน้าต่างฝ่ายการเงิน (Finance)
+                  </button>
+                )}
+              </div>
+            )}
+
+            {processSubTab === 'HR' && canAccessHrView && (
               <div className="space-y-4">
                 {/* Title and Scope Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
