@@ -2,6 +2,8 @@ using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Employees.DTOs;
+using Hrms.Application.Features.Notifications.Services;
+using Hrms.Application.Features.Payroll;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,15 +17,18 @@ public class EmployeeService : IEmployeeService
     private readonly IHrmsDbContext _dbContext;
     private readonly IAesEncryptionService _cryptoService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
 
     public EmployeeService(
         IHrmsDbContext dbContext,
         IAesEncryptionService cryptoService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationService notificationService)
     {
         _dbContext = dbContext;
         _cryptoService = cryptoService;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
     }
 
     public async Task<List<EmployeeDto>> GetAllAsync(string? search = null, CancellationToken cancellationToken = default)
@@ -258,8 +263,8 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์สร้างพนักงาน
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        // 1. ตรวจสอบสิทธิ์สร้างพนักงาน (EMP_PROFILE_CREATE ในตารางสิทธิ์ / EMP_MANAGE แบบเดิม)
+        if (!_currentUserService.HasPermission("EMP_PROFILE_CREATE") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างข้อมูลพนักงาน");
         }
@@ -309,6 +314,17 @@ public class EmployeeService : IEmployeeService
 
         var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
 
+        // รหัสอ้างอิงข้อมูลหลัก: ใช้ที่ส่งมา หรือหาจากชื่อในเมนู ข้อมูลหลัก
+        var createNationalityId = request.NationalityId
+            ?? (string.IsNullOrWhiteSpace(request.Nationality) ? null
+                : await _dbContext.Nationalities.AsNoTracking().Where(x => x.NationalityName == request.Nationality.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var createReligionId = request.ReligionId
+            ?? (string.IsNullOrWhiteSpace(request.Religion) ? null
+                : await _dbContext.Religions.AsNoTracking().Where(x => x.ReligionName == request.Religion.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+        var createMaritalStatusId = request.MaritalStatusId
+            ?? (string.IsNullOrWhiteSpace(request.MaritalStatus) ? null
+                : await _dbContext.MaritalStatusTypes.AsNoTracking().Where(x => x.MaritalStatusName == request.MaritalStatus.Trim()).Select(x => (long?)x.Id).FirstOrDefaultAsync(cancellationToken));
+
         var employee = new Employee
         {
             EmployeeCode = request.EmployeeCode.Trim(),
@@ -323,11 +339,11 @@ public class EmployeeService : IEmployeeService
             Gender = gender,
             GenderId = genderId,
             Nationality = request.Nationality,
-            NationalityId = request.NationalityId,
-            Religion = request.Religion,
-            ReligionId = request.ReligionId,
+            NationalityId = createNationalityId,
+            Religion = string.IsNullOrWhiteSpace(request.Religion) ? null : request.Religion.Trim(),
+            ReligionId = createReligionId,
             MaritalStatus = request.MaritalStatus,
-            MaritalStatusId = request.MaritalStatusId,
+            MaritalStatusId = createMaritalStatusId,
             MilitaryStatus = request.MilitaryStatus,
             IsTopLevel = request.IsTopLevel,
             SpouseHasIncome = request.SpouseHasIncome,
@@ -382,36 +398,32 @@ public class EmployeeService : IEmployeeService
             }
         }
 
-        // 7. บัญชีธนาคาร
-        if (request.BankAccounts != null && request.BankAccounts.Any())
-        {
-            foreach (var acc in request.BankAccounts)
-            {
-                employee.BankAccounts.Add(new EmployeeBankAccount
-                {
-                    BankId = acc.BankId,
-                    AccountNumber = acc.AccountNumber.Trim(),
-                    AccountType = acc.AccountType ?? "SAVINGS",
-                    AccountName = acc.AccountName ?? employee.FullName,
-                    IsPrimary = acc.IsPrimary,
-                    Status = acc.Status ?? "ACTIVE"
-                });
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(request.AccountNumber))
-        {
-            var bank = await _dbContext.Banks
-                .FirstOrDefaultAsync(b => b.BankName.Contains(request.BankName ?? "") || b.BankCode == (request.BankName ?? ""), cancellationToken);
-            long bankId = bank?.Id ?? 1;
+        // 7. บัญชีธนาคาร — ต้องเลือกธนาคารจากข้อมูลหลัก (ไม่เดา) + ตรวจจำนวนหลัก + ห้ามเลขบัญชีซ้ำกับพนักงานอื่น
+        var bankInputs = (request.BankAccounts ?? new List<CreateEmployeeBankAccountDto>())
+            .Where(a => !string.IsNullOrWhiteSpace(a.AccountNumber))
+            .Select(a => new BankInput(a.BankId, null, a.AccountNumber, a.AccountType, a.AccountName))
+            .ToList();
+        if (bankInputs.Count == 0 && !string.IsNullOrWhiteSpace(request.AccountNumber))
+            bankInputs.Add(new BankInput(request.BankId, request.BankName, request.AccountNumber, null, null));
 
+        foreach (var acc in bankInputs)
+        {
+            var bank = await ResolveBankAsync(acc.BankId, acc.BankName, cancellationToken);
+            var digits = NormalizeAccountNumber(acc.AccountNumber, bank);
+            var hash = _cryptoService.HashAccountNumber(digits);
+            await EnsureAccountNotUsedAsync(bank.Id, hash, 0, cancellationToken);
+            bool first = !employee.BankAccounts.Any();
             employee.BankAccounts.Add(new EmployeeBankAccount
             {
-                BankId = bankId,
-                AccountNumber = request.AccountNumber.Trim(),
-                AccountType = "SAVINGS",
-                AccountName = employee.FullName,
-                IsPrimary = true,
-                Status = "ACTIVE"
+                BankId = bank.Id,
+                AccountNumber = digits,
+                AccountHash = hash,
+                AccountType = acc.AccountType ?? "SAVINGS",
+                AccountName = string.IsNullOrWhiteSpace(acc.AccountName) ? employee.FullName : acc.AccountName.Trim(),
+                IsPrimary = first,
+                Status = first ? "ACTIVE" : "INACTIVE",
+                VerifiedAt = DateTime.UtcNow,
+                VerifiedByUserId = _currentUserService.UserId
             });
         }
 
@@ -474,26 +486,10 @@ public class EmployeeService : IEmployeeService
             });
         }
 
-        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment)
-        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        // 11. ข้อมูลตำแหน่งงาน (Employee Assignment) — ต้องเลือกตำแหน่งที่มีในโครงสร้างองค์กร (ไม่สร้างตำแหน่งใหม่ให้เอง)
+        if (request.PositionId is > 0 || !string.IsNullOrWhiteSpace(request.PositionName))
         {
-            var pos = await _dbContext.Positions
-                .Include(p => p.Department)
-                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
-
-            if (pos == null)
-            {
-                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
-                pos = new Position
-                {
-                    DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
-                    PositionName = request.PositionName.Trim(),
-                    Status = "ACTIVE"
-                };
-                _dbContext.Positions.Add(pos);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
+            var pos = await ResolvePositionAsync(request.PositionId, request.PositionName, null, cancellationToken);
 
             var deptId = pos.DepartmentId;
             var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
@@ -762,64 +758,16 @@ public class EmployeeService : IEmployeeService
             }
         }
 
-        // 6.1 บัญชีธนาคาร (Bank Accounts)
-        if (request.BankAccounts != null && request.BankAccounts.Any())
-        {
-            foreach (var acc in request.BankAccounts)
-            {
-                var existing = employee.BankAccounts.FirstOrDefault(b => b.AccountNumber == acc.AccountNumber.Trim())
-                               ?? employee.BankAccounts.FirstOrDefault(b => b.IsPrimary);
-                if (existing != null)
-                {
-                    if (acc.BankId > 0) existing.BankId = acc.BankId;
-                    existing.AccountNumber = acc.AccountNumber.Trim();
-                    existing.AccountType = acc.AccountType ?? existing.AccountType;
-                    existing.AccountName = acc.AccountName ?? employee.FullName;
-                    existing.IsPrimary = acc.IsPrimary;
-                    existing.Status = acc.Status ?? existing.Status;
-                }
-                else
-                {
-                    employee.BankAccounts.Add(new EmployeeBankAccount
-                    {
-                        BankId = acc.BankId > 0 ? acc.BankId : 1,
-                        AccountNumber = acc.AccountNumber.Trim(),
-                        AccountType = acc.AccountType ?? "SAVINGS",
-                        AccountName = acc.AccountName ?? employee.FullName,
-                        IsPrimary = acc.IsPrimary,
-                        Status = acc.Status ?? "ACTIVE"
-                    });
-                }
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(request.AccountNumber) || !string.IsNullOrWhiteSpace(request.BankName))
-        {
-            var bank = await _dbContext.Banks
-                .FirstOrDefaultAsync(b => b.BankName == (request.BankName ?? "") 
-                                       || b.BankName.Contains(request.BankName ?? "") 
-                                       || b.BankCode == (request.BankName ?? "")
-                                       || (request.BankName != null && request.BankName.Contains(b.BankName)), cancellationToken);
-
-            var primaryBank = employee.BankAccounts.FirstOrDefault(b => b.IsPrimary) ?? employee.BankAccounts.FirstOrDefault();
-            if (primaryBank != null)
-            {
-                if (bank != null) primaryBank.BankId = bank.Id;
-                if (!string.IsNullOrWhiteSpace(request.AccountNumber)) primaryBank.AccountNumber = request.AccountNumber.Trim();
-                primaryBank.AccountName = employee.FullName;
-            }
-            else
-            {
-                employee.BankAccounts.Add(new EmployeeBankAccount
-                {
-                    BankId = bank?.Id ?? 1,
-                    AccountNumber = request.AccountNumber?.Trim() ?? string.Empty,
-                    AccountType = "SAVINGS",
-                    AccountName = employee.FullName,
-                    IsPrimary = true,
-                    Status = "ACTIVE"
-                });
-            }
-        }
+        // 6.1 บัญชีธนาคาร — บัญชีแรกใช้ได้ทันที / เปลี่ยนบัญชี = รอผู้อื่นยืนยันก่อนใช้จ่ายเงินเดือน
+        BankInput? bankInput = null;
+        var firstAcc = request.BankAccounts?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.AccountNumber));
+        if (firstAcc != null)
+            bankInput = new BankInput(firstAcc.BankId, null, firstAcc.AccountNumber, firstAcc.AccountType, firstAcc.AccountName);
+        else if (!string.IsNullOrWhiteSpace(request.AccountNumber) || (request.BankId ?? 0) > 0)
+            bankInput = new BankInput(request.BankId, request.BankName, request.AccountNumber ?? string.Empty, null, null);
+        string? bankChange = bankInput != null
+            ? await ApplyBankChangeAsync(employee, bankInput, cancellationToken)
+            : null;
 
         // 7. ประวัติการศึกษา (Educations) — ส่งมาทั้งชุด = แทนที่ทั้งหมด
         if (request.Educations != null)
@@ -919,25 +867,9 @@ public class EmployeeService : IEmployeeService
             await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PositionName))
+        if (request.PositionId is > 0 || !string.IsNullOrWhiteSpace(request.PositionName))
         {
-            var pos = await _dbContext.Positions
-                .Include(p => p.Department)
-                .FirstOrDefaultAsync(p => p.PositionName.Trim().ToLower() == request.PositionName.Trim().ToLower() || p.PositionName.Contains(request.PositionName.Trim()), cancellationToken);
-
-            if (pos == null)
-            {
-                var defaultDept = await _dbContext.Departments.FirstOrDefaultAsync(cancellationToken);
-                pos = new Position
-                {
-                    DepartmentId = defaultDept?.Id ?? 1,
-                    PositionCode = await CodeGenerator.NextAsync(_dbContext.Positions.Select(p => p.PositionCode), "POS", 3, cancellationToken),
-                    PositionName = request.PositionName.Trim(),
-                    Status = "ACTIVE"
-                };
-                _dbContext.Positions.Add(pos);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
+            var pos = await ResolvePositionAsync(request.PositionId, request.PositionName, currentAssignment?.PositionId, cancellationToken);
 
             var deptId = pos.DepartmentId;
             var divId = pos.Department?.DivisionId ?? (await _dbContext.Departments.Where(d => d.Id == deptId).Select(d => d.DivisionId).FirstOrDefaultAsync(cancellationToken));
@@ -948,9 +880,13 @@ public class EmployeeService : IEmployeeService
 
             if (currentAssignment != null)
             {
-                currentAssignment.PositionId = pos.Id;
-                currentAssignment.DepartmentId = deptId;
-                currentAssignment.DivisionId = divId;
+                // ตำแหน่งเดิม = ไม่แตะแผนก/ฝ่าย (การย้ายแผนกให้ทำผ่านเมนูการโอนย้ายเพื่อเก็บประวัติ)
+                if (currentAssignment.PositionId != pos.Id)
+                {
+                    currentAssignment.PositionId = pos.Id;
+                    currentAssignment.DepartmentId = deptId;
+                    currentAssignment.DivisionId = divId;
+                }
                 if (!string.IsNullOrWhiteSpace(request.EmployeeType))
                 {
                     await ApplyEmployeeTypeAsync(currentAssignment, request.EmployeeType, canChangeEmployeeType, cancellationToken);
@@ -1005,12 +941,20 @@ public class EmployeeService : IEmployeeService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        if (bankChange == "PENDING")
+        {
+            var pending = employee.BankAccounts.First(b => b.Status == "PENDING_VERIFY");
+            await NotifyEmployeeAsync(employee.Id, "ขอเปลี่ยนบัญชีรับเงินเดือน",
+                $"มีการขอเปลี่ยนบัญชีรับเงินเดือนเป็นเลขที่ {_cryptoService.MaskAccountNumber(pending.AccountNumber)} (รอ HR/การเงินยืนยัน) หากคุณไม่ได้เป็นผู้ขอ กรุณาติดต่อฝ่ายบุคคลทันที",
+                cancellationToken);
+        }
+
         return await GetByIdAsync(employee.Id, cancellationToken);
     }
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงาน");
         }
@@ -1030,7 +974,7 @@ public class EmployeeService : IEmployeeService
     /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, INACTIVE</summary>
     public async Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
             throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะพนักงาน");
 
         var allowedStatuses = new[] { "ACTIVE", "INACTIVE" };
@@ -1410,6 +1354,299 @@ public class EmployeeService : IEmployeeService
         return managerId.Value;
     }
 
+    /// <summary>
+    /// หาตำแหน่งจากโครงสร้างองค์กร: ใช้รหัสที่ส่งมา หรือชื่อที่ตรงทุกตัว (ไม่จับคู่แบบ "มีคำนี้อยู่")
+    /// ชื่อซ้ำหลายแผนก → ใช้ตำแหน่งเดิมของพนักงานถ้าตรง ไม่งั้นให้เลือกจากรายการ / ไม่พบ → แจ้งให้สร้างที่โครงสร้างองค์กรก่อน
+    /// </summary>
+    private async Task<Position> ResolvePositionAsync(long? positionId, string? positionName, long? currentPositionId, CancellationToken cancellationToken)
+    {
+        if (positionId is > 0)
+        {
+            var byId = await _dbContext.Positions.Include(p => p.Department)
+                .FirstOrDefaultAsync(p => p.Id == positionId.Value, cancellationToken)
+                ?? throw new BusinessRuleException("ไม่พบตำแหน่งที่เลือกในโครงสร้างองค์กร");
+            if (byId.Id != currentPositionId && !string.Equals(byId.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+                throw new BusinessRuleException($"ตำแหน่ง {byId.PositionName} ปิดการใช้งานแล้ว");
+            return byId;
+        }
+
+        var key = (positionName ?? string.Empty).Trim().ToLower();
+        var matches = await _dbContext.Positions.Include(p => p.Department)
+            .Where(p => p.PositionName.Trim().ToLower() == key)
+            .ToListAsync(cancellationToken);
+        if (matches.Count == 0)
+            throw new BusinessRuleException($"ไม่พบตำแหน่ง '{positionName?.Trim()}' ในโครงสร้างองค์กร กรุณาสร้างตำแหน่งที่เมนู โครงสร้างองค์กร → จัดการตำแหน่ง ก่อน");
+        var current = matches.FirstOrDefault(p => p.Id == currentPositionId);
+        if (current != null) return current;
+        var active = matches.Where(p => string.Equals(p.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (active.Count == 1) return active[0];
+        if (active.Count == 0)
+            throw new BusinessRuleException($"ตำแหน่ง {positionName?.Trim()} ปิดการใช้งานแล้ว");
+        throw new BusinessRuleException($"มีตำแหน่งชื่อ '{positionName?.Trim()}' หลายแผนก กรุณาเลือกตำแหน่งจากรายการ");
+    }
+
+    // ===================== บัญชีธนาคาร =====================
+
+    private sealed record BankInput(long? BankId, string? BankName, string AccountNumber, string? AccountType, string? AccountName);
+
+    /// <summary>สถานะรอบเงินเดือนที่ส่งการเงินแล้วแต่ยังไม่จ่าย — ห้ามเปลี่ยนบัญชีระหว่างนี้</summary>
+    private static readonly string[] PayrollInProgressStatuses =
+    {
+        "SUBMITTED_TO_FINANCE", "FINANCE_VERIFIED", "PENDING_APPROVAL", "APPROVED", "PROCESSING", "PROCESSING_BANK"
+    };
+
+    private bool IsSuperUser() => _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+
+    /// <summary>ดูเลขบัญชีเต็ม: เจ้าของ, ADMIN, ฝ่ายการเงิน — คนอื่นเห็นแบบ xxxxxx1234</summary>
+    private bool CanSeeFullAccount(long employeeId) =>
+        IsSuperUser() || _currentUserService.EmployeeId == employeeId || PayrollAccess.IsFinance(_currentUserService);
+
+    /// <summary>ยืนยัน/ปฏิเสธบัญชีใหม่: HR ที่แก้ข้อมูลพนักงานได้ หรือฝ่ายการเงิน (ต้องไม่ใช่ผู้ขอและเจ้าของบัญชี)</summary>
+    private bool CanVerifyBankAccounts() =>
+        IsSuperUser()
+        || _currentUserService.HasPermission("EMP_MANAGE")
+        || _currentUserService.HasPermission("EMP_EDIT")
+        || _currentUserService.HasPermission("EMP_PROFILE_EDIT")
+        || PayrollAccess.IsFinance(_currentUserService);
+
+    private List<EmployeeBankAccountDto> MapBankAccounts(Employee e)
+    {
+        bool full = CanSeeFullAccount(e.Id);
+        bool canVerify = CanVerifyBankAccounts() && _currentUserService.EmployeeId != e.Id;
+        return e.BankAccounts
+            .Where(b => b.Status != "INACTIVE")
+            .OrderByDescending(b => b.Status == "ACTIVE").ThenByDescending(b => b.RequestedAt)
+            .Select(b => new EmployeeBankAccountDto
+            {
+                Id = b.Id,
+                BankId = b.BankId,
+                BankCode = b.Bank?.BankCode,
+                BankName = b.Bank?.BankName,
+                AccountNumber = full ? b.AccountNumber : _cryptoService.MaskAccountNumber(b.AccountNumber),
+                IsMasked = !full,
+                AccountType = b.AccountType,
+                AccountName = b.AccountName,
+                IsPrimary = b.IsPrimary,
+                Status = b.Status,
+                RequestedAt = b.RequestedAt,
+                VerifiedAt = b.VerifiedAt,
+                RejectReason = b.RejectReason,
+                CanVerify = b.Status == "PENDING_VERIFY" && canVerify && b.RequestedByUserId != _currentUserService.UserId
+            }).ToList();
+    }
+
+    private async Task<Bank> ResolveBankAsync(long? bankId, string? bankName, CancellationToken cancellationToken)
+    {
+        Bank? bank = null;
+        if (bankId is > 0)
+        {
+            bank = await _dbContext.Banks.FirstOrDefaultAsync(b => b.Id == bankId.Value, cancellationToken)
+                ?? throw new BusinessRuleException("ไม่พบธนาคารที่เลือกในข้อมูลหลัก");
+        }
+        else if (!string.IsNullOrWhiteSpace(bankName))
+        {
+            var key = bankName.Trim();
+            var banks = await _dbContext.Banks.ToListAsync(cancellationToken);
+            bank = banks.FirstOrDefault(b => string.Equals(b.BankName.Trim(), key, StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(b.BankCode, key, StringComparison.OrdinalIgnoreCase)
+                                          || (b.ShortName != null && string.Equals(b.ShortName, key, StringComparison.OrdinalIgnoreCase)));
+            if (bank == null)
+                throw new BusinessRuleException($"ไม่พบธนาคาร '{key}' ในข้อมูลหลัก กรุณาเลือกธนาคารจากรายการ");
+        }
+        else
+        {
+            throw new BusinessRuleException("กรุณาเลือกธนาคาร");
+        }
+
+        if (!string.Equals(bank.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+            throw new BusinessRuleException($"ธนาคาร {bank.BankName} ถูกปิดการใช้งานแล้ว");
+        return bank;
+    }
+
+    private static string NormalizeAccountNumber(string raw, Bank bank)
+    {
+        var digits = new string((raw ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (digits.Length == 0)
+            throw new BusinessRuleException("กรุณากรอกเลขที่บัญชี");
+        if (bank.AccountDigits.HasValue && digits.Length != bank.AccountDigits.Value)
+            throw new BusinessRuleException($"เลขบัญชี{bank.BankName}ต้องมี {bank.AccountDigits.Value} หลัก (กรอกมา {digits.Length} หลัก)");
+        if (digits.Length < 6 || digits.Length > 20)
+            throw new BusinessRuleException("เลขที่บัญชีต้องมี 6–20 หลัก");
+        return digits;
+    }
+
+    private async Task EnsureAccountNotUsedAsync(long bankId, string hash, long employeeId, CancellationToken cancellationToken)
+    {
+        var otherCode = await _dbContext.EmployeeBankAccounts.AsNoTracking()
+            .Where(b => b.BankId == bankId && b.AccountHash == hash && b.EmployeeId != employeeId
+                        && (b.Status == "ACTIVE" || b.Status == "PENDING_VERIFY"))
+            .Select(b => b.Employee.EmployeeCode)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (otherCode != null)
+            throw new BusinessRuleException($"เลขบัญชีนี้ถูกใช้เป็นบัญชีรับเงินเดือนของพนักงานรหัส {otherCode} แล้ว");
+    }
+
+    private async Task EnsureNoPayrollInProgressAsync(long employeeId, CancellationToken cancellationToken)
+    {
+        var period = await _dbContext.Payrolls.AsNoTracking()
+            .Where(p => p.EmployeeId == employeeId && p.Period != null && PayrollInProgressStatuses.Contains(p.Period.Status))
+            .Select(p => new { p.Period!.Year, p.Period.Month })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (period != null)
+            throw new BusinessRuleException(
+                $"ไม่สามารถเปลี่ยนบัญชีรับเงินเดือนได้ระหว่างที่รอบเงินเดือน {period.Month}/{period.Year + 543} อยู่ระหว่างตรวจสอบหรือโอนเงิน กรุณารอให้จ่ายเงินรอบนี้เสร็จก่อน");
+    }
+
+    /// <summary>คืน null = ไม่เปลี่ยน, "ADDED" = บัญชีแรก (ใช้ได้ทันที), "PENDING" = รอยืนยัน</summary>
+    private async Task<string?> ApplyBankChangeAsync(Employee employee, BankInput input, CancellationToken cancellationToken)
+    {
+        var current = employee.BankAccounts.Where(b => b.Status == "ACTIVE").OrderByDescending(b => b.IsPrimary).FirstOrDefault();
+        var raw = input.AccountNumber?.Trim() ?? string.Empty;
+        bool keepNumber = raw.Length == 0 || raw.Contains('x', StringComparison.OrdinalIgnoreCase); // ส่งค่าที่ซ่อนไว้กลับมา = ไม่แก้เลข
+        bool bankGiven = (input.BankId ?? 0) > 0 || !string.IsNullOrWhiteSpace(input.BankName);
+
+        if (keepNumber && current == null) return null;
+
+        var bank = bankGiven
+            ? await ResolveBankAsync(input.BankId, input.BankName, cancellationToken)
+            : await _dbContext.Banks.FirstAsync(b => b.Id == current!.BankId, cancellationToken);
+
+        if (keepNumber)
+        {
+            if (bank.Id == current!.BankId)
+            {
+                if (!string.IsNullOrWhiteSpace(input.AccountName)) current.AccountName = input.AccountName.Trim();
+                return null;
+            }
+            throw new BusinessRuleException("เปลี่ยนธนาคารแล้ว กรุณากรอกเลขที่บัญชีใหม่");
+        }
+
+        var digits = NormalizeAccountNumber(raw, bank);
+        if (current != null && current.BankId == bank.Id
+            && new string(current.AccountNumber.Where(char.IsDigit).ToArray()) == digits)
+            return null;
+
+        var hash = _cryptoService.HashAccountNumber(digits);
+        await EnsureAccountNotUsedAsync(bank.Id, hash, employee.Id, cancellationToken);
+        var accountName = string.IsNullOrWhiteSpace(input.AccountName) ? employee.FullName : input.AccountName.Trim();
+
+        if (current == null)
+        {
+            employee.BankAccounts.Add(new EmployeeBankAccount
+            {
+                BankId = bank.Id,
+                AccountNumber = digits,
+                AccountHash = hash,
+                AccountType = input.AccountType ?? "SAVINGS",
+                AccountName = accountName,
+                IsPrimary = true,
+                Status = "ACTIVE",
+                VerifiedAt = DateTime.UtcNow,
+                VerifiedByUserId = _currentUserService.UserId
+            });
+            return "ADDED";
+        }
+
+        await EnsureNoPayrollInProgressAsync(employee.Id, cancellationToken);
+
+        var pending = employee.BankAccounts.FirstOrDefault(b => b.Status == "PENDING_VERIFY");
+        if (pending == null)
+        {
+            pending = new EmployeeBankAccount();
+            employee.BankAccounts.Add(pending);
+        }
+        pending.BankId = bank.Id;
+        pending.AccountNumber = digits;
+        pending.AccountHash = hash;
+        pending.AccountType = input.AccountType ?? current.AccountType ?? "SAVINGS";
+        pending.AccountName = accountName;
+        pending.IsPrimary = false;
+        pending.Status = "PENDING_VERIFY";
+        pending.RequestedAt = DateTime.UtcNow;
+        pending.RequestedByUserId = _currentUserService.UserId;
+        pending.VerifiedAt = null;
+        pending.VerifiedByUserId = null;
+        pending.RejectReason = null;
+        return "PENDING";
+    }
+
+    public async Task<EmployeeDto> ReviewBankAccountAsync(long employeeId, long accountId, bool approve, string? reason, CancellationToken cancellationToken = default)
+    {
+        if (!CanVerifyBankAccounts())
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ยืนยันบัญชีธนาคารของพนักงาน");
+        if (_currentUserService.EmployeeId == employeeId)
+            throw new ForbiddenException("ไม่สามารถยืนยันบัญชีรับเงินเดือนของตนเองได้");
+
+        var employee = await _dbContext.Employees
+            .Include(e => e.BankAccounts).ThenInclude(b => b.Bank)
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken)
+            ?? throw new NotFoundException("Employee", employeeId);
+
+        var acc = employee.BankAccounts.FirstOrDefault(b => b.Id == accountId && b.Status == "PENDING_VERIFY")
+            ?? throw new BusinessRuleException("ไม่พบบัญชีที่รอยืนยัน (อาจถูกยืนยันหรือปฏิเสธไปแล้ว)");
+        if (acc.RequestedByUserId.HasValue && acc.RequestedByUserId == _currentUserService.UserId)
+            throw new ForbiddenException("ผู้ขอเปลี่ยนบัญชีไม่สามารถยืนยันเองได้ ต้องให้ผู้อื่นตรวจสอบ");
+
+        var masked = _cryptoService.MaskAccountNumber(acc.AccountNumber);
+        if (approve)
+        {
+            await EnsureNoPayrollInProgressAsync(employeeId, cancellationToken);
+            foreach (var old in employee.BankAccounts.Where(b => b.Status == "ACTIVE"))
+            {
+                old.Status = "INACTIVE";
+                old.IsPrimary = false;
+            }
+            acc.Status = "ACTIVE";
+            acc.IsPrimary = true;
+            acc.VerifiedAt = DateTime.UtcNow;
+            acc.VerifiedByUserId = _currentUserService.UserId;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new BusinessRuleException("กรุณาระบุเหตุผลที่ไม่อนุมัติ");
+            acc.Status = "REJECTED";
+            acc.RejectReason = reason.Trim();
+            acc.VerifiedAt = DateTime.UtcNow;
+            acc.VerifiedByUserId = _currentUserService.UserId;
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await NotifyEmployeeAsync(employeeId,
+            approve ? "ยืนยันบัญชีรับเงินเดือนใหม่แล้ว" : "ไม่อนุมัติการเปลี่ยนบัญชีรับเงินเดือน",
+            approve
+                ? $"บัญชี {acc.Bank?.BankName} เลขที่ {masked} ได้รับการยืนยันแล้ว ใช้รับเงินเดือนตั้งแต่รอบถัดไป"
+                : $"คำขอเปลี่ยนเป็นบัญชีเลขที่ {masked} ไม่ได้รับอนุมัติ: {reason!.Trim()}",
+            cancellationToken);
+
+        return await GetByIdAsync(employeeId, cancellationToken);
+    }
+
+    private async Task NotifyEmployeeAsync(long employeeId, string title, string message, CancellationToken cancellationToken)
+    {
+        var userId = await _dbContext.UserAccounts.AsNoTracking()
+            .Where(u => u.EmployeeId == employeeId && u.Status == "ACTIVE")
+            .Select(u => (long?)u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (userId == null) return;
+        try
+        {
+            await _notificationService.CreateNotificationAsync(new Hrms.Application.Features.Notifications.DTOs.CreateNotificationRequest
+            {
+                UserId = userId.Value,
+                NotificationType = "BANK_ACCOUNT",
+                Title = title,
+                Message = message,
+                ReferenceType = "EMPLOYEE",
+                ReferenceId = employeeId
+            }, cancellationToken);
+        }
+        catch
+        {
+            // แจ้งเตือนไม่สำเร็จไม่ควรทำให้การบันทึกข้อมูลล้ม
+        }
+    }
+
     private EmployeeDto MapToDto(Employee e)
     {
         var (gender, genderId) = ResolveGenderAndId(e.Gender, e.GenderId, e.Prefix);
@@ -1495,18 +1732,7 @@ public class EmployeeService : IEmployeeService
                 PostalCode = a.PostalCode,
                 IsCurrent = a.IsCurrent
             }).ToList(),
-            BankAccounts = e.BankAccounts.Select(b => new EmployeeBankAccountDto
-            {
-                Id = b.Id,
-                BankId = b.BankId,
-                BankCode = b.Bank?.BankCode,
-                BankName = b.Bank?.BankName,
-                AccountNumber = b.AccountNumber,
-                AccountType = b.AccountType,
-                AccountName = b.AccountName,
-                IsPrimary = b.IsPrimary,
-                Status = b.Status
-            }).ToList(),
+            BankAccounts = MapBankAccounts(e),
             WorkExperiences = (e.WorkExperiences ?? new List<EmployeeWorkExperience>())
                 .OrderByDescending(w => w.StartDate)
                 .Select(w => new EmployeeWorkExperienceDto

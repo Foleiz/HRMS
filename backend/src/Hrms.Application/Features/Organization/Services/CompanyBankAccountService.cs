@@ -61,7 +61,8 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         }
 
         // ตรวจสอบว่ามีธนาคารนี้อยู่จริง
-        var bankExists = await _context.Banks.AnyAsync(b => b.Id == dto.BankId, cancellationToken);
+        var bank = await _context.Banks.FirstOrDefaultAsync(b => b.Id == dto.BankId, cancellationToken);
+        var bankExists = bank != null;
         if (!bankExists)
             throw new NotFoundException("ธนาคาร", dto.BankId);
 
@@ -91,7 +92,7 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         {
             CompanyId = companyId,
             BankId = dto.BankId,
-            AccountNumber = dto.AccountNumber.Trim(),
+            AccountNumber = NormalizeAccountNumber(dto.AccountNumber, bank!),
             AccountName = dto.AccountName?.Trim(),
             IsPrimaryPayrollAccount = dto.IsPrimaryPayrollAccount,
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper()
@@ -112,7 +113,8 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         if (entity == null)
             throw new NotFoundException("บัญชีธนาคารบริษัท", id);
 
-        var bankExists = await _context.Banks.AnyAsync(b => b.Id == dto.BankId, cancellationToken);
+        var bank = await _context.Banks.FirstOrDefaultAsync(b => b.Id == dto.BankId, cancellationToken);
+        var bankExists = bank != null;
         if (!bankExists)
             throw new NotFoundException("ธนาคาร", dto.BankId);
 
@@ -135,7 +137,7 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         }
 
         entity.BankId = dto.BankId;
-        entity.AccountNumber = dto.AccountNumber.Trim();
+        entity.AccountNumber = NormalizeAccountNumber(dto.AccountNumber, bank!);
         entity.AccountName = dto.AccountName?.Trim();
         entity.IsPrimaryPayrollAccount = dto.IsPrimaryPayrollAccount;
         entity.Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper();
@@ -198,5 +200,16 @@ public class CompanyBankAccountService : ICompanyBankAccountService
             IsPrimaryPayrollAccount = account.IsPrimaryPayrollAccount,
             Status = account.Status
         };
+    }
+
+    /// <summary>เลขบัญชีเก็บเป็นตัวเลขล้วน และต้องมีจำนวนหลักตามที่ตั้งไว้ในข้อมูลหลักธนาคาร</summary>
+    private static string NormalizeAccountNumber(string raw, Domain.Entities.Bank bank)
+    {
+        var digits = new string((raw ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (digits.Length == 0)
+            throw new BusinessRuleException("กรุณาระบุเลขที่บัญชี");
+        if (bank.AccountDigits.HasValue && digits.Length != bank.AccountDigits.Value)
+            throw new BusinessRuleException($"เลขบัญชี{bank.BankName}ต้องมี {bank.AccountDigits.Value} หลัก (กรอกมา {digits.Length} หลัก)");
+        return digits;
     }
 }

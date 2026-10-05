@@ -262,76 +262,40 @@ export default function PayrollPage() {
     hasPermission('PAYROLL_SLIP_VIEW') ||
     hasRole('ADMIN');
 
-  const isCEO =
-    user?.roles?.includes('CEO') ||
-    user?.roles?.includes('ADMIN') ||
-    user?.username?.toLowerCase().includes('ceo') ||
-    user?.username?.toLowerCase().includes('approver') ||
-    hasRole('CEO') ||
-    hasRole('ADMIN');
+  // บทบาทในหน้าเงินเดือน — ใช้ชุดรหัสสิทธิ์เดียวกับ backend (PayrollAccess.cs) ไม่ดูจากชื่อบทบาทหรือชื่อผู้ใช้
+  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const PAYROLL_HR_PERMS = ['PAYROLL_CALC_CREATE', 'PAYROLL_CALC_EDIT', 'PAYROLL_HR_CREATE', 'PAYROLL_HR_EDIT'];
+  const PAYROLL_FINANCE_PERMS = [
+    'PAYROLL_FINANCE_CREATE', 'PAYROLL_FINANCE_EDIT', 'PAYROLL_FINANCE_APPROVE',
+    'PAYROLL_BANK_CREATE', 'PAYROLL_BANK_EDIT', 'PAYROLL_TAX_EDIT', 'PAYROLL_TAX_MANAGE',
+  ];
+  const PAYROLL_APPROVER_PERMS = ['APPROVAL_PAYROLL_APPROVE', 'PAYROLL_ADMIN_APPROVE', 'PAYROLL_CALC_APPROVE', 'PAYROLL_APPROVE'];
+  const hasHrPayrollPerm = PAYROLL_HR_PERMS.some((p) => hasPermission(p));
+  const hasFinancePayrollPerm = PAYROLL_FINANCE_PERMS.some((p) => hasPermission(p));
+  const hasApproverPayrollPerm = PAYROLL_APPROVER_PERMS.some((p) => hasPermission(p));
 
-  // Role & Permissions access checks for views
-  const usernameLower = user?.username?.toLowerCase() || '';
-  const userRolesList = user?.roles?.map((r: string) => r.toUpperCase()) || [];
-  const isAdmin =
-    userRolesList.includes('ADMIN') ||
-    userRolesList.includes('SYSTEM_SUPER') ||
-    userRolesList.includes('SUPER_ADMIN') ||
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
-    hasRole('SUPER_ADMIN') ||
-    usernameLower === 'admin';
+  // ปุ่มดำเนินการ: ตามสิทธิ์ทำงาน (ตรงกับ backend)
+  const isCEO = isAdmin || hasApproverPayrollPerm;
+  const isFinance = isAdmin || hasFinancePayrollPerm;
+  const isHR = isAdmin || hasHrPayrollPerm;
 
-  // Check if role has configured any of the 3 explicit view permissions
+  // มุมมอง (แท็บ HR / การเงิน / ผู้บริหาร): ใช้สิทธิ์ดูแบบแยก (PAYROLL_*_VIEW) ถ้าบทบาทตั้งไว้
+  // ถ้าบทบาทยังไม่ได้ตั้งสิทธิ์ดูแบบแยก → ใช้สิทธิ์ทำงานของหน้าที่นั้นแทน (ไม่เดาจากชื่อบทบาท/ชื่อผู้ใช้)
   const hasConfiguredExplicitViews =
     hasPermission('PAYROLL_HR_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
     hasPermission('PAYROLL_ADMIN_VIEW');
 
-  // 1. HR View:
-  // - Admin
-  // - Explicit PAYROLL_HR_VIEW permission
-  // - Fallback for unconfigured role: only if no explicit view permissions exist
   const canAccessHrView =
-    isAdmin ||
-    hasPermission('PAYROLL_HR_VIEW') ||
-    (!hasConfiguredExplicitViews && (
-      hasRole('HR_MGR') ||
-      hasRole('HR_ADMIN') ||
-      userRolesList.some(r => r.includes('HR')) ||
-      usernameLower.includes('hr')
-    ));
+    isAdmin || hasPermission('PAYROLL_HR_VIEW') || (!hasConfiguredExplicitViews && hasHrPayrollPerm);
 
-  // 2. Finance View:
-  // - Admin
-  // - Explicit PAYROLL_FINANCE_VIEW permission
-  // - Fallback for unconfigured role: only if no explicit view permissions exist
   const canAccessFinanceView =
-    isAdmin ||
-    hasPermission('PAYROLL_FINANCE_VIEW') ||
-    (!hasConfiguredExplicitViews && (
-      hasRole('PAYROLL_ADMIN') ||
-      userRolesList.some(r => r.includes('FINANCE') || r.includes('ACCOUNT')) ||
-      usernameLower.includes('finance') ||
-      usernameLower.includes('account')
-    ));
+    isAdmin || hasPermission('PAYROLL_FINANCE_VIEW') || (!hasConfiguredExplicitViews && hasFinancePayrollPerm);
 
-  // 3. Approver (CEO) View:
-  // - Admin
-  // - Explicit PAYROLL_ADMIN_VIEW permission
-  // - Fallback for unconfigured role: only if no explicit view permissions exist
   const canAccessApproverView =
     isAdmin ||
     hasPermission('PAYROLL_ADMIN_VIEW') ||
-    (!hasConfiguredExplicitViews && (
-      hasRole('CEO') ||
-      userRolesList.some(r => r.includes('CEO')) ||
-      usernameLower.includes('ceo') ||
-      hasPermission('APPROVAL_PAYROLL_VIEW')
-    ));
-
-  const isFinance = canAccessFinanceView;
-  const isHR = canAccessHrView;
+    (!hasConfiguredExplicitViews && (hasApproverPayrollPerm || hasPermission('APPROVAL_PAYROLL_VIEW')));
 
   const canEditTax =
     hasPermission('PAYROLL_TAX_EDIT') ||
@@ -2991,10 +2955,16 @@ export default function PayrollPage() {
                                 <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
                               </td>
                               <td className="py-4 px-5">
-                                <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
-                                <div className="text-[11px] font-mono text-slate-400">
-                                  <MaskedDataViewer value={pr.accountNumber || '1234567890'} type="bankAccount" />
-                                </div>
+                                {pr.bankName && pr.accountNumber ? (
+                                  <>
+                                    <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName}</div>
+                                    <div className="text-[11px] font-mono text-slate-400">
+                                      <MaskedDataViewer value={pr.accountNumber} type="bankAccount" />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">⚠️ ยังไม่มีบัญชีธนาคาร</div>
+                                )}
                               </td>
                               <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                                 {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
@@ -3186,6 +3156,28 @@ export default function PayrollPage() {
       {/* === TAB 5: โอนเงินธนาคาร (Payment Workflow) === */}
       {activeTab === 'bank-transfer' && (
         <div className="space-y-5">
+
+          {/* บัญชีบริษัทที่ตัดจ่าย + เตือนบัญชีพนักงานที่รอยืนยัน */}
+          {bankSummary && (
+            <div className="flex flex-wrap gap-3 text-xs">
+              {bankSummary.hasPayerAccount ? (
+                <div className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  ตัดจ่ายจากบัญชีบริษัท: <span className="font-semibold">{bankSummary.payerBankName}</span>{' '}
+                  <span className="font-mono">{bankSummary.payerAccountNumber}</span>
+                  {bankSummary.payerAccountName ? ` (${bankSummary.payerAccountName})` : ''}
+                </div>
+              ) : (
+                <div className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                  ⚠️ ยังไม่ได้ตั้งบัญชีธนาคารหลักสำหรับจ่ายเงินเดือน (โครงสร้างองค์กร → บัญชีธนาคารบริษัท) — สร้างไฟล์ธนาคารไม่ได้
+                </div>
+              )}
+              {(bankSummary.pendingBankChangeCount ?? 0) > 0 && (
+                <div className="px-3.5 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                  มีพนักงาน {bankSummary.pendingBankChangeCount} คนขอเปลี่ยนบัญชีที่ยังไม่ได้ยืนยัน — รอบนี้จะโอนเข้าบัญชีเดิม
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Header ── */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5">

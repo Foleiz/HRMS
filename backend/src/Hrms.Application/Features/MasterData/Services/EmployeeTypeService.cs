@@ -142,7 +142,7 @@ public class EmployeeTypeService : IEmployeeTypeService
 
     public async Task<EmployeeTypeDto> CreateAsync(CreateEmployeeTypeRequest request, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE") && !_currentUserService.HasPermission("SYS_ADMIN"))
+        if (!_currentUserService.HasPermission("EMP_TYPE_CREATE") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างประเภทพนักงาน/สัญญาจ้าง");
         }
@@ -251,7 +251,7 @@ public class EmployeeTypeService : IEmployeeTypeService
 
     public async Task<EmployeeTypeDto> UpdateAsync(long id, UpdateEmployeeTypeRequest request, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE") && !_currentUserService.HasPermission("SYS_ADMIN"))
+        if (!_currentUserService.HasPermission("EMP_TYPE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขประเภทพนักงาน/สัญญาจ้าง");
         }
@@ -353,7 +353,7 @@ public class EmployeeTypeService : IEmployeeTypeService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_MANAGE") && !_currentUserService.HasPermission("SYS_ADMIN"))
+        if (!_currentUserService.HasPermission("EMP_TYPE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบประเภทพนักงาน/สัญญาจ้าง");
         }

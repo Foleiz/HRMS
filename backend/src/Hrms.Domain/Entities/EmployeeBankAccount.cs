@@ -14,7 +14,20 @@ public class EmployeeBankAccount : BaseEntity
     public string? AccountType { get; set; }
     public string? AccountName { get; set; }
     public bool IsPrimary { get; set; } = false;
-    public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
+    public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, PENDING_VERIFY, REJECTED
+
+    /// <summary>HMAC ของเลขบัญชี (ใช้ตรวจเลขซ้ำ เพราะ AccountNumber ถูกเข้ารหัสแบบสุ่ม IV)</summary>
+    public string? AccountHash { get; set; }
+
+    /// <summary>ผู้ขอเปลี่ยนบัญชี / เวลา (บัญชีที่รอยืนยัน)</summary>
+    public DateTime? RequestedAt { get; set; }
+    public long? RequestedByUserId { get; set; }
+
+    /// <summary>ผู้ยืนยันบัญชี / เวลา (ต้องไม่ใช่คนเดียวกับผู้ขอ)</summary>
+    public DateTime? VerifiedAt { get; set; }
+    public long? VerifiedByUserId { get; set; }
+
+    public string? RejectReason { get; set; }
 
     // Navigation Properties
     public virtual Employee Employee { get; set; } = null!;

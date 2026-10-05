@@ -32,7 +32,15 @@ export interface EmployeeBankAccount {
   accountType?: string;
   accountName?: string;
   isPrimary: boolean;
+  /** ACTIVE = ใช้รับเงินเดือน, PENDING_VERIFY = รอยืนยัน, REJECTED = ไม่อนุมัติ */
   status: string;
+  /** เลขบัญชีถูกซ่อน (ไม่มีสิทธิ์เห็นเต็ม) */
+  isMasked?: boolean;
+  requestedAt?: string | null;
+  verifiedAt?: string | null;
+  rejectReason?: string | null;
+  /** ผู้ดูยืนยัน/ปฏิเสธบัญชีนี้ได้ */
+  canVerify?: boolean;
 }
 
 export interface Employee {
@@ -164,6 +172,10 @@ export interface CreateEmployeePayload {
   genderId?: number;
   nationality?: string;
   religion?: string;
+  /** รหัสอ้างอิงจากข้อมูลหลัก (ส่งคู่กับชื่อ) */
+  religionId?: number;
+  nationalityId?: number;
+  maritalStatusId?: number;
 
   // ข้อมูลส่วนบุคคล & ที่อยู่
   birthDate?: string;
@@ -196,6 +208,8 @@ export interface CreateEmployeePayload {
   gpa?: number;
 
   // การเงิน & ตำแหน่งงาน
+  /** ธนาคารจากข้อมูลหลัก (แนะนำให้ส่ง) */
+  bankId?: number;
   bankName?: string;
   accountNumber?: string;
   positionId?: number;

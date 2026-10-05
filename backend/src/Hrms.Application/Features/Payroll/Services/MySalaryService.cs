@@ -29,12 +29,12 @@ public class MySalaryService : IMySalaryService
         // 1. Fetch employee's primary bank account
         var bankAccount = await _context.EmployeeBankAccounts
             .Include(b => b.Bank)
-            .Where(b => b.EmployeeId == employeeId && b.IsPrimary)
+            .Where(b => b.EmployeeId == employeeId && b.IsPrimary && b.Status == "ACTIVE")
             .FirstOrDefaultAsync(cancellationToken);
 
-        string bankName = bankAccount?.Bank?.BankName ?? "ธนาคารไทยพาณิชย์";
-        string rawAccount = bankAccount?.AccountNumber ?? "123-4-56789-0";
-        string maskedAccount = MaskAccountNumber(rawAccount);
+        // ไม่มีบัญชี = แสดง "-" (ไม่ใส่ธนาคาร/เลขบัญชีตัวอย่าง)
+        string bankName = bankAccount?.Bank?.BankName ?? "-";
+        string maskedAccount = bankAccount != null ? MaskAccountNumber(bankAccount.AccountNumber) : "-";
 
         // 2. Fetch all payroll records for this employee
         var payrollQuery = _context.Payrolls
@@ -174,12 +174,11 @@ public class MySalaryService : IMySalaryService
         // Fetch bank account
         var bankAccount = await _context.EmployeeBankAccounts
             .Include(b => b.Bank)
-            .Where(b => b.EmployeeId == payroll.EmployeeId && b.IsPrimary)
+            .Where(b => b.EmployeeId == payroll.EmployeeId && b.IsPrimary && b.Status == "ACTIVE")
             .FirstOrDefaultAsync(cancellationToken);
 
-        string bankName = bankAccount?.Bank?.BankName ?? "ธนาคารกสิกรไทย";
-        string rawAccount = bankAccount?.AccountNumber ?? "456-7-89012-3";
-        string maskedAccount = MaskAccountNumber(rawAccount);
+        string bankName = bankAccount?.Bank?.BankName ?? "-";
+        string maskedAccount = bankAccount != null ? MaskAccountNumber(bankAccount.AccountNumber) : "-";
 
         int pYear = payroll.Period?.Year ?? DateTime.Today.Year;
         int pMonth = payroll.Period?.Month ?? 1;

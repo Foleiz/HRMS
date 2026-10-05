@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
-import { NATIONALITIES } from '@/constants/nationalities';
+import { useMasterLookups } from '@/hooks/useMasterLookups';
 
 interface NationalitySelectProps {
   value?: string;
@@ -24,6 +24,8 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  // รายการสัญชาติจากเมนู ข้อมูลหลัก (ใช้รายการสำรองถ้าโหลดไม่ได้)
+  const NATIONALITIES = useMasterLookups().nationalities;
   const inputRef = useRef<HTMLInputElement>(null);
 
   // ปิด Dropdown เมื่อคลิกนอกพื้นที่คอมโพเนนต์
@@ -45,7 +47,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
     }
     const q = searchQuery.toLowerCase().trim();
     return NATIONALITIES.filter((n) => n.name.toLowerCase().includes(q));
-  }, [searchQuery]);
+  }, [searchQuery, NATIONALITIES]);
 
   const handleSelect = (name: string) => {
     onChange(name);
@@ -171,7 +173,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
                 const isSelected = item.name === value;
                 return (
                   <button
-                    key={item.id}
+                    key={item.id ?? item.name}
                     type="button"
                     onClick={() => handleSelect(item.name)}
                     className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors cursor-pointer ${

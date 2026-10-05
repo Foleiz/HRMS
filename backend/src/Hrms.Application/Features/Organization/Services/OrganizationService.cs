@@ -449,6 +449,9 @@ public class OrganizationService : IOrganizationService
                 PositionCode = p.PositionCode,
                 PositionName = p.PositionName,
                 Status = p.Status,
+                HeadcountPlan = p.HeadcountPlan,
+                FilledCount = _dbContext.EmployeeAssignments.Count(a => a.PositionId == p.Id && a.IsCurrent
+                                                                       && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE"),
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             })
@@ -466,6 +469,8 @@ public class OrganizationService : IOrganizationService
 
         if (p == null) throw new NotFoundException("Position", id);
 
+        var filled = await _dbContext.EmployeeAssignments.CountAsync(a => a.PositionId == id && a.IsCurrent
+                                                                         && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE", cancellationToken);
         return new PositionDto
         {
             Id = p.Id,
@@ -478,9 +483,28 @@ public class OrganizationService : IOrganizationService
             PositionCode = p.PositionCode,
             PositionName = p.PositionName,
             Status = p.Status,
+            HeadcountPlan = p.HeadcountPlan,
+            FilledCount = filled,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt
         };
+    }
+
+    /// <summary>ชื่อตำแหน่งต้องไม่ซ้ำภายในแผนกเดียวกัน (ฟอร์มพนักงานเลือกตำแหน่งตามชื่อ+แผนก)</summary>
+    private async Task EnsureUniquePositionNameAsync(long departmentId, string name, long? excludeId, CancellationToken cancellationToken)
+    {
+        var key = (name ?? string.Empty).Trim().ToLower();
+        var dup = await _dbContext.Positions.AnyAsync(p => p.DepartmentId == departmentId && p.PositionName.Trim().ToLower() == key
+                                                           && (excludeId == null || p.Id != excludeId), cancellationToken);
+        if (dup)
+            throw new ValidationException($"แผนกนี้มีตำแหน่งชื่อ '{name?.Trim()}' อยู่แล้ว");
+    }
+
+    private static int? ValidateHeadcount(int? plan)
+    {
+        if (plan.HasValue && (plan.Value < 0 || plan.Value > 100000))
+            throw new ValidationException("อัตรากำลังต้องเป็นจำนวน 0 ขึ้นไป (เว้นว่าง = ไม่กำหนด)");
+        return plan;
     }
 
     public async Task<PositionDto> CreatePositionAsync(CreatePositionDto request, CancellationToken cancellationToken = default)
@@ -501,6 +525,8 @@ public class OrganizationService : IOrganizationService
             throw new ValidationException($"รหัสตำแหน่ง '{code}' มีอยู่ในระบบแล้ว");
         }
 
+        await EnsureUniquePositionNameAsync(request.DepartmentId, request.PositionName, null, cancellationToken);
+
         var pos = new Position
         {
             DepartmentId = request.DepartmentId,
@@ -508,6 +534,7 @@ public class OrganizationService : IOrganizationService
             PositionCode = code,
             PositionName = request.PositionName.Trim(),
             Status = request.Status,
+            HeadcountPlan = ValidateHeadcount(request.HeadcountPlan),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -523,10 +550,12 @@ public class OrganizationService : IOrganizationService
         var pos = await _dbContext.Positions.FindAsync(new object[] { id }, cancellationToken);
         if (pos == null) throw new NotFoundException("Position", id);
 
+        await EnsureUniquePositionNameAsync(request.DepartmentId, request.PositionName, id, cancellationToken);
         pos.DepartmentId = request.DepartmentId;
         pos.EmployeeLevelId = request.EmployeeLevelId;
         pos.PositionName = request.PositionName.Trim();
         pos.Status = request.Status;
+        pos.HeadcountPlan = ValidateHeadcount(request.HeadcountPlan);
         pos.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);

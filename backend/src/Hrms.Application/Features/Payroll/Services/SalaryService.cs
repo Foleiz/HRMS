@@ -12,11 +12,25 @@ public class SalaryService : ISalaryService
 {
     private readonly IHrmsDbContext _context;
     private readonly IAttendanceDailyService _attendanceDailyService;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IAesEncryptionService _crypto;
 
-    public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService)
+    public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService,
+        ICurrentUserService currentUser, IAesEncryptionService crypto)
     {
         _context = context;
         _attendanceDailyService = attendanceDailyService;
+        _currentUser = currentUser;
+        _crypto = crypto;
+    }
+
+    /// <summary>เลขบัญชีเต็มเห็นได้เฉพาะการเงิน/ผู้อนุมัติ (คนโอนเงิน) — HR เห็นแบบ xxxxxx1234</summary>
+    private string AccountForViewer(string? accountNumber)
+    {
+        if (string.IsNullOrEmpty(accountNumber)) return string.Empty;
+        return PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser)
+            ? accountNumber
+            : _crypto.MaskAccountNumber(accountNumber);
     }
 
     #region Salary Structures
@@ -1156,7 +1170,7 @@ public class SalaryService : ISalaryService
         var employeeBankAccounts = employeeIds.Any()
             ? await _context.EmployeeBankAccounts
                 .Include(b => b.Bank)
-                .Where(b => employeeIds.Contains(b.EmployeeId))
+                .Where(b => employeeIds.Contains(b.EmployeeId) && b.Status == "ACTIVE")
                 .AsNoTracking()
                 .ToListAsync(cancellationToken)
             : new List<Domain.Entities.EmployeeBankAccount>();
@@ -1254,9 +1268,10 @@ public class SalaryService : ISalaryService
                 InputStatusText = inputStatusText,
 
                 // Finance
-                BankCode = empBank?.Bank?.BankCode ?? "004",
-                BankName = empBank?.Bank?.BankName ?? "กสิกรไทย",
-                AccountNumber = empBank?.AccountNumber ?? "-"
+                // ไม่มีบัญชี = ว่าง (หน้าจอแสดง "ยังไม่มีบัญชี") ห้ามเดาธนาคาร
+                BankCode = empBank?.Bank?.BankCode ?? string.Empty,
+                BankName = empBank?.Bank?.BankName ?? string.Empty,
+                AccountNumber = AccountForViewer(empBank?.AccountNumber)
             };
         }).ToList();
     }
@@ -2474,12 +2489,19 @@ public class SalaryService : ISalaryService
                 EmployeeName = empName,
                 BankCode = bCode,
                 BankName = hasAccount ? (empBank!.Bank?.BankName ?? string.Empty) : "ยังไม่มีข้อมูลบัญชีธนาคาร",
-                AccountNumber = hasAccount ? empBank!.AccountNumber : string.Empty,
+                AccountNumber = hasAccount ? AccountForViewer(empBank!.AccountNumber) : string.Empty,
                 AccountName = hasAccount ? (empBank!.AccountName ?? empName) : empName,
                 NetPayableSalary = pr.NetPayableSalary,
                 Status = hasAccount ? "READY" : "MISSING_ACCOUNT"
             });
         }
+
+        var payer = await GetPayrollPayerAccountAsync(cancellationToken);
+        var pendingChangeCount = employeeIds.Any()
+            ? await _context.EmployeeBankAccounts.AsNoTracking()
+                .Where(b => employeeIds.Contains(b.EmployeeId) && b.Status == "PENDING_VERIFY")
+                .Select(b => b.EmployeeId).Distinct().CountAsync(cancellationToken)
+            : 0;
 
         return new BankTransferSummaryDto
         {
@@ -2489,6 +2511,12 @@ public class SalaryService : ISalaryService
             TotalTransferAmount = totalAmount,
             TotalEmployees = items.Count(i => i.Status == "READY"),
             MissingAccountCount = items.Count(i => i.Status == "MISSING_ACCOUNT"),
+            PendingBankChangeCount = pendingChangeCount,
+            HasPayerAccount = payer != null,
+            PayerBankCode = payer?.Bank?.BankCode,
+            PayerBankName = payer?.Bank?.BankName,
+            PayerAccountNumber = payer != null ? _crypto.MaskAccountNumber(payer.AccountNumber) : null,
+            PayerAccountName = payer?.AccountName,
             Items = items.OrderBy(i => i.EmployeeCode).ToList()
         };
     }
@@ -2518,31 +2546,69 @@ public class SalaryService : ISalaryService
         if (!summary.Items.Any())
             throw new BusinessRuleException("ไม่มีรายการที่ต้องโอนเงินในรอบนี้ (หรือในธนาคารที่เลือก)");
 
-        var paymentDate = (period.PaymentDate ?? period.EndDate).ToString("yyyyMMdd");
-        static string Csv(string value) => $"\"{(value ?? string.Empty).Replace("\"", "\"\"")}\"";
+        // บัญชีบริษัทที่ตัดเงินจ่าย (บัญชีหลักสำหรับจ่ายเงินเดือน) — ไฟล์ธนาคารต้องระบุบัญชีต้นทาง
+        var payer = await GetPayrollPayerAccountAsync(cancellationToken)
+            ?? throw new BusinessRuleException("ยังไม่ได้ตั้งบัญชีธนาคารหลักสำหรับจ่ายเงินเดือน กรุณาตั้งที่ โครงสร้างองค์กร → บัญชีธนาคารบริษัท (เลือกเป็นบัญชีหลักจ่ายเงินเดือน)");
 
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine("SEQUENCE,EMPLOYEE_CODE,ACCOUNT_NUMBER,ACCOUNT_NAME,BANK_CODE,AMOUNT,CURRENCY,PAYMENT_DATE");
-        int seq = 1;
-        foreach (var item in summary.Items)
-        {
-            var cleanAcc = item.AccountNumber.Replace("-", "").Replace(" ", "");
-            // เลขบัญชีเป็นตัวเลขล้วน (ไม่ใช้สูตร Excel ="...") เพื่อให้ระบบธนาคารนำเข้าไฟล์ได้
-            sb.AppendLine(string.Join(",",
-                seq.ToString("D4"),
-                Csv(item.EmployeeCode),
-                cleanAcc,
-                Csv(item.AccountName),
-                item.BankCode,
-                item.NetPayableSalary.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
-                "THB",
-                paymentDate));
-            seq++;
-        }
+        var paymentDate = (period.PaymentDate ?? period.EndDate).ToString("yyyyMMdd");
+        var readyItems = summary.Items.Where(i => i.Status == "READY").ToList();
+        var sb = BuildBankFile(payer, readyItems, paymentDate);
 
         var preamble = System.Text.Encoding.UTF8.GetPreamble();
         var contentBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
         return preamble.Concat(contentBytes).ToArray();
+    }
+
+    /// <summary>บัญชีบริษัทที่ใช้จ่ายเงินเดือน (บัญชีหลัก ACTIVE)</summary>
+    private Task<CompanyBankAccount?> GetPayrollPayerAccountAsync(CancellationToken cancellationToken) =>
+        _context.CompanyBankAccounts
+            .Include(a => a.Bank)
+            .AsNoTracking()
+            .Where(a => a.IsPrimaryPayrollAccount && a.Status == "ACTIVE")
+            .OrderBy(a => a.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    /// <summary>
+    /// ไฟล์โอนเงินเดือนรูปแบบกลาง (CSV: H = บัญชีต้นทาง, D = รายการโอน, T = ยอดรวม)
+    /// หมายเหตุ: ไฟล์ Payroll ของแต่ละธนาคารมีรูปแบบเฉพาะ (มักเป็น fixed-width) — เมื่อได้ spec จากธนาคาร
+    /// ให้เพิ่มรูปแบบโดยแยกตามรหัสธนาคารของบัญชีบริษัท (payer.Bank.BankCode) ที่ฟังก์ชันนี้
+    /// </summary>
+    private static System.Text.StringBuilder BuildBankFile(CompanyBankAccount payer, List<BankTransferItemDto> items, string paymentDate)
+    {
+        static string Csv(string? value) => $"\"{(value ?? string.Empty).Replace("\"", "\"\"")}\"";
+        static string Digits(string? value) => new string((value ?? string.Empty).Where(char.IsDigit).ToArray());
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var total = items.Sum(i => i.NetPayableSalary);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("RECORD_TYPE,PAYER_BANK_CODE,PAYER_ACCOUNT_NUMBER,PAYER_ACCOUNT_NAME,PAYMENT_DATE,TOTAL_RECORDS,TOTAL_AMOUNT,CURRENCY");
+        sb.AppendLine(string.Join(",", "H",
+            payer.Bank?.BankCode ?? string.Empty,
+            Digits(payer.AccountNumber),
+            Csv(payer.AccountName),
+            paymentDate,
+            items.Count.ToString(inv),
+            total.ToString("F2", inv),
+            "THB"));
+
+        sb.AppendLine("RECORD_TYPE,SEQUENCE,EMPLOYEE_CODE,RECEIVER_BANK_CODE,RECEIVER_ACCOUNT_NUMBER,RECEIVER_ACCOUNT_NAME,AMOUNT,CURRENCY");
+        int seq = 1;
+        foreach (var item in items)
+        {
+            // เลขบัญชีเป็นตัวเลขล้วน (ไม่ใช้สูตร Excel ="...") เพื่อให้ระบบธนาคารนำเข้าไฟล์ได้
+            sb.AppendLine(string.Join(",", "D",
+                seq.ToString("D4", inv),
+                Csv(item.EmployeeCode),
+                item.BankCode,
+                Digits(item.AccountNumber),
+                Csv(item.AccountName),
+                item.NetPayableSalary.ToString("F2", inv),
+                "THB"));
+            seq++;
+        }
+
+        sb.AppendLine(string.Join(",", "T", items.Count.ToString(inv), total.ToString("F2", inv)));
+        return sb;
     }
 
     public async Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default)

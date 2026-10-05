@@ -14,7 +14,10 @@ import {
   Calendar,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
-import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
+import { bankService } from '@/services/bankService';
+import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
+import type { Bank } from '@/types/api';
+import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience, EmployeeBankAccount } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
@@ -123,6 +126,19 @@ function EmployeeEditPageContent() {
   const [managerId, setManagerId] = useState<number | ''>('');
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
+  // สัญชาติ / ศาสนา / สถานภาพสมรส จากเมนู ข้อมูลหลัก
+  const lookups = useMasterLookups();
+
+  // ธนาคารจากข้อมูลหลัก + บัญชีที่รอยืนยัน (ถ้ามี)
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [pendingBank, setPendingBank] = useState<EmployeeBankAccount | null>(null);
+  const [rejectedBank, setRejectedBank] = useState<EmployeeBankAccount | null>(null);
+  useEffect(() => {
+    bankService
+      .getAll()
+      .then((list) => setBanks(list.filter((b) => b.status === 'ACTIVE')))
+      .catch(() => setBanks([]));
+  }, []);
   const [formData, setFormData] = useState<CreateEmployeePayload>({
     employeeCode: '',
     biometricId: '',
@@ -132,7 +148,7 @@ function EmployeeEditPageContent() {
     citizenId: '',
     gender: '',
     nationality: 'ไทย',
-    religion: 'พุทธ',
+    religion: '',
     birthDate: '',
     maritalStatus: '',
     militaryStatus: '',
@@ -212,7 +228,11 @@ function EmployeeEditPageContent() {
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
         const primaryEducation = emp.educations?.[0];
         const primaryEmergency = emp.emergencyContacts?.find((c) => c.isPrimary) || emp.emergencyContacts?.[0];
-        const primaryBank = emp.bankAccounts?.find((b) => b.isPrimary) || emp.bankAccounts?.[0];
+        const primaryBank =
+          emp.bankAccounts?.find((b) => b.status === 'ACTIVE' && b.isPrimary) ||
+          emp.bankAccounts?.find((b) => b.status === 'ACTIVE');
+        setPendingBank(emp.bankAccounts?.find((b) => b.status === 'PENDING_VERIFY') ?? null);
+        setRejectedBank(emp.bankAccounts?.find((b) => b.status === 'REJECTED') ?? null);
 
         setFormData({
           employeeCode: emp.employeeCode || '',
@@ -223,7 +243,7 @@ function EmployeeEditPageContent() {
           citizenId: emp.citizenIdMasked || '',
           gender: emp.gender || (emp.genderId === 1 || emp.prefix === 'นาย' ? 'ชาย' : (emp.genderId === 2 || emp.prefix === 'นางสาว' || emp.prefix === 'นาง' ? 'หญิง' : '')),
           nationality: emp.nationality === 'ไทย' ? 'ไทย (Thai)' : (emp.nationality || 'ไทย (Thai)'),
-          religion: emp.religion || 'พุทธ',
+          religion: emp.religion || '',
           birthDate: emp.birthDate ? emp.birthDate.substring(0, 10) : '',
           maritalStatus: emp.maritalStatus || '',
           militaryStatus: emp.militaryStatus || '',
@@ -241,8 +261,10 @@ function EmployeeEditPageContent() {
           major: primaryEducation?.major || '',
           graduationYear: primaryEducation?.graduationYear || 2569,
           gpa: primaryEducation?.gpa ? Number(primaryEducation.gpa) : undefined,
+          bankId: primaryBank?.bankId,
           bankName: primaryBank?.bankName || '',
           accountNumber: primaryBank?.accountNumber || '',
+          positionId: emp.positionId,
           positionName: emp.positionName || '',
           employeeType: emp.employeeType || '',
           familyMembers:
@@ -366,8 +388,11 @@ function EmployeeEditPageContent() {
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
-        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : 'พุทธ',
+        // ศาสนาเป็นข้อมูลอ่อนไหว (PDPA) → ไม่บังคับ และไม่ใส่ค่าให้เอง
+        religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
+        religionId: lookupId(lookups.religions, formData.religion),
         maritalStatus: formData.maritalStatus && formData.maritalStatus !== 'เลือกสถานภาพ' ? formData.maritalStatus : undefined,
+        maritalStatusId: lookupId(lookups.maritalStatuses, formData.maritalStatus),
         militaryStatus: formData.militaryStatus && formData.militaryStatus !== 'เลือกสถานภาพทางทหาร' ? formData.militaryStatus : undefined,
         educationLevel: undefined,
         institution: undefined,
@@ -733,18 +758,22 @@ function EmployeeEditPageContent() {
                   {/* ศาสนา */}
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      ศาสนา (Religion) <span className="text-rose-500">*</span>
+                      ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
                     </label>
                     <select
                       value={formData.religion}
                       onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
-                      <option value="พุทธ">พุทธ</option>
-                      <option value="คริสต์">คริสต์</option>
-                      <option value="อิสลาม">อิสลาม</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                      <option value="ไม่ระบุ">ไม่ระบุ</option>
+                      <option value="">ไม่ระบุ</option>
+                      {lookups.religions.map((r) => (
+                        <option key={r.id ?? r.name} value={r.name}>
+                          {r.name}
+                        </option>
+                      ))}
+                      {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
+                        <option value={formData.religion}>{formData.religion}</option>
+                      )}
                     </select>
                   </div>
 
@@ -759,10 +788,14 @@ function EmployeeEditPageContent() {
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
                     >
                       <option value="">เลือกสถานภาพ</option>
-                      <option value="โสด">โสด</option>
-                      <option value="สมรส">สมรส</option>
-                      <option value="หย่าร้าง">หย่าร้าง</option>
-                      <option value="หม้าย">หม้าย</option>
+                      {lookups.maritalStatuses.map((m) => (
+                        <option key={m.id ?? m.name} value={m.name}>
+                          {m.name}
+                        </option>
+                      ))}
+                      {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
+                        <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
+                      )}
                     </select>
                   </div>
 
@@ -932,29 +965,68 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block">
                       บัญชีธนาคาร (Bank Account)
                     </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)
+                    </p>
+                    {pendingBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                        มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
+                        {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
+                      </div>
+                    )}
+                    {!pendingBank && rejectedBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                        {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                      </div>
+                    )}
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         ชื่อธนาคาร
                       </span>
-                      <input
-                        type="text"
-                        placeholder="เช่น ธนาคารกสิกรไทย"
-                        value={formData.bankName || ''}
-                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
+                      <select
+                        value={formData.bankId ?? ''}
+                        onChange={(e) => {
+                          const id = e.target.value ? Number(e.target.value) : undefined;
+                          const bank = banks.find((b) => b.id === id);
+                          setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
+                        }}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      >
+                        <option value="">เลือกธนาคาร</option>
+                        {banks.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.bankName}
+                            {b.shortName ? ` (${b.shortName})` : ''}
+                            {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         เลขที่บัญชี
+                        {banks.find((b) => b.id === formData.bankId)?.accountDigits
+                          ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
+                          : ''}
                       </span>
                       <input
                         type="text"
-                        placeholder="123-4-56789-0"
+                        inputMode="numeric"
+                        placeholder="กรอกเฉพาะตัวเลข"
                         value={formData.accountNumber || ''}
-                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                        onFocus={() => {
+                          // เลขที่ซ่อนไว้ (xxxx1234) — คลิกเพื่อกรอกเลขใหม่ทั้งหมด
+                          if ((formData.accountNumber || '').toLowerCase().includes('x')) {
+                            setFormData({ ...formData, accountNumber: '' });
+                          }
+                        }}
+                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
                         className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม
+                      </span>
                     </div>
                   </div>
                 </div>

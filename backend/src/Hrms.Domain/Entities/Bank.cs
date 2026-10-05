@@ -20,6 +20,15 @@ public class Bank : BaseEntity
     [MaxLength(255)]
     public string BankName { get; set; } = string.Empty;
 
+    /// <summary>ชื่อย่อ เช่น KBANK, SCB</summary>
+    [Column("short_name")]
+    [MaxLength(20)]
+    public string? ShortName { get; set; }
+
+    /// <summary>จำนวนหลักของเลขบัญชี (null = ไม่ตรวจความยาว)</summary>
+    [Column("account_digits")]
+    public int? AccountDigits { get; set; }
+
     [Column("status")]
     [Required]
     [MaxLength(20)]

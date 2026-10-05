@@ -94,6 +94,12 @@ export interface Position {
   positionCode: string;
   positionName: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
+  /** อัตรากำลังที่อนุมัติ (null = ไม่กำหนด) */
+  headcountPlan?: number | null;
+  /** พนักงานที่อยู่ในตำแหน่งตอนนี้ */
+  filledCount?: number;
+  /** อัตราว่าง (null = ไม่กำหนดอัตรากำลัง) */
+  vacantCount?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -104,6 +110,8 @@ export interface CreatePositionRequest {
   positionCode: string;
   positionName: string;
   status: string;
+  /** อัตรากำลัง (คน) — เว้นว่าง = ไม่กำหนด */
+  headcountPlan?: number | null;
 }
 
 export interface UpdatePositionRequest {
@@ -111,6 +119,7 @@ export interface UpdatePositionRequest {
   employeeLevelId?: number;
   positionName: string;
   status: string;
+  headcountPlan?: number | null;
 }
 
 export interface EmployeeLevel {

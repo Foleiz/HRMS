@@ -1,9 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
 import {
-  WorkSchedule,
-  CreateWorkScheduleRequest,
-  UpdateWorkScheduleRequest,
   EmployeeShift,
   AssignEmployeeShiftRequest,
   BatchAssignEmployeeShiftRequest,
@@ -13,35 +10,6 @@ import {
   AssignableEmployee,
   EmployeeTypeLookup,
 } from '@/types/schedule';
-
-export const scheduleService = {
-  // Master Work Schedules
-  async getWorkSchedules(status?: string): Promise<WorkSchedule[]> {
-    const params = status && status !== 'ALL' ? { status } : {};
-    const res = await apiClient.get<ApiResponse<WorkSchedule[]>>('/workschedules', { params });
-    return res.data.data || [];
-  },
-
-  async getWorkSchedule(id: number): Promise<WorkSchedule> {
-    const res = await apiClient.get<ApiResponse<WorkSchedule>>(`/workschedules/${id}`);
-    return res.data.data!;
-  },
-
-  async createWorkSchedule(data: CreateWorkScheduleRequest): Promise<WorkSchedule> {
-    const res = await apiClient.post<ApiResponse<WorkSchedule>>('/workschedules', data);
-    return res.data.data!;
-  },
-
-  async updateWorkSchedule(id: number, data: UpdateWorkScheduleRequest): Promise<WorkSchedule> {
-    const res = await apiClient.put<ApiResponse<WorkSchedule>>(`/workschedules/${id}`, data);
-    return res.data.data!;
-  },
-
-  async deleteWorkSchedule(id: number): Promise<boolean> {
-    const res = await apiClient.delete<ApiResponse<boolean>>(`/workschedules/${id}`);
-    return res.data.data || false;
-  },
-};
 
 export const employeeShiftService = {
   // Employee Shift Assignments

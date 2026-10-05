@@ -60,6 +60,15 @@ export const employeeService = {
     return res.data.data;
   },
 
+  // ยืนยัน / ปฏิเสธบัญชีรับเงินเดือนใหม่ที่รอยืนยัน (ผู้ยืนยันต้องไม่ใช่ผู้ขอ)
+  async reviewBankAccount(employeeId: number, accountId: number, approve: boolean, reason?: string): Promise<Employee> {
+    const res = await apiClient.post<ApiResponse<Employee>>(
+      `/employees/${employeeId}/bank-accounts/${accountId}/review`,
+      { approve, reason }
+    );
+    return res.data.data;
+  },
+
   // ลบรูปโปรไฟล์พนักงาน
   async deleteAvatar(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<boolean>>(`/employees/${id}/avatar`);

@@ -124,13 +124,12 @@ export default function AnnouncementsPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const { user, hasRole, hasPermission } = useAuth();
 
+  // ใช้รหัสสิทธิ์เดียวกับ backend (ANNOUNCEMENTS_CREATE / ANNOUNCEMENTS_EDIT)
   const canManage = Boolean(
     hasRole('ADMIN') ||
-    hasRole('HR_MGR') ||
-    hasRole('HR_ADMIN') ||
-    hasRole('SYS_ADMIN') ||
-    hasPermission('ORG_VIEW') ||
-    hasPermission('SYS_ADMIN')
+    hasRole('SYSTEM_SUPER') ||
+    hasPermission('ANNOUNCEMENTS_CREATE') ||
+    hasPermission('ANNOUNCEMENTS_EDIT')
   );
 
   // Reading Modal (Preview สำหรับผู้ดูแล)

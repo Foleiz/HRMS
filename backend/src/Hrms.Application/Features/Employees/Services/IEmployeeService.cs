@@ -12,6 +12,9 @@ public interface IEmployeeService
     Task<string> GetNextEmployeeCodeAsync(CancellationToken cancellationToken = default);
     Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken cancellationToken = default);
     Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>ยืนยัน (approve=true) หรือปฏิเสธบัญชีรับเงินเดือนที่รอยืนยัน — ผู้ยืนยันต้องไม่ใช่ผู้ขอ/เจ้าของบัญชี</summary>
+    Task<EmployeeDto> ReviewBankAccountAsync(long employeeId, long accountId, bool approve, string? reason, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
     Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default);
 

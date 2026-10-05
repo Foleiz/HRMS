@@ -14,6 +14,9 @@ public class Position : BaseEntity
     public string PositionCode { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
+
+    /// <summary>อัตรากำลังที่อนุมัติ (คน) — null = ไม่กำหนด</summary>
+    public int? HeadcountPlan { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

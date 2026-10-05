@@ -127,7 +127,21 @@ public class EmployeeBankAccountDto
     public string? AccountType { get; set; }
     public string? AccountName { get; set; }
     public bool IsPrimary { get; set; }
+    /// <summary>ACTIVE = ใช้จ่ายเงินเดือน, PENDING_VERIFY = รอยืนยัน, REJECTED = ไม่อนุมัติ</summary>
     public string Status { get; set; } = "ACTIVE";
+    /// <summary>true = เลขบัญชีถูกซ่อน (ผู้ดูไม่มีสิทธิ์เห็นเต็ม)</summary>
+    public bool IsMasked { get; set; }
+    public DateTime? RequestedAt { get; set; }
+    public DateTime? VerifiedAt { get; set; }
+    public string? RejectReason { get; set; }
+    /// <summary>ผู้ดูปัจจุบันยืนยัน/ปฏิเสธบัญชีนี้ได้</summary>
+    public bool CanVerify { get; set; }
+}
+
+public class ReviewBankAccountRequest
+{
+    public bool Approve { get; set; }
+    public string? Reason { get; set; }
 }
 
 public class EmployeeWorkExperienceDto
