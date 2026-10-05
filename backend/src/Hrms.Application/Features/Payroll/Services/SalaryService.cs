@@ -1886,7 +1886,10 @@ public class SalaryService : ISalaryService
             {
                 if (!claimBenefits.TryGetValue(c.BenefitItemId, out var claimBenefit)) continue;
                 var payItem = await BenefitPayCode.EnsureAsync(_context, claimBenefit, cancellationToken);
-                var cur = claimLines.TryGetValue(payItem.Id, out var found) ? found : (payItem, 0m, new List<string>());
+                if (!claimLines.TryGetValue(payItem.Id, out var cur))
+                {
+                    cur = (payItem, 0m, new List<string>());
+                }
                 cur.Refs.Add(string.IsNullOrEmpty(c.RequestNo) ? $"#{c.Id}" : c.RequestNo);
                 claimLines[payItem.Id] = (cur.Item, cur.Amount + c.Amount, cur.Refs);
 
