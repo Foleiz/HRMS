@@ -36,7 +36,9 @@ public class EmployeeService : IEmployeeService
         // 1. ตรวจสอบสิทธิ์ (RBAC)
         if (!_currentUserService.HasPermission("EMP_VIEW") && 
             !_currentUserService.HasPermission("EMP_MANAGE") && 
-            !_currentUserService.HasPermission("EMP_PROFILE_VIEW"))
+            !_currentUserService.HasPermission("EMP_PROFILE_VIEW") &&
+            !_currentUserService.HasPermission("PAYROLL_VIEW") &&
+            !_currentUserService.HasPermission("PAYROLL_CALC_VIEW"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงรายชื่อพนักงาน");
         }
@@ -142,61 +144,71 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_VIEW") && 
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        // ถ้าดูข้อมูลตัวเอง อนุญาตเสมอ
+        // ถ้าดูข้อมูลคนอื่น ต้องมีสิทธิ์ EMP_VIEW, EMP_MANAGE, EMP_PROFILE_VIEW, PAYROLL_VIEW หรือ PAYROLL_CALC_VIEW
+        if (!isSelf &&
+            !_currentUserService.HasPermission("EMP_VIEW") && 
             !_currentUserService.HasPermission("EMP_MANAGE") && 
-            !_currentUserService.HasPermission("EMP_PROFILE_VIEW"))
+            !_currentUserService.HasPermission("EMP_PROFILE_VIEW") &&
+            !_currentUserService.HasPermission("PAYROLL_VIEW") &&
+            !_currentUserService.HasPermission("PAYROLL_CALC_VIEW"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลพนักงาน");
         }
 
-        // Data Scoping — ตรวจสอบ employee ที่ขอดูก่อนดึงข้อมูล
-        string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
-        switch (dataScope)
+        // Data Scoping — ตรวจสอบ employee ที่ขอดูก่อนดึงข้อมูล (ข้ามถ้าเป็นข้อมูลตนเอง)
+        if (!isSelf)
         {
-            case "SELF":
+            string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
+            switch (dataScope)
             {
-                long? myEmpId = _currentUserService.EmployeeId;
-                if (!myEmpId.HasValue || myEmpId.Value != id)
-                    throw new ForbiddenException("คุณสามารถดูได้เฉพาะข้อมูลของตนเองเท่านั้น");
-                break;
-            }
-            case "DEPARTMENT":
-            {
-                long? myDeptId = _currentUserService.DepartmentId;
-                if (myDeptId.HasValue)
+                case "SELF":
                 {
-                    bool inDept = await _dbContext.EmployeeAssignments
-                        .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
-                    if (!inDept)
-                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกแผนกของคุณ");
+                    if (!myEmpId.HasValue || myEmpId.Value != id)
+                        throw new ForbiddenException("คุณสามารถดูได้เฉพาะข้อมูลของตนเองเท่านั้น");
+                    break;
                 }
-                break;
-            }
-            case "DIVISION":
-            {
-                long? myDivId = _currentUserService.DivisionId;
-                if (myDivId.HasValue)
+                case "DEPARTMENT":
                 {
-                    bool inDiv = await _dbContext.EmployeeAssignments
-                        .AnyAsync(a => a.EmployeeId == id && a.DivisionId == myDivId.Value && a.IsCurrent, cancellationToken);
-                    if (!inDiv)
-                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกฝ่ายของคุณ");
+                    long? myDeptId = _currentUserService.DepartmentId;
+                    if (myDeptId.HasValue)
+                    {
+                        bool inDept = await _dbContext.EmployeeAssignments
+                            .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
+                        if (!inDept)
+                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกแผนกของคุณ");
+                    }
+                    break;
                 }
-                break;
-            }
-            case "TEAM":
-            {
-                long? myDeptId = _currentUserService.DepartmentId;
-                if (myDeptId.HasValue)
+                case "DIVISION":
                 {
-                    bool inTeam = await _dbContext.EmployeeAssignments
-                        .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
-                    if (!inTeam)
-                        throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
+                    long? myDivId = _currentUserService.DivisionId;
+                    if (myDivId.HasValue)
+                    {
+                        bool inDiv = await _dbContext.EmployeeAssignments
+                            .AnyAsync(a => a.EmployeeId == id && a.DivisionId == myDivId.Value && a.IsCurrent, cancellationToken);
+                        if (!inDiv)
+                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกฝ่ายของคุณ");
+                    }
+                    break;
                 }
-                break;
+                case "TEAM":
+                {
+                    long? myDeptId = _currentUserService.DepartmentId;
+                    if (myDeptId.HasValue)
+                    {
+                        bool inTeam = await _dbContext.EmployeeAssignments
+                            .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
+                        if (!inTeam)
+                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
+                    }
+                    break;
+                }
+                // case "ORGANIZATION": เห็นได้ทุกคน
             }
-            // case "ORGANIZATION": เห็นได้ทุกคน
         }
 
         string idStr = id.ToString();

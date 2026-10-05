@@ -83,7 +83,9 @@ public class CurrentUserService : ICurrentUserService
 
         // Alias mapping สำหรับการดูรายชื่อพนักงาน
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase) &&
-            perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)))
+            (perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)) ||
+             perms.Any(p => string.Equals(p, "PAYROLL_VIEW", StringComparison.OrdinalIgnoreCase)) ||
+             perms.Any(p => string.Equals(p, "PAYROLL_CALC_VIEW", StringComparison.OrdinalIgnoreCase))))
         {
             return true;
         }
@@ -109,10 +111,14 @@ public class CurrentUserService : ICurrentUserService
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add("EMP_PROFILE_VIEW");
+            permsToCheck.Add("PAYROLL_VIEW");
+            permsToCheck.Add("PAYROLL_CALC_VIEW");
         }
         else if (string.Equals(permission, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add("EMP_VIEW");
+            permsToCheck.Add("PAYROLL_VIEW");
+            permsToCheck.Add("PAYROLL_CALC_VIEW");
         }
 
         var scopes = new List<string>();
