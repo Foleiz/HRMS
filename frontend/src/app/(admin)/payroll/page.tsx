@@ -38,6 +38,7 @@ import {
   Upload,
   Download,
   Lock,
+  Paperclip,
   Landmark,
   Calculator,
   Sliders,
@@ -700,9 +701,9 @@ export default function PayrollPage() {
           setConfirmPaymentModalOpen(false);
           setBankReceiptFile(null);
           if (markAsPaid) {
-            showToast('🏦 อัปโหลดสลิปธนาคารและยืนยันรอบเงินเดือนเป็น PAID สำเร็จ!');
+            showToast('อัปโหลดสลิปธนาคารและยืนยันรอบเงินเดือนเป็น PAID สำเร็จ!');
           } else {
-            showToast('📄 อัปโหลดสลิป/ใบเสร็จธนาคารเรียบร้อยแล้ว (ขั้นตอนที่ 3 เสร็จสิ้น)');
+            showToast('อัปโหลดสลิป/ใบเสร็จธนาคารเรียบร้อยแล้ว (ขั้นตอนที่ 3 เสร็จสิ้น)');
           }
         } catch (err: any) {
           showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอัปโหลดสลิปธนาคาร');
@@ -720,7 +721,7 @@ export default function PayrollPage() {
   const handleMarkPaid = async () => {
     if (!selectedPeriod) return;
     if (selectedPeriod.paymentMethod === 'BANK_BATCH' && !selectedPeriod.hasBankReceipt) {
-      showToast('❌ ไม่อนุญาตให้กดยืนยัน: ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน');
+      showToast('ไม่อนุญาตให้กดยืนยัน: ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน');
       return;
     }
     setIsConfirmingPayment(true);
@@ -728,7 +729,7 @@ export default function PayrollPage() {
       const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, 'PAID');
       setSelectedPeriod(updated);
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
-      showToast('🎉 ยืนยันรอบเงินเดือนเข้าสู่สถานะ PAID เรียบร้อยแล้ว (ขั้นตอนที่ 4 เสร็จสิ้น)');
+      showToast('ยืนยันรอบเงินเดือนเข้าสู่สถานะ PAID เรียบร้อยแล้ว (ขั้นตอนที่ 4 เสร็จสิ้น)');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะเป็น PAID');
     } finally {
@@ -905,7 +906,7 @@ export default function PayrollPage() {
       // Refresh period to show bankFileGeneratedAt
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
-      showToast('📁 ดาวน์โหลดไฟล์ธนาคารสำเร็จ สถานะเปลี่ยนเป็น PROCESSING');
+      showToast('ดาวน์โหลดไฟล์ธนาคารสำเร็จ สถานะเปลี่ยนเป็น PROCESSING');
     } catch (err: any) {
       // responseType เป็น blob → ข้อความ error จาก API อยู่ใน Blob ต้องแปลงเป็น JSON ก่อน
       let message: string | undefined = err?.response?.data?.message;
@@ -934,7 +935,7 @@ export default function PayrollPage() {
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       setConfirmPaymentModalOpen(false);
       setConfirmPaymentNote('');
-      showToast('🏦 ยืนยันธนาคารโอนเงินเรียบร้อยแล้ว (ขั้นตอนที่ 2 เสร็จสิ้น -> รอดำเนินการขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป/ใบเสร็จ)');
+      showToast('ยืนยันธนาคารโอนเงินเรียบร้อยแล้ว (ขั้นตอนที่ 2 เสร็จสิ้น -> รอดำเนินการขั้นตอนที่ 3: ฝ่ายการเงินตรวจสลิป/ใบเสร็จ)');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการ Confirm Bank Transfer');
     } finally {
@@ -2634,7 +2635,7 @@ export default function PayrollPage() {
                             title="กรุณากดคำนวณเงินเดือนก่อนส่งการเงิน"
                           >
                             <Lock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>🔒 ส่งให้การเงิน (ต้องคำนวณก่อน)</span>
+                            <span>ส่งให้การเงิน (ต้องคำนวณก่อน)</span>
                           </button>
                         )
                       )}
@@ -2698,7 +2699,7 @@ export default function PayrollPage() {
                           title="รอ CEO อนุมัติรอบเงินเดือนก่อนดาวน์โหลดไฟล์จ่ายเงิน"
                         >
                           <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>🔒 ไฟล์โอนเงินธนาคาร (รอ CEO อนุมัติ)</span>
+                          <span>ไฟล์โอนเงินธนาคาร (รอ CEO อนุมัติ)</span>
                         </button>
                       )}
                     </>
@@ -3191,7 +3192,8 @@ export default function PayrollPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  💳 การจ่ายเงินเดือน
+                  <Wallet className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                  <span>การจ่ายเงินเดือน</span>
                   {selectedPeriod && (
                     <span className="text-slate-400 font-normal">— {selectedPeriod.periodName}</span>
                   )}
@@ -3203,18 +3205,21 @@ export default function PayrollPage() {
               <div className="flex items-center gap-2">
                 {/* Status Badge */}
                 {selectedPeriod?.status === 'PAID' && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                    ✅ จ่ายเงินเดือนเสร็จสิ้น
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>จ่ายเงินเดือนเสร็จสิ้น</span>
                   </span>
                 )}
                 {selectedPeriod?.status === 'PROCESSING' && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                    ⏳ กำลังดำเนินการจ่าย
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 inline-flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>กำลังดำเนินการจ่าย</span>
                   </span>
                 )}
                 {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
-                    🎯 อนุมัติแล้ว — รอเลือกวิธีการจ่าย
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>อนุมัติแล้ว — รอเลือกวิธีการจ่าย</span>
                   </span>
                 )}
               </div>
@@ -3259,7 +3264,7 @@ export default function PayrollPage() {
                     <Building2 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-bold text-sm">🏦 ส่งไฟล์ธนาคาร</div>
+                    <div className="font-bold text-sm">ส่งไฟล์ธนาคาร (Bank Batch)</div>
                     <div className="text-xs text-blue-200 mt-1">ดาวน์โหลดไฟล์ .CSV ส่งให้ธนาคาร ธนาคารจะโอนเงินให้พนักงานอัตโนมัติ (สำหรับบริษัทขนาดใหญ่)</div>
                   </div>
                 </button>
@@ -3273,7 +3278,7 @@ export default function PayrollPage() {
                     <Banknote className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-bold text-sm">👤 CEO โอนเองทีละคน <span className="text-emerald-300 text-[11px]">(บริษัทนี้)</span></div>
+                    <div className="font-bold text-sm">CEO โอนเองทีละคน <span className="text-emerald-300 text-[11px]">(บริษัทนี้)</span></div>
                     <div className="text-xs text-blue-200 mt-1">CEO โอนเงินผ่าน Internet Banking ทีละคน แนบสลิปยืนยัน แล้ว Confirm ทั้งหมด</div>
                   </div>
                 </button>
@@ -3331,7 +3336,10 @@ export default function PayrollPage() {
               {(selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' || selectedPeriod?.status === 'PROCESSING_BANK') && (
                 <div className="space-y-3 pt-2 border-t border-slate-100">
                   <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200/80 flex items-center justify-between">
-                    <span>📁 ไฟล์โอนเงินพร้อมใช้งาน</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
+                      <span>ไฟล์โอนเงินพร้อมใช้งาน</span>
+                    </span>
                     <span className={`px-2.5 py-0.5 rounded-md font-semibold text-[11px] ${
                       selectedPeriod?.status === 'PROCESSING_BANK'
                         ? 'bg-blue-100 text-blue-800'
@@ -3432,7 +3440,7 @@ export default function PayrollPage() {
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
                           >
                             <Lock className="w-4 h-4 text-slate-400" />
-                            <span>🔒 ไม่อนุญาตให้กดยืนยัน (ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน)</span>
+                            <span>ไม่อนุญาตให้กดยืนยัน (ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน)</span>
                           </button>
                         </div>
                       )}
@@ -3471,7 +3479,10 @@ export default function PayrollPage() {
                     </div>
                   ) : (
                     <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mt-3">
-                      <span>⏳ รอดำเนินการ: ฝ่ายการเงินตรวจสอบและแนบสลิปโอนเงินรวมของธนาคาร (ขั้นตอนที่ 3)</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>รอดำเนินการ: ฝ่ายการเงินตรวจสอบและแนบสลิปโอนเงินรวมของธนาคาร (ขั้นตอนที่ 3)</span>
+                      </span>
                     </div>
                   )
                 )
@@ -3481,7 +3492,7 @@ export default function PayrollPage() {
               {selectedPeriod?.status === 'PAID' && (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800 mt-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">✅</span>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                     <div>
                       <div className="font-bold text-emerald-900">ธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว (สถานะ: PAID)</div>
                       <div className="text-[11px] text-emerald-700 mt-0.5">ฝ่ายการเงินตรวจสอบสลิปและปิดยอดแล้ว — ระบบแจ้งสถานะไปยังฝ่ายบุคคล (HR) เรียบร้อยแล้ว</div>
@@ -3536,7 +3547,7 @@ export default function PayrollPage() {
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
                   >
                     <Lock className="w-4 h-4 text-slate-400" />
-                    <span>🔒 ไม่สามารถ Confirm ได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
+                    <span>ไม่สามารถ Confirm ได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
                   </button>
                 )}
               </div>
@@ -3683,7 +3694,10 @@ export default function PayrollPage() {
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100">📎 แนบสลิปการโอนเงิน</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <Paperclip className="w-4 h-4 text-slate-500" />
+                    <span>แนบสลิปการโอนเงิน</span>
+                  </h3>
                   <button onClick={() => setSlipModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer text-xl leading-none">×</button>
                 </div>
 
@@ -3728,7 +3742,7 @@ export default function PayrollPage() {
                   >
                     {slipFile ? (
                       <div className="flex items-center justify-center gap-2 text-emerald-700">
-                        <div className="text-2xl">✅</div>
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
                         <div className="text-left">
                           <div className="font-semibold text-sm">{slipFile.name}</div>
                           <div className="text-xs text-emerald-600">{(slipFile.size / 1024).toFixed(1)} KB</div>
@@ -3736,7 +3750,7 @@ export default function PayrollPage() {
                       </div>
                     ) : (
                       <div className="text-slate-400">
-                        <div className="text-2xl mb-2">📎</div>
+                        <Upload className="w-7 h-7 mx-auto mb-2 text-slate-400" />
                         <div className="text-xs font-medium">ลาก & วาง หรือคลิกเพื่อเลือกไฟล์</div>
                         <div className="text-[11px] mt-1">JPG, PNG, WEBP, PDF · สูงสุด 10 MB</div>
                       </div>
@@ -3779,7 +3793,9 @@ export default function PayrollPage() {
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="text-center">
-                  <div className="text-5xl mb-3">🔐</div>
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-3">
+                    <ShieldCheck className="w-7 h-7" />
+                  </div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                     {selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'Confirm การจ่ายเงินเดือน'}
                   </h3>
@@ -4212,8 +4228,9 @@ export default function PayrollPage() {
                   placeholder="เช่น รอบเดือนสิงหาคม 2569"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  💡 ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)
+                <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)</span>
                 </p>
               </div>
 
