@@ -40,11 +40,14 @@ public class WorkCalendarService : IWorkCalendarService
     /// หลังเปลี่ยนวัน/เวลาทำงานหรือวันหยุดประจำปี: คำนวณข้อมูลเวลาเข้า-ออก (สาย/ออกก่อน/ขาด/วันหยุด) และสรุปรายเดือนใหม่อัตโนมัติ
     /// ถ้าคำนวณไม่สำเร็จ ไม่ทำให้การบันทึกการตั้งค่าล้ม
     /// </summary>
-    private async Task RefreshAttendanceAsync()
+    private async Task RefreshAttendanceAsync(IReadOnlyCollection<DateOnly>? onlyDates = null)
     {
         try
         {
-            var changed = await _attendanceDailyService.ApplyCompanyScheduleAsync();
+            // วันหยุดกระทบเฉพาะวันที่นั้น ๆ — คำนวณใหม่แค่วันที่เกี่ยวข้อง ไม่ต้องไล่ทั้งระบบ (กันคำขอช้าจน timeout)
+            var changed = onlyDates is { Count: > 0 }
+                ? await _attendanceDailyService.ApplyCompanyScheduleAsync(onlyDates)
+                : await _attendanceDailyService.ApplyCompanyScheduleAsync();
             if (changed > 0) _logger.LogInformation("คำนวณข้อมูลเวลาใหม่ตามการตั้งค่าวันทำงาน/วันหยุด {Count} รายการ", changed);
         }
         catch (Exception ex)
@@ -60,6 +63,35 @@ public class WorkCalendarService : IWorkCalendarService
         "SUBSTITUTE" => "วันหยุดชดเชย",
         _ => "วันหยุดทั่วไป"
     };
+
+    private static readonly HashSet<string> AllowedHolidayTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PUBLIC", "COMPANY_SPECIAL", "SUBSTITUTE"
+    };
+
+    private static (DateOnly date, string name, string type) ValidateHolidayInput(string? holidayDate, string? holidayName, string? holidayType)
+    {
+        if (string.IsNullOrWhiteSpace(holidayDate)
+            || !DateOnly.TryParseExact(holidayDate.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            throw new ArgumentException("รูปแบบวันที่ไม่ถูกต้อง กรุณาใช้รูปแบบ YYYY-MM-DD");
+        }
+
+        var name = holidayName?.Trim() ?? string.Empty;
+        if (name.Length == 0)
+            throw new ArgumentException("กรุณาระบุชื่อวันหยุด");
+        if (name.Length > 255)
+            throw new ArgumentException("ชื่อวันหยุดต้องไม่เกิน 255 ตัวอักษร");
+
+        var type = string.IsNullOrWhiteSpace(holidayType) ? "PUBLIC" : holidayType.Trim().ToUpperInvariant();
+        if (!AllowedHolidayTypes.Contains(type))
+            throw new ArgumentException("ประเภทวันหยุดไม่ถูกต้อง");
+
+        return (date, name, type);
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex) =>
+        (ex.InnerException?.Message.Contains("23505") ?? false) || ex.Message.Contains("23505");
 
     public async Task<List<WorkWeekDto>> GetWorkWeekAsync(long? companyId = null)
     {
@@ -201,10 +233,11 @@ public class WorkCalendarService : IWorkCalendarService
     public async Task<HolidayDto> CreateHolidayAsync(CreateHolidayRequest request)
     {
         var targetCompanyId = request.CompanyId ?? 1;
+        var (date, name, type) = ValidateHolidayInput(request.HolidayDate, request.HolidayName, request.HolidayType);
 
-        if (!DateOnly.TryParse(request.HolidayDate, CultureInfo.InvariantCulture, out var date))
+        if (!await _context.Companies.AnyAsync(c => c.Id == targetCompanyId))
         {
-            throw new ArgumentException("รูปแบบวันที่ไม่ถูกต้อง กรุณาใช้รูปแบบ YYYY-MM-DD");
+            throw new InvalidOperationException($"ไม่พบข้อมูลบริษัท (รหัส {targetCompanyId}) กรุณาตั้งค่าข้อมูลบริษัทก่อนเพิ่มวันหยุด");
         }
 
         var exists = await _context.Holidays
@@ -212,20 +245,30 @@ public class WorkCalendarService : IWorkCalendarService
 
         if (exists)
         {
-            throw new InvalidOperationException($"มีวันหยุดสำหรับวันที่ {request.HolidayDate} ถูกบันทึกไว้ในระบบแล้ว");
+            throw new InvalidOperationException($"มีวันหยุดสำหรับวันที่ {date:yyyy-MM-dd} ถูกบันทึกไว้ในระบบแล้ว");
         }
 
         var holiday = new Holiday
         {
             CompanyId = targetCompanyId,
             HolidayDate = date,
-            HolidayName = request.HolidayName.Trim(),
-            HolidayType = string.IsNullOrWhiteSpace(request.HolidayType) ? "PUBLIC" : request.HolidayType.Trim()
+            HolidayName = name,
+            HolidayType = type
         };
 
         _context.Holidays.Add(holiday);
-        await _context.SaveChangesAsync();
-        await RefreshAttendanceAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // ชนกับ unique (company_id, holiday_date) หรือ sequence ของ id ไม่ตรงกับข้อมูลในตาราง
+            _logger.LogError(ex, "บันทึกวันหยุดไม่สำเร็จ (ข้อมูลซ้ำ)");
+            throw new InvalidOperationException(
+                $"ไม่สามารถบันทึกวันหยุดได้ เนื่องจากข้อมูลซ้ำ (วันที่ {date:yyyy-MM-dd} อาจมีอยู่แล้ว หรือลำดับรหัสในตาราง holiday ไม่ตรง — แจ้งผู้ดูแลระบบให้รัน backend/scripts/holiday_fix_sequence.sql)");
+        }
+        await RefreshAttendanceAsync(new[] { date });
 
         return new HolidayDto
         {
@@ -246,25 +289,31 @@ public class WorkCalendarService : IWorkCalendarService
             throw new KeyNotFoundException($"ไม่พบข้อมูลวันหยุดรหัส {id}");
         }
 
-        if (!DateOnly.TryParse(request.HolidayDate, CultureInfo.InvariantCulture, out var date))
-        {
-            throw new ArgumentException("รูปแบบวันที่ไม่ถูกต้อง กรุณาใช้รูปแบบ YYYY-MM-DD");
-        }
+        var (date, name, type) = ValidateHolidayInput(request.HolidayDate, request.HolidayName, request.HolidayType);
 
         var exists = await _context.Holidays
             .AnyAsync(h => h.CompanyId == holiday.CompanyId && h.HolidayDate == date && h.Id != id);
 
         if (exists)
         {
-            throw new InvalidOperationException($"มีวันหยุดสำหรับวันที่ {request.HolidayDate} ถูกบันทึกไว้ในระบบแล้ว");
+            throw new InvalidOperationException($"มีวันหยุดสำหรับวันที่ {date:yyyy-MM-dd} ถูกบันทึกไว้ในระบบแล้ว");
         }
 
+        var oldDate = holiday.HolidayDate;
         holiday.HolidayDate = date;
-        holiday.HolidayName = request.HolidayName.Trim();
-        holiday.HolidayType = string.IsNullOrWhiteSpace(request.HolidayType) ? "PUBLIC" : request.HolidayType.Trim();
+        holiday.HolidayName = name;
+        holiday.HolidayType = type;
 
-        await _context.SaveChangesAsync();
-        await RefreshAttendanceAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            throw new InvalidOperationException($"มีวันหยุดสำหรับวันที่ {date:yyyy-MM-dd} ถูกบันทึกไว้ในระบบแล้ว");
+        }
+        // วันเดิมต้องกลับไปเป็นวันทำงาน/ขาด และวันใหม่เป็นวันหยุด
+        await RefreshAttendanceAsync(oldDate == date ? new[] { date } : new[] { oldDate, date });
 
         return new HolidayDto
         {
@@ -282,9 +331,10 @@ public class WorkCalendarService : IWorkCalendarService
         var holiday = await _context.Holidays.FindAsync(id);
         if (holiday == null) return false;
 
+        var removedDate = holiday.HolidayDate;
         _context.Holidays.Remove(holiday);
         await _context.SaveChangesAsync();
-        await RefreshAttendanceAsync();
+        await RefreshAttendanceAsync(new[] { removedDate });
         return true;
     }
 }
