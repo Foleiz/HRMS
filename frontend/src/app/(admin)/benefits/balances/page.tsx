@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { benefitService } from '@/services/benefitService';
 import { EmployeeBenefitOverview, BenefitUsageItem, BenefitClaim } from '@/types/benefit';
-import { RecordBenefitClaimModal } from '@/components/employees/RecordBenefitClaimModal';
 import { useToast } from '@/context/ToastContext';
 import {
   Gift,
@@ -19,7 +18,6 @@ import {
   Utensils,
   ShieldCheck,
   Receipt,
-  Plus,
   History,
   X,
   Building2,
@@ -36,11 +34,6 @@ export default function EmployeeBenefitBalancesPage() {
   const [loading, setLoading] = useState(true);
   const [overviewList, setOverviewList] = useState<EmployeeBenefitOverview[]>([]);
   const [expandedEmployeeIds, setExpandedEmployeeIds] = useState<Set<number>>(new Set());
-
-  // Modal states for recording claim
-  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [selectedEmpForClaim, setSelectedEmpForClaim] = useState<EmployeeBenefitOverview | null>(null);
-  const [preSelectedBenefitId, setPreSelectedBenefitId] = useState<number | null>(null);
 
   // Modal states for viewing claims history
   const [isClaimsHistoryOpen, setIsClaimsHistoryOpen] = useState(false);
@@ -99,13 +92,6 @@ export default function EmployeeBenefitBalancesPage() {
 
   const collapseAllEmployees = () => {
     setExpandedEmployeeIds(new Set());
-  };
-
-  // Open claim modal
-  const handleOpenRecordClaim = (emp: EmployeeBenefitOverview, benefitId?: number) => {
-    setSelectedEmpForClaim(emp);
-    setPreSelectedBenefitId(benefitId || null);
-    setIsRecordModalOpen(true);
   };
 
   // Open claims history modal
@@ -455,28 +441,16 @@ export default function EmployeeBenefitBalancesPage() {
                                     </span>
                                   </td>
                                   <td className="py-3 px-3 text-center">
-                                    <div className="inline-flex items-center gap-1">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenRecordClaim(emp, b.benefitItemId);
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                        title="บันทึกการใช้สิทธิ์ / เพิ่มยอดเบิก"
-                                      >
-                                        <Plus className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenClaimsHistory(emp, b);
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                        title={`ดูประวัติการเบิกจ่าย (${b.benefitName})`}
-                                      >
-                                        <History className="w-4 h-4" />
-                                      </button>
-                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenClaimsHistory(emp, b);
+                                      }}
+                                      className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                      title={`ดูประวัติการเบิกจ่าย (${b.benefitName})`}
+                                    >
+                                      <History className="w-4 h-4" />
+                                    </button>
                                   </td>
                                 </tr>
                               ))
@@ -492,28 +466,6 @@ export default function EmployeeBenefitBalancesPage() {
           </div>
         )}
       </div>
-
-      {/* Record Claim Modal */}
-      {selectedEmpForClaim && (
-        <RecordBenefitClaimModal
-          isOpen={isRecordModalOpen}
-          onClose={() => {
-            setIsRecordModalOpen(false);
-            setSelectedEmpForClaim(null);
-            setPreSelectedBenefitId(null);
-          }}
-          onSuccess={() => {
-            setIsRecordModalOpen(false);
-            setSelectedEmpForClaim(null);
-            setPreSelectedBenefitId(null);
-            fetchOverview();
-          }}
-          employeeId={selectedEmpForClaim.employeeId}
-          employeeName={selectedEmpForClaim.employeeName}
-          benefits={selectedEmpForClaim.benefits}
-          preSelectedBenefitId={preSelectedBenefitId}
-        />
-      )}
 
       {/* Claims History Drawer/Modal */}
       {isClaimsHistoryOpen && historyEmp && (
