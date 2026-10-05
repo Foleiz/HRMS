@@ -31,6 +31,8 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
 
     /// <summary>ฝ่ายบุคคล/ผู้ดูแลสวัสดิการ — พิจารณาคำขอที่ไม่มีสายการอนุมัติ</summary>
     private bool IsHrApprover => IsAdmin
+        || _currentUser.HasPermission("BENEFIT_BALANCE_APPROVE")
+        || _currentUser.HasPermission("BENEFIT_BALANCE_EDIT")
         || _currentUser.HasPermission("ORG_BENEFIT_APPROVE")
         || _currentUser.HasPermission("ORG_BENEFIT_EDIT")
         || _currentUser.HasPermission("APPROVAL_EMP_APPROVE");

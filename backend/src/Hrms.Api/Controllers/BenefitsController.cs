@@ -97,7 +97,7 @@ public class BenefitsController : ControllerBase
     /// ดึงภาพรวมยอดสวัสดิการพนักงานทุกคน (HR Overview / Accordion List)
     /// </summary>
     [HttpGet("balances")]
-    [RequirePermission("ORG_BENEFIT_VIEW,EMP_PROFILE_VIEW,EMP_VIEW")]
+    [RequirePermission("BENEFIT_BALANCE_VIEW,ORG_BENEFIT_VIEW,EMP_PROFILE_VIEW,EMP_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeBenefitOverviewDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeBenefitOverviewDto>>>> GetBalances(
         [FromQuery] int? year,
@@ -112,7 +112,7 @@ public class BenefitsController : ControllerBase
     /// ดึงข้อมูลสรุปโควตาและการใช้สิทธิ์สวัสดิการรายบุคคลของพนักงาน
     /// </summary>
     [HttpGet("usage/{employeeId:long}")]
-    [SelfOrPermission("employeeId", "EMP_PROFILE_VIEW")]
+    [SelfOrPermission("employeeId", "BENEFIT_BALANCE_VIEW,EMP_PROFILE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeBenefitUsageSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<EmployeeBenefitUsageSummaryDto>>> GetUsageSummary(
@@ -128,7 +128,7 @@ public class BenefitsController : ControllerBase
     /// ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการของพนักงาน
     /// </summary>
     [HttpGet("claims/{employeeId:long}")]
-    [SelfOrPermission("employeeId", "EMP_PROFILE_VIEW")]
+    [SelfOrPermission("employeeId", "BENEFIT_BALANCE_VIEW,EMP_PROFILE_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<BenefitClaimDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<BenefitClaimDto>>>> GetClaims(
         long employeeId,
@@ -145,7 +145,7 @@ public class BenefitsController : ControllerBase
     /// </summary>
     [HttpPost("claims")]
     // ฝ่ายบุคคลบันทึกให้โดยตรง (อนุมัติทันที) — พนักงานยื่นเองใช้ POST claims/request
-    [RequirePermission("ORG_BENEFIT_EDIT,ORG_BENEFIT_CREATE")]
+    [RequirePermission("BENEFIT_BALANCE_CREATE,ORG_BENEFIT_EDIT,ORG_BENEFIT_CREATE")]
     [ProducesResponseType(typeof(ApiResponse<BenefitClaimDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<BenefitClaimDto>>> CreateClaim(
@@ -160,7 +160,7 @@ public class BenefitsController : ControllerBase
     /// ยกเลิก/ลบรายการเบิกสวัสดิการ
     /// </summary>
     [HttpDelete("claims/{claimId:long}")]
-    [RequirePermission("ORG_BENEFIT_EDIT")]
+    [RequirePermission("BENEFIT_BALANCE_EDIT,ORG_BENEFIT_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteClaim(

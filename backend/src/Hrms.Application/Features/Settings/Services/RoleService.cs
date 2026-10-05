@@ -56,6 +56,9 @@ public class RoleService : IRoleService
         new("EMP_DOC", "แฟ้มเอกสารพนักงาน", "EMP_DOC", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_HISTORY", "ประวัติการเปลี่ยนแปลง", "EMP_HISTORY", "EMPLOYEE", "พนักงาน", "EMP"),
 
+        // 2.1 ยอดสวัสดิการพนักงาน (BENEFIT_BALANCE)
+        new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE"),
+
         // 3. เงินเดือนของฉัน (MY_SALARY)
         new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
 

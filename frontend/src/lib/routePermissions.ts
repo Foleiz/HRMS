@@ -56,7 +56,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/benefits/balances',
     title: 'ยอดสวัสดิการพนักงาน',
-    requiredPermissions: ['ORG_BENEFIT_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
+    requiredPermissions: ['BENEFIT_BALANCE_VIEW', 'ORG_BENEFIT_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
   },
 
   {

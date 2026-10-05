@@ -98,6 +98,7 @@ const ToggleSwitch: React.FC<{
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   DASHBOARD: LayoutDashboard,
   EMPLOYEE: Users,
+  BENEFIT_BALANCE: Gift,
   MY_SALARY: Wallet,
   MY_PROFILE: User,
   MY_LEAVE: CalendarCheck,
@@ -122,6 +123,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 const CATEGORY_NAMES: Record<string, string> = {
   DASHBOARD: 'แดชบอร์ด',
   EMPLOYEE: 'พนักงาน',
+  BENEFIT_BALANCE: 'ยอดสวัสดิการพนักงาน',
   MY_SALARY: 'เงินเดือนของฉัน',
   MY_PROFILE: 'โปรไฟล์ของฉัน (ESS)',
   MY_LEAVE: 'ยอดวันลาคงเหลือ',
