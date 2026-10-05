@@ -83,5 +83,50 @@ export const benefitService = {
   async deleteClaim(claimId: number): Promise<void> {
     await apiClient.delete<ApiResponse<null>>(`/benefits/claims/${claimId}`);
   },
+
+  // ───── พนักงานยื่นเบิกเอง + สายการอนุมัติ ─────
+
+  // ยื่นเบิกสวัสดิการของตนเอง (รออนุมัติ)
+  async submitClaimRequest(data: import('@/types/benefit').SubmitBenefitClaimPayload) {
+    const res = await apiClient.post<ApiResponse<import('@/types/benefit').BenefitClaimRequest>>(
+      '/benefits/claims/request',
+      data
+    );
+    return res.data.data;
+  },
+
+  // คำขอเบิกที่ผู้ใช้มีสิทธิ์พิจารณา
+  async getClaimRequests(status?: string) {
+    const res = await apiClient.get<ApiResponse<import('@/types/benefit').BenefitClaimRequest[]>>(
+      '/benefits/claim-requests',
+      { params: status ? { status } : undefined }
+    );
+    return res.data.data;
+  },
+
+  async approveClaimRequest(id: number, comment?: string) {
+    const res = await apiClient.put<ApiResponse<import('@/types/benefit').BenefitClaimRequest>>(
+      `/benefits/claim-requests/${id}/approve`,
+      { comment }
+    );
+    return res.data.data;
+  },
+
+  async rejectClaimRequest(id: number, reason: string) {
+    const res = await apiClient.put<ApiResponse<import('@/types/benefit').BenefitClaimRequest>>(
+      `/benefits/claim-requests/${id}/reject`,
+      { comment: reason }
+    );
+    return res.data.data;
+  },
+
+  async cancelClaimRequest(id: number): Promise<void> {
+    await apiClient.post<ApiResponse<null>>(`/benefits/claim-requests/${id}/cancel`);
+  },
+
+  async downloadClaimAttachment(id: number): Promise<Blob> {
+    const res = await apiClient.get(`/benefits/claim-requests/${id}/attachment`, { responseType: 'blob' });
+    return res.data as Blob;
+  },
 };
 

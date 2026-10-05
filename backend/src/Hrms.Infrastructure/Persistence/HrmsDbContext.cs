@@ -1103,6 +1103,28 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .HasForeignKey(e => e.ApprovedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // ยื่นเบิกเองผ่านสายการอนุมัติ (scripts/benefit_claim_request.sql)
+            entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(30);
+            entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.RequestedByEmployeeId).HasColumnName("requested_by_employee_id");
+            entity.Property(e => e.ApprovedByEmployeeId).HasColumnName("approved_by_employee_id");
+            entity.Property(e => e.RejectReason).HasColumnName("reject_reason");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+            entity.Property(e => e.FileMimeType).HasColumnName("file_mime_type").HasMaxLength(100);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.FileData).HasColumnName("file_data");
+
+            entity.HasOne(e => e.ApprovedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ApprovalInstance)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovalInstanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasIndex(e => new { e.EmployeeId, e.ClaimYear });
         });
 

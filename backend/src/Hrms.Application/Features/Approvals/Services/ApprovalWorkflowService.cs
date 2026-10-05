@@ -130,6 +130,15 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     await _context.SaveChangesAsync(cancellationToken);
                 }
             }
+            else if (documentType == "BENEFIT_CLAIM")
+            {
+                var doc = await _context.EmployeeBenefitClaims.FirstOrDefaultAsync(r => r.Id == sourceDocumentId, cancellationToken);
+                if (doc != null && doc.ApprovalInstanceId != instanceId)
+                {
+                    doc.ApprovalInstanceId = instanceId;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
         }
         catch
         {
@@ -175,6 +184,14 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == instance.SourceDocumentId, cancellationToken);
             requesterId = generalReq?.EmployeeId;
+        }
+        else if (instance.DocumentType == "BENEFIT_CLAIM")
+        {
+            requesterId = await _context.EmployeeBenefitClaims
+                .AsNoTracking()
+                .Where(c => c.Id == instance.SourceDocumentId)
+                .Select(c => (long?)c.EmployeeId)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         return requesterId;
@@ -947,6 +964,28 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 }
             }
         }
+        else if (instance.DocumentType == "BENEFIT_CLAIM")
+        {
+            var claim = await _context.EmployeeBenefitClaims
+                .FirstOrDefaultAsync(c => c.Id == instance.SourceDocumentId, cancellationToken);
+
+            if (claim != null)
+            {
+                claim.Status = instance.Status;
+                claim.CompletedAt ??= DateTime.UtcNow;
+                claim.UpdatedAt = DateTime.UtcNow;
+                if (instance.Status == "APPROVED")
+                {
+                    // action ล่าสุดเพิ่งถูก Add (ยังไม่ SaveChanges) — หาใน Local ก่อน
+                    claim.ApprovedAt = DateTime.UtcNow;
+                    claim.ApprovedByEmployeeId = _context.ApprovalActions.Local
+                        .Concat(instance.Actions)
+                        .Where(a => a.ApprovalInstanceId == instance.Id && a.ActionDecision == "APPROVE")
+                        .OrderByDescending(a => a.ActionAt)
+                        .FirstOrDefault()?.ApproverEmployeeId;
+                }
+            }
+        }
     }
 
     // ===================== In-app Notifications =====================
@@ -961,6 +1000,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         ["PAYROLL_PERIOD"] = "รอบเงินเดือน",
         ["TRANSFER_REQUEST"] = "คำขอย้ายแผนก/เลื่อนตำแหน่ง",
         ["GENERAL_REQUEST"] = "คำขอเอกสารทั่วไป",
+        ["BENEFIT_CLAIM"] = "คำขอเบิกสวัสดิการ",
     };
 
     private static string GetDocumentLabel(string documentType) =>

@@ -57,6 +57,8 @@ export interface BenefitUsageItem {
   quotaAmount: number;
   frequency: 'DAILY' | 'MONTHLY' | 'YEARLY' | 'PER_OCCURRENCE' | string;
   usedAmount: number;
+  /** ยอดที่ยื่นเบิกแล้วรออนุมัติ (กันวงเงินไว้แล้ว) */
+  pendingAmount?: number;
   remainingAmount: number;
   usagePercentage: number;
   isMaxedOut: boolean;
@@ -110,10 +112,63 @@ export interface BenefitClaim {
   receiptNumber?: string | null;
   serviceProvider?: string | null;
   remarks?: string | null;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | string;
   approvedByName?: string | null;
   approvedAt?: string | null;
   createdAt: string;
+  requestNo?: string | null;
+  rejectReason?: string | null;
+  fileName?: string | null;
+  /** true = พนักงานยื่นเบิกเอง / false = ฝ่ายบุคคลบันทึกให้ */
+  isSelfRequest?: boolean;
+}
+
+/** พนักงานยื่นเบิกสวัสดิการเอง (ESS) */
+export interface SubmitBenefitClaimPayload {
+  benefitItemId: number;
+  claimDate?: string;
+  amount: number;
+  receiptNumber?: string;
+  serviceProvider?: string;
+  remarks?: string;
+  fileName?: string;
+  fileData?: string;
+}
+
+/** คำขอเบิกสวัสดิการสำหรับหน้าอนุมัติ */
+export interface BenefitClaimRequest {
+  id: number;
+  requestNo: string;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string;
+  positionName: string;
+  benefitItemId: number;
+  benefitName: string;
+  category: string;
+  claimDate: string;
+  claimYear: number;
+  amount: number;
+  receiptNumber?: string | null;
+  serviceProvider?: string | null;
+  remarks?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  quotaAmount: number;
+  approvedUsedAmount: number;
+  status: string;
+  submittedAt: string;
+  approvalInstanceId?: number | null;
+  currentStepNo?: number | null;
+  totalSteps: number;
+  currentApproverDisplay?: string | null;
+  isMyTurnToApprove: boolean;
+  hasAlreadyApproved: boolean;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  rejectReason?: string | null;
+  canCancel: boolean;
 }
 
 export interface CreateBenefitClaimPayload {

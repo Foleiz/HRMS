@@ -7,7 +7,8 @@ export type ApprovalDocumentType =
   | 'EMPLOYMENT_CONTRACT'
   | 'PAYROLL_PERIOD'
   | 'TRANSFER_REQUEST'
-  | 'GENERAL_REQUEST';
+  | 'GENERAL_REQUEST'
+  | 'BENEFIT_CLAIM';
 
 export type ApproverType =
   | 'EMPLOYEE'
@@ -161,6 +162,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   PAYROLL_PERIOD: 'รอบเงินเดือน',
   TRANSFER_REQUEST: 'คำขอย้ายแผนก/เลื่อนตำแหน่ง',
   GENERAL_REQUEST: 'คำขอเอกสารทั่วไป',
+  BENEFIT_CLAIM: 'คำขอเบิกสวัสดิการ',
 };
 
 /** ป้ายชื่อภาษาไทยสำหรับแสดงผลประเภทผู้อนุมัติ (Pure Thai - Rule #10) */

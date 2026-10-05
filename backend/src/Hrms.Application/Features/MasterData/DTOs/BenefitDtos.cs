@@ -89,6 +89,8 @@ public class BenefitUsageItemDto
     public decimal QuotaAmount { get; set; }
     public string Frequency { get; set; } = "YEARLY";
     public decimal UsedAmount { get; set; }
+    /// <summary>ยอดที่ยื่นเบิกแล้วรออนุมัติ (กันวงเงินไว้แล้ว)</summary>
+    public decimal PendingAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public decimal UsagePercentage { get; set; }
     public bool IsMaxedOut { get; set; }
@@ -117,6 +119,76 @@ public class BenefitClaimDto
     public string? ApprovedByName { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? RequestNo { get; set; }
+    public string? RejectReason { get; set; }
+    public string? FileName { get; set; }
+    /// <summary>true = พนักงานยื่นเบิกเอง / false = ฝ่ายบุคคลบันทึกให้</summary>
+    public bool IsSelfRequest { get; set; }
+}
+
+/// <summary>พนักงานยื่นเบิกสวัสดิการเอง (ESS)</summary>
+public class SubmitBenefitClaimRequest
+{
+    public long BenefitItemId { get; set; }
+    public string? ClaimDate { get; set; }
+    public decimal Amount { get; set; }
+    public string? ReceiptNumber { get; set; }
+    public string? ServiceProvider { get; set; }
+    public string? Remarks { get; set; }
+    public string? FileName { get; set; }
+    /// <summary>ไฟล์ใบเสร็จแบบ base64 (data URL ได้)</summary>
+    public string? FileData { get; set; }
+}
+
+public class ReviewBenefitClaimRequest
+{
+    public string? Comment { get; set; }
+}
+
+/// <summary>คำขอเบิกสวัสดิการสำหรับหน้าอนุมัติ / รายการของฉัน</summary>
+public class BenefitClaimRequestDto
+{
+    public long Id { get; set; }
+    public string RequestNo { get; set; } = string.Empty;
+    public long EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = "-";
+    public string PositionName { get; set; } = "-";
+    public long BenefitItemId { get; set; }
+    public string BenefitName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string ClaimDate { get; set; } = string.Empty;
+    public int ClaimYear { get; set; }
+    public decimal Amount { get; set; }
+    public string? ReceiptNumber { get; set; }
+    public string? ServiceProvider { get; set; }
+    public string? Remarks { get; set; }
+    public string? FileName { get; set; }
+    public long? FileSize { get; set; }
+    /// <summary>วงเงินต่อปีตามประเภทพนักงาน (0 = ไม่จำกัด)</summary>
+    public decimal QuotaAmount { get; set; }
+    /// <summary>ยอดอนุมัติแล้วในปีเดียวกัน (ไม่รวมคำขอนี้)</summary>
+    public decimal ApprovedUsedAmount { get; set; }
+    public string Status { get; set; } = "PENDING";
+    public DateTime SubmittedAt { get; set; }
+    public long? ApprovalInstanceId { get; set; }
+    public int? CurrentStepNo { get; set; }
+    public int TotalSteps { get; set; }
+    public string? CurrentApproverDisplay { get; set; }
+    public bool IsMyTurnToApprove { get; set; }
+    public bool HasAlreadyApproved { get; set; }
+    public string? ApprovedByName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? RejectReason { get; set; }
+    public bool CanCancel { get; set; }
+}
+
+public class BenefitClaimAttachment
+{
+    public string FileName { get; set; } = "receipt";
+    public string MimeType { get; set; } = "application/octet-stream";
+    public byte[] Data { get; set; } = Array.Empty<byte>();
 }
 
 public class CreateBenefitClaimRequest

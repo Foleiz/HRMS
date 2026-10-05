@@ -4,7 +4,22 @@ import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
-import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+const readAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+
+const extractErrorMessage = (err: unknown, fallback: string) => {
+  const e = err as { response?: { data?: { message?: string; errors?: string[] } }; message?: string };
+  return e?.response?.data?.errors?.[0] || e?.response?.data?.message || e?.message || fallback;
+};
 
 interface RecordBenefitClaimModalProps {
   isOpen: boolean;
@@ -14,6 +29,8 @@ interface RecordBenefitClaimModalProps {
   employeeName: string;
   benefits: BenefitUsageItem[];
   preSelectedBenefitId?: number | null;
+  /** hr = ฝ่ายบุคคลบันทึกให้ (อนุมัติทันที) / self = พนักงานยื่นเบิกเอง (เข้าสายการอนุมัติ) */
+  mode?: 'hr' | 'self';
 }
 
 export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = ({
@@ -24,14 +41,19 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   employeeName,
   benefits,
   preSelectedBenefitId,
+  mode = 'hr',
 }) => {
+  const isSelf = mode === 'self';
   const toast = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Filter claimable benefits (typically HEALTH, WELLNESS, ALLOWANCE, etc. with quota or active)
+  // สวัสดิการที่จ่ายผ่านเงินเดือนอัตโนมัติ/ตามกฎหมาย ไม่ต้องยื่นเบิก
   const claimableBenefits = benefits.filter(
-    (b) => b.frequency === 'YEARLY' || b.quotaAmount > 0 || b.category === 'HEALTH'
+    (b) =>
+      (b.frequency === 'YEARLY' || b.quotaAmount > 0 || b.category === 'HEALTH') &&
+      (!isSelf || (b.category !== 'ALLOWANCE' && b.category !== 'STATUTORY'))
   );
 
   const [selectedBenefitId, setSelectedBenefitId] = useState<number>(
@@ -42,6 +64,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   const [receiptNumber, setReceiptNumber] = useState('');
   const [serviceProvider, setServiceProvider] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [file, setFile] = useState<File | null>(null);
 
   // Find currently selected benefit item to display live quota check
   const activeBenefit = benefits.find((b) => b.benefitItemId === Number(selectedBenefitId));
@@ -71,10 +94,37 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
       }
     }
 
+    const needsReceipt = isSelf && activeBenefit?.payoutType === 'REIMBURSEMENT';
+    if (needsReceipt && !file) {
+      setErrorMsg('กรุณาแนบใบเสร็จ/หลักฐานการชำระเงิน');
+      return;
+    }
+    if (file && file.size > MAX_FILE_BYTES) {
+      setErrorMsg('ไฟล์แนบต้องมีขนาดไม่เกิน 5 MB');
+      return;
+    }
+
     setErrorMsg(null);
     setSubmitting(true);
 
     try {
+      if (isSelf) {
+        await benefitService.submitClaimRequest({
+          benefitItemId: Number(selectedBenefitId),
+          claimDate,
+          amount: numAmount,
+          receiptNumber: receiptNumber.trim() || undefined,
+          serviceProvider: serviceProvider.trim() || undefined,
+          remarks: remarks.trim() || undefined,
+          fileName: file?.name,
+          fileData: file ? await readAsDataUrl(file) : undefined,
+        });
+        toast.success('ยื่นเบิกสวัสดิการเรียบร้อยแล้ว รอการอนุมัติ');
+        onSuccess();
+        onClose();
+        return;
+      }
+
       const payload: CreateBenefitClaimPayload = {
         employeeId,
         benefitItemId: Number(selectedBenefitId),
@@ -91,7 +141,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึกรายการ';
+      const msg = extractErrorMessage(err, 'เกิดข้อผิดพลาดในการบันทึกรายการ');
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -110,7 +160,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                บันทึกการใช้สิทธิ์ / เบิกสวัสดิการ
+                {isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์ / เบิกสวัสดิการ'}
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 พนักงาน: {employeeName}
@@ -169,6 +219,11 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 <p className="font-bold text-amber-600 dark:text-amber-400 font-mono">
                   {activeBenefit.usedAmount.toLocaleString()} บ.
                 </p>
+                {!!activeBenefit.pendingAmount && activeBenefit.pendingAmount > 0 && (
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400">
+                    + รออนุมัติ {activeBenefit.pendingAmount.toLocaleString()} บ.
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">โควตาคงเหลือ</p>
@@ -261,6 +316,30 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             />
           </div>
 
+          {/* ใบเสร็จ / หลักฐาน (เฉพาะพนักงานยื่นเอง) */}
+          {isSelf && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-slate-400" />
+                แนบใบเสร็จ / หลักฐาน
+                {activeBenefit?.payoutType === 'REIMBURSEMENT' && <span className="text-rose-500">*</span>}
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-200 file:text-xs file:font-medium cursor-pointer"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">รูปภาพหรือ PDF ไม่เกิน 5 MB</p>
+            </div>
+          )}
+
+          {isSelf && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl px-3 py-2">
+              คำขอจะส่งเข้าสายการอนุมัติ ยอดที่ยื่นจะถูกกันวงเงินไว้ และนับเป็นยอดใช้สิทธิ์เมื่ออนุมัติครบ
+            </p>
+          )}
+
           {/* Footer Actions */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">
             <button
@@ -284,7 +363,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>บันทึกการใช้สิทธิ์</span>
+                  <span>{isSelf ? 'ยื่นเบิก' : 'บันทึกการใช้สิทธิ์'}</span>
                 </>
               )}
             </button>

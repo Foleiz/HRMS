@@ -30,6 +30,9 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { benefitService } from '@/services/benefitService';
+import { BenefitClaimRequest } from '@/types/benefit';
+import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
@@ -62,7 +65,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 export interface UnifiedApprovalItem {
   id: string;
   rawId: number | string;
-  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL';
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT';
   docTypeName: string;
   requestNo: string;
   employeeId: number;
@@ -87,6 +90,7 @@ export interface UnifiedApprovalItem {
   certRaw?: CertificateRequest;
   resignationRaw?: ResignationRequest;
   generalRaw?: GeneralDocumentRequest;
+  benefitRaw?: BenefitClaimRequest;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -107,6 +111,10 @@ export default function LeaveRequestsApprovalPage() {
   // General Document Requests State
   const [generalRequests, setGeneralRequests] = useState<GeneralDocumentRequest[]>([]);
 
+  // คำขอเบิกสวัสดิการ
+  const [benefitRequests, setBenefitRequests] = useState<BenefitClaimRequest[]>([]);
+  const [benefitReview, setBenefitReview] = useState<{ claim: BenefitClaimRequest; mode: BenefitClaimReviewMode } | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   // Sync breadcrumb
@@ -117,7 +125,7 @@ export default function LeaveRequestsApprovalPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
-  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL'>('ALL');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Leave Approval Modals State
@@ -203,7 +211,7 @@ export default function LeaveRequestsApprovalPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [reqData, statsData, certData, resignData, genData] = await Promise.all([
+      const [reqData, statsData, certData, resignData, genData, benefitData] = await Promise.all([
         leaveService.getLeaveRequests({ status: statusFilter || undefined, pageSize: 200 }),
         leaveService.getLeaveStats(),
         certificateService.getAllRequests(statusFilter || undefined).catch((err) => {
@@ -218,12 +226,17 @@ export default function LeaveRequestsApprovalPage() {
           console.error('Failed to fetch general requests', err);
           return [] as GeneralDocumentRequest[];
         }),
+        benefitService.getClaimRequests(statusFilter || undefined).catch((err) => {
+          console.error('Failed to fetch benefit claim requests', err);
+          return [] as BenefitClaimRequest[];
+        }),
       ]);
       setLeaveRequests(reqData);
       setLeaveStats(statsData);
       setCertificateRequests(certData);
       setResignationRequests(resignData);
       setGeneralRequests(genData);
+      setBenefitRequests(benefitData);
     } catch (err) {
       console.error('Failed to fetch leave/cert/resign/gen requests', err);
     } finally {
@@ -363,6 +376,35 @@ export default function LeaveRequestsApprovalPage() {
       });
     });
 
+    // 5. คำขอเบิกสวัสดิการ
+    benefitRequests.forEach((bc) => {
+      list.push({
+        id: `BEN-${bc.id}`,
+        rawId: bc.id,
+        docType: 'BENEFIT',
+        docTypeName: 'เบิกสวัสดิการ',
+        requestNo: bc.requestNo,
+        employeeId: bc.employeeId,
+        employeeCode: bc.employeeCode,
+        employeeName: bc.employeeName,
+        departmentName: bc.departmentName || '-',
+        positionName: bc.positionName || '-',
+        subType: bc.benefitName,
+        details: `${bc.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บาท (${formatDate(bc.claimDate)})${bc.serviceProvider ? ` • ${bc.serviceProvider}` : ''}${bc.remarks ? ` • ${bc.remarks}` : ''}`,
+        submittedAt: bc.submittedAt || null,
+        status: bc.status,
+        currentStepNo: bc.currentStepNo,
+        totalSteps: bc.totalSteps,
+        currentApproverDisplay: bc.currentApproverDisplay,
+        isMyTurnToApprove: !!bc.isMyTurnToApprove,
+        hasAlreadyApproved: bc.hasAlreadyApproved ?? bc.status === 'APPROVED',
+        approvedByName: bc.approvedByName,
+        approvedAt: bc.approvedAt,
+        canCancel: bc.canCancel,
+        benefitRaw: bc,
+      });
+    });
+
     // เรียงลำดับ: รายการที่ถึงคิวเราอนุมัติขึ้นก่อน จากนั้นเรียงตามวันที่ยื่นล่าสุด
     return list.sort((a, b) => {
       if (a.isMyTurnToApprove && !b.isMyTurnToApprove) return -1;
@@ -374,7 +416,7 @@ export default function LeaveRequestsApprovalPage() {
       const rawB = typeof b.rawId === 'number' ? b.rawId : 0;
       return rawB - rawA;
     });
-  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests]);
+  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests, benefitRequests]);
 
   const filteredRequests = useMemo(() => {
     return unifiedRequests.filter((item) => {
@@ -817,6 +859,7 @@ export default function LeaveRequestsApprovalPage() {
                 <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
                 <option value="RESIGNATION">คำขอลาออก</option>
                 <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
+                <option value="BENEFIT">คำขอเบิกสวัสดิการ</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -941,6 +984,12 @@ export default function LeaveRequestsApprovalPage() {
                             เอกสารทั่วไป
                           </span>
                         )}
+                        {item.docType === 'BENEFIT' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                            <FileText className="w-3.5 h-3.5 text-teal-500" />
+                            เบิกสวัสดิการ
+                          </span>
+                        )}
                       </td>
 
                       {/* 3. พนักงาน (ชื่อ-นามสกุล และ แผนก ไม่มีรูปโปรไฟล์) */}
@@ -1011,6 +1060,8 @@ export default function LeaveRequestsApprovalPage() {
                                     openApproveResignDialog(item.resignationRaw!);
                                   } else if (item.docType === 'GENERAL') {
                                     openApproveGeneralDialog(item.generalRaw!);
+                                  } else if (item.docType === 'BENEFIT') {
+                                    setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
                                   }
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300 ring-offset-1 transition-all shadow-sm cursor-pointer"
@@ -1029,6 +1080,8 @@ export default function LeaveRequestsApprovalPage() {
                                     openRejectResignDialog(item.resignationRaw!);
                                   } else if (item.docType === 'GENERAL') {
                                     openRejectGeneralDialog(item.generalRaw!);
+                                  } else if (item.docType === 'BENEFIT') {
+                                    setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
                                   }
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-sm cursor-pointer"
@@ -1076,6 +1129,8 @@ export default function LeaveRequestsApprovalPage() {
                                 setIsResignPreviewOpen(true);
                               } else if (item.docType === 'GENERAL') {
                                 setSelectedGeneralForPreview(item.generalRaw!);
+                              } else if (item.docType === 'BENEFIT') {
+                                setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
                                 setIsGeneralPreviewOpen(true);
                               }
                             }}
@@ -1087,7 +1142,7 @@ export default function LeaveRequestsApprovalPage() {
                           </button>
 
                           {/* 5. ยกเลิกคำขอ — จะขึ้นก็ต่อเมื่อกดอนุมัติไปแล้ว */}
-                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && (
+                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && (
                             <button
                               onClick={() => {
                                 if (item.docType === 'LEAVE') {
@@ -1155,6 +1210,12 @@ export default function LeaveRequestsApprovalPage() {
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
                             <FileText className="w-3 h-3 text-amber-500" />
                             เอกสารทั่วไป
+                          </span>
+                        )}
+                        {item.docType === 'BENEFIT' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                            <FileText className="w-3 h-3 text-teal-500" />
+                            เบิกสวัสดิการ
                           </span>
                         )}
                         <span className="font-mono font-bold text-xs text-[#0B2046]">
@@ -1228,6 +1289,8 @@ export default function LeaveRequestsApprovalPage() {
                               openApproveResignDialog(item.resignationRaw!);
                             } else if (item.docType === 'GENERAL') {
                               openApproveGeneralDialog(item.generalRaw!);
+                            } else if (item.docType === 'BENEFIT') {
+                              setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
                             }
                           }}
                           className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
@@ -1245,6 +1308,8 @@ export default function LeaveRequestsApprovalPage() {
                               openRejectResignDialog(item.resignationRaw!);
                             } else if (item.docType === 'GENERAL') {
                               openRejectGeneralDialog(item.generalRaw!);
+                            } else if (item.docType === 'BENEFIT') {
+                              setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
                             }
                           }}
                           className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
@@ -1285,6 +1350,8 @@ export default function LeaveRequestsApprovalPage() {
                             setIsResignPreviewOpen(true);
                           } else if (item.docType === 'GENERAL') {
                             setSelectedGeneralForPreview(item.generalRaw!);
+                          } else if (item.docType === 'BENEFIT') {
+                            setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
                             setIsGeneralPreviewOpen(true);
                           }
                         }}
@@ -1294,7 +1361,7 @@ export default function LeaveRequestsApprovalPage() {
                         ดูตัวอย่างเอกสาร
                       </button>
 
-                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && (
+                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && (
                         <button
                           onClick={() => {
                             if (item.docType === 'LEAVE') {
@@ -1945,6 +2012,18 @@ export default function LeaveRequestsApprovalPage() {
           notes: selectedGeneralForPreview.notes,
           fileName: selectedGeneralForPreview.fileName,
         } : null}
+      />
+
+      {/* ─── Modal คำขอเบิกสวัสดิการ (ดู / อนุมัติ / ไม่อนุมัติ) ─── */}
+      <BenefitClaimReviewModal
+        claim={benefitReview?.claim ?? null}
+        mode={benefitReview?.mode ?? 'view'}
+        onClose={() => setBenefitReview(null)}
+        onDone={(msg) => {
+          setBenefitReview(null);
+          showToast(msg);
+          fetchData();
+        }}
       />
 
       {/* Confirm Modal ทั่วไป */}

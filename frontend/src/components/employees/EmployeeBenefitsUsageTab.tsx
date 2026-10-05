@@ -23,17 +23,43 @@ import {
   Wallet,
   Coins,
   History,
+  Clock,
+  XCircle,
+  Ban,
 } from 'lucide-react';
+
+const CLAIM_STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  APPROVED: {
+    label: 'อนุมัติแล้ว',
+    className: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  },
+  PENDING: {
+    label: 'รออนุมัติ',
+    className: 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+  },
+  REJECTED: {
+    label: 'ไม่อนุมัติ',
+    className: 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+  },
+  CANCELLED: {
+    label: 'ยกเลิกแล้ว',
+    className: 'bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+  },
+};
 
 interface EmployeeBenefitsUsageTabProps {
   employeeId: number;
   employeeName: string;
+  /** hr = ฝ่ายบุคคลบันทึก/ลบรายการ / self = พนักงานยื่นเบิกเองผ่านสายการอนุมัติ */
+  mode?: 'hr' | 'self';
 }
 
 export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> = ({
   employeeId,
   employeeName,
+  mode = 'hr',
 }) => {
+  const isSelf = mode === 'self';
   const toast = useToast();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -75,6 +101,21 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ไม่สามารถลบรายการได้';
       toast.error(msg);
+    } finally {
+      setDeletingClaimId(null);
+    }
+  };
+
+  const handleCancelRequest = async (claimId: number) => {
+    if (!confirm('ยกเลิกคำขอเบิกสวัสดิการนี้ใช่หรือไม่?')) return;
+    setDeletingClaimId(claimId);
+    try {
+      await benefitService.cancelClaimRequest(claimId);
+      toast.success('ยกเลิกคำขอเบิกแล้ว');
+      fetchData();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e?.response?.data?.message || 'ไม่สามารถยกเลิกคำขอได้');
     } finally {
       setDeletingClaimId(null);
     }
@@ -144,7 +185,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             className="px-3.5 py-1.5 rounded-xl bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>บันทึกการใช้สิทธิ์</span>
+            <span>{isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์'}</span>
           </button>
         </div>
       </div>
@@ -298,6 +339,11 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       <div className="flex items-center justify-between text-[11px] pt-1">
                         <span className="text-slate-400 dark:text-slate-500">
                           {b.claimCount > 0 ? `บันทึกแล้ว ${b.claimCount} ครั้ง` : 'ยังไม่มีประวัติการเบิก'}
+                          {!!b.pendingAmount && b.pendingAmount > 0 && (
+                            <span className="ml-1 text-amber-600 dark:text-amber-400">
+                              • รออนุมัติ {b.pendingAmount.toLocaleString()} บ.
+                            </span>
+                          )}
                         </span>
                         <span className={`font-semibold ${b.remainingAmount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                           คงเหลือ {b.remainingAmount.toLocaleString()} บ.
@@ -318,7 +364,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                   )}
 
                   {/* Action Button: Quick Record Claim */}
-                  {(hasQuota || isYearly) && (
+                  {(hasQuota || isYearly) && (!isSelf || (b.category !== 'ALLOWANCE' && b.category !== 'STATUTORY')) && (
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {b.lastClaimDate ? `ใช้ล่าสุดเมื่อ: ${b.lastClaimDate}` : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
@@ -329,15 +375,21 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           setSelectedBenefitForClaim(b.benefitItemId);
                           setIsModalOpen(true);
                         }}
-                        disabled={b.isMaxedOut}
+                        disabled={b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)}
                         className={`text-[11px] font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
-                          b.isMaxedOut
+                          b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
                             ? 'text-slate-400 bg-slate-100 dark:bg-slate-800 cursor-not-allowed'
                             : 'text-[#0B2046] dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                         }`}
                       >
                         <Plus className="w-3 h-3" />
-                        <span>{b.isMaxedOut ? 'โควตาเต็ม' : 'บันทึกเบิก'}</span>
+                        <span>
+                          {b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
+                            ? 'โควตาเต็ม'
+                            : isSelf
+                            ? 'ยื่นเบิก'
+                            : 'บันทึกเบิก'}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -390,6 +442,9 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {c.benefitName}
                         </span>
+                        {c.requestNo && (
+                          <span className="block text-[10px] font-mono text-slate-400">{c.requestNo}</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                         {c.serviceProvider || '-'}
@@ -404,12 +459,42 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         {c.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บ.
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>อนุมัติแล้ว</span>
-                        </span>
+                        {(() => {
+                          const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
+                          const Icon =
+                            c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
+                          return (
+                            <span
+                              title={c.status === 'REJECTED' && c.rejectReason ? `เหตุผล: ${c.rejectReason}` : undefined}
+                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.className}`}
+                            >
+                              <Icon className="w-3 h-3" />
+                              <span>{badge.label}</span>
+                            </span>
+                          );
+                        })()}
+                        {c.status === 'REJECTED' && c.rejectReason && (
+                          <span className="block mt-0.5 text-[10px] text-rose-500 max-w-[10rem] mx-auto truncate" title={c.rejectReason}>
+                            {c.rejectReason}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-center">
+                        {isSelf ? (
+                          c.status === 'PENDING' && c.isSelfRequest ? (
+                            <button
+                              type="button"
+                              onClick={() => handleCancelRequest(c.id)}
+                              disabled={deletingClaimId === c.id}
+                              className="px-2 py-1 rounded-md text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              title="ยกเลิกคำขอเบิก"
+                            >
+                              {deletingClaimId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิก'}
+                            </button>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600">-</span>
+                          )
+                        ) : (
                         <button
                           type="button"
                           onClick={() => handleDeleteClaim(c.id)}
@@ -423,6 +508,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                             <Trash2 className="w-3.5 h-3.5" />
                           )}
                         </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -448,6 +534,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           employeeName={employeeName}
           benefits={summary.benefits}
           preSelectedBenefitId={selectedBenefitForClaim}
+          mode={mode}
         />
       )}
     </div>
