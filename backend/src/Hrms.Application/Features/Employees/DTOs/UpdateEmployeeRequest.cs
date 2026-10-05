@@ -64,7 +64,8 @@ public class UpdateEmployeeRequest
     public string? PostalCode { get; set; }
     public List<CreateEmployeeAddressDto>? Addresses { get; set; }
 
-    // บัญชีธนาคาร
+    // บัญชีธนาคาร (ส่ง BankId จากข้อมูลหลักธนาคาร; BankName ใช้ได้เฉพาะชื่อ/รหัส/ชื่อย่อที่ตรงทุกตัว)
+    public long? BankId { get; set; }
     public string? BankName { get; set; }
     public string? AccountNumber { get; set; }
     public List<CreateEmployeeBankAccountDto>? BankAccounts { get; set; }

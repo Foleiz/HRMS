@@ -62,7 +62,8 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
         "Id", "EmployeeId", "CreatedAt", "UpdatedAt", "AvatarUpdatedAt", "CitizenId", "CitizenIdEncrypted",
         "SocialSecurityNo", "SocialSecurityNoEncrypted", "FileData", "FilePath", "StoragePath", "ExpiryWarningNotifiedAt", "ExpiredNotifiedAt",
         "GenderId", "NationalityId", "ReligionId", "MaritalStatusId", "SourceGeneralRequestId", "FileMimeType", "FileSize",
-        "ProbationNotifiedAt", "ExpiryNotifiedAt", "AvatarUrl", "SignatureUrl", "AvatarData", "SignatureData", "UserId"
+        "ProbationNotifiedAt", "ExpiryNotifiedAt", "AvatarUrl", "SignatureUrl", "AvatarData", "SignatureData", "UserId",
+        "AccountHash", "RequestedByUserId", "VerifiedByUserId", "RequestedAt"
     };
 
     private static readonly Dictionary<string, string> FieldLabels = new(StringComparer.OrdinalIgnoreCase)
@@ -76,7 +77,7 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
         ["AddressType"] = "ประเภทที่อยู่", ["AddressLine"] = "บ้านเลขที่/ถนน", ["SubDistrict"] = "ตำบล/แขวง", ["District"] = "อำเภอ/เขต",
         ["Province"] = "จังหวัด", ["PostalCode"] = "รหัสไปรษณีย์", ["IsCurrent"] = "ใช้อยู่ปัจจุบัน",
         ["BankId"] = "ธนาคาร", ["AccountNumber"] = "เลขบัญชี", ["AccountType"] = "ประเภทบัญชี", ["AccountName"] = "ชื่อบัญชี",
-        ["IsPrimary"] = "รายการหลัก", ["Status"] = "สถานะ", ["SocialSecurityNoMasked"] = "เลขประกันสังคม",
+        ["IsPrimary"] = "รายการหลัก", ["Status"] = "สถานะ", ["VerifiedAt"] = "ยืนยันเมื่อ", ["RejectReason"] = "เหตุผลที่ไม่อนุมัติ", ["SocialSecurityNoMasked"] = "เลขประกันสังคม",
         ["HospitalName"] = "โรงพยาบาลประกันสังคม", ["HospitalCode"] = "รหัสโรงพยาบาล",
         ["EducationLevel"] = "ระดับการศึกษา", ["Institution"] = "สถาบัน", ["Major"] = "สาขาวิชา", ["GraduationYear"] = "ปีที่จบ", ["Gpa"] = "เกรดเฉลี่ย",
         ["CompanyName"] = "บริษัท", ["PositionName"] = "ตำแหน่ง", ["StartDate"] = "วันเริ่มงาน", ["EndDate"] = "วันที่ออก",
@@ -109,7 +110,7 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
         ["WageType"] = new(StringComparer.OrdinalIgnoreCase) { ["MONTHLY"] = "รายเดือน", ["DAILY"] = "รายวัน", ["HOURLY"] = "รายชั่วโมง", ["STIPEND"] = "เบี้ยเลี้ยง" },
         ["AddressType"] = new(StringComparer.OrdinalIgnoreCase) { ["CURRENT"] = "ที่อยู่ปัจจุบัน", ["REGISTERED"] = "ตามทะเบียนบ้าน", ["PERMANENT"] = "ตามทะเบียนบ้าน", ["WORK"] = "ที่ทำงาน" },
         ["RelationshipType"] = new(StringComparer.OrdinalIgnoreCase) { ["FATHER"] = "บิดา", ["MOTHER"] = "มารดา", ["SPOUSE"] = "คู่สมรส", ["CHILD"] = "บุตร", ["SIBLING"] = "พี่น้อง" },
-        ["Status"] = new(StringComparer.OrdinalIgnoreCase) { ["ACTIVE"] = "ใช้งาน", ["INACTIVE"] = "ไม่ใช้งาน" },
+        ["Status"] = new(StringComparer.OrdinalIgnoreCase) { ["ACTIVE"] = "ใช้งาน", ["INACTIVE"] = "ไม่ใช้งาน", ["PENDING_VERIFY"] = "รอยืนยัน", ["REJECTED"] = "ไม่อนุมัติ" },
         ["AccountType"] = new(StringComparer.OrdinalIgnoreCase) { ["SAVINGS"] = "ออมทรัพย์", ["SAVING"] = "ออมทรัพย์", ["CURRENT"] = "กระแสรายวัน", ["FIXED"] = "ฝากประจำ" },
     };
 

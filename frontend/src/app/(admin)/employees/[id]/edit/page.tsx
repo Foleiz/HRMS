@@ -14,7 +14,9 @@ import {
   Calendar,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
-import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
+import { bankService } from '@/services/bankService';
+import type { Bank } from '@/types/api';
+import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience, EmployeeBankAccount } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
@@ -123,6 +125,16 @@ function EmployeeEditPageContent() {
   const [managerId, setManagerId] = useState<number | ''>('');
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
+  // ธนาคารจากข้อมูลหลัก + บัญชีที่รอยืนยัน (ถ้ามี)
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [pendingBank, setPendingBank] = useState<EmployeeBankAccount | null>(null);
+  const [rejectedBank, setRejectedBank] = useState<EmployeeBankAccount | null>(null);
+  useEffect(() => {
+    bankService
+      .getAll()
+      .then((list) => setBanks(list.filter((b) => b.status === 'ACTIVE')))
+      .catch(() => setBanks([]));
+  }, []);
   const [formData, setFormData] = useState<CreateEmployeePayload>({
     employeeCode: '',
     biometricId: '',
@@ -212,7 +224,11 @@ function EmployeeEditPageContent() {
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
         const primaryEducation = emp.educations?.[0];
         const primaryEmergency = emp.emergencyContacts?.find((c) => c.isPrimary) || emp.emergencyContacts?.[0];
-        const primaryBank = emp.bankAccounts?.find((b) => b.isPrimary) || emp.bankAccounts?.[0];
+        const primaryBank =
+          emp.bankAccounts?.find((b) => b.status === 'ACTIVE' && b.isPrimary) ||
+          emp.bankAccounts?.find((b) => b.status === 'ACTIVE');
+        setPendingBank(emp.bankAccounts?.find((b) => b.status === 'PENDING_VERIFY') ?? null);
+        setRejectedBank(emp.bankAccounts?.find((b) => b.status === 'REJECTED') ?? null);
 
         setFormData({
           employeeCode: emp.employeeCode || '',
@@ -241,6 +257,7 @@ function EmployeeEditPageContent() {
           major: primaryEducation?.major || '',
           graduationYear: primaryEducation?.graduationYear || 2569,
           gpa: primaryEducation?.gpa ? Number(primaryEducation.gpa) : undefined,
+          bankId: primaryBank?.bankId,
           bankName: primaryBank?.bankName || '',
           accountNumber: primaryBank?.accountNumber || '',
           positionName: emp.positionName || '',
@@ -932,29 +949,68 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block">
                       บัญชีธนาคาร (Bank Account)
                     </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)
+                    </p>
+                    {pendingBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                        มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
+                        {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
+                      </div>
+                    )}
+                    {!pendingBank && rejectedBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                        {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                      </div>
+                    )}
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         ชื่อธนาคาร
                       </span>
-                      <input
-                        type="text"
-                        placeholder="เช่น ธนาคารกสิกรไทย"
-                        value={formData.bankName || ''}
-                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
+                      <select
+                        value={formData.bankId ?? ''}
+                        onChange={(e) => {
+                          const id = e.target.value ? Number(e.target.value) : undefined;
+                          const bank = banks.find((b) => b.id === id);
+                          setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
+                        }}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      >
+                        <option value="">เลือกธนาคาร</option>
+                        {banks.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.bankName}
+                            {b.shortName ? ` (${b.shortName})` : ''}
+                            {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         เลขที่บัญชี
+                        {banks.find((b) => b.id === formData.bankId)?.accountDigits
+                          ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
+                          : ''}
                       </span>
                       <input
                         type="text"
-                        placeholder="123-4-56789-0"
+                        inputMode="numeric"
+                        placeholder="กรอกเฉพาะตัวเลข"
                         value={formData.accountNumber || ''}
-                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                        onFocus={() => {
+                          // เลขที่ซ่อนไว้ (xxxx1234) — คลิกเพื่อกรอกเลขใหม่ทั้งหมด
+                          if ((formData.accountNumber || '').toLowerCase().includes('x')) {
+                            setFormData({ ...formData, accountNumber: '' });
+                          }
+                        }}
+                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
                         className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม
+                      </span>
                     </div>
                   </div>
                 </div>

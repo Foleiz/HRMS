@@ -28,6 +28,8 @@ public class BankService : IBankService
                 Id = b.Id,
                 BankCode = b.BankCode,
                 BankName = b.BankName,
+                ShortName = b.ShortName,
+                AccountDigits = b.AccountDigits,
                 Status = b.Status
             })
             .ToListAsync(cancellationToken);
@@ -47,6 +49,8 @@ public class BankService : IBankService
             Id = bank.Id,
             BankCode = bank.BankCode,
             BankName = bank.BankName,
+            ShortName = bank.ShortName,
+            AccountDigits = bank.AccountDigits,
             Status = bank.Status
         };
     }
@@ -59,11 +63,14 @@ public class BankService : IBankService
 
         if (exists)
             throw new BusinessRuleException($"รหัสธนาคาร '{dto.BankCode}' มีอยู่ในระบบแล้ว");
+        ValidateDigits(dto.AccountDigits);
 
         var bank = new Bank
         {
             BankCode = dto.BankCode.Trim().ToUpper(),
             BankName = dto.BankName.Trim(),
+            ShortName = string.IsNullOrWhiteSpace(dto.ShortName) ? null : dto.ShortName.Trim().ToUpper(),
+            AccountDigits = dto.AccountDigits,
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper()
         };
 
@@ -75,6 +82,8 @@ public class BankService : IBankService
             Id = bank.Id,
             BankCode = bank.BankCode,
             BankName = bank.BankName,
+            ShortName = bank.ShortName,
+            AccountDigits = bank.AccountDigits,
             Status = bank.Status
         };
     }
@@ -85,7 +94,10 @@ public class BankService : IBankService
         if (bank == null)
             throw new NotFoundException("ธนาคาร", id);
 
+        ValidateDigits(dto.AccountDigits);
         bank.BankName = dto.BankName.Trim();
+        bank.ShortName = string.IsNullOrWhiteSpace(dto.ShortName) ? null : dto.ShortName.Trim().ToUpper();
+        bank.AccountDigits = dto.AccountDigits;
         bank.Status = string.IsNullOrWhiteSpace(dto.Status) ? bank.Status : dto.Status.ToUpper();
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -95,6 +107,8 @@ public class BankService : IBankService
             Id = bank.Id,
             BankCode = bank.BankCode,
             BankName = bank.BankName,
+            ShortName = bank.ShortName,
+            AccountDigits = bank.AccountDigits,
             Status = bank.Status
         };
     }
@@ -105,7 +119,18 @@ public class BankService : IBankService
         if (bank == null)
             throw new NotFoundException("ธนาคาร", id);
 
+        var inUse = await _context.EmployeeBankAccounts.AnyAsync(a => a.BankId == id, cancellationToken)
+                    || await _context.CompanyBankAccounts.AnyAsync(a => a.BankId == id, cancellationToken);
+        if (inUse)
+            throw new BusinessRuleException("ไม่สามารถลบธนาคารนี้ได้ เนื่องจากมีบัญชีพนักงานหรือบัญชีบริษัทใช้อยู่ (ปิดการใช้งานแทนได้)");
+
         _context.Banks.Remove(bank);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void ValidateDigits(int? digits)
+    {
+        if (digits.HasValue && (digits.Value < 6 || digits.Value > 20))
+            throw new BusinessRuleException("จำนวนหลักเลขบัญชีต้องอยู่ระหว่าง 6 ถึง 20 หลัก");
     }
 }

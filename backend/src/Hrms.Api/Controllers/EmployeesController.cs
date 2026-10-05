@@ -99,6 +99,21 @@ public class EmployeesController : ControllerBase
     }
 
     /// <summary>
+    /// ยืนยัน / ปฏิเสธบัญชีรับเงินเดือนใหม่ที่รอยืนยัน (HR หรือการเงิน ที่ไม่ใช่ผู้ขอเปลี่ยน)
+    /// </summary>
+    [HttpPost("{id:long}/bank-accounts/{accountId:long}/review")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<EmployeeDto>>> ReviewBankAccount(
+        long id,
+        long accountId,
+        [FromBody] ReviewBankAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.ReviewBankAccountAsync(id, accountId, request.Approve, request.Reason, cancellationToken);
+        return Ok(ApiResponse<EmployeeDto>.Ok(result, request.Approve ? "ยืนยันบัญชีรับเงินเดือนแล้ว" : "ไม่อนุมัติบัญชีใหม่แล้ว"));
+    }
+
+    /// <summary>
     /// หลังบันทึกพนักงาน: จับคู่เวลาจากไฟล์ลงเวลาที่นำเข้าไว้แล้วแต่ยังหาพนักงานไม่เจอ (ตามรหัสพนักงาน/รหัสเครื่องสแกนปัจจุบัน)
     /// ถ้าจับคู่ไม่สำเร็จ ไม่ทำให้การบันทึกพนักงานล้ม
     /// </summary>

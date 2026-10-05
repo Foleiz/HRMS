@@ -105,6 +105,31 @@ export default function EmployeeDetailView({
 }: EmployeeDetailViewProps) {
   const toast = useToast();
   const router = useRouter();
+  const [bankRejecting, setBankRejecting] = useState(false);
+  const [bankRejectReason, setBankRejectReason] = useState('');
+  const [bankReviewing, setBankReviewing] = useState(false);
+
+  const handleReviewBank = async (approve: boolean) => {
+    const target = employee.bankAccounts?.find((b) => b.status === 'PENDING_VERIFY');
+    if (!target) return;
+    if (!approve && !bankRejectReason.trim()) {
+      toast.warning('กรุณาระบุเหตุผลที่ไม่อนุมัติ');
+      return;
+    }
+    try {
+      setBankReviewing(true);
+      const updated = await employeeService.reviewBankAccount(employee.id, target.id, approve, bankRejectReason.trim() || undefined);
+      onEmployeeUpdate?.(updated);
+      setBankRejecting(false);
+      setBankRejectReason('');
+      toast.success(approve ? 'ยืนยันบัญชีรับเงินเดือนใหม่แล้ว' : 'ไม่อนุมัติบัญชีใหม่แล้ว');
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || 'บันทึกไม่สำเร็จ');
+    } finally {
+      setBankReviewing(false);
+    }
+  };
   const searchParams = useSearchParams();
   const { hasRole, user } = useAuth();
 
@@ -283,7 +308,11 @@ export default function EmployeeDetailView({
 
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
   const primaryEducation = employee.educations?.[0];
-  const primaryBank = employee.bankAccounts?.find((b) => b.isPrimary) || employee.bankAccounts?.[0];
+  const primaryBank =
+    employee.bankAccounts?.find((b) => b.status === 'ACTIVE' && b.isPrimary) ||
+    employee.bankAccounts?.find((b) => b.status === 'ACTIVE');
+  const pendingBank = employee.bankAccounts?.find((b) => b.status === 'PENDING_VERIFY');
+  const rejectedBank = employee.bankAccounts?.find((b) => b.status === 'REJECTED');
   const rawAvatarUrl = customAvatar || employee.avatarUrl;
   const avatarUrl = rawAvatarUrl ? getAvatarUrl(rawAvatarUrl) : null;
   const rawSigUrl = customSig || employee.signatureUrl;
@@ -699,6 +728,73 @@ export default function EmployeeDetailView({
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ชื่อบัญชี</p>
                         <p className="text-slate-700 dark:text-slate-300">{primaryBank.accountName}</p>
                       </div>
+                    )}
+                    {pendingBank && (
+                      <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 space-y-1.5">
+                        <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">บัญชีใหม่รอยืนยัน</p>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                          {pendingBank.bankName} <span className="font-mono">{pendingBank.accountNumber}</span>
+                          {pendingBank.requestedAt ? ` · ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')}` : ''}
+                        </p>
+                        <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80">ระหว่างรอ เงินเดือนยังโอนเข้าบัญชีเดิม</p>
+                        {pendingBank.canVerify && (
+                          <div className="space-y-1.5 pt-1">
+                            {bankRejecting ? (
+                              <>
+                                <textarea
+                                  value={bankRejectReason}
+                                  onChange={(e) => setBankRejectReason(e.target.value)}
+                                  rows={2}
+                                  placeholder="เหตุผลที่ไม่อนุมัติ"
+                                  className="w-full px-2 py-1.5 text-[11px] rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+                                />
+                                <div className="flex gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={bankReviewing}
+                                    onClick={() => handleReviewBank(false)}
+                                    className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                                  >
+                                    ยืนยันไม่อนุมัติ
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setBankRejecting(false)}
+                                    className="px-2.5 py-1 text-[11px] rounded-md text-slate-600 dark:text-slate-300 hover:underline cursor-pointer"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex gap-1.5">
+                                <button
+                                  type="button"
+                                  disabled={bankReviewing}
+                                  onClick={() => handleReviewBank(true)}
+                                  className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                                >
+                                  ยืนยันบัญชีใหม่
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={bankReviewing}
+                                  onClick={() => setBankRejecting(true)}
+                                  className="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-50 cursor-pointer"
+                                >
+                                  ไม่อนุมัติ
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!pendingBank && rejectedBank && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                        {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                      </p>
                     )}
                   </div>
                 </div>

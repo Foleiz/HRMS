@@ -104,6 +104,8 @@ builder.Services.AddScoped<Hrms.Application.Features.EmployeeDocuments.Services.
 builder.Services.AddScoped<Hrms.Application.Features.Contracts.Services.IContractAlertNotifier, Hrms.Application.Features.Contracts.Services.ContractAlertNotifier>();
 // งานเบื้องหลัง: แจ้งเตือนเอกสารใกล้หมดอายุ / ทดลองงาน / สัญญาจ้าง / รายการค้างอนุมัติ
 builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.ScheduledNotificationWorker>();
+// เข้ารหัสเลขบัญชีธนาคารเดิม (ครั้งเดียว ทำเฉพาะแถวที่ยังไม่ได้ทำ)
+builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.BankAccountProtectionBackfill>();
 builder.Services.AddScoped<IResignationService, ResignationService>();
 
 
@@ -184,6 +186,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// ตัวเข้ารหัสคอลัมน์ข้อมูลอ่อนไหว (เลขบัญชีธนาคาร) ที่ EF ValueConverter ใช้
+SensitiveFieldCipher.Service = app.Services.GetRequiredService<IAesEncryptionService>();
 
 app.UseCors("AllowFrontend");
 

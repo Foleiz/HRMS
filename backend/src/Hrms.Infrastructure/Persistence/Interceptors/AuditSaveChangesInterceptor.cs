@@ -145,7 +145,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                         }
                         else
                         {
-                            auditEntry.NewValues[propName] = FormatPropertyValue(prop.CurrentValue);
+                            auditEntry.NewValues[propName] = FormatPropertyValue(propName, prop.CurrentValue);
                         }
                     }
 
@@ -191,8 +191,8 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                             }
                             else
                             {
-                                oldValues[propName] = FormatPropertyValue(original);
-                                newValues[propName] = FormatPropertyValue(current);
+                                oldValues[propName] = FormatPropertyValue(propName, original);
+                                newValues[propName] = FormatPropertyValue(propName, current);
                             }
                         }
                     }
@@ -253,7 +253,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                         }
                         else
                         {
-                            oldValues[propName] = FormatPropertyValue(prop.OriginalValue);
+                            oldValues[propName] = FormatPropertyValue(propName, prop.OriginalValue);
                         }
                     }
 
@@ -334,6 +334,19 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
             logs.Add(audit.ToAuditLog());
         }
         return logs;
+    }
+
+    /// <summary>เลขบัญชีธนาคารเก็บใน audit แบบ 4 ตัวท้าย, account_hash ไม่เก็บ (PDPA)</summary>
+    private static object? FormatPropertyValue(string propName, object? value)
+    {
+        if (value is string s && propName.Equals("AccountNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            var digits = new string(s.Where(char.IsDigit).ToArray());
+            return digits.Length > 4 ? new string('x', digits.Length - 4) + digits[^4..] : "xxxx";
+        }
+        if (propName.Equals("AccountHash", StringComparison.OrdinalIgnoreCase))
+            return value == null ? null : "[REDACTED]";
+        return FormatPropertyValue(value);
     }
 
     private static object? FormatPropertyValue(object? value)

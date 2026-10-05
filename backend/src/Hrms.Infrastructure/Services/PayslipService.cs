@@ -140,7 +140,8 @@ public class PayslipService : IPayslipService
         string empName = payroll.SnapshotEmployeeName ?? emp?.FullName ?? "พนักงาน";
         string empCode = emp?.EmployeeCode ?? "EMP";
 
-        var primaryBank = emp?.BankAccounts.FirstOrDefault(b => b.IsPrimary) ?? emp?.BankAccounts.FirstOrDefault();
+        var primaryBank = emp?.BankAccounts.FirstOrDefault(b => b.IsPrimary && b.Status == "ACTIVE")
+                          ?? emp?.BankAccounts.FirstOrDefault(b => b.Status == "ACTIVE");
         string bankText = "-";
         if (primaryBank != null)
         {

@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Interfaces;
 using Hrms.Domain.Entities;
+using Hrms.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.Infrastructure.Persistence;
@@ -152,6 +153,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.BankCode).HasColumnName("bank_code").IsRequired().HasMaxLength(50);
             entity.Property(e => e.BankName).HasColumnName("bank_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ShortName).HasColumnName("short_name").HasMaxLength(20);
+            entity.Property(e => e.AccountDigits).HasColumnName("account_digits");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.BankCode).IsUnique();
         });
@@ -280,7 +283,15 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
             entity.Property(e => e.BankId).HasColumnName("bank_id").IsRequired();
-            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(100);
+            // เลขบัญชีเข้ารหัส AES (PDPA) — ข้อมูลเก่าที่ยังเป็นตัวเลขล้วนอ่านได้ และจะถูกเข้ารหัสตอนเปิดระบบ
+            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(255)
+                .HasConversion(v => SensitiveFieldCipher.Protect(v), v => SensitiveFieldCipher.Unprotect(v));
+            entity.Property(e => e.AccountHash).HasColumnName("account_hash").HasMaxLength(64);
+            entity.Property(e => e.RequestedAt).HasColumnName("requested_at");
+            entity.Property(e => e.RequestedByUserId).HasColumnName("requested_by_user_id");
+            entity.Property(e => e.VerifiedAt).HasColumnName("verified_at");
+            entity.Property(e => e.VerifiedByUserId).HasColumnName("verified_by_user_id");
+            entity.Property(e => e.RejectReason).HasColumnName("reject_reason").HasMaxLength(500);
             entity.Property(e => e.AccountType).HasColumnName("account_type").HasMaxLength(50);
             entity.Property(e => e.AccountName).HasColumnName("account_name").HasMaxLength(255);
             entity.Property(e => e.IsPrimary).HasColumnName("is_primary");
@@ -536,7 +547,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
             entity.Property(e => e.BankId).HasColumnName("bank_id").IsRequired();
-            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(255)
+                .HasConversion(v => SensitiveFieldCipher.Protect(v), v => SensitiveFieldCipher.Unprotect(v));
             entity.Property(e => e.AccountName).HasColumnName("account_name").HasMaxLength(255);
             entity.Property(e => e.IsPrimaryPayrollAccount).HasColumnName("is_primary_payroll_account");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);

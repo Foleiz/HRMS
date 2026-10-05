@@ -168,6 +168,14 @@ public class BankTransferSummaryDto
     public int TotalEmployees { get; set; }
     /// <summary>จำนวนพนักงานที่ต้องได้รับเงินแต่ยังไม่มีข้อมูลบัญชีธนาคาร</summary>
     public int MissingAccountCount { get; set; }
+    /// <summary>จำนวนพนักงานในรอบที่มีบัญชีใหม่รอยืนยัน (ยังจ่ายเข้าบัญชีเดิม)</summary>
+    public int PendingBankChangeCount { get; set; }
+    /// <summary>บัญชีบริษัทที่ตัดจ่ายเงินเดือน (บัญชีหลัก)</summary>
+    public bool HasPayerAccount { get; set; }
+    public string? PayerBankCode { get; set; }
+    public string? PayerBankName { get; set; }
+    public string? PayerAccountNumber { get; set; }
+    public string? PayerAccountName { get; set; }
     public List<BankTransferItemDto> Items { get; set; } = new();
 }
 

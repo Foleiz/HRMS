@@ -87,4 +87,36 @@ public class AesEncryptionService : IAesEncryptionService
         // รูปแบบ 1-2345-xxxxx-xx-9
         return $"{digits[0]}-{digits.Substring(1, 4)}-xxxxx-xx-{digits[12]}";
     }
+
+    public const string ProtectedPrefix = "enc:v1:";
+
+    public string ProtectText(string plainText)
+    {
+        if (string.IsNullOrEmpty(plainText) || plainText.StartsWith(ProtectedPrefix, StringComparison.Ordinal))
+            return plainText;
+        return ProtectedPrefix + Convert.ToBase64String(Encrypt(plainText));
+    }
+
+    public string UnprotectText(string value)
+    {
+        if (string.IsNullOrEmpty(value) || !value.StartsWith(ProtectedPrefix, StringComparison.Ordinal))
+            return value;
+        return Decrypt(Convert.FromBase64String(value.Substring(ProtectedPrefix.Length)));
+    }
+
+    public string HashAccountNumber(string accountNumber)
+    {
+        var digits = Regex.Replace(accountNumber ?? string.Empty, @"\D", "");
+        var hmacKey = SHA256.HashData(Encoding.UTF8.GetBytes(Convert.ToBase64String(_key) + ":bank-account-hash"));
+        var hash = HMACSHA256.HashData(hmacKey, Encoding.UTF8.GetBytes(digits));
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    public string MaskAccountNumber(string accountNumber)
+    {
+        var digits = Regex.Replace(accountNumber ?? string.Empty, @"\D", "");
+        if (digits.Length == 0) return string.Empty;
+        if (digits.Length <= 4) return new string('x', digits.Length);
+        return new string('x', digits.Length - 4) + digits[^4..];
+    }
 }

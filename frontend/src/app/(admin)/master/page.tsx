@@ -66,9 +66,17 @@ export default function MasterDataHubPage() {
     status: 'ACTIVE',
   });
   const [simpleNameInput, setSimpleNameInput] = useState('');
-  const [bankForm, setBankForm] = useState<{ bankCode: string; bankName: string; status: 'ACTIVE' | 'INACTIVE' }>({
+  const [bankForm, setBankForm] = useState<{
+    bankCode: string;
+    bankName: string;
+    shortName: string;
+    accountDigits: string;
+    status: 'ACTIVE' | 'INACTIVE';
+  }>({
     bankCode: '',
     bankName: '',
+    shortName: '',
+    accountDigits: '',
     status: 'ACTIVE',
   });
 
@@ -124,7 +132,7 @@ export default function MasterDataHubPage() {
     if (activeTab === 'document-types') {
       setDocForm({ documentCode: '', documentName: '', isExpiryRequired: false, notifyBeforeDays: 30, validityMonths: null, status: 'ACTIVE' });
     } else if (activeTab === 'banks') {
-      setBankForm({ bankCode: '', bankName: '', status: 'ACTIVE' });
+      setBankForm({ bankCode: '', bankName: '', shortName: '', accountDigits: '', status: 'ACTIVE' });
     } else {
       setSimpleNameInput('');
     }
@@ -154,6 +162,8 @@ export default function MasterDataHubPage() {
       setBankForm({
         bankCode: item.bankCode,
         bankName: item.bankName,
+        shortName: item.shortName || '',
+        accountDigits: item.accountDigits ? String(item.accountDigits) : '',
         status: (item.status as 'ACTIVE' | 'INACTIVE') || 'ACTIVE',
       });
     }
@@ -205,10 +215,21 @@ export default function MasterDataHubPage() {
         }
       } else if (activeTab === 'banks') {
         if (modalMode === 'create') {
-          await bankService.create(bankForm);
+          await bankService.create({
+            bankCode: bankForm.bankCode,
+            bankName: bankForm.bankName,
+            shortName: bankForm.shortName.trim() || null,
+            accountDigits: bankForm.accountDigits ? Number(bankForm.accountDigits) : null,
+            status: bankForm.status,
+          });
           toast.success('เพิ่มธนาคารสำเร็จ');
         } else if (currentId) {
-          await bankService.update(currentId, { bankName: bankForm.bankName, status: bankForm.status });
+          await bankService.update(currentId, {
+            bankName: bankForm.bankName,
+            shortName: bankForm.shortName.trim() || null,
+            accountDigits: bankForm.accountDigits ? Number(bankForm.accountDigits) : null,
+            status: bankForm.status,
+          });
           toast.success('อัปเดตธนาคารสำเร็จ');
         }
       }
@@ -615,6 +636,8 @@ export default function MasterDataHubPage() {
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">รหัสธนาคาร</th>
                   <th className="py-3 px-4">ชื่อธนาคาร</th>
+                  <th className="py-3 px-4">ชื่อย่อ</th>
+                  <th className="py-3 px-4 text-center">จำนวนหลักเลขบัญชี</th>
                   <th className="py-3 px-4 text-center">สถานะ</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
                 </tr>
@@ -622,7 +645,7 @@ export default function MasterDataHubPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredBanks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                    <td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลธนาคาร
                     </td>
                   </tr>
@@ -636,6 +659,10 @@ export default function MasterDataHubPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.bankName}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-300">{item.shortName || '-'}</td>
+                      <td className="py-3.5 px-4 text-center text-slate-600 dark:text-slate-300">
+                        {item.accountDigits ? `${item.accountDigits} หลัก` : 'ไม่ตรวจ'}
+                      </td>
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
@@ -816,7 +843,7 @@ export default function MasterDataHubPage() {
                       disabled={modalMode === 'edit'}
                       value={bankForm.bankCode}
                       onChange={(e) => setBankForm({ ...bankForm, bankCode: e.target.value.toUpperCase() })}
-                      placeholder="เช่น KBANK, SCB, BBL"
+                      placeholder="รหัสมาตรฐาน 3 หลัก เช่น 004 (กสิกรไทย), 014 (ไทยพาณิชย์)"
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     />
                   </div>
@@ -831,6 +858,32 @@ export default function MasterDataHubPage() {
                       placeholder="เช่น ธนาคารกสิกรไทย"
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อย่อ</label>
+                      <input
+                        type="text"
+                        maxLength={20}
+                        value={bankForm.shortName}
+                        onChange={(e) => setBankForm({ ...bankForm, shortName: e.target.value.toUpperCase() })}
+                        placeholder="เช่น KBANK"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">จำนวนหลักเลขบัญชี</label>
+                      <input
+                        type="number"
+                        min={6}
+                        max={20}
+                        value={bankForm.accountDigits}
+                        onChange={(e) => setBankForm({ ...bankForm, accountDigits: e.target.value })}
+                        placeholder="เว้นว่าง = ไม่ตรวจ"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                      />
+                    </div>
                   </div>
 
                   <div>

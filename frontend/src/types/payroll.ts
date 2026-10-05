@@ -276,6 +276,14 @@ export interface BankTransferSummary {
   totalRecords: number;
   /** จำนวนพนักงานที่ยังไม่มีข้อมูลบัญชีธนาคาร (ต้องแก้ก่อนสร้างไฟล์ธนาคาร) */
   missingAccountCount?: number;
+  /** จำนวนพนักงานในรอบที่มีบัญชีใหม่รอยืนยัน (ยังโอนเข้าบัญชีเดิม) */
+  pendingBankChangeCount?: number;
+  /** บัญชีบริษัทที่ตัดจ่ายเงินเดือน (บัญชีหลัก) */
+  hasPayerAccount?: boolean;
+  payerBankCode?: string | null;
+  payerBankName?: string | null;
+  payerAccountNumber?: string | null;
+  payerAccountName?: string | null;
   items: BankTransferItem[];
 }
 

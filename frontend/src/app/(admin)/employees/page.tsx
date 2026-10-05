@@ -34,6 +34,8 @@ import {
   ArrowDown,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { bankService } from '@/services/bankService';
+import type { Bank } from '@/types/api';
 
 interface DepartmentItem {
   id: number;
@@ -88,29 +90,6 @@ export const autoFormatPhone = (val: string): string => {
   return digits;
 };
 
-export interface BankConfig {
-  name: string;
-  shortName: string;
-  digits: number;
-}
-
-export const BANK_CONFIGS: BankConfig[] = [
-  { name: 'ธนาคารกสิกรไทย', shortName: 'KBANK', digits: 10 },
-  { name: 'ธนาคารไทยพาณิชย์', shortName: 'SCB', digits: 10 },
-  { name: 'ธนาคารกรุงเทพ', shortName: 'BBL', digits: 10 },
-  { name: 'ธนาคารกรุงไทย', shortName: 'KTB', digits: 10 },
-  { name: 'ธนาคารกรุงศรีอยุธยา', shortName: 'BAY', digits: 10 },
-  { name: 'ธนาคารทหารไทยธนชาต', shortName: 'ttb', digits: 10 },
-  { name: 'ธนาคารออมสิน', shortName: 'GSB', digits: 12 },
-  { name: 'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร', shortName: 'ธ.ก.ส.', digits: 15 },
-];
-
-export const getRequiredBankDigits = (bankName?: string): number => {
-  if (!bankName || bankName === 'เลือกธนาคาร') return 10;
-  if (bankName.includes('ออมสิน')) return 12;
-  if (bankName.includes('เกษตร') || bankName.includes('ธ.ก.ส') || bankName.includes('BAAC')) return 15;
-  return 10;
-};
 
 export default function EmployeesPage() {
   const { user, hasPermission, getDataScope } = useAuth();
@@ -122,6 +101,18 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // ธนาคารจากข้อมูลหลัก (ใช้ตรวจจำนวนหลักเลขบัญชีตามที่ตั้งไว้ในข้อมูลหลัก)
+  const [banks, setBanks] = useState<Bank[]>([]);
+  useEffect(() => {
+    bankService
+      .getAll()
+      .then((list) => setBanks(list.filter((b) => b.status === 'ACTIVE')))
+      .catch(() => setBanks([]));
+  }, []);
+  /** จำนวนหลักเลขบัญชีของธนาคาร (null = ไม่กำหนด ตรวจแค่ 6–20 หลัก) */
+  const getRequiredBankDigits = (bankName?: string): number | null =>
+    banks.find((b) => b.bankName === bankName)?.accountDigits ?? null;
 
   // ซ่อน Dropdown ตัวกรองแผนกสำหรับ Role หัวหน้าแผนก (DEPT_MGR) เนื่องจากเห็นเฉพาะแผนกของตนเองอยู่แล้ว
   const isDeptManager = useMemo(() => {
@@ -569,8 +560,10 @@ export default function EmployeesPage() {
     const cleanAccountDigits = (data.accountNumber || '').replace(/\D/g, '');
     if (!data.accountNumber?.trim()) {
       errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
-    } else if (cleanAccountDigits.length !== reqBankDigits) {
+    } else if (reqBankDigits != null && cleanAccountDigits.length !== reqBankDigits) {
       errors.accountNumber = `เลขที่บัญชีต้องมี ${reqBankDigits} หลัก (ปัจจุบัน ${cleanAccountDigits.length} หลัก)`;
+    } else if (reqBankDigits == null && (cleanAccountDigits.length < 6 || cleanAccountDigits.length > 20)) {
+      errors.accountNumber = 'เลขที่บัญชีต้องมี 6–20 หลัก';
     }
     if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
     if (!data.employeeType || data.employeeType === 'เลือกประเภท') errors.employeeType = 'กรุณาเลือกประเภทพนักงาน';
@@ -732,6 +725,7 @@ export default function EmployeesPage() {
         educationLevel: formData.educationLevel && formData.educationLevel !== 'เลือกวุฒิการศึกษา' ? formData.educationLevel : undefined,
         institution: formData.institution && formData.institution !== 'เลือกสถาบันการศึกษา' ? formData.institution : undefined,
         bankName: formData.bankName && formData.bankName !== 'เลือกธนาคาร' ? formData.bankName : undefined,
+        bankId: banks.find((b) => b.bankName === formData.bankName)?.id,
         accountNumber: formData.accountNumber?.trim() ? formData.accountNumber.replace(/\D/g, '') : undefined,
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
@@ -2195,7 +2189,7 @@ export default function EmployeesPage() {
                               value={formData.bankName}
                               onChange={(e) => {
                                 const newBank = e.target.value;
-                                const maxDigits = getRequiredBankDigits(newBank);
+                                const maxDigits = getRequiredBankDigits(newBank) ?? 20;
                                 const currentDigits = formData.accountNumber ? formData.accountNumber.replace(/\D/g, '') : '';
                                 const newAcc = currentDigits.slice(0, maxDigits);
                                 setFormData({
@@ -2211,9 +2205,11 @@ export default function EmployeesPage() {
                               className={`${getFieldClass('bankName')} cursor-pointer`}
                             >
                               <option value="">เลือกธนาคาร</option>
-                              {BANK_CONFIGS.map((b) => (
-                                <option key={b.name} value={b.name}>
-                                  {b.name} ({b.shortName}) - {b.digits} หลัก
+                              {banks.map((b) => (
+                                <option key={b.id} value={b.bankName}>
+                                  {b.bankName}
+                                  {b.shortName ? ` (${b.shortName})` : ''}
+                                  {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
                                 </option>
                               ))}
                             </select>
@@ -2227,21 +2223,26 @@ export default function EmployeesPage() {
                               </label>
                               <span
                                 className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
-                                  formData.accountNumber?.length === getRequiredBankDigits(formData.bankName)
+                                  formData.accountNumber?.length === (getRequiredBankDigits(formData.bankName) ?? -1)
                                     ? 'bg-emerald-50 text-emerald-600 font-medium'
                                     : 'bg-slate-100 text-slate-500 dark:text-slate-400'
                                 }`}
                               >
-                                {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
+                                {formData.accountNumber?.length || 0}
+                                {getRequiredBankDigits(formData.bankName) != null ? ` / ${getRequiredBankDigits(formData.bankName)}` : ''} หลัก
                               </span>
                             </div>
                             <input
                               type="text"
-                              maxLength={getRequiredBankDigits(formData.bankName)}
-                              placeholder={`ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`}
+                              maxLength={getRequiredBankDigits(formData.bankName) ?? 20}
+                              placeholder={
+                                getRequiredBankDigits(formData.bankName) != null
+                                  ? `ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`
+                                  : 'ระบุเลขที่บัญชี (ตัวเลข)'
+                              }
                               value={formData.accountNumber}
                               onChange={(e) => {
-                                const maxDigits = getRequiredBankDigits(formData.bankName);
+                                const maxDigits = getRequiredBankDigits(formData.bankName) ?? 20;
                                 const val = e.target.value.replace(/\D/g, '').slice(0, maxDigits);
                                 setFormData({ ...formData, accountNumber: val });
                                 clearFieldError('accountNumber');

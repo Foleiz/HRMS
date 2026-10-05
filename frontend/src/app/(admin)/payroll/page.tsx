@@ -2976,10 +2976,16 @@ export default function PayrollPage() {
                                 <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
                               </td>
                               <td className="py-4 px-5">
-                                <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName || 'ธนาคารกสิกรไทย'}</div>
-                                <div className="text-[11px] font-mono text-slate-400">
-                                  <MaskedDataViewer value={pr.accountNumber || '1234567890'} type="bankAccount" />
-                                </div>
+                                {pr.bankName && pr.accountNumber ? (
+                                  <>
+                                    <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName}</div>
+                                    <div className="text-[11px] font-mono text-slate-400">
+                                      <MaskedDataViewer value={pr.accountNumber} type="bankAccount" />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">⚠️ ยังไม่มีบัญชีธนาคาร</div>
+                                )}
                               </td>
                               <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                                 {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
@@ -3171,6 +3177,28 @@ export default function PayrollPage() {
       {/* === TAB 5: โอนเงินธนาคาร (Payment Workflow) === */}
       {activeTab === 'bank-transfer' && (
         <div className="space-y-5">
+
+          {/* บัญชีบริษัทที่ตัดจ่าย + เตือนบัญชีพนักงานที่รอยืนยัน */}
+          {bankSummary && (
+            <div className="flex flex-wrap gap-3 text-xs">
+              {bankSummary.hasPayerAccount ? (
+                <div className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  ตัดจ่ายจากบัญชีบริษัท: <span className="font-semibold">{bankSummary.payerBankName}</span>{' '}
+                  <span className="font-mono">{bankSummary.payerAccountNumber}</span>
+                  {bankSummary.payerAccountName ? ` (${bankSummary.payerAccountName})` : ''}
+                </div>
+              ) : (
+                <div className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                  ⚠️ ยังไม่ได้ตั้งบัญชีธนาคารหลักสำหรับจ่ายเงินเดือน (โครงสร้างองค์กร → บัญชีธนาคารบริษัท) — สร้างไฟล์ธนาคารไม่ได้
+                </div>
+              )}
+              {(bankSummary.pendingBankChangeCount ?? 0) > 0 && (
+                <div className="px-3.5 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                  มีพนักงาน {bankSummary.pendingBankChangeCount} คนขอเปลี่ยนบัญชีที่ยังไม่ได้ยืนยัน — รอบนี้จะโอนเข้าบัญชีเดิม
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Header ── */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5">
