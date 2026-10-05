@@ -55,7 +55,10 @@ apiClient.interceptors.response.use(
       errorMessage = error.message;
     }
 
-    if (!error.response) {
+    if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')) {
+      errorMessage = 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
+      console.warn('API Timeout:', error.config?.url);
+    } else if (!error.response) {
       errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';
       console.warn('API Connection Refused / Network Error:', error.message);
     } else {
@@ -87,7 +90,18 @@ apiClient.interceptors.response.use(
       );
     }
 
-    return Promise.reject(new Error(errorMessage));
+    // คืน error เดิมของ axios (ยังมี response/status ให้หน้าเว็บตรวจได้) แต่ตั้งข้อความให้เป็นข้อความที่อ่านเข้าใจได้
+    // เพื่อให้ทั้ง err.message และ err.response?.data?.message ได้ข้อความจริงจาก Backend (หลายหน้าใช้แบบหลัง)
+    error.message = errorMessage;
+    if (error.response) {
+      const data = error.response.data;
+      if (data && typeof data === 'object' && !(typeof Blob !== 'undefined' && data instanceof Blob)) {
+        if (!data.message) data.message = errorMessage;
+      } else if (!data || typeof data === 'string') {
+        error.response.data = { message: errorMessage };
+      }
+    }
+    return Promise.reject(error);
   }
 );
 

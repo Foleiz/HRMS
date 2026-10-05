@@ -118,7 +118,7 @@ export default function WorkCalendarPage() {
       if (firstWorking?.startTime) setBulkStartTime(firstWorking.startTime.substring(0, 5));
       if (firstWorking?.endTime) setBulkEndTime(firstWorking.endTime.substring(0, 5));
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
+      toast.error(err?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลปฏิทินการทำงาน');
     } finally {
       setLoading(false);
     }
@@ -160,7 +160,7 @@ export default function WorkCalendarPage() {
       setWorkWeek(updated);
       toast.success('บันทึกการตั้งค่าวันทำงานและเวลาเข้า-ออกงานสำเร็จ');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'ไม่สามารถบันทึกการตั้งค่าวันทำงานได้');
+      toast.error(err?.message || 'ไม่สามารถบันทึกการตั้งค่าวันทำงานได้');
     } finally {
       setSaving(false);
     }
@@ -213,7 +213,7 @@ export default function WorkCalendarPage() {
       }
       setModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'ไม่สามารถบันทึกข้อมูลวันหยุดได้');
+      toast.error(err?.message || 'ไม่สามารถบันทึกข้อมูลวันหยุดได้');
     }
   };
 
@@ -231,7 +231,7 @@ export default function WorkCalendarPage() {
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'ไม่สามารถลบข้อมูลวันหยุดได้');
+      toast.error(err?.message || 'ไม่สามารถลบข้อมูลวันหยุดได้');
     }
   };
 

@@ -375,7 +375,13 @@ public class AttendanceDailyService : IAttendanceDailyService
     /// - ข้ามเดือนที่งวดเงินเดือนอนุมัติ/จ่าย/ปิดแล้ว, แล้วคำนวณสรุปรายเดือนของเดือนที่เปลี่ยนใหม่
     /// คืนจำนวนรายการที่เปลี่ยน
     /// </summary>
-    public async Task<int> ApplyCompanyScheduleAsync(CancellationToken cancellationToken = default)
+    public Task<int> ApplyCompanyScheduleAsync(CancellationToken cancellationToken = default)
+        => ApplyCompanyScheduleCoreAsync(null, cancellationToken);
+
+    public Task<int> ApplyCompanyScheduleAsync(IReadOnlyCollection<DateOnly> onlyDates, CancellationToken cancellationToken = default)
+        => ApplyCompanyScheduleCoreAsync(onlyDates.Distinct().ToList(), cancellationToken);
+
+    private async Task<int> ApplyCompanyScheduleCoreAsync(List<DateOnly>? onlyDates, CancellationToken cancellationToken)
     {
         var schedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
@@ -395,9 +401,11 @@ public class AttendanceDailyService : IAttendanceDailyService
         // วันทำงานของพนักงานที่มีกะ (ใช้ตัดสินสถานะวันที่ไม่มีเวลา)
         var shifts = await _context.EmployeeShifts.AsNoTracking().ToListAsync(cancellationToken);
 
-        var records = await _context.AttendanceDailies
-            .Where(a => a.Status != "LEAVE" && (a.ShiftId == null || (a.ActualIn == null && a.ActualOut == null)))
-            .ToListAsync(cancellationToken);
+        var recordsQuery = _context.AttendanceDailies
+            .Where(a => a.Status != "LEAVE" && (a.ShiftId == null || (a.ActualIn == null && a.ActualOut == null)));
+        if (onlyDates != null)
+            recordsQuery = recordsQuery.Where(a => onlyDates.Contains(a.WorkDate));
+        var records = await recordsQuery.ToListAsync(cancellationToken);
 
         var today = DateOnly.FromDateTime(ToThaiLocalTime(DateTime.UtcNow));
         var changedMonths = new HashSet<(int Year, int Month)>();

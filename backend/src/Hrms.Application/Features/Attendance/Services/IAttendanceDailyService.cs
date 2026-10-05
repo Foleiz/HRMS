@@ -25,5 +25,7 @@ public interface IAttendanceDailyService
 
     /// <summary>คำนวณข้อมูลเวลาใหม่ตามวัน/เวลาทำงานของบริษัทและวันหยุดประจำปี (อัตโนมัติหลังบันทึกการตั้งค่า) — คืนจำนวนรายการที่เปลี่ยน</summary>
     Task<int> ApplyCompanyScheduleAsync(CancellationToken cancellationToken = default);
+    /// <summary>เหมือนด้านบน แต่คำนวณใหม่เฉพาะวันที่ที่ระบุ (ใช้หลังเพิ่ม/แก้/ลบวันหยุด)</summary>
+    Task<int> ApplyCompanyScheduleAsync(IReadOnlyCollection<DateOnly> onlyDates, CancellationToken cancellationToken = default);
     Task<byte[]> ExportMonthlyAttendanceCsvAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default);
 }
