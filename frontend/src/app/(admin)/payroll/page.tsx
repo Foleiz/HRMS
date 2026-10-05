@@ -46,6 +46,7 @@ import {
   Coins,
   Sparkles,
   AlertTriangle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -396,6 +397,7 @@ export default function PayrollPage() {
   const [isAddingBonus, setIsAddingBonus] = useState(false);
   const [bonusPayoutYear, setBonusPayoutYear] = useState<number | null>(null);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
+  const [isAllPeriodsModalOpen, setIsAllPeriodsModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isDuplicatePeriodAlertOpen, setIsDuplicatePeriodAlertOpen] = useState(false);
   const [duplicatePeriodTarget, setDuplicatePeriodTarget] = useState<PayrollPeriod | null>(null);
@@ -1526,7 +1528,8 @@ export default function PayrollPage() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">รอบเงินเดือนล่าสุด</h2>
               <button
-                onClick={() => setActiveTab('process')}
+                type="button"
+                onClick={() => setIsAllPeriodsModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <span>ดูทั้งหมด</span>
@@ -1534,55 +1537,65 @@ export default function PayrollPage() {
               </button>
             </div>
 
-            <div className="divide-y divide-slate-100">
-              {(overview?.recentPeriods && overview.recentPeriods.length > 0
-                ? overview.recentPeriods
-                : [
-                    {
-                      periodName: 'รอบเดือนสิงหาคม 2569',
-                      totalAmount: 1842300,
-                      status: 'PENDING_REVIEW',
-                      statusText: 'รอตรวจสอบ',
-                    },
-                    {
-                      periodName: 'รอบเดือนกรกฎาคม 2569',
-                      totalAmount: 1798650,
-                      status: 'CALCULATED',
-                      statusText: 'คำนวณแล้ว',
-                    },
-                    {
-                      periodName: 'รอบเดือนมิถุนายน 2569',
-                      totalAmount: 1776900,
-                      status: 'CALCULATED',
-                      statusText: 'คำนวณแล้ว',
-                    },
-                    {
-                      periodName: 'รอบเดือนพฤษภาคม 2569',
-                      totalAmount: 1742200,
-                      status: 'CALCULATED',
-                      statusText: 'คำนวณแล้ว',
-                    },
-                  ]
-              ).map((p, idx) => (
-                <div key={idx} className="py-4 flex items-center justify-between text-sm">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{p.periodName}</span>
-                  <div className="flex items-center gap-8">
-                    <span className="font-bold text-slate-900 dark:text-white font-mono">
-                      ฿{p.totalAmount.toLocaleString()}
-                    </span>
-                    <span
-                      className={`inline-flex items-center px-3.5 py-1 rounded-xl text-xs font-semibold min-w-[90px] justify-center ${
-                        p.status === 'PENDING_REVIEW'
-                          ? 'bg-[#FEECE5] text-[#EA580C] border border-[#FDBA74]/40'
-                          : 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]/40'
-                      }`}
+            {(!overview?.recentPeriods || overview.recentPeriods.length === 0) ? (
+              <div className="py-8 text-center">
+                <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีรอบเงินเดือนในระบบ</p>
+                {canAccessHrView && (
+                  <button
+                    type="button"
+                    onClick={handleOpenCreatePeriodModal}
+                    className="mt-3 px-3.5 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>สร้างรอบเงินเดือนแรก</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                {overview.recentPeriods.map((p, idx) => {
+                  const targetPeriod = periods.find(x => p.periodName.includes(x.periodName) || x.periodName.includes(p.periodName));
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (targetPeriod) {
+                          handlePeriodChange(targetPeriod.id);
+                          setActiveTab('process');
+                        } else {
+                          setIsAllPeriodsModalOpen(true);
+                        }
+                      }}
+                      className="py-4 flex items-center justify-between text-sm hover:bg-slate-50/50 dark:hover:bg-slate-700/30 px-2 rounded-xl transition-colors cursor-pointer group"
+                      title="คลิกเพื่อเปิดดูรายละเอียดรอบนี้"
                     >
-                      {p.statusText}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046] dark:group-hover:text-blue-400 transition-colors">
+                          {p.periodName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-8">
+                        <span className="font-bold text-slate-900 dark:text-white font-mono">
+                          ฿{p.totalAmount.toLocaleString()}
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-3.5 py-1 rounded-xl text-xs font-semibold min-w-[90px] justify-center ${
+                            p.status === 'PENDING_REVIEW' || p.status === 'REVIEW'
+                              ? 'bg-[#FEECE5] text-[#EA580C] border border-[#FDBA74]/40 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                              : p.status === 'CLOSED'
+                              ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
+                              : 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                          }`}
+                        >
+                          {p.statusText}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2376,20 +2389,31 @@ export default function PayrollPage() {
 
                   <div className="flex items-center gap-3">
                     {periods.length > 0 ? (
-                      <div className="relative inline-block">
-                        <select
-                          value={selectedPeriod?.id || ''}
-                          onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                          className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                      <>
+                        <div className="relative inline-block">
+                          <select
+                            value={selectedPeriod?.id || ''}
+                            onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                            className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                          >
+                            {periods.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.periodName}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAllPeriodsModalOpen(true)}
+                          className="h-7 px-2 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          title="ดูรอบเงินเดือนทั้งหมด"
                         >
-                          {periods.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.periodName}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>ดูรอบทั้งหมด</span>
+                        </button>
+                      </>
                     ) : (
                       <div className="flex items-center gap-2 py-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
@@ -4454,6 +4478,198 @@ export default function PayrollPage() {
         type="danger"
         isLoading={isDeletingPeriod}
       />
+
+      {/* Modal: รายการรอบเงินเดือนทั้งหมด */}
+      {isAllPeriodsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center font-bold">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">รอบเงินเดือนทั้งหมด</h3>
+                    <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
+                      ทั้งหมด {periods.length} รอบ
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    รายการรอบระยะเวลาการคำนวณและจ่ายเงินเดือนทั้งหมดในระบบ
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {canAccessHrView && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAllPeriodsModalOpen(false);
+                      handleOpenCreatePeriodModal();
+                    }}
+                    className="h-8.5 inline-flex items-center gap-1 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>สร้างรอบใหม่</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsAllPeriodsModalOpen(false)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Table of all periods */}
+            <div className="overflow-y-auto p-6 space-y-4">
+              {periods.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-400 mx-auto flex items-center justify-center mb-3">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">ยังไม่มีรอบเงินเดือนในระบบ</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                    คุณสามารถสร้างรอบการคำนวณเงินเดือนแรกได้ทันที
+                  </p>
+                  {canAccessHrView && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAllPeriodsModalOpen(false);
+                        handleOpenCreatePeriodModal();
+                      }}
+                      className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>สร้างรอบเงินเดือนใหม่</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-500 dark:text-slate-400">
+                        <th className="py-3 px-4">รอบเงินเดือน</th>
+                        <th className="py-3 px-4">ช่วงเวลาคำนวณ</th>
+                        <th className="py-3 px-4">กำหนดวันจ่าย</th>
+                        <th className="py-3 px-4 text-center">จำนวนพนักงาน</th>
+                        <th className="py-3 px-4 text-right">ยอดรวมสุทธิ</th>
+                        <th className="py-3 px-4 text-center">สถานะ</th>
+                        <th className="py-3 px-4 text-center">การจัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
+                      {periods.map((p) => {
+                        const isCurrent = selectedPeriod?.id === p.id;
+                        return (
+                          <tr
+                            key={p.id}
+                            className={`hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors ${
+                              isCurrent ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
+                            }`}
+                          >
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
+                                  {p.periodName}
+                                </span>
+                                {isCurrent && (
+                                  <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                                    ปัจจุบัน
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                ปี {p.year + 543} / เดือน {p.month}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                              {p.startDate} ถึง {p.endDate}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                              {p.paymentDate || '-'}
+                            </td>
+                            <td className="py-3 px-4 text-center font-semibold">
+                              {p.employeeCount != null ? `${p.employeeCount} คน` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                              {p.totalNetSalary != null ? `฿${p.totalNetSalary.toLocaleString()}` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                  p.status === 'CLOSED'
+                                    ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
+                                    : p.status === 'PAID'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                                    : p.status === 'APPROVED'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                                    : p.status === 'SUBMITTED_TO_FINANCE' || p.status === 'FINANCE_VERIFIED'
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                                }`}
+                              >
+                                {p.statusText || p.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handlePeriodChange(p.id);
+                                    setActiveTab('process');
+                                    setIsAllPeriodsModalOpen(false);
+                                  }}
+                                  className="px-2.5 py-1 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  title="เปิดดูและประมวลผลรอบนี้"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>เปิดดู</span>
+                                </button>
+                                {p.status !== 'CLOSED' && canAccessHrView && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedPeriod(p);
+                                      setDeletePeriodConfirmOpen(true);
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                                    title="ลบรอบนี้"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/80 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsAllPeriodsModalOpen(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

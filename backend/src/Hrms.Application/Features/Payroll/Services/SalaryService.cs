@@ -857,6 +857,15 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollOverviewDto> GetPayrollOverviewAsync(CancellationToken cancellationToken = default)
     {
+        var periods = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .OrderByDescending(p => p.Year)
+            .ThenByDescending(p => p.Month)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var latestPeriod = periods.FirstOrDefault();
+
         var activeSalaries = await _context.EmployeeSalaries
             .Where(s => s.EffectiveTo == null)
             .AsNoTracking()
@@ -865,28 +874,66 @@ public class SalaryService : ISalaryService
         var totalSalaries = activeSalaries.Sum(s => s.BaseSalary);
         var totalEmps = await _context.Employees.CountAsync(cancellationToken);
 
-        var currentTotal = totalSalaries > 1000000 ? totalSalaries : 1842300m;
-        var calculatedCount = activeSalaries.Count > 10 ? activeSalaries.Count : 118;
-        var totalCount = totalEmps > 50 ? totalEmps : 145;
-        var calcPercent = totalCount > 0 ? (int)Math.Round((double)calculatedCount / totalCount * 100) : 81;
+        decimal currentTotal = latestPeriod != null && latestPeriod.Payrolls.Any()
+            ? latestPeriod.Payrolls.Sum(p => p.NetPayableSalary)
+            : totalSalaries;
+
+        int calculatedCount = latestPeriod != null ? latestPeriod.Payrolls.Count : activeSalaries.Count;
+        int totalCount = totalEmps;
+        int calcPercent = totalCount > 0 ? (int)Math.Round((double)calculatedCount / totalCount * 100) : 0;
+
+        string currentMonthPeriod = latestPeriod != null
+            ? $"{ThaiMonths[latestPeriod.Month <= 12 ? latestPeriod.Month : 1]} {latestPeriod.Year + 543}"
+            : "ไม่มีรอบเงินเดือน";
+
+        string nextClosingDate = latestPeriod?.PaymentDate?.ToString("d MMM yyyy", new System.Globalization.CultureInfo("th-TH"))
+            ?? latestPeriod?.EndDate.ToString("d MMM yyyy", new System.Globalization.CultureInfo("th-TH"))
+            ?? "-";
+
+        int remainingDays = 0;
+        if (latestPeriod != null)
+        {
+            var targetDate = latestPeriod.PaymentDate ?? latestPeriod.EndDate;
+            remainingDays = Math.Max(0, targetDate.DayNumber - DateOnly.FromDateTime(DateTime.UtcNow).DayNumber);
+        }
+
+        var recentPeriods = periods.Take(5).Select(p =>
+        {
+            var statusText = p.Status switch
+            {
+                "DRAFT" => "ร่าง",
+                "REVIEW" => "รอตรวจสอบ",
+                "SUBMITTED_TO_FINANCE" => "ส่งการเงินตรวจสอบ",
+                "FINANCE_VERIFIED" => "การเงินตรวจสอบแล้ว",
+                "PENDING_APPROVAL" => "รออนุมัติ",
+                "APPROVED" => "อนุมัติแล้ว",
+                "PROCESSING" => "กำลังดำเนินการจ่าย",
+                "PROCESSING_BANK" => "ส่งโอนธนาคารแล้ว",
+                "PAID" => "โอนเงินสำเร็จแล้ว",
+                "CLOSED" => "ปิดรอบแล้ว",
+                _ => p.Status
+            };
+
+            return new RecentPayrollPeriodDto
+            {
+                PeriodName = $"รอบเดือน{ThaiMonths[p.Month <= 12 ? p.Month : 1]} {p.Year + 543}",
+                TotalAmount = p.Payrolls.Sum(x => x.NetPayableSalary),
+                Status = p.Status,
+                StatusText = statusText
+            };
+        }).ToList();
 
         return new PayrollOverviewDto
         {
             CurrentMonthTotal = currentTotal,
-            CurrentMonthPeriod = "รอบ ส.ค. 2569",
+            CurrentMonthPeriod = currentMonthPeriod,
             CalculatedEmployeesCount = calculatedCount,
             TotalEmployeesCount = totalCount,
             CalculatedPercentage = calcPercent,
             PendingApprovalCount = Math.Max(0, totalCount - calculatedCount),
-            NextClosingDate = "29 ส.ค. 2569",
-            RemainingDays = 2,
-            RecentPeriods = new List<RecentPayrollPeriodDto>
-            {
-                new() { PeriodName = "รอบเดือนสิงหาคม 2569", TotalAmount = 1842300m, Status = "PENDING_REVIEW", StatusText = "รอตรวจสอบ" },
-                new() { PeriodName = "รอบเดือนกรกฎาคม 2569", TotalAmount = 1798650m, Status = "CALCULATED", StatusText = "คำนวณแล้ว" },
-                new() { PeriodName = "รอบเดือนมิถุนายน 2569", TotalAmount = 1776900m, Status = "CALCULATED", StatusText = "คำนวณแล้ว" },
-                new() { PeriodName = "รอบเดือนพฤษภาคม 2569", TotalAmount = 1742200m, Status = "CALCULATED", StatusText = "คำนวณแล้ว" }
-            }
+            NextClosingDate = nextClosingDate,
+            RemainingDays = remainingDays,
+            RecentPeriods = recentPeriods
         };
     }
 
