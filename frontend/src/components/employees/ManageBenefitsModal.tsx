@@ -52,6 +52,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
   const [category, setCategory] = useState('HEALTH');
   const [description, setDescription] = useState('');
   const [isStatutory, setIsStatutory] = useState(false);
+  const [isDocumentRequired, setIsDocumentRequired] = useState(false);
   const [defaultCoverageAmount, setDefaultCoverageAmount] = useState<number>(0);
   const [defaultFrequency, setDefaultFrequency] = useState<string>('YEARLY');
   const [payoutType, setPayoutType] = useState<string>('REIMBURSEMENT');
@@ -91,6 +92,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setCategory('HEALTH');
     setDescription('');
     setIsStatutory(false);
+    setIsDocumentRequired(false);
     setDefaultCoverageAmount(0);
     setDefaultFrequency('YEARLY');
     setPayoutType('REIMBURSEMENT');
@@ -110,6 +112,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     setCategory(item.category || 'HEALTH');
     setDescription(item.description || '');
     setIsStatutory(item.isStatutory);
+    setIsDocumentRequired(item.isDocumentRequired ?? false);
     setDefaultCoverageAmount(item.defaultCoverageAmount ?? 0);
     setDefaultFrequency(item.defaultFrequency || 'YEARLY');
     setPayoutType(item.payoutType || 'REIMBURSEMENT');
@@ -136,6 +139,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           category,
           description: description.trim() || undefined,
           isStatutory,
+          isDocumentRequired,
           defaultCoverageAmount: Number(defaultCoverageAmount) || 0,
           defaultFrequency,
           payoutType,
@@ -150,6 +154,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           category,
           description: description.trim() || undefined,
           isStatutory,
+          isDocumentRequired,
           defaultCoverageAmount: Number(defaultCoverageAmount) || 0,
           defaultFrequency,
           payoutType,
@@ -398,6 +403,33 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
                   />
                 </div>
+
+                <div className="sm:col-span-2 space-y-2 pt-1">
+                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                    <input
+                      type="checkbox"
+                      id="manageIsStatutory"
+                      checked={isStatutory}
+                      onChange={(e) => setIsStatutory(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                    />
+                    <label htmlFor="manageIsStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                      เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                    <input
+                      type="checkbox"
+                      id="manageIsDocumentRequired"
+                      checked={isDocumentRequired}
+                      onChange={(e) => setIsDocumentRequired(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                    />
+                    <label htmlFor="manageIsDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                      แนบเอกสารประกอบหรือใบรับรองแพทย์ (บังคับแนบเอกสารเมื่อขอเบิกสวัสดิการนี้)
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -464,8 +496,13 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                           <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             <span>{item.benefitName}</span>
                             {item.isStatutory && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 font-medium">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
                                 สิทธิตามกฎหมาย
+                              </span>
+                            )}
+                            {item.isDocumentRequired && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 font-medium">
+                                📎 บังคับแนบเอกสาร
                               </span>
                             )}
                           </div>

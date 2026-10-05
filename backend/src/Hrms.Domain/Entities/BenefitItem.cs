@@ -12,6 +12,7 @@ public class BenefitItem
     public string Category { get; set; } = "OTHER"; // STATUTORY, HEALTH, ALLOWANCE, WELLNESS, FINANCIAL, OTHER
     public string? Description { get; set; }
     public bool IsStatutory { get; set; } = false;
+    public bool IsDocumentRequired { get; set; } = false;
     public decimal DefaultCoverageAmount { get; set; } = 0;
     public string DefaultFrequency { get; set; } = "YEARLY"; // DAILY, MONTHLY, YEARLY, PER_OCCURRENCE
     public string PayoutType { get; set; } = "REIMBURSEMENT"; // REIMBURSEMENT, PAYROLL, IN_KIND

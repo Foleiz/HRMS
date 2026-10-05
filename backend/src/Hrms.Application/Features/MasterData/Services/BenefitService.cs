@@ -51,6 +51,7 @@ public class BenefitService : IBenefitService
             Category = b.Category,
             Description = b.Description,
             IsStatutory = b.IsStatutory,
+            IsDocumentRequired = b.IsDocumentRequired,
             DefaultCoverageAmount = b.DefaultCoverageAmount,
             DefaultFrequency = b.DefaultFrequency,
             PayoutType = b.PayoutType,
@@ -82,6 +83,7 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            IsDocumentRequired = benefit.IsDocumentRequired,
             DefaultCoverageAmount = benefit.DefaultCoverageAmount,
             DefaultFrequency = benefit.DefaultFrequency,
             PayoutType = benefit.PayoutType,
@@ -116,6 +118,7 @@ public class BenefitService : IBenefitService
             Category = string.IsNullOrWhiteSpace(request.Category) ? "OTHER" : request.Category.Trim().ToUpper(),
             Description = request.Description?.Trim(),
             IsStatutory = request.IsStatutory,
+            IsDocumentRequired = request.IsDocumentRequired,
             DefaultCoverageAmount = request.DefaultCoverageAmount,
             DefaultFrequency = string.IsNullOrWhiteSpace(request.DefaultFrequency) ? "YEARLY" : request.DefaultFrequency.Trim().ToUpper(),
             PayoutType = string.IsNullOrWhiteSpace(request.PayoutType) ? "REIMBURSEMENT" : request.PayoutType.Trim().ToUpper(),
@@ -135,6 +138,7 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            IsDocumentRequired = benefit.IsDocumentRequired,
             DefaultCoverageAmount = benefit.DefaultCoverageAmount,
             DefaultFrequency = benefit.DefaultFrequency,
             PayoutType = benefit.PayoutType,
@@ -160,6 +164,7 @@ public class BenefitService : IBenefitService
         benefit.Category = string.IsNullOrWhiteSpace(request.Category) ? "OTHER" : request.Category.Trim().ToUpper();
         benefit.Description = request.Description?.Trim();
         benefit.IsStatutory = request.IsStatutory;
+        benefit.IsDocumentRequired = request.IsDocumentRequired;
         benefit.DefaultCoverageAmount = request.DefaultCoverageAmount;
         if (!string.IsNullOrWhiteSpace(request.DefaultFrequency))
             benefit.DefaultFrequency = request.DefaultFrequency.Trim().ToUpper();
@@ -182,6 +187,7 @@ public class BenefitService : IBenefitService
             Category = benefit.Category,
             Description = benefit.Description,
             IsStatutory = benefit.IsStatutory,
+            IsDocumentRequired = benefit.IsDocumentRequired,
             DefaultCoverageAmount = benefit.DefaultCoverageAmount,
             DefaultFrequency = benefit.DefaultFrequency,
             PayoutType = benefit.PayoutType,
@@ -294,6 +300,7 @@ public class BenefitService : IBenefitService
                 Category = bItem.Category,
                 Description = bItem.Description,
                 PayoutType = bItem.PayoutType,
+                IsDocumentRequired = bItem.IsDocumentRequired,
                 QuotaAmount = quota,
                 Frequency = tb.Frequency,
                 UsedAmount = used,
@@ -424,6 +431,7 @@ public class BenefitService : IBenefitService
                     Category = bItem.Category,
                     Description = bItem.Description,
                     PayoutType = bItem.PayoutType,
+                    IsDocumentRequired = bItem.IsDocumentRequired,
                     QuotaAmount = quota,
                     Frequency = tb.Frequency,
                     UsedAmount = used,
@@ -496,6 +504,8 @@ public class BenefitService : IBenefitService
                 ReceiptNumber = c.ReceiptNumber,
                 ServiceProvider = c.ServiceProvider,
                 Remarks = c.Remarks,
+                AttachmentFileName = c.AttachmentFileName ?? c.FileName,
+                AttachmentUrl = c.AttachmentUrl,
                 Status = c.Status,
                 ApprovedByName = c.ApprovedByEmployee != null
                     ? ((c.ApprovedByEmployee.Prefix ?? "") + " " + c.ApprovedByEmployee.FirstName + " " + c.ApprovedByEmployee.LastName).Trim()
@@ -530,6 +540,11 @@ public class BenefitService : IBenefitService
         if (benefitItem == null)
             throw new NotFoundException($"ไม่พบข้อมูลสิทธิประโยชน์รหัส ID: {request.BenefitItemId}");
 
+        if (benefitItem.IsDocumentRequired && string.IsNullOrWhiteSpace(request.AttachmentFileName) && string.IsNullOrWhiteSpace(request.AttachmentUrl))
+        {
+            throw new ValidationException("สวัสดิการประเภทนี้ บังคับแนบเอกสารประกอบหรือใบรับรองแพทย์");
+        }
+
         int claimYear = request.ClaimYear ?? DateTime.UtcNow.Year;
         DateOnly claimDate = request.ClaimDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -562,6 +577,8 @@ public class BenefitService : IBenefitService
             ReceiptNumber = request.ReceiptNumber?.Trim(),
             ServiceProvider = request.ServiceProvider?.Trim(),
             Remarks = request.Remarks?.Trim(),
+            AttachmentFileName = request.AttachmentFileName?.Trim(),
+            AttachmentUrl = request.AttachmentUrl?.Trim(),
             Status = "APPROVED",
             ApprovedByUserId = approvedByUserId,
             ApprovedAt = DateTime.UtcNow,
@@ -588,6 +605,8 @@ public class BenefitService : IBenefitService
             ReceiptNumber = claim.ReceiptNumber,
             ServiceProvider = claim.ServiceProvider,
             Remarks = claim.Remarks,
+            AttachmentFileName = claim.AttachmentFileName,
+            AttachmentUrl = claim.AttachmentUrl,
             Status = claim.Status,
             ApprovedAt = claim.ApprovedAt,
             CreatedAt = claim.CreatedAt

@@ -477,6 +477,7 @@ export default function OrganizationPage() {
     category: 'HEALTH',
     description: '',
     isStatutory: false,
+    isDocumentRequired: false,
     defaultCoverageAmount: 0,
     defaultFrequency: 'YEARLY',
     payoutType: 'REIMBURSEMENT',
@@ -726,6 +727,7 @@ export default function OrganizationPage() {
         category: item.category || 'HEALTH',
         description: item.description || '',
         isStatutory: item.isStatutory,
+        isDocumentRequired: item.isDocumentRequired ?? false,
         defaultCoverageAmount: item.defaultCoverageAmount ?? 0,
         defaultFrequency: item.defaultFrequency || 'YEARLY',
         payoutType: item.payoutType || 'REIMBURSEMENT',
@@ -739,6 +741,7 @@ export default function OrganizationPage() {
         category: 'HEALTH',
         description: '',
         isStatutory: false,
+        isDocumentRequired: false,
         defaultCoverageAmount: 0,
         defaultFrequency: 'YEARLY',
         payoutType: 'REIMBURSEMENT',
@@ -758,6 +761,7 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
+          isDocumentRequired: benefitForm.isDocumentRequired,
           defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
@@ -770,6 +774,7 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
+          isDocumentRequired: benefitForm.isDocumentRequired,
           defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
@@ -1730,15 +1735,22 @@ export default function OrganizationPage() {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-center whitespace-nowrap">
-                            {ben.isStatutory ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
-                                ⚖️ สิทธิตามกฎหมาย
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
-                                ⭐ สวัสดิการบริษัท
-                              </span>
-                            )}
+                            <div className="flex flex-col items-center gap-1">
+                              {ben.isStatutory ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
+                                  ⚖️ สิทธิตามกฎหมาย
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
+                                  ⭐ สวัสดิการบริษัท
+                                </span>
+                              )}
+                              {ben.isDocumentRequired && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300">
+                                  📎 บังคับแนบเอกสาร
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
                             <span
@@ -2347,151 +2359,173 @@ export default function OrganizationPage() {
 
       {/* 7. Create / Edit Modal (Benefit) */}
       {modalOpen && activeTab === 'benefits' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2 dark:text-slate-100">
-                <Gift className="w-4 h-4 text-[#0B2046]" />
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0 bg-slate-50/70 dark:bg-slate-900/50">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#0B2046] dark:text-cyan-400" />
                 {modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
               </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBenefit} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  ชื่อสวัสดิการ / สิทธิประโยชน์ *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={benefitForm.benefitName}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
-                  placeholder="เช่น รถรับส่งพนักงาน"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หมวดหมู่สวัสดิการ *</label>
-                <select
-                  value={benefitForm.category}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
-                    <option key={key} value={key}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รายละเอียดเพิ่มเติม</label>
-                <textarea
-                  rows={3}
-                  value={benefitForm.description || ''}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
-                  placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-                <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveBenefit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ชื่อสวัสดิการ / สิทธิประโยชน์ *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={benefitForm.benefitName}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
+                    placeholder="เช่น รถรับส่งพนักงาน"
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รูปแบบการให้สิทธิ์ / เบิกจ่าย *
-                  </label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ *</label>
                   <select
-                    value={benefitForm.payoutType || 'REIMBURSEMENT'}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                    value={benefitForm.category}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
                   >
-                    <option value="IN_KIND">ตามระเบียบบริษัท</option>
-                    <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
-                    <option value="PAYROLL">จ่ายในเงินเดือน</option>
+                    {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
+                      <option key={key} value={key}>
+                        {item.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      วงเงินมาตรฐาน (บาท)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="any"
-                      value={benefitForm.defaultCoverageAmount ?? 0}
-                      onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
-                      placeholder="0 = ไม่จำกัด/ตามระเบียบ"
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
-                    />
-                    <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
+                  <textarea
+                    rows={2}
+                    value={benefitForm.description || ''}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
+                    placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      รอบการให้สิทธิ์
+                      รูปแบบการให้สิทธิ์ / เบิกจ่าย *
                     </label>
                     <select
-                      value={benefitForm.defaultFrequency || 'YEARLY'}
-                      onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
+                      value={benefitForm.payoutType || 'REIMBURSEMENT'}
+                      onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
                     >
-                      <option value="YEARLY">ต่อปี (Yearly)</option>
-                      <option value="MONTHLY">ต่อเดือน (Monthly)</option>
-                      <option value="DAILY">ต่อวัน (Daily)</option>
-                      <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                      <option value="IN_KIND">ตามระเบียบบริษัท</option>
+                      <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
+                      <option value="PAYROLL">จ่ายในเงินเดือน</option>
                     </select>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        วงเงินมาตรฐาน (บาท)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={benefitForm.defaultCoverageAmount ?? 0}
+                        onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
+                        placeholder="0 = ไม่จำกัด/ตามระเบียบ"
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        รอบการให้สิทธิ์
+                      </label>
+                      <select
+                        value={benefitForm.defaultFrequency || 'YEARLY'}
+                        onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
+                      >
+                        <option value="YEARLY">ต่อปี (Yearly)</option>
+                        <option value="MONTHLY">ต่อเดือน (Monthly)</option>
+                        <option value="DAILY">ต่อวัน (Daily)</option>
+                        <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+                  <input
+                    type="checkbox"
+                    id="isStatutory"
+                    checked={benefitForm.isStatutory}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
+                    className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
+                  />
+                  <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+                  <input
+                    type="checkbox"
+                    id="isDocumentRequired"
+                    checked={benefitForm.isDocumentRequired}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, isDocumentRequired: e.target.checked })}
+                    className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
+                  />
+                  <label htmlFor="isDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    แนบเอกสารประกอบหรือใบรับรองแพทย์ (บังคับแนบเอกสารเมื่อขอเบิกสวัสดิการนี้)
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
+                  <select
+                    value={benefitForm.status}
+                    onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">เปิดใช้งาน</option>
+                    <option value="INACTIVE">ปิดใช้งาน</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                <input
-                  type="checkbox"
-                  id="isStatutory"
-                  checked={benefitForm.isStatutory}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
-                  className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
-                />
-                <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none dark:text-slate-300">
-                  เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <select
-                  value={benefitForm.status}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ปิดใช้งาน</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/60 shrink-0 bg-slate-50/70 dark:bg-slate-900/50">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium dark:border-slate-700 cursor-pointer transition-colors"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 cursor-pointer transition-all"
                 >
                   บันทึกข้อมูล
                 </button>

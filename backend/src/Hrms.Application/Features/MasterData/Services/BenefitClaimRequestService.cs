@@ -103,9 +103,9 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
             claim.FileMimeType = mime;
             claim.FileName = string.IsNullOrWhiteSpace(dto.FileName) ? "receipt" : Path.GetFileName(dto.FileName.Trim());
         }
-        else if (item.PayoutType == "REIMBURSEMENT")
+        else if (item.IsDocumentRequired)
         {
-            throw new ValidationException("กรุณาแนบใบเสร็จ/หลักฐานการชำระเงิน");
+            throw new ValidationException("สวัสดิการประเภทนี้ บังคับแนบเอกสารประกอบหรือใบรับรองแพทย์");
         }
 
         _context.EmployeeBenefitClaims.Add(claim);

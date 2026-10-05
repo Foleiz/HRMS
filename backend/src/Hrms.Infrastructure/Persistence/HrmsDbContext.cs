@@ -1032,6 +1032,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Category).HasColumnName("category").IsRequired().HasMaxLength(50);
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.IsStatutory).HasColumnName("is_statutory").HasDefaultValue(false);
+            entity.Property(e => e.IsDocumentRequired).HasColumnName("is_document_required").HasDefaultValue(false);
             entity.Property(e => e.DefaultCoverageAmount).HasColumnName("default_coverage_amount").HasPrecision(12, 2).HasDefaultValue(0);
             entity.Property(e => e.DefaultFrequency).HasColumnName("default_frequency").HasMaxLength(20).HasDefaultValue("YEARLY");
             entity.Property(e => e.PayoutType).HasColumnName("payout_type").HasMaxLength(30).HasDefaultValue("REIMBURSEMENT");
@@ -1082,6 +1083,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ReceiptNumber).HasColumnName("receipt_number").HasMaxLength(100);
             entity.Property(e => e.ServiceProvider).HasColumnName("service_provider").HasMaxLength(200);
             entity.Property(e => e.Remarks).HasColumnName("remarks");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255);
+            entity.Property(e => e.AttachmentUrl).HasColumnName("attachment_url");
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("APPROVED");
             entity.Property(e => e.ApprovedByUserId).HasColumnName("approved_by_user_id");
             entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");

@@ -15,6 +15,8 @@ public class EmployeeBenefitClaim
     public string? ReceiptNumber { get; set; }
     public string? ServiceProvider { get; set; }
     public string? Remarks { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public string? AttachmentUrl { get; set; }
     public string Status { get; set; } = "APPROVED"; // PENDING, APPROVED, REJECTED, CANCELLED
     /// <summary>เลขที่คำขอ (เฉพาะที่พนักงานยื่นเบิกเอง) เช่น BC-202610-0001</summary>
     public string? RequestNo { get; set; }
