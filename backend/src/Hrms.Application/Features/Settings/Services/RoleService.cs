@@ -433,12 +433,21 @@ public class RoleService : IRoleService
 
     public async Task<RoleSummaryDto> CreateRoleAsync(CreateRoleRequestDto request, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.RoleCode) || string.IsNullOrWhiteSpace(request.RoleName))
+        if (string.IsNullOrWhiteSpace(request.RoleName))
         {
-            throw new ValidationException("กรุณากรอกรหัสบทบาทและชื่อบทบาท");
+            throw new ValidationException("กรุณากรอกชื่อบทบาท");
         }
 
-        var code = request.RoleCode.Trim().ToUpperInvariant();
+        string code;
+        if (!string.IsNullOrWhiteSpace(request.RoleCode))
+        {
+            code = request.RoleCode.Trim().ToUpperInvariant();
+        }
+        else
+        {
+            code = await GenerateUniqueRoleCodeAsync(request.RoleName, cancellationToken);
+        }
+
         var exists = await _dbContext.Roles.AnyAsync(r => r.RoleCode == code, cancellationToken);
         if (exists)
         {
@@ -738,5 +747,68 @@ public class RoleService : IRoleService
             role.RoleCode, null, currentUserId, ipAddress, cancellationToken: cancellationToken);
 
         return true;
+    }
+
+    private async Task<string> GenerateUniqueRoleCodeAsync(string roleName, CancellationToken cancellationToken)
+    {
+        var englishOnly = System.Text.RegularExpressions.Regex.Replace(roleName, @"[^a-zA-Z0-9\s_-]", " ").Trim();
+        var words = englishOnly.Split(new[] { ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+        string baseCode;
+        if (words.Length > 0 && words.Any(w => w.Length >= 2))
+        {
+            baseCode = string.Join("_", words).ToUpperInvariant();
+            if (baseCode.Length > 30) baseCode = baseCode[..30];
+        }
+        else
+        {
+            var thaiKeywords = new (string Pattern, string Code)[]
+            {
+                ("ผู้จัดการ|ผจก", "MGR"),
+                ("ผู้อำนวยการ|ผอ", "DIRECTOR"),
+                ("หัวหน้า|ลีด", "LEAD"),
+                ("เจ้าหน้าที่|พนักงาน", "OFFICER"),
+                ("ผู้ช่วย", "ASST"),
+                ("บุคคล|ทรัพยากรบุคคล", "HR"),
+                ("การเงิน", "FIN"),
+                ("บัญชี", "ACC"),
+                ("จัดซื้อ", "PURCHASE"),
+                ("การตลาด", "MKT"),
+                ("ขาย|เซลส์", "SALES"),
+                ("ธุรการ", "ADMIN"),
+                ("ไอที", "IT"),
+                ("ตรวจสอบ", "AUDITOR"),
+                ("สรรหา", "RECRUIT"),
+                ("ฝึกอบรม", "TRAIN")
+            };
+
+            var matched = new List<string>();
+            foreach (var (pat, kwCode) in thaiKeywords)
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(roleName, pat, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    matched.Add(kwCode);
+                }
+            }
+
+            if (matched.Count > 0)
+            {
+                baseCode = $"ROLE_{string.Join("_", matched)}";
+            }
+            else
+            {
+                var count = await _dbContext.Roles.CountAsync(cancellationToken);
+                baseCode = $"ROLE_{(count + 1):D2}";
+            }
+        }
+
+        var candidate = baseCode;
+        int suffix = 1;
+        while (await _dbContext.Roles.AnyAsync(r => r.RoleCode == candidate, cancellationToken))
+        {
+            candidate = $"{baseCode}_{suffix++}";
+        }
+
+        return candidate;
     }
 }

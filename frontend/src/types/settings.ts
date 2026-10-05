@@ -102,7 +102,7 @@ export interface RoleDetail {
 }
 
 export interface CreateRoleRequest {
-  roleCode: string;
+  roleCode?: string;
   roleName: string;
   description?: string;
 }
