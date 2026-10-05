@@ -448,7 +448,7 @@ public class BenefitService : IBenefitService
         return overviewList;
     }
 
-    public async Task<List<BenefitClaimDto>> GetEmployeeClaimsAsync(long employeeId, int? year = null, CancellationToken cancellationToken = default)
+    public async Task<List<BenefitClaimDto>> GetEmployeeClaimsAsync(long employeeId, int? year = null, long? benefitItemId = null, CancellationToken cancellationToken = default)
     {
         var query = _context.EmployeeBenefitClaims
             .Include(c => c.BenefitItem)
@@ -459,6 +459,11 @@ public class BenefitService : IBenefitService
         if (year.HasValue)
         {
             query = query.Where(c => c.ClaimYear == year.Value);
+        }
+
+        if (benefitItemId.HasValue)
+        {
+            query = query.Where(c => c.BenefitItemId == benefitItemId.Value);
         }
 
         var claims = await query

@@ -45,6 +45,7 @@ export default function EmployeeBenefitBalancesPage() {
   // Modal states for viewing claims history
   const [isClaimsHistoryOpen, setIsClaimsHistoryOpen] = useState(false);
   const [historyEmp, setHistoryEmp] = useState<EmployeeBenefitOverview | null>(null);
+  const [historyBenefit, setHistoryBenefit] = useState<BenefitUsageItem | null>(null);
   const [empClaims, setEmpClaims] = useState<BenefitClaim[]>([]);
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
@@ -108,12 +109,17 @@ export default function EmployeeBenefitBalancesPage() {
   };
 
   // Open claims history modal
-  const handleOpenClaimsHistory = async (emp: EmployeeBenefitOverview) => {
+  const handleOpenClaimsHistory = async (emp: EmployeeBenefitOverview, benefit?: BenefitUsageItem) => {
     setHistoryEmp(emp);
+    setHistoryBenefit(benefit || null);
     setIsClaimsHistoryOpen(true);
     setLoadingClaims(true);
     try {
-      const claims = await benefitService.getEmployeeClaims(emp.employeeId, selectedYear);
+      const claims = await benefitService.getEmployeeClaims(
+        emp.employeeId,
+        selectedYear,
+        benefit?.benefitItemId
+      );
       setEmpClaims(claims);
     } catch (err) {
       console.error('Failed to load claims:', err);
@@ -130,7 +136,11 @@ export default function EmployeeBenefitBalancesPage() {
       await benefitService.deleteClaim(claimId);
       toast.success('ยกเลิกรายการเบิกสำเร็จ');
       if (historyEmp) {
-        const claims = await benefitService.getEmployeeClaims(historyEmp.employeeId, selectedYear);
+        const claims = await benefitService.getEmployeeClaims(
+          historyEmp.employeeId,
+          selectedYear,
+          historyBenefit?.benefitItemId
+        );
         setEmpClaims(claims);
       }
       fetchOverview();
@@ -459,10 +469,10 @@ export default function EmployeeBenefitBalancesPage() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleOpenClaimsHistory(emp);
+                                          handleOpenClaimsHistory(emp, b);
                                         }}
                                         className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                        title="ดูประวัติการเบิกจ่าย"
+                                        title={`ดูประวัติการเบิกจ่าย (${b.benefitName})`}
                                       >
                                         <History className="w-4 h-4" />
                                       </button>
@@ -517,15 +527,23 @@ export default function EmployeeBenefitBalancesPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm md:text-base">
-                    ประวัติการเบิกสวัสดิการ — {historyEmp.employeeName}
+                    ประวัติการเบิก{historyBenefit ? `: ${historyBenefit.benefitName}` : 'สวัสดิการ'} — {historyEmp.employeeName}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-slate-400">
                     รหัส {historyEmp.employeeCode} · ประจำปี {selectedYear + 543}
+                    {historyBenefit && (
+                      <span className="ml-2 font-medium text-blue-600 dark:text-cyan-400">
+                        ({historyBenefit.benefitCode})
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => setIsClaimsHistoryOpen(false)}
+                onClick={() => {
+                  setIsClaimsHistoryOpen(false);
+                  setHistoryBenefit(null);
+                }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -541,7 +559,9 @@ export default function EmployeeBenefitBalancesPage() {
                 </div>
               ) : empClaims.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 dark:text-slate-500 text-sm">
-                  ยังไม่มีประวัติการขอเบิกสวัสดิการในปี {selectedYear + 543}
+                  {historyBenefit
+                    ? `ยังไม่มีประวัติการขอเบิกสวัสดิการ "${historyBenefit.benefitName}" ในปี ${selectedYear + 543}`
+                    : `ยังไม่มีประวัติการขอเบิกสวัสดิการในปี ${selectedYear + 543}`}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -607,7 +627,10 @@ export default function EmployeeBenefitBalancesPage() {
             {/* Footer */}
             <div className="px-6 py-3.5 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 flex justify-end">
               <button
-                onClick={() => setIsClaimsHistoryOpen(false)}
+                onClick={() => {
+                  setIsClaimsHistoryOpen(false);
+                  setHistoryBenefit(null);
+                }}
                 className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-colors"
               >
                 ปิดหน้าต่าง
