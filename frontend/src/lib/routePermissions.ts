@@ -49,6 +49,17 @@ export const ROUTE_RULES: RouteRule[] = [
     requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_VIEW'],
   },
   {
+    matchPrefix: '/ess/benefits',
+    title: 'สวัสดิการของฉัน (ESS)',
+    requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
+  },
+  {
+    matchPrefix: '/benefits/balances',
+    title: 'ยอดสวัสดิการพนักงาน',
+    requiredPermissions: ['ORG_BENEFIT_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
+  },
+
+  {
     matchPrefix: '/attendance/daily',
     title: 'ตรวจบันทึกเวลา',
     requiredPermissions: ['TIME_DAILY_VIEW', 'TIME_IMPORT_VIEW'],

@@ -145,7 +145,7 @@ export default function ExpiringDocumentsPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -217,7 +217,7 @@ export default function ExpiringDocumentsPage() {
           type="button"
           onClick={handleRunCheck}
           disabled={checking}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-[#0B2046] text-[#0B2046] text-xs font-medium rounded-xl hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white text-xs font-medium rounded-xl hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer disabled:opacity-60"
           title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
         >
           {checking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellRing className="w-3.5 h-3.5" />}

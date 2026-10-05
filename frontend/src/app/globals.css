@@ -71,21 +71,116 @@ input[type="reset"]:disabled {
   cursor: not-allowed;
 }
 
-/* Mobile & Touch Optimizations */
-html {
-  -webkit-tap-highlight-color: transparent;
+
+/* Ensure dark mode colors propagate cleanly to all text and cards */
+.dark body {
+  background-color: #0B132B;
+  color: #F8FAFC;
 }
 
-button, a, input, select, textarea {
-  touch-action: manipulation;
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #FFFFFF;
 }
 
-/* Smooth horizontal scrollbar hiding for swipeable tabs & mobile menus */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #F8FAFC !important;
 }
 
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #CBD5E1 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #94A3B8 !important;
+}
+
+.dark .bg-white {
+  background-color: #1E293B !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.25) !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.25) !important;
+  border-color: rgba(217, 119, 6, 0.3) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.25) !important;
+  border-color: rgba(37, 99, 235, 0.3) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-200\/60,
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  border-color: #334155 !important;
+}
+
+/* Dark mode table borders & headers */
+.dark table {
+  border-color: #334155 !important;
+}
+
+.dark thead tr {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark thead th {
+  background-color: #0F172A !important;
+  color: #94A3B8 !important;
+  border-color: #334155 !important;
+}
+
+.dark tbody tr {
+  border-color: #334155 !important;
+}
+
+.dark tbody td {
+  border-color: #334155 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+.dark tr {
+  border-color: #334155 !important;
+}
+
+.dark th {
+  border-color: #334155 !important;
+}
+
+.dark td {
+  border-color: #334155 !important;
+}

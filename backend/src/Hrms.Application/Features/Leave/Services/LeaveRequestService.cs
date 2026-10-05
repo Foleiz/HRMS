@@ -344,6 +344,21 @@ public partial class LeaveRequestService : ILeaveRequestService
             return (await GetByIdAsync(id, approverId, cancellationToken))!;
         }
 
+        // Period Lock Guard: ป้องกันการอนุมัติวันลาย้อนหลังในรอบเงินเดือนที่ปิด/จ่ายเงินแล้ว (Data Integrity)
+        var leaveStartDate = DateOnly.FromDateTime(request.StartDatetime);
+        var leaveEndDate = DateOnly.FromDateTime(request.EndDatetime);
+
+        var isPeriodLocked = await _context.PayrollPeriods
+            .AnyAsync(p => p.StartDate <= leaveEndDate &&
+                           leaveStartDate <= p.EndDate &&
+                           (p.Status == "PAID" || p.Status == "CLOSED"),
+                      cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            throw new InvalidOperationException($"ไม่สามารถอนุมัติคำขอลาในช่วงวันที่ {leaveStartDate:yyyy-MM-dd} ถึง {leaveEndDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
+        }
+
         // คำนวณวันลาใหม่ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท (แก้ค่าที่อาจนับเสาร์–อาทิตย์มาจากหน้าเว็บเดิม)
         var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, allowZero: true, cancellationToken);
         request.LeaveDays = calc.LeaveDays;

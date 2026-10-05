@@ -1594,6 +1594,8 @@ public class SalaryService : ISalaryService
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .Include(e => e.Assignments).ThenInclude(a => a.EmployeeType)
+                .ThenInclude(et => et!.EmployeeTypeBenefits)
+                    .ThenInclude(etb => etb.BenefitItem)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -1740,11 +1742,67 @@ public class SalaryService : ISalaryService
                     $"ลาไม่รับค่าจ้าง {unpaidDays:0.##} วัน x {dailyRate:N2} บาท/วัน (เงินเดือน ÷ 30)", IsRegular: false));
             }
 
+            // ===== 2.1 ค่าล่วงเวลา (OT) จากเวลาเข้างานจริง (เฉพาะประเภทพนักงานที่มีสิทธิ์ตามสัญญาจ้าง) =====
+            bool hasOt = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasOvertime;
+            if (hasOt && empAttendance != null && empAttendance.TotalOvertimeHours > 0)
+            {
+                decimal otRate = Math.Round(hourlyRate * 1.5m, 4);
+                decimal otAmount = Math.Round(empAttendance.TotalOvertimeHours * otRate, 2, MidpointRounding.AwayFromZero);
+                if (otAmount > 0)
+                {
+                    lines.Add(new CalcLine(systemItems["INC_OT"], otAmount, empAttendance.TotalOvertimeHours, otRate,
+                        $"ค่าล่วงเวลา {empAttendance.TotalOvertimeHours:0.##} ชม. x {otRate:N2} บาท/ชม. (1.5 เท่า)", IsRegular: false));
+                }
+            }
+
             // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
             foreach (var item in autoItems)
             {
                 var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance, periodLeaveDays);
                 if (line != null) lines.Add(line);
+            }
+
+            // ===== 3.1 สวัสดิการที่เป็นเงินได้/เบี้ยเลี้ยง (ALLOWANCE) ตามประเภทสัญญา/การจ้างงาน =====
+            if (curAssign?.EmployeeType?.EmployeeTypeBenefits != null)
+            {
+                var allowanceBenefits = curAssign.EmployeeType.EmployeeTypeBenefits
+                    .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null && etb.BenefitItem.Category == "ALLOWANCE")
+                    .ToList();
+
+                foreach (var b in allowanceBenefits)
+                {
+                    decimal allowanceAmount = 0;
+                    decimal? quantity = null;
+                    decimal? rate = null;
+                    string subtext;
+
+                    bool isDaily = b.Frequency == "DAILY" || b.BenefitItem.BenefitCode.Contains("MEAL") || b.BenefitItem.BenefitCode.Contains("DAILY");
+                    if (isDaily)
+                    {
+                        int actualWorkDays = empAttendance != null && empAttendance.TotalActualWorkDays > 0
+                            ? empAttendance.TotalActualWorkDays
+                            : workedDays;
+                        allowanceAmount = Math.Round(b.CoverageAmount * actualWorkDays, 2, MidpointRounding.AwayFromZero);
+                        quantity = actualWorkDays;
+                        rate = b.CoverageAmount;
+                        subtext = $"{b.BenefitItem.BenefitName} ({b.CoverageAmount:N2} บาท/วัน x {actualWorkDays} วันทำงานจริง)";
+                    }
+                    else
+                    {
+                        allowanceAmount = isProrated
+                            ? Math.Round(b.CoverageAmount * factor, 2, MidpointRounding.AwayFromZero)
+                            : b.CoverageAmount;
+                        subtext = isProrated
+                            ? $"{b.BenefitItem.BenefitName} (ตามสัดส่วน {workedDays}/{periodDays} วัน จาก {b.CoverageAmount:N2} บาท)"
+                            : $"{b.BenefitItem.BenefitName} (สวัสดิการประจำเดือน)";
+                    }
+
+                    if (allowanceAmount > 0)
+                    {
+                        var payrollItem = await EnsureBenefitPayrollItemAsync(b.BenefitItem, cancellationToken);
+                        lines.Add(new CalcLine(payrollItem, allowanceAmount, quantity, rate, subtext, IsRegular: !isDaily));
+                    }
+                }
             }
 
             // ===== 4. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
@@ -1764,6 +1822,12 @@ public class SalaryService : ISalaryService
                 - lines.Where(l => l.Item.ItemType == "DEDUCTION" && l.Item.IsSocialSecurityCalculated).Sum(l => l.Amount));
             bool hasSso = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasSocialSecurity;
             decimal ssoAmount = hasSso ? CalculateSsoContribution(ssoWage, ssoRate.EmployeePercent, ssoRate) : 0;
+
+            // กองทุนสำรองเลี้ยงชีพ: เฉพาะประเภทพนักงานที่มีสิทธิ์ตามสัญญาจ้าง
+            if (curAssign?.EmployeeType != null && !curAssign.EmployeeType.HasProvidentFund)
+            {
+                lines.RemoveAll(l => IsProvidentFund(l.Item));
+            }
 
             // ===== 6. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
             // เงินได้ประจำ: ประมาณการทั้งปีจากยอดเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
@@ -1835,7 +1899,7 @@ public class SalaryService : ISalaryService
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
-    private static readonly string[] SystemItemCodes = { "INC_BASE", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
+    private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
 
     /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
     private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS" };
@@ -1981,12 +2045,13 @@ public class SalaryService : ISalaryService
         return total;
     }
 
-    /// <summary>หา/สร้างรายการเงินเดือนของระบบ (เงินเดือน, SSO, ภาษี, หักลาไม่รับค่าจ้าง, โบนัส)</summary>
+    /// <summary>หา/สร้างรายการเงินเดือนของระบบ (เงินเดือน, OT, SSO, ภาษี, หักลาไม่รับค่าจ้าง, โบนัส)</summary>
     private async Task<Dictionary<string, PayrollItem>> EnsureSystemPayrollItemsAsync(CancellationToken cancellationToken)
     {
         var definitions = new (string Code, string Name, string Type, string CalcType, string? Template, bool Taxable, bool Sso)[]
         {
             ("INC_BASE", "เงินเดือน", "EARNING", "FORMULA", "BASE_SALARY", true, true),
+            ("INC_OT", "ค่าล่วงเวลา (OT)", "EARNING", "FORMULA", "OVERTIME", true, true),
             ("DED_SSO", "เงินสมทบประกันสังคม", "DEDUCTION", "FORMULA", "SSO_STANDARD", false, false),
             ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
             ("DED_UNPAID_LEAVE", "หักวันลาไม่รับค่าจ้าง", "DEDUCTION", "FORMULA", null, true, true),
@@ -2031,6 +2096,31 @@ public class SalaryService : ISalaryService
             await _context.SaveChangesAsync(cancellationToken);
 
         return result;
+    }
+
+    /// <summary>หาหรือสร้างรายการเงินเดือนสำหรับสวัสดิการพนักงาน (หมวด ALLOWANCE / เบี้ยเลี้ยง)</summary>
+    private async Task<PayrollItem> EnsureBenefitPayrollItemAsync(BenefitItem benefit, CancellationToken cancellationToken)
+    {
+        string code = $"BEN_{benefit.BenefitCode.ToUpperInvariant()}";
+        var existing = await _context.PayrollItems.FirstOrDefaultAsync(p => p.ItemCode == code, cancellationToken);
+        if (existing != null) return existing;
+
+        var newItem = new PayrollItem
+        {
+            ItemCode = code,
+            ItemName = benefit.BenefitName,
+            Description = $"สวัสดิการพนักงาน: {benefit.Description ?? benefit.BenefitName}",
+            ItemType = "EARNING",
+            CalculationType = "FORMULA",
+            FormulaTemplate = null,
+            FormulaValue = null,
+            IsTaxable = false,
+            IsSocialSecurityCalculated = false,
+            Status = "ACTIVE"
+        };
+        _context.PayrollItems.Add(newItem);
+        await _context.SaveChangesAsync(cancellationToken);
+        return newItem;
     }
 
     /// <summary>

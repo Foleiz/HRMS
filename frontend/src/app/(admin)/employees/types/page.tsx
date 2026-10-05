@@ -179,7 +179,7 @@ export default function EmployeeTypesPage() {
                 href={tab.href}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
@@ -377,6 +377,8 @@ export default function EmployeeTypesPage() {
                               } else if (b.category === 'WELLNESS') {
                                 badgeColor = 'bg-pink-50 text-pink-700 border-pink-200/80';
                               }
+                              const amt = Number(b.coverageAmount) || 0;
+                              const freqLabel = b.frequency === 'DAILY' ? 'บ./วัน' : b.frequency === 'YEARLY' ? 'บ./ปี' : 'บ./ด.';
                               return (
                                 <span
                                   key={b.id}
@@ -384,6 +386,11 @@ export default function EmployeeTypesPage() {
                                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
                                 >
                                   {b.benefitName}
+                                  {amt > 0 && (
+                                    <span className="font-mono font-bold opacity-85">
+                                      ({amt.toLocaleString()} {freqLabel})
+                                    </span>
+                                  )}
                                 </span>
                               );
                             })

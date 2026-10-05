@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -27,7 +27,9 @@ import {
   Wallet,
   Database,
   X,
+  Gift,
 } from 'lucide-react';
+
 
 interface MenuItem {
   title: string;
@@ -110,8 +112,16 @@ const menuGroups: MenuGroup[] = [
         icon: Clock,
         requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_VIEW'],
       },
+      {
+        title: 'สวัสดิการของฉัน',
+        href: '/ess/benefits',
+        matchPrefix: '/ess/benefits',
+        icon: Gift,
+        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
+      },
     ],
   },
+
   {
     category: 'การเงินและค่าตอบแทน',
     items: [
@@ -155,6 +165,17 @@ const menuGroups: MenuGroup[] = [
           'EMP_CONTRACT_VIEW',
           'EMP_TRANSFER_VIEW',
           'EMP_TYPE_VIEW',
+        ],
+      },
+      {
+        title: 'ยอดสวัสดิการพนักงาน',
+        href: '/benefits/balances',
+        matchPrefix: '/benefits/balances',
+        icon: Gift,
+        requiredPermissions: [
+          'ORG_BENEFIT_VIEW',
+          'EMP_PROFILE_VIEW',
+          'EMP_VIEW',
         ],
       },
       {

@@ -163,7 +163,7 @@ export default function ContractsPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -226,7 +226,7 @@ export default function ContractsPage() {
         <div className="border-b border-slate-200 dark:border-slate-700 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex space-x-8 text-sm font-medium">
             <button
-              className="pb-3 border-b-2 border-[#0B2046] text-[#0B2046] font-bold"
+              className="pb-3 border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold"
             >
               รายการสัญญาจ้างงาน
             </button>

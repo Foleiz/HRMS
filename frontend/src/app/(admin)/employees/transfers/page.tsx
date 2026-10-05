@@ -250,7 +250,7 @@ export default function TransfersPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -319,7 +319,7 @@ export default function TransfersPage() {
               }}
               className={`pb-3 transition-all cursor-pointer ${
                 activeTab === 'transfers'
-                  ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
               }`}
             >
@@ -332,7 +332,7 @@ export default function TransfersPage() {
               }}
               className={`pb-3 transition-all cursor-pointer ${
                 activeTab === 'timeline'
-                  ? 'border-b-2 border-[#0B2046] text-[#0B2046] font-bold'
+                  ? 'border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
               }`}
             >

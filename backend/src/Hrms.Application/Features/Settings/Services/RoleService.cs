@@ -74,6 +74,9 @@ public class RoleService : IRoleService
         // 8. ยื่นเอกสาร (MY_DOCS)
         new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
 
+        // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
+        new("ESS_BENEFIT", "สวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
+
         // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
         new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
         new("TIME_IMPORT", "นำเข้าเวลาสแกนนิ้ว / ไฟล์เวลา", "TIME_IMPORT", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),

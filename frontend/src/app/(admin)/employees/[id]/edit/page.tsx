@@ -440,7 +440,7 @@ function EmployeeEditPageContent() {
                 onClick={() => router.push(tab.href)}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                   isActive
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
@@ -462,7 +462,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('personal')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'personal'
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -474,7 +474,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('family')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'family'
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -486,7 +486,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('emergency')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'emergency'
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -498,7 +498,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('background')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'background'
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -510,7 +510,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('tax')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'tax'
-                    ? 'border-[#0B2046] text-[#0B2046] font-bold'
+                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >

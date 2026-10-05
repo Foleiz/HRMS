@@ -64,6 +64,7 @@ public interface IHrmsDbContext
     // Benefits & Welfare Management
     DbSet<BenefitItem> BenefitItems { get; }
     DbSet<EmployeeTypeBenefit> EmployeeTypeBenefits { get; }
+    DbSet<EmployeeBenefitClaim> EmployeeBenefitClaims { get; }
 
     // Employee Avatar Storage (Option 3 - PostgreSQL Binary)
     DbSet<EmployeeAvatar> EmployeeAvatars { get; }

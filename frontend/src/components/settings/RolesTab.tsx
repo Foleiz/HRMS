@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -32,6 +32,7 @@ import {
   FileText,
   Megaphone,
   Database,
+  Gift,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -103,6 +104,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   MY_ATTENDANCE: CalendarDays,
   MY_NEWS: Megaphone,
   MY_DOCS: FileText,
+  MY_BENEFITS: Gift,
   ATTENDANCE_DAILY: CalendarDays,
   ATTENDANCE_SCHEDULE: CalendarRange,
   LEAVE: CalendarCheck,
@@ -126,6 +128,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   MY_ATTENDANCE: 'บันทึกเวลาของฉัน (ESS)',
   MY_NEWS: 'ข่าวสารสำหรับฉัน',
   MY_DOCS: 'ยื่นเอกสาร',
+  MY_BENEFITS: 'สวัสดิการของฉัน',
   ATTENDANCE_DAILY: 'ตรวจบันทึกเวลา',
   ATTENDANCE_SCHEDULE: 'การจัดตารางงาน',
   LEAVE: 'การลา',
@@ -146,6 +149,7 @@ const ESS_CATEGORY_CODES = new Set<string>([
   'MY_LEAVE',
   'MY_ATTENDANCE',
   'MY_DOCS',
+  'MY_BENEFITS',
 ]);
 
 const SCOPES_CONFIG: {
