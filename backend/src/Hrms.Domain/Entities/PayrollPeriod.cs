@@ -13,6 +13,11 @@ public class PayrollPeriod : BaseEntity
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public DateOnly? PaymentDate { get; set; }
+    /// <summary>วันตัดรอบเงินเบิกสวัสดิการ (null = ใช้วันกำหนดจ่าย หรือวันสิ้นสุดรอบ)</summary>
+    public DateOnly? ClaimCutoffDate { get; set; }
+
+    /// <summary>วันตัดรอบเงินเบิกที่ใช้จริง</summary>
+    public DateOnly EffectiveClaimCutoffDate => ClaimCutoffDate ?? PaymentDate ?? EndDate;
     public string Status { get; set; } = "REVIEW"; // DRAFT, REVIEW, APPROVED, PROCESSING, PAID, CLOSED
     public DateTimeOffset? ClosedAt { get; set; }
     public long? ClosedByEmployeeId { get; set; }

@@ -60,6 +60,7 @@ public interface ISalaryService
 
     // ===== PAYMENT WORKFLOW =====
     /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) — ต้องเป็น APPROVED</summary>
+    Task<PayrollPeriodDto> UpdateClaimCutoffAsync(long periodId, UpdateClaimCutoffRequest request, CancellationToken cancellationToken = default);
     Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>ดึงรายการโอนเงินพนักงานพร้อมข้อมูล Bank Account และสถานะการโอน</summary>

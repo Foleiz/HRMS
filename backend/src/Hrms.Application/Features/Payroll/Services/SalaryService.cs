@@ -1584,6 +1584,8 @@ public class SalaryService : ISalaryService
                 throw new BusinessRuleException("รูปแบบวันกำหนดจ่ายเงินไม่ถูกต้อง");
         }
 
+        var claimCutoffDate = ParseClaimCutoff(request.ClaimCutoffDate, startDate, paymentDate ?? endDate);
+
         var period = new Domain.Entities.PayrollPeriod
         {
             Year = request.Year,
@@ -1591,6 +1593,7 @@ public class SalaryService : ISalaryService
             StartDate = startDate,
             EndDate = endDate,
             PaymentDate = paymentDate,
+            ClaimCutoffDate = claimCutoffDate,
             Status = "DRAFT"
         };
 
@@ -1660,7 +1663,7 @@ public class SalaryService : ISalaryService
         autoItems.RemoveAll(i => benefitLinkedItemIds.Contains(i.Id));
 
         // ===== คำขอเบิกสวัสดิการที่อนุมัติแล้ว: สรุปจ่ายในรอบนี้ (ตัดรอบที่วันกำหนดจ่าย) =====
-        var claimCutoff = period.PaymentDate ?? period.EndDate;
+        var claimCutoff = period.EffectiveClaimCutoffDate;
         var claimCutoffUtc = DateTime.SpecifyKind(claimCutoff.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc).AddHours(-7);
         var releasedClaimIds = await _context.EmployeeBenefitClaims
             .Where(c => c.PayrollPeriodId == period.Id && c.PaymentStatus == BenefitPayCode.PaymentInPayroll)
@@ -2785,6 +2788,35 @@ public class SalaryService : ISalaryService
 
         #region Payment Workflow
 
+    /// <summary>แปลงและตรวจวันตัดรอบเงินเบิก: ว่าง = null, ต้องอยู่ระหว่างวันเริ่มรอบถึงวันกำหนดจ่าย</summary>
+    private static DateOnly? ParseClaimCutoff(string? value, DateOnly startDate, DateOnly latest)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        if (!DateOnly.TryParse(value, out var cutoff))
+            throw new BusinessRuleException("รูปแบบวันตัดรอบเงินเบิกไม่ถูกต้อง");
+        if (cutoff < startDate.AddMonths(-1))
+            throw new BusinessRuleException("วันตัดรอบเงินเบิกเร็วเกินไป (ต้องไม่ก่อนวันเริ่มรอบเกิน 1 เดือน)");
+        if (cutoff > latest)
+            throw new BusinessRuleException("วันตัดรอบเงินเบิกต้องไม่หลังวันกำหนดจ่ายเงิน");
+        return cutoff;
+    }
+
+    public async Task<PayrollPeriodDto> UpdateClaimCutoffAsync(long periodId, UpdateClaimCutoffRequest request, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (BenefitPayCode.LockedPeriodStatuses.Contains(period.Status))
+            throw new BusinessRuleException("รอบเงินเดือนนี้อนุมัติ/ปิดแล้ว ไม่สามารถเปลี่ยนวันตัดรอบเงินเบิกได้");
+
+        period.ClaimCutoffDate = ParseClaimCutoff(request.ClaimCutoffDate, period.StartDate, period.PaymentDate ?? period.EndDate);
+        await _context.SaveChangesAsync(cancellationToken);
+        return MapPeriodToDto(period);
+    }
+
     public async Task<PayrollPeriodDto> SetPaymentMethodAsync(long periodId, SetPaymentMethodRequest request, CancellationToken cancellationToken = default)
     {
         var validMethods = new[] { "BANK_BATCH", "DIRECT_TRANSFER" };
@@ -3245,6 +3277,8 @@ public class SalaryService : ISalaryService
             StartDate = period.StartDate.ToString("yyyy-MM-dd"),
             EndDate = period.EndDate.ToString("yyyy-MM-dd"),
             PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
+            ClaimCutoffDate = period.ClaimCutoffDate?.ToString("yyyy-MM-dd"),
+            EffectiveClaimCutoffDate = period.EffectiveClaimCutoffDate.ToString("yyyy-MM-dd"),
             Status = period.Status,
             StatusText = statusText,
             EmployeeCount = payrolls.Count,

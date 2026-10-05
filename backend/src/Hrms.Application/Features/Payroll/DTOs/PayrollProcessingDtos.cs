@@ -9,6 +9,10 @@ public class PayrollPeriodDto
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
     public string? PaymentDate { get; set; }
+    /// <summary>วันตัดรอบเงินเบิกที่ HR กำหนด (null = ใช้ค่าเริ่มต้น)</summary>
+    public string? ClaimCutoffDate { get; set; }
+    /// <summary>วันตัดรอบเงินเบิกที่ใช้จริง</summary>
+    public string EffectiveClaimCutoffDate { get; set; } = string.Empty;
     public string Status { get; set; } = "REVIEW";
     public string StatusText { get; set; } = "รอตรวจสอบ";
     public int EmployeeCount { get; set; }
@@ -132,6 +136,14 @@ public class CreatePayrollPeriodRequest
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
     public string? PaymentDate { get; set; }
+    /// <summary>วันตัดรอบเงินเบิก (ว่าง = ใช้วันกำหนดจ่าย)</summary>
+    public string? ClaimCutoffDate { get; set; }
+}
+
+public class UpdateClaimCutoffRequest
+{
+    /// <summary>yyyy-MM-dd หรือว่าง = ใช้วันกำหนดจ่าย</summary>
+    public string? ClaimCutoffDate { get; set; }
 }
 
 public class BankTransferItemDto

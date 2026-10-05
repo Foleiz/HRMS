@@ -468,6 +468,7 @@ export default function PayrollPage() {
     startDate: '2026-08-01',
     endDate: '2026-08-31',
     paymentDate: '2026-08-29',
+    claimCutoffDate: '',
   }));
 
   const handleMonthChange = (newMonth: number) => {
@@ -480,6 +481,7 @@ export default function PayrollPage() {
       startDate: defaults.startDate,
       endDate: defaults.endDate,
       paymentDate: defaults.paymentDate,
+      claimCutoffDate: '',
     }));
   };
 
@@ -493,6 +495,7 @@ export default function PayrollPage() {
       startDate: defaults.startDate,
       endDate: defaults.endDate,
       paymentDate: defaults.paymentDate,
+      claimCutoffDate: '',
     }));
   };
 
@@ -506,6 +509,7 @@ export default function PayrollPage() {
       startDate: defaults.startDate,
       endDate: defaults.endDate,
       paymentDate: defaults.paymentDate,
+      claimCutoffDate: '',
     });
     setIsCreatePeriodModalOpen(true);
   };
@@ -785,6 +789,29 @@ export default function PayrollPage() {
       setTransferList(null);
     } finally {
       setIsLoadingTransferList(false);
+    }
+  };
+
+  const [claimCutoffEditing, setClaimCutoffEditing] = useState(false);
+  const [claimCutoffDraft, setClaimCutoffDraft] = useState('');
+  const [isSavingClaimCutoff, setIsSavingClaimCutoff] = useState(false);
+  useEffect(() => {
+    setClaimCutoffEditing(false);
+  }, [selectedPeriod?.id]);
+
+  const handleSaveClaimCutoff = async (value: string | null) => {
+    if (!selectedPeriod) return;
+    setIsSavingClaimCutoff(true);
+    try {
+      const updated = await salaryService.updateClaimCutoff(selectedPeriod.id, value);
+      setSelectedPeriod(updated);
+      setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      setClaimCutoffEditing(false);
+      showToast('บันทึกวันตัดรอบเงินเบิกแล้ว กรุณากดคำนวณเงินเดือนใหม่');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'บันทึกวันตัดรอบเงินเบิกไม่สำเร็จ');
+    } finally {
+      setIsSavingClaimCutoff(false);
     }
   };
 
@@ -2470,6 +2497,65 @@ export default function PayrollPage() {
                           : '-'}
                       </span>
                     </span>
+                    {selectedPeriod && (
+                      <span className="inline-flex items-center gap-1.5">
+                        ตัดรอบเงินเบิก:{' '}
+                        {claimCutoffEditing ? (
+                          <>
+                            <input
+                              type="date"
+                              value={claimCutoffDraft}
+                              max={selectedPeriod.paymentDate || selectedPeriod.endDate}
+                              onChange={(e) => setClaimCutoffDraft(e.target.value)}
+                              className="px-1.5 py-0.5 text-[11px] border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+                            />
+                            <button
+                              type="button"
+                              disabled={isSavingClaimCutoff}
+                              onClick={() => handleSaveClaimCutoff(claimCutoffDraft || null)}
+                              className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer disabled:opacity-50"
+                            >
+                              บันทึก
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isSavingClaimCutoff}
+                              onClick={() => handleSaveClaimCutoff(null)}
+                              className="text-[11px] text-slate-500 hover:underline cursor-pointer disabled:opacity-50"
+                              title="ใช้วันกำหนดจ่ายเงินเป็นวันตัดรอบ"
+                            >
+                              ใช้วันจ่ายเงิน
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setClaimCutoffEditing(false)}
+                              className="text-[11px] text-slate-400 hover:underline cursor-pointer"
+                            >
+                              ยกเลิก
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-slate-600 dark:text-slate-400 font-medium">
+                              {selectedPeriod.effectiveClaimCutoffDate || '-'}
+                              {!selectedPeriod.claimCutoffDate && ' (วันจ่ายเงิน)'}
+                            </span>
+                            {(isHR || isAdmin) && !['APPROVED', 'PROCESSING', 'PAID', 'CLOSED'].includes(selectedPeriod.status) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClaimCutoffDraft(selectedPeriod.claimCutoffDate || selectedPeriod.effectiveClaimCutoffDate || '');
+                                  setClaimCutoffEditing(true);
+                                }}
+                                className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
+                              >
+                                แก้ไข
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </span>
+                    )}
                     <span>
                       พนักงานในรอบ:{' '}
                       <span className="text-slate-600 dark:text-slate-400 font-medium">{payrolls.length} คน</span>
@@ -4212,6 +4298,20 @@ export default function PayrollPage() {
                   onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันตัดรอบเงินเบิกสวัสดิการ</label>
+                <input
+                  type="date"
+                  value={newPeriodForm.claimCutoffDate}
+                  max={newPeriodForm.paymentDate || newPeriodForm.endDate || undefined}
+                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, claimCutoffDate: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  คำขอเบิกที่อนุมัติไม่เกินวันนี้จะจ่ายในรอบนี้ ที่อนุมัติหลังจากนั้นไปรอบถัดไป · เว้นว่าง = ใช้วันกำหนดจ่ายเงิน
+                </p>
               </div>
 
               {/* Attendance Data Integration Info */}

@@ -168,6 +168,10 @@ export interface PayrollPeriod {
   startDate: string;
   endDate: string;
   paymentDate?: string | null;
+  /** วันตัดรอบเงินเบิกที่ HR กำหนด (null = ใช้วันกำหนดจ่าย) */
+  claimCutoffDate?: string | null;
+  /** วันตัดรอบเงินเบิกที่ใช้จริง */
+  effectiveClaimCutoffDate?: string;
   status: 'DRAFT' | 'REVIEW' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'CLOSED' | string;
   statusText: string;
   employeeCount: number;

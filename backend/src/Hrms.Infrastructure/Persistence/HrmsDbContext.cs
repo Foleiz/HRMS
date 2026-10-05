@@ -1769,6 +1769,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.PaymentDate).HasColumnName("payment_date");
+            entity.Property(e => e.ClaimCutoffDate).HasColumnName("claim_cutoff_date");
+            entity.Ignore(e => e.EffectiveClaimCutoffDate);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
             entity.Property(e => e.ClosedAt).HasColumnName("closed_at");
             entity.Property(e => e.ClosedByEmployeeId).HasColumnName("closed_by_employee_id");

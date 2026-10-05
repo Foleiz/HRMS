@@ -178,7 +178,7 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async createPayrollPeriod(payload: { year: number; month: number; periodName?: string; startDate: string; endDate: string; paymentDate?: string }): Promise<PayrollPeriod> {
+  async createPayrollPeriod(payload: { year: number; month: number; periodName?: string; startDate: string; endDate: string; paymentDate?: string; claimCutoffDate?: string }): Promise<PayrollPeriod> {
     const res = await apiClient.post<ApiResponse<PayrollPeriod>>('/salary/periods', payload);
     return res.data.data;
   },
@@ -244,6 +244,15 @@ export const salaryService = {
   },
 
   // === 7. PAYMENT WORKFLOW ===
+
+  /** กำหนดวันตัดรอบเงินเบิกสวัสดิการ (ว่าง = ใช้วันกำหนดจ่าย) */
+  async updateClaimCutoff(periodId: number, claimCutoffDate: string | null): Promise<PayrollPeriod> {
+    const res = await apiClient.put<ApiResponse<PayrollPeriod>>(
+      `/salary/periods/${periodId}/claim-cutoff`,
+      { claimCutoffDate: claimCutoffDate || null }
+    );
+    return res.data.data;
+  },
 
   /** ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) */
   async setPaymentMethod(periodId: number, payload: SetPaymentMethodPayload): Promise<PayrollPeriod> {

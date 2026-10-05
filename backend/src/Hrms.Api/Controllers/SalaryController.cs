@@ -595,6 +595,21 @@ public class SalaryController : ControllerBase
 
     #endregion
 
+    /// <summary>
+    /// กำหนดวันตัดรอบเงินเบิกสวัสดิการของรอบ (เฉพาะรอบที่ยังไม่อนุมัติ) — มีผลเมื่อกดคำนวณใหม่
+    /// </summary>
+    [HttpPut("periods/{id:long}/claim-cutoff")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UpdateClaimCutoff(
+        long id,
+        [FromBody] UpdateClaimCutoffRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.UpdateClaimCutoffAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<PayrollPeriodDto>.Ok(result, "บันทึกวันตัดรอบเงินเบิกแล้ว กรุณากดคำนวณเงินเดือนใหม่"));
+    }
+
     #region Payment Workflow
 
     /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER)</summary>
