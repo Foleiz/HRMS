@@ -26,6 +26,9 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { benefitService } from '@/services/benefitService';
+import { BenefitClaimRequest } from '@/types/benefit';
+import { BenefitClaimReviewModal } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
@@ -72,7 +75,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 export interface UnifiedHistoryItem {
   id: string;
   rawId: number | string;
-  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL';
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT';
   docTypeName: string;
   requestNo: string;
   employeeName: string;
@@ -87,6 +90,7 @@ export interface UnifiedHistoryItem {
   certRaw?: CertificateRequest;
   resignationRaw?: ResignationRequest;
   generalRaw?: GeneralDocumentRequest;
+  benefitRaw?: BenefitClaimRequest;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -98,6 +102,8 @@ export default function ApprovalHistoryPage() {
   const [certHistory, setCertHistory] = useState<CertificateRequest[]>([]);
   const [resignHistory, setResignHistory] = useState<ResignationRequest[]>([]);
   const [generalHistory, setGeneralHistory] = useState<GeneralDocumentRequest[]>([]);
+  const [benefitHistory, setBenefitHistory] = useState<BenefitClaimRequest[]>([]);
+  const [benefitPreview, setBenefitPreview] = useState<BenefitClaimRequest | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Sync breadcrumb
@@ -108,7 +114,7 @@ export default function ApprovalHistoryPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL'>('ALL');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Timeline Modal State (Leave)
@@ -140,7 +146,7 @@ export default function ApprovalHistoryPage() {
         ? [statusFilter]
         : ['APPROVED', 'REJECTED', 'CANCELLED'];
 
-      const [leaveResults, certResults, resignResults, genResults] = await Promise.all([
+      const [leaveResults, certResults, resignResults, genResults, benefitResults] = await Promise.all([
         Promise.all(statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))),
         certificateService.getAllRequests().catch((err) => {
           console.error('Failed to fetch certificate history', err);
@@ -153,6 +159,10 @@ export default function ApprovalHistoryPage() {
         generalDocumentService.getAllRequests().catch((err) => {
           console.error('Failed to fetch general document history', err);
           return [] as GeneralDocumentRequest[];
+        }),
+        benefitService.getClaimRequests().catch((err) => {
+          console.error('Failed to fetch benefit claim history', err);
+          return [] as BenefitClaimRequest[];
         }),
       ]);
 
@@ -183,6 +193,9 @@ export default function ApprovalHistoryPage() {
       setCertHistory(nonPendingCerts);
       setResignHistory(nonPendingResigns);
       setGeneralHistory(nonPendingGeneral);
+      setBenefitHistory(
+        benefitResults.filter((b) => (statusFilter ? b.status === statusFilter : b.status !== 'PENDING'))
+      );
     } catch (err) {
       console.error('Failed to fetch approval history', err);
     } finally {
@@ -285,6 +298,26 @@ export default function ApprovalHistoryPage() {
       });
     });
 
+    // 5. คำขอเบิกสวัสดิการ
+    benefitHistory.forEach((b) => {
+      list.push({
+        id: `BEN-${b.id}`,
+        rawId: b.id,
+        docType: 'BENEFIT',
+        docTypeName: 'คำขอเบิกสวัสดิการ',
+        requestNo: b.requestNo,
+        employeeName: b.employeeName,
+        employeeCode: b.employeeCode,
+        departmentName: b.departmentName || '-',
+        subType: b.benefitName,
+        details: `${b.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บาท`,
+        status: b.status,
+        approvedByName: b.approvedByName ?? (b.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
+        actionAt: b.approvedAt ?? b.submittedAt ?? null,
+        benefitRaw: b,
+      });
+    });
+
     // เรียงลำดับ: รายการล่าสุดอยู่บนสุดเสมอ
     return list.sort((a, b) => {
       const timeA = a.actionAt ? new Date(a.actionAt).getTime() : 0;
@@ -292,7 +325,7 @@ export default function ApprovalHistoryPage() {
       if (timeA !== timeB) return timeB - timeA;
       return String(b.rawId).localeCompare(String(a.rawId));
     });
-  }, [leaveHistory, certHistory, resignHistory, generalHistory]);
+  }, [leaveHistory, certHistory, resignHistory, generalHistory, benefitHistory]);
 
   const filteredHistory = useMemo(() => {
     return unifiedHistory.filter((item) => {
@@ -406,6 +439,7 @@ export default function ApprovalHistoryPage() {
                 <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
                 <option value="RESIGNATION">คำขอลาออก</option>
                 <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
+                <option value="BENEFIT">คำขอเบิกสวัสดิการ</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -498,6 +532,12 @@ export default function ApprovalHistoryPage() {
                             เอกสารทั่วไป
                           </span>
                         )}
+                        {item.docType === 'BENEFIT' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                            <FileText className="w-3.5 h-3.5 text-teal-500" />
+                            เบิกสวัสดิการ
+                          </span>
+                        )}
                       </td>
 
                       {/* 3. พนักงาน (ชื่อ-นามสกุล และ แผนก ไม่มีรูปโปรไฟล์) */}
@@ -554,6 +594,8 @@ export default function ApprovalHistoryPage() {
                             } else if (item.docType === 'GENERAL') {
                               setSelectedGeneralForPreview(item.generalRaw!);
                               setIsGeneralPreviewOpen(true);
+                            } else if (item.docType === 'BENEFIT') {
+                              setBenefitPreview(item.benefitRaw!);
                             }
                           }}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
@@ -646,6 +688,14 @@ export default function ApprovalHistoryPage() {
           notes: selectedGeneralForPreview.notes,
           fileName: selectedGeneralForPreview.fileName,
         } : null}
+      />
+
+      {/* รายละเอียดคำขอเบิกสวัสดิการ */}
+      <BenefitClaimReviewModal
+        claim={benefitPreview}
+        mode="view"
+        onClose={() => setBenefitPreview(null)}
+        onDone={() => setBenefitPreview(null)}
       />
     </div>
   );

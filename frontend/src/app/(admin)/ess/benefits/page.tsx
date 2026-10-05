@@ -132,6 +132,7 @@ export default function MyBenefitsPage() {
             key={effectiveEmployeeId}
             employeeId={effectiveEmployeeId}
             employeeName={effectiveEmployeeName}
+            mode={effectiveEmployeeId === user?.employeeId ? 'self' : 'hr'}
           />
         </div>
       ) : (

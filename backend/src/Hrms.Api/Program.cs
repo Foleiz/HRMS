@@ -77,6 +77,7 @@ builder.Services.AddScoped<IAttendanceAdjustmentService, AttendanceAdjustmentSer
 builder.Services.AddScoped<IOperationalReportService, OperationalReportService>();
 builder.Services.AddScoped<IEmployeeTypeService, EmployeeTypeService>();
 builder.Services.AddScoped<IBenefitService, BenefitService>();
+builder.Services.AddScoped<IBenefitClaimRequestService, BenefitClaimRequestService>();
 builder.Services.AddScoped<IEmployeeTransferService, EmployeeTransferService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<ILeavePolicyService, LeavePolicyService>();
