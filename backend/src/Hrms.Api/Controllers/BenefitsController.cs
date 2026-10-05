@@ -133,9 +133,10 @@ public class BenefitsController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<BenefitClaimDto>>>> GetClaims(
         long employeeId,
         [FromQuery] int? year,
+        [FromQuery] long? benefitItemId,
         CancellationToken cancellationToken)
     {
-        var result = await _benefitService.GetEmployeeClaimsAsync(employeeId, year, cancellationToken);
+        var result = await _benefitService.GetEmployeeClaimsAsync(employeeId, year, benefitItemId, cancellationToken);
         return Ok(ApiResponse<List<BenefitClaimDto>>.Ok(result));
     }
 

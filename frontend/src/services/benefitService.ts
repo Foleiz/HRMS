@@ -57,10 +57,15 @@ export const benefitService = {
   },
 
   // ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการของพนักงาน
-  async getEmployeeClaims(employeeId: number, year?: number) {
+  async getEmployeeClaims(employeeId: number, year?: number, benefitItemId?: number) {
     const res = await apiClient.get<ApiResponse<import('@/types/benefit').BenefitClaim[]>>(
       `/benefits/claims/${employeeId}`,
-      { params: year ? { year } : undefined }
+      {
+        params: {
+          ...(year ? { year } : {}),
+          ...(benefitItemId ? { benefitItemId } : {}),
+        },
+      }
     );
     return res.data.data;
   },
