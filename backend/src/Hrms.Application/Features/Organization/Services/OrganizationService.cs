@@ -539,6 +539,24 @@ public class OrganizationService : IOrganizationService
         var pos = await _dbContext.Positions.FindAsync(new object[] { id }, cancellationToken);
         if (pos == null) throw new NotFoundException("Position", id);
 
+        var assignmentCount = await _dbContext.EmployeeAssignments.CountAsync(a => a.PositionId == id, cancellationToken);
+        if (assignmentCount > 0)
+        {
+            throw new BusinessRuleException($"ไม่สามารถลบตำแหน่ง '{pos.PositionName}' ได้ เนื่องจากมีประวัติหรือพนักงานใช้งานตำแหน่งนี้อยู่ {assignmentCount} คน (หากไม่ต้องการใช้งาน กรุณาแก้ไขสถานะเป็น 'ไม่ได้ใช้งาน' แทน)");
+        }
+
+        var salaryCount = await _dbContext.SalaryStructures.CountAsync(s => s.PositionId == id, cancellationToken);
+        if (salaryCount > 0)
+        {
+            throw new BusinessRuleException($"ไม่สามารถลบตำแหน่ง '{pos.PositionName}' ได้ เนื่องจากมีโครงสร้างเงินเดือนเชื่อมโยงอยู่ {salaryCount} รายการ (โปรดยกเลิกหรือลบโครงสร้างเงินเดือนก่อน)");
+        }
+
+        var transferCount = await _dbContext.EmployeeTransferRequests.CountAsync(t => t.FromPositionId == id || t.ToPositionId == id, cancellationToken);
+        if (transferCount > 0)
+        {
+            throw new BusinessRuleException($"ไม่สามารถลบตำแหน่ง '{pos.PositionName}' ได้ เนื่องจากมีประวัติคำขอโอนย้ายตำแหน่งเชื่อมโยงอยู่ {transferCount} รายการ");
+        }
+
         _dbContext.Positions.Remove(pos);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -645,11 +663,11 @@ public class OrganizationService : IOrganizationService
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
 
         if (level == null)
-            throw new KeyNotFoundException($"ไม่พบระดับพนักงานรหัส {id}");
+            throw new NotFoundException("EmployeeLevel", id);
 
         bool inUse = await _dbContext.Positions.AnyAsync(p => p.EmployeeLevelId == id, cancellationToken);
         if (inUse)
-            throw new InvalidOperationException($"ไม่สามารถลบระดับพนักงาน '{level.LevelName}' ได้ เนื่องจากมีตำแหน่งงานที่เชื่อมโยงอยู่");
+            throw new BusinessRuleException($"ไม่สามารถลบระดับพนักงาน '{level.LevelName}' ได้ เนื่องจากมีตำแหน่งงานที่เชื่อมโยงอยู่");
 
         _dbContext.EmployeeLevels.Remove(level);
         await _dbContext.SaveChangesAsync(cancellationToken);

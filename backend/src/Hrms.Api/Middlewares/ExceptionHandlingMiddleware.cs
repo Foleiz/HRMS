@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.Api.Middlewares;
 
@@ -64,6 +65,11 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.BadRequest;
                 message = valEx.Errors?.Count == 1 ? valEx.Errors[0] : valEx.Message;
                 errors = valEx.Errors;
+                break;
+
+            case DbUpdateException dbEx when dbEx.InnerException?.Message.Contains("23503") == true || dbEx.Message.Contains("23503"):
+                statusCode = HttpStatusCode.BadRequest;
+                message = "ไม่สามารถลบหรือแก้ไขข้อมูลนี้ได้ เนื่องจากมีข้อมูลอื่นในระบบกำลังเชื่อมโยงหรือใช้งานอยู่ (Foreign Key Constraint)";
                 break;
 
             default:
