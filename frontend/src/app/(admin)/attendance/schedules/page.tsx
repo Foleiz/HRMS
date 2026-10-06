@@ -1753,7 +1753,7 @@ function SchedulesContent() {
                   {assignModalMode === 'create' && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
-                      <select
+                      <CustomSelect
                         value={singleAssignTypeFilter}
                         onChange={(e) => setSingleAssignTypeFilter(e.target.value)}
                         className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-200 rounded-md focus:outline-none text-slate-700 dark:text-slate-300 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
@@ -1764,7 +1764,7 @@ function SchedulesContent() {
                             {t.typeName}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
                   )}
                 </div>
@@ -1947,7 +1947,7 @@ function SchedulesContent() {
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                   กะการทำงานเป้าหมาย <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={assignForm.shiftId}
                   onChange={(e) => setAssignForm({ ...assignForm, shiftId: Number(e.target.value) })}
                   className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
@@ -1960,7 +1960,7 @@ function SchedulesContent() {
                       {s.isCrossDay ? ' กะข้ามวัน' : ''})
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Date Ranges */}
@@ -2167,7 +2167,7 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                     เลือกแผนกเป้าหมาย <span className="text-rose-500">*</span>
                   </label>
-                  <select
+                  <CustomSelect
                     value={batchSelectedDept || ''}
                     onChange={(e) => setBatchSelectedDept(Number(e.target.value) || null)}
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
@@ -2178,7 +2178,7 @@ function SchedulesContent() {
                         {d.departmentName} ({d.departmentCode})
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
               ) : (
                 /* Select Specific Employees */
@@ -2233,7 +2233,7 @@ function SchedulesContent() {
                     </div>
 
                     <div>
-                      <select
+                      <CustomSelect
                         value={batchAssignTypeFilter}
                         onChange={(e) => setBatchAssignTypeFilter(e.target.value)}
                         className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-slate-700 dark:text-slate-300 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
@@ -2244,7 +2244,7 @@ function SchedulesContent() {
                             {t.typeName}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
 
@@ -2302,7 +2302,7 @@ function SchedulesContent() {
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                   กะการทำงานที่ต้องการมอบหมาย <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={batchShiftId}
                   onChange={(e) => setBatchShiftId(Number(e.target.value))}
                   className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
@@ -2312,7 +2312,7 @@ function SchedulesContent() {
                       {s.shiftCode} - {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.)
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Dates */}
@@ -2646,14 +2646,14 @@ function SchedulesContent() {
               {/* Status */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะกะการทำงาน</label>
-                <select
+                <CustomSelect
                   value={shiftForm.status}
                   onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
                   className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
-                  <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                  <option value="INACTIVE">ระงับการใช้งานชั่วคราว (Inactive)</option>
-                </select>
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ระงับการใช้งานชั่วคราว</option>
+                </CustomSelect>
               </div>
 
               {/* Actions */}

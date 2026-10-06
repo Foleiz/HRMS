@@ -37,6 +37,7 @@ import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -701,7 +702,7 @@ export default function DocumentHistoryPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-gray-100">
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                 แสดง
-                <select
+                <CustomSelect
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
@@ -712,7 +713,7 @@ export default function DocumentHistoryPage() {
                   {PAGE_SIZE_OPTIONS.map((n) => (
                     <option key={n} value={n}>{n}</option>
                   ))}
-                </select>
+                </CustomSelect>
                 เอกสาร (ทั้งหมด {documents.length} รายการ)
               </div>
               <div className="flex items-center gap-1.5">

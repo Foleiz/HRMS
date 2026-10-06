@@ -780,7 +780,7 @@ export default function ReportsPage() {
               {/* Month Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
-                <select
+                <CustomSelect
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
@@ -790,13 +790,13 @@ export default function ReportsPage() {
                       {m}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Year Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
-                <select
+                <CustomSelect
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
@@ -806,7 +806,7 @@ export default function ReportsPage() {
                       พ.ศ. {y + 543}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Department Selector */}
@@ -1045,24 +1045,24 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
-                <select
+                <CustomSelect
                   value={taxYear}
                   onChange={(e) => setTaxYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
-                      {y + 543} ({y})
+                      พ.ศ. {y + 543}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Month Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">งวดเดือน:</span>
-                <select
+                <CustomSelect
                   value={taxMonth}
                   onChange={(e) => setTaxMonth(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
@@ -1072,7 +1072,7 @@ export default function ReportsPage() {
                       {m}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Department Select */}
@@ -1272,7 +1272,7 @@ export default function ReportsPage() {
                 {/* Rows per page */}
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span>แสดง</span>
-                  <select
+                  <CustomSelect
                     value={taxRowsPerPage}
                     onChange={(e) => {
                       setTaxRowsPerPage(Number(e.target.value));
@@ -1285,7 +1285,7 @@ export default function ReportsPage() {
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                     <option value={200}>200</option>
-                  </select>
+                  </CustomSelect>
                   <span>แถว</span>
                 </div>
               </div>
@@ -1452,24 +1452,24 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
-                <select
+                <CustomSelect
                   value={turnoverYear}
                   onChange={(e) => setTurnoverYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
-                      {y + 543} ({y})
+                      พ.ศ. {y + 543}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Month Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
                 <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
-                <select
+                <CustomSelect
                   value={turnoverMonth}
                   onChange={(e) => setTurnoverMonth(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
@@ -1479,7 +1479,7 @@ export default function ReportsPage() {
                       {m}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Division Filter */}

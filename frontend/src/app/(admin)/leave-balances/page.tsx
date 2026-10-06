@@ -16,6 +16,7 @@ import {
   Loader2,
   FileSpreadsheet,
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function LeaveBalancesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -159,7 +160,7 @@ export default function LeaveBalancesPage() {
         <div className="relative inline-block">
           <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 transition-colors">
             <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-            <select
+            <CustomSelect
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer pr-1"
@@ -169,7 +170,7 @@ export default function LeaveBalancesPage() {
                   {yr}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
         </div>
 

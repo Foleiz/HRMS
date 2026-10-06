@@ -10,6 +10,7 @@ import { employeeTypeService } from '@/services/employeeTypeService';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { useToast } from '@/context/ToastContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface CreateContractModalProps {
   isOpen: boolean;
@@ -211,7 +212,7 @@ export default function CreateContractModal({
               </Link>
             </div>
 
-            <select
+            <CustomSelect
               value={employeeTypeId || ''}
               onChange={(e) => handleTypeSelectChange(e.target.value)}
               required
@@ -225,12 +226,12 @@ export default function CreateContractModal({
                 ))
               ) : (
                 <>
-                  <option value="2">ทดลองงาน (PROB)</option>
-                  <option value="1">ประจำ (PERM)</option>
-                  <option value="3">สัญญาจ้าง (CONT)</option>
+                  <option value="2">ทดลองงาน</option>
+                  <option value="1">ประจำ</option>
+                  <option value="3">สัญญาจ้าง</option>
                 </>
               )}
-            </select>
+            </CustomSelect>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               เมื่อถึงวันเริ่มสัญญา ระบบจะอัปเดตประเภทพนักงานของพนักงานคนนี้ตามสัญญาให้อัตโนมัติ
             </p>

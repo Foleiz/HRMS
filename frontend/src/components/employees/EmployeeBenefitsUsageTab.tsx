@@ -28,6 +28,7 @@ import {
   Ban,
   Paperclip,
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 function paymentStatusLabel(c: BenefitClaim): string {
   switch (c.paymentStatus) {
@@ -182,17 +183,17 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <span className="font-medium">ปีงบประมาณ:</span>
-            <select
+            <CustomSelect
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="bg-transparent font-bold focus:outline-none cursor-pointer"
             >
               {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
                 <option key={y} value={y} className="dark:bg-slate-800">
-                  {y} ({y + 543})
+                  พ.ศ. {y + 543}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
 
           {/* Record Claim Button */}

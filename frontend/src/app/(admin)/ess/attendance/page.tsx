@@ -26,6 +26,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function EssAttendancePage() {
   const { user, hasPermission, hasRole } = useAuth();
@@ -416,7 +417,7 @@ export default function EssAttendancePage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <select
+              <CustomSelect
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
                 className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -426,9 +427,9 @@ export default function EssAttendancePage() {
                     {m}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
 
-              <select
+              <CustomSelect
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -438,7 +439,7 @@ export default function EssAttendancePage() {
                     พ.ศ. {y + 543}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
 

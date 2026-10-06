@@ -10,44 +10,144 @@ export interface SelectOption {
 }
 
 export interface CustomSelectProps {
-  value: string | number;
-  onChange: (value: string) => void;
-  options: SelectOption[];
+  value?: string | number;
+  onChange?: (value: any, event?: any) => void;
+  options?: SelectOption[];
+  children?: React.ReactNode;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
   align?: 'left' | 'right';
+  name?: string;
+  id?: string;
+  title?: string;
+  required?: boolean;
+}
+
+function extractOptions(children: React.ReactNode): SelectOption[] {
+  const options: SelectOption[] = [];
+  React.Children.forEach(children, (child) => {
+    if (!child || !React.isValidElement(child)) return;
+    if (child.type === 'option') {
+      const props = child.props as { value?: string | number; children?: React.ReactNode; disabled?: boolean };
+      const val = props.value !== undefined ? props.value : (props.children as any);
+      let label = props.children;
+      if (Array.isArray(label)) {
+        label = label
+          .map((c: any) => (typeof c === 'string' || typeof c === 'number' ? c : ''))
+          .join('');
+      } else if (typeof label !== 'string' && typeof label !== 'number') {
+        label = String(label ?? '');
+      }
+      options.push({
+        value: val,
+        label: String(label).trim(),
+        disabled: props.disabled,
+      });
+    } else if ((child.props as any)?.children) {
+      options.push(...extractOptions((child.props as any).children));
+    }
+  });
+  return options;
+}
+
+function createDualValue(optValue: string | number, name?: string) {
+  const strVal = String(optValue);
+  const eventObj = new String(strVal) as any;
+  eventObj.target = { value: strVal, name: name || '' };
+  eventObj.currentTarget = eventObj.target;
+  eventObj.value = strVal;
+  return eventObj;
+}
+
+function filterContainerClasses(className: string): string {
+  if (!className) return '';
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const containerTokens: string[] = [];
+
+  for (const token of tokens) {
+    if (
+      /^p[xytblr]?-/.test(token) ||
+      /^border/.test(token) ||
+      /^dark:border/.test(token) ||
+      /^bg-/.test(token) ||
+      /^dark:bg-/.test(token) ||
+      /^ring/.test(token) ||
+      /^dark:ring/.test(token) ||
+      /^focus:/.test(token) ||
+      /^dark:focus:/.test(token) ||
+      /^hover:/.test(token) ||
+      /^dark:hover:/.test(token) ||
+      /^text-(slate|gray|zinc|neutral|black|white)/.test(token) ||
+      /^dark:text-/.test(token) ||
+      /^rounded/.test(token) ||
+      token === 'appearance-none' ||
+      token === 'cursor-pointer' ||
+      token === 'outline-none' ||
+      token === 'shadow-sm' ||
+      token === 'shadow' ||
+      token === 'shadow-2xs' ||
+      token === 'font-medium' ||
+      token === 'font-semibold' ||
+      token === 'font-bold'
+    ) {
+      continue;
+    }
+    containerTokens.push(token);
+  }
+  return containerTokens.join(' ');
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
   value,
   onChange,
   options,
+  children,
   placeholder = 'เลือกรายการ',
   className = '',
   disabled = false,
-  size = 'md',
+  size,
   align = 'left',
+  name,
+  id,
+  title,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
 
-  const selectedOption = options.find((opt) => String(opt.value) === String(value));
+  // Resolve options from prop or children
+  const resolvedOptions: SelectOption[] = React.useMemo(() => {
+    if (options && options.length > 0) return options;
+    if (children) return extractOptions(children);
+    return [];
+  }, [options, children]);
+
+  const selectedOption = resolvedOptions.find((opt) => String(opt.value) === String(value));
+
+  // Auto-detect size if not specified explicitly
+  const effectiveSize =
+    size ||
+    (className.includes('h-8') || className.includes('text-xs')
+      ? 'sm'
+      : className.includes('h-10') || className.includes('text-sm')
+      ? 'lg'
+      : 'md');
 
   const updatePosition = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const dropdownHeight = Math.min(options.length * 40 + 16, 260);
+    const dropdownHeight = Math.min(resolvedOptions.length * 40 + 16, 260);
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 99999,
-      minWidth: `${Math.max(rect.width, 160)}px`,
+      minWidth: `${Math.max(rect.width, 140)}px`,
+      maxWidth: 'calc(100vw - 16px)',
     };
 
     if (openUpward) {
@@ -99,20 +199,39 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [isOpen, options.length, align]);
+  }, [isOpen, resolvedOptions.length, align]);
 
   const sizeClasses = {
     sm: 'h-8 px-2.5 text-xs rounded-lg',
     md: 'h-9 px-3 text-xs rounded-xl',
     lg: 'h-10 px-3.5 text-sm rounded-xl',
-  }[size];
+  }[effectiveSize];
+
+  const containerClasses = filterContainerClasses(className);
+  const isFullWidth = containerClasses.includes('w-full') || className.includes('w-full');
+  const hasCustomWidth =
+    isFullWidth ||
+    containerClasses.includes('w-') ||
+    containerClasses.includes('min-w-') ||
+    className.includes('min-w-');
+
+  const defaultMinWidth = effectiveSize === 'sm' ? 'min-w-[85px]' : 'min-w-[120px]';
 
   return (
-    <div className={`relative inline-block ${className || 'min-w-[130px]'}`}>
+    <div
+      className={`relative ${isFullWidth ? 'w-full block' : 'inline-block'} ${
+        !hasCustomWidth ? defaultMinWidth : ''
+      } ${containerClasses}`}
+    >
+      {/* Hidden input for form submission if name is provided */}
+      {name && <input type="hidden" name={name} value={value ?? ''} />}
+
       {/* Trigger Button */}
       <button
         ref={triggerRef}
         type="button"
+        id={id}
+        title={title}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-2 transition-all text-left shadow-2xs ${
@@ -144,15 +263,18 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           style={menuStyle}
           className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-y-auto py-1 animate-in fade-in zoom-in-95 duration-150"
         >
-          {options.map((opt) => {
+          {resolvedOptions.map((opt, idx) => {
             const isSelected = String(opt.value) === String(value);
             return (
               <button
-                key={String(opt.value)}
+                key={`${String(opt.value)}-${idx}`}
                 type="button"
                 disabled={opt.disabled}
                 onClick={() => {
-                  onChange(String(opt.value));
+                  if (onChange) {
+                    const dualVal = createDualValue(opt.value, name);
+                    onChange(dualVal, dualVal);
+                  }
                   setIsOpen(false);
                 }}
                 className={`w-full px-3 py-2 text-xs flex items-center justify-between text-left transition-colors cursor-pointer ${

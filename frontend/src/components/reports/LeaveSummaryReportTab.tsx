@@ -6,6 +6,7 @@ import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
 import { LeaveSummaryReport } from '@/types/leaveInsights';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface Props {
   canExport: boolean;
@@ -85,7 +86,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
             <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ปี:</span>
-            <select
+            <CustomSelect
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
               className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
@@ -95,11 +96,11 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   {currentYear - i + 543}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
             <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-            <select
+            <CustomSelect
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
               className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
@@ -110,7 +111,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   {d.departmentName}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500 dark:text-slate-400" />}
         </div>

@@ -738,7 +738,7 @@ export default function AnnouncementsPage() {
             <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <span>แสดง</span>
-                <select
+                <CustomSelect
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
@@ -751,7 +751,7 @@ export default function AnnouncementsPage() {
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                   <option value={200}>200</option>
-                </select>
+                </CustomSelect>
                 <span>แถวต่อหน้า</span>
                 <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
                   (ทั้งหมด {totalCount} รายการ - หน้า {page} จาก {Math.max(1, Math.ceil(totalCount / pageSize))})
@@ -1099,7 +1099,7 @@ export default function AnnouncementsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่ข่าว</label>
-                  <select
+                  <CustomSelect
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
@@ -1109,12 +1109,12 @@ export default function AnnouncementsPage() {
                     <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
                     <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
                     <option value="URGENT">ประกาศด่วนสำคัญ</option>
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ระดับความสำคัญ</label>
-                  <select
+                  <CustomSelect
                     value={formPriority}
                     onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
@@ -1123,7 +1123,7 @@ export default function AnnouncementsPage() {
                     <option value="NORMAL">ปกติ</option>
                     <option value="HIGH">สำคัญ</option>
                     <option value="URGENT">ด่วนที่สุด</option>
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
 
@@ -1248,14 +1248,14 @@ export default function AnnouncementsPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะเมื่อบันทึก</label>
-                  <select
+                  <CustomSelect
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value as AnnouncementStatus)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
                   >
                     <option value="PUBLISHED">เผยแพร่</option>
                     <option value="DRAFT">บันทึกเป็นฉบับร่าง</option>
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
 

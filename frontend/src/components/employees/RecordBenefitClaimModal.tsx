@@ -6,6 +6,7 @@ import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
 import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -214,7 +215,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               ประเภทสวัสดิการ <span className="text-rose-500">*</span>
             </label>
-            <select
+            <CustomSelect
               value={selectedBenefitId}
               onChange={(e) => setSelectedBenefitId(Number(e.target.value))}
               required
@@ -228,7 +229,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                   {b.quotaAmount > 0 ? ` (คงเหลือ ${b.remainingAmount.toLocaleString()} บ.)` : ''}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
 
           {/* Alert if Benefit Requires Supporting Document */}

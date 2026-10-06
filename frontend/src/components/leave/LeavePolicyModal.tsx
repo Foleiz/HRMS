@@ -13,6 +13,7 @@ import {
 import { employeeTypeService } from '@/services/employeeTypeService';
 import { inferFormCategory } from './LeaveTypeModal';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface EmployeeLevelOption {
   id: number;
@@ -329,7 +330,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           <Section no={1} title="ใช้กับใคร">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="ประเภทการลา *">
-                <select
+                <CustomSelect
                   value={leaveTypeId}
                   disabled={isEditing}
                   onChange={(e) => handleLeaveTypeChange(Number(e.target.value))}
@@ -341,23 +342,23 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                       {t.status !== 'ACTIVE' ? ' (ปิดใช้งาน)' : ''}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </Field>
               <Field label="ประเภทพนักงาน">
-                <select value={employeeTypeId} onChange={(e) => setEmployeeTypeId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
+                <CustomSelect value={employeeTypeId} onChange={(e) => setEmployeeTypeId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
                   <option value="">ทุกประเภท</option>
                   {employeeTypes.map((t) => (
                     <option key={t.id} value={t.id}>{t.typeName}</option>
                   ))}
-                </select>
+                </CustomSelect>
               </Field>
               <Field label="ระดับพนักงาน">
-                <select value={employeeLevelId} onChange={(e) => setEmployeeLevelId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
+                <CustomSelect value={employeeLevelId} onChange={(e) => setEmployeeLevelId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
                   <option value="">ทุกระดับ</option>
                   {employeeLevels.map((l) => (
                     <option key={l.id} value={l.id}>{l.levelName}</option>
                   ))}
-                </select>
+                </CustomSelect>
               </Field>
             </div>
             <p className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">
@@ -377,10 +378,10 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 <NumberBox value={form.entitlementDays} onChange={(v) => set('entitlementDays', v)} unit="วัน/ปี" step="0.5" />
               </Field>
               <Field label="พนักงานเข้าใหม่ระหว่างปี">
-                <select value={form.prorationMethod} onChange={(e) => set('prorationMethod', e.target.value as LeaveProrationMethod)} className={selectCls}>
+                <CustomSelect value={form.prorationMethod} onChange={(e) => set('prorationMethod', e.target.value as LeaveProrationMethod)} className={selectCls}>
                   <option value="FULL">ได้สิทธิ์เต็มปี</option>
                   <option value="PRORATA_MONTHLY">คิดตามสัดส่วนเดือนที่เหลือ</option>
-                </select>
+                </CustomSelect>
               </Field>
               <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = ใช้ได้ตั้งแต่วันแรก · 365 = ทำงานครบ 1 ปี">
                 <NumberBox value={form.minimumServiceDays} onChange={(v) => set('minimumServiceDays', v)} unit="วัน" />
@@ -402,11 +403,11 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               </Field>
               <Field label="การยื่นย้อนหลัง">
                 <div className="flex gap-2">
-                  <select value={form.backdateMode} onChange={(e) => set('backdateMode', e.target.value as BackdateMode)} className={selectCls}>
+                  <CustomSelect value={form.backdateMode} onChange={(e) => set('backdateMode', e.target.value as BackdateMode)} className={selectCls}>
                     <option value="UNLIMITED">ยื่นได้ตลอด</option>
                     <option value="LIMIT">กำหนดวัน</option>
                     <option value="NONE">ยื่นไม่ได้</option>
-                  </select>
+                  </CustomSelect>
                   {form.backdateMode === 'LIMIT' && (
                     <div className="w-32 shrink-0">
                       <NumberBox value={form.maxBackdateDays} onChange={(v) => set('maxBackdateDays', v)} unit="วัน" />

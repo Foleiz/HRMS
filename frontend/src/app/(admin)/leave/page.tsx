@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -44,6 +44,7 @@ import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -702,17 +703,17 @@ export default function LeaveManagementPage() {
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200">
                   <Calendar className="w-4 h-4 text-gray-500 dark:text-slate-400" />
                   <span className="text-xs font-medium text-gray-600 dark:text-slate-400">ประจำปี:</span>
-                  <select
+                  <CustomSelect
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                     className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     {[2025, 2026, 2027].map((y) => (
                       <option key={y} value={y}>
-                        {y + 543} ({y})
+                        พ.ศ. {y + 543}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 {/* Search Box */}

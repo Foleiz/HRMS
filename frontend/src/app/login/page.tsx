@@ -7,11 +7,11 @@ import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircl
 
 /** บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา ไม่แสดงบน production) */
 const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
-  { label: 'SuperAdmin', username: 'admin', password: 'Admin#2026!Sec' },
-  { label: 'HR', username: 'hr', password: 'Hr@2026!Pass' },
-  { label: 'Finance', username: 'finance', password: 'Finance@Money2026' },
-  { label: 'CEO / Approver', username: 'approver', password: 'Approver@Flow2026' },
-  { label: 'Dept Manager', username: 'somchai.w', password: 'Somchai@Dept2026' },
+  { label: 'ผู้ดูแลระบบสูงสุด', username: 'admin', password: 'Admin#2026!Sec' },
+  { label: 'ฝ่ายทรัพยากรบุคคล', username: 'hr', password: 'Hr@2026!Pass' },
+  { label: 'ฝ่ายการเงินและบัญชี', username: 'finance', password: 'Finance@Money2026' },
+  { label: 'ผู้บริหาร / ผู้อนุมัติ', username: 'approver', password: 'Approver@Flow2026' },
+  { label: 'ผู้จัดการฝ่าย', username: 'somchai.w', password: 'Somchai@Dept2026' },
   { label: 'พนักงานทั่วไป', username: 'worameth.r', password: 'Worameth@Staff26' },
 ];
 

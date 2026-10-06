@@ -23,6 +23,7 @@ import {
   Building2,
   Trash2,
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function EmployeeBenefitBalancesPage() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -213,7 +214,7 @@ export default function EmployeeBenefitBalancesPage() {
             <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700">
               <Calendar className="w-4 h-4 text-gray-500 dark:text-slate-400" />
               <span className="text-xs font-medium text-gray-600 dark:text-slate-400">ประจำปี:</span>
-              <select
+              <CustomSelect
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
@@ -223,7 +224,7 @@ export default function EmployeeBenefitBalancesPage() {
                     {y + 543} ({y})
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
 
             {/* Search Box */}

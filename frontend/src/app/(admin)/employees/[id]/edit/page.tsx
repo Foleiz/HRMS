@@ -28,6 +28,7 @@ import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -615,7 +616,7 @@ function EmployeeEditPageContent() {
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">ประเภทพนักงาน</label>
                     {canEditEmployeeType ? (
-                      <select
+                      <CustomSelect
                         value={formData.employeeType || ''}
                         onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
@@ -626,7 +627,7 @@ function EmployeeEditPageContent() {
                             {name}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     ) : (
                       <div className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
                         {formData.employeeType || '-'}
@@ -644,7 +645,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.prefix}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -661,7 +662,7 @@ function EmployeeEditPageContent() {
                       <option value="นาย">นาย</option>
                       <option value="นางสาว">นางสาว</option>
                       <option value="นาง">นาง</option>
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   {/* ชื่อ */}
@@ -731,7 +732,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       เพศ (Gender) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.gender}
                       onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
@@ -740,7 +741,7 @@ function EmployeeEditPageContent() {
                       <option value="ชาย">ชาย</option>
                       <option value="หญิง">หญิง</option>
                       <option value="ไม่ระบุ">ไม่ระบุ</option>
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   {/* สัญชาติ */}
@@ -759,7 +760,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.religion}
                       onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
@@ -773,7 +774,7 @@ function EmployeeEditPageContent() {
                       {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
                         <option value={formData.religion}>{formData.religion}</option>
                       )}
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   {/* สถานภาพสมรส */}
@@ -781,7 +782,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.maritalStatus}
                       onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
@@ -795,7 +796,7 @@ function EmployeeEditPageContent() {
                       {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
                         <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
                       )}
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   {/* สถานภาพทางทหาร */}
@@ -803,7 +804,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.militaryStatus}
                       onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
@@ -812,7 +813,7 @@ function EmployeeEditPageContent() {
                       <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
                       <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
                       <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
-                    </select>
+                    </CustomSelect>
                   </div>
                 </div>
 
@@ -983,7 +984,7 @@ function EmployeeEditPageContent() {
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         ชื่อธนาคาร
                       </span>
-                      <select
+                      <CustomSelect
                         value={formData.bankId ?? ''}
                         onChange={(e) => {
                           const id = e.target.value ? Number(e.target.value) : undefined;
@@ -1000,7 +1001,7 @@ function EmployeeEditPageContent() {
                             {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
@@ -1088,7 +1089,7 @@ function EmployeeEditPageContent() {
                         <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                           value={formData.familyMembers[activeFamilyIndex].relationshipType}
                           onChange={(e) => {
                             const list = [...(formData.familyMembers || [])];
@@ -1102,14 +1103,14 @@ function EmployeeEditPageContent() {
                           <option value="คู่สมรส">คู่สมรส</option>
                           <option value="บุตร">บุตร</option>
                           <option value="พี่น้อง">พี่น้อง</option>
-                        </select>
+                        </CustomSelect>
                       </div>
 
                       <div>
                         <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                           value={formData.familyMembers[activeFamilyIndex].prefix || ''}
                           onChange={(e) => {
                             const list = [...(formData.familyMembers || [])];
@@ -1124,7 +1125,7 @@ function EmployeeEditPageContent() {
                           <option value="นาง">นาง</option>
                           <option value="เด็กชาย">เด็กชาย</option>
                           <option value="เด็กหญิง">เด็กหญิง</option>
-                        </select>
+                        </CustomSelect>
                       </div>
 
                       <div>
@@ -1208,7 +1209,7 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelect
                       value={formData.emergencyContact?.relationship || 'บิดา'}
                       onChange={(e) =>
                         setFormData({
@@ -1231,12 +1232,12 @@ function EmployeeEditPageContent() {
                       <option value="ญาติ">ญาติ</option>
                       <option value="เพื่อน">เพื่อน</option>
                       <option value="อื่นๆ">อื่นๆ</option>
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">คำนำหน้า</label>
-                    <select
+                    <CustomSelect
                       value={formData.emergencyContact?.prefix || ''}
                       onChange={(e) =>
                         setFormData({
@@ -1256,7 +1257,7 @@ function EmployeeEditPageContent() {
                       <option value="นาย">นาย</option>
                       <option value="นางสาว">นางสาว</option>
                       <option value="นาง">นาง</option>
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   <div>

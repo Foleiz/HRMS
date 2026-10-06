@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AuditLogItem, UserAccount } from '@/types/settings';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface AuditLogTabProps {
   logs: AuditLogItem[];
@@ -526,7 +527,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                 ผู้ใช้งาน
               </label>
-              <select
+              <CustomSelect
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
@@ -537,14 +538,14 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                     {u.username} ({u.fullName})
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                 ประเภทการกระทำ
               </label>
-              <select
+              <CustomSelect
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
                 className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
@@ -559,14 +560,14 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <option value="APPROVE">อนุมัติ</option>
                 <option value="REJECT">ปฏิเสธ</option>
                 <option value="EXPORT">ส่งออก</option>
-              </select>
+              </CustomSelect>
             </div>
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                 โมดูล
               </label>
-              <select
+              <CustomSelect
                 value={selectedEntityType}
                 onChange={(e) => setSelectedEntityType(e.target.value)}
                 className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
@@ -579,7 +580,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <option value="leave_request">การลา</option>
                 <option value="attendance_daily">เวลาทำงาน</option>
                 <option value="document">เอกสาร</option>
-              </select>
+              </CustomSelect>
             </div>
           </div>
 
@@ -694,7 +695,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       <div className="py-2.5 px-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-slate-600">
           <span>แสดง</span>
-          <select
+          <CustomSelect
             value={pageSize}
             onChange={(e) => {
               const newSize = Number(e.target.value);
@@ -708,7 +709,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             <option value={50}>50</option>
             <option value={100}>100</option>
             <option value={200}>200</option>
-          </select>
+          </CustomSelect>
           <span>แถวต่อหน้า</span>
           <span className="text-slate-400 text-[11px]">
             (ทั้งหมด {totalCount.toLocaleString()} รายการ)

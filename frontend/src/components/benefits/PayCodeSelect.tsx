@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { salaryService } from '@/services/salaryService';
 import { PayrollItem } from '@/types/payroll';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const SYSTEM_CODES = ['INC_BASE', 'INC_OT', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
 
@@ -49,7 +50,7 @@ export const PayCodeSelect: React.FC<PayCodeSelectProps> = ({ value, onChange, i
 
   return (
     <div>
-      <select
+      <CustomSelect
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
         className={
@@ -63,7 +64,7 @@ export const PayCodeSelect: React.FC<PayCodeSelectProps> = ({ value, onChange, i
             {p.itemName} ({p.itemCode})
           </option>
         ))}
-      </select>
+      </CustomSelect>
       <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
         {selected ? (
           <>
