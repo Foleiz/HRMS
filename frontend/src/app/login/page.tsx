@@ -3,7 +3,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { ShieldCheck, Lock, User, Eye, EyeOff, Loader2, KeyRound } from 'lucide-react';
+import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircle } from 'lucide-react';
+
+/** บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา ไม่แสดงบน production) */
+const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
+  { label: 'SuperAdmin', username: 'admin', password: 'Admin#2026!Sec' },
+  { label: 'HR', username: 'hr', password: 'Hr@2026!Pass' },
+  { label: 'Finance', username: 'finance', password: 'Finance@Money2026' },
+  { label: 'CEO / Approver', username: 'approver', password: 'Approver@Flow2026' },
+  { label: 'Dept Manager', username: 'somchai.w', password: 'Somchai@Dept2026' },
+  { label: 'พนักงานทั่วไป', username: 'worameth.r', password: 'Worameth@Staff26' },
+];
+
+const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +25,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,74 +57,99 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-500/25 mb-4">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">ระบบบริหารงานบุคคล (HRMS)</h1>
-          <p className="text-sm text-slate-400 mt-1">Enterprise Human Resource Management System</p>
-        </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#C9DBF5] via-[#E3ECFA] to-[#F8FAFC] flex flex-col">
+      {/* ===== พื้นหลัง: แสงนุ่ม ๆ + เส้นโค้งจาง ๆ ===== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full bg-[#AFC8EE]/50 blur-3xl" />
+        <div className="absolute bottom-[-120px] -left-32 w-[560px] h-[360px] rounded-full bg-white/80 blur-3xl" />
+        <div className="absolute bottom-[-140px] -right-24 w-[620px] h-[380px] rounded-full bg-white/80 blur-3xl" />
+        <div className="absolute bottom-[-60px] left-1/2 -translate-x-1/2 w-[900px] h-[260px] rounded-full bg-white/70 blur-3xl" />
+        <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full border border-white/60" />
+        <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[820px] h-[820px] rounded-full border border-white/50" />
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-slate-800/80 border border-slate-700/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-lg font-semibold text-white mb-6">เข้าสู่ระบบ</h2>
+      {/* ===== โลโก้มุมซ้ายบน (เหมือน Sidebar) ===== */}
+      <header className="relative z-10 px-6 sm:px-10 pt-6">
+        <div className="inline-flex items-center gap-3 select-none">
+          <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/25">
+            <Users className="w-5 h-5" />
+          </div>
+          <div className="leading-tight">
+            <div className="text-[15px] font-bold text-[#0F172A] tracking-tight">Human</div>
+            <div className="text-[15px] font-bold text-[#0B2046] tracking-tight">Resource</div>
+          </div>
+        </div>
+      </header>
+
+      {/* ===== การ์ดเข้าสู่ระบบ ===== */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[420px] rounded-[28px] border border-white/80 bg-gradient-to-b from-[#DCE8FA] via-[#F4F8FE] to-[#FFFFFF] shadow-[0_24px_60px_-20px_rgba(11,32,70,0.35)] px-6 sm:px-10 pt-10 pb-8">
+          {/* ไอคอน */}
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-white shadow-[0_8px_20px_-6px_rgba(11,32,70,0.25)] flex items-center justify-center text-[#0B2046]">
+            <LogIn className="w-6 h-6" />
+          </div>
+
+          <h1 className="mt-5 text-center text-2xl font-bold text-[#0F172A] tracking-tight">เข้าสู่ระบบ</h1>
+          <p className="mt-1.5 text-center text-sm leading-relaxed text-[#64748B]">
+            ระบบบริหารงานบุคคล (HRMS)
+            <br />
+            จัดการข้อมูลพนักงาน การลา <span className="whitespace-nowrap">และเงินเดือนได้ในที่เดียว</span>
+          </p>
 
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm flex items-start space-x-2">
-              <span className="font-semibold">⚠️</span>
+            <div className="mt-5 p-3 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#BE123C] text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="เช่น admin, pimjai.k, finance"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-900/60 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
+          <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+            <label className="sr-only" htmlFor="login-username">ชื่อผู้ใช้งาน</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#94A3B8]">
+                <User className="w-4 h-4" />
               </div>
+              <input
+                id="login-username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="ชื่อผู้ใช้งาน"
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-[#0B2046]/30 focus:ring-4 focus:ring-[#0B2046]/10 transition-all"
+                required
+              />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">รหัสผ่าน (Password)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-900/60 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            <label className="sr-only" htmlFor="login-password">รหัสผ่าน</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#94A3B8]">
+                <Lock className="w-4 h-4" />
               </div>
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="รหัสผ่าน"
+                className="w-full h-12 pl-11 pr-12 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-[#0B2046]/30 focus:ring-4 focus:ring-[#0B2046]/10 transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#94A3B8] hover:text-[#0B2046] transition-colors"
+              >
+                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
+              className="w-full h-12 mt-3 rounded-xl bg-gradient-to-b from-[#1B3766] to-[#0B2046] text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
@@ -124,103 +162,48 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Logins */}
-          <div className="mt-8 pt-6 border-t border-slate-700">
-            <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-3">
-              <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
-              <span>บัญชีสำหรับทดสอบสิทธิ์ (คลิกเพื่อเลือก - แต่ละบทบาทในระบบ):</span>
+          {/* ===== บัญชีทดสอบ (เฉพาะตอนพัฒนา) ===== */}
+          {SHOW_DEMO_ACCOUNTS && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowDemo((v) => !v)}
+                className="w-full flex items-center gap-3 text-xs text-[#64748B] hover:text-[#0B2046]"
+              >
+                <span className="flex-1 border-t border-dotted border-[#CBD5E1]" />
+                <span className="inline-flex items-center gap-1">
+                  บัญชีสำหรับทดสอบ
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDemo ? 'rotate-180' : ''}`} />
+                </span>
+                <span className="flex-1 border-t border-dotted border-[#CBD5E1]" />
+              </button>
+
+              {showDemo && (
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <button
+                      key={acc.username}
+                      type="button"
+                      onClick={() => handleQuickLogin(acc.username, acc.password)}
+                      title={`${acc.username} / ${acc.password}`}
+                      className={`h-14 px-2 rounded-xl border bg-[#FFFFFF] text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                        username === acc.username ? 'border-[#0B2046]/40 ring-2 ring-[#0B2046]/10' : 'border-[#E2E8F0]'
+                      }`}
+                    >
+                      <div className="text-[12px] font-semibold text-[#0F172A] truncate">{acc.label}</div>
+                      <div className="text-[10px] font-mono text-[#94A3B8] truncate">{acc.username}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'Admin#2026!Sec')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-indigo-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-indigo-400">SuperAdmin</span>
-                  <span className="text-[10px] text-slate-500 font-mono">admin</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Admin#2026!Sec
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('hr', 'Hr@2026!Pass')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-emerald-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-emerald-400">HR Only (สายธาร)</span>
-                  <span className="text-[10px] text-slate-500 font-mono">hr</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Hr@2026!Pass / 123456
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('finance', 'Finance@Money2026')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-cyan-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyan-400">Finance Only (สมการ)</span>
-                  <span className="text-[10px] text-slate-500 font-mono">finance</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Finance@Money2026 / 123456
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('approver', 'Approver@Flow2026')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-purple-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-purple-400">CEO / Approver</span>
-                  <span className="text-[10px] text-slate-500 font-mono">approver</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Approver@Flow2026
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('somchai.w', 'Somchai@Dept2026')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-blue-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-blue-400">Dept Manager</span>
-                  <span className="text-[10px] text-slate-500 font-mono">somchai.w</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Somchai@Dept2026
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('worameth.r', 'Worameth@Staff26')}
-                className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-amber-500 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-amber-400">General Staff</span>
-                  <span className="text-[10px] text-slate-500 font-mono">worameth.r</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono group-hover:text-slate-200 truncate">
-                  Worameth@Staff26
-                </div>
-              </button>
-            </div>
-            <div className="text-[11px] text-slate-400 text-center mt-3">
-              🔒 รองรับทั้งรหัสผ่านประจำตำแหน่ง หรือรหัสผ่านทดสอบเริ่มต้น <code className="text-indigo-300 font-mono">123456</code> / <code className="text-indigo-300 font-mono">Admin@123456</code>
-            </div>
-          </div>
+          )}
         </div>
-      </div>
+      </main>
+
+      <footer className="relative z-10 pb-6 text-center text-[11px] text-[#64748B]">
+        © {new Date().getFullYear()} Human Resource Management System
+      </footer>
     </div>
   );
 }
