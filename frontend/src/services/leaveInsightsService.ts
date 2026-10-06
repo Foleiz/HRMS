@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { downloadReportFile, ExportFormat } from '@/services/reportService';
 import { ApiResponse } from '@/types/api';
 import { LeaveCalendarResult, LeaveSummaryReport, LeaveYearEndPreview } from '@/types/leaveInsights';
 
@@ -23,20 +24,8 @@ export const leaveInsightsService = {
     return res.data.data;
   },
 
-  async downloadSummaryCsv(year: number, departmentId?: number): Promise<void> {
-    const res = await apiClient.get('/reports/leave-summary/export', {
-      params: { year, departmentId },
-      responseType: 'blob',
-    });
-    const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Leave_Summary_${year + 543}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+  downloadSummaryCsv(year: number, departmentId?: number, format: ExportFormat = 'csv'): Promise<void> {
+    return downloadReportFile('/reports/leave-summary/export', { year, departmentId }, `Leave_Summary_${year + 543}`, format);
   },
 
   /** ดูตัวอย่างการปิดยอดวันลาสิ้นปี (ปี ค.ศ.) */

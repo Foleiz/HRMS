@@ -59,11 +59,15 @@ public class LeaveInsightsController : ControllerBase
     public async Task<IActionResult> ExportLeaveSummary(
         [FromQuery] int? year,
         [FromQuery] long? departmentId,
+        [FromQuery] string? format,
         CancellationToken cancellationToken = default)
     {
         var report = await _insights.GetSummaryReportAsync(year ?? LeavePolicyRules.ThaiToday().Year, departmentId, cancellationToken);
         var csv = _insights.BuildSummaryCsv(report);
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+        if (string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase))
+            return File(Hrms.Application.Common.Utilities.ReportFileConverter.CsvToXlsx(bytes, "รายงานการลา"),
+                Hrms.Application.Common.Utilities.ReportFileConverter.XlsxContentType, $"Leave_Summary_{report.Year + 543}.xlsx");
         return File(bytes, "text/csv; charset=utf-8", $"Leave_Summary_{report.Year + 543}.csv");
     }
 

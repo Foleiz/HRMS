@@ -15,6 +15,9 @@ import {
 } from '@/types/reports';
 import { Department, Division } from '@/types/organization';
 import LeaveSummaryReportTab from '@/components/reports/LeaveSummaryReportTab';
+import EmployeesByDepartmentTab from '@/components/reports/EmployeesByDepartmentTab';
+import ExportMenu, { ReportExportFormat } from '@/components/reports/ExportMenu';
+import { printReport } from '@/lib/printReport';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import {
@@ -84,24 +87,28 @@ export default function ReportsPage() {
   const canViewAnyReport = canViewHeadcount || canViewLateness || canViewTax || canViewTurnover || canViewLeave;
 
   // Active Tab
-  type ReportTab = 'headcount' | 'lateness' | 'tax' | 'turnover' | 'leave';
+  // ลำดับแท็บตามขอบเขตหมวด "รายงาน": พนักงานแยกตามแผนก → การเข้าออกงาน (รายวัน/รายเดือน) → การลา → อัตราการลาออก
+  type ReportTab = 'department' | 'headcount' | 'lateness' | 'tax' | 'turnover' | 'leave';
   const [activeTab, setActiveTab] = useState<ReportTab>(() => {
-    if (canViewHeadcount) return 'headcount';
+    if (canViewHeadcount) return 'department';
     if (canViewLateness) return 'lateness';
-    if (canViewTax) return 'tax';
-    if (canViewTurnover) return 'turnover';
     if (canViewLeave) return 'leave';
+    if (canViewTurnover) return 'turnover';
+    if (canViewTax) return 'tax';
     return 'headcount';
   });
   const { setBreadcrumb } = useBreadcrumb();
+  // พื้นที่เนื้อหารายงาน (ใช้พิมพ์ / บันทึกเป็น PDF)
+  const reportAreaRef = useRef<HTMLDivElement>(null);
 
   // Sync breadcrumb with activeTab
   useEffect(() => {
     const tabTitles: Record<ReportTab, string> = {
-      headcount: 'กำลังคนรายวัน',
-      lateness: 'การมาสาย',
+      department: 'พนักงานแยกตามแผนก',
+      headcount: 'การเข้าออกงาน (รายวัน)',
+      lateness: 'การเข้าออกงาน (รายเดือน)',
       tax: 'ภาษีและประกันสังคม',
-      turnover: 'การเข้า-ออกพนักงาน',
+      turnover: 'อัตราการลาออก',
       leave: 'การลา',
     };
     setBreadcrumb({
@@ -332,22 +339,30 @@ export default function ReportsPage() {
   // -------------------------------------------------------------
   // Export Handlers
   // -------------------------------------------------------------
-  const handleExportDailyHeadcount = async () => {
+  const handleExportDailyHeadcount = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(reportAreaRef.current, { title: 'รายงานการเข้าออกงาน (รายวัน)', subtitle: `วันที่ ${selectedDate}` });
+      return;
+    }
     try {
       setIsExportingHeadcount(true);
       const divId = selectedDivision === 'ALL' ? undefined : selectedDivision;
       const deptId = selectedDepartment === 'ALL' ? undefined : selectedDepartment;
-      await reportService.downloadDailyHeadcountCsv(selectedDate, divId, deptId);
-      toast.success('ดาวน์โหลดรายงานอัตรากำลังคนประจำวันสำเร็จ');
+      await reportService.downloadDailyHeadcountCsv(selectedDate, divId, deptId, format);
+      toast.success('ดาวน์โหลดรายงานการเข้าออกงาน (รายวัน) สำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์ CSV');
+      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์');
     } finally {
       setIsExportingHeadcount(false);
     }
   };
 
-  const handleExportMonthlyLateness = async () => {
+  const handleExportMonthlyLateness = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(reportAreaRef.current, { title: 'รายงานการเข้าออกงาน (รายเดือน)', subtitle: `เดือน ${thaiMonths[selectedMonth - 1]} ${selectedYear + 543}` });
+      return;
+    }
     try {
       setIsExportingLateness(true);
       const deptId = latenessDepartment === 'ALL' ? undefined : latenessDepartment;
@@ -355,22 +370,27 @@ export default function ReportsPage() {
         selectedYear,
         selectedMonth,
         deptId,
-        latenessSearch.trim() || undefined
+        latenessSearch.trim() || undefined,
+        format
       );
-      toast.success('ดาวน์โหลดรายงานบันทึกเวลาและการมาสายสำเร็จ');
+      toast.success('ดาวน์โหลดรายงานการเข้าออกงาน (รายเดือน) สำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์ CSV');
+      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์');
     } finally {
       setIsExportingLateness(false);
     }
   };
 
-  const handleExportPayrollTax = async () => {
+  const handleExportPayrollTax = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(reportAreaRef.current, { title: 'รายงานภาษีและประกันสังคม', subtitle: `เดือน ${thaiMonths[taxMonth - 1]} ${taxYear + 543}` });
+      return;
+    }
     try {
       setIsExportingTax(true);
       const deptId = taxDepartment === 'ALL' ? undefined : taxDepartment;
-      await reportService.downloadPayrollTaxCsv(taxYear, taxMonth, deptId);
+      await reportService.downloadPayrollTaxCsv(taxYear, taxMonth, deptId, format);
       toast.success('ดาวน์โหลดรายงานภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1) สำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
@@ -380,11 +400,15 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExportSso = async () => {
+  const handleExportSso = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(reportAreaRef.current, { title: 'รายงานภาษีและประกันสังคม', subtitle: `เดือน ${thaiMonths[taxMonth - 1]} ${taxYear + 543}` });
+      return;
+    }
     try {
       setIsExportingSso(true);
       const deptId = taxDepartment === 'ALL' ? undefined : taxDepartment;
-      await reportService.downloadSsoCsv(taxYear, taxMonth, deptId);
+      await reportService.downloadSsoCsv(taxYear, taxMonth, deptId, format);
       toast.success('ดาวน์โหลดรายงานนำส่งเงินสมทบประกันสังคม (สปส. 1-10) สำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
@@ -394,16 +418,20 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExportTurnover = async () => {
+  const handleExportTurnover = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(reportAreaRef.current, { title: 'รายงานอัตราการลาออก', subtitle: `เดือน ${thaiMonths[turnoverMonth - 1]} ${turnoverYear + 543}` });
+      return;
+    }
     try {
       setIsExportingTurnover(true);
       const divId = turnoverDivision === 'ALL' ? undefined : turnoverDivision;
       const deptId = turnoverDepartment === 'ALL' ? undefined : turnoverDepartment;
-      await reportService.downloadMonthlyTurnoverCsv(turnoverYear, turnoverMonth, divId, deptId);
-      toast.success('ดาวน์โหลดรายงานอัตราการเข้า-ออกของพนักงานสำเร็จ');
+      await reportService.downloadMonthlyTurnoverCsv(turnoverYear, turnoverMonth, divId, deptId, format);
+      toast.success('ดาวน์โหลดรายงานอัตราการลาออกสำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดรายงานการเข้า-ออกพนักงาน');
+      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดรายงานอัตราการลาออก');
     } finally {
       setIsExportingTurnover(false);
     }
@@ -446,56 +474,28 @@ export default function ReportsPage() {
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {canViewHeadcount && (
             <button
-              onClick={() => setActiveTab('headcount')}
+              onClick={() => setActiveTab('department')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'headcount'
+                activeTab === 'department'
                   ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              กำลังคนรายวัน
+              พนักงานแยกตามแผนก
             </button>
           )}
-
-          {canViewLateness && (
+          {(canViewHeadcount || canViewLateness) && (
             <button
-              onClick={() => setActiveTab('lateness')}
+              onClick={() => setActiveTab(canViewHeadcount ? 'headcount' : 'lateness')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'lateness'
+                (activeTab === 'headcount' || activeTab === 'lateness')
                   ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              การมาสาย
+              การเข้าออกงาน
             </button>
           )}
-
-          {canViewTax && (
-            <button
-              onClick={() => setActiveTab('tax')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'tax'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ภาษีและประกันสังคม
-            </button>
-          )}
-
-          {canViewTurnover && (
-            <button
-              onClick={() => setActiveTab('turnover')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'turnover'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              การเข้า-ออกพนักงาน
-            </button>
-          )}
-
           {canViewLeave && (
             <button
               onClick={() => setActiveTab('leave')}
@@ -508,8 +508,71 @@ export default function ReportsPage() {
               การลา
             </button>
           )}
+          {canViewTurnover && (
+            <button
+              onClick={() => setActiveTab('turnover')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'turnover'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
+              }`}
+            >
+              อัตราการลาออก
+            </button>
+          )}
+          {canViewTax && (
+            <button
+              onClick={() => setActiveTab('tax')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'tax'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
+              }`}
+            >
+              ภาษีและประกันสังคม
+            </button>
+          )}
         </nav>
       </div>
+
+      {/* การเข้าออกงาน: สลับมุมมองรายวัน / รายเดือน */}
+      {(activeTab === 'headcount' || activeTab === 'lateness') && (
+        <div className="flex flex-wrap items-center gap-3 -mt-2">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            {canViewHeadcount && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('headcount')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  activeTab === 'headcount' ? 'bg-[#0B2046] text-white' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                รายวัน
+              </button>
+            )}
+            {canViewLateness && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('lateness')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  activeTab === 'lateness' ? 'bg-[#0B2046] text-white' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                รายเดือน
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-slate-400">
+            {activeTab === 'headcount' ? 'สถานะการมาทำงานของแต่ละแผนกในวันที่เลือก' : 'สรุปมาสาย ออกก่อน ขาดงาน รายบุคคลทั้งเดือน'}
+          </span>
+        </div>
+      )}
+
+      <div ref={reportAreaRef} className="space-y-6">
+      {/* แท็บ: พนักงานแยกตามแผนก */}
+      {activeTab === 'department' && canViewHeadcount && (
+        <EmployeesByDepartmentTab canExport={canExportHeadcount} onError={handleLeaveReportError} />
+      )}
 
       {/* ============================================================= */}
       {/* TAB 1: อัตรากำลังคนประจำวัน (Daily Headcount) */}
@@ -517,7 +580,7 @@ export default function ReportsPage() {
       {activeTab === 'headcount' && canViewHeadcount && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
               <div className="flex items-center gap-2">
@@ -574,20 +637,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Export Button */}
-            {canExportHeadcount && (
-              <button
-                onClick={handleExportDailyHeadcount}
-                disabled={isExportingHeadcount || !headcountData}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-              >
-                {isExportingHeadcount ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                ส่งออก CSV (Excel)
-              </button>
-            )}
+            {canExportHeadcount && <ExportMenu onExport={handleExportDailyHeadcount} disabled={isExportingHeadcount || !headcountData} />}
           </div>
 
           {/* 4 Summary KPI Cards */}
@@ -775,7 +825,7 @@ export default function ReportsPage() {
       {activeTab === 'lateness' && canViewLateness && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -848,20 +898,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Export Button */}
-            {canExportLateness && (
-              <button
-                onClick={handleExportMonthlyLateness}
-                disabled={isExportingLateness || !latenessData}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-              >
-                {isExportingLateness ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                ส่งออก CSV (Excel)
-              </button>
-            )}
+            {canExportLateness && <ExportMenu onExport={handleExportMonthlyLateness} disabled={isExportingLateness || !latenessData} />}
           </div>
 
           {/* 4 Summary KPI Cards */}
@@ -1039,7 +1076,7 @@ export default function ReportsPage() {
       {activeTab === 'tax' && canViewTax && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -1120,33 +1157,20 @@ export default function ReportsPage() {
             {(canExportTax || canExportSso) && (
               <div className="flex flex-wrap items-center gap-2">
                 {canExportTax && (
-                <button
-                  onClick={handleExportPayrollTax}
-                  disabled={isExportingTax || !taxData || taxData.items.length === 0}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
-                >
-                  {isExportingTax ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Receipt className="w-4 h-4 text-amber-300" />
-                  )}
-                  ส่งออก ภ.ง.ด.1 (CSV)
-                </button>
+                  <ExportMenu
+                    label="ภ.ง.ด.1"
+                    onExport={handleExportPayrollTax}
+                    disabled={isExportingTax || !taxData || taxData.items.length === 0}
+                  />
                 )}
 
                 {canExportSso && (
-                <button
-                  onClick={handleExportSso}
-                  disabled={isExportingSso || !taxData || taxData.items.length === 0}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
-                >
-                  {isExportingSso ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ShieldCheck className="w-4 h-4 text-emerald-300" />
-                  )}
-                  ส่งออก สปส. 1-10 (CSV)
-                </button>
+                  <ExportMenu
+                    label="สปส. 1-10"
+                    formats={['xlsx', 'csv']}
+                    onExport={handleExportSso}
+                    disabled={isExportingSso || !taxData || taxData.items.length === 0}
+                  />
                 )}
               </div>
             )}
@@ -1446,7 +1470,7 @@ export default function ReportsPage() {
       {activeTab === 'turnover' && canViewTurnover && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -1527,20 +1551,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Export Button */}
-            {canExportTurnover && (
-              <button
-                onClick={handleExportTurnover}
-                disabled={isExportingTurnover || !turnoverData}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
-              >
-                {isExportingTurnover ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                )}
-                ส่งออก Turnover (CSV)
-              </button>
-            )}
+            {canExportTurnover && <ExportMenu onExport={handleExportTurnover} disabled={isExportingTurnover || !turnoverData} />}
           </div>
 
           {/* 5 Summary KPI Cards */}
@@ -1784,6 +1795,7 @@ export default function ReportsPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

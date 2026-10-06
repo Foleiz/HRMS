@@ -1,12 +1,14 @@
 ﻿'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Calendar, CalendarDays, FileSpreadsheet, Loader2, Users } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
 import { LeaveSummaryReport } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import ExportMenu, { ReportExportFormat } from './ExportMenu';
+import { printReport } from '@/lib/printReport';
 
 interface Props {
   canExport: boolean;
@@ -67,10 +69,16 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   const maxType = Math.max(1, ...(data?.byType.map((m) => m.days) ?? [0]));
   const heatMax = Math.max(1, ...(data?.departmentByType.map((c) => c.days) ?? [0]));
 
-  const handleExport = async () => {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const handleExport = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: `ปี ${year + 543}` });
+      return;
+    }
     setExporting(true);
     try {
-      await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId);
+      await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId, format);
     } catch (e: unknown) {
       onError((e as { message?: string })?.message || 'ส่งออกไฟล์ไม่สำเร็จ');
     } finally {
@@ -79,9 +87,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div ref={rootRef} className="space-y-6 animate-in fade-in duration-200">
       {/* Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
             <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
@@ -115,15 +123,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           </div>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500 dark:text-slate-400" />}
         </div>
-        {canExport && (
-          <button
-            onClick={handleExport}
-            disabled={exporting || !data}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} ส่งออก CSV
-          </button>
-        )}
+        {canExport && <ExportMenu onExport={handleExport} disabled={exporting || !data} />}
       </div>
 
       {data && (

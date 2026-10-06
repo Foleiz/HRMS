@@ -1,5 +1,5 @@
 /* ไฟล์นี้สร้างอัตโนมัติจาก scripts/gen-dark-theme.py — ห้ามแก้มือ (รันสคริปต์ใหม่แทน) */
-/* 427 rules */
+/* 428 rules */
 html.dark .bg-\[\#0B2046\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #1A4DA7 !important; }
 html.dark .bg-\[\#0B2046\]\/10:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(26, 77, 167, 0.10) !important; }
 html.dark .bg-\[\#0B2046\]\/5:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(26, 77, 167, 0.05) !important; }
@@ -233,6 +233,7 @@ html.dark .ring-\[\#0B2046\]:not(.theme-light, .theme-light *, [data-stat-card],
 html.dark .ring-\[\#0B2046\]\/10:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.10) !important; }
 html.dark .ring-\[\#0B2046\]\/20:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.20) !important; }
 html.dark .ring-\[\#0B2046\]\/60:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.60) !important; }
+html.dark .ring-\[\#0B2046\]\/70:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.70) !important; }
 html.dark .ring-amber-100:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: #836F21 !important; }
 html.dark .ring-amber-400\/50:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(131, 104, 33, 0.50) !important; }
 html.dark .ring-blue-200:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: #214C83 !important; }

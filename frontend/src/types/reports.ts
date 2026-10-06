@@ -124,3 +124,49 @@ export interface MonthlyTurnoverSummary {
   eventLogs: TurnoverEventLog[];
 }
 
+
+// ===== รายงานพนักงานแยกตามแผนก =====
+export interface NameCount {
+  name: string;
+  count: number;
+}
+
+export interface DepartmentEmployeeRow {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  positionName: string;
+  employeeTypeName: string;
+  levelName: string;
+  gender: string;
+  startDate?: string | null;
+}
+
+export interface DepartmentEmployees {
+  departmentId: number;
+  departmentCode: string;
+  departmentName: string;
+  divisionName: string;
+  employeeCount: number;
+  headcountPlan?: number | null;
+  maleCount: number;
+  femaleCount: number;
+  otherGenderCount: number;
+  newHiresThisYear: number;
+  byEmployeeType: NameCount[];
+  employees: DepartmentEmployeeRow[];
+}
+
+export interface EmployeesByDepartmentReport {
+  asOfDate: string;
+  totalEmployees: number;
+  totalDepartments: number;
+  totalHeadcountPlan?: number | null;
+  maleCount: number;
+  femaleCount: number;
+  otherGenderCount: number;
+  newHiresThisYear: number;
+  byEmployeeType: NameCount[];
+  byLevel: NameCount[];
+  departments: DepartmentEmployees[];
+}

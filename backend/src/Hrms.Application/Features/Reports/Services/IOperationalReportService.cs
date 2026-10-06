@@ -88,4 +88,15 @@ public interface IOperationalReportService
         long? divisionId = null,
         long? departmentId = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>รายงานพนักงานแยกตามแผนก (พนักงานที่ยังทำงานอยู่ ณ วันนี้)</summary>
+    Task<EmployeesByDepartmentReportDto> GetEmployeesByDepartmentAsync(
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportEmployeesByDepartmentCsvAsync(
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default);
 }
