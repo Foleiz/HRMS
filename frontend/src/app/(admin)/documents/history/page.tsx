@@ -180,7 +180,7 @@ export default function DocumentHistoryPage() {
       code: r.requestNo,
       submittedDate: r.submittedAt,
       detailDate: `วันทำงานสุดท้าย: ${formatShortDate(r.requestedLastWorkingDate)}`,
-      documentType: `คำขอลาออก (${r.reasonCategory || 'ทั่วไป'})`,
+      documentType: 'คำขอลาออก',
       status: r.status,
       rejectReason: r.cancelReason,
       source: 'RESIGNATION',
@@ -522,11 +522,6 @@ export default function DocumentHistoryPage() {
                             {statusConf.icon}
                             {statusConf.label}
                           </span>
-                          {doc.rejectReason && (
-                            <div className="text-xs text-red-400 mt-1 max-w-36 truncate" title={doc.rejectReason}>
-                              เหตุผล: {doc.rejectReason}
-                            </div>
-                          )}
                         </td>
                         <td className="px-5 py-4 text-right">
                           {(() => {
@@ -637,11 +632,6 @@ export default function DocumentHistoryPage() {
                         <span className="text-slate-400">ช่วงวันที่:</span>
                         <span className="font-medium text-slate-700">{doc.detailDate}</span>
                       </div>
-                      {doc.rejectReason && (
-                        <div className="text-2xs text-rose-600 pt-1 border-t border-slate-200/60">
-                          เหตุผลที่ปฏิเสธ: {doc.rejectReason}
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
