@@ -64,6 +64,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
 
   const maxMonth = Math.max(1, ...(data?.byMonth.map((m) => m.days) ?? [0]));
   const maxType = Math.max(1, ...(data?.byType.map((m) => m.days) ?? [0]));
+  const heatMax = Math.max(1, ...(data?.departmentByType.map((c) => c.days) ?? [0]));
 
   const handleExport = async () => {
     setExporting(true);
@@ -191,7 +192,14 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
 
           {/* Department x Type */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+                น้อย
+                <span className="inline-flex h-2.5 w-24 rounded-sm" style={{ background: 'linear-gradient(to right, color-mix(in srgb, var(--viz-s1) 8%, transparent), color-mix(in srgb, var(--viz-s1) 60%, transparent))' }} />
+                มาก
+              </span>
+            </div>
             {matrix.depts.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
@@ -214,8 +222,15 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                         <td className="py-2 px-3 font-medium text-slate-700 dark:text-slate-300">{d.label}</td>
                         {matrix.types.map((t) => {
                           const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
+                          // ช่องสีตามความเข้ม (ฟ้าอ่อน → เข้ม) ตัวเลขยังอ่านได้ด้วยสีตัวอักษรปกติ
+                          const pct = v > 0 ? Math.round(8 + (v / heatMax) * 52) : 0;
                           return (
-                            <td key={t} className={`py-2 px-3 text-right ${v > 0 ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300'}`}>
+                            <td
+                              key={t}
+                              title={`${d.label} · ${t}: ${fmt(v)} วัน`}
+                              className={`py-2 px-3 text-right tabular-nums ${v > 0 ? 'text-slate-800 font-medium' : 'text-slate-300'}`}
+                              style={v > 0 ? { background: `color-mix(in srgb, var(--viz-s1) ${pct}%, transparent)` } : undefined}
+                            >
                               {fmt(v)}
                             </td>
                           );

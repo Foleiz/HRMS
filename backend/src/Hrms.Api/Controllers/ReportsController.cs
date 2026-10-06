@@ -128,7 +128,8 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/payroll-tax/export")]
-    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
+    // ไฟล์ ภ.ง.ด.1 มีข้อมูลเงินได้ทุกคน — เฉพาะการเงิน/ภาษีเงินเดือน (ไม่เปิดให้ REPORT_VIEW ทั่วไป)
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_EXPORT")]
     public async Task<IActionResult> ExportPayrollTaxCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,
@@ -149,7 +150,8 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/sso/export")]
-    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
+    // ไฟล์ สปส.1-10: การเงิน/ภาษีเงินเดือน และ HR เงินเดือน (ไม่เปิดให้ REPORT_VIEW ทั่วไป)
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_EXPORT")]
     public async Task<IActionResult> ExportSsoCsv(
         [FromQuery] int? year,
         [FromQuery] int? month,

@@ -14,6 +14,11 @@ public class DailyDepartmentHeadcountDto
     public int LateCount { get; set; }
     public int EarlyLeaveCount { get; set; }
     public int AbsentCount { get; set; }
+    /// <summary>ลา (อนุมัติแล้ว)</summary>
+    public int LeaveCount { get; set; }
+    /// <summary>วันหยุด / ไม่ใช่วันทำงานของพนักงาน</summary>
+    public int OffCount { get; set; }
+    /// <summary>มาทำงาน ÷ (ทั้งหมด − ลา − วันหยุด)</summary>
     public double AttendanceRate { get; set; }
 }
 
@@ -28,6 +33,10 @@ public class DailyHeadcountSummaryDto
     public int TotalLate { get; set; }
     public int TotalEarlyLeave { get; set; }
     public int TotalAbsent { get; set; }
+    public int TotalLeave { get; set; }
+    public int TotalOff { get; set; }
+    /// <summary>จำนวนคนที่ต้องมาทำงานวันนั้น (ทั้งหมด − ลา − วันหยุด)</summary>
+    public int TotalExpected { get; set; }
     public double OverallAttendanceRate { get; set; }
     public List<DailyDepartmentHeadcountDto> Departments { get; set; } = new();
 }

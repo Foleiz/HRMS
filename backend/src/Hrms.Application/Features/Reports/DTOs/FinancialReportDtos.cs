@@ -11,6 +11,9 @@ public class PayrollTaxItemDto
     public string DepartmentName { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string CitizenIdMasked { get; set; } = string.Empty;
+    /// <summary>เลขประจำตัวประชาชนเต็ม 13 หลัก — ใช้เฉพาะในไฟล์ยื่น ภ.ง.ด.1 / สปส.1-10 ไม่ส่งออกทาง API</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string CitizenIdFull { get; set; } = string.Empty;
     public decimal GrossIncome { get; set; }
     public decimal WithholdingTax { get; set; }
     public decimal SsoEmployee { get; set; }
