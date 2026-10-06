@@ -28,6 +28,7 @@ import {
   Building,
   Tag
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { announcementService } from '@/services/announcementService';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -502,49 +503,49 @@ export default function AnnouncementsPage() {
               </div>
 
               {/* Status */}
-              <div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
-                >
-                  <option value="">สถานะทั้งหมด</option>
-                  <option value="PUBLISHED">เผยแพร่แล้ว</option>
-                  <option value="DRAFT">ฉบับร่าง</option>
-                  <option value="ARCHIVED">จัดเก็บ/ลบ</option>
-                </select>
-              </div>
+              <CustomSelect
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val)}
+                placeholder="สถานะทั้งหมด"
+                className="min-w-[140px]"
+                options={[
+                  { value: '', label: 'สถานะทั้งหมด' },
+                  { value: 'PUBLISHED', label: 'เผยแพร่แล้ว' },
+                  { value: 'DRAFT', label: 'ฉบับร่าง' },
+                  { value: 'ARCHIVED', label: 'จัดเก็บ/ลบ' },
+                ]}
+              />
 
               {/* Category */}
-              <div>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
-                >
-                  <option value="">หมวดหมู่ทั้งหมด</option>
-                  <option value="GENERAL">ข่าวทั่วไป</option>
-                  <option value="POLICY">นโยบายองค์กร</option>
-                  <option value="ACTIVITY">กิจกรรมและสัมมนา</option>
-                  <option value="WELFARE">สวัสดิการและสิทธิประโยชน์</option>
-                  <option value="URGENT">ประกาศด่วนสำคัญ</option>
-                </select>
-              </div>
+              <CustomSelect
+                value={categoryFilter}
+                onChange={(val) => setCategoryFilter(val)}
+                placeholder="หมวดหมู่ทั้งหมด"
+                className="min-w-[160px]"
+                options={[
+                  { value: '', label: 'หมวดหมู่ทั้งหมด' },
+                  { value: 'GENERAL', label: 'ข่าวทั่วไป' },
+                  { value: 'POLICY', label: 'นโยบายองค์กร' },
+                  { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
+                  { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
+                  { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
+                ]}
+              />
 
               {/* Priority */}
-              <div>
-                <select
-                  value={priorityFilter}
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
-                >
-                  <option value="">ความสำคัญทั้งหมด</option>
-                  <option value="LOW">ทั่วไป</option>
-                  <option value="NORMAL">ปกติ</option>
-                  <option value="HIGH">สำคัญ</option>
-                  <option value="URGENT">ด่วนที่สุด</option>
-                </select>
-              </div>
+              <CustomSelect
+                value={priorityFilter}
+                onChange={(val) => setPriorityFilter(val)}
+                placeholder="ความสำคัญทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: '', label: 'ความสำคัญทั้งหมด' },
+                  { value: 'LOW', label: 'ทั่วไป' },
+                  { value: 'NORMAL', label: 'ปกติ' },
+                  { value: 'HIGH', label: 'สำคัญ' },
+                  { value: 'URGENT', label: 'ด่วนที่สุด' },
+                ]}
+              />
             </div>
           </div>
 

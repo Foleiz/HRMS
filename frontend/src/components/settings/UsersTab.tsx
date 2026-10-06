@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, RoleSummary } from '@/types/settings';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -69,8 +70,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     onSearchChange(searchInput.trim());
   };
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
+  const handleRoleSelect = (val: string) => {
     setSelectedRole(val);
     if (val === 'ทั้งหมด') {
       onRoleFilterChange(undefined);
@@ -80,8 +80,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     }
   };
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
+  const handleStatusSelect = (val: string) => {
     setSelectedStatus(val);
     onStatusFilterChange(val);
   };
@@ -137,30 +136,28 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           </form>
 
           {/* Status Dropdown */}
-          <select
+          <CustomSelect
             value={selectedStatus}
-            onChange={handleStatusChange}
-            className="h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
-          >
-            <option value="ทั้งหมด">สถานะทั้งหมด</option>
-            <option value="ACTIVE">ใช้งานอยู่</option>
-            <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-            <option value="LOCKED">ถูกระงับ/ล็อก</option>
-          </select>
+            onChange={handleStatusSelect}
+            className="min-w-[140px]"
+            options={[
+              { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
+              { value: 'ACTIVE', label: 'ใช้งานอยู่' },
+              { value: 'INACTIVE', label: 'ไม่ได้ใช้งาน' },
+              { value: 'LOCKED', label: 'ถูกระงับ/ล็อก' },
+            ]}
+          />
 
           {/* Role Dropdown */}
-          <select
+          <CustomSelect
             value={selectedRole}
-            onChange={handleRoleChange}
-            className="h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
-          >
-            <option value="ทั้งหมด">บทบาททั้งหมด</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.roleCode}>
-                {r.roleCode}
-              </option>
-            ))}
-          </select>
+            onChange={handleRoleSelect}
+            className="min-w-[150px]"
+            options={[
+              { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
+              ...roles.map((r) => ({ value: r.roleCode, label: r.roleCode })),
+            ]}
+          />
         </div>
 
         {/* Add User Button */}

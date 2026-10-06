@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -22,6 +22,7 @@ import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   WorkWeekDay,
   Holiday,
@@ -446,27 +447,31 @@ export default function WorkCalendarPage() {
                 </div>
 
                 {/* Year Filter */}
-                <select
+                <CustomSelect
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value={2025}>ปี พ.ศ. 2568 (2025)</option>
-                  <option value={2026}>ปี พ.ศ. 2569 (2026)</option>
-                  <option value={2027}>ปี พ.ศ. 2570 (2027)</option>
-                </select>
+                  onChange={(val) => setSelectedYear(parseInt(val, 10))}
+                  placeholder="เลือกปี"
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 2025, label: 'ปี พ.ศ. 2568 (2025)' },
+                    { value: 2026, label: 'ปี พ.ศ. 2569 (2026)' },
+                    { value: 2027, label: 'ปี พ.ศ. 2570 (2027)' },
+                  ]}
+                />
 
                 {/* Type Filter */}
-                <select
+                <CustomSelect
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ALL">ทุกประเภทวันหยุด</option>
-                  <option value="PUBLIC">วันหยุดตามประเพณี</option>
-                  <option value="COMPANY_SPECIAL">วันหยุดพิเศษบริษัท</option>
-                  <option value="SUBSTITUTE">วันหยุดชดเชย</option>
-                </select>
+                  onChange={(val) => setFilterType(val)}
+                  placeholder="ทุกประเภทวันหยุด"
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกประเภทวันหยุด' },
+                    { value: 'PUBLIC', label: 'วันหยุดตามประเพณี' },
+                    { value: 'COMPANY_SPECIAL', label: 'วันหยุดพิเศษบริษัท' },
+                    { value: 'SUBSTITUTE', label: 'วันหยุดชดเชย' },
+                  ]}
+                />
               </div>
 
               {/* Add Holiday Button */}

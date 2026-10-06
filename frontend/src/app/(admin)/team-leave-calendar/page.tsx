@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -7,6 +7,7 @@ import { organizationService } from '@/services/organizationService';
 import { Department, Division } from '@/types/organization';
 import { LeaveCalendarItem, LeaveCalendarResult } from '@/types/leaveInsights';
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Users, X } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 type ViewMode = 'month' | 'week';
 
@@ -224,35 +225,31 @@ export default function TeamLeaveCalendarPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {scope === 'ORG' && (
-            <select
+            <CustomSelect
               value={divisionId}
-              onChange={(e) => {
-                setDivisionId(e.target.value === '' ? '' : Number(e.target.value));
+              onChange={(val) => {
+                setDivisionId(val === '' ? '' : Number(val));
                 setDepartmentId('');
               }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-sm"
-            >
-              <option value="">ทุกฝ่าย</option>
-              {divisions.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.divisionName}
-                </option>
-              ))}
-            </select>
+              placeholder="ทุกฝ่าย"
+              className="min-w-[140px]"
+              options={[
+                { value: '', label: 'ทุกฝ่าย' },
+                ...divisions.map((d) => ({ value: d.id, label: d.divisionName })),
+              ]}
+            />
           )}
           {(scope === 'ORG' || scope === 'DIVISION') && (
-            <select
+            <CustomSelect
               value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-sm"
-            >
-              <option value="">ทุกแผนก</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.departmentName}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setDepartmentId(val === '' ? '' : Number(val))}
+              placeholder="ทุกแผนก"
+              className="min-w-[140px]"
+              options={[
+                { value: '', label: 'ทุกแผนก' },
+                ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
+              ]}
+            />
           )}
           <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 cursor-pointer">
             <input type="checkbox" checked={includePending} onChange={(e) => setIncludePending(e.target.checked)} />

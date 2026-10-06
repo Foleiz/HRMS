@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
@@ -847,38 +848,33 @@ export default function LeaveRequestsApprovalPage() {
             </div>
 
             {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
-            <div className="relative">
-              <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <select
-                value={docTypeFilter}
-                onChange={(e) => setDocTypeFilter(e.target.value as any)}
-                className="pl-9 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 dark:text-slate-300 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
-              >
-                <option value="ALL">ทุกประเภทเอกสาร</option>
-                <option value="LEAVE">คำขอลา</option>
-                <option value="CERTIFICATE">คำขอหนังสือรับรอง</option>
-                <option value="RESIGNATION">คำขอลาออก</option>
-                <option value="GENERAL">คำร้องเอกสารทั่วไป</option>
-                <option value="BENEFIT">คำขอเบิกสวัสดิการ</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={docTypeFilter}
+              onChange={(val) => setDocTypeFilter(val as any)}
+              className="min-w-[170px]"
+              options={[
+                { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
+                { value: 'LEAVE', label: 'คำขอลา' },
+                { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
+                { value: 'RESIGNATION', label: 'คำขอลาออก' },
+                { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
+                { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+              ]}
+            />
 
             {/* Status filter (ปุ่มกรองสถานะ) */}
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 pr-8 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs text-gray-700 dark:text-slate-300 focus:ring-2 focus:ring-[#0B2046] appearance-none cursor-pointer"
-              >
-                <option value="">ทุกสถานะ</option>
-                <option value="PENDING">รอการอนุมัติ</option>
-                <option value="APPROVED">อนุมัติแล้ว</option>
-                <option value="REJECTED">ปฏิเสธแล้ว</option>
-                <option value="CANCELLED">ยกเลิกแล้ว</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val)}
+              className="min-w-[150px]"
+              options={[
+                { value: '', label: 'ทุกสถานะ' },
+                { value: 'PENDING', label: 'รอการอนุมัติ' },
+                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                { value: 'REJECTED', label: 'ปฏิเสธแล้ว' },
+                { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+              ]}
+            />
           </div>
 
           <span className="text-xs text-gray-400 font-medium whitespace-nowrap">

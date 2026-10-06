@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { contractService } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
 import { EmploymentContract, ContractSummaryStats, CreateContractRequest } from '@/types/contract';
@@ -245,28 +246,32 @@ export default function ContractsPage() {
               />
             </div>
 
-            <select
+            <CustomSelect
               value={selectedContractType}
-              onChange={(e) => setSelectedContractType(e.target.value)}
-              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-            >
-              <option value="ALL">ประเภทสัญญาทั้งหมด</option>
-              <option value="PROBATION">ทดลองงาน</option>
-              <option value="PERMANENT">ประจำ</option>
-              <option value="FIXED_TERM">สัญญาจ้าง</option>
-              <option value="OTHER">อื่นๆ / ฝึกงาน</option>
-            </select>
+              onChange={(val) => setSelectedContractType(val)}
+              placeholder="ประเภทสัญญาทั้งหมด"
+              className="min-w-[170px]"
+              options={[
+                { value: 'ALL', label: 'ประเภทสัญญาทั้งหมด' },
+                { value: 'PROBATION', label: 'ทดลองงาน' },
+                { value: 'PERMANENT', label: 'ประจำ' },
+                { value: 'FIXED_TERM', label: 'สัญญาจ้าง' },
+                { value: 'OTHER', label: 'อื่นๆ / ฝึกงาน' },
+              ]}
+            />
 
-            <select
+            <CustomSelect
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-            >
-              <option value="ALL">สถานะทั้งหมด</option>
-              <option value="ACTIVE">ใช้งาน</option>
-              <option value="PENDING_APPROVAL">รออนุมัติ</option>
-              <option value="TERMINATED">สิ้นสุดแล้ว</option>
-            </select>
+              onChange={(val) => setSelectedStatus(val)}
+              placeholder="สถานะทั้งหมด"
+              className="min-w-[150px]"
+              options={[
+                { value: 'ALL', label: 'สถานะทั้งหมด' },
+                { value: 'ACTIVE', label: 'ใช้งาน' },
+                { value: 'PENDING_APPROVAL', label: 'รออนุมัติ' },
+                { value: 'TERMINATED', label: 'สิ้นสุดแล้ว' },
+              ]}
+            />
           </div>
         </div>
 

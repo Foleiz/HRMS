@@ -108,7 +108,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   }[size];
 
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative inline-block ${className || 'min-w-[130px]'}`}>
       {/* Trigger Button */}
       <button
         ref={triggerRef}

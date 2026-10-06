@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { employeeService } from '@/services/employeeService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { confirmAction, showError, hrmsSwal } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import { Employee } from '@/types/employee';
@@ -362,34 +363,38 @@ export default function TransfersPage() {
 
             {activeTab === 'transfers' && (
               <>
-                <select
+                <CustomSelect
                   value={selectedType}
-                  onChange={(e) => {
-                    setSelectedType(e.target.value);
+                  onChange={(val) => {
+                    setSelectedType(val);
                     setCurrentPage(1);
                   }}
-                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                >
-                  <option value="ALL">ประเภททั้งหมด</option>
-                  <option value="DEPARTMENT_TRANSFER">ย้ายแผนก</option>
-                  <option value="PROMOTION">เลื่อนตำแหน่ง</option>
-                  <option value="TRANSFER_AND_PROMOTION">โอนย้ายและเลื่อนตำแหน่ง</option>
-                  <option value="PROMOTION_AND_SUPERVISOR">เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน</option>
-                </select>
+                  placeholder="ประเภททั้งหมด"
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 'ALL', label: 'ประเภททั้งหมด' },
+                    { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
+                    { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
+                    { value: 'TRANSFER_AND_PROMOTION', label: 'โอนย้ายและเลื่อนตำแหน่ง' },
+                    { value: 'PROMOTION_AND_SUPERVISOR', label: 'เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน' },
+                  ]}
+                />
 
-                <select
+                <CustomSelect
                   value={selectedStatus}
-                  onChange={(e) => {
-                    setSelectedStatus(e.target.value);
+                  onChange={(val) => {
+                    setSelectedStatus(val);
                     setCurrentPage(1);
                   }}
-                  className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                >
-                  <option value="ALL">สถานะทั้งหมด</option>
-                  <option value="PENDING">รอดำเนินการ</option>
-                  <option value="APPROVED">อนุมัติแล้ว</option>
-                  <option value="REJECTED">ปฏิเสธ</option>
-                </select>
+                  placeholder="สถานะทั้งหมด"
+                  className="min-w-[150px]"
+                  options={[
+                    { value: 'ALL', label: 'สถานะทั้งหมด' },
+                    { value: 'PENDING', label: 'รอดำเนินการ' },
+                    { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                    { value: 'REJECTED', label: 'ปฏิเสธ' },
+                  ]}
+                />
               </>
             )}
           </div>

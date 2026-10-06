@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -33,6 +33,7 @@ import {
 import { employeeShiftService } from '@/services/scheduleService';
 import { shiftService } from '@/services/shiftService';
 import { organizationService } from '@/services/organizationService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
@@ -931,19 +932,17 @@ function SchedulesContent() {
               </div>
 
               {/* Department Filter */}
-              <div className="w-44">
-                <select
+              <div className="w-48">
+                <CustomSelect
                   value={assignmentDeptFilter}
-                  onChange={(e) => setAssignmentDeptFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value="ALL">ทุกแผนก / สังกัด</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setAssignmentDeptFilter(val)}
+                  placeholder="ทุกแผนก / สังกัด"
+                  className="w-full"
+                  options={[
+                    { value: 'ALL', label: 'ทุกแผนก / สังกัด' },
+                    ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                  ]}
+                />
               </div>
 
               {/* Refresh Button */}
@@ -1392,30 +1391,34 @@ function SchedulesContent() {
               </div>
 
               {/* Filter Shift Type */}
-              <div className="w-44">
-                <select
+              <div className="w-48">
+                <CustomSelect
                   value={shiftFilterType}
-                  onChange={(e) => setShiftFilterType(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value="ALL">ประเภทกะทั้งหมด</option>
-                  <option value="MORNING">กะเช้า</option>
-                  <option value="AFTERNOON">กะกลางวัน</option>
-                  <option value="NIGHT">กะกลางคืน (ข้ามวัน)</option>
-                </select>
+                  onChange={(val) => setShiftFilterType(val)}
+                  placeholder="ประเภทกะทั้งหมด"
+                  className="w-full"
+                  options={[
+                    { value: 'ALL', label: 'ประเภทกะทั้งหมด' },
+                    { value: 'MORNING', label: 'กะเช้า' },
+                    { value: 'AFTERNOON', label: 'กะกลางวัน' },
+                    { value: 'NIGHT', label: 'กะกลางคืน (ข้ามวัน)' },
+                  ]}
+                />
               </div>
 
               {/* Filter Status */}
-              <div className="w-36">
-                <select
+              <div className="w-40">
+                <CustomSelect
                   value={shiftFilterStatus}
-                  onChange={(e) => setShiftFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value="ALL">สถานะทั้งหมด</option>
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ระงับใช้งาน</option>
-                </select>
+                  onChange={(val) => setShiftFilterStatus(val)}
+                  placeholder="สถานะทั้งหมด"
+                  className="w-full"
+                  options={[
+                    { value: 'ALL', label: 'สถานะทั้งหมด' },
+                    { value: 'ACTIVE', label: 'เปิดใช้งาน' },
+                    { value: 'INACTIVE', label: 'ระงับใช้งาน' },
+                  ]}
+                />
               </div>
 
               {/* Refresh */}
