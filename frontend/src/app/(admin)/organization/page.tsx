@@ -42,6 +42,7 @@ import {
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
 import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
 import { companyBankAccountService } from '@/services/companyBankAccountService';
@@ -1275,18 +1276,15 @@ export default function OrganizationPage() {
                   />
                 </div>
 
-                <select
+                <CustomSelect
                   value={filterDivisionId}
-                  onChange={(e) => setFilterDivisionId(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ALL">ทุกฝ่าย</option>
-                  {divisions.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.divisionName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setFilterDivisionId(val)}
+                  placeholder="ทุกฝ่าย"
+                  options={[
+                    { value: 'ALL', label: 'ทุกฝ่าย' },
+                    ...divisions.map((d) => ({ value: String(d.id), label: d.divisionName })),
+                  ]}
+                />
               </div>
 
               <button
@@ -1400,18 +1398,16 @@ export default function OrganizationPage() {
                   />
                 </div>
 
-                <select
+                <CustomSelect
                   value={filterDeptId}
-                  onChange={(e) => setFilterDeptId(e.target.value)}
-                  className="px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ALL">ทุกแผนก</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setFilterDeptId(val)}
+                  placeholder="ทุกแผนก"
+                  className="min-w-[150px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกแผนก' },
+                    ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                  ]}
+                />
               </div>
 
               <button
@@ -1646,20 +1642,19 @@ export default function OrganizationPage() {
                   />
                 </div>
 
-                <div className="w-full sm:w-48">
-                  <select
-                    value={filterBenefitCategory}
-                    onChange={(e) => setFilterBenefitCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300 dark:focus:ring-blue-500/20"
-                  >
-                    <option value="ALL">ทุกหมวดหมู่สวัสดิการ</option>
-                    {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
-                      <option key={key} value={key}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CustomSelect
+                  value={filterBenefitCategory}
+                  onChange={(val) => setFilterBenefitCategory(val)}
+                  placeholder="ทุกหมวดหมู่สวัสดิการ"
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกหมวดหมู่สวัสดิการ' },
+                    ...Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => ({
+                      value: key,
+                      label: item.label,
+                    })),
+                  ]}
+                />
               </div>
 
               <button

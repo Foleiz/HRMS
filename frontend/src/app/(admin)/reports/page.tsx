@@ -15,6 +15,7 @@ import {
 } from '@/types/reports';
 import { Department, Division } from '@/types/organization';
 import LeaveSummaryReportTab from '@/components/reports/LeaveSummaryReportTab';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   Users,
   Clock,
@@ -458,45 +459,37 @@ export default function ReportsPage() {
               </div>
 
               {/* Division Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <select
-                  value={selectedDivision}
-                  onChange={(e) => {
-                    const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
-                    setSelectedDivision(val);
-                    setSelectedDepartment('ALL');
-                  }}
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">ฝ่ายทั้งหมด</option>
-                  {divisions.map((div) => (
-                    <option key={div.id} value={div.id}>
-                      {div.divisionName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CustomSelect
+                value={selectedDivision}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setSelectedDivision(parsed);
+                  setSelectedDepartment('ALL');
+                }}
+                placeholder="ฝ่ายทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'ฝ่ายทั้งหมด' },
+                  ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
+                ]}
+              />
 
               {/* Department Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) =>
-                    setSelectedDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-                  }
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">แผนกทั้งหมด</option>
-                  {departments
+              <CustomSelect
+                value={selectedDepartment}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setSelectedDepartment(parsed);
+                }}
+                placeholder="แผนกทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'แผนกทั้งหมด' },
+                  ...departments
                     .filter((dept) => selectedDivision === 'ALL' || dept.divisionId === selectedDivision)
-                    .map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.departmentName}
-                      </option>
-                    ))}
-                </select>
-              </div>
+                    .map((dept) => ({ value: dept.id, label: dept.departmentName })),
+                ]}
+              />
 
               {/* Refresh Button */}
               <button
@@ -705,22 +698,19 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <select
-                  value={latenessDepartment}
-                  onChange={(e) =>
-                    setLatenessDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-                  }
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">แผนกทั้งหมด</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.departmentName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CustomSelect
+                value={latenessDepartment}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setLatenessDepartment(parsed);
+                }}
+                placeholder="แผนกทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'แผนกทั้งหมด' },
+                  ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
+                ]}
+              />
 
               {/* Search Box */}
               <div className="relative">
@@ -935,23 +925,19 @@ export default function ReportsPage() {
               </div>
 
               {/* Department Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <select
-                  value={taxDepartment}
-                  onChange={(e) =>
-                    setTaxDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-                  }
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">แผนกทั้งหมด</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.departmentName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CustomSelect
+                value={taxDepartment}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setTaxDepartment(parsed);
+                }}
+                placeholder="แผนกทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'แผนกทั้งหมด' },
+                  ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
+                ]}
+              />
 
               {/* Search Box */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
@@ -1298,45 +1284,37 @@ export default function ReportsPage() {
               </div>
 
               {/* Division Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <select
-                  value={turnoverDivision}
-                  onChange={(e) => {
-                    const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
-                    setTurnoverDivision(val);
-                    setTurnoverDepartment('ALL');
-                  }}
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">ฝ่ายทั้งหมด</option>
-                  {divisions.map((div) => (
-                    <option key={div.id} value={div.id}>
-                      {div.divisionName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CustomSelect
+                value={turnoverDivision}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setTurnoverDivision(parsed);
+                  setTurnoverDepartment('ALL');
+                }}
+                placeholder="ฝ่ายทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'ฝ่ายทั้งหมด' },
+                  ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
+                ]}
+              />
 
               {/* Department Filter */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <select
-                  value={turnoverDepartment}
-                  onChange={(e) =>
-                    setTurnoverDepartment(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-                  }
-                  className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none dark:text-slate-300"
-                >
-                  <option value="ALL">แผนกทั้งหมด</option>
-                  {departments
+              <CustomSelect
+                value={turnoverDepartment}
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setTurnoverDepartment(parsed);
+                }}
+                placeholder="แผนกทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'แผนกทั้งหมด' },
+                  ...departments
                     .filter((dept) => turnoverDivision === 'ALL' || dept.divisionId === turnoverDivision)
-                    .map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.departmentName}
-                      </option>
-                    ))}
-                </select>
-              </div>
+                    .map((dept) => ({ value: dept.id, label: dept.departmentName })),
+                ]}
+              />
 
               {/* Refresh Button */}
               <button

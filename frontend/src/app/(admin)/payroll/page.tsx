@@ -53,6 +53,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { salaryService } from '@/services/salaryService';
 import { organizationService } from '@/services/organizationService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   SalaryStructure,
   TaxBracket,
@@ -1801,18 +1802,16 @@ export default function PayrollPage() {
                       />
                     </div>
 
-                    <select
+                    <CustomSelect
                       value={selectedDeptId}
-                      onChange={(e) => setSelectedDeptId(e.target.value)}
-                      className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
-                    >
-                      <option value="">ทุกแผนก</option>
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.departmentName}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedDeptId(val)}
+                      placeholder="ทุกแผนก"
+                      className="min-w-[150px]"
+                      options={[
+                        { value: '', label: 'ทุกแผนก' },
+                        ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                      ]}
+                    />
 
                     <button
                       onClick={handleFilterEmployees}

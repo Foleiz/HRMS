@@ -13,6 +13,7 @@ import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { confirmDelete } from '@/lib/sweetalert';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   Search,
   Plus,
@@ -914,18 +915,19 @@ export default function EmployeesPage() {
           {/* Department Filter Dropdown - ซ่อนสำหรับ role หัวหน้าแผนก (DEPT_MGR) */}
           {!isDeptManager && (
             <div className="shrink-0">
-              <select
+              <CustomSelect
                 value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
-              >
-                <option value="ALL">ทุกแผนก</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.departmentName}>
-                    {dept.departmentName}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedDepartment(val)}
+                placeholder="ทุกแผนก"
+                className="min-w-[140px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกแผนก' },
+                  ...departments.map((dept) => ({
+                    value: dept.departmentName,
+                    label: dept.departmentName,
+                  })),
+                ]}
+              />
             </div>
           )}
         </div>

@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
@@ -1313,22 +1314,19 @@ function DailyAttendanceContent() {
               </div>
 
               {/* Department Filter */}
-              <select
+              <CustomSelect
                 value={selectedDepartment}
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val) => {
                   setSelectedDepartment(val === 'ALL' ? 'ALL' : Number(val));
                   setCurrentPage(1);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 dark:text-slate-300 font-medium rounded-lg px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
-              >
-                <option value="ALL">ทุกแผนก / สังกัด</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName}
-                  </option>
-                ))}
-              </select>
+                placeholder="ทุกแผนก / สังกัด"
+                className="min-w-[160px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกแผนก / สังกัด' },
+                  ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
+                ]}
+              />
 
               {/* Date Picker with Min/Max Locking */}
               <div className="flex items-center gap-2">
@@ -2022,35 +2020,37 @@ function DailyAttendanceContent() {
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 dark:text-slate-500 dark:text-slate-400" />
                 </div>
 
-                <select
+                <CustomSelect
                   value={filterSource}
-                  onChange={(e) => {
-                    setFilterSource(e.target.value);
+                  onChange={(val) => {
+                    setFilterSource(val);
                     setBatchPage(1);
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 dark:text-slate-200 bg-white dark:border-slate-600 dark:text-slate-200 dark:bg-slate-900"
-                >
-                  <option value="ALL">แหล่งที่มา: ทั้งหมด</option>
-                  <option value="FINGERPRINT">เครื่องสแกนลายนิ้วมือ</option>
-                  <option value="FACE_SCAN">เครื่องสแกนใบหน้า</option>
-                  <option value="EXCEL">ไฟล์ Excel</option>
-                  <option value="CSV">ไฟล์ CSV</option>
-                </select>
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 'ALL', label: 'แหล่งที่มา: ทั้งหมด' },
+                    { value: 'FINGERPRINT', label: 'เครื่องสแกนลายนิ้วมือ' },
+                    { value: 'FACE_SCAN', label: 'เครื่องสแกนใบหน้า' },
+                    { value: 'EXCEL', label: 'ไฟล์ Excel' },
+                    { value: 'CSV', label: 'ไฟล์ CSV' },
+                  ]}
+                />
 
-                <select
+                <CustomSelect
                   value={filterBatchStatus}
-                  onChange={(e) => {
-                    setFilterBatchStatus(e.target.value);
+                  onChange={(val) => {
+                    setFilterBatchStatus(val);
                     setBatchPage(1);
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 dark:text-slate-200 bg-white dark:border-slate-600 dark:text-slate-200 dark:bg-slate-900"
-                >
-                  <option value="ALL">สถานะ: ทั้งหมด</option>
-                  <option value="IMPORTED">สำเร็จครบถ้วน</option>
-                  <option value="PARTIAL">สำเร็จบางส่วน</option>
-                  <option value="FAILED">ล้มเหลว</option>
-                  <option value="REVERTED">ยกเลิกแล้ว</option>
-                </select>
+                  className="min-w-[150px]"
+                  options={[
+                    { value: 'ALL', label: 'สถานะ: ทั้งหมด' },
+                    { value: 'IMPORTED', label: 'สำเร็จครบถ้วน' },
+                    { value: 'PARTIAL', label: 'สำเร็จบางส่วน' },
+                    { value: 'FAILED', label: 'ล้มเหลว' },
+                    { value: 'REVERTED', label: 'ยกเลิกแล้ว' },
+                  ]}
+                />
 
                 <button
                   onClick={() => {
@@ -2265,20 +2265,21 @@ function DailyAttendanceContent() {
               </div>
 
               {/* Status Filter */}
-              <select
+              <CustomSelect
                 value={filterAdjustmentStatus}
-                onChange={(e) => {
-                  setFilterAdjustmentStatus(e.target.value);
+                onChange={(val) => {
+                  setFilterAdjustmentStatus(val);
                   setAdjustmentsPage(1);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 dark:text-slate-300 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
-              >
-                <option value="ALL">สถานะทั้งหมด</option>
-                <option value="PENDING">รอพิจารณา (Pending)</option>
-                <option value="APPROVED">อนุมัติแล้ว (Approved)</option>
-                <option value="REJECTED">ไม่อนุมัติ (Rejected)</option>
-                <option value="CANCELLED">ยกเลิกแล้ว (Cancelled)</option>
-              </select>
+                className="min-w-[170px]"
+                options={[
+                  { value: 'ALL', label: 'สถานะทั้งหมด' },
+                  { value: 'PENDING', label: 'รอพิจารณา (Pending)' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว (Approved)' },
+                  { value: 'REJECTED', label: 'ไม่อนุมัติ (Rejected)' },
+                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว (Cancelled)' },
+                ]}
+              />
 
               {/* Refresh Button */}
               <button
@@ -2555,21 +2556,19 @@ function DailyAttendanceContent() {
               </div>
 
               {/* Department Filter */}
-              <select
+              <CustomSelect
                 value={monthlyDepartment}
-                onChange={(e) => {
-                  const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
-                  setMonthlyDepartment(val);
+                onChange={(val) => {
+                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  setMonthlyDepartment(parsed);
                 }}
-                className="text-xs bg-slate-50 border border-slate-200 text-slate-700 dark:text-slate-300 font-medium rounded-xl px-3 py-2 focus:outline-none cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300"
-              >
-                <option value="ALL">ทุกแผนก</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName}
-                  </option>
-                ))}
-              </select>
+                placeholder="ทุกแผนก"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกแผนก' },
+                  ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
+                ]}
+              />
 
               {/* Search */}
               <div className="relative w-48 sm:w-56">

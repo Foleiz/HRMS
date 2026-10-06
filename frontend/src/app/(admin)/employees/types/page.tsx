@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeTypeService } from '@/services/employeeTypeService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   EmployeeType,
   EmployeeTypeStats,
@@ -295,15 +296,18 @@ export default function EmployeeTypesPage() {
             </div>
 
             {/* Status Filter */}
-            <select
+            <CustomSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-8 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-            >
-              <option value="ALL">สถานะทั้งหมด</option>
-              <option value="ACTIVE">เปิดใช้งาน</option>
-              <option value="INACTIVE">ปิดการใช้งาน</option>
-            </select>
+              onChange={(val) => setStatusFilter(val)}
+              placeholder="สถานะทั้งหมด"
+              size="sm"
+              className="min-w-[140px]"
+              options={[
+                { value: 'ALL', label: 'สถานะทั้งหมด' },
+                { value: 'ACTIVE', label: 'เปิดใช้งาน' },
+                { value: 'INACTIVE', label: 'ปิดการใช้งาน' },
+              ]}
+            />
           </div>
         </div>
 
