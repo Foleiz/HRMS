@@ -24,7 +24,7 @@ import {
   ChartCard,
   Legend,
   MonthlyColumns,
-  RankBars,
+  ColumnChart,
   VIZ,
   fmtBaht,
   fmtNumber,
@@ -756,23 +756,17 @@ export default function ReportsPage() {
                           {dept.absentCount}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <div className="inline-flex items-center gap-2">
-                            <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800">
-                              <div
-                                className={`h-full rounded-full ${
-                                  dept.attendanceRate >= 90
-                                    ? 'bg-emerald-500'
-                                    : dept.attendanceRate >= 75
-                                    ? 'bg-amber-500'
-                                    : 'bg-rose-500'
-                                }`}
-                                style={{ width: `${Math.min(100, Math.max(0, dept.attendanceRate))}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 min-w-[36px] dark:text-slate-300">
-                              {Math.min(100, Math.max(0, dept.attendanceRate))}%
-                            </span>
-                          </div>
+                          <span
+                            className={`inline-flex min-w-[56px] justify-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                              dept.attendanceRate >= 90
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : dept.attendanceRate >= 75
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}
+                          >
+                            {Math.min(100, Math.max(0, dept.attendanceRate))}%
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -896,18 +890,20 @@ export default function ReportsPage() {
           {/* 10 อันดับมาสายบ่อย */}
           {latenessData && latenessData.items.some((i) => i.lateDays > 0) && !isLoadingLateness && (
             <ChartCard title="10 อันดับพนักงานที่มาสายบ่อยที่สุด" subtitle="เรียงตามจำนวนครั้ง แล้วตามนาทีรวม · ชี้เพื่อดูรายละเอียด">
-              <RankBars
+              <ColumnChart
                 color={VIZ.s2}
+                unit="ครั้ง"
                 items={[...latenessData.items]
                   .filter((i) => i.lateDays > 0)
                   .sort((a, b) => b.lateDays - a.lateDays || b.totalLateMinutes - a.totalLateMinutes)
                   .slice(0, 10)
                   .map((i) => ({
                     id: i.employeeId,
-                    label: i.employeeName,
+                    // ตัดคำนำหน้าชื่อ ให้ชื่อใต้แท่งสั้นลง (ชื่อเต็มดูได้ใน tooltip)
+                    label: i.employeeName.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/, ''),
                     sub: i.departmentName,
                     value: i.lateDays,
-                    valueLabel: `${i.lateDays} ครั้ง · ${i.totalLateMinutes} นาที`,
+                    valueLabel: `${i.lateDays} ครั้ง`,
                     tip: (
                       <div>
                         <div className="font-semibold text-slate-900">{i.employeeName}</div>

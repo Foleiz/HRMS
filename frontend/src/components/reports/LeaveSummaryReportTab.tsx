@@ -8,6 +8,7 @@ import { Department } from '@/types/organization';
 import { LeaveSummaryReport } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
+import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
 
 interface Props {
@@ -66,7 +67,6 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   }, [data]);
 
   const maxMonth = Math.max(1, ...(data?.byMonth.map((m) => m.days) ?? [0]));
-  const maxType = Math.max(1, ...(data?.byType.map((m) => m.days) ?? [0]));
   const heatMax = Math.max(1, ...(data?.departmentByType.map((c) => c.days) ?? [0]));
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -172,21 +172,11 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               {data.byType.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
               ) : (
-                <div className="space-y-3">
-                  {data.byType.map((t) => (
-                    <div key={t.key}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">{t.label}</span>
-                        <span className="text-slate-500 dark:text-slate-400">
-                          {fmt(t.days)} วัน · {t.requests} ใบ · {t.employees} คน
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="h-2 rounded-full bg-blue-500" style={{ width: `${(t.days / maxType) * 100}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <DonutChart
+                  unit="วัน"
+                  centerLabel="วันลารวม"
+                  segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
+                />
               )}
             </div>
           </div>

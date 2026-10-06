@@ -6,7 +6,7 @@ import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
 import type { Department, Division } from '@/types/organization';
 import type { EmployeesByDepartmentReport } from '@/types/reports';
-import { ChartCard, Legend, ProportionBars, RankBars, VIZ } from './ReportCharts';
+import { ChartCard, ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { printReport } from '@/lib/printReport';
 
@@ -189,9 +189,10 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
 
           {/* กราฟ */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <ChartCard title="จำนวนพนักงานแต่ละแผนก" subtitle="ตัวเลขหลัง / = อัตรากำลังตามแผน" className="xl:col-span-2">
-              <RankBars
+            <ChartCard title="จำนวนพนักงานแต่ละแผนก" subtitle="แท่ง = พนักงานจริง · เส้นประ = อัตรากำลังตามแผน · ชี้เพื่อดูรายละเอียด" className="xl:col-span-2">
+              <ColumnChart
                 color={VIZ.s1}
+                height={220}
                 items={[...data.departments]
                   .sort((a, b) => b.employeeCount - a.employeeCount)
                   .map((d) => ({
@@ -199,31 +200,23 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                     label: d.departmentName,
                     sub: d.divisionName,
                     value: d.employeeCount,
-                    valueLabel: d.headcountPlan ? `${d.employeeCount} / ${d.headcountPlan} คน` : `${d.employeeCount} คน`,
+                    target: d.headcountPlan ?? null,
                   }))}
               />
             </ChartCard>
             <div className="space-y-4">
-              <ChartCard title="สัดส่วนเพศ" legend={<Legend items={[{ label: 'ชาย', color: VIZ.s1 }, { label: 'หญิง', color: VIZ.s2 }, { label: 'ไม่ระบุ', color: VIZ.neutral }]} />}>
-                <ProportionBars
-                  rows={[
-                    {
-                      id: 'all',
-                      label: 'ทั้งหมด',
-                      segments: [
-                        { key: 'm', label: 'ชาย', value: data.maleCount, color: VIZ.s1 },
-                        { key: 'f', label: 'หญิง', value: data.femaleCount, color: VIZ.s2 },
-                        { key: 'o', label: 'ไม่ระบุ', value: data.otherGenderCount, color: VIZ.neutral },
-                      ],
-                    },
+              <ChartCard title="สัดส่วนเพศ">
+                <DonutChart
+                  size={130}
+                  segments={[
+                    { key: 'm', label: 'ชาย', value: data.maleCount, color: VIZ.s1 },
+                    { key: 'f', label: 'หญิง', value: data.femaleCount, color: VIZ.s2 },
+                    { key: 'o', label: 'ไม่ระบุ', value: data.otherGenderCount, color: VIZ.neutral },
                   ]}
                 />
               </ChartCard>
               <ChartCard title="ประเภทพนักงาน">
-                <RankBars
-                  color={VIZ.s3}
-                  items={data.byEmployeeType.map((t) => ({ id: t.name, label: t.name, value: t.count, valueLabel: `${t.count} คน` }))}
-                />
+                <DonutChart size={130} segments={toSegments(data.byEmployeeType)} />
               </ChartCard>
             </div>
           </div>
