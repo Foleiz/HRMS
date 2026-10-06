@@ -2383,7 +2383,7 @@ export default function OrganizationPage() {
 
       {/* === TAB: แผนผังองค์กร (Org Chart) === */}
       {activeTab === 'orgchart' && (
-        <OrgChartView onEditStructure={canViewStruct ? () => setActiveTab('divisions') : undefined} />
+        <OrgChartView />
       )}
 
       {/* Modal: Create / Edit Company Bank Account */}

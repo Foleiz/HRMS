@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Network,
@@ -10,7 +10,6 @@ import {
   ZoomOut,
   RotateCcw,
   Printer,
-  Edit2,
   Mail,
   MoreHorizontal,
   ChevronDown,
@@ -150,7 +149,7 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
             <a
               href={`mailto:${person.workEmail}`}
               title={`อีเมล: ${person.workEmail}`}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors print:hidden"
             >
               <Mail className="w-3.5 h-3.5" />
             </a>
@@ -160,7 +159,7 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
               type="button"
               title="ดูข้อมูล"
               onClick={() => onOpen({ person, unit })}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors print:hidden"
             >
               <MoreHorizontal className="w-3.5 h-3.5" />
             </button>
@@ -172,7 +171,7 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
             type="button"
             onClick={onToggle}
             title={expanded ? 'ยุบ' : 'ขยาย'}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors print:hidden"
           >
             <span>{childCount}</span>
             {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -417,7 +416,7 @@ function allNodeKeys(chart: OrgChart) {
 // ---------------------------------------------------------------------------
 // คอมโพเนนต์หลัก
 // ---------------------------------------------------------------------------
-export default function OrgChartView({ onEditStructure }: { onEditStructure?: () => void }) {
+export default function OrgChartView() {
   const router = useRouter();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
@@ -431,6 +430,7 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
   const [search, setSearch] = useState('');
   const [zoom, setZoom] = useState(1);
   const [opened, setOpened] = useState<OpenPerson | null>(null);
+  const printAreaRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -468,6 +468,76 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
   }, [expanded, found]);
   const isAllExpanded = allKeys.size > 0 && [...allKeys].every((k) => expanded.has(k));
 
+  /**
+   * พิมพ์ด้วย iframe แยก: ได้เฉพาะแผนผัง (ไม่มี Sidebar/เมนู) ขนาด A4 แนวนอน
+   * พร้อมหัวกระดาษ และย่อขนาดอัตโนมัติให้พอดีหน้ากระดาษ
+   */
+  const handlePrint = () => {
+    const node = printAreaRef.current;
+    if (!node || !chart) return;
+
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.style.zoom = '1';
+    clone.classList.remove('min-w-full', 'py-10', 'px-12');
+    clone.style.padding = '8px';
+
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+    const title = esc(`แผนผังองค์กร${chart.companyName ? ` — ${chart.companyName}` : ''}`);
+    const printedAt = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join('\n');
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    Object.assign(iframe.style, { position: 'fixed', left: '-10000px', top: '0', width: '1200px', height: '800px', border: '0' });
+    iframe.srcdoc = `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${title}</title>${styles}
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  html, body { background: #fff !important; margin: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .oc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 1px solid #e2e8f0; padding: 0 4px 6px; margin-bottom: 10px; font-size: 11px; color: #64748b; }
+  .oc-head h1 { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; }
+  #oc-sheet { display: flex; justify-content: center; }
+</style></head><body>
+<div class="oc-head"><h1>${title}</h1><span>${esc(`${chart.divisions.length} ฝ่าย · ${chart.totalDepartments} แผนก · ${chart.totalEmployees} คน · พิมพ์เมื่อ ${printedAt}`)}</span></div>
+<div id="oc-sheet">${clone.outerHTML}</div>
+</body></html>`;
+
+    iframe.onload = () => {
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      const content = doc?.getElementById('oc-sheet')?.firstElementChild as HTMLElement | null;
+      if (!doc || !win || !content) {
+        iframe.remove();
+        return;
+      }
+      // พื้นที่พิมพ์ A4 แนวนอน (ขอบ 8 มม.) ≈ 1060 × 700 px — ย่อให้พอดีความกว้าง และพอดีหน้าเดียวถ้าย่อแล้วยังอ่านได้
+      const pageW = 1060;
+      const pageH = 680;
+      const w = content.scrollWidth;
+      const h = content.scrollHeight;
+      let scale = Math.min(1, pageW / w);
+      const fitOnePage = Math.min(1, pageW / w, pageH / h);
+      if (h * scale > pageH && fitOnePage >= 0.4) scale = fitOnePage;
+      content.style.zoom = String(scale);
+
+      const cleanup = () => setTimeout(() => iframe.remove(), 300);
+      win.addEventListener('afterprint', cleanup, { once: true });
+      // รอรูป/ฟอนต์โหลดให้ครบก่อนสั่งพิมพ์
+      const ready = doc.fonts ? doc.fonts.ready : Promise.resolve();
+      ready.then(() => {
+        setTimeout(() => {
+          win.focus();
+          win.print();
+        }, 200);
+      });
+      setTimeout(() => iframe.remove(), 120000);
+    };
+
+    document.body.appendChild(iframe);
+  };
+
   const ctx: TreeCtx = {
     expanded: effectiveExpanded,
     toggle,
@@ -478,16 +548,6 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
 
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
-      {/* ใช้ตอนพิมพ์: พิมพ์เฉพาะแผนผัง */}
-      <style>{`
-        @media print {
-          @page { size: landscape; margin: 8mm; }
-          body * { visibility: hidden !important; }
-          #orgchart-print-area, #orgchart-print-area * { visibility: visible !important; }
-          #orgchart-print-area { position: fixed; left: 0; top: 0; overflow: visible !important; background: #fff !important; }
-        }
-      `}</style>
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700">
         <div>
@@ -502,21 +562,20 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
           )}
         </div>
         <div className="flex items-center gap-2">
-          {onEditStructure && (
-            <button
-              type="button"
-              onClick={onEditStructure}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors dark:border-slate-700 dark:text-slate-300"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              แก้ไขโครงสร้าง
-            </button>
-          )}
           <button
             type="button"
-            onClick={() => window.print()}
             disabled={!chart}
-            title="พิมพ์ / บันทึกเป็น PDF"
+            onClick={() => setExpanded(isAllExpanded ? new Set(['ceo']) : new Set(allKeys))}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+          >
+            {isAllExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {isAllExpanded ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={!chart}
+            title="พิมพ์แผนผังตามที่แสดงบนหน้าจอ (กางโหนดที่ต้องการก่อนพิมพ์) / บันทึกเป็น PDF"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
           >
             <Printer className="w-3.5 h-3.5" />
@@ -552,14 +611,6 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
             {found.count > 0 ? `พบ ${found.count} รายการ (ไฮไลต์สีฟ้า)` : 'ไม่พบผลลัพธ์'}
           </span>
         )}
-        <button
-          type="button"
-          disabled={!chart}
-          onClick={() => setExpanded(isAllExpanded ? new Set(['ceo']) : new Set(allKeys))}
-          className="ml-auto px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
-        >
-          {isAllExpanded ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
-        </button>
       </div>
 
       {/* Canvas */}
@@ -583,7 +634,7 @@ export default function OrgChartView({ onEditStructure }: { onEditStructure?: ()
               </button>
             </div>
           ) : chart ? (
-            <div id="orgchart-print-area" className="w-max min-w-full py-10 px-12" style={{ zoom }}>
+            <div ref={printAreaRef} className="w-max min-w-full py-10 px-12" style={{ zoom }}>
               <div className="flex flex-col items-center">
                 {/* ระดับ 0: CEO */}
                 <NodeCard
