@@ -669,6 +669,7 @@ export default function SettingsPage() {
         onSubmitCreate={handleCreateRole}
         onSubmitUpdate={handleUpdateRole}
         roleToEdit={roleToEdit}
+        existingRoles={roles}
       />
 
       {/* Audit Log Detail Modal / Slide-over Drawer */}

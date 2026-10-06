@@ -87,25 +87,41 @@ input[type="reset"]:disabled {
   color: #FFFFFF;
 }
 
-.dark .text-slate-900,
-.dark .text-slate-800,
-.dark .text-gray-900,
-.dark .text-gray-800 {
+.dark .text-slate-900:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-slate-800:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-900:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-800:not([data-stat-card] *):not(.stat-panel *) {
   color: #F8FAFC !important;
 }
 
-.dark .text-slate-700,
-.dark .text-slate-600,
-.dark .text-gray-700,
-.dark .text-gray-600 {
+.dark .text-slate-700:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-slate-600:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-700:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-600:not([data-stat-card] *):not(.stat-panel *) {
   color: #CBD5E1 !important;
 }
 
-.dark .text-slate-500,
-.dark .text-slate-400,
-.dark .text-gray-500,
-.dark .text-gray-400 {
+.dark .text-slate-500:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-slate-400:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-500:not([data-stat-card] *):not(.stat-panel *),
+.dark .text-gray-400:not([data-stat-card] *):not(.stat-panel *) {
   color: #94A3B8 !important;
+}
+
+/* Ensure text inside dashboard pastel stat cards explicitly retains original dark contrast */
+.dark [data-stat-card] .text-slate-900,
+.dark .stat-panel .text-slate-900 {
+  color: #0F172A !important;
+}
+
+.dark [data-stat-card] .text-slate-700,
+.dark .stat-panel .text-slate-700 {
+  color: #334155 !important;
+}
+
+.dark [data-stat-card] .text-slate-600,
+.dark .stat-panel .text-slate-600 {
+  color: #475569 !important;
 }
 
 .dark .bg-white {

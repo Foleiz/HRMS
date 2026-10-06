@@ -184,7 +184,7 @@ export const EmployeeStatCards: React.FC = () => {
   const overDays = stats.vacationUsed - stats.vacationQuota;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
+    <div data-stat-card className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
       {/* 1. ลาป่วย (Yellow) */}
       <div className="bg-[#FEF6D8] border border-[#F6E5A6] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px]">
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา ป่วย ไปแล้ว</span>

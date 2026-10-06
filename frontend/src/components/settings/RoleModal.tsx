@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Shield } from 'lucide-react';
+import { X, Shield, RefreshCw, Sparkles } from 'lucide-react';
 import { RoleSummary, CreateRoleRequest, UpdateRoleRequest } from '@/types/settings';
 
 interface RoleModalProps {
@@ -10,6 +10,7 @@ interface RoleModalProps {
   onSubmitCreate: (data: CreateRoleRequest) => Promise<void>;
   onSubmitUpdate: (id: number, data: UpdateRoleRequest) => Promise<void>;
   roleToEdit?: RoleSummary | null;
+  existingRoles?: RoleSummary[];
 }
 
 export const RoleModal: React.FC<RoleModalProps> = ({
@@ -18,6 +19,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   onSubmitCreate,
   onSubmitUpdate,
   roleToEdit,
+  existingRoles = [],
 }) => {
   const isEditMode = !!roleToEdit;
 
@@ -28,6 +30,30 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // คำนวณรหัสบทบาทอัตโนมัติ เช่น ROLE_001, ROLE_002, ...
+  const generateNextRoleCode = (rolesList: RoleSummary[] = existingRoles): string => {
+    const existingCodes = new Set(rolesList.map((r) => r.roleCode.toUpperCase()));
+    let maxNum = 0;
+
+    rolesList.forEach((r) => {
+      const match = r.roleCode.match(/^ROLE_?(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+
+    let nextNum = maxNum > 0 ? maxNum + 1 : rolesList.length + 1;
+    let candidate = `ROLE_${String(nextNum).padStart(3, '0')}`;
+    while (existingCodes.has(candidate)) {
+      nextNum++;
+      candidate = `ROLE_${String(nextNum).padStart(3, '0')}`;
+    }
+    return candidate;
+  };
+
   useEffect(() => {
     if (roleToEdit) {
       setRoleCode(roleToEdit.roleCode);
@@ -35,13 +61,13 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       setDescription(roleToEdit.description || '');
       setStatus(roleToEdit.status);
     } else {
-      setRoleCode('');
+      setRoleCode(generateNextRoleCode(existingRoles));
       setRoleName('');
       setDescription('');
       setStatus('ACTIVE');
     }
     setErrorMsg(null);
-  }, [roleToEdit, isOpen]);
+  }, [roleToEdit, isOpen, existingRoles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,21 +143,40 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              รหัสบทบาท (Role Code) <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              disabled={isEditMode}
-              value={roleCode}
-              onChange={(e) => setRoleCode(e.target.value.toUpperCase())}
-              placeholder="เช่น HR_SPECIALIST, AUDITOR"
-              className={`w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 uppercase ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-400' : ''
-              }`}
-            />
-            {isEditMode && (
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">รหัสบทบาทไม่สามารถเปลี่ยนแปลงได้</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                รหัสบทบาท (Role Code) <span className="text-rose-500">*</span>
+              </label>
+              {!isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setRoleCode(generateNextRoleCode(existingRoles))}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  สร้างรหัสอัตโนมัติ
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                disabled={isEditMode}
+                value={roleCode}
+                onChange={(e) => setRoleCode(e.target.value.toUpperCase())}
+                placeholder="เช่น ROLE_001 หรือ HR_SPECIALIST"
+                className={`w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 uppercase ${
+                  isEditMode ? 'bg-slate-50 dark:bg-slate-900/50 cursor-not-allowed text-slate-400' : ''
+                }`}
+              />
+            </div>
+            {isEditMode ? (
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">รหัสบทบาทไม่สามารถเปลี่ยนแปลงได้</p>
+            ) : (
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                ระบบใส่รหัสอัตโนมัติให้แล้ว (สามารถแก้ไขเองตามต้องการได้ เช่น <span className="font-mono">AUDITOR</span>)
+              </p>
             )}
           </div>
 

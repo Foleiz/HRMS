@@ -334,11 +334,17 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   }, [searchModuleQuery, filteredCategories]);
 
   /* ── Left Pane Filtered Roles ── */
-  const filteredRoles = roles.filter(
-    (r) =>
-      r.roleCode.toLowerCase().includes(searchRole.toLowerCase().trim()) ||
-      r.roleName.toLowerCase().includes(searchRole.toLowerCase().trim())
-  );
+  const filteredRoles = roles
+    .filter(
+      (r) =>
+        r.roleCode.toLowerCase().includes(searchRole.toLowerCase().trim()) ||
+        r.roleName.toLowerCase().includes(searchRole.toLowerCase().trim())
+    )
+    .sort((a, b) => {
+      if (a.isSystemDefault && !b.isSystemDefault) return -1;
+      if (!a.isSystemDefault && b.isSystemDefault) return 1;
+      return a.id - b.id;
+    });
 
   /* ── Module Helpers ── */
   const isModuleActive = (mod: ModulePermissionScope): boolean => {
@@ -675,8 +681,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-slate-900 dark:text-slate-100 tracking-tight">
-                        {role.roleCode}
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">
+                        {role.roleName}
                       </span>
                       {role.isSystemDefault && (
                         <span className="px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/60 rounded text-[9px] font-semibold">
@@ -684,8 +690,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      {role.roleName}
+                    <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+                      {role.roleCode}
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
@@ -734,13 +740,18 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <span>ตั้งค่าสิทธิ์สำหรับ:</span>
-                  <span className="text-[#0B2046] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  <span className="text-[#0B2046] dark:text-blue-400">
+                    {selectedRoleMatrix.roleName}
+                  </span>
+                  <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     {selectedRoleMatrix.roleCode}
                   </span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {selectedRoleMatrix.description || selectedRoleMatrix.roleName}
-                </p>
+                {selectedRoleMatrix.description && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {selectedRoleMatrix.description}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2">

@@ -339,7 +339,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
   const cards = getCardsConfig();
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
+    <div data-stat-card className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
       {cards.map((card, idx) => (
         <div
           key={idx}
