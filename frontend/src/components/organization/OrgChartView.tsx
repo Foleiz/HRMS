@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Copy,
+  Hand,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -414,9 +415,13 @@ function allNodeKeys(chart: OrgChart) {
 }
 
 // ---------------------------------------------------------------------------
+interface OrgChartViewProps {
+  fullHeight?: boolean;
+}
+
 // คอมโพเนนต์หลัก
 // ---------------------------------------------------------------------------
-export default function OrgChartView() {
+export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) {
   const router = useRouter();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
@@ -431,6 +436,77 @@ export default function OrgChartView() {
   const [zoom, setZoom] = useState(1);
   const [opened, setOpened] = useState<OpenPerson | null>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Pan (Click & Drag to Scroll)
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number }>({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, select, textarea, [role="button"]')) {
+      return;
+    }
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    setIsPanning(true);
+    panStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPanning) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const dx = e.clientX - panStartRef.current.startX;
+    const dy = e.clientY - panStartRef.current.startY;
+    container.scrollLeft = panStartRef.current.scrollLeft - dx;
+    container.scrollTop = panStartRef.current.scrollTop - dy;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      setIsPanning(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      setIsPanning(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+  };
+
+  // กึ่งกลางแผนผังแนวนอนเมื่อโหลดข้อมูลเสร็จ
+  useEffect(() => {
+    if (chart && scrollContainerRef.current) {
+      const el = scrollContainerRef.current;
+      const scrollX = (el.scrollWidth - el.clientWidth) / 2;
+      if (scrollX > 0) {
+        el.scrollLeft = scrollX;
+      }
+    }
+  }, [chart]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -547,9 +623,13 @@ export default function OrgChartView() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+    <div
+      className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden flex flex-col ${
+        fullHeight ? 'h-full flex-1 min-h-0' : 'h-[calc(100vh-14rem)] min-h-[560px]'
+      }`}
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Network className="w-5 h-5 text-[#0B2046] dark:text-blue-400" />
@@ -566,7 +646,7 @@ export default function OrgChartView() {
             type="button"
             disabled={!chart}
             onClick={() => setExpanded(isAllExpanded ? new Set(['ceo']) : new Set(allKeys))}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
           >
             {isAllExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             {isAllExpanded ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
@@ -576,7 +656,7 @@ export default function OrgChartView() {
             onClick={handlePrint}
             disabled={!chart}
             title="พิมพ์แผนผังตามที่แสดงบนหน้าจอ (กางโหนดที่ต้องการก่อนพิมพ์) / บันทึกเป็น PDF"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             พิมพ์
@@ -585,7 +665,7 @@ export default function OrgChartView() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30">
+      <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30 shrink-0">
         <div className="relative flex-1 max-w-xs min-w-[200px]">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -600,7 +680,7 @@ export default function OrgChartView() {
               type="button"
               onClick={() => setSearch('')}
               aria-label="ล้างคำค้นหา"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-slate-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -614,21 +694,30 @@ export default function OrgChartView() {
       </div>
 
       {/* Canvas */}
-      <div className="relative bg-slate-100/80 dark:bg-slate-900/40">
-        <div className="overflow-auto overscroll-contain" style={{ minHeight: 520, maxHeight: 'calc(100vh - 220px)' }}>
+      <div className="relative flex-1 min-h-0 w-full bg-slate-100/80 dark:bg-slate-900/40 flex flex-col overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+          className={`flex-1 w-full h-full overflow-auto overscroll-contain select-none transition-colors scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80 [&::-webkit-scrollbar-track]:bg-transparent ${
+            isPanning ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+        >
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-24">
+            <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
               <p className="text-sm text-slate-500">กำลังโหลดแผนผังองค์กร...</p>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center gap-3 py-24 text-center px-4">
+            <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24 text-center px-4">
               <AlertTriangle className="w-8 h-8 text-amber-500" />
               <p className="text-sm text-slate-600">{error}</p>
               <button
                 type="button"
                 onClick={load}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> ลองใหม่
               </button>
@@ -681,34 +770,47 @@ export default function OrgChartView() {
           ) : null}
         </div>
 
-        {/* Zoom */}
+        {/* Floating Controls: Zoom & Pan Hint */}
         {chart && (
-          <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 z-10 print:hidden">
-            <button
-              type="button"
-              title="ขยาย"
-              onClick={() => setZoom((z) => Math.min(+(z + 0.1).toFixed(1), 1.5))}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              title="ย่อ"
-              onClick={() => setZoom((z) => Math.max(+(z - 0.1).toFixed(1), 0.4))}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              title="ขนาดปกติ"
-              onClick={() => setZoom(1)}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <div className="w-8 text-center text-[10px] font-mono text-slate-500">{Math.round(zoom * 100)}%</div>
+          <div className="absolute bottom-4 left-4 flex items-end gap-3 z-10 print:hidden pointer-events-none">
+            {/* Zoom Controls */}
+            <div className="flex flex-col gap-1 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-1 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md pointer-events-auto">
+              <button
+                type="button"
+                title="ขยาย (Zoom In)"
+                onClick={() => setZoom((z) => Math.min(+(z + 0.1).toFixed(1), 1.5))}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="ย่อ (Zoom Out)"
+                onClick={() => setZoom((z) => Math.max(+(z - 0.1).toFixed(1), 0.4))}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="ขนาดปกติ (Reset)"
+                onClick={() => setZoom(1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 text-center text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 py-0.5">
+                {Math.round(zoom * 100)}%
+              </div>
+            </div>
+
+            {/* Hand / Pan Tool Hint */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl shadow-md text-xs text-slate-600 dark:text-slate-300 select-none">
+              <div className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Hand className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-medium">คลิกค้างแล้วลากเพื่อเลื่อนดูแผนผัง</span>
+            </div>
           </div>
         )}
       </div>
