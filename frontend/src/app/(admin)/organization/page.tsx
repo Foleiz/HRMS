@@ -410,16 +410,6 @@ export default function OrganizationPage() {
       </span>
     );
 
-  const renderMissingHeadBanner = (count: number, unit: 'ฝ่าย' | 'แผนก') =>
-    count > 0 ? (
-      <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-        <span>
-          มี <strong>{count} {unit}</strong>ที่ยังไม่ได้ตั้งหัวหน้า — ขั้นอนุมัติแบบ &quot;หัวหน้า{unit}ของผู้ยื่น&quot; ของพนักงานใน{unit}นี้จะใช้ทางสำรองที่ตั้งไว้แทน (เช่น ส่งให้ฝ่ายบุคคล)
-        </span>
-      </div>
-    ) : null;
-
   const renderEmployeeCell = (name?: string | null) => {
     if (!name) return <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">-</span>;
     const initial = name.trim().charAt(0);
@@ -1164,7 +1154,6 @@ export default function OrganizationPage() {
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
-            {renderMissingHeadBanner(divisions.filter((d) => d.status === 'ACTIVE' && !d.headEmployeeId).length, 'ฝ่าย')}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative max-w-sm w-full">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
@@ -1273,7 +1262,6 @@ export default function OrganizationPage() {
         {/* TAB 2: DEPARTMENTS */}
         {activeTab === 'departments' && (
           <div className="space-y-4">
-            {renderMissingHeadBanner(departments.filter((d) => d.status === 'ACTIVE' && !d.headEmployeeId).length, 'แผนก')}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
                 <div className="relative flex-1">
