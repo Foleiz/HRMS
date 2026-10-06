@@ -79,13 +79,13 @@ public class CompanyBankAccountsController : ControllerBase
     }
 
     /// <summary>
-    /// ลบบัญชีธนาคารบริษัท
+    /// ปิดใช้งานบัญชีธนาคารบริษัท (ไม่ลบจริง เพื่อเก็บประวัติ; บัญชีหลักปิดไม่ได้)
     /// </summary>
     [HttpDelete("{id:long}")]
     [RequirePermission("ORG_COMP_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteAsync(id, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(null!, "ลบบัญชีธนาคารสำเร็จ"));
+        return Ok(ApiResponse<object>.Ok(null!, "ปิดใช้งานบัญชีธนาคารสำเร็จ"));
     }
 }

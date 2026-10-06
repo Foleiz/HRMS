@@ -159,6 +159,8 @@ export interface CompanyBankAccount {
   bankCode: string;
   bankName: string;
   accountNumber: string;
+  /** true = เลขบัญชีถูกปิดบางส่วน (ผู้ดูไม่ใช่ ADMIN/การเงิน) */
+  isAccountNumberMasked?: boolean;
   accountName?: string;
   isPrimaryPayrollAccount: boolean;
   status: 'ACTIVE' | 'INACTIVE' | string;
