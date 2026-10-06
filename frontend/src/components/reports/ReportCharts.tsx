@@ -228,15 +228,17 @@ export function MonthlyColumns({
   format = fmtCompact,
   tipFormat = fmtNumber,
   highlightMonth,
+  minMax,
 }: {
   series: { key: string; label: string; color: string; values: (number | null)[] }[];
   format?: (v: number) => string;
   tipFormat?: (v: number) => string;
   highlightMonth?: number; // 1-12
+  minMax?: number;
 }) {
   const tt = useTooltip();
   const [hover, setHover] = useState<number | null>(null);
-  const max = niceMax(Math.max(0, ...series.flatMap((s) => s.values.map((v) => v ?? 0))));
+  const max = niceMax(Math.max(minMax ?? 0, ...series.flatMap((s) => s.values.map((v) => v ?? 0))));
   const groupW = PLOT_W / 12;
   const barW = Math.min(18, (groupW - 10) / series.length - 2);
   const y = (v: number) => PAD.t + PLOT_H - (v / max) * PLOT_H;

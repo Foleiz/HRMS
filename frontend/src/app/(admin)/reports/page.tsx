@@ -19,12 +19,11 @@ import {
   ChartCard,
   Legend,
   MonthlyColumns,
-  MonthlyDiverging,
-  MonthlyLine,
   ProportionBars,
   RankBars,
   VIZ,
   fmtBaht,
+  fmtNumber,
 } from '@/components/reports/ReportCharts';
 import {
   Users,
@@ -1618,31 +1617,50 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* แนวโน้มทั้งปี */}
-          {turnoverTrend && turnoverTrend.rate.some((v) => v != null) && (
+          {/* แนวโน้มทั้งปี: แยกเป็น 2 กราฟ (พนักงานเข้าใหม่ และ พนักงานลาออก) */}
+          {turnoverTrend && (turnoverTrend.joined.some((v) => v != null) || turnoverTrend.resigned.some((v) => v != null)) && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <ChartCard title={`อัตราการลาออกรายเดือน ปี ${turnoverYear + 543}`} subtitle="ลาออก ÷ จำนวนพนักงานเฉลี่ยของเดือน (%)">
-                <MonthlyLine
-                  label="อัตราการลาออก"
-                  values={turnoverTrend.rate}
-                  color={VIZ.s2}
-                  format={(v) => `${Math.round(v * 10) / 10}%`}
-                  minMax={5}
-                />
-              </ChartCard>
               <ChartCard
-                title={`พนักงานเข้าใหม่ / ลาออก ปี ${turnoverYear + 543}`}
-                subtitle="แท่งขึ้น = เข้าใหม่ · แท่งลง = ลาออก (คน)"
+                title={`พนักงานเข้าใหม่ ปี ${turnoverYear + 543}`}
+                subtitle="จำนวนพนักงานเริ่มงานในแต่ละเดือน (คน)"
                 legend={
                   <Legend
                     items={[
                       { label: 'เข้าใหม่', color: VIZ.s3 },
+                    ]}
+                  />
+                }
+              >
+                <MonthlyColumns
+                  highlightMonth={turnoverMonth}
+                  minMax={4}
+                  format={fmtNumber}
+                  tipFormat={(v) => `${fmtNumber(v)} คน`}
+                  series={[
+                    { key: 'joined', label: 'เข้าใหม่', color: VIZ.s3, values: turnoverTrend.joined },
+                  ]}
+                />
+              </ChartCard>
+              <ChartCard
+                title={`พนักงานลาออก ปี ${turnoverYear + 543}`}
+                subtitle="จำนวนพนักงานสิ้นสุดสภาพการจ้างในแต่ละเดือน (คน)"
+                legend={
+                  <Legend
+                    items={[
                       { label: 'ลาออก', color: VIZ.s2 },
                     ]}
                   />
                 }
               >
-                <MonthlyDiverging up={turnoverTrend.joined} down={turnoverTrend.resigned} upLabel="เข้าใหม่" downLabel="ลาออก" />
+                <MonthlyColumns
+                  highlightMonth={turnoverMonth}
+                  minMax={4}
+                  format={fmtNumber}
+                  tipFormat={(v) => `${fmtNumber(v)} คน`}
+                  series={[
+                    { key: 'resigned', label: 'ลาออก', color: VIZ.s2, values: turnoverTrend.resigned },
+                  ]}
+                />
               </ChartCard>
             </div>
           )}
