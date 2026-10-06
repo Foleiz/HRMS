@@ -50,11 +50,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = () => {
-    // ยังไม่มีระบบรีเซ็ตรหัสผ่านด้วยตนเอง — แจ้งให้ติดต่อ HR/ผู้ดูแลระบบ
-    toast.info('กรุณาติดต่อฝ่ายบุคคล (HR) หรือผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน', 'ลืมรหัสผ่าน');
-  };
-
   const handleQuickLogin = (quickUser: string, quickPass: string) => {
     setUsername(quickUser);
     setPassword(quickPass);
@@ -151,20 +146,10 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-[13px] font-medium text-[#0F172A] hover:text-[#0B2046] hover:underline underline-offset-2"
-              >
-                ลืมรหัสผ่าน?
-              </button>
-            </div>
-
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 mt-1 rounded-xl bg-gradient-to-b from-[#1B3766] to-[#0B2046] text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center disabled:opacity-60"
+              className="w-full h-12 mt-3 rounded-xl bg-gradient-to-b from-[#1B3766] to-[#0B2046] text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
