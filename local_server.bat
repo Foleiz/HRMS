@@ -13,9 +13,9 @@ echo ===========================================================================
 echo.
 echo   [1] Start Full System (Backend API + Frontend Web + Open Browser)
 echo   [2] Start Backend Only (.NET 10 API - Port 5229)
-echo   [3] Start Frontend Only (Next.js 16 - Port 3000)
-echo   [4] Stop All Servers (Kill Ports 5229 ^& 3000)
-echo   [5] Check Server Status (Port 5229 ^& 3000)
+echo   [3] Start Frontend Only (Next.js 16 - Port 4001)
+echo   [4] Stop All Servers (Kill Ports 5229 ^& 4001)
+echo   [5] Check Server Status (Port 5229 ^& 4001)
 echo   [0] Exit
 echo.
 echo ==============================================================================
@@ -69,21 +69,21 @@ start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Back
 
 ping 127.0.0.1 -n 3 >nul
 
-echo - Launching Frontend Web (Next.js) on http://localhost:3000 ...
-start "HRMS [Frontend Web - Port 3000]" /D "%~dp0frontend" cmd /k "title HRMS Frontend Web (Port 3000) && color 0B && echo Starting HRMS Frontend (Next.js)... && npm run dev"
+echo - Launching Frontend Web (Next.js) on http://localhost:4001 ...
+start "HRMS [Frontend Web - Port 4001]" /D "%~dp0frontend" cmd /k "title HRMS Frontend Web (Port 4001) && color 0B && echo Starting HRMS Frontend (Next.js)... && npm run dev"
 
 echo.
 echo ==============================================================================
 echo [3/3] Servers are starting up!
 echo ==============================================================================
-echo   * Frontend Web   : http://localhost:3000
+echo   * Frontend Web   : http://localhost:4001
 echo   * Backend Swagger: http://localhost:5229/swagger
 echo   * Backend Health : http://localhost:5229/api/health
 echo ==============================================================================
 echo.
-echo Opening default web browser to http://localhost:3000 in 5 seconds...
+echo Opening default web browser to http://localhost:4001 in 5 seconds...
 ping 127.0.0.1 -n 6 >nul
-start http://localhost:3000
+start http://localhost:4001
 
 echo.
 echo Servers are running in background windows.
@@ -113,10 +113,10 @@ echo.
 echo ==============================================================================
 echo Launching Frontend Web (Next.js)...
 echo ==============================================================================
-start "HRMS [Frontend Web - Port 3000]" /D "%~dp0frontend" cmd /k "title HRMS Frontend Web (Port 3000) && color 0B && echo Starting HRMS Frontend (Next.js)... && npm run dev"
+start "HRMS [Frontend Web - Port 4001]" /D "%~dp0frontend" cmd /k "title HRMS Frontend Web (Port 4001) && color 0B && echo Starting HRMS Frontend (Next.js)... && npm run dev"
 
 ping 127.0.0.1 -n 4 >nul
-start http://localhost:3000
+start http://localhost:4001
 echo [OK] Frontend Web window launched. Browser opened.
 echo.
 echo Press any key to return to main menu...
@@ -141,9 +141,9 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5229" ^| findstr "LISTENING
     echo [OK] Killed process on Port 5229 [PID %%a].
 )
 
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":4001" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>&1
-    echo [OK] Killed process on Port 3000 [PID %%a].
+    echo [OK] Killed process on Port 4001 [PID %%a].
 )
 
 echo.
@@ -166,12 +166,12 @@ if %ERRORLEVEL% equ 0 (
     echo   --^> Status: [OFFLINE] Port 5229 is not active
 )
 echo.
-echo [Frontend Port 3000]:
-netstat -ano | findstr ":3000" | findstr "LISTENING" >nul 2>&1
+echo [Frontend Port 4001]:
+netstat -ano | findstr ":4001" | findstr "LISTENING" >nul 2>&1
 if %ERRORLEVEL% equ 0 (
-    echo   --^> Status: [ONLINE] Running on port 3000
+    echo   --^> Status: [ONLINE] Running on port 4001
 ) else (
-    echo   --^> Status: [OFFLINE] Port 3000 is not active
+    echo   --^> Status: [OFFLINE] Port 4001 is not active
 )
 echo ==============================================================================
 echo.

@@ -5,7 +5,7 @@ title HRMS Stop Local Servers
 cd /d "%~dp0"
 
 echo ==============================================================================
-echo Stopping HRMS local servers (Backend Port 5229, Frontend Port 3000)...
+echo Stopping HRMS local servers (Backend Port 5229, Frontend Port 4001)...
 echo ==============================================================================
 
 :: Terminate Hrms.Api process
@@ -22,10 +22,10 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5229" ^| findstr "LISTENING
     echo [OK] Killed process on Port 5229 [PID %%a].
 )
 
-:: Terminate Port 3000
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
+:: Terminate Port 4001
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":4001" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>&1
-    echo [OK] Killed process on Port 3000 [PID %%a].
+    echo [OK] Killed process on Port 4001 [PID %%a].
 )
 
 echo.

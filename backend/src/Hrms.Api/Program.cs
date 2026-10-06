@@ -167,7 +167,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// 5. CORS Policy (สำหรับ Next.js Frontend ทุกพอร์ต เช่น 3000, 3001)
+// 5. CORS Policy (สำหรับ Next.js Frontend เช่น 4001, 3000)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
