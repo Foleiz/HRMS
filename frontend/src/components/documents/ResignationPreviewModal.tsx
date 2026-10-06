@@ -189,7 +189,7 @@ const ResignationPaper: React.FC<{
 
   return (
     <div
-      className={`resignation-paper ${sarabun.className}`}
+      className={`resignation-paper theme-light ${sarabun.className}`}
       style={{
         position: 'relative',
         width: '210mm',

@@ -97,7 +97,7 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
 
         {/* Paper */}
         <div className="overflow-x-auto max-h-[75vh] overflow-y-auto">
-          <div className="min-w-[600px] p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900">
+          <div className="theme-light bg-white min-w-[600px] p-6 sm:p-10 font-serif text-[13.5px] leading-relaxed text-gray-900">
             <h2 className="text-center text-base font-bold mb-8">ใบลาป่วย ลาคลอดบุตร ลากิจส่วนตัว</h2>
 
             <div className="text-right mb-1">

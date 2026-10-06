@@ -1,7 +1,9 @@
 @import "tailwindcss";
+@import "./dark-theme.css";
 
 /* Dark mode variant for Tailwind v4 */
-@custom-variant dark (&:where(.dark, .dark *));
+/* dark: ใช้ได้ทั้งแอป ยกเว้นในส่วน .theme-light (กระดาษเอกสาร/หน้า login ที่ต้องเป็นสีสว่างเสมอ) */
+@custom-variant dark (&:where(.dark, .dark *):not(.theme-light, .theme-light *));
 
 :root {
   --background: #F8FAFC;
@@ -72,115 +74,34 @@ input[type="reset"]:disabled {
 }
 
 
-/* Ensure dark mode colors propagate cleanly to all text and cards */
-.dark body {
-  background-color: #0B132B;
-  color: #F8FAFC;
+/* ===================== Dark mode =====================
+   - เปิด/ปิดด้วย class "dark" บน <html> (ThemeContext + สคริปต์ใน layout.tsx กันจอกะพริบ)
+   - สีของ utility class โหมดสว่างถูกแปลงอัตโนมัติใน dark-theme.css (สร้างจาก scripts/gen-dark-theme.py)
+   - ส่วนที่ต้องเป็นสีสว่างเสมอ (กระดาษเอกสาร, หน้า login) ใส่ class "theme-light"
+*/
+html.dark {
+  color-scheme: dark;
 }
 
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6 {
-  color: #FFFFFF;
+html.dark body {
+  background-color: #0B1220;
+  color: #E2E8F0;
 }
 
-.dark .text-slate-900,
-.dark .text-slate-800,
-.dark .text-gray-900,
-.dark .text-gray-800 {
-  color: #F8FAFC !important;
+.theme-light {
+  color-scheme: light;
+  color: #1E293B;
 }
 
-.dark .text-slate-700,
-.dark .text-slate-600,
-.dark .text-gray-700,
-.dark .text-gray-600 {
-  color: #CBD5E1 !important;
-}
+@layer base {
+  /* เส้นขอบเริ่มต้น (ไม่ได้ระบุสี) ให้เข้ากับพื้นมืด — อยู่ใน layer base จึงไม่ทับสีขอบที่ระบุด้วย utility */
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *)),
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *))::before,
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *))::after {
+    border-color: #334155;
+  }
 
-.dark .text-slate-500,
-.dark .text-slate-400,
-.dark .text-gray-500,
-.dark .text-gray-400 {
-  color: #94A3B8 !important;
-}
-
-.dark .bg-white {
-  background-color: #1E293B !important;
-}
-
-.dark .bg-slate-100 {
-  background-color: #0F172A !important;
-  border-color: #334155 !important;
-}
-
-.dark .bg-slate-50 {
-  background-color: #0F172A !important;
-  border-color: #334155 !important;
-}
-
-.dark .bg-emerald-50 {
-  background-color: rgba(6, 78, 59, 0.25) !important;
-  border-color: rgba(5, 150, 105, 0.3) !important;
-}
-
-.dark .bg-amber-50 {
-  background-color: rgba(120, 53, 15, 0.25) !important;
-  border-color: rgba(217, 119, 6, 0.3) !important;
-}
-
-.dark .bg-blue-50 {
-  background-color: rgba(30, 58, 138, 0.25) !important;
-  border-color: rgba(37, 99, 235, 0.3) !important;
-}
-
-.dark .border-slate-100,
-.dark .border-slate-200,
-.dark .border-slate-200\/60,
-.dark .border-gray-100,
-.dark .border-gray-200 {
-  border-color: #334155 !important;
-}
-
-/* Dark mode table borders & headers */
-.dark table {
-  border-color: #334155 !important;
-}
-
-.dark thead tr {
-  background-color: #0F172A !important;
-  border-color: #334155 !important;
-}
-
-.dark thead th {
-  background-color: #0F172A !important;
-  color: #94A3B8 !important;
-  border-color: #334155 !important;
-}
-
-.dark tbody tr {
-  border-color: #334155 !important;
-}
-
-.dark tbody td {
-  border-color: #334155 !important;
-}
-
-.dark tbody tr:hover {
-  background-color: rgba(30, 41, 59, 0.7) !important;
-}
-
-.dark tr {
-  border-color: #334155 !important;
-}
-
-.dark th {
-  border-color: #334155 !important;
-}
-
-.dark td {
-  border-color: #334155 !important;
+  :where(html.dark) :where(input, textarea):not(.theme-light *)::placeholder {
+    color: #64748B;
+  }
 }

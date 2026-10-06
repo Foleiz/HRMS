@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   Bell,
   Moon,
+  Sun,
   ChevronDown,
   LogOut,
   User,
@@ -18,6 +19,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useSidebar } from '@/context/SidebarContext';
+import { useTheme } from '@/context/ThemeContext';
 import { NotificationBell } from './NotificationBell';
 
 export const Navbar: React.FC = () => {
@@ -26,6 +28,7 @@ export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { breadcrumb: customBreadcrumb } = useBreadcrumb();
   const { openMobileSidebar } = useSidebar();
+  const { theme, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -161,10 +164,13 @@ export const Navbar: React.FC = () => {
 
         {/* Dark Mode Toggle */}
         <button
-          title="โหมดกลางคืน (Coming soon)"
+          type="button"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'}
+          aria-label={theme === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'}
           className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors"
         >
-          <Moon className="w-4 h-4" />
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
         </button>
 
         {/* User Profile Dropdown Pill */}

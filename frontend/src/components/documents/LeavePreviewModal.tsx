@@ -224,7 +224,7 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
 
   return (
     <div
-      className={`leave-paper ${sarabun.className}`}
+      className={`leave-paper theme-light ${sarabun.className}`}
       style={{
         position: 'relative',
         width: '210mm',

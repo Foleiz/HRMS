@@ -56,7 +56,7 @@ const CertificatePaper: React.FC<{
 
   return (
     <div
-      className={`cert-paper ${sarabun.className}`}
+      className={`cert-paper theme-light ${sarabun.className}`}
       style={{
         position: 'relative',
         width: '210mm',
