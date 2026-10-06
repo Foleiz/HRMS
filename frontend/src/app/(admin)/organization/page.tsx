@@ -11,6 +11,7 @@ import {
   Search,
   Edit2,
   Trash2,
+  PowerOff,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -719,7 +720,7 @@ export default function OrganizationPage() {
         showSuccess(`ลบระดับพนักงาน ${itemToDelete.name} สำเร็จ`);
       } else if (itemToDelete.type === 'bank-account') {
         await companyBankAccountService.delete(itemToDelete.id);
-        showSuccess(`ลบบัญชีธนาคาร ${itemToDelete.name} สำเร็จ`);
+        showSuccess(`ปิดใช้งานบัญชีธนาคาร ${itemToDelete.name} สำเร็จ`);
       }
       setDeleteModalOpen(false);
       setItemToDelete(null);
@@ -1845,14 +1846,24 @@ export default function OrganizationPage() {
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบบัญชี"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {/* บัญชีหลักปิดใช้งานไม่ได้ (ต้องตั้งบัญชีอื่นเป็นบัญชีหลักก่อน) / บัญชีที่ปิดแล้วเปิดใหม่ได้ผ่านปุ่มแก้ไข */}
+                            {acc.isPrimaryPayrollAccount ? (
+                              <span
+                                className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                                title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
+                              >
+                                <PowerOff className="w-3.5 h-3.5" />
+                              </span>
+                            ) : acc.status === 'ACTIVE' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="ปิดใช้งานบัญชี"
+                              >
+                                <PowerOff className="w-3.5 h-3.5" />
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -2434,10 +2445,27 @@ export default function OrganizationPage() {
                   required
                   placeholder="เช่น 789-0-12345-6"
                   value={bankAccountForm.accountNumber}
+                  onFocus={() => {
+                    // เลขถูกปิดบางส่วน: เมื่อคลิกแก้ ให้ล้างช่องเพื่อกรอกเลขใหม่ทั้งหมด
+                    if (editingBankAccount?.isAccountNumberMasked && bankAccountForm.accountNumber === editingBankAccount.accountNumber) {
+                      setBankAccountForm({ ...bankAccountForm, accountNumber: '' });
+                    }
+                  }}
+                  onBlur={() => {
+                    if (editingBankAccount?.isAccountNumberMasked && !bankAccountForm.accountNumber.trim()) {
+                      setBankAccountForm({ ...bankAccountForm, accountNumber: editingBankAccount.accountNumber });
+                    }
+                  }}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
+
+              {editingBankAccount?.isAccountNumberMasked && (
+                <p className="-mt-2 text-[11px] text-slate-500">
+                  เลขบัญชีแสดงแบบปิดบางส่วน — ถ้าไม่ต้องการเปลี่ยนเลข ปล่อยไว้ตามเดิม (เห็นเลขเต็มได้เฉพาะฝ่ายการเงิน/ผู้ดูแลระบบ)
+                </p>
+              )}
 
               {/* ชื่อบัญชี */}
               <div>
@@ -2457,13 +2485,22 @@ export default function OrganizationPage() {
                   type="checkbox"
                   id="isPrimaryPayrollAccount"
                   checked={bankAccountForm.isPrimaryPayrollAccount}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, isPrimaryPayrollAccount: e.target.checked })}
-                  className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
+                  disabled={!!editingBankAccount?.isPrimaryPayrollAccount}
+                  onChange={(e) =>
+                    setBankAccountForm({
+                      ...bankAccountForm,
+                      isPrimaryPayrollAccount: e.target.checked,
+                      status: e.target.checked ? 'ACTIVE' : bankAccountForm.status,
+                    })
+                  }
+                  className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 />
                 <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
                   <span className="font-semibold text-slate-800 dark:text-slate-200 block dark:text-slate-200">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 dark:text-slate-400">
-                    เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน
+                    {editingBankAccount?.isPrimaryPayrollAccount
+                      ? 'บัญชีนี้เป็นบัญชีหลักอยู่ — ถ้าต้องการเปลี่ยน ให้กด "ตั้งเป็นบัญชีหลัก" ที่บัญชีอื่นแทน'
+                      : 'เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน'}
                   </span>
                 </label>
               </div>
@@ -2473,6 +2510,8 @@ export default function OrganizationPage() {
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะการใช้งาน</label>
                 <select
                   value={bankAccountForm.status}
+                  disabled={bankAccountForm.isPrimaryPayrollAccount}
+                  title={bankAccountForm.isPrimaryPayrollAccount ? 'บัญชีหลักต้องเปิดใช้งานเสมอ' : undefined}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
@@ -2514,10 +2553,18 @@ export default function OrganizationPage() {
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-slate-900 dark:text-slate-100 text-center text-sm mb-2 dark:text-slate-100">
-              ยืนยันการลบข้อมูล?
+              {itemToDelete.type === 'bank-account' ? 'ยืนยันการปิดใช้งานบัญชี?' : 'ยืนยันการลบข้อมูล?'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-6 dark:text-slate-400">
-              คุณต้องการลบข้อมูล <span className="font-semibold text-slate-900 dark:text-slate-100">&quot;{itemToDelete.name}&quot;</span> ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+              {itemToDelete.type === 'bank-account' ? (
+                <>
+                  ปิดใช้งานบัญชี <span className="font-semibold text-slate-900 dark:text-slate-100">&quot;{itemToDelete.name}&quot;</span> ใช่หรือไม่? ข้อมูลยังเก็บไว้ในระบบ และเปิดใช้งานใหม่ได้จากปุ่มแก้ไข
+                </>
+              ) : (
+                <>
+                  คุณต้องการลบข้อมูล <span className="font-semibold text-slate-900 dark:text-slate-100">&quot;{itemToDelete.name}&quot;</span> ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+                </>
+              )}
             </p>
 
             <div className="flex items-center justify-center gap-2">
@@ -2531,7 +2578,7 @@ export default function OrganizationPage() {
                 onClick={executeDelete}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-md shadow-rose-600/20 w-full"
               >
-                ยืนยันลบ
+                {itemToDelete.type === 'bank-account' ? 'ยืนยันปิดใช้งาน' : 'ยืนยันลบ'}
               </button>
             </div>
           </div>

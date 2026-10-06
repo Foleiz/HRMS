@@ -1,6 +1,7 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Organization.Dtos;
+using Hrms.Application.Features.Payroll;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +10,26 @@ namespace Hrms.Application.Features.Organization.Services;
 public class CompanyBankAccountService : ICompanyBankAccountService
 {
     private readonly IHrmsDbContext _context;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IAesEncryptionService _crypto;
 
-    public CompanyBankAccountService(IHrmsDbContext context)
+    public CompanyBankAccountService(IHrmsDbContext context, ICurrentUserService currentUser, IAesEncryptionService crypto)
     {
         _context = context;
+        _currentUser = currentUser;
+        _crypto = crypto;
+    }
+
+    /// <summary>เลขบัญชีบริษัทเต็มเห็นได้เฉพาะ ADMIN / ฝ่ายการเงิน — คนอื่นเห็นแบบ xxxxxx1234</summary>
+    private bool CanSeeFullAccount() =>
+        _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER") || PayrollAccess.IsFinance(_currentUser);
+
+    private static string NormalizeStatus(string? status)
+    {
+        var s = string.IsNullOrWhiteSpace(status) ? "ACTIVE" : status.Trim().ToUpperInvariant();
+        if (s != "ACTIVE" && s != "INACTIVE")
+            throw new BusinessRuleException("สถานะบัญชีต้องเป็น ACTIVE หรือ INACTIVE");
+        return s;
     }
 
     public async Task<List<CompanyBankAccountDto>> GetAllAsync(long? companyId = null, CancellationToken cancellationToken = default)
@@ -32,7 +49,8 @@ public class CompanyBankAccountService : ICompanyBankAccountService
             .ThenBy(a => a.Id)
             .ToListAsync(cancellationToken);
 
-        return accounts.Select(MapToDto).ToList();
+        var full = CanSeeFullAccount();
+        return accounts.Select(a => MapToDto(a, full)).ToList();
     }
 
     public async Task<CompanyBankAccountDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -45,7 +63,7 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         if (account == null)
             throw new NotFoundException("บัญชีธนาคารบริษัท", id);
 
-        return MapToDto(account);
+        return MapToDto(account, CanSeeFullAccount());
     }
 
     public async Task<CompanyBankAccountDto> CreateAsync(CreateCompanyBankAccountDto dto, CancellationToken cancellationToken = default)
@@ -66,6 +84,10 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         if (!bankExists)
             throw new NotFoundException("ธนาคาร", dto.BankId);
 
+        var status = NormalizeStatus(dto.Status);
+        if (dto.IsPrimaryPayrollAccount && status != "ACTIVE")
+            throw new BusinessRuleException("บัญชีหลักจ่ายเงินเดือนต้องเป็นสถานะเปิดใช้งาน");
+
         // หากกำหนดเป็นบัญชีจ่ายเงินเดือนหลัก ให้รีเซ็ตบัญชีอื่นของบริษัทนี้
         if (dto.IsPrimaryPayrollAccount)
         {
@@ -80,9 +102,10 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         }
         else
         {
-            // หากยังไม่มีบัญชีใดเลยในบริษัท ให้บัญชีนี้เป็นบัญชีหลักโดยอัตโนมัติ
-            var anyAccounts = await _context.CompanyBankAccounts.AnyAsync(a => a.CompanyId == companyId, cancellationToken);
-            if (!anyAccounts)
+            // หากยังไม่มีบัญชีหลักที่ใช้งานอยู่ ให้บัญชีนี้ (ถ้าเปิดใช้งาน) เป็นบัญชีหลักโดยอัตโนมัติ
+            var hasActivePrimary = await _context.CompanyBankAccounts.AnyAsync(
+                a => a.CompanyId == companyId && a.IsPrimaryPayrollAccount && a.Status == "ACTIVE", cancellationToken);
+            if (!hasActivePrimary && status == "ACTIVE")
             {
                 dto.IsPrimaryPayrollAccount = true;
             }
@@ -95,7 +118,7 @@ public class CompanyBankAccountService : ICompanyBankAccountService
             AccountNumber = NormalizeAccountNumber(dto.AccountNumber, bank!),
             AccountName = dto.AccountName?.Trim(),
             IsPrimaryPayrollAccount = dto.IsPrimaryPayrollAccount,
-            Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper()
+            Status = status
         };
 
         _context.CompanyBankAccounts.Add(entity);
@@ -118,10 +141,13 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         if (!bankExists)
             throw new NotFoundException("ธนาคาร", dto.BankId);
 
-        if (dto.CompanyId.HasValue && dto.CompanyId.Value > 0)
-        {
-            entity.CompanyId = dto.CompanyId.Value;
-        }
+        var status = NormalizeStatus(dto.Status);
+
+        // บัญชีหลักต้องมีอยู่เสมอ: ห้ามปลดบัญชีหลัก/ปิดใช้งานบัญชีหลักตรง ๆ — ให้ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน
+        if (entity.IsPrimaryPayrollAccount && (!dto.IsPrimaryPayrollAccount || status != "ACTIVE"))
+            throw new BusinessRuleException("บัญชีนี้เป็นบัญชีหลักจ่ายเงินเดือน — กรุณาตั้งบัญชีอื่นเป็นบัญชีหลักก่อน จึงจะยกเลิกหรือปิดใช้งานบัญชีนี้ได้");
+        if (dto.IsPrimaryPayrollAccount && status != "ACTIVE")
+            throw new BusinessRuleException("บัญชีหลักจ่ายเงินเดือนต้องเป็นสถานะเปิดใช้งาน");
 
         // หากมีการตั้งเป็นบัญชีหลัก ให้ปลดบัญชีอื่นของบริษัทนี้
         if (dto.IsPrimaryPayrollAccount && !entity.IsPrimaryPayrollAccount)
@@ -136,11 +162,22 @@ public class CompanyBankAccountService : ICompanyBankAccountService
             }
         }
 
+        // ผู้ที่เห็นเลขแบบปิดบางส่วน (xxxxxx1234) แล้วกดบันทึกโดยไม่ได้แก้เลข → คงเลขเดิมไว้
+        var isMaskedInput = (dto.AccountNumber ?? string.Empty).Contains('x', StringComparison.OrdinalIgnoreCase);
+        if (isMaskedInput)
+        {
+            if (entity.BankId != dto.BankId)
+                throw new BusinessRuleException("เปลี่ยนธนาคารต้องกรอกเลขบัญชีใหม่ทั้งหมด");
+        }
+        else
+        {
+            entity.AccountNumber = NormalizeAccountNumber(dto.AccountNumber ?? string.Empty, bank!);
+        }
+
         entity.BankId = dto.BankId;
-        entity.AccountNumber = NormalizeAccountNumber(dto.AccountNumber, bank!);
         entity.AccountName = dto.AccountName?.Trim();
         entity.IsPrimaryPayrollAccount = dto.IsPrimaryPayrollAccount;
-        entity.Status = string.IsNullOrWhiteSpace(dto.Status) ? "ACTIVE" : dto.Status.ToUpper();
+        entity.Status = status;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -181,11 +218,15 @@ public class CompanyBankAccountService : ICompanyBankAccountService
         if (entity == null)
             throw new NotFoundException("บัญชีธนาคารบริษัท", id);
 
-        _context.CompanyBankAccounts.Remove(entity);
+        if (entity.IsPrimaryPayrollAccount)
+            throw new BusinessRuleException("ไม่สามารถปิดใช้งานบัญชีหลักจ่ายเงินเดือนได้ — กรุณาตั้งบัญชีอื่นเป็นบัญชีหลักก่อน");
+
+        // ไม่ลบจริง: ปิดใช้งานแทน เพื่อเก็บประวัติ (การเปลี่ยนแปลงถูกบันทึกใน Audit Log อัตโนมัติ)
+        entity.Status = "INACTIVE";
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    private static CompanyBankAccountDto MapToDto(CompanyBankAccount account)
+    private CompanyBankAccountDto MapToDto(CompanyBankAccount account, bool fullAccountNumber)
     {
         return new CompanyBankAccountDto
         {
@@ -195,7 +236,8 @@ public class CompanyBankAccountService : ICompanyBankAccountService
             BankId = account.BankId,
             BankCode = account.Bank?.BankCode ?? string.Empty,
             BankName = account.Bank?.BankName ?? string.Empty,
-            AccountNumber = account.AccountNumber,
+            AccountNumber = fullAccountNumber ? account.AccountNumber : _crypto.MaskAccountNumber(account.AccountNumber),
+            IsAccountNumberMasked = !fullAccountNumber,
             AccountName = account.AccountName,
             IsPrimaryPayrollAccount = account.IsPrimaryPayrollAccount,
             Status = account.Status

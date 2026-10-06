@@ -9,6 +9,8 @@ public class CompanyBankAccountDto
     public string BankCode { get; set; } = string.Empty;
     public string BankName { get; set; } = string.Empty;
     public string AccountNumber { get; set; } = string.Empty;
+    /// <summary>true = เลขบัญชีถูกปิดบางส่วน (ผู้ดูไม่ใช่ ADMIN/การเงิน)</summary>
+    public bool IsAccountNumberMasked { get; set; }
     public string? AccountName { get; set; }
     public bool IsPrimaryPayrollAccount { get; set; }
     public string Status { get; set; } = "ACTIVE";
