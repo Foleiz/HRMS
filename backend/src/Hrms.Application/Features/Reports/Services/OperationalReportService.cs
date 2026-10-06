@@ -40,6 +40,34 @@ public class OperationalReportService : IOperationalReportService
         return new string((raw ?? string.Empty).Where(char.IsDigit).ToArray());
     }
 
+    /// <summary>
+    /// เหตุผลการสิ้นสุดสัญญา: บางรายการเก็บเป็น JSON ของใบลาออก ({"Category":..,"Detail":..})
+    /// แปลงเป็นข้อความอ่านง่าย เช่น "ได้งานใหม่ — ย้ายไปทำงานที่ต่างจังหวัด"
+    /// </summary>
+    private static string FormatTerminationReason(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "สิ้นสุดสัญญา / ลาออก";
+        var text = raw.Trim();
+        if (!text.StartsWith("{")) return text;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(text);
+            string? Get(string name)
+            {
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                    if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+                        return prop.Value.GetString()?.Trim();
+                return null;
+            }
+            var parts = new[] { Get("Category"), Get("Detail") }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            return parts.Length > 0 ? string.Join(" — ", parts) : "ลาออก";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return text;
+        }
+    }
+
     /// <summary>หัวไฟล์เตือนเมื่อรอบเงินเดือนยังไม่อนุมัติ (ตัวเลขอาจเปลี่ยน)</summary>
     private static string PeriodWarning(string status) =>
         ClosedPayrollStatuses.Contains(status) ? string.Empty
@@ -686,7 +714,7 @@ public class OperationalReportService : IOperationalReportService
                         PositionName = assign.Position?.PositionName ?? "-",
                         EventType = "RESIGNED",
                         EventDate = empEnd.Value,
-                        Reason = contract?.TerminationReason ?? "สิ้นสุดสัญญา / ลาออก"
+                        Reason = FormatTerminationReason(contract?.TerminationReason)
                     });
                 }
             }
