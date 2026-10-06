@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -225,9 +225,9 @@ export default function CreateContractModal({
                 ))
               ) : (
                 <>
-                  <option value="2">ทดลองงาน (PROB)</option>
-                  <option value="1">ประจำ (PERM)</option>
-                  <option value="3">สัญญาจ้าง (CONT)</option>
+                  <option value="2">ทดลองงาน</option>
+                  <option value="1">ประจำ</option>
+                  <option value="3">สัญญาจ้าง</option>
                 </>
               )}
             </CustomSelect>

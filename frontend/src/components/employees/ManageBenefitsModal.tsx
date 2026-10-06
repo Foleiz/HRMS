@@ -328,12 +328,12 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
-                    <option value="HEALTH">สุขภาพ & ประกัน (HEALTH)</option>
-                    <option value="ALLOWANCE">เบี้ยเลี้ยง & ช่วยเหลือ (ALLOWANCE)</option>
-                    <option value="WELLNESS">กิจกรรม & สันทนาการ (WELLNESS)</option>
-                    <option value="FINANCIAL">การเงิน & กองทุน (FINANCIAL)</option>
-                    <option value="STATUTORY">กฎหมายแรงงาน (STATUTORY)</option>
-                    <option value="OTHER">ทั่วไป / อื่นๆ (OTHER)</option>
+                    <option value="HEALTH">สุขภาพ & ประกัน</option>
+                    <option value="ALLOWANCE">เบี้ยเลี้ยง & ช่วยเหลือ</option>
+                    <option value="WELLNESS">กิจกรรม & สันทนาการ</option>
+                    <option value="FINANCIAL">การเงิน & กองทุน</option>
+                    <option value="STATUTORY">กฎหมายแรงงาน</option>
+                    <option value="OTHER">ทั่วไป / อื่นๆ</option>
                   </CustomSelect>
                 </div>
 
@@ -346,8 +346,8 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
-                    <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                    <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
+                    <option value="ACTIVE">เปิดใช้งาน</option>
+                    <option value="INACTIVE">ปิดการใช้งาน</option>
                   </CustomSelect>
                 </div>
 
@@ -398,10 +398,10 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     onChange={(e) => setDefaultFrequency(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
-                    <option value="YEARLY">ต่อปี (Yearly)</option>
-                    <option value="MONTHLY">ต่อเดือน (Monthly)</option>
-                    <option value="DAILY">ต่อวัน (Daily)</option>
-                    <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                    <option value="YEARLY">ต่อปี</option>
+                    <option value="MONTHLY">ต่อเดือน</option>
+                    <option value="DAILY">ต่อวัน</option>
+                    <option value="PER_OCCURRENCE">ต่อครั้ง</option>
                   </CustomSelect>
                 </div>
 

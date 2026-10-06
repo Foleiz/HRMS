@@ -901,7 +901,7 @@ export default function ReportsPage() {
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
-                      {y + 543} ({y})
+                      พ.ศ. {y + 543}
                     </option>
                   ))}
                 </CustomSelect>
@@ -1260,7 +1260,7 @@ export default function ReportsPage() {
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
-                      {y + 543} ({y})
+                      พ.ศ. {y + 543}
                     </option>
                   ))}
                 </CustomSelect>

@@ -2274,10 +2274,10 @@ function DailyAttendanceContent() {
                 className="min-w-[170px]"
                 options={[
                   { value: 'ALL', label: 'สถานะทั้งหมด' },
-                  { value: 'PENDING', label: 'รอพิจารณา (Pending)' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว (Approved)' },
-                  { value: 'REJECTED', label: 'ไม่อนุมัติ (Rejected)' },
-                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว (Cancelled)' },
+                  { value: 'PENDING', label: 'รอพิจารณา' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
                 ]}
               />
 
@@ -2947,21 +2947,21 @@ function DailyAttendanceContent() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                  สถานะการเข้างาน (Status)
+                  สถานะการเข้างาน
                 </label>
                 <CustomSelect
                   value={editForm.status}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
-                  <option value="PRESENT">ตรงเวลา (PRESENT)</option>
-                  <option value="LATE">มาสาย (LATE)</option>
-                  <option value="EARLY_LEAVE">ออกก่อนเวลา (EARLY_LEAVE)</option>
-                  <option value="LATE_AND_EARLY">สายและออกก่อน (LATE_AND_EARLY)</option>
-                  <option value="ABSENT">ขาดงาน (ABSENT)</option>
-                  <option value="HOLIDAY">วันหยุดประเพณี (HOLIDAY)</option>
-                  <option value="OFF">วันหยุดสัปดาห์ (OFF)</option>
-                  <option value="PENDING">รอดำเนินการ (PENDING)</option>
+                  <option value="PRESENT">ตรงเวลา</option>
+                  <option value="LATE">มาสาย</option>
+                  <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
+                  <option value="LATE_AND_EARLY">สายและออกก่อน</option>
+                  <option value="ABSENT">ขาดงาน</option>
+                  <option value="HOLIDAY">วันหยุดประเพณี</option>
+                  <option value="OFF">วันหยุดสัปดาห์</option>
+                  <option value="PENDING">รอดำเนินการ</option>
                 </CustomSelect>
               </div>
 

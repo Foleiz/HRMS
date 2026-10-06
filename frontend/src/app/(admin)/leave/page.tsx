@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -710,7 +710,7 @@ export default function LeaveManagementPage() {
                   >
                     {[2025, 2026, 2027].map((y) => (
                       <option key={y} value={y}>
-                        {y + 543} ({y})
+                        พ.ศ. {y + 543}
                       </option>
                     ))}
                   </CustomSelect>

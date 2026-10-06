@@ -552,7 +552,7 @@ export default function TransfersPage() {
                             ...(item.recordType === 'REQUEST' || item.approvalInstanceId
                               ? [
                                   {
-                                    label: 'ดูผังการอนุมัติ (Workflow)',
+                                    label: 'ดูผังการอนุมัติ',
                                     icon: <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />,
                                     onClick: () => handleViewApprovalTimeline(item),
                                   },

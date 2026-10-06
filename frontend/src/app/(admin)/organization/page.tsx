@@ -1894,8 +1894,8 @@ export default function OrganizationPage() {
                   onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
-                  <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
-                  <option value="INACTIVE">ปิดใช้งาน (INACTIVE)</option>
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ปิดใช้งาน</option>
                 </CustomSelect>
               </div>
             </div>
@@ -2500,10 +2500,10 @@ export default function OrganizationPage() {
                         onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
                       >
-                        <option value="YEARLY">ต่อปี (Yearly)</option>
-                        <option value="MONTHLY">ต่อเดือน (Monthly)</option>
-                        <option value="DAILY">ต่อวัน (Daily)</option>
-                        <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
+                        <option value="YEARLY">ต่อปี</option>
+                        <option value="MONTHLY">ต่อเดือน</option>
+                        <option value="DAILY">ต่อวัน</option>
+                        <option value="PER_OCCURRENCE">ต่อครั้ง</option>
                       </CustomSelect>
                     </div>
                   </div>
@@ -3184,8 +3184,8 @@ export default function OrganizationPage() {
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
-                  <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
-                  <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ระงับการใช้งาน</option>
                 </CustomSelect>
               </div>
 

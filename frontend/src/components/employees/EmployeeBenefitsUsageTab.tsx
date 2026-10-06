@@ -190,7 +190,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             >
               {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
                 <option key={y} value={y} className="dark:bg-slate-800">
-                  {y} ({y + 543})
+                  พ.ศ. {y + 543}
                 </option>
               ))}
             </CustomSelect>

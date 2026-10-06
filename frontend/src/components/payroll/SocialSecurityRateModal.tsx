@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -341,8 +341,8 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 cursor-pointer"
               >
-                <option value="ACTIVE">เปิดใช้งาน (ACTIVE) — นำไปใช้คำนวณในรอบเงินเดือน</option>
-                <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
+                <option value="ACTIVE">เปิดใช้งาน — นำไปใช้คำนวณในรอบเงินเดือน</option>
+                <option value="INACTIVE">ระงับการใช้งาน</option>
               </CustomSelect>
             </div>
           </div>

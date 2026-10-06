@@ -453,9 +453,9 @@ export default function WorkCalendarPage() {
                   placeholder="เลือกปี"
                   className="min-w-[170px]"
                   options={[
-                    { value: 2025, label: 'ปี พ.ศ. 2568 (2025)' },
-                    { value: 2026, label: 'ปี พ.ศ. 2569 (2026)' },
-                    { value: 2027, label: 'ปี พ.ศ. 2570 (2027)' },
+                    { value: 2025, label: 'ปี พ.ศ. 2568' },
+                    { value: 2026, label: 'ปี พ.ศ. 2569' },
+                    { value: 2027, label: 'ปี พ.ศ. 2570' },
                   ]}
                 />
 
