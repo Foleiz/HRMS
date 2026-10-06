@@ -28,6 +28,7 @@ import {
   Database,
   X,
   Gift,
+  Network,
 } from 'lucide-react';
 
 
@@ -71,6 +72,13 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/my-news',
         icon: CalendarDays,
         requiredPermissions: ['ESS_NEWS_VIEW'],
+      },
+      {
+        // แผนผังองค์กร — พนักงานทุกคนดูได้ (ไม่ต้องมีสิทธิ์)
+        title: 'แผนผังองค์กร',
+        href: '/org-chart',
+        matchPrefix: '/org-chart',
+        icon: Network,
       },
     ],
   },

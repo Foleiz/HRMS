@@ -16,9 +16,16 @@ import {
   CreateEmployeeLevelRequest,
   UpdateEmployeeLevelRequest,
   OrganizationSummary,
+  OrgChart,
 } from '@/types/organization';
 
 export const organizationService = {
+  // แผนผังองค์กร (ทุกคนดูได้)
+  async getOrgChart(): Promise<OrgChart> {
+    const res = await apiClient.get<ApiResponse<OrgChart>>('/organization/chart');
+    return res.data.data!;
+  },
+
   // Summary
   async getSummary(): Promise<OrganizationSummary> {
     const res = await apiClient.get<ApiResponse<OrganizationSummary>>('/organization/summary');

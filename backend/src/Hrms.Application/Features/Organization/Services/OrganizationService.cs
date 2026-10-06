@@ -703,6 +703,143 @@ public class OrganizationService : IOrganizationService
     }
     #endregion
 
+    #region Org Chart
+    public async Task<OrgChartDto> GetOrgChartAsync(CancellationToken cancellationToken = default)
+    {
+        var company = await _dbContext.Companies.AsNoTracking()
+            .OrderBy(c => c.Id)
+            .Select(c => new { c.CompanyName, c.CeoEmployeeId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var divisions = await _dbContext.Divisions.AsNoTracking()
+            .Where(d => d.Status == "ACTIVE")
+            .OrderBy(d => d.DivisionCode)
+            .ToListAsync(cancellationToken);
+
+        var departments = await _dbContext.Departments.AsNoTracking()
+            .Where(d => d.Status == "ACTIVE")
+            .OrderBy(d => d.DepartmentCode)
+            .ToListAsync(cancellationToken);
+
+        var plans = (await _dbContext.Positions.AsNoTracking()
+                .Where(p => p.Status == "ACTIVE" && p.HeadcountPlan != null)
+                .Select(p => new { p.DepartmentId, Plan = p.HeadcountPlan!.Value })
+                .ToListAsync(cancellationToken))
+            .GroupBy(p => p.DepartmentId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Plan));
+
+        // เฉพาะพนักงานที่ยังทำงานอยู่ + ตำแหน่งปัจจุบันล่าสุด
+        var rows = await _dbContext.Employees.AsNoTracking()
+            .Where(e => e.EmploymentStatus == "ACTIVE")
+            .Select(e => new
+            {
+                e.Id,
+                e.EmployeeCode,
+                e.Prefix,
+                e.FirstName,
+                e.LastName,
+                e.AvatarUpdatedAt,
+                WorkEmail = e.Contact != null ? e.Contact.OrganizationEmail : null,
+                Assignment = e.Assignments
+                    .Where(a => a.IsCurrent)
+                    .OrderByDescending(a => a.EffectiveFrom)
+                    .Select(a => new
+                    {
+                        a.DivisionId,
+                        a.DepartmentId,
+                        PositionName = a.Position != null ? a.Position.PositionName : null
+                    })
+                    .FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
+        var people = rows.ToDictionary(r => r.Id, r => new OrgChartPersonDto
+        {
+            Id = r.Id,
+            EmployeeCode = r.EmployeeCode,
+            FullName = $"{r.Prefix} {r.FirstName} {r.LastName}".Trim(),
+            PositionName = r.Assignment?.PositionName,
+            AvatarUrl = r.AvatarUpdatedAt.HasValue ? $"/api/employees/{r.Id}/avatar?v={r.AvatarUpdatedAt.Value.Ticks}" : null,
+            WorkEmail = string.IsNullOrWhiteSpace(r.WorkEmail) ? null : r.WorkEmail
+        });
+
+        // หัวหน้าที่ลาออก/ไม่ active → ถือว่าตำแหน่งว่าง
+        OrgChartPersonDto? Person(long? id) => id.HasValue && people.TryGetValue(id.Value, out var p) ? p : null;
+
+        // คนที่แสดงเป็นหัวหน้าในแผนผังแล้ว จะไม่ซ้ำในรายชื่อสมาชิก
+        var shownAsHead = new HashSet<long>();
+        if (Person(company?.CeoEmployeeId) != null) shownAsHead.Add(company!.CeoEmployeeId!.Value);
+        foreach (var d in divisions) if (Person(d.HeadEmployeeId) != null) shownAsHead.Add(d.HeadEmployeeId!.Value);
+        foreach (var d in departments) if (Person(d.HeadEmployeeId) != null) shownAsHead.Add(d.HeadEmployeeId!.Value);
+
+        var activeDivisionIds = divisions.Select(d => d.Id).ToHashSet();
+        var activeDepartmentIds = departments.Where(d => activeDivisionIds.Contains(d.DivisionId)).Select(d => d.Id).ToHashSet();
+
+        var byDepartment = rows
+            .Where(r => r.Assignment != null && activeDepartmentIds.Contains(r.Assignment.DepartmentId))
+            .GroupBy(r => r.Assignment!.DepartmentId)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.Id).ToList());
+
+        // กันกรณีข้อมูลแผนกแม่-ลูกวนกันเอง (แต่ละแผนกถูกสร้างได้ครั้งเดียว)
+        var builtDepartments = new HashSet<long>();
+        OrgChartDepartmentDto BuildDepartment(Department d)
+        {
+            builtDepartments.Add(d.Id);
+            var memberIds = byDepartment.TryGetValue(d.Id, out var ids) ? ids : new List<long>();
+            return new OrgChartDepartmentDto
+            {
+                Id = d.Id,
+                DepartmentCode = d.DepartmentCode,
+                DepartmentName = d.DepartmentName,
+                Head = Person(d.HeadEmployeeId),
+                ActiveCount = memberIds.Count,
+                HeadcountPlan = plans.TryGetValue(d.Id, out var plan) ? plan : null,
+                Members = memberIds.Where(id => !shownAsHead.Contains(id))
+                    .Select(id => people[id])
+                    .OrderBy(p => p.EmployeeCode)
+                    .ToList(),
+                SubDepartments = departments
+                    .Where(c => c.ParentDepartmentId == d.Id && c.DivisionId == d.DivisionId && !builtDepartments.Contains(c.Id))
+                    .Select(BuildDepartment)
+                    .ToList()
+            };
+        }
+
+        var result = new OrgChartDto
+        {
+            CompanyName = company?.CompanyName ?? string.Empty,
+            Ceo = Person(company?.CeoEmployeeId),
+            TotalEmployees = rows.Count,
+            TotalDepartments = activeDepartmentIds.Count,
+        };
+
+        foreach (var div in divisions)
+        {
+            var divDepts = departments.Where(d => d.DivisionId == div.Id).ToList();
+            var divDeptIds = divDepts.Select(d => d.Id).ToHashSet();
+            // แผนกระดับบนสุดของฝ่าย = ไม่มีแผนกแม่ หรือแผนกแม่ไม่ได้อยู่ในฝ่ายนี้/ปิดใช้งาน
+            var roots = divDepts.Where(d => !d.ParentDepartmentId.HasValue || !divDeptIds.Contains(d.ParentDepartmentId.Value));
+            result.Divisions.Add(new OrgChartDivisionDto
+            {
+                Id = div.Id,
+                DivisionCode = div.DivisionCode,
+                DivisionName = div.DivisionName,
+                Head = Person(div.HeadEmployeeId),
+                ActiveCount = divDeptIds.Sum(id => byDepartment.TryGetValue(id, out var ids) ? ids.Count : 0),
+                Departments = roots.Select(BuildDepartment).ToList()
+            });
+        }
+
+        result.Unassigned = rows
+            .Where(r => (r.Assignment == null || !activeDepartmentIds.Contains(r.Assignment.DepartmentId)) && !shownAsHead.Contains(r.Id))
+            .Select(r => people[r.Id])
+            .OrderBy(p => p.EmployeeCode)
+            .ToList();
+
+        return result;
+    }
+    #endregion
+
     #region Summary
     public async Task<OrganizationSummaryDto> GetSummaryAsync(CancellationToken cancellationToken = default)
     {

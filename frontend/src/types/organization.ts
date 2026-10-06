@@ -182,3 +182,42 @@ export interface UpdateCompanyBankAccountRequest {
   status?: string;
 }
 
+
+// ===== Org Chart (GET /organization/chart) =====
+export interface OrgChartPerson {
+  id: number;
+  employeeCode: string;
+  fullName: string;
+  positionName?: string | null;
+  avatarUrl?: string | null;
+  workEmail?: string | null;
+}
+
+export interface OrgChartDepartment {
+  id: number;
+  departmentCode: string;
+  departmentName: string;
+  head?: OrgChartPerson | null;
+  members: OrgChartPerson[];
+  activeCount: number;
+  headcountPlan?: number | null;
+  subDepartments: OrgChartDepartment[];
+}
+
+export interface OrgChartDivision {
+  id: number;
+  divisionCode: string;
+  divisionName: string;
+  head?: OrgChartPerson | null;
+  activeCount: number;
+  departments: OrgChartDepartment[];
+}
+
+export interface OrgChart {
+  companyName: string;
+  ceo?: OrgChartPerson | null;
+  divisions: OrgChartDivision[];
+  unassigned: OrgChartPerson[];
+  totalEmployees: number;
+  totalDepartments: number;
+}

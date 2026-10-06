@@ -42,4 +42,7 @@ public interface IOrganizationService
 
     // Dashboard Summary
     Task<OrganizationSummaryDto> GetSummaryAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>แผนผังองค์กร (บริษัท → ฝ่าย → แผนก → พนักงาน) — เปิดให้พนักงานทุกคนดูได้</summary>
+    Task<OrgChartDto> GetOrgChartAsync(CancellationToken cancellationToken = default);
 }

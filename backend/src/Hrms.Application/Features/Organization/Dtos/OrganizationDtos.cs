@@ -182,3 +182,53 @@ public class OrganizationSummaryDto
     public int LevelCount { get; set; }
 }
 #endregion
+
+#region Org Chart DTOs
+/// <summary>บุคคลในแผนผังองค์กร — ส่งเฉพาะข้อมูลที่เปิดเผยได้ (ไม่มีเบอร์/อีเมลส่วนตัว)</summary>
+public class OrgChartPersonDto
+{
+    public long Id { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? PositionName { get; set; }
+    public string? AvatarUrl { get; set; }
+    public string? WorkEmail { get; set; }
+}
+
+public class OrgChartDepartmentDto
+{
+    public long Id { get; set; }
+    public string DepartmentCode { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = string.Empty;
+    /// <summary>หัวหน้าแผนก (null = ตำแหน่งว่าง)</summary>
+    public OrgChartPersonDto? Head { get; set; }
+    /// <summary>พนักงานในแผนก (ไม่รวมผู้ที่แสดงเป็นหัวหน้าในแผนผังแล้ว)</summary>
+    public List<OrgChartPersonDto> Members { get; set; } = new();
+    /// <summary>จำนวนพนักงานที่สังกัดแผนกนี้จริง (รวมหัวหน้าถ้าสังกัดแผนกนี้)</summary>
+    public int ActiveCount { get; set; }
+    /// <summary>อัตรากำลังตามแผน = ผลรวม headcount_plan ของตำแหน่งในแผนก (null = ยังไม่กำหนด)</summary>
+    public int? HeadcountPlan { get; set; }
+    public List<OrgChartDepartmentDto> SubDepartments { get; set; } = new();
+}
+
+public class OrgChartDivisionDto
+{
+    public long Id { get; set; }
+    public string DivisionCode { get; set; } = string.Empty;
+    public string DivisionName { get; set; } = string.Empty;
+    public OrgChartPersonDto? Head { get; set; }
+    public int ActiveCount { get; set; }
+    public List<OrgChartDepartmentDto> Departments { get; set; } = new();
+}
+
+public class OrgChartDto
+{
+    public string CompanyName { get; set; } = string.Empty;
+    public OrgChartPersonDto? Ceo { get; set; }
+    public List<OrgChartDivisionDto> Divisions { get; set; } = new();
+    /// <summary>พนักงานที่ยังไม่มีสังกัด (ไม่มีตำแหน่งปัจจุบัน หรือสังกัดแผนก/ฝ่ายที่ปิดใช้งาน)</summary>
+    public List<OrgChartPersonDto> Unassigned { get; set; } = new();
+    public int TotalEmployees { get; set; }
+    public int TotalDepartments { get; set; }
+}
+#endregion

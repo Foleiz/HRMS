@@ -30,6 +30,14 @@ public class OrganizationController : ControllerBase
         var result = await _orgService.GetSummaryAsync(cancellationToken);
         return Ok(ApiResponse<OrganizationSummaryDto>.Ok(result));
     }
+
+    /// <summary>แผนผังองค์กร — พนักงานทุกคนที่ล็อกอินดูได้ (ส่งเฉพาะข้อมูลที่เปิดเผยได้)</summary>
+    [HttpGet("chart")]
+    public async Task<IActionResult> GetOrgChart(CancellationToken cancellationToken)
+    {
+        var result = await _orgService.GetOrgChartAsync(cancellationToken);
+        return Ok(ApiResponse<OrgChartDto>.Ok(result));
+    }
     #endregion
 
     #region Company
