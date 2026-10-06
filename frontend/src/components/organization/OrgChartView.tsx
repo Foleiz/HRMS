@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Copy,
+  Hand,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -89,7 +90,9 @@ function Avatar({ person, size = 'md' }: { person: OrgChartPerson; size?: 'sm' |
         src={url}
         alt={person.fullName}
         onError={() => setBroken(true)}
-        className={`${cls} rounded-full object-cover ring-2 ring-white shrink-0`}
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        className={`${cls} rounded-full object-cover ring-2 ring-white shrink-0 pointer-events-none select-none`}
       />
     );
   }
@@ -120,7 +123,9 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
 
   return (
     <div
-      className={`relative w-56 shrink-0 rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md ${
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      className={`relative w-56 shrink-0 rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md select-none ${
         person ? 'border-slate-200' : 'border-dashed border-slate-300 bg-slate-50'
       } ${ring}`}
     >
@@ -216,14 +221,21 @@ function MemberGrid({
   const width = cols === 1 ? 'w-56' : cols === 2 ? 'w-[464px]' : 'w-[920px]';
   const grid = cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-2' : 'grid-cols-4';
   return (
-    <div className={`${width} max-w-full rounded-2xl border border-slate-200 bg-white/80 p-2`} style={{ borderTop: `3px solid ${color}` }}>
+    <div
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      className={`${width} max-w-full rounded-2xl border border-slate-200 bg-white/80 p-2 select-none`}
+      style={{ borderTop: `3px solid ${color}` }}
+    >
       <div className={`grid ${grid} gap-1.5`}>
         {members.map((m) => (
           <button
             key={m.id}
             type="button"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             onClick={() => onOpen({ person: m, unit })}
-            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-slate-50 ${
+            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-slate-50 select-none ${
               highlightIds.has(m.id) ? 'bg-blue-50 ring-2 ring-blue-300' : ''
             }`}
           >
@@ -414,9 +426,13 @@ function allNodeKeys(chart: OrgChart) {
 }
 
 // ---------------------------------------------------------------------------
+interface OrgChartViewProps {
+  fullHeight?: boolean;
+}
+
 // คอมโพเนนต์หลัก
 // ---------------------------------------------------------------------------
-export default function OrgChartView() {
+export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) {
   const router = useRouter();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
@@ -431,6 +447,98 @@ export default function OrgChartView() {
   const [zoom, setZoom] = useState(1);
   const [opened, setOpened] = useState<OpenPerson | null>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Pan (Click & Drag to Scroll)
+  const [isPanning, setIsPanning] = useState(false);
+  const isPointerDownRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const panStartRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number }>({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    isPointerDownRef.current = true;
+    isDraggingRef.current = false;
+    panStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    };
+  };
+
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (isDraggingRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      if (!isPointerDownRef.current) return;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const dx = e.clientX - panStartRef.current.startX;
+      const dy = e.clientY - panStartRef.current.startY;
+
+      if (!isDraggingRef.current) {
+        if (Math.hypot(dx, dy) > 4) {
+          isDraggingRef.current = true;
+          setIsPanning(true);
+        }
+      }
+
+      if (isDraggingRef.current) {
+        container.scrollLeft = panStartRef.current.scrollLeft - dx;
+        container.scrollTop = panStartRef.current.scrollTop - dy;
+      }
+    };
+
+    const handleGlobalPointerUp = () => {
+      if (isPointerDownRef.current) {
+        isPointerDownRef.current = false;
+        if (isDraggingRef.current) {
+          setTimeout(() => {
+            isDraggingRef.current = false;
+            setIsPanning(false);
+          }, 50);
+        } else {
+          setIsPanning(false);
+        }
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, []);
+
+  // กึ่งกลางแผนผังแนวนอนเมื่อโหลดข้อมูลเสร็จ
+  useEffect(() => {
+    if (chart && scrollContainerRef.current) {
+      const el = scrollContainerRef.current;
+      const scrollX = (el.scrollWidth - el.clientWidth) / 2;
+      if (scrollX > 0) {
+        el.scrollLeft = scrollX;
+      }
+    }
+  }, [chart]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -547,9 +655,13 @@ export default function OrgChartView() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+    <div
+      className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden flex flex-col ${
+        fullHeight ? 'h-full flex-1 min-h-0' : 'h-[calc(100vh-14rem)] min-h-[560px]'
+      }`}
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Network className="w-5 h-5 text-[#0B2046] dark:text-blue-400" />
@@ -566,7 +678,7 @@ export default function OrgChartView() {
             type="button"
             disabled={!chart}
             onClick={() => setExpanded(isAllExpanded ? new Set(['ceo']) : new Set(allKeys))}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
           >
             {isAllExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             {isAllExpanded ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}
@@ -576,7 +688,7 @@ export default function OrgChartView() {
             onClick={handlePrint}
             disabled={!chart}
             title="พิมพ์แผนผังตามที่แสดงบนหน้าจอ (กางโหนดที่ต้องการก่อนพิมพ์) / บันทึกเป็น PDF"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             พิมพ์
@@ -585,7 +697,7 @@ export default function OrgChartView() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30">
+      <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30 shrink-0">
         <div className="relative flex-1 max-w-xs min-w-[200px]">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -600,7 +712,7 @@ export default function OrgChartView() {
               type="button"
               onClick={() => setSearch('')}
               aria-label="ล้างคำค้นหา"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-slate-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -614,27 +726,43 @@ export default function OrgChartView() {
       </div>
 
       {/* Canvas */}
-      <div className="relative bg-slate-100/80 dark:bg-slate-900/40">
-        <div className="overflow-auto overscroll-contain" style={{ minHeight: 520, maxHeight: 'calc(100vh - 220px)' }}>
+      <div className="relative flex-1 min-h-0 w-full bg-slate-100/80 dark:bg-slate-900/40 flex flex-col overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          onPointerDown={handlePointerDown}
+          onClickCapture={handleClickCapture}
+          onDragStart={(e) => e.preventDefault()}
+          draggable={false}
+          style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitUserDrag: 'none' } as React.CSSProperties}
+          className={`flex-1 w-full h-full overflow-auto overscroll-contain select-none transition-colors scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80 [&::-webkit-scrollbar-track]:bg-transparent ${
+            isPanning ? 'cursor-grabbing [&_*]:!cursor-grabbing' : 'cursor-grab'
+          }`}
+        >
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-24">
+            <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
               <p className="text-sm text-slate-500">กำลังโหลดแผนผังองค์กร...</p>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center gap-3 py-24 text-center px-4">
+            <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24 text-center px-4">
               <AlertTriangle className="w-8 h-8 text-amber-500" />
               <p className="text-sm text-slate-600">{error}</p>
               <button
                 type="button"
                 onClick={load}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> ลองใหม่
               </button>
             </div>
           ) : chart ? (
-            <div ref={printAreaRef} className="w-max min-w-full py-10 px-12" style={{ zoom }}>
+            <div
+              ref={printAreaRef}
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
+              className="w-max min-w-full py-10 px-12 select-none"
+              style={{ zoom, userSelect: 'none', WebkitUserSelect: 'none', WebkitUserDrag: 'none' } as React.CSSProperties}
+            >
               <div className="flex flex-col items-center">
                 {/* ระดับ 0: CEO */}
                 <NodeCard
@@ -681,34 +809,47 @@ export default function OrgChartView() {
           ) : null}
         </div>
 
-        {/* Zoom */}
+        {/* Floating Controls: Zoom & Pan Hint */}
         {chart && (
-          <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 z-10 print:hidden">
-            <button
-              type="button"
-              title="ขยาย"
-              onClick={() => setZoom((z) => Math.min(+(z + 0.1).toFixed(1), 1.5))}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              title="ย่อ"
-              onClick={() => setZoom((z) => Math.max(+(z - 0.1).toFixed(1), 0.4))}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              title="ขนาดปกติ"
-              onClick={() => setZoom(1)}
-              className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600 hover:bg-slate-50"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <div className="w-8 text-center text-[10px] font-mono text-slate-500">{Math.round(zoom * 100)}%</div>
+          <div className="absolute bottom-4 left-4 flex items-end gap-3 z-10 print:hidden pointer-events-none">
+            {/* Zoom Controls */}
+            <div className="flex flex-col gap-1 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-1 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md pointer-events-auto">
+              <button
+                type="button"
+                title="ขยาย (Zoom In)"
+                onClick={() => setZoom((z) => Math.min(+(z + 0.1).toFixed(1), 1.5))}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="ย่อ (Zoom Out)"
+                onClick={() => setZoom((z) => Math.max(+(z - 0.1).toFixed(1), 0.4))}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="ขนาดปกติ (Reset)"
+                onClick={() => setZoom(1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 text-center text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 py-0.5">
+                {Math.round(zoom * 100)}%
+              </div>
+            </div>
+
+            {/* Hand / Pan Tool Hint */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl shadow-md text-xs text-slate-600 dark:text-slate-300 select-none">
+              <div className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Hand className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-medium">คลิกค้างแล้วลากเพื่อเลื่อนดูแผนผัง</span>
+            </div>
           </div>
         )}
       </div>

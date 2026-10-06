@@ -14,8 +14,8 @@ export default function OrgChartPage() {
   }, [setBreadcrumb]);
 
   return (
-    <div className="pb-12">
-      <OrgChartView />
+    <div className="h-[calc(100vh-7rem)] lg:h-[calc(100vh-8rem)] flex flex-col min-h-[500px]">
+      <OrgChartView fullHeight />
     </div>
   );
 }
