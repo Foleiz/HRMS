@@ -1,5 +1,6 @@
 using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Reports.DTOs;
 using Hrms.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +50,7 @@ public class ReportsController : ControllerBase
         [FromQuery] string? date,
         [FromQuery] long? divisionId,
         [FromQuery] long? departmentId,
+        [FromQuery] string? format,
         CancellationToken cancellationToken)
     {
         DateOnly queryDate = DateOnly.FromDateTime(DateTime.Today);
@@ -60,7 +62,7 @@ public class ReportsController : ControllerBase
         var csvBytes = await _reportService.ExportDailyHeadcountCsvAsync(queryDate, divisionId, departmentId, cancellationToken);
         var fileName = $"Daily_Headcount_{queryDate:yyyyMMdd}.csv";
 
-        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+        return ExportFile(csvBytes, fileName, format);
     }
 
     /// <summary>
@@ -93,6 +95,7 @@ public class ReportsController : ControllerBase
         [FromQuery] int? month,
         [FromQuery] long? departmentId,
         [FromQuery] string? search,
+        [FromQuery] string? format,
         CancellationToken cancellationToken)
     {
         var now = DateTime.Today;
@@ -102,7 +105,7 @@ public class ReportsController : ControllerBase
         var csvBytes = await _reportService.ExportMonthlyLatenessCsvAsync(queryYear, queryMonth, departmentId, search, cancellationToken);
         var fileName = $"Monthly_Attendance_Lateness_{queryYear}_{queryMonth:D2}.csv";
 
-        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+        return ExportFile(csvBytes, fileName, format);
     }
 
     /// <summary>
@@ -134,6 +137,7 @@ public class ReportsController : ControllerBase
         [FromQuery] int? year,
         [FromQuery] int? month,
         [FromQuery] long? departmentId,
+        [FromQuery] string? format,
         CancellationToken cancellationToken)
     {
         var now = DateTime.Today;
@@ -143,7 +147,7 @@ public class ReportsController : ControllerBase
         var csvBytes = await _reportService.ExportPayrollTaxCsvAsync(queryYear, queryMonth, departmentId, cancellationToken);
         var fileName = $"PND1_Tax_Report_{queryYear}_{queryMonth:D2}.csv";
 
-        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+        return ExportFile(csvBytes, fileName, format);
     }
 
     /// <summary>
@@ -156,6 +160,7 @@ public class ReportsController : ControllerBase
         [FromQuery] int? year,
         [FromQuery] int? month,
         [FromQuery] long? departmentId,
+        [FromQuery] string? format,
         CancellationToken cancellationToken)
     {
         var now = DateTime.Today;
@@ -165,7 +170,7 @@ public class ReportsController : ControllerBase
         var csvBytes = await _reportService.ExportSsoCsvAsync(queryYear, queryMonth, departmentId, cancellationToken);
         var fileName = $"SSO_Report_1_10_{queryYear}_{queryMonth:D2}.csv";
 
-        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+        return ExportFile(csvBytes, fileName, format);
     }
 
     /// <summary>
@@ -198,6 +203,7 @@ public class ReportsController : ControllerBase
         [FromQuery] int? month,
         [FromQuery] long? divisionId,
         [FromQuery] long? departmentId,
+        [FromQuery] string? format,
         CancellationToken cancellationToken)
     {
         var now = DateTime.Today;
@@ -207,6 +213,41 @@ public class ReportsController : ControllerBase
         var csvBytes = await _reportService.ExportMonthlyTurnoverCsvAsync(queryYear, queryMonth, divisionId, departmentId, cancellationToken);
         var fileName = $"Turnover_Report_{queryYear}_{queryMonth:D2}.csv";
 
-        return File(csvBytes, "text/csv; charset=utf-8", fileName);
+        return ExportFile(csvBytes, fileName, format);
+    }
+
+    /// <summary>รายงานพนักงานแยกตามแผนก</summary>
+    [HttpGet("employees/by-department")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
+    public async Task<IActionResult> GetEmployeesByDepartment(
+        [FromQuery] long? divisionId,
+        [FromQuery] long? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _reportService.GetEmployeesByDepartmentAsync(divisionId, departmentId, cancellationToken);
+        return Ok(ApiResponse<EmployeesByDepartmentReportDto>.Ok(result, "ดึงรายงานพนักงานแยกตามแผนกสำเร็จ"));
+    }
+
+    [HttpGet("employees/by-department/export")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
+    public async Task<IActionResult> ExportEmployeesByDepartment(
+        [FromQuery] long? divisionId,
+        [FromQuery] long? departmentId,
+        [FromQuery] string? format,
+        CancellationToken cancellationToken)
+    {
+        var csvBytes = await _reportService.ExportEmployeesByDepartmentCsvAsync(divisionId, departmentId, cancellationToken);
+        return ExportFile(csvBytes, $"Employees_By_Department_{DateTime.Today:yyyyMMdd}.csv", format);
+    }
+
+    /// <summary>ส่งไฟล์รายงานตามรูปแบบที่ขอ: csv (ค่าเริ่มต้น) หรือ xlsx</summary>
+    private IActionResult ExportFile(byte[] csvBytes, string csvFileName, string? format)
+    {
+        if (string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            var baseName = Path.GetFileNameWithoutExtension(csvFileName);
+            return File(ReportFileConverter.CsvToXlsx(csvBytes, "รายงาน"), ReportFileConverter.XlsxContentType, $"{baseName}.xlsx");
+        }
+        return File(csvBytes, "text/csv; charset=utf-8", csvFileName);
     }
 }

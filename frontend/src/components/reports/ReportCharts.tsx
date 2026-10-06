@@ -18,6 +18,19 @@ export const VIZ = {
   neutral: 'var(--viz-neutral)',
 } as const;
 
+/** ชุดสีแยกกลุ่ม (เรียงลำดับคงที่ ผ่านการตรวจ CVD) — เกิน 6 กลุ่มให้รวมเป็น "อื่น ๆ" */
+export const CATEGORICAL = ['var(--viz-s1)', 'var(--viz-s2)', 'var(--viz-s3)', '#eda100', '#e87ba4', '#4a3aa7'];
+
+/** แปลงรายการ ชื่อ/จำนวน เป็นชิ้นโดนัท (รวมกลุ่มที่เกินเป็น "อื่น ๆ") */
+export function toSegments(items: { name: string; count: number }[], max = 6): Segment[] {
+  const sorted = [...items].sort((a, b) => b.count - a.count);
+  const head = sorted.slice(0, sorted.length > max ? max - 1 : max);
+  const rest = sorted.slice(head.length);
+  const segs = head.map((x, i) => ({ key: x.name, label: x.name, value: x.count, color: CATEGORICAL[i] }));
+  if (rest.length > 0) segs.push({ key: '__other', label: 'อื่น ๆ', value: rest.reduce((s, x) => s + x.count, 0), color: 'var(--viz-neutral)' });
+  return segs;
+}
+
 export const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
 const nf = new Intl.NumberFormat('th-TH');
@@ -85,7 +98,7 @@ function TipRow({ color, label, value }: { color?: string; label: string; value:
 }
 
 // ---------------------------------------------------------------------------
-// 1) แถบสัดส่วนแนวนอน (100%) ต่อแถว — เช่น สถานะการมาทำงานรายแผนก
+// 1) โดนัท — สัดส่วนของทั้งหมด (เหมาะกับ 2–6 กลุ่ม เช่น เพศ ประเภทพนักงาน)
 // ---------------------------------------------------------------------------
 export interface Segment {
   key: string;
@@ -94,79 +107,283 @@ export interface Segment {
   color: string;
 }
 
-export function ProportionBars({
-  rows,
+export function DonutChart({
+  segments,
   unit = 'คน',
+  centerLabel = 'ทั้งหมด',
+  size = 150,
 }: {
-  rows: { id: string | number; label: string; sub?: string; segments: Segment[] }[];
+  segments: Segment[];
   unit?: string;
+  centerLabel?: string;
+  size?: number;
 }) {
   const tt = useTooltip();
+  const [hover, setHover] = useState<string | null>(null);
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  const r = 42;
+  const c = 2 * Math.PI * r;
+  const gap = segments.filter((x) => x.value > 0).length > 1 ? 1.2 : 0; // ช่องว่างระหว่างชิ้น
+  let offset = 0;
+
   return (
-    <div ref={tt.ref} className="relative space-y-2.5" onMouseLeave={tt.hide}>
-      {rows.map((row) => {
-        const total = row.segments.reduce((s, x) => s + x.value, 0);
-        const rowTip = (
-          <div>
-            <div className="mb-1 font-semibold text-slate-900">{row.label}</div>
-            {row.segments.map((s) => (
-              <TipRow key={s.key} color={s.color} label={s.label} value={`${fmtNumber(s.value)} ${unit}`} />
-            ))}
-          </div>
-        );
-        return (
-          <div key={row.id} className="flex items-center gap-3" onMouseMove={(e) => tt.show(e, rowTip)}>
-            <div className="w-44 shrink-0 truncate text-xs">
-              <span className="font-medium text-slate-800">{row.label}</span>
-              {row.sub && <span className="ml-1 text-[10px] text-slate-400">{row.sub}</span>}
-            </div>
-            <div className="flex h-3.5 flex-1 gap-[2px] overflow-hidden rounded-full bg-slate-100">
-              {total > 0 &&
-                row.segments
-                  .filter((s) => s.value > 0)
-                  .map((s) => <div key={s.key} style={{ width: `${(s.value / total) * 100}%`, background: s.color }} />)}
-            </div>
-            <div className="w-14 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">
-              {fmtNumber(total)} {unit}
-            </div>
-          </div>
-        );
-      })}
+    <div ref={tt.ref} className="relative flex flex-wrap items-center gap-5" onMouseLeave={() => { tt.hide(); setHover(null); }}>
+      <svg viewBox="0 0 100 100" width={size} height={size} className="shrink-0 -rotate-90" role="img">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--viz-grid)" strokeWidth="12" />
+        {total > 0 &&
+          segments
+            .filter((x) => x.value > 0)
+            .map((x) => {
+              const len = (x.value / total) * c;
+              const el = (
+                <circle
+                  key={x.key}
+                  cx="50"
+                  cy="50"
+                  r={r}
+                  fill="none"
+                  stroke={x.color}
+                  strokeWidth={hover === x.key ? 15 : 12}
+                  strokeDasharray={`${Math.max(0, len - gap)} ${c}`}
+                  strokeDashoffset={-offset}
+                  className="cursor-pointer transition-[stroke-width] duration-150"
+                  onMouseMove={(e) => {
+                    setHover(x.key);
+                    tt.show(e, <TipRow color={x.color} label={x.label} value={`${fmtNumber(x.value)} ${unit} (${Math.round((x.value / total) * 100)}%)`} />);
+                  }}
+                />
+              );
+              offset += len;
+              return el;
+            })}
+        <g className="rotate-90" style={{ transformOrigin: '50px 50px' }}>
+          <text x="50" y="48" textAnchor="middle" fontSize="16" fontWeight="800" fill="currentColor" className="text-slate-900">
+            {fmtNumber(total)}
+          </text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7.5" fill="currentColor" className="text-slate-400">
+            {centerLabel}
+          </text>
+        </g>
+      </svg>
+      <ul className="min-w-[140px] flex-1 space-y-1.5">
+        {segments.map((x) => (
+          <li
+            key={x.key}
+            className={`flex items-center justify-between gap-3 rounded-lg px-2 py-1 text-xs ${hover === x.key ? 'bg-slate-50' : ''}`}
+            onMouseEnter={() => setHover(x.key)}
+            onMouseLeave={() => setHover(null)}
+          >
+            <span className="inline-flex items-center gap-2 text-slate-700">
+              <Swatch color={x.color} />
+              {x.label}
+            </span>
+            <span className="tabular-nums text-slate-900 font-semibold">
+              {fmtNumber(x.value)}
+              <span className="ml-1 font-normal text-slate-400">{total > 0 ? `${Math.round((x.value / total) * 100)}%` : '0%'}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
       {tt.node}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 2) อันดับแนวนอน — เช่น 10 อันดับคนที่มาสายบ่อย
+// 2) กราฟแท่งแนวตั้ง — เปรียบเทียบจำนวนระหว่างหมวด (แผนก, พนักงาน)
+//    target = ค่าเป้าหมาย/แผน แสดงเป็นเส้นประบนแท่ง
 // ---------------------------------------------------------------------------
-export function RankBars({
+export interface ColumnItem {
+  id: string | number;
+  label: string;
+  sub?: string;
+  value: number;
+  valueLabel?: string;
+  target?: number | null;
+  tip?: React.ReactNode;
+}
+
+const TICKS = [0, 0.25, 0.5, 0.75, 1];
+
+function ColumnFrame({
+  max,
+  height,
+  children,
+  labels,
+}: {
+  max: number;
+  height: number;
+  children: React.ReactNode;
+  labels: React.ReactNode;
+}) {
+  return (
+    <div className="flex gap-2">
+      {/* แกนตั้ง */}
+      <div className="relative w-8 shrink-0" style={{ height }}>
+        {TICKS.map((t) => (
+          <span key={t} className="absolute right-0 -translate-y-1/2 text-[10px] tabular-nums text-slate-400" style={{ top: `${(1 - t) * 100}%` }}>
+            {fmtCompact(max * t)}
+          </span>
+        ))}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="relative" style={{ height }}>
+          {TICKS.map((t) => (
+            <div key={t} className="absolute inset-x-0" style={{ top: `${(1 - t) * 100}%`, borderTop: `${t === 0 ? 1 : 0.6}px solid var(--viz-grid)` }} />
+          ))}
+          <div className="absolute inset-0 flex items-end gap-2 sm:gap-3 px-1">{children}</div>
+        </div>
+        <div className="mt-2 flex gap-2 sm:gap-3 px-1">{labels}</div>
+      </div>
+    </div>
+  );
+}
+
+export function ColumnChart({
   items,
   color = VIZ.s1,
+  height = 200,
+  unit = 'คน',
   emptyText = 'ไม่มีข้อมูล',
+  targetLabel = 'ตามแผน',
 }: {
-  items: { id: string | number; label: string; sub?: string; value: number; valueLabel: string; tip?: React.ReactNode }[];
+  items: ColumnItem[];
   color?: string;
+  height?: number;
+  unit?: string;
   emptyText?: string;
+  targetLabel?: string;
 }) {
   const tt = useTooltip();
-  const max = Math.max(1, ...items.map((i) => i.value));
-  if (items.length === 0) return <div className="py-8 text-center text-xs text-slate-400">{emptyText}</div>;
+  const [hover, setHover] = useState<string | number | null>(null);
+  if (items.length === 0) return <div className="py-10 text-center text-xs text-slate-400">{emptyText}</div>;
+  const max = niceMax(Math.max(1, ...items.map((i) => Math.max(i.value, i.target ?? 0))));
+
   return (
-    <div ref={tt.ref} className="relative space-y-2" onMouseLeave={tt.hide}>
-      {items.map((it, idx) => (
-        <div key={it.id} className="flex items-center gap-3" onMouseMove={(e) => it.tip && tt.show(e, it.tip)}>
-          <span className="w-5 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-400">{idx + 1}</span>
-          <div className="w-40 shrink-0 truncate text-xs">
-            <span className="font-medium text-slate-800">{it.label}</span>
+    <div ref={tt.ref} className="relative" onMouseLeave={() => { tt.hide(); setHover(null); }}>
+      <ColumnFrame
+        max={max}
+        height={height}
+        labels={items.map((it) => (
+          <div key={it.id} className="min-w-0 flex-1 text-center" title={it.sub ? `${it.label} · ${it.sub}` : it.label}>
+            <div className="line-clamp-2 text-[11px] font-medium leading-tight text-slate-700">{it.label}</div>
             {it.sub && <div className="truncate text-[10px] text-slate-400">{it.sub}</div>}
           </div>
-          <div className="flex h-3 flex-1 items-center">
-            <div className="h-full rounded-r-[4px]" style={{ width: `${Math.max(2, (it.value / max) * 100)}%`, background: color }} />
-          </div>
-          <span className="w-28 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-700">{it.valueLabel}</span>
+        ))}
+      >
+        {items.map((it) => {
+          const h = (it.value / max) * 100;
+          const th = it.target != null ? (it.target / max) * 100 : null;
+          return (
+            <div
+              key={it.id}
+              className="relative flex h-full min-w-0 flex-1 cursor-default flex-col items-center justify-end"
+              onMouseMove={(e) => {
+                setHover(it.id);
+                tt.show(
+                  e,
+                  it.tip ?? (
+                    <div>
+                      <div className="mb-1 font-semibold text-slate-900">{it.label}</div>
+                      <TipRow color={color} label="จำนวน" value={`${fmtNumber(it.value)} ${unit}`} />
+                      {it.target != null && <TipRow label={targetLabel} value={`${fmtNumber(it.target)} ${unit}`} />}
+                    </div>
+                  )
+                );
+              }}
+            >
+              {/* ป้ายค่าอยู่เหนือแท่งหรือเส้นแผน (ที่สูงกว่า) ไม่ให้ทับกัน */}
+              <span
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums text-slate-700"
+                style={{ bottom: `calc(${Math.max(h, th ?? 0)}% + 4px)` }}
+              >
+                {it.valueLabel ?? fmtNumber(it.value)}
+              </span>
+              <div
+                className="w-full max-w-[48px] rounded-t-[4px] transition-opacity"
+                style={{ height: `${Math.max(it.value > 0 ? 1.5 : 0, h)}%`, background: color, opacity: hover == null || hover === it.id ? 1 : 0.55 }}
+              />
+              {th != null && (
+                <div
+                  className="pointer-events-none absolute left-1/2 w-full max-w-[60px] -translate-x-1/2 border-t-2 border-dashed"
+                  style={{ bottom: `${th}%`, borderColor: 'var(--viz-axis)' }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </ColumnFrame>
+      {items.some((i) => i.target != null) && (
+        <div className="mt-3 flex items-center justify-end gap-4 text-[11px] text-slate-500">
+          <span className="inline-flex items-center gap-1.5">
+            <Swatch color={color} /> จำนวนจริง
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: 'var(--viz-axis)' }} /> {targetLabel}
+          </span>
         </div>
-      ))}
+      )}
+      {tt.node}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 3) กราฟแท่งแนวตั้งแบบซ้อน — สถานะหลายกลุ่มต่อหมวด (เช่น มา/สาย/ขาด/ลา ต่อแผนก)
+// ---------------------------------------------------------------------------
+export function StackedColumnChart({
+  rows,
+  height = 200,
+  unit = 'คน',
+}: {
+  rows: { id: string | number; label: string; sub?: string; segments: Segment[] }[];
+  height?: number;
+  unit?: string;
+}) {
+  const tt = useTooltip();
+  if (rows.length === 0) return <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>;
+  const max = niceMax(Math.max(1, ...rows.map((r) => r.segments.reduce((s, x) => s + x.value, 0))));
+
+  return (
+    <div ref={tt.ref} className="relative" onMouseLeave={tt.hide}>
+      <ColumnFrame
+        max={max}
+        height={height}
+        labels={rows.map((r) => (
+          <div key={r.id} className="min-w-0 flex-1 text-center" title={r.label}>
+            <div className="line-clamp-2 text-[11px] font-medium leading-tight text-slate-700">{r.label}</div>
+            {r.sub && <div className="truncate text-[10px] text-slate-400">{r.sub}</div>}
+          </div>
+        ))}
+      >
+        {rows.map((r) => {
+          const total = r.segments.reduce((s, x) => s + x.value, 0);
+          const tip = (
+            <div>
+              <div className="mb-1 font-semibold text-slate-900">{r.label}</div>
+              {r.segments.map((x) => (
+                <TipRow key={x.key} color={x.color} label={x.label} value={`${fmtNumber(x.value)} ${unit}`} />
+              ))}
+            </div>
+          );
+          return (
+            <div key={r.id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end" onMouseMove={(e) => tt.show(e, tip)}>
+              <span className="mb-1 text-[11px] font-semibold tabular-nums text-slate-700">{fmtNumber(total)}</span>
+              <div className="flex w-full max-w-[48px] flex-col-reverse gap-[2px]" style={{ height: `${(total / max) * 100}%` }}>
+                {r.segments
+                  .filter((x) => x.value > 0)
+                  .map((x, i, arr) => (
+                    <div
+                      key={x.key}
+                      style={{ flexGrow: x.value, flexBasis: 0, background: x.color }}
+                      className={i === arr.length - 1 ? 'rounded-t-[4px]' : ''}
+                    />
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </ColumnFrame>
       {tt.node}
     </div>
   );

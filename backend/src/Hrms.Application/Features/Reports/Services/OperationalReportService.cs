@@ -68,6 +68,161 @@ public class OperationalReportService : IOperationalReportService
         }
     }
 
+    #region Employees by Department
+    public async Task<EmployeesByDepartmentReportDto> GetEmployeesByDepartmentAsync(
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        var deptQuery = _context.Departments.AsNoTracking()
+            .Include(d => d.Division)
+            .Where(d => d.Status == "ACTIVE");
+        if (divisionId is > 0) deptQuery = deptQuery.Where(d => d.DivisionId == divisionId.Value);
+        if (departmentId is > 0) deptQuery = deptQuery.Where(d => d.Id == departmentId.Value);
+        var departments = await deptQuery
+            .OrderBy(d => d.Division != null ? d.Division.DivisionCode : "")
+            .ThenBy(d => d.DepartmentCode)
+            .ToListAsync(cancellationToken);
+        var deptIds = departments.Select(d => d.Id).ToList();
+
+        var plans = (await _context.Positions.AsNoTracking()
+                .Where(p => p.Status == "ACTIVE" && p.HeadcountPlan != null && deptIds.Contains(p.DepartmentId))
+                .Select(p => new { p.DepartmentId, Plan = p.HeadcountPlan!.Value })
+                .ToListAsync(cancellationToken))
+            .GroupBy(p => p.DepartmentId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Plan));
+
+        // พนักงานที่ยังทำงานอยู่ + ตำแหน่งปัจจุบัน
+        var rows = await _context.EmployeeAssignments.AsNoTracking()
+            .Where(a => a.IsCurrent && deptIds.Contains(a.DepartmentId)
+                        && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
+            .Select(a => new
+            {
+                a.EmployeeId,
+                a.DepartmentId,
+                a.EffectiveFrom,
+                Code = a.Employee!.EmployeeCode,
+                a.Employee.Prefix,
+                a.Employee.FirstName,
+                a.Employee.LastName,
+                a.Employee.Gender,
+                PositionName = a.Position != null ? a.Position.PositionName : null,
+                TypeName = a.EmployeeType != null ? a.EmployeeType.TypeName : null,
+                LevelName = a.EmployeeLevel != null ? a.EmployeeLevel.LevelName : null,
+            })
+            .ToListAsync(cancellationToken);
+
+        // ใช้ตำแหน่งปัจจุบันล่าสุดคนละ 1 รายการ
+        var people = rows.GroupBy(r => r.EmployeeId).Select(g => g.OrderByDescending(x => x.EffectiveFrom).First()).ToList();
+
+        // วันเริ่มงานจากสัญญาจ้างฉบับแรก (ถ้ามี) ไม่เช่นนั้นใช้วันเริ่มตำแหน่ง
+        var empIds = people.Select(p => p.EmployeeId).ToList();
+        var startDates = (await _context.EmploymentContracts.AsNoTracking()
+                .Where(c => empIds.Contains(c.EmployeeId))
+                .Select(c => new { c.EmployeeId, c.StartDate })
+                .ToListAsync(cancellationToken))
+            .GroupBy(c => c.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Min(x => x.StartDate));
+
+        static string GenderGroup(string? g)
+        {
+            var s = (g ?? string.Empty).Trim();
+            if (s is "ชาย" or "M" or "m" or "Male" or "male") return "ชาย";
+            if (s is "หญิง" or "F" or "f" or "Female" or "female") return "หญิง";
+            return "ไม่ระบุ";
+        }
+
+        var result = new EmployeesByDepartmentReportDto { AsOfDate = today };
+
+        foreach (var d in departments)
+        {
+            var list = people.Where(p => p.DepartmentId == d.Id).ToList();
+            var dto = new DepartmentEmployeesDto
+            {
+                DepartmentId = d.Id,
+                DepartmentCode = d.DepartmentCode,
+                DepartmentName = d.DepartmentName,
+                DivisionName = d.Division?.DivisionName ?? "-",
+                EmployeeCount = list.Count,
+                HeadcountPlan = plans.TryGetValue(d.Id, out var plan) ? plan : null,
+            };
+
+            foreach (var p in list.OrderBy(x => x.Code))
+            {
+                var start = startDates.TryGetValue(p.EmployeeId, out var sd) ? sd : p.EffectiveFrom;
+                var gender = GenderGroup(p.Gender);
+                if (gender == "ชาย") dto.MaleCount++;
+                else if (gender == "หญิง") dto.FemaleCount++;
+                else dto.OtherGenderCount++;
+                if (start.Year == today.Year) dto.NewHiresThisYear++;
+
+                dto.Employees.Add(new DepartmentEmployeeRowDto
+                {
+                    EmployeeId = p.EmployeeId,
+                    EmployeeCode = p.Code,
+                    EmployeeName = $"{p.Prefix} {p.FirstName} {p.LastName}".Trim(),
+                    PositionName = p.PositionName ?? "-",
+                    EmployeeTypeName = p.TypeName ?? "-",
+                    LevelName = p.LevelName ?? "-",
+                    Gender = gender,
+                    StartDate = start,
+                });
+            }
+
+            dto.ByEmployeeType = dto.Employees
+                .GroupBy(e => e.EmployeeTypeName)
+                .Select(g => new NameCountDto { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count).ToList();
+
+            result.Departments.Add(dto);
+        }
+
+        var all = result.Departments.SelectMany(d => d.Employees).ToList();
+        result.TotalEmployees = all.Count;
+        result.TotalDepartments = result.Departments.Count;
+        var withPlan = result.Departments.Where(d => d.HeadcountPlan.HasValue).ToList();
+        result.TotalHeadcountPlan = withPlan.Count > 0 ? withPlan.Sum(d => d.HeadcountPlan!.Value) : null;
+        result.MaleCount = result.Departments.Sum(d => d.MaleCount);
+        result.FemaleCount = result.Departments.Sum(d => d.FemaleCount);
+        result.OtherGenderCount = result.Departments.Sum(d => d.OtherGenderCount);
+        result.NewHiresThisYear = result.Departments.Sum(d => d.NewHiresThisYear);
+        result.ByEmployeeType = all.GroupBy(e => e.EmployeeTypeName)
+            .Select(g => new NameCountDto { Name = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count).ToList();
+        result.ByLevel = all.GroupBy(e => e.LevelName)
+            .Select(g => new NameCountDto { Name = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count).ToList();
+
+        return result;
+    }
+
+    public async Task<byte[]> ExportEmployeesByDepartmentCsvAsync(
+        long? divisionId = null,
+        long? departmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetEmployeesByDepartmentAsync(divisionId, departmentId, cancellationToken);
+        var sb = new StringBuilder();
+        sb.AppendLine($"รายงานพนักงานแยกตามแผนก,ณ วันที่ {data.AsOfDate:dd/MM/yyyy}");
+        sb.AppendLine($"สรุปภาพรวม: พนักงานทั้งหมด {data.TotalEmployees} คน, {data.TotalDepartments} แผนก, ชาย {data.MaleCount} คน, หญิง {data.FemaleCount} คน, ไม่ระบุ {data.OtherGenderCount} คน, เข้าใหม่ปีนี้ {data.NewHiresThisYear} คน");
+        sb.AppendLine();
+        sb.AppendLine("สรุปรายแผนก");
+        sb.AppendLine("ฝ่าย,รหัสแผนก,ชื่อแผนก,จำนวนพนักงาน (คน),อัตรากำลังตามแผน (คน),ชาย,หญิง,ไม่ระบุ,เข้าใหม่ปีนี้");
+        foreach (var d in data.Departments)
+            sb.AppendLine($"\"{EscapeCsv(d.DivisionName)}\",\"{EscapeCsv(d.DepartmentCode)}\",\"{EscapeCsv(d.DepartmentName)}\",{d.EmployeeCount},{(d.HeadcountPlan.HasValue ? d.HeadcountPlan.Value.ToString() : "")},{d.MaleCount},{d.FemaleCount},{d.OtherGenderCount},{d.NewHiresThisYear}");
+        sb.AppendLine($",,รวมทั้งสิ้น,{data.TotalEmployees},{(data.TotalHeadcountPlan.HasValue ? data.TotalHeadcountPlan.Value.ToString() : "")},{data.MaleCount},{data.FemaleCount},{data.OtherGenderCount},{data.NewHiresThisYear}");
+        sb.AppendLine();
+        sb.AppendLine("รายชื่อพนักงาน");
+        sb.AppendLine("ฝ่าย,แผนก,รหัสพนักงาน,ชื่อ-นามสกุล,ตำแหน่ง,ประเภทพนักงาน,ระดับ,เพศ,วันเริ่มงาน");
+        foreach (var d in data.Departments)
+            foreach (var e in d.Employees)
+                sb.AppendLine($"\"{EscapeCsv(d.DivisionName)}\",\"{EscapeCsv(d.DepartmentName)}\",\"{EscapeCsv(e.EmployeeCode)}\",\"{EscapeCsv(e.EmployeeName)}\",\"{EscapeCsv(e.PositionName)}\",\"{EscapeCsv(e.EmployeeTypeName)}\",\"{EscapeCsv(e.LevelName)}\",\"{e.Gender}\",{(e.StartDate.HasValue ? e.StartDate.Value.ToString("dd/MM/yyyy") : "")}");
+        return PrependUtf8Bom(sb.ToString());
+    }
+    #endregion
+
     /// <summary>หัวไฟล์เตือนเมื่อรอบเงินเดือนยังไม่อนุมัติ (ตัวเลขอาจเปลี่ยน)</summary>
     private static string PeriodWarning(string status) =>
         ClosedPayrollStatuses.Contains(status) ? string.Empty

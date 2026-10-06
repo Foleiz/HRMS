@@ -1,12 +1,15 @@
 ﻿'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Calendar, CalendarDays, FileSpreadsheet, Loader2, Users } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
 import { LeaveSummaryReport } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import ExportMenu, { ReportExportFormat } from './ExportMenu';
+import { DonutChart, toSegments } from './ReportCharts';
+import { printReport } from '@/lib/printReport';
 
 interface Props {
   canExport: boolean;
@@ -64,13 +67,17 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   }, [data]);
 
   const maxMonth = Math.max(1, ...(data?.byMonth.map((m) => m.days) ?? [0]));
-  const maxType = Math.max(1, ...(data?.byType.map((m) => m.days) ?? [0]));
-  const heatMax = Math.max(1, ...(data?.departmentByType.map((c) => c.days) ?? [0]));
 
-  const handleExport = async () => {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const handleExport = async (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: `ปี ${year + 543}` });
+      return;
+    }
     setExporting(true);
     try {
-      await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId);
+      await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId, format);
     } catch (e: unknown) {
       onError((e as { message?: string })?.message || 'ส่งออกไฟล์ไม่สำเร็จ');
     } finally {
@@ -79,9 +86,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div ref={rootRef} className="space-y-6 animate-in fade-in duration-200">
       {/* Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
             <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
@@ -115,15 +122,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           </div>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500 dark:text-slate-400" />}
         </div>
-        {canExport && (
-          <button
-            onClick={handleExport}
-            disabled={exporting || !data}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} ส่งออก CSV
-          </button>
-        )}
+        {canExport && <ExportMenu onExport={handleExport} disabled={exporting || !data} />}
       </div>
 
       {data && (
@@ -172,21 +171,11 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               {data.byType.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
               ) : (
-                <div className="space-y-3">
-                  {data.byType.map((t) => (
-                    <div key={t.key}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">{t.label}</span>
-                        <span className="text-slate-500 dark:text-slate-400">
-                          {fmt(t.days)} วัน · {t.requests} ใบ · {t.employees} คน
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="h-2 rounded-full bg-blue-500" style={{ width: `${(t.days / maxType) * 100}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <DonutChart
+                  unit="วัน"
+                  centerLabel="วันลารวม"
+                  segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
+                />
               )}
             </div>
           </div>
@@ -195,11 +184,6 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
-                น้อย
-                <span className="inline-flex h-2.5 w-24 rounded-sm" style={{ background: 'linear-gradient(to right, color-mix(in srgb, var(--viz-s1) 8%, transparent), color-mix(in srgb, var(--viz-s1) 60%, transparent))' }} />
-                มาก
-              </span>
             </div>
             {matrix.depts.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
@@ -223,14 +207,11 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                         <td className="py-2 px-3 font-medium text-slate-700 dark:text-slate-300">{d.label}</td>
                         {matrix.types.map((t) => {
                           const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
-                          // ช่องสีตามความเข้ม (ฟ้าอ่อน → เข้ม) ตัวเลขยังอ่านได้ด้วยสีตัวอักษรปกติ
-                          const pct = v > 0 ? Math.round(8 + (v / heatMax) * 52) : 0;
                           return (
                             <td
                               key={t}
                               title={`${d.label} · ${t}: ${fmt(v)} วัน`}
-                              className={`py-2 px-3 text-right tabular-nums ${v > 0 ? 'text-slate-800 font-medium' : 'text-slate-300'}`}
-                              style={v > 0 ? { background: `color-mix(in srgb, var(--viz-s1) ${pct}%, transparent)` } : undefined}
+                              className={`py-2 px-3 text-right tabular-nums ${v > 0 ? 'text-slate-800 dark:text-slate-200 font-medium' : 'text-slate-300 dark:text-slate-600'}`}
                             >
                               {fmt(v)}
                             </td>

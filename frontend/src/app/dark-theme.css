@@ -1,5 +1,5 @@
 /* ไฟล์นี้สร้างอัตโนมัติจาก scripts/gen-dark-theme.py — ห้ามแก้มือ (รันสคริปต์ใหม่แทน) */
-/* 427 rules */
+/* 431 rules */
 html.dark .bg-\[\#0B2046\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #1A4DA7 !important; }
 html.dark .bg-\[\#0B2046\]\/10:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(26, 77, 167, 0.10) !important; }
 html.dark .bg-\[\#0B2046\]\/5:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(26, 77, 167, 0.05) !important; }
@@ -233,6 +233,7 @@ html.dark .ring-\[\#0B2046\]:not(.theme-light, .theme-light *, [data-stat-card],
 html.dark .ring-\[\#0B2046\]\/10:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.10) !important; }
 html.dark .ring-\[\#0B2046\]\/20:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.20) !important; }
 html.dark .ring-\[\#0B2046\]\/60:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.60) !important; }
+html.dark .ring-\[\#0B2046\]\/70:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(57, 116, 224, 0.70) !important; }
 html.dark .ring-amber-100:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: #836F21 !important; }
 html.dark .ring-amber-400\/50:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: rgba(131, 104, 33, 0.50) !important; }
 html.dark .ring-blue-200:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { --tw-ring-color: #214C83 !important; }
@@ -248,13 +249,16 @@ html.dark .text-\[\#0F172A\]:not(.theme-light, .theme-light *, [data-stat-card],
 html.dark .text-\[\#0f2547\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #89AEE6 !important; }
 html.dark .text-\[\#15803d\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #84EBAB !important; }
 html.dark .text-\[\#166534\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #8AE5AD !important; }
+html.dark .text-\[\#2F4C75\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #99B2D6 !important; }
 html.dark .text-\[\#3730A3\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #9591DF !important; }
+html.dark .text-\[\#3F5F8C\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #9DB3D3 !important; }
 html.dark .text-\[\#64748B\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #ACB6C3 !important; }
 html.dark .text-\[\#6B21A8\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #BC88E8 !important; }
 html.dark .text-\[\#7C2D12\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #ED9D82 !important; }
 html.dark .text-\[\#92400e\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #EDAB82 !important; }
 html.dark .text-\[\#94292B\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #E08F91 !important; }
 html.dark .text-\[\#9F1239\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #ED82A0 !important; }
+html.dark .text-\[\#A4545C\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #CFA1A5 !important; }
 html.dark .text-\[\#BE123C\]:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #ED829C !important; }
 html.dark .text-amber-700:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: #EDAE82 !important; }
 html.dark .text-amber-700\/80:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { color: rgba(237, 174, 130, 0.80) !important; }
