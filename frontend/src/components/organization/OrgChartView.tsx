@@ -90,7 +90,9 @@ function Avatar({ person, size = 'md' }: { person: OrgChartPerson; size?: 'sm' |
         src={url}
         alt={person.fullName}
         onError={() => setBroken(true)}
-        className={`${cls} rounded-full object-cover ring-2 ring-white shrink-0`}
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        className={`${cls} rounded-full object-cover ring-2 ring-white shrink-0 pointer-events-none select-none`}
       />
     );
   }
@@ -121,7 +123,9 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
 
   return (
     <div
-      className={`relative w-56 shrink-0 rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md ${
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      className={`relative w-56 shrink-0 rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md select-none ${
         person ? 'border-slate-200' : 'border-dashed border-slate-300 bg-slate-50'
       } ${ring}`}
     >
@@ -217,14 +221,21 @@ function MemberGrid({
   const width = cols === 1 ? 'w-56' : cols === 2 ? 'w-[464px]' : 'w-[920px]';
   const grid = cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-2' : 'grid-cols-4';
   return (
-    <div className={`${width} max-w-full rounded-2xl border border-slate-200 bg-white/80 p-2`} style={{ borderTop: `3px solid ${color}` }}>
+    <div
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      className={`${width} max-w-full rounded-2xl border border-slate-200 bg-white/80 p-2 select-none`}
+      style={{ borderTop: `3px solid ${color}` }}
+    >
       <div className={`grid ${grid} gap-1.5`}>
         {members.map((m) => (
           <button
             key={m.id}
             type="button"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             onClick={() => onOpen({ person: m, unit })}
-            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-slate-50 ${
+            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-slate-50 select-none ${
               highlightIds.has(m.id) ? 'bg-blue-50 ring-2 ring-blue-300' : ''
             }`}
           >
@@ -440,6 +451,8 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
 
   // Pan (Click & Drag to Scroll)
   const [isPanning, setIsPanning] = useState(false);
+  const isPointerDownRef = useRef(false);
+  const isDraggingRef = useRef(false);
   const panStartRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number }>({
     startX: 0,
     startY: 0,
@@ -449,53 +462,72 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('button, a, input, select, textarea, [role="button"]')) {
-      return;
-    }
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    setIsPanning(true);
+    isPointerDownRef.current = true;
+    isDraggingRef.current = false;
     panStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       scrollLeft: container.scrollLeft,
       scrollTop: container.scrollTop,
     };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (_) {}
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPanning) return;
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const dx = e.clientX - panStartRef.current.startX;
-    const dy = e.clientY - panStartRef.current.startY;
-    container.scrollLeft = panStartRef.current.scrollLeft - dx;
-    container.scrollTop = panStartRef.current.scrollTop - dy;
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (isPanning) {
-      setIsPanning(false);
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (_) {}
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (isDraggingRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
     }
   };
 
-  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (isPanning) {
-      setIsPanning(false);
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (_) {}
-    }
-  };
+  useEffect(() => {
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      if (!isPointerDownRef.current) return;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const dx = e.clientX - panStartRef.current.startX;
+      const dy = e.clientY - panStartRef.current.startY;
+
+      if (!isDraggingRef.current) {
+        if (Math.hypot(dx, dy) > 4) {
+          isDraggingRef.current = true;
+          setIsPanning(true);
+        }
+      }
+
+      if (isDraggingRef.current) {
+        container.scrollLeft = panStartRef.current.scrollLeft - dx;
+        container.scrollTop = panStartRef.current.scrollTop - dy;
+      }
+    };
+
+    const handleGlobalPointerUp = () => {
+      if (isPointerDownRef.current) {
+        isPointerDownRef.current = false;
+        if (isDraggingRef.current) {
+          setTimeout(() => {
+            isDraggingRef.current = false;
+            setIsPanning(false);
+          }, 50);
+        } else {
+          setIsPanning(false);
+        }
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, []);
 
   // กึ่งกลางแผนผังแนวนอนเมื่อโหลดข้อมูลเสร็จ
   useEffect(() => {
@@ -698,11 +730,12 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
         <div
           ref={scrollContainerRef}
           onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
+          onClickCapture={handleClickCapture}
+          onDragStart={(e) => e.preventDefault()}
+          draggable={false}
+          style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitUserDrag: 'none' } as React.CSSProperties}
           className={`flex-1 w-full h-full overflow-auto overscroll-contain select-none transition-colors scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80 [&::-webkit-scrollbar-track]:bg-transparent ${
-            isPanning ? 'cursor-grabbing' : 'cursor-grab'
+            isPanning ? 'cursor-grabbing [&_*]:!cursor-grabbing' : 'cursor-grab'
           }`}
         >
           {loading ? (
@@ -723,7 +756,13 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
               </button>
             </div>
           ) : chart ? (
-            <div ref={printAreaRef} className="w-max min-w-full py-10 px-12" style={{ zoom }}>
+            <div
+              ref={printAreaRef}
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
+              className="w-max min-w-full py-10 px-12 select-none"
+              style={{ zoom, userSelect: 'none', WebkitUserSelect: 'none', WebkitUserDrag: 'none' } as React.CSSProperties}
+            >
               <div className="flex flex-col items-center">
                 {/* ระดับ 0: CEO */}
                 <NodeCard
