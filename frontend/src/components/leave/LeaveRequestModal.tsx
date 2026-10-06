@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Paperclip } from 'lucide-react';
@@ -167,7 +167,7 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
               <option value="">-- เลือกประเภทการลา --</option>
               {leaveTypes.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.leaveName} ({t.leaveCode})
+                  {t.leaveName}
                 </option>
               ))}
             </CustomSelect>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
@@ -438,7 +438,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   return (
                     <option key={t.id} value={t.id}>
                       {t.leaveName}
-                      {quotaDays != null ? ` (สิทธิ์ ${quotaDays} วัน/ปี)` : ''}
                     </option>
                   );
                 })}
