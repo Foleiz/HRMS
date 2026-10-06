@@ -3,17 +3,19 @@
 
 /* Dark mode variant for Tailwind v4 */
 /* dark: ใช้ได้ทั้งแอป ยกเว้นในส่วน .theme-light (กระดาษเอกสาร/หน้า login ที่ต้องเป็นสีสว่างเสมอ) */
-@custom-variant dark (&:where(.dark, .dark *):not(.theme-light, .theme-light *));
+@custom-variant dark (&:where(.dark, .dark *):not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *));
 
 :root {
   --background: #F8FAFC;
   --foreground: #1E293B;
   --font-sans: var(--font-prompt), sans-serif;
+  color-scheme: light;
 }
 
 .dark {
   --background: #0F172A;
   --foreground: #F1F5F9;
+  color-scheme: dark;
 }
 
 body {
@@ -56,7 +58,7 @@ body {
 
 /* Make all buttons and interactive elements show pointer cursor on hover */
 button:not(:disabled),
-[role="button"]:not([aria-disabled="true"]),
+[role="button"][aria-disabled="true"],
 input[type="button"]:not(:disabled),
 input[type="submit"]:not(:disabled),
 input[type="reset"]:not(:disabled),
@@ -65,17 +67,78 @@ select {
   cursor: pointer;
 }
 
+/* =========================================================================
+   Standardized Modern Select Dropdown System (ทั้งระบบ)
+   ========================================================================= */
+select:not([multiple]):not([size]) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e") !important;
+  background-position: right 0.75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1rem 1rem !important;
+  padding-right: 2.35rem !important;
+  border-radius: 0.75rem;
+  transition: all 0.15s ease-in-out;
+  color-scheme: light;
+}
+
+select:not([multiple]):not([size]):focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(11, 32, 70, 0.15) !important;
+  border-color: #0B2046 !important;
+}
+
+/* Dark mode select styling & chevron */
+.dark select:not([multiple]):not([size]) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e") !important;
+  color-scheme: dark;
+}
+
+.dark select:not([multiple]):not([size]):focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+  border-color: #3B82F6 !important;
+}
+
+/* Standardize option styling across browsers (Chrome, Edge, Firefox) */
+select option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+.dark select option {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+select option:checked {
+  background-color: #E2E8F0 !important;
+  color: #0B2046 !important;
+}
+
+.dark select option:checked {
+  background-color: #334155 !important;
+  color: #60A5FA !important;
+}
+
 button:disabled,
 [role="button"][aria-disabled="true"],
 input[type="button"]:disabled,
 input[type="submit"]:disabled,
-input[type="reset"]:disabled {
+input[type="reset"]:disabled,
+select:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
 /* ===================== Dark mode =====================
-   - เปิด/ปิดด้วย class "dark" บน <html> (ThemeContext + สคริปต์ใน layout.tsx กันจอกะพริบ)
+   - เปิด/ปิดด้วย class "dark" บน <html> ผ่าน next-themes (layout.tsx, ค่าเริ่มต้นโหมดสว่าง ไม่ตาม OS)
    - สีของ utility class โหมดสว่างถูกแปลงอัตโนมัติใน dark-theme.css (สร้างจาก scripts/gen-dark-theme.py)
    - ส่วนที่ต้องเป็นสีสว่างเสมอ (กระดาษเอกสาร, หน้า login) ใส่ class "theme-light"
 */
@@ -93,15 +156,18 @@ html.dark body {
   color: #1E293B;
 }
 
+/* การ์ดสถิติสีพาสเทลบนแดชบอร์ด ([data-stat-card], .stat-panel) คงสีเดิมในโหมดมืด — ยกเว้นไว้เหมือน .theme-light
+   (รายการยกเว้นกำหนดใน scripts/gen-dark-theme.py และ @custom-variant dark ด้านบน) */
+
 @layer base {
   /* เส้นขอบเริ่มต้น (ไม่ได้ระบุสี) ให้เข้ากับพื้นมืด — อยู่ใน layer base จึงไม่ทับสีขอบที่ระบุด้วย utility */
-  :where(html.dark) :where(*:not(.theme-light, .theme-light *)),
-  :where(html.dark) :where(*:not(.theme-light, .theme-light *))::before,
-  :where(html.dark) :where(*:not(.theme-light, .theme-light *))::after {
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *, [data-stat-card] *, .stat-panel *)),
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *, [data-stat-card] *, .stat-panel *))::before,
+  :where(html.dark) :where(*:not(.theme-light, .theme-light *, [data-stat-card] *, .stat-panel *))::after {
     border-color: #334155;
   }
 
-  :where(html.dark) :where(input, textarea):not(.theme-light *)::placeholder {
+  :where(html.dark) :where(input, textarea):not(.theme-light *, [data-stat-card] *, .stat-panel *)::placeholder {
     color: #64748B;
   }
 }

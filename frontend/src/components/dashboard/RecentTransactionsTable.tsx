@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { leaveService } from '@/services/leaveService';
 import { certificateService } from '@/services/certificateService';
 import { LeaveRequest } from '@/types/leave';
@@ -319,53 +320,56 @@ export const RecentTransactionsTable: React.FC = () => {
           </div>
 
           {/* Date Range Selector */}
-          <select
+          <CustomSelect
             value={dateRange}
-            onChange={(e) => {
-              setDateRange(e.target.value);
+            onChange={(val) => {
+              setDateRange(val);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
-          >
-            <option value="">เลือกช่วงวันที่ท่านต้องการ</option>
-            <option value="THIS_MONTH">เดือนนี้</option>
-            <option value="LAST_MONTH">เดือนที่แล้ว</option>
-            <option value="THIS_YEAR">ปีนี้</option>
-          </select>
+            placeholder="ช่วงวันที่"
+            options={[
+              { value: '', label: 'ช่วงวันที่ทั้งหมด' },
+              { value: 'THIS_MONTH', label: 'เดือนนี้' },
+              { value: 'LAST_MONTH', label: 'เดือนที่แล้ว' },
+              { value: 'THIS_YEAR', label: 'ปีนี้' },
+            ]}
+          />
 
           {/* Type Selector */}
-          <select
+          <CustomSelect
             value={selectedType}
-            onChange={(e) => {
-              setSelectedType(e.target.value);
+            onChange={(val) => {
+              setSelectedType(val);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
-          >
-            <option value="ALL">ประเภท ทั้งหมด</option>
-            <option value="ลาพักร้อน">ลาพักร้อน</option>
-            <option value="ลาป่วย">ลาป่วย</option>
-            <option value="ลากิจ">ลากิจ</option>
-            <option value="ลาพิเศษ">ลาพิเศษ</option>
-            <option value="หนังสือรับรอง">ขอหนังสือรับรอง</option>
-          </select>
+            placeholder="ประเภท ทั้งหมด"
+            options={[
+              { value: 'ALL', label: 'ประเภท ทั้งหมด' },
+              { value: 'ลาพักร้อน', label: 'ลาพักร้อน' },
+              { value: 'ลาป่วย', label: 'ลาป่วย' },
+              { value: 'ลากิจ', label: 'ลากิจ' },
+              { value: 'ลาพิเศษ', label: 'ลาพิเศษ' },
+              { value: 'หนังสือรับรอง', label: 'ขอหนังสือรับรอง' },
+            ]}
+          />
 
           {/* Status Selector */}
-          <select
+          <CustomSelect
             value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
+            onChange={(val) => {
+              setSelectedStatus(val);
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] cursor-pointer"
-          >
-            <option value="ALL">สถานะ ทั้งหมด</option>
-            <option value="PENDING">รออนุมัติ</option>
-            <option value="APPROVED">อนุมัติแล้ว</option>
-            <option value="REJECTED">ไม่อนุมัติ</option>
-            <option value="CANCELLED">ยกเลิกแล้ว</option>
-            <option value="DRAFT">แบบร่าง</option>
-          </select>
+            placeholder="สถานะ ทั้งหมด"
+            options={[
+              { value: 'ALL', label: 'สถานะ ทั้งหมด' },
+              { value: 'PENDING', label: 'รออนุมัติ' },
+              { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+              { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+              { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+              { value: 'DRAFT', label: 'แบบร่าง' },
+            ]}
+          />
         </div>
       </div>
 

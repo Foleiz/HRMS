@@ -1806,7 +1806,7 @@ export default function PayrollPage() {
                       onChange={(e) => setSelectedDeptId(e.target.value)}
                       className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                     >
-                      <option value="">-- ทุกแผนก --</option>
+                      <option value="">ทุกแผนก</option>
                       {departments.map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.departmentName}

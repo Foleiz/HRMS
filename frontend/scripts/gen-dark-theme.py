@@ -23,7 +23,8 @@ THEME = ROOT / 'node_modules' / 'tailwindcss' / 'theme.css'
 
 NEUTRAL_FAMILIES = {'slate', 'gray', 'zinc', 'neutral', 'stone'}
 FAMILIES = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose'
-EXEMPT = ':not(.theme-light, .theme-light *)'
+# ส่วนที่คงสีโหมดสว่าง: กระดาษเอกสาร/หน้า login (.theme-light) และการ์ดสถิติสีพาสเทลบนแดชบอร์ด
+EXEMPT = ':not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *)'
 
 # ---------- สี ----------
 def oklch_to_rgb(L, C, H):
