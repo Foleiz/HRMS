@@ -54,7 +54,7 @@ body {
 
 /* Make all buttons and interactive elements show pointer cursor on hover */
 button:not(:disabled),
-[role="button"]:not([aria-disabled="true"]),
+[role="button"][aria-disabled="true"],
 input[type="button"]:not(:disabled),
 input[type="submit"]:not(:disabled),
 input[type="reset"]:not(:disabled),
@@ -63,12 +63,71 @@ select {
   cursor: pointer;
 }
 
+/* =========================================================================
+   Standardized Modern Select Dropdown System (ทั้งระบบ)
+   ========================================================================= */
+select:not([multiple]):not([size]) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e") !important;
+  background-position: right 0.75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1rem 1rem !important;
+  padding-right: 2.35rem !important;
+  border-radius: 0.75rem;
+  transition: all 0.15s ease-in-out;
+}
+
+select:not([multiple]):not([size]):focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(11, 32, 70, 0.15) !important;
+  border-color: #0B2046 !important;
+}
+
+/* Dark mode select styling & chevron */
+.dark select:not([multiple]):not([size]) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e") !important;
+}
+
+.dark select:not([multiple]):not([size]):focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+  border-color: #3B82F6 !important;
+}
+
+/* Standardize option styling across browsers (Chrome, Edge, Firefox) */
+select option {
+  background-color: #FFFFFF;
+  color: #0F172A;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+.dark select option {
+  background-color: #1E293B;
+  color: #F8FAFC;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+select option:checked {
+  background-color: #E2E8F0;
+  color: #0B2046;
+}
+
+.dark select option:checked {
+  background-color: #334155;
+  color: #60A5FA;
+}
+
 button:disabled,
 [role="button"][aria-disabled="true"],
 input[type="button"]:disabled,
 input[type="submit"]:disabled,
-input[type="reset"]:disabled {
+input[type="reset"]:disabled,
+select:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
