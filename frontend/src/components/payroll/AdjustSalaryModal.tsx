@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, ArrowUpRight, ArrowDownRight, User, Building2, Briefcase } from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface Props {
   isOpen: boolean;
@@ -273,11 +274,10 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่มีผลบังคับใช้ <span className="text-red-500">*</span>
             </label>
-            <input
-              type="date"
-              required
+            <ThaiDatePicker
               value={effectiveFrom}
-              onChange={(e) => setEffectiveFrom(e.target.value)}
+              onChange={setEffectiveFrom}
+              placeholder="เลือกวันที่มีผลบังคับใช้"
               className="w-full text-sm px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
             <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">

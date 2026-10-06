@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateMyLeaveRequestPayload } from '@/types/leave';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface MyLeaveRequestModalProps {
   isOpen: boolean;
@@ -163,22 +164,21 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่เริ่มลา</label>
-              <input
-                type="date"
+              <ThaiDatePicker
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="เลือกวันที่เริ่มลา"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่สิ้นสุด</label>
-              <input
-                type="date"
+              <ThaiDatePicker
+                min={startDate || undefined}
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={setEndDate}
+                placeholder="เลือกวันที่สิ้นสุด"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
               />
             </div>
           </div>

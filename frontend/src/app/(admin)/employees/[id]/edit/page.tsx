@@ -23,6 +23,7 @@ import { NATIONALITIES } from '@/constants/nationalities';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
@@ -719,11 +720,9 @@ function EmployeeEditPageContent() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                       วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                     </label>
-                    <input
-                      type="date"
+                    <ThaiDatePicker
                       value={formData.birthDate}
-                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      onChange={(val) => setFormData({ ...formData, birthDate: val })}
                     />
                   </div>
 
@@ -1179,15 +1178,13 @@ function EmployeeEditPageContent() {
 
                       <div>
                         <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันเกิด</label>
-                        <input
-                          type="date"
+                        <ThaiDatePicker
                           value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const list = [...(formData.familyMembers || [])];
-                            list[activeFamilyIndex].birthDate = e.target.value;
+                            list[activeFamilyIndex].birthDate = val;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
                     </div>

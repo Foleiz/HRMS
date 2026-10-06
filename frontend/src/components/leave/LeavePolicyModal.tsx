@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Sparkles, FileCheck2 } from 'lucide-react';
@@ -12,6 +12,7 @@ import {
 } from '@/types/leave';
 import { employeeTypeService } from '@/services/employeeTypeService';
 import { inferFormCategory } from './LeaveTypeModal';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface EmployeeLevelOption {
   id: number;
@@ -461,7 +462,12 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           </Section>
 
           <Field label="เริ่มมีผลตั้งแต่วันที่">
-            <input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <ThaiDatePicker
+              value={effectiveFrom}
+              onChange={setEffectiveFrom}
+              placeholder="เลือกวันที่มีผล"
+              className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
           </Field>
 
           {/* สรุป */}

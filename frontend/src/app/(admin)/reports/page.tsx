@@ -16,6 +16,7 @@ import {
 import { Department, Division } from '@/types/organization';
 import LeaveSummaryReportTab from '@/components/reports/LeaveSummaryReportTab';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import {
   ChartCard,
   Legend,
@@ -519,14 +520,12 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">วันที่:</span>
-                <input
-                  type="date"
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">วันที่:</span>
+                <ThaiDatePicker
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
+                  onChange={setSelectedDate}
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200"
                 />
               </div>
 

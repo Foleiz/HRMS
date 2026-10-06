@@ -44,6 +44,7 @@ import {
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
@@ -1330,24 +1331,17 @@ function DailyAttendanceContent() {
 
               {/* Date Picker with Min/Max Locking */}
               <div className="flex items-center gap-2">
-                <input
-                  type="date"
+                <ThaiDatePicker
                   min={allowedDateRange.min ?? undefined}
                   max={allowedDateRange.max ?? undefined}
                   value={selectedDate}
-                  onChange={(e) => {
-                    const newDate = e.target.value;
+                  onChange={(newDate) => {
                     if (allowedDateRange.min && newDate < allowedDateRange.min) return;
                     if (allowedDateRange.max && newDate > allowedDateRange.max) return;
                     setSelectedDate(newDate);
                     setCurrentPage(1);
                   }}
                   className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 dark:text-slate-300 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-300"
-                  title={
-                    allowedDateRange.min && allowedDateRange.max
-                      ? `เลือกได้เฉพาะช่วง ${formatThaiDate(allowedDateRange.min)} ถึง ${formatThaiDate(allowedDateRange.max)} ตามเอกสารที่นำเข้า`
-                      : 'เลือกวันที่ต้องการตรวจบันทึกเวลา'
-                  }
                 />
 
                 {allowedDateRange.min && allowedDateRange.max && (

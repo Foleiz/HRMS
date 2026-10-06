@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +25,7 @@ import {
   Loader2,
   CalendarDays,
 } from 'lucide-react';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 export default function EssAttendancePage() {
   const { user, hasPermission, hasRole } = useAuth();
@@ -777,12 +778,9 @@ export default function EssAttendancePage() {
             <form onSubmit={handleSubmitAdjustment} className="mt-4 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">วันที่ทำงานที่ต้องการปรับ</label>
-                <input
-                  type="date"
-                  required
+                <ThaiDatePicker
                   value={formData.workDate}
-                  onChange={(e) => {
-                    const newDate = e.target.value;
+                  onChange={(newDate) => {
                     const matched = historyList.find((h) => h.workDate === newDate);
                     setFormData((prev) => ({
                       ...prev,
@@ -792,6 +790,7 @@ export default function EssAttendancePage() {
                       adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : (prev.adjustedClockOut || '17:30'),
                     }));
                   }}
+                  placeholder="เลือกวันที่ทำงานที่ต้องการปรับ"
                   className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

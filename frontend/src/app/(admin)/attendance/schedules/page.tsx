@@ -52,6 +52,7 @@ import { Shift, CreateShiftRequest } from '@/types/shift';
 import { Department } from '@/types/organization';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1968,22 +1969,22 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                     มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
                     value={assignForm.effectiveFrom}
-                    onChange={(e) => setAssignForm({ ...assignForm, effectiveFrom: e.target.value })}
+                    onChange={(val) => setAssignForm({ ...assignForm, effectiveFrom: val })}
+                    placeholder="เลือกวันที่มีผล"
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                    required
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                     สิ้นสุดวันที่ <span className="text-slate-400 font-normal dark:text-slate-500 dark:text-slate-400">(เว้นว่างถ้าไม่มีกำหนด)</span>
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
+                    min={assignForm.effectiveFrom || undefined}
                     value={assignForm.effectiveTo || ''}
-                    onChange={(e) => setAssignForm({ ...assignForm, effectiveTo: e.target.value })}
+                    onChange={(val) => setAssignForm({ ...assignForm, effectiveTo: val })}
+                    placeholder="เลือกวันที่สิ้นสุด"
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
@@ -2320,10 +2321,10 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                     มีผลตั้งแต่วันที่ <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
                     value={batchEffectiveFrom}
-                    onChange={(e) => setBatchEffectiveFrom(e.target.value)}
+                    onChange={setBatchEffectiveFrom}
+                    placeholder="เลือกวันที่มีผล"
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
@@ -2331,10 +2332,11 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                     สิ้นสุดวันที่ <span className="text-slate-400 font-normal dark:text-slate-500 dark:text-slate-400">(เว้นว่างถ้าไม่มีกำหนดสิ้นสุด)</span>
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
+                    min={batchEffectiveFrom || undefined}
                     value={batchEffectiveTo}
-                    onChange={(e) => setBatchEffectiveTo(e.target.value)}
+                    onChange={setBatchEffectiveTo}
+                    placeholder="เลือกวันที่สิ้นสุด"
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>

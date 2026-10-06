@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import { EmployeeType } from '@/types/employeeType';
 import { employeeTypeService } from '@/services/employeeTypeService';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { useToast } from '@/context/ToastContext';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface CreateContractModalProps {
   isOpen: boolean;
@@ -240,16 +241,11 @@ export default function CreateContractModal({
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => handleStartDateChange(e.target.value)}
-                required
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all pr-10"
-              />
-              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <ThaiDatePicker
+              value={startDate}
+              onChange={(val) => handleStartDateChange(val)}
+              required
+            />
           </div>
 
           {/* 4. วันที่สิ้นสุด / */}
@@ -257,15 +253,11 @@ export default function CreateContractModal({
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่สิ้นสุด / ครบทดลองงาน
             </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all pr-10"
-              />
-              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <ThaiDatePicker
+              value={endDate}
+              minDate={startDate || undefined}
+              onChange={(val) => setEndDate(val)}
+            />
             <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">
               เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด
             </p>

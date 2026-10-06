@@ -22,6 +22,7 @@ import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   WorkWeekDay,
@@ -588,12 +589,11 @@ export default function WorkCalendarPage() {
             <form onSubmit={handleSaveHoliday} className="space-y-4 pt-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">วันที่วันหยุด *</label>
-                <input
-                  type="date"
-                  required
+                <ThaiDatePicker
                   value={holidayForm.holidayDate}
-                  onChange={(e) => setHolidayForm({ ...holidayForm, holidayDate: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  onChange={(val) => setHolidayForm({ ...holidayForm, holidayDate: val })}
+                  placeholder="เลือกวันที่วันหยุด"
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 

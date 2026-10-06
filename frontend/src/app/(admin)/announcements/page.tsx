@@ -29,6 +29,7 @@ import {
   Tag
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { announcementService } from '@/services/announcementService';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -1132,11 +1133,10 @@ export default function AnnouncementsPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่เผยแพร่ประกาศ <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    required
+                  <ThaiDatePicker
                     value={formPublishedAt}
-                    onChange={(e) => setFormPublishedAt(e.target.value)}
+                    onChange={setFormPublishedAt}
+                    placeholder="เลือกวันที่เผยแพร่"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">
@@ -1148,11 +1148,11 @@ export default function AnnouncementsPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่สิ้นสุดการเผยแพร่ (ไม่ระบุก็ได้)
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
                     min={formPublishedAt || undefined}
                     value={formExpireAt}
-                    onChange={(e) => setFormExpireAt(e.target.value)}
+                    onChange={setFormExpireAt}
+                    placeholder="เลือกวันที่สิ้นสุด"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">

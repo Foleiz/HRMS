@@ -54,6 +54,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import { salaryService } from '@/services/salaryService';
 import { organizationService } from '@/services/organizationService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import {
   SalaryStructure,
   TaxBracket,
@@ -2479,11 +2480,10 @@ export default function PayrollPage() {
                         ตัดรอบเงินเบิก:{' '}
                         {claimCutoffEditing ? (
                           <>
-                            <input
-                              type="date"
+                            <ThaiDatePicker
                               value={claimCutoffDraft}
                               max={selectedPeriod.paymentDate || selectedPeriod.endDate}
-                              onChange={(e) => setClaimCutoffDraft(e.target.value)}
+                              onChange={setClaimCutoffDraft}
                               className="px-1.5 py-0.5 text-[11px] border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
                             />
                             <button
@@ -4316,21 +4316,20 @@ export default function PayrollPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันเริ่มคำนวณ</label>
-                  <input
-                    type="date"
-                    required
+                  <ThaiDatePicker
                     value={newPeriodForm.startDate}
-                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, startDate: e.target.value })}
+                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, startDate: val })}
+                    placeholder="เลือกวันเริ่มคำนวณ"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันสิ้นสุดคำนวณ</label>
-                  <input
-                    type="date"
-                    required
+                  <ThaiDatePicker
+                    min={newPeriodForm.startDate || undefined}
                     value={newPeriodForm.endDate}
-                    onChange={(e) => setNewPeriodForm({ ...newPeriodForm, endDate: e.target.value })}
+                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, endDate: val })}
+                    placeholder="เลือกวันสิ้นสุดคำนวณ"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                   />
                 </div>
@@ -4338,21 +4337,21 @@ export default function PayrollPage() {
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันกำหนดจ่ายเงิน</label>
-                <input
-                  type="date"
+                <ThaiDatePicker
                   value={newPeriodForm.paymentDate}
-                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, paymentDate: e.target.value })}
+                  onChange={(val) => setNewPeriodForm({ ...newPeriodForm, paymentDate: val })}
+                  placeholder="เลือกวันกำหนดจ่ายเงิน"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันตัดรอบเงินเบิกสวัสดิการ</label>
-                <input
-                  type="date"
+                <ThaiDatePicker
                   value={newPeriodForm.claimCutoffDate}
                   max={newPeriodForm.paymentDate || newPeriodForm.endDate || undefined}
-                  onChange={(e) => setNewPeriodForm({ ...newPeriodForm, claimCutoffDate: e.target.value })}
+                  onChange={(val) => setNewPeriodForm({ ...newPeriodForm, claimCutoffDate: val })}
+                  placeholder="เลือกวันตัดรอบเงินเบิกสวัสดิการ"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">

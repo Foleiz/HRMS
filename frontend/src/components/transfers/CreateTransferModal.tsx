@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -19,6 +19,7 @@ import { transferService } from '@/services/transferService';
 import { Employee } from '@/types/employee';
 import { Department, Position } from '@/types/organization';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface CreateTransferModalProps {
   isOpen: boolean;
@@ -379,16 +380,12 @@ export default function CreateTransferModal({
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
                 วันที่มีผล <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={effectiveDate}
-                  onChange={(e) => setEffectiveDate(e.target.value)}
-                  className="w-full h-10 pl-3.5 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
-                  required
-                />
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <ThaiDatePicker
+                value={effectiveDate}
+                onChange={setEffectiveDate}
+                placeholder="เลือกวันที่มีผล"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              />
             </div>
 
             <div className="space-y-1.5">

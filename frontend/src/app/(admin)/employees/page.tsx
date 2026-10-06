@@ -14,6 +14,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { confirmDelete } from '@/lib/sweetalert';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import {
   Search,
   Plus,
@@ -1879,14 +1880,13 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                           </label>
-                          <input
-                            type="date"
+                          <ThaiDatePicker
                             value={formData.birthDate}
-                            onChange={(e) => {
-                              setFormData({ ...formData, birthDate: e.target.value });
+                            onChange={(val) => {
+                              setFormData({ ...formData, birthDate: val });
                               clearFieldError('birthDate');
                             }}
-                            className={getFieldClass('birthDate')}
+                            error={hasAttemptedSubmit && Boolean(formErrors['birthDate'])}
                           />
                           {renderFieldError('birthDate')}
                         </div>
@@ -2456,16 +2456,15 @@ export default function EmployeesPage() {
                             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
                             </label>
-                            <input
-                              type="date"
+                            <ThaiDatePicker
                               value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
-                              onChange={(e) => {
+                              onChange={(val) => {
                                 const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].birthDate = e.target.value;
+                                list[activeFamilyIndex].birthDate = val;
                                 setFormData({ ...formData, familyMembers: list });
                                 clearFieldError(`family_${activeFamilyIndex}_birthDate`);
                               }}
-                              className={getFieldClass(`family_${activeFamilyIndex}_birthDate`)}
+                              error={hasAttemptedSubmit && Boolean(formErrors[`family_${activeFamilyIndex}_birthDate`])}
                             />
                             {renderFieldError(`family_${activeFamilyIndex}_birthDate`)}
                           </div>

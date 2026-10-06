@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
 import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
@@ -323,23 +324,19 @@ export default function EmployeeBackgroundEditor({
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     วันที่เริ่มงาน
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
                     value={currentWork.startDate ?? ''}
-                    onChange={(e) => updateWork(safeWorkIndex, { startDate: e.target.value })}
-                    className={INPUT}
+                    onChange={(val) => updateWork(safeWorkIndex, { startDate: val })}
                   />
                 </div>
                 <div className="md:col-span-2">
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     วันที่ออก
                   </label>
-                  <input
-                    type="date"
+                  <ThaiDatePicker
                     value={currentWork.endDate ?? ''}
-                    min={currentWork.startDate || undefined}
-                    onChange={(e) => updateWork(safeWorkIndex, { endDate: e.target.value })}
-                    className={INPUT}
+                    minDate={currentWork.startDate || undefined}
+                    onChange={(val) => updateWork(safeWorkIndex, { endDate: val })}
                   />
                 </div>
                 <div className="md:col-span-2">

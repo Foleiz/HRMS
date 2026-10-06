@@ -19,6 +19,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { AuditLogItem, UserAccount } from '@/types/settings';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 interface AuditLogTabProps {
   logs: AuditLogItem[];
@@ -504,17 +505,18 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 วันที่เริ่มต้น - สิ้นสุด
               </label>
               <div className="flex items-center gap-1.5">
-                <input
-                  type="date"
+                <ThaiDatePicker
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={setStartDate}
+                  placeholder="เริ่มต้น"
                   className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
                 />
                 <span className="text-slate-400 text-xs">-</span>
-                <input
-                  type="date"
+                <ThaiDatePicker
+                  min={startDate || undefined}
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={setEndDate}
+                  placeholder="สิ้นสุด"
                   className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
                 />
               </div>

@@ -5,6 +5,7 @@ import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
 import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -302,12 +303,10 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
               วันที่ใช้สิทธิ์ / วันที่ตามใบเสร็จ <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="date"
+            <ThaiDatePicker
               value={claimDate}
-              onChange={(e) => setClaimDate(e.target.value)}
+              onChange={(val) => setClaimDate(val)}
               required
-              className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
             />
           </div>
 
