@@ -6,6 +6,18 @@
 @custom-variant dark (&:where(.dark, .dark *):not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *));
 
 :root {
+  /* สีกราฟรายงาน (ชุดสีที่ผ่านการตรวจ CVD) — ใช้ผ่าน components/reports/ReportCharts.tsx */
+  --viz-s1: #2a78d6;
+  --viz-s2: #eb6834;
+  --viz-s3: #1baf7a;
+  --viz-good: #0ca30c;
+  --viz-warning: #fab219;
+  --viz-serious: #ec835a;
+  --viz-critical: #d03b3b;
+  --viz-neutral: #c3c2b7;
+  --viz-grid: #e2e8f0;
+  --viz-axis: #94a3b8;
+  --viz-surface: #ffffff;
   --background: #F8FAFC;
   --foreground: #1E293B;
   --font-sans: var(--font-prompt), sans-serif;
@@ -144,6 +156,13 @@ select:disabled {
 */
 html.dark {
   color-scheme: dark;
+  --viz-s1: #3987e5;
+  --viz-s2: #d95926;
+  --viz-s3: #199e70;
+  --viz-neutral: #5f5e5a;
+  --viz-grid: #2c3a4f;
+  --viz-axis: #64748b;
+  --viz-surface: #1e293b;
 }
 
 html.dark body {

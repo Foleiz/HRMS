@@ -8,6 +8,10 @@ export interface DailyDepartmentHeadcount {
   lateCount: number;
   earlyLeaveCount: number;
   absentCount: number;
+  /** ลา (อนุมัติแล้ว) */
+  leaveCount: number;
+  /** วันหยุด / ไม่ใช่วันทำงาน */
+  offCount: number;
   attendanceRate: number;
 }
 
@@ -18,6 +22,10 @@ export interface DailyHeadcountSummary {
   totalLate: number;
   totalEarlyLeave: number;
   totalAbsent: number;
+  totalLeave: number;
+  totalOff: number;
+  /** จำนวนคนที่ต้องมาทำงาน (ทั้งหมด − ลา − วันหยุด) */
+  totalExpected: number;
   overallAttendanceRate: number;
   departments: DailyDepartmentHeadcount[];
 }

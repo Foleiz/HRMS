@@ -1,5 +1,7 @@
 using System.Text;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Attendance.Services;
+using Hrms.Application.Features.Payroll;
 using Hrms.Application.Features.Reports.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +11,39 @@ public class OperationalReportService : IOperationalReportService
 {
     private readonly IHrmsDbContext _context;
 
-    public OperationalReportService(IHrmsDbContext context)
+    private readonly ICurrentUserService _currentUser;
+    private readonly IAesEncryptionService _crypto;
+
+    public OperationalReportService(IHrmsDbContext context, ICurrentUserService currentUser, IAesEncryptionService crypto)
     {
         _context = context;
+        _currentUser = currentUser;
+        _crypto = crypto;
     }
+
+    private static readonly string[] ClosedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+
+    /// <summary>ไฟล์ยื่นภาษี/ประกันสังคมใส่เลขบัตรเต็มได้เฉพาะ ADMIN / ฝ่ายการเงิน / ผู้มีสิทธิ์ภาษีเงินเดือน</summary>
+    private bool CanExportFullCitizenId() =>
+        _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER")
+        || PayrollAccess.IsFinance(_currentUser)
+        || _currentUser.HasPermission("PAYROLL_TAX_VIEW");
+
+    private string FullCitizenId(Hrms.Domain.Entities.Employee? e)
+    {
+        if (e == null) return string.Empty;
+        var raw = e.CitizenId;
+        if (string.IsNullOrWhiteSpace(raw) && e.CitizenIdEncrypted is { Length: > 0 })
+        {
+            try { raw = _crypto.Decrypt(e.CitizenIdEncrypted); } catch { raw = null; }
+        }
+        return new string((raw ?? string.Empty).Where(char.IsDigit).ToArray());
+    }
+
+    /// <summary>หัวไฟล์เตือนเมื่อรอบเงินเดือนยังไม่อนุมัติ (ตัวเลขอาจเปลี่ยน)</summary>
+    private static string PeriodWarning(string status) =>
+        ClosedPayrollStatuses.Contains(status) ? string.Empty
+        : "หมายเหตุ: รอบเงินเดือนนี้ยังไม่อนุมัติ ตัวเลขอาจเปลี่ยนแปลง — ยังไม่ควรใช้ยื่นจริง";
 
     /// <summary>
     /// ดึงรายงานภาพรวมอัตรากำลังคนประจำวัน (Daily Department Headcount Snapshot)
@@ -47,9 +78,15 @@ public class OperationalReportService : IOperationalReportService
         var assignments = await _context.EmployeeAssignments
             .Include(a => a.Employee)
             .Where(a => a.IsCurrent && a.EffectiveFrom <= date && (a.EffectiveTo == null || a.EffectiveTo >= date))
-            .Where(a => a.Employee != null)
+            .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        // วันหยุด/วันทำงานของบริษัท — ใช้ตัดสินคนที่ยังไม่มีบันทึกเวลาในวันนั้น
+        var schedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+        var isHoliday = await _context.Holidays.AsNoTracking()
+            .AnyAsync(h => h.CompanyId == CompanyWorkSchedule.DefaultCompanyId && h.HolidayDate == date, cancellationToken);
+        var isCompanyOffDay = isHoliday || !schedule.IsWorkingDay(date);
 
         // จัดกลุ่มพนักงานตามแผนก
         var empIds = assignments.Select(a => a.EmployeeId).Distinct().ToList();
@@ -77,12 +114,22 @@ public class OperationalReportService : IOperationalReportService
             int lateCount = 0;
             int earlyLeaveCount = 0;
             int absentCount = 0;
+            int leaveCount = 0;
+            int offCount = 0;
 
             foreach (var assign in deptAssignments)
             {
                 if (attendanceMap.TryGetValue(assign.EmployeeId, out var att))
                 {
-                    if (att.IsAbsent || att.Status == "ABSENT")
+                    if (att.Status == "LEAVE")
+                    {
+                        leaveCount++;
+                    }
+                    else if (att.Status == "HOLIDAY" || att.Status == "OFF")
+                    {
+                        offCount++;
+                    }
+                    else if (att.IsAbsent || att.Status == "ABSENT")
                     {
                         absentCount++;
                     }
@@ -112,14 +159,21 @@ public class OperationalReportService : IOperationalReportService
                         absentCount++;
                     }
                 }
+                else if (isCompanyOffDay)
+                {
+                    // ไม่มีบันทึกเวลา และเป็นวันหยุดบริษัท -> ไม่นับเป็นขาด
+                    offCount++;
+                }
                 else
                 {
-                    // ไม่มี record ใน attendance_daily ถือว่าขาด/ยังไม่มีข้อมูล
+                    // ไม่มี record ใน attendance_daily ในวันทำงาน ถือว่าขาด/ยังไม่มีข้อมูล
                     absentCount++;
                 }
             }
 
-            double rate = totalHeadcount > 0 ? Math.Min(100.0, Math.Round(((double)presentCount / totalHeadcount) * 100, 1)) : 0;
+            // อัตราเข้างานคิดจากคนที่ต้องมาทำงานจริง (ไม่รวมคนลา/วันหยุด)
+            int expected = totalHeadcount - leaveCount - offCount;
+            double rate = expected > 0 ? Math.Min(100.0, Math.Round(((double)presentCount / expected) * 100, 1)) : 0;
 
             result.Departments.Add(new DailyDepartmentHeadcountDto
             {
@@ -132,6 +186,8 @@ public class OperationalReportService : IOperationalReportService
                 LateCount = lateCount,
                 EarlyLeaveCount = earlyLeaveCount,
                 AbsentCount = absentCount,
+                LeaveCount = leaveCount,
+                OffCount = offCount,
                 AttendanceRate = rate
             });
 
@@ -140,10 +196,13 @@ public class OperationalReportService : IOperationalReportService
             result.TotalLate += lateCount;
             result.TotalEarlyLeave += earlyLeaveCount;
             result.TotalAbsent += absentCount;
+            result.TotalLeave += leaveCount;
+            result.TotalOff += offCount;
         }
 
-        result.OverallAttendanceRate = result.TotalEmployees > 0
-            ? Math.Min(100.0, Math.Round(((double)result.TotalPresent / result.TotalEmployees) * 100, 1))
+        result.TotalExpected = result.TotalEmployees - result.TotalLeave - result.TotalOff;
+        result.OverallAttendanceRate = result.TotalExpected > 0
+            ? Math.Min(100.0, Math.Round(((double)result.TotalPresent / result.TotalExpected) * 100, 1))
             : 0;
 
         return result;
@@ -163,13 +222,13 @@ public class OperationalReportService : IOperationalReportService
         var sb = new StringBuilder();
         // Header
         sb.AppendLine($"รายงานอัตรากำลังคนประจำวัน,วันที่ {date:dd/MM/yyyy}");
-        sb.AppendLine($"สรุปภาพรวม: พนักงานทั้งหมด {data.TotalEmployees} คน, มาทำงาน {data.TotalPresent} คน, มาสาย {data.TotalLate} คน, ออกก่อน {data.TotalEarlyLeave} คน, ขาดงาน {data.TotalAbsent} คน, อัตราการเข้างาน {data.OverallAttendanceRate}%");
+        sb.AppendLine($"สรุปภาพรวม: พนักงานทั้งหมด {data.TotalEmployees} คน, ต้องมาทำงาน {data.TotalExpected} คน, มาทำงาน {data.TotalPresent} คน, มาสาย {data.TotalLate} คน, ออกก่อน {data.TotalEarlyLeave} คน, ลา {data.TotalLeave} คน, วันหยุด {data.TotalOff} คน, ขาดงาน {data.TotalAbsent} คน, อัตราการเข้างาน {data.OverallAttendanceRate}%");
         sb.AppendLine();
-        sb.AppendLine("รหัสแผนก,ชื่อแผนก,ฝ่าย,พนักงานทั้งหมด (คน),มาปฏิบัติงาน (คน),มาสาย (คน),ออกก่อน (คน),ขาดงาน (คน),อัตราการเข้างาน (%)");
+        sb.AppendLine("รหัสแผนก,ชื่อแผนก,ฝ่าย,พนักงานทั้งหมด (คน),มาปฏิบัติงาน (คน),มาสาย (คน),ออกก่อน (คน),ลา (คน),วันหยุด (คน),ขาดงาน (คน),อัตราการเข้างาน (%)");
 
         foreach (var item in data.Departments)
         {
-            sb.AppendLine($"\"{EscapeCsv(item.DepartmentCode)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.DivisionName)}\",{item.TotalHeadcount},{item.PresentCount},{item.LateCount},{item.EarlyLeaveCount},{item.AbsentCount},{item.AttendanceRate}%");
+            sb.AppendLine($"\"{EscapeCsv(item.DepartmentCode)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.DivisionName)}\",{item.TotalHeadcount},{item.PresentCount},{item.LateCount},{item.EarlyLeaveCount},{item.LeaveCount},{item.OffCount},{item.AbsentCount},{item.AttendanceRate}%");
         }
 
         var preamble = Encoding.UTF8.GetPreamble();
@@ -419,6 +478,7 @@ public class OperationalReportService : IOperationalReportService
                 DepartmentName = p.SnapshotDepartmentName ?? "-",
                 PositionName = p.SnapshotPositionName ?? "-",
                 CitizenIdMasked = maskedCitizenId,
+                CitizenIdFull = FullCitizenId(p.Employee),
                 GrossIncome = p.TotalGrossIncome,
                 WithholdingTax = taxAmount,
                 SsoEmployee = ssoEmpAmount,
@@ -460,13 +520,18 @@ public class OperationalReportService : IOperationalReportService
         var sb = new StringBuilder();
         sb.AppendLine($"รายงานสรุปภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1),ประจำเดือน {monthName} พ.ศ. {thaiYear}");
         sb.AppendLine($"สรุปภาพรวม: จำนวนพนักงานทั้งหมด {data.TotalEmployees} คน, ผู้มีหน้าที่เสียภาษี {data.TaxableEmployeesCount} คน, เงินได้พึงประเมินรวม {data.TotalGrossIncome:N2} บาท, ภาษีหัก ณ ที่จ่ายรวม {data.TotalWithholdingTax:N2} บาท");
+        var fullId = CanExportFullCitizenId();
+        var warn = PeriodWarning(data.PeriodStatus);
+        if (warn.Length > 0) sb.AppendLine(warn);
+        if (!fullId) sb.AppendLine("หมายเหตุ: เลขประจำตัวประชาชนแสดงแบบปิดบางส่วน (ไฟล์ยื่นจริงต้องดาวน์โหลดโดยฝ่ายการเงิน)");
         sb.AppendLine();
         sb.AppendLine("ลำดับ,รหัสพนักงาน,เลขประจำตัวประชาชน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,เงินได้พึงประเมิน (บาท),ภาษีหัก ณ ที่จ่าย (บาท),เงินเดือนสุทธิ (บาท)");
 
         int seq = 1;
         foreach (var item in data.Items)
         {
-            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(item.CitizenIdMasked)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.WithholdingTax:F2},{item.NetSalary:F2}");
+            var cid = fullId && item.CitizenIdFull.Length > 0 ? item.CitizenIdFull : item.CitizenIdMasked;
+            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(cid)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.WithholdingTax:F2},{item.NetSalary:F2}");
         }
 
         // Summary Row
@@ -493,6 +558,10 @@ public class OperationalReportService : IOperationalReportService
         var sb = new StringBuilder();
         sb.AppendLine($"รายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10),ประจำเดือน {monthName} พ.ศ. {thaiYear}");
         sb.AppendLine($"สรุปภาพรวม: จำนวนผู้ประกันตน {data.TotalEmployees} คน, ค่าจ้างรวม {data.TotalGrossIncome:N2} บาท, สมทบส่วนผู้ประกันตน {data.TotalSsoEmployee:N2} บาท, สมทบส่วนนายจ้าง {data.TotalSsoEmployer:N2} บาท, รวมเงินสมทบนำส่งทั้งสิ้น {data.TotalSsoRemittance:N2} บาท");
+        var fullId = CanExportFullCitizenId();
+        var warn = PeriodWarning(data.PeriodStatus);
+        if (warn.Length > 0) sb.AppendLine(warn);
+        if (!fullId) sb.AppendLine("หมายเหตุ: เลขประจำตัวประชาชนแสดงแบบปิดบางส่วน (ไฟล์ยื่นจริงต้องดาวน์โหลดโดยฝ่ายการเงิน)");
         sb.AppendLine();
         sb.AppendLine("ลำดับ,รหัสพนักงาน,เลขประจำตัวประชาชน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,ค่าจ้างที่ใช้คำนวณ (บาท),เงินสมทบผู้ประกันตน (5%),เงินสมทบนายจ้าง (5%),รวมยอดนำส่ง (บาท)");
 
@@ -500,7 +569,8 @@ public class OperationalReportService : IOperationalReportService
         foreach (var item in data.Items)
         {
             decimal totalRemit = item.SsoEmployee + item.SsoEmployer;
-            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(item.CitizenIdMasked)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.SsoEmployee:F2},{item.SsoEmployer:F2},{totalRemit:F2}");
+            var cid = fullId && item.CitizenIdFull.Length > 0 ? item.CitizenIdFull : item.CitizenIdMasked;
+            sb.AppendLine($"{seq++},\"{EscapeCsv(item.EmployeeCode)}\",\"{EscapeCsv(cid)}\",\"{EscapeCsv(item.EmployeeName)}\",\"{EscapeCsv(item.DepartmentName)}\",\"{EscapeCsv(item.PositionName)}\",{item.GrossIncome:F2},{item.SsoEmployee:F2},{item.SsoEmployer:F2},{totalRemit:F2}");
         }
 
         // Summary Row
