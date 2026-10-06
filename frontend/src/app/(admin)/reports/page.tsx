@@ -24,7 +24,6 @@ import {
   ChartCard,
   Legend,
   MonthlyColumns,
-  ProportionBars,
   RankBars,
   VIZ,
   fmtBaht,
@@ -682,41 +681,7 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* กราฟสัดส่วนสถานะรายแผนก */}
-          {headcountData && headcountData.departments.some((d) => d.totalHeadcount > 0) && !isLoadingHeadcount && (
-            <ChartCard
-              title="สถานะการมาทำงานรายแผนก"
-              subtitle="ชี้ที่แถบเพื่อดูจำนวนแต่ละสถานะ · ตัวเลขหลังชื่อแผนก = อัตราการเข้างาน"
-              legend={
-                <Legend
-                  items={[
-                    { label: 'ตรงเวลา', color: VIZ.good },
-                    { label: 'มาสาย', color: VIZ.warning },
-                    { label: 'ขาด / ยังไม่ลงเวลา', color: VIZ.critical },
-                    { label: 'ลา', color: VIZ.s1 },
-                    { label: 'วันหยุด', color: VIZ.neutral },
-                  ]}
-                />
-              }
-            >
-              <ProportionBars
-                rows={headcountData.departments
-                  .filter((d) => d.totalHeadcount > 0)
-                  .map((d) => ({
-                    id: d.departmentId,
-                    label: d.departmentName,
-                    sub: `${Math.min(100, Math.max(0, d.attendanceRate))}%`,
-                    segments: [
-                      { key: 'present', label: 'ตรงเวลา', value: Math.max(0, d.presentCount - d.lateCount), color: VIZ.good },
-                      { key: 'late', label: 'มาสาย', value: d.lateCount, color: VIZ.warning },
-                      { key: 'absent', label: 'ขาด / ยังไม่ลงเวลา', value: d.absentCount, color: VIZ.critical },
-                      { key: 'leave', label: 'ลา', value: d.leaveCount ?? 0, color: VIZ.s1 },
-                      { key: 'off', label: 'วันหยุด', value: d.offCount ?? 0, color: VIZ.neutral },
-                    ],
-                  }))}
-              />
-            </ChartCard>
-          )}
+
 
           {/* Table Breakdown by Department */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
