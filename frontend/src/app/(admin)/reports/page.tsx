@@ -687,7 +687,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
-                <BarChart3 className="w-4 h-4 text-blue-600" />
+                <BarChart3 className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
                 ตารางสรุปอัตรากำลังคนจำแนกตามแผนก
               </h3>
               <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -716,7 +716,7 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-center text-emerald-700">มาทำงาน</th>
                       <th className="py-3 px-4 text-center text-amber-700">มาสาย</th>
                       <th className="py-3 px-4 text-center text-orange-700">ออกก่อน</th>
-                      <th className="py-3 px-4 text-center text-blue-700">ลา</th>
+                      <th className="py-3 px-4 text-center text-[#2F4C75] dark:text-[#B4C6E2]">ลา</th>
                       <th className="py-3 px-4 text-center text-slate-500">วันหยุด</th>
                       <th className="py-3 px-4 text-center text-rose-700">ขาดงาน</th>
                       <th className="py-3 px-4 text-center">อัตราการเข้างาน</th>
@@ -746,13 +746,13 @@ export default function ReportsPage() {
                         <td className="py-3 px-4 text-center font-semibold text-orange-600">
                           {dept.earlyLeaveCount}
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-blue-600">
+                        <td className="py-3 px-4 text-center font-semibold text-[#3F5F8C] dark:text-[#A3B8D8]">
                           {dept.leaveCount ?? 0}
                         </td>
                         <td className="py-3 px-4 text-center text-slate-500">
                           {dept.offCount ?? 0}
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-rose-600">
+                        <td className="py-3 px-4 text-center font-semibold text-[#A4545C] dark:text-[#E0A3A9]">
                           {dept.absentCount}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -852,7 +852,7 @@ export default function ReportsPage() {
                 className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
-                <RefreshCw className={`w-4 h-4 ${isLoadingLateness ? 'animate-spin text-blue-600' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isLoadingLateness ? 'animate-spin text-[#3F5F8C] dark:text-[#A3B8D8]' : ''}`} />
               </button>
             </div>
 
@@ -881,7 +881,7 @@ export default function ReportsPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-blue-600 font-medium">อัตราการเข้างานเฉลี่ย</span>
+                <span className="text-xs text-[#3F5F8C] dark:text-[#A3B8D8] font-medium">อัตราการเข้างานเฉลี่ย</span>
                 <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%</div>
               </div>
             </div>
@@ -1005,7 +1005,7 @@ export default function ReportsPage() {
                             <span className="text-slate-300">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-rose-600">
+                        <td className="py-3 px-4 text-center font-bold text-[#A4545C] dark:text-[#E0A3A9]">
                           {item.absentDays > 0 ? `${item.absentDays} วัน` : <span className="text-slate-300 font-normal">-</span>}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -1110,7 +1110,7 @@ export default function ReportsPage() {
                 className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
-                <RefreshCw className={`w-4 h-4 ${isLoadingTax ? 'animate-spin text-blue-600' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isLoadingTax ? 'animate-spin text-[#3F5F8C] dark:text-[#A3B8D8]' : ''}`} />
               </button>
             </div>
 
@@ -1143,7 +1143,7 @@ export default function ReportsPage() {
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
-                  <DollarSign className="w-4 h-4 text-blue-600" />
+                  <DollarSign className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
                 </div>
                 <div className="text-2xl font-extrabold text-[#0B2046]">
                   {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1154,24 +1154,24 @@ export default function ReportsPage() {
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-rose-600 font-medium">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                  <Receipt className="w-4 h-4 text-rose-600" />
+                  <span className="text-xs text-[#A4545C] dark:text-[#E0A3A9] font-medium">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
+                  <Receipt className="w-4 h-4 text-[#A4545C] dark:text-[#E0A3A9]" />
                 </div>
-                <div className="text-2xl font-extrabold text-rose-600">
+                <div className="text-2xl font-extrabold text-[#A4545C] dark:text-[#E0A3A9]">
                   {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
-                <div className="text-2xs text-rose-500">
+                <div className="text-2xs text-[#A4545C] dark:text-[#E0A3A9] opacity-90">
                   มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
                 </div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-blue-600 font-medium">นำส่งประกันสังคม (สปส. 1-10)</span>
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs text-[#3F5F8C] dark:text-[#A3B8D8] font-medium">นำส่งประกันสังคม (สปส. 1-10)</span>
+                  <ShieldCheck className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
                 </div>
-                <div className="text-2xl font-extrabold text-blue-700">
+                <div className="text-2xl font-extrabold text-[#2F4C75] dark:text-[#B4C6E2]">
                   {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
                 </div>
