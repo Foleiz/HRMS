@@ -896,8 +896,8 @@ export default function OrganizationPage() {
         </nav>
       </div>
 
-      {/* 4. Tab Content Panels */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+      {/* 4. Tab Content Panels (แท็บแผนผังองค์กรมีกรอบของตัวเอง จึงซ่อนกรอบนี้) */}
+      <div className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm ${activeTab === 'orgchart' ? 'hidden' : ''}`}>
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
