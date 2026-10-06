@@ -19,6 +19,7 @@ import { CertificatePreviewModal } from '@/components/documents/CertificatePrevi
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { toast } from '@/context/ToastContext';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 225;
@@ -324,7 +325,7 @@ export default function CertificatePage() {
             <div className={`${CARD} flex-1 space-y-5`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอรับรอง *</label>
-                <select
+                <CustomSelect
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
@@ -336,7 +337,7 @@ export default function CertificatePage() {
                       {t.certificateName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>

@@ -26,6 +26,7 @@ import { masterDataService } from '@/services/masterDataService';
 import { DocumentTypeItem } from '@/types/master';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { toast } from '@/context/ToastContext';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 200;
@@ -392,7 +393,7 @@ export default function GeneralDocumentPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ประเภทเอกสาร *</label>
                 {!isCustomType ? (
-                  <select
+                  <CustomSelect
                     value={documentType}
                     onChange={(e) => {
                       if (e.target.value === 'CUSTOM') {
@@ -410,7 +411,7 @@ export default function GeneralDocumentPage() {
                       </option>
                     ))}
                     <option value="CUSTOM">+ ระบุประเภทอื่น ๆ ด้วยตนเอง</option>
-                  </select>
+                  </CustomSelect>
                 ) : (
                   <div className="flex items-center gap-1.5">
                     <input

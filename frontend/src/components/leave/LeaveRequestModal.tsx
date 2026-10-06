@@ -5,6 +5,7 @@ import { X, Loader2, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateLeaveRequestPayload } from '@/types/leave';
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface LeaveRequestModalProps {
   isOpen: boolean;
@@ -157,7 +158,7 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประเภทการลา</label>
-            <select
+            <CustomSelect
               value={leaveTypeId}
               onChange={(e) => setLeaveTypeId(e.target.value ? Number(e.target.value) : '')}
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -169,7 +170,7 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
                   {t.leaveName} ({t.leaveCode})
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

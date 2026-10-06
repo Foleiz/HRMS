@@ -30,6 +30,7 @@ import {
   Sparkles,
   PieChart as PieChartIcon,
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function MySalaryPage() {
   const router = useRouter();
@@ -651,7 +652,7 @@ export default function MySalaryPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-slate-600 dark:text-slate-400">แสดงผล</span>
-              <select
+              <CustomSelect
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
@@ -664,7 +665,7 @@ export default function MySalaryPage() {
                 <option value={50}>50 รายการ / หน้า</option>
                 <option value={100}>100 รายการ / หน้า</option>
                 <option value={200}>200 รายการ / หน้า</option>
-              </select>
+              </CustomSelect>
               <span className="text-slate-400">
                 (แสดง {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ)
               </span>

@@ -1889,14 +1889,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะบริษัท</label>
-                <select
+                <CustomSelect
                   value={companyForm.status}
                   onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
                   <option value="INACTIVE">ปิดใช้งาน (INACTIVE)</option>
-                </select>
+                </CustomSelect>
               </div>
             </div>
 
@@ -2157,14 +2157,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <select
+                <CustomSelect
                   value={divisionForm.status}
                   onChange={(e) => setDivisionForm({ ...divisionForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
@@ -2203,7 +2203,7 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveDept} className="space-y-4 pt-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย *</label>
-                <select
+                <CustomSelect
                   required
                   value={deptForm.divisionId}
                   onChange={(e) => setDeptForm({ ...deptForm, divisionId: Number(e.target.value) })}
@@ -2214,7 +2214,7 @@ export default function OrganizationPage() {
                       {d.divisionName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>
@@ -2247,14 +2247,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <select
+                <CustomSelect
                   value={deptForm.status}
                   onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
@@ -2293,7 +2293,7 @@ export default function OrganizationPage() {
             <form onSubmit={handleSavePos} className="space-y-4 pt-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก *</label>
-                <select
+                <CustomSelect
                   required
                   value={posForm.departmentId}
                   onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
@@ -2304,12 +2304,12 @@ export default function OrganizationPage() {
                       {d.departmentName} ({d.divisionName})
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ระดับตำแหน่ง</label>
-                <select
+                <CustomSelect
                   value={posForm.employeeLevelId || ''}
                   onChange={(e) => setPosForm({ ...posForm, employeeLevelId: e.target.value ? Number(e.target.value) : undefined })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
@@ -2320,7 +2320,7 @@ export default function OrganizationPage() {
                       {lvl.levelCode} - {lvl.levelName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>
@@ -2350,14 +2350,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <select
+                <CustomSelect
                   value={posForm.status}
                   onChange={(e) => setPosForm({ ...posForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ทำงานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ทำงาน</option>
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
@@ -2418,7 +2418,7 @@ export default function OrganizationPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ *</label>
-                  <select
+                  <CustomSelect
                     value={benefitForm.category}
                     onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
                     className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
@@ -2428,7 +2428,7 @@ export default function OrganizationPage() {
                         {item.label}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div>
@@ -2452,7 +2452,7 @@ export default function OrganizationPage() {
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       รูปแบบการให้สิทธิ์ / เบิกจ่าย *
                     </label>
-                    <select
+                    <CustomSelect
                       value={benefitForm.payoutType || 'REIMBURSEMENT'}
                       onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
@@ -2460,7 +2460,7 @@ export default function OrganizationPage() {
                       <option value="IN_KIND">ตามระเบียบบริษัท</option>
                       <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
                       <option value="PAYROLL">จ่ายในเงินเดือน</option>
-                    </select>
+                    </CustomSelect>
                   </div>
 
                   <div>
@@ -2495,7 +2495,7 @@ export default function OrganizationPage() {
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         รอบการให้สิทธิ์
                       </label>
-                      <select
+                      <CustomSelect
                         value={benefitForm.defaultFrequency || 'YEARLY'}
                         onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
@@ -2504,7 +2504,7 @@ export default function OrganizationPage() {
                         <option value="MONTHLY">ต่อเดือน (Monthly)</option>
                         <option value="DAILY">ต่อวัน (Daily)</option>
                         <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
                 </div>
@@ -2537,14 +2537,14 @@ export default function OrganizationPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
-                  <select
+                  <CustomSelect
                     value={benefitForm.status}
                     onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
                     className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
                   >
                     <option value="ACTIVE">เปิดใช้งาน</option>
                     <option value="INACTIVE">ปิดใช้งาน</option>
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
 
@@ -2599,14 +2599,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <select
+                <CustomSelect
                   value={levelForm.status}
                   onChange={(e) => setLevelForm({ ...levelForm, status: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
@@ -3119,7 +3119,7 @@ export default function OrganizationPage() {
               {/* ธนาคาร */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ *</label>
-                <select
+                <CustomSelect
                   required
                   value={bankAccountForm.bankId}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankId: Number(e.target.value) })}
@@ -3131,7 +3131,7 @@ export default function OrganizationPage() {
                       [{b.bankCode}] {b.bankName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* เลขที่บัญชี */}
@@ -3179,14 +3179,14 @@ export default function OrganizationPage() {
               {/* สถานะ */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะการใช้งาน</label>
-                <select
+                <CustomSelect
                   value={bankAccountForm.status}
                   onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 >
                   <option value="ACTIVE">เปิดใช้งาน (ACTIVE)</option>
                   <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Action Buttons */}

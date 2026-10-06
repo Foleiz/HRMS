@@ -19,6 +19,7 @@ import {
 import { benefitService } from '@/services/benefitService';
 import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface ManageBenefitsModalProps {
   isOpen: boolean;
@@ -258,7 +259,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full sm:w-64 px-3.5 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
               />
-              <select
+              <CustomSelect
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
@@ -270,7 +271,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 <option value="WELLNESS">กิจกรรม & สันทนาการ</option>
                 <option value="FINANCIAL">การเงิน & กองทุน</option>
                 <option value="OTHER">อื่นๆ</option>
-              </select>
+              </CustomSelect>
             </div>
 
             {!isFormOpen && (
@@ -322,7 +323,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     หมวดหมู่สวัสดิการ
                   </label>
-                  <select
+                  <CustomSelect
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
@@ -333,28 +334,28 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     <option value="FINANCIAL">การเงิน & กองทุน (FINANCIAL)</option>
                     <option value="STATUTORY">กฎหมายแรงงาน (STATUTORY)</option>
                     <option value="OTHER">ทั่วไป / อื่นๆ (OTHER)</option>
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     สถานะการใช้งาน
                   </label>
-                  <select
+                  <CustomSelect
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
                   >
                     <option value="ACTIVE">เปิดใช้งาน (Active)</option>
                     <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     รูปแบบการให้สิทธิ์ / เบิกจ่าย *
                   </label>
-                  <select
+                  <CustomSelect
                     value={payoutType}
                     onChange={(e) => setPayoutType(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
@@ -362,7 +363,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     <option value="IN_KIND">ตามระเบียบบริษัท</option>
                     <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
                     <option value="PAYROLL">จ่ายในรอบเงินเดือน</option>
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div>
@@ -392,7 +393,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     รอบการให้สิทธิ์
                   </label>
-                  <select
+                  <CustomSelect
                     value={defaultFrequency}
                     onChange={(e) => setDefaultFrequency(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
@@ -401,7 +402,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     <option value="MONTHLY">ต่อเดือน (Monthly)</option>
                     <option value="DAILY">ต่อวัน (Daily)</option>
                     <option value="PER_OCCURRENCE">ต่อครั้ง (Per Occurrence)</option>
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 <div className="sm:col-span-2">

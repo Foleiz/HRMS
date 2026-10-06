@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
 import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
@@ -153,7 +154,7 @@ export default function EmployeeBackgroundEditor({
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     ระดับการศึกษา <span className="text-rose-500">*</span>
                   </label>
-                  <select
+                  <CustomSelect
                     value={currentEdu.educationLevel}
                     onChange={(e) => updateEdu(safeEduIndex, { educationLevel: e.target.value })}
                     className={`${INPUT} cursor-pointer`}
@@ -165,7 +166,7 @@ export default function EmployeeBackgroundEditor({
                     {currentEdu.educationLevel && !EDUCATION_LEVELS.includes(currentEdu.educationLevel) && (
                       <option value={currentEdu.educationLevel}>{currentEdu.educationLevel}</option>
                     )}
-                  </select>
+                  </CustomSelect>
                 </div>
                 <div className="md:col-span-4">
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
@@ -195,7 +196,7 @@ export default function EmployeeBackgroundEditor({
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     ปีที่สำเร็จ (พ.ศ.)
                   </label>
-                  <select
+                  <CustomSelect
                     value={currentEdu.graduationYear ?? ''}
                     onChange={(e) => updateEdu(safeEduIndex, { graduationYear: e.target.value ? Number(e.target.value) : undefined })}
                     className={`${INPUT} cursor-pointer`}
@@ -204,7 +205,7 @@ export default function EmployeeBackgroundEditor({
                     {YEARS.map((y) => (
                       <option key={y} value={y}>{y}</option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
                 <div className="md:col-span-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">

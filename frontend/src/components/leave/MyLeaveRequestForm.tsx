@@ -6,6 +6,7 @@ import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveReques
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -421,7 +422,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 flex-1 space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอลา *</label>
-              <select
+              <CustomSelect
                 value={leaveTypeId}
                 onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -441,7 +442,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                     </option>
                   );
                 })}
-              </select>
+              </CustomSelect>
               {leaveTypes.length === 0 && (
                 <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
               )}

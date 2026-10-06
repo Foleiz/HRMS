@@ -39,6 +39,7 @@ import { Department, EmployeeLevel } from '@/types/organization';
 import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -532,7 +533,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
               {/* Doc Type Filter */}
               <div className="relative">
-                <select
+                <CustomSelect
                   value={docTypeFilter}
                   onChange={(e) => setDocTypeFilter(e.target.value)}
                   className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
@@ -543,13 +544,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                       {DOCUMENT_TYPE_LABELS[dt]}
                     </option>
                   ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 pointer-events-none" />
+                </CustomSelect>
               </div>
 
               {/* Dept Filter */}
               <div className="relative">
-                <select
+                <CustomSelect
                   value={deptFilter}
                   onChange={(e) => setDeptFilter(e.target.value)}
                   className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
@@ -560,13 +560,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                       {d.departmentName}
                     </option>
                   ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 pointer-events-none" />
+                </CustomSelect>
               </div>
 
               {/* Status Filter */}
               <div className="relative">
-                <select
+                <CustomSelect
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
@@ -574,8 +573,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                   <option value="">สถานะ: ทั้งหมด</option>
                   <option value="ACTIVE">ใช้งานอยู่</option>
                   <option value="INACTIVE">ปิดใช้งาน</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 pointer-events-none" />
+                </CustomSelect>
               </div>
             </div>
 
@@ -836,7 +834,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         ประเภทเอกสาร <span className="text-rose-500">*</span>
                       </label>
-                      <select
+                      <CustomSelect
                         value={form.documentType}
                         onChange={(e) => setForm({ ...form, documentType: e.target.value })}
                         className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
@@ -846,7 +844,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             {idx + 1}. {DOCUMENT_TYPE_LABELS[dt]}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
 
@@ -868,7 +866,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         แผนกที่บังคับใช้
                       </label>
-                      <select
+                      <CustomSelect
                         value={form.departmentId ?? ''}
                         onChange={(e) =>
                           setForm({
@@ -884,14 +882,14 @@ export const ApprovalFlowsTab: React.FC = () => {
                             {d.departmentName}
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         ระดับตำแหน่งที่บังคับใช้
                       </label>
-                      <select
+                      <CustomSelect
                         value={form.levelId ?? ''}
                         onChange={(e) =>
                           setForm({
@@ -907,7 +905,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             {l.levelName} ({l.levelCode})
                           </option>
                         ))}
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
 
@@ -1021,7 +1019,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               ประเภทผู้อนุมัติ
                             </label>
-                            <select
+                            <CustomSelect
                               value={step.approverType}
                               onChange={(e) => {
                                 updateStep(idx, {
@@ -1043,14 +1041,14 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   {APPROVER_TYPE_LABELS[at]}
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               ถ้าหาผู้อนุมัติไม่เจอ
                             </label>
-                            <select
+                            <CustomSelect
                               value={step.fallbackAction ?? 'HR'}
                               onChange={(e) =>
                                 updateStep(idx, { fallbackAction: e.target.value, isRequired: e.target.value !== 'SKIP' })
@@ -1062,7 +1060,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   {label}
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
                           </div>
                         </div>
 
@@ -1081,7 +1079,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               เลือกพนักงานผู้มีอำนาจอนุมัติ <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <CustomSelect
                               value={step.approverEmployeeId ?? ''}
                               onChange={(e) =>
                                 updateStep(idx, {
@@ -1097,7 +1095,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   {emp.positionName ? `(${emp.positionName})` : ''}
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
                           </div>
                         )}
 
@@ -1107,7 +1105,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                               เลือกบทบาทผู้มีสิทธิ์อนุมัติ <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <CustomSelect
                               value={step.approverRoleId ?? ''}
                               onChange={(e) =>
                                 updateStep(idx, {
@@ -1122,12 +1120,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   {r.roleName} ({r.roleCode})
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
 
                             <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1 mt-3">
                               ขอบเขตผู้อนุมัติ
                             </label>
-                            <select
+                            <CustomSelect
                               value={step.approverScope ?? 'ORG'}
                               onChange={(e) => updateStep(idx, { approverScope: e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
@@ -1137,7 +1135,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                   {label}
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
                             <p
                               className={`text-[11px] mt-1 ${ (step.approverScope ?? 'ORG') === 'ORG' ? 'text-amber-600' : 'text-slate-400'
                               }`}
@@ -1152,7 +1150,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">ผู้อนุมัติแทน</label>
-                              <select
+                              <CustomSelect
                                 value={step.delegateType ?? ''}
                                 onChange={(e) =>
                                   updateStep(idx, {
@@ -1167,12 +1165,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 <option value="">ไม่มี</option>
                                 <option value="EMPLOYEE">ระบุตัวบุคคล</option>
                                 <option value="ROLE">ตามบทบาท</option>
-                              </select>
+                              </CustomSelect>
                             </div>
                             {step.delegateType && (
                               <div>
                                 <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">อนุมัติแทนเมื่อ</label>
-                                <select
+                                <CustomSelect
                                   value={step.delegateMode ?? 'WHEN_ABSENT'}
                                   onChange={(e) => updateStep(idx, { delegateMode: e.target.value })}
                                   className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
@@ -1182,13 +1180,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                                       {label}
                                     </option>
                                   ))}
-                                </select>
+                                </CustomSelect>
                               </div>
                             )}
                           </div>
 
                           {step.delegateType === 'EMPLOYEE' && (
-                            <select
+                            <CustomSelect
                               value={step.delegateEmployeeId ?? ''}
                               onChange={(e) =>
                                 updateStep(idx, { delegateEmployeeId: e.target.value ? Number(e.target.value) : null })
@@ -1204,12 +1202,12 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     {emp.positionName ? `(${emp.positionName})` : ''}
                                   </option>
                                 ))}
-                            </select>
+                            </CustomSelect>
                           )}
 
                           {step.delegateType === 'ROLE' && (
                             <div className="grid grid-cols-2 gap-3">
-                              <select
+                              <CustomSelect
                                 value={step.delegateRoleId ?? ''}
                                 onChange={(e) =>
                                   updateStep(idx, { delegateRoleId: e.target.value ? Number(e.target.value) : null })
@@ -1222,8 +1220,8 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     {r.roleName} ({r.roleCode})
                                   </option>
                                 ))}
-                              </select>
-                              <select
+                              </CustomSelect>
+                              <CustomSelect
                                 value={step.delegateScope ?? 'ORG'}
                                 onChange={(e) => updateStep(idx, { delegateScope: e.target.value })}
                                 className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
@@ -1233,7 +1231,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                     {label}
                                   </option>
                                 ))}
-                              </select>
+                              </CustomSelect>
                             </div>
                           )}
 

@@ -464,7 +464,7 @@ export const RecentTransactionsTable: React.FC = () => {
         {/* Right: Page Size display */}
         <div className="flex-1 flex items-center justify-end gap-1.5 text-xs text-slate-500 dark:text-slate-400">
           <span>แสดง</span>
-          <select
+          <CustomSelect
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -477,7 +477,7 @@ export const RecentTransactionsTable: React.FC = () => {
             <option value={50}>50</option>
             <option value={100}>100</option>
             <option value={200}>200</option>
-          </select>
+          </CustomSelect>
           <span>เอกสาร</span>
         </div>
       </div>

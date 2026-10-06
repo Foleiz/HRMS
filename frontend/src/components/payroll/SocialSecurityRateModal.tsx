@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { SocialSecurityRate, UpdateSocialSecurityRatePayload } from '@/types/payroll';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface SocialSecurityRateModalProps {
   isOpen: boolean;
@@ -335,14 +336,14 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 สถานะการใช้งาน
               </label>
-              <select
+              <CustomSelect
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 cursor-pointer"
               >
                 <option value="ACTIVE">เปิดใช้งาน (ACTIVE) — นำไปใช้คำนวณในรอบเงินเดือน</option>
                 <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
-              </select>
+              </CustomSelect>
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface Props {
   isOpen: boolean;
@@ -225,7 +226,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
               {canEdit && (
                 <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">เพิ่มรายการรายได้ / รายหัก (ระบุเอง)</h4>
-                  <select
+                  <CustomSelect
                     value={newItemId}
                     onChange={(e) => setNewItemId(e.target.value)}
                     disabled={saving}
@@ -242,7 +243,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                         <option key={i.id} value={i.id}>{i.itemName} ({i.itemCode})</option>
                       ))}
                     </optgroup>
-                  </select>
+                  </CustomSelect>
                   <div className="flex gap-2">
                     <input
                       type="number"

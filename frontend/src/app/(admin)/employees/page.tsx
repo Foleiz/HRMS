@@ -1351,7 +1351,7 @@ export default function EmployeesPage() {
           {/* ซ้ายล่าง: Rows per page selector */}
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
             <span>แสดง</span>
-            <select
+            <CustomSelect
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -1364,7 +1364,7 @@ export default function EmployeesPage() {
               <option value={50}>50</option>
               <option value={100}>100</option>
               <option value={200}>200</option>
-            </select>
+            </CustomSelect>
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">
               (ทั้งหมด {filteredEmployees.length} รายการ)
@@ -1682,7 +1682,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ตำแหน่ง <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.positionId ?? ''}
                             onChange={(e) => {
                               const id = e.target.value ? Number(e.target.value) : undefined;
@@ -1707,7 +1707,7 @@ export default function EmployeesPage() {
                                   ))}
                               </optgroup>
                             ))}
-                          </select>
+                          </CustomSelect>
                           {positions.length === 0 && (
                             <p className="text-[11px] text-amber-600 mt-1">ยังไม่มีตำแหน่ง — สร้างที่เมนู โครงสร้างองค์กร → จัดการตำแหน่ง</p>
                           )}
@@ -1718,7 +1718,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ประเภทพนักงาน <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.employeeType}
                             onChange={(e) => {
                               setFormData({ ...formData, employeeType: e.target.value });
@@ -1732,7 +1732,7 @@ export default function EmployeesPage() {
                                 {name}
                               </option>
                             ))}
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('employeeType')}
                         </div>
 
@@ -1740,7 +1740,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.prefix}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -1759,7 +1759,7 @@ export default function EmployeesPage() {
                             <option value="นาย">นาย</option>
                             <option value="นางสาว">นางสาว</option>
                             <option value="นาง">นาง</option>
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('prefix')}
                         </div>
 
@@ -1820,7 +1820,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             เพศ (Gender) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.gender}
                             onChange={(e) => {
                               setFormData({ ...formData, gender: e.target.value });
@@ -1831,7 +1831,7 @@ export default function EmployeesPage() {
                             <option value="">เลือกเพศ</option>
                             <option value="ชาย">ชาย</option>
                             <option value="หญิง">หญิง</option>
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('gender')}
                         </div>
 
@@ -1854,7 +1854,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.religion}
                             onChange={(e) => {
                               setFormData({ ...formData, religion: e.target.value });
@@ -1868,7 +1868,7 @@ export default function EmployeesPage() {
                                 {r.name}
                               </option>
                             ))}
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('religion')}
                         </div>
                       </div>
@@ -1895,7 +1895,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.maritalStatus}
                             onChange={(e) => {
                               setFormData({ ...formData, maritalStatus: e.target.value });
@@ -1909,7 +1909,7 @@ export default function EmployeesPage() {
                                 {m.name}
                               </option>
                             ))}
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('maritalStatus')}
                         </div>
 
@@ -1917,7 +1917,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.militaryStatus}
                             onChange={(e) => {
                               setFormData({ ...formData, militaryStatus: e.target.value });
@@ -1929,7 +1929,7 @@ export default function EmployeesPage() {
                             <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
                             <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
                             <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('militaryStatus')}
                         </div>
 
@@ -2113,7 +2113,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ระดับวุฒิการศึกษา (Education level) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.educationLevel}
                             onChange={(e) => {
                               setFormData({ ...formData, educationLevel: e.target.value });
@@ -2128,7 +2128,7 @@ export default function EmployeesPage() {
                             <option value="ปริญญาตรี">ปริญญาตรี</option>
                             <option value="ปริญญาโท">ปริญญาโท</option>
                             <option value="ปริญญาเอก">ปริญญาเอก</option>
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('educationLevel')}
                         </div>
 
@@ -2170,7 +2170,7 @@ export default function EmployeesPage() {
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             ปีที่สำเร็จการศึกษา (Graduation year) <span className="text-rose-500">*</span>
                           </label>
-                          <select
+                          <CustomSelect
                             value={formData.graduationYear}
                             onChange={(e) => {
                               setFormData({ ...formData, graduationYear: Number(e.target.value) });
@@ -2182,7 +2182,7 @@ export default function EmployeesPage() {
                             {[2570, 2569, 2568, 2567, 2566, 2565, 2564, 2563, 2562, 2561, 2560].map((y) => (
                               <option key={y} value={y}>{y}</option>
                             ))}
-                          </select>
+                          </CustomSelect>
                           {renderFieldError('graduationYear')}
                         </div>
 
@@ -2216,7 +2216,7 @@ export default function EmployeesPage() {
                             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               ชื่อธนาคาร (Bank name) <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <CustomSelect
                               value={formData.bankName}
                               onChange={(e) => {
                                 const newBank = e.target.value;
@@ -2243,7 +2243,7 @@ export default function EmployeesPage() {
                                   {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
                                 </option>
                               ))}
-                            </select>
+                            </CustomSelect>
                             {renderFieldError('bankName')}
                           </div>
 
@@ -2349,7 +2349,7 @@ export default function EmployeesPage() {
                             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <CustomSelect
                               value={formData.familyMembers[activeFamilyIndex].relationshipType}
                               onChange={(e) => {
                                 const list = [...(formData.familyMembers || [])];
@@ -2365,7 +2365,7 @@ export default function EmployeesPage() {
                               <option value="คู่สมรส">คู่สมรส</option>
                               <option value="บุตร">บุตร</option>
                               <option value="พี่น้อง">พี่น้อง</option>
-                            </select>
+                            </CustomSelect>
                             {renderFieldError(`family_${activeFamilyIndex}_relationshipType`)}
                           </div>
 
@@ -2373,7 +2373,7 @@ export default function EmployeesPage() {
                             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                               คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <CustomSelect
                               value={formData.familyMembers[activeFamilyIndex].prefix || ''}
                               onChange={(e) => {
                                 const list = [...(formData.familyMembers || [])];
@@ -2389,7 +2389,7 @@ export default function EmployeesPage() {
                               <option value="นาง">นาง</option>
                               <option value="เด็กชาย">เด็กชาย</option>
                               <option value="เด็กหญิง">เด็กหญิง</option>
-                            </select>
+                            </CustomSelect>
                             {renderFieldError(`family_${activeFamilyIndex}_prefix`)}
                           </div>
 
@@ -2490,7 +2490,7 @@ export default function EmployeesPage() {
                         <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                           value={formData.emergencyContact?.relationship || ''}
                           onChange={(e) => {
                             setFormData({
@@ -2512,7 +2512,7 @@ export default function EmployeesPage() {
                           <option value="ญาติ">ญาติ</option>
                           <option value="เพื่อน">เพื่อน</option>
                           <option value="อื่นๆ">อื่นๆ</option>
-                        </select>
+                        </CustomSelect>
                         {renderFieldError('emergency_relationship')}
                       </div>
 
@@ -2520,7 +2520,7 @@ export default function EmployeesPage() {
                         <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                           คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                           value={formData.emergencyContact?.prefix || ''}
                           onChange={(e) => {
                             setFormData({
@@ -2538,7 +2538,7 @@ export default function EmployeesPage() {
                           <option value="นาย">นาย</option>
                           <option value="นางสาว">นางสาว</option>
                           <option value="นาง">นาง</option>
-                        </select>
+                        </CustomSelect>
                         {renderFieldError('emergency_prefix')}
                       </div>
 
