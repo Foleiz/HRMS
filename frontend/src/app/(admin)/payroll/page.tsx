@@ -147,7 +147,7 @@ function TablePagination({
         </span>
         <div className="flex items-center gap-1.5">
           <span className="text-slate-400">แสดงหน้าละ:</span>
-          <select
+          <CustomSelect
             value={pageSize}
             onChange={(e) => {
               const newSize = Number(e.target.value);
@@ -161,7 +161,7 @@ function TablePagination({
                 {opt} {unitText}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </div>
       </div>
 
@@ -2390,7 +2390,7 @@ export default function PayrollPage() {
                     {periods.length > 0 ? (
                       <>
                         <div className="relative inline-block">
-                          <select
+                          <CustomSelect
                             value={selectedPeriod?.id || ''}
                             onChange={(e) => handlePeriodChange(Number(e.target.value))}
                             className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
@@ -2400,8 +2400,7 @@ export default function PayrollPage() {
                                 {p.periodName}
                               </option>
                             ))}
-                          </select>
-                          <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </CustomSelect>
                         </div>
                         <button
                           type="button"
@@ -2583,7 +2582,7 @@ export default function PayrollPage() {
 
                       {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && canAccessHrView && (
                         <div className="h-9 inline-flex items-center border border-amber-200 rounded-xl overflow-hidden shadow-2xs">
-                          <select
+                          <CustomSelect
                             value={effectiveBonusYear}
                             onChange={(e) => setBonusPayoutYear(Number(e.target.value))}
                             disabled={isAddingBonus}
@@ -2593,7 +2592,7 @@ export default function PayrollPage() {
                             {[defaultBonusYear - 1, defaultBonusYear, defaultBonusYear + 1].map((y) => (
                               <option key={y} value={y}>โบนัสปี {y + 543}</option>
                             ))}
-                          </select>
+                          </CustomSelect>
                           <button
                             onClick={handleAddBonusPayout}
                             disabled={isAddingBonus || !selectedPeriod}
@@ -4262,7 +4261,7 @@ export default function PayrollPage() {
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน (1-12)</label>
-                  <select
+                  <CustomSelect
                     value={newPeriodForm.month}
                     onChange={(e) => handleMonthChange(parseInt(e.target.value))}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
@@ -4272,7 +4271,7 @@ export default function PayrollPage() {
                         {idx + 1} - {name}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
 

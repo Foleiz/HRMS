@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateMyLeaveRequestPayload } from '@/types/leave';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface MyLeaveRequestModalProps {
   isOpen: boolean;
@@ -145,7 +146,7 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประเภทการลา</label>
-            <select
+            <CustomSelect
               value={leaveTypeId}
               onChange={(e) => setLeaveTypeId(e.target.value ? Number(e.target.value) : '')}
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -154,10 +155,10 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
               <option value="">-- เลือกประเภทการลา --</option>
               {leaveTypes.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.leaveName} ({t.leaveCode})
+                  {t.leaveName}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

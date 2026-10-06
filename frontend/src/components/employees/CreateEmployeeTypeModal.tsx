@@ -10,6 +10,7 @@ import {
 } from '@/types/employeeType';
 import { BenefitItem } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface CreateEmployeeTypeModalProps {
   isOpen: boolean;
@@ -263,7 +264,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 รูปแบบค่าตอบแทน <span className="text-rose-500">*</span>
               </label>
-              <select
+              <CustomSelect
                 value={wageType}
                 onChange={(e) => setWageType(e.target.value)}
                 className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
@@ -272,21 +273,21 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 <option value="DAILY">รายวัน</option>
                 <option value="HOURLY">รายชั่วโมง</option>
                 <option value="STIPEND">เบี้ยเลี้ยง / ค่าตอบแทนพิเศษ</option>
-              </select>
+              </CustomSelect>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 สถานะการใช้งาน
               </label>
-              <select
+              <CustomSelect
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               >
                 <option value="ACTIVE">เปิดใช้งาน</option>
                 <option value="INACTIVE">ปิดการใช้งาน</option>
-              </select>
+              </CustomSelect>
             </div>
           </div>
 
@@ -380,7 +381,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                             <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
                               รอบการคำนวณ / จ่าย
                             </label>
-                            <select
+                            <CustomSelect
                               value={benefitDetails[b.id]?.frequency ?? 'MONTHLY'}
                               onChange={(e) => updateBenefitDetail(b.id, 'frequency', e.target.value)}
                               className="w-full h-7 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
@@ -389,7 +390,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                               <option value="MONTHLY">บาท / เดือน (เข้าสลิป)</option>
                               <option value="YEARLY">บาท / ปี (วงเงินคุ้มครอง)</option>
                               <option value="PER_OCCURRENCE">บาท / ครั้งที่เบิก</option>
-                            </select>
+                            </CustomSelect>
                           </div>
                         </div>
                       )}

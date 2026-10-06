@@ -32,6 +32,7 @@ import {
   MaritalStatusItem,
 } from '@/types/master';
 import { Bank } from '@/types/api';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 type MasterTab = 'document-types' | 'nationalities' | 'religions' | 'marital-statuses' | 'banks';
 
@@ -779,14 +780,14 @@ export default function MasterDataHubPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                    <select
+                    <CustomSelect
                       value={docForm.status}
                       onChange={(e) => setDocForm({ ...docForm, status: e.target.value })}
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     >
                       <option value="ACTIVE">เปิดใช้งาน</option>
                       <option value="INACTIVE">ปิดใช้งาน</option>
-                    </select>
+                    </CustomSelect>
                   </div>
                 </>
               )}
@@ -888,14 +889,14 @@ export default function MasterDataHubPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                    <select
+                    <CustomSelect
                       value={bankForm.status}
                       onChange={(e) => setBankForm({ ...bankForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                     >
                       <option value="ACTIVE">เปิดใช้งาน</option>
                       <option value="INACTIVE">ปิดใช้งาน</option>
-                    </select>
+                    </CustomSelect>
                   </div>
                 </>
               )}

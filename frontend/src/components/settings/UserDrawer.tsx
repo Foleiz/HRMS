@@ -6,6 +6,7 @@ import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { Employee } from '@/types/employee';
 import { RoleSummary, UserAccount, CreateUserRequest, UpdateUserRequest } from '@/types/settings';
 import { settingsService } from '@/services/settingsService';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface UserDrawerProps {
   isOpen: boolean;
@@ -383,7 +384,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                         </div>
 
                         {/* Role Dropdown */}
-                        <select
+                        <CustomSelect
                           value={roleItem.roleId}
                           onChange={(e) => handleRoleChange(index, Number(e.target.value))}
                           className="flex-1 h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
@@ -393,7 +394,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                               {r.roleCode} — {r.roleName}
                             </option>
                           ))}
-                        </select>
+                        </CustomSelect>
                       </div>
 
                       {/* Bottom row: Status toggle and Delete button */}

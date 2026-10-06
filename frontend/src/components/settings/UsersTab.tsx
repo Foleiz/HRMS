@@ -336,7 +336,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           {/* ซ้ายล่าง: Rows per page selector */}
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
             <span>แสดง</span>
-            <select
+            <CustomSelect
               value={pageSize}
               onChange={(e) => {
                 const newSize = Number(e.target.value);
@@ -352,7 +352,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               <option value={50}>50</option>
               <option value={100}>100</option>
               <option value={200}>200</option>
-            </select>
+            </CustomSelect>
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">
               (ทั้งหมด {totalCount.toLocaleString()} บัญชีผู้ใช้งาน)

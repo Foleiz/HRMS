@@ -1599,7 +1599,7 @@ function DailyAttendanceContent() {
             <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <span>แสดง</span>
-                <select
+                <CustomSelect
                   value={dailyPageSize}
                   onChange={(e) => {
                     setDailyPageSize(Number(e.target.value));
@@ -1612,7 +1612,7 @@ function DailyAttendanceContent() {
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                   <option value={200}>200</option>
-                </select>
+                </CustomSelect>
                 <span>แถวต่อหน้า</span>
                 <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
                   (แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{currentPage}</span> จาก{' '}
@@ -1738,7 +1738,7 @@ function DailyAttendanceContent() {
                         <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                           ปี (พ.ศ. / ค.ศ.)
                         </label>
-                        <select
+                        <CustomSelect
                           value={importYear}
                           onChange={(e) => setImportYear(Number(e.target.value))}
                           className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
@@ -1748,7 +1748,7 @@ function DailyAttendanceContent() {
                               {y + 543} (ค.ศ. {y})
                             </option>
                           ))}
-                        </select>
+                        </CustomSelect>
                       </div>
 
                       {/* Month */}
@@ -1756,7 +1756,7 @@ function DailyAttendanceContent() {
                         <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                           เดือน
                         </label>
-                        <select
+                        <CustomSelect
                           value={importMonth}
                           onChange={(e) => setImportMonth(Number(e.target.value))}
                           className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
@@ -1766,7 +1766,7 @@ function DailyAttendanceContent() {
                               {idx + 1} - {mName}
                             </option>
                           ))}
-                        </select>
+                        </CustomSelect>
                       </div>
                     </div>
 
@@ -2204,7 +2204,7 @@ function DailyAttendanceContent() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-300">|</span>
                     <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">ไปที่หน้า:</span>
-                    <select
+                    <CustomSelect
                       value={batchPage}
                       onChange={(e) => setBatchPage(Number(e.target.value))}
                       className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
@@ -2214,7 +2214,7 @@ function DailyAttendanceContent() {
                           หน้า {p}
                         </option>
                       ))}
-                    </select>
+                    </CustomSelect>
                   </div>
                 )}
               </div>
@@ -2274,10 +2274,10 @@ function DailyAttendanceContent() {
                 className="min-w-[170px]"
                 options={[
                   { value: 'ALL', label: 'สถานะทั้งหมด' },
-                  { value: 'PENDING', label: 'รอพิจารณา (Pending)' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว (Approved)' },
-                  { value: 'REJECTED', label: 'ไม่อนุมัติ (Rejected)' },
-                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว (Cancelled)' },
+                  { value: 'PENDING', label: 'รอพิจารณา' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
                 ]}
               />
 
@@ -2474,7 +2474,7 @@ function DailyAttendanceContent() {
             <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <span>แสดง</span>
-                <select
+                <CustomSelect
                   value={adjustmentsPageSize}
                   onChange={(e) => {
                     setAdjustmentsPageSize(Number(e.target.value));
@@ -2487,7 +2487,7 @@ function DailyAttendanceContent() {
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                   <option value={200}>200</option>
-                </select>
+                </CustomSelect>
                 <span>แถวต่อหน้า</span>
                 <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
                   (แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ - หน้า {adjustmentsPage} / {adjustmentsTotalPages})
@@ -2526,7 +2526,7 @@ function DailyAttendanceContent() {
               {/* Month Selector */}
               <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
                 <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <select
+                <CustomSelect
                   value={monthlyMonth}
                   onChange={(e) => setMonthlyMonth(Number(e.target.value))}
                   className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold dark:text-slate-200"
@@ -2536,13 +2536,13 @@ function DailyAttendanceContent() {
                       {name}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Year Selector */}
               <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
                 <span>ปี</span>
-                <select
+                <CustomSelect
                   value={monthlyYear}
                   onChange={(e) => setMonthlyYear(Number(e.target.value))}
                   className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold dark:text-slate-200"
@@ -2552,7 +2552,7 @@ function DailyAttendanceContent() {
                       {y + 543} ({y})
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* Department Filter */}
@@ -2912,7 +2912,7 @@ function DailyAttendanceContent() {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                   กะการทำงาน (Shift)
                 </label>
-                <select
+                <CustomSelect
                   value={editForm.shiftId || ''}
                   onChange={(e) => {
                     const val = e.target.value ? Number(e.target.value) : undefined;
@@ -2926,7 +2926,7 @@ function DailyAttendanceContent() {
                       {s.shiftName} ({s.shiftCode}) - {s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} น.
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -2947,22 +2947,22 @@ function DailyAttendanceContent() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                  สถานะการเข้างาน (Status)
+                  สถานะการเข้างาน
                 </label>
-                <select
+                <CustomSelect
                   value={editForm.status}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
-                  <option value="PRESENT">ตรงเวลา (PRESENT)</option>
-                  <option value="LATE">มาสาย (LATE)</option>
-                  <option value="EARLY_LEAVE">ออกก่อนเวลา (EARLY_LEAVE)</option>
-                  <option value="LATE_AND_EARLY">สายและออกก่อน (LATE_AND_EARLY)</option>
-                  <option value="ABSENT">ขาดงาน (ABSENT)</option>
-                  <option value="HOLIDAY">วันหยุดประเพณี (HOLIDAY)</option>
-                  <option value="OFF">วันหยุดสัปดาห์ (OFF)</option>
-                  <option value="PENDING">รอดำเนินการ (PENDING)</option>
-                </select>
+                  <option value="PRESENT">ตรงเวลา</option>
+                  <option value="LATE">มาสาย</option>
+                  <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
+                  <option value="LATE_AND_EARLY">สายและออกก่อน</option>
+                  <option value="ABSENT">ขาดงาน</option>
+                  <option value="HOLIDAY">วันหยุดประเพณี</option>
+                  <option value="OFF">วันหยุดสัปดาห์</option>
+                  <option value="PENDING">รอดำเนินการ</option>
+                </CustomSelect>
               </div>
 
               <div className="pt-2">
@@ -3030,7 +3030,7 @@ function DailyAttendanceContent() {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                   เลือกพนักงาน <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={clockEmpId}
                   onChange={(e) => setClockEmpId(Number(e.target.value))}
                   required
@@ -3042,7 +3042,7 @@ function DailyAttendanceContent() {
                       {r.employeeCode} - {r.employeeName} ({r.departmentName || 'ไม่ระบุแผนก'})
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>
@@ -3273,7 +3273,7 @@ function DailyAttendanceContent() {
 
                 <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                   <span className="whitespace-nowrap font-medium">แสดงหน้าละ:</span>
-                  <select
+                  <CustomSelect
                     value={batchRecordPageSize}
                     onChange={(e) => {
                       const newSize = Number(e.target.value);
@@ -3288,7 +3288,7 @@ function DailyAttendanceContent() {
                     <option value={50}>50 คน / หน้า</option>
                     <option value={100}>100 คน / หน้า</option>
                     <option value={200}>200 คน / หน้า</option>
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
             </div>
@@ -3400,7 +3400,7 @@ function DailyAttendanceContent() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-300">|</span>
                     <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">ไปที่หน้า:</span>
-                    <select
+                    <CustomSelect
                       value={batchRecordPage}
                       onChange={(e) => {
                         const targetP = Number(e.target.value);
@@ -3414,7 +3414,7 @@ function DailyAttendanceContent() {
                           หน้า {p}
                         </option>
                       ))}
-                    </select>
+                    </CustomSelect>
                   </div>
                 )}
               </div>

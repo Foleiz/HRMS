@@ -552,7 +552,7 @@ export default function TransfersPage() {
                             ...(item.recordType === 'REQUEST' || item.approvalInstanceId
                               ? [
                                   {
-                                    label: 'ดูผังการอนุมัติ (Workflow)',
+                                    label: 'ดูผังการอนุมัติ',
                                     icon: <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />,
                                     onClick: () => handleViewApprovalTimeline(item),
                                   },
@@ -680,7 +680,7 @@ export default function TransfersPage() {
         <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
             <span>แสดง</span>
-            <select
+            <CustomSelect
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
@@ -693,7 +693,7 @@ export default function TransfersPage() {
               <option value={50}>50</option>
               <option value={100}>100</option>
               <option value={200}>200</option>
-            </select>
+            </CustomSelect>
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
               (แสดง{' '}

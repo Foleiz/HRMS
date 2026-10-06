@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
 import { PayrollItem } from '@/types/payroll';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface Props {
   isOpen: boolean;
@@ -405,7 +406,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                   <Calculator className="w-3.5 h-3.5 text-blue-700" />
                   <span>รูปแบบสูตรมาตรฐานของระบบ (Formula Template)</span>
                 </label>
-                <select
+                <CustomSelect
                   value={formulaTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
                   className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
@@ -415,7 +416,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                       {tpl.name}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {selectedTemplate && (

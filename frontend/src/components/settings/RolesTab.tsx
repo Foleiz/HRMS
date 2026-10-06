@@ -170,9 +170,9 @@ const ACTIONS_CONFIG: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { key: 'view', label: 'ดูข้อมูล (View)', icon: Eye },
-  { key: 'create', label: 'สร้าง (Create)', icon: Plus },
-  { key: 'edit', label: 'แก้ไข (Edit)', icon: Edit2 },
+  { key: 'view', label: 'ดูข้อมูล', icon: Eye },
+  { key: 'create', label: 'สร้าง', icon: Plus },
+  { key: 'edit', label: 'แก้ไข', icon: Edit2 },
 ];
 
 export const RolesTab: React.FC<RolesTabProps> = ({

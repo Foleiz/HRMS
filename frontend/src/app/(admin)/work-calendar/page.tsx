@@ -453,9 +453,9 @@ export default function WorkCalendarPage() {
                   placeholder="เลือกปี"
                   className="min-w-[170px]"
                   options={[
-                    { value: 2025, label: 'ปี พ.ศ. 2568 (2025)' },
-                    { value: 2026, label: 'ปี พ.ศ. 2569 (2026)' },
-                    { value: 2027, label: 'ปี พ.ศ. 2570 (2027)' },
+                    { value: 2025, label: 'ปี พ.ศ. 2568' },
+                    { value: 2026, label: 'ปี พ.ศ. 2569' },
+                    { value: 2027, label: 'ปี พ.ศ. 2570' },
                   ]}
                 />
 
@@ -611,7 +611,7 @@ export default function WorkCalendarPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ประเภทวันหยุด *</label>
-                <select
+                <CustomSelect
                   value={holidayForm.holidayType}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayType: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
@@ -619,7 +619,7 @@ export default function WorkCalendarPage() {
                   <option value="PUBLIC">วันหยุดตามประเพณี</option>
                   <option value="COMPANY_SPECIAL">วันหยุดพิเศษบริษัท</option>
                   <option value="SUBSTITUTE">วันหยุดชดเชย</option>
-                </select>
+                </CustomSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700/60">

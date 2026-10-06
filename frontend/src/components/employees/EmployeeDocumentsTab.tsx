@@ -18,6 +18,7 @@ import { EmployeeDocument, DocumentExpiryStatus } from '@/types/employeeDocument
 import { DocumentTypeItem } from '@/types/master';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
@@ -356,7 +357,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   ประเภทเอกสาร <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={typeId}
                   onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : '')}
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
@@ -367,7 +368,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                       {t.documentName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               <div>

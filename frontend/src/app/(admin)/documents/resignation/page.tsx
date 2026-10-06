@@ -24,6 +24,7 @@ import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 import { toast } from '@/context/ToastContext';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
 
@@ -322,7 +323,7 @@ export default function ResignationPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
                   <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">คำนำหน้า</label>
-                  <select
+                  <CustomSelect
                     value={titlePrefix}
                     onChange={(e) => setTitlePrefix(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
@@ -330,7 +331,7 @@ export default function ResignationPage() {
                     <option value="นาย">นาย</option>
                     <option value="นาง">นาง</option>
                     <option value="นางสาว">นางสาว</option>
-                  </select>
+                  </CustomSelect>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล *</label>
@@ -406,7 +407,7 @@ export default function ResignationPage() {
                 <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">
                   หมวดหมู่สาเหตุการลาออก
                 </label>
-                <select
+                <CustomSelect
                   value={reasonCategory}
                   onChange={(e) => setReasonCategory(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
@@ -416,7 +417,7 @@ export default function ResignationPage() {
                       {cat.label}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
               </div>
 
               {/* เหตุผลการลาออก (Textarea พร้อมตัวนับตาม Figma: สถานที่/เบอร์ติดต่อระหว่างลา หรือเหตุผล) */}

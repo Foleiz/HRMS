@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { SalaryStructure, CreateSalaryStructurePayload, UpdateSalaryStructurePayload } from '@/types/payroll';
 import { Position, EmployeeLevel } from '@/types/organization';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface Props {
   isOpen: boolean;
@@ -131,7 +132,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
           {/* ระดับพนักงาน */}
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ระดับพนักงาน</label>
-            <select
+            <CustomSelect
               value={employeeLevelId}
               onChange={(e) => setEmployeeLevelId(e.target.value)}
               className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
@@ -143,7 +144,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
                   {l.levelCode ? `${l.levelCode} - ` : ''}{l.levelName}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </div>
 
           {/* เงินเดือนขั้นต่ำ */}
