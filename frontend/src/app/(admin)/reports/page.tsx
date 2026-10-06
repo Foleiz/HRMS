@@ -97,11 +97,11 @@ export default function ReportsPage() {
   // Sync breadcrumb with activeTab
   useEffect(() => {
     const tabTitles: Record<ReportTab, string> = {
-      headcount: 'อัตรากำลังคนประจำวัน',
-      lateness: 'รายงานการมาสายประจำเดือน',
-      tax: 'ภาษีและประกันสังคม (ภ.ง.ด.1 / สปส. 1-10)',
-      turnover: 'อัตราการเข้า-ออกของพนักงาน (Turnover Rate)',
-      leave: 'รายงานการลา',
+      headcount: 'กำลังคนรายวัน',
+      lateness: 'การมาสาย',
+      tax: 'ภาษีและประกันสังคม',
+      turnover: 'การเข้า-ออกพนักงาน',
+      leave: 'การลา',
     };
     setBreadcrumb({
       section: 'รายงาน',
@@ -402,7 +402,7 @@ export default function ReportsPage() {
       toast.success('ดาวน์โหลดรายงานอัตราการเข้า-ออกของพนักงานสำเร็จ');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดรายงาน Turnover');
+      toast.error('เกิดข้อผิดพลาดในการดาวน์โหลดรายงานการเข้า-ออกพนักงาน');
     } finally {
       setIsExportingTurnover(false);
     }
@@ -452,7 +452,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              อัตรากำลังคนประจำวัน
+              กำลังคนรายวัน
             </button>
           )}
 
@@ -465,7 +465,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              รายงานการมาสายประจำเดือน
+              การมาสาย
             </button>
           )}
 
@@ -478,7 +478,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              ภาษีและประกันสังคม (ภ.ง.ด.1 / สปส. 1-10)
+              ภาษีและประกันสังคม
             </button>
           )}
 
@@ -491,7 +491,7 @@ export default function ReportsPage() {
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
-              อัตราการเข้า-ออกงาน (Turnover Rate)
+              การเข้า-ออกพนักงาน
             </button>
           )}
 
@@ -1579,7 +1579,7 @@ export default function ReportsPage() {
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-emerald-600 font-medium">เข้าใหม่ (New Hires)</span>
+                  <span className="text-xs text-emerald-600 font-medium">เข้าใหม่</span>
                   <UserPlus className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-emerald-600">
@@ -1589,7 +1589,7 @@ export default function ReportsPage() {
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-rose-600 font-medium">ลาออก (Resigned)</span>
+                  <span className="text-xs text-rose-600 font-medium">ลาออก</span>
                   <UserMinus className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-extrabold text-rose-600">
@@ -1605,7 +1605,7 @@ export default function ReportsPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">Turnover / Retention</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">อัตราลาออก / อัตราคงอยู่</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-extrabold text-amber-600">
                     {turnoverData.overallTurnoverRate}%
@@ -1680,8 +1680,8 @@ export default function ReportsPage() {
                       <th className="py-3 px-4 text-center text-emerald-700">เข้าใหม่</th>
                       <th className="py-3 px-4 text-center text-rose-700">ลาออก</th>
                       <th className="py-3 px-4 text-center text-blue-900">สิ้นงวด (คน)</th>
-                      <th className="py-3 px-4 text-center">Turnover Rate (%)</th>
-                      <th className="py-3 px-4 text-center">Retention Rate (%)</th>
+                      <th className="py-3 px-4 text-center">อัตราลาออก (%)</th>
+                      <th className="py-3 px-4 text-center">อัตราคงอยู่ (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
