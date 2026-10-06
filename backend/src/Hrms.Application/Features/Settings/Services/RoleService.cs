@@ -152,7 +152,6 @@ public class RoleService : IRoleService
 
         var roles = await _dbContext.Roles
             .AsNoTracking()
-            .OrderBy(r => r.Id)
             .Select(r => new RoleSummaryDto
             {
                 Id = r.Id,
@@ -164,6 +163,8 @@ public class RoleService : IRoleService
                 IsSystemDefault = r.RoleCode == "ADMIN" || r.RoleCode == "SYSTEM_SUPER",
                 LastModifiedAt = DateTime.UtcNow.AddHours(-2)
             })
+            .OrderByDescending(r => r.IsSystemDefault)
+            .ThenBy(r => r.Id)
             .ToListAsync(cancellationToken);
 
         _allRolesCache = (DateTime.UtcNow.Add(CacheTtl), roles);
