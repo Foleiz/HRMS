@@ -17,6 +17,13 @@ public interface ILeaveEntitlementSync
 {
     /// <summary>ซิงค์ยอดวันลาของปีที่กำหนด (ระบุพนักงาน/ประเภทการลาเพื่อจำกัดขอบเขต)</summary>
     Task SyncAsync(int year, IReadOnlyCollection<long>? employeeIds = null, long? leaveTypeId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// ซิงค์แบบจำกัดความถี่ (ไม่เกิน 1 ครั้ง/5 นาที ต่อ ปี+พนักงาน+ประเภทการลา) — ใช้กับหน้าที่อ่านยอดและตอนยื่นใบลา
+    /// ฐานข้อมูลอยู่ไกล (แต่ละ query ~150-250ms) การซิงค์ทุกครั้งทำให้คำขอช้าจน timeout
+    /// การแก้นโยบาย/ประเภทการลา/ปิดยอดปี ยังเรียก SyncAsync ตรง จึงอัปเดตทันทีเหมือนเดิม
+    /// </summary>
+    Task SyncIfStaleAsync(int year, long? employeeId, long? leaveTypeId, CancellationToken cancellationToken = default);
 }
 
 public class LeaveEntitlementSync : ILeaveEntitlementSync
@@ -26,6 +33,29 @@ public class LeaveEntitlementSync : ILeaveEntitlementSync
     public LeaveEntitlementSync(IHrmsDbContext context)
     {
         _context = context;
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> LastSync = new();
+    private static readonly TimeSpan SyncInterval = TimeSpan.FromMinutes(5);
+
+    public async Task SyncIfStaleAsync(int year, long? employeeId, long? leaveTypeId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        // ซิงค์ทั้งปี/ทุกคน/ทุกประเภทครอบคลุมขอบเขตที่แคบกว่า
+        string[] keys =
+        {
+            $"{year}|{employeeId?.ToString() ?? "*"}|{leaveTypeId?.ToString() ?? "*"}",
+            $"{year}|{employeeId?.ToString() ?? "*"}|*",
+            $"{year}|*|*",
+        };
+        foreach (var k in keys)
+        {
+            if (LastSync.TryGetValue(k, out var last) && now - last < SyncInterval)
+                return;
+        }
+
+        await SyncAsync(year, employeeId.HasValue ? new[] { employeeId.Value } : null, leaveTypeId, cancellationToken);
+        LastSync[keys[0]] = now;
     }
 
     public async Task SyncAsync(int year, IReadOnlyCollection<long>? employeeIds = null, long? leaveTypeId = null, CancellationToken cancellationToken = default)

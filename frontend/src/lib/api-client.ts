@@ -37,6 +37,12 @@ apiClient.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
       config.baseURL = getApiBaseUrl();
+      // คำขอที่บันทึกข้อมูล (POST/PUT/PATCH/DELETE) ทำงานหลายขั้นในฐานข้อมูล (เช่น ยื่นใบลา + เริ่มสายอนุมัติ)
+      // ให้เวลา 45 วินาที เพื่อไม่ให้ขึ้น timeout ทั้งที่บันทึกสำเร็จ — คำขออ่านข้อมูลยังใช้ 15 วินาที
+      const method = (config.method || 'get').toLowerCase();
+      if (method !== 'get' && (config.timeout ?? 0) <= 15000) {
+        config.timeout = 45000;
+      }
       const token = localStorage.getItem('hrms_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

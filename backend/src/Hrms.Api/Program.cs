@@ -39,13 +39,14 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Database Connection (PostgreSQL - Schema: hrms)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddSingleton<QueryCountingInterceptor>();
 builder.Services.AddDbContext<HrmsDbContext>((sp, options) =>
 {
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "hrms");
     });
-    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>(), sp.GetRequiredService<QueryCountingInterceptor>());
 });
 
 builder.Services.AddScoped<IHrmsDbContext>(provider => provider.GetRequiredService<HrmsDbContext>());
@@ -195,7 +196,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()
-              .WithExposedHeaders("X-Refreshed-Token");
+              .WithExposedHeaders("X-Refreshed-Token", "Server-Timing", "X-Query-Count");
     });
 });
 
@@ -231,6 +232,9 @@ var app = builder.Build();
 SensitiveFieldCipher.Service = app.Services.GetRequiredService<IAesEncryptionService>();
 
 app.UseCors("AllowFrontend");
+
+// วัดเวลา + จำนวน query ต่อคำขอ (log [SLOW] และ header Server-Timing)
+app.UseMiddleware<RequestTimingMiddleware>();
 
 // 8. Global Exception Middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();

@@ -2,6 +2,7 @@ using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Auth.Dtos;
 using Hrms.Application.Features.Auth.Services;
+using Hrms.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,15 +18,18 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITokenService _tokenService;
+    private readonly UserAccessLoader _userAccessLoader;
 
     public AuthController(
         IAuthService authService,
         ICurrentUserService currentUserService,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        UserAccessLoader userAccessLoader)
     {
         _authService = authService;
         _currentUserService = currentUserService;
         _tokenService = tokenService;
+        _userAccessLoader = userAccessLoader;
     }
 
     /// <summary>
@@ -56,8 +60,13 @@ public class AuthController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail("ไม่พบข้อมูลผู้ใช้งาน หรือ Token หมดอายุแล้ว"));
         }
 
-        var profile = await _authService.GetCurrentUserProfileAsync(userId.Value, cancellationToken);
-        
+        // ใช้ข้อมูลจาก cache เดียวกับที่ตรวจสิทธิ์ (ล้างอัตโนมัติเมื่อแก้ผู้ใช้/บทบาท) — /auth/me ถูกเรียกทุกครั้งที่เปลี่ยนหน้า
+        var profile = await _userAccessLoader.GetProfileAsync(userId.Value, cancellationToken);
+        if (profile == null)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("ไม่พบข้อมูลผู้ใช้งาน หรือ Token หมดอายุแล้ว"));
+        }
+
         // ออก Token ชุดใหม่ที่อัปเดตสิทธิ์สดล่าสุดจาก Database ส่งกลับไปใน Header
         var (token, _) = _tokenService.GenerateToken(profile);
         Response.Headers["X-Refreshed-Token"] = token;

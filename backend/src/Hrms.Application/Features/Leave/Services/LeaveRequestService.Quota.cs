@@ -138,7 +138,7 @@ public partial class LeaveRequestService
         var isQuotaControlled = await _context.LeavePolicies.AsNoTracking()
             .AnyAsync(p => p.LeaveTypeId == leaveTypeId, cancellationToken);
 
-        await _entitlementSync.SyncAsync(year, new[] { employeeId }, leaveTypeId, cancellationToken);
+        await _entitlementSync.SyncIfStaleAsync(year, employeeId, leaveTypeId, cancellationToken);
 
         var balance = await _context.LeaveBalances
             .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year, cancellationToken);

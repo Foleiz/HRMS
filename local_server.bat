@@ -16,12 +16,13 @@ echo   [2] Start Backend Only (.NET 10 API - Port 5229)
 echo   [3] Start Frontend Only (Next.js 16 - Port 4001)
 echo   [4] Stop All Servers (Kill Ports 5229 ^& 4001)
 echo   [5] Check Server Status (Port 5229 ^& 4001)
+echo   [6] Start Full System - PRODUCTION mode (faster pages, for testers via VPN)
 echo   [0] Exit
 echo.
 echo ==============================================================================
 echo   Default: [1] (Auto-starts in 5 seconds if no key is pressed)
 echo ==============================================================================
-choice /c 123450 /t 5 /d 1 /n /m "Select option [1-5, 0]: "
+choice /c 1234560 /t 5 /d 1 /n /m "Select option [1-6, 0]: "
 set CHOICE=%ERRORLEVEL%
 
 if "%CHOICE%"=="1" goto START_ALL
@@ -29,7 +30,8 @@ if "%CHOICE%"=="2" goto START_BACKEND
 if "%CHOICE%"=="3" goto START_FRONTEND
 if "%CHOICE%"=="4" goto STOP_ALL
 if "%CHOICE%"=="5" goto CHECK_STATUS
-if "%CHOICE%"=="6" goto EXIT_SCRIPT
+if "%CHOICE%"=="6" goto START_PROD
+if "%CHOICE%"=="7" goto EXIT_SCRIPT
 
 :START_ALL
 echo.
@@ -88,6 +90,23 @@ start http://localhost:4001
 echo.
 echo Servers are running in background windows.
 echo To stop servers later, select [4] or run "stop server.bat".
+echo.
+echo Press any key to return to main menu...
+pause >nul
+goto MENU
+
+:START_PROD
+echo.
+echo ==============================================================================
+echo Production mode: build frontend once, then serve the optimized build
+echo  - pages are not compiled on first visit and API calls are not doubled
+echo  - after changing frontend code, run this option again to rebuild
+echo ==============================================================================
+start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Backend API (Port 5229) && color 0A && echo Starting HRMS Backend API... && dotnet run --project src/Hrms.Api/Hrms.Api.csproj --urls "http://0.0.0.0:5229""
+ping 127.0.0.1 -n 3 >nul
+start "HRMS [Frontend Web - Port 4001]" /D "%~dp0frontend" cmd /k "title HRMS Frontend Web PROD (Port 4001) && color 0B && echo Building frontend (takes 1-3 minutes)... && npm run build && npm run start -- -H 0.0.0.0"
+echo.
+echo [OK] Servers launching. Open http://localhost:4001 after the frontend build finishes.
 echo.
 echo Press any key to return to main menu...
 pause >nul
