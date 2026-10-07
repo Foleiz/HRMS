@@ -212,7 +212,11 @@ public class EmployeeService : IEmployeeService
         }
 
         string idStr = id.ToString();
+        // AsSplitQuery: เดิมรวม Include ~12 ชุดเป็น query เดียว → แถวคูณกัน (ที่อยู่ × การศึกษา × ครอบครัว × สวัสดิการ × ...)
+        // รวมรูปลายเซ็นซ้ำทุกแถว ทำให้ส่งข้อมูลมหาศาลข้ามเครือข่าย (วัดได้ ~4 วินาที) แยก query ต่อคอลเลกชันแทน
         var employee = await _dbContext.Employees
+            .AsSplitQuery()
+            .AsNoTracking()
             .Include(e => e.Contact)
             .Include(e => e.SocialSecurity)
             .Include(e => e.Addresses)

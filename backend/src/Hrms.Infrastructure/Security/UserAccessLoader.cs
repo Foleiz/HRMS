@@ -28,6 +28,18 @@ public class UserAccessLoader
     /// <returns>principal ใหม่จากข้อมูลล่าสุด หรือ null ถ้าบัญชีไม่มีแล้ว/ไม่ได้ใช้งาน</returns>
     public async Task<ClaimsPrincipal?> LoadAsync(long userId, string authenticationType, CancellationToken cancellationToken)
     {
+        var info = await GetProfileAsync(userId, cancellationToken);
+
+        if (info == null || !string.Equals(info.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var identity = new ClaimsIdentity(JwtTokenService.BuildClaims(info), authenticationType, "unique_name", ClaimTypes.Role);
+        return new ClaimsPrincipal(identity);
+    }
+
+    /// <summary>ข้อมูลผู้ใช้ล่าสุดจาก cache เดียวกับที่ใช้ตรวจสิทธิ์ (ใช้ซ้ำใน GET /auth/me เพื่อไม่ต้อง query ซ้ำทุกหน้า)</summary>
+    public async Task<UserInfoDto?> GetProfileAsync(long userId, CancellationToken cancellationToken)
+    {
         var key = $"user-access:{UserAccessVersion.Current}:{userId}";
         if (!_cache.TryGetValue(key, out UserInfoDto? info))
         {
@@ -41,11 +53,6 @@ public class UserAccessLoader
             }
             _cache.Set(key, info, CacheDuration);
         }
-
-        if (info == null || !string.Equals(info.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
-            return null;
-
-        var identity = new ClaimsIdentity(JwtTokenService.BuildClaims(info), authenticationType, "unique_name", ClaimTypes.Role);
-        return new ClaimsPrincipal(identity);
+        return info;
     }
 }
