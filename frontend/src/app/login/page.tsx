@@ -9,6 +9,10 @@ import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircl
 const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
   { label: 'ผู้ดูแลระบบสูงสุด', username: 'admin', password: 'Admin#2026!Sec' },
   { label: 'ฝ่ายทรัพยากรบุคคล', username: 'hr', password: 'Hr@2026!Pass' },
+  { label: 'การเงิน / เงินเดือน', username: 'test.finance', password: 'Test#Fin2026' },
+  { label: 'หัวหน้าทีม (ผู้อนุมัติ)', username: 'test.lead', password: 'Test#Lead2026' },
+  { label: 'พนักงานทั่วไป', username: 'test.employee', password: 'Test#Emp2026' },
+  { label: 'พนักงานทั่วไป (คนที่ 2)', username: 'test.employee2', password: 'Test#Emp2026b' },
 ];
 
 const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production';
