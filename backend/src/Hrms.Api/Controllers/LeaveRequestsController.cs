@@ -208,9 +208,14 @@ public class LeaveRequestsController : ControllerBase
         [FromBody] RejectLeaveRequestModel? model,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(model?.Reason))
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail("กรุณาระบุเหตุผลในการปฏิเสธคำร้องขอลา"));
+        }
+
         try
         {
-            var result = await _requestService.RejectAsync(id, model?.Reason, cancellationToken);
+            var result = await _requestService.RejectAsync(id, model.Reason.Trim(), cancellationToken);
             return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "ปฏิเสธคำร้องขอลาสำเร็จ"));
         }
         catch (KeyNotFoundException ex)

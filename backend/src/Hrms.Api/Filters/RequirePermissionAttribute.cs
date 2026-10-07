@@ -68,7 +68,11 @@ public class RequirePermissionFilter : IAsyncActionFilter
 
         if (matchedCodes.Count == 0)
         {
-            context.Result = new ObjectResult(ApiResponse<object>.Fail($"คุณไม่มีสิทธิ์ในการดำเนินการนี้ (ต้องการสิทธิ์: {_permissionCode})"))
+            var isPrivileged = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+            var errorMsg = isPrivileged
+                ? $"คุณไม่มีสิทธิ์ในการดำเนินการนี้ (ต้องการสิทธิ์: {_permissionCode})"
+                : "คุณไม่มีสิทธิ์ในการดำเนินการนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน";
+            context.Result = new ObjectResult(ApiResponse<object>.Fail(errorMsg))
             {
                 StatusCode = StatusCodes.Status403Forbidden
             };
@@ -81,7 +85,11 @@ public class RequirePermissionFilter : IAsyncActionFilter
             bool hasScope = matchedCodes.Any(c => _dataScope.HasScope(c, _minScope));
             if (!hasScope)
             {
-                context.Result = new ObjectResult(ApiResponse<object>.Fail($"ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการดำเนินการนี้ (ต้องการระดับ: {_minScope})"))
+                var isPrivileged = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
+                var errorMsg = isPrivileged
+                    ? $"ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการดำเนินการนี้ (ต้องการระดับ: {_minScope})"
+                    : "ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการดำเนินการนี้ กรุณาติดต่อผู้ดูแลระบบ";
+                context.Result = new ObjectResult(ApiResponse<object>.Fail(errorMsg))
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };

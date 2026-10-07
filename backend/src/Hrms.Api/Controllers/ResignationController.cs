@@ -97,7 +97,7 @@ public class ResignationController : ControllerBase
     /// อนุมัติคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/approve")]
-    [RequirePermission("APPROVAL_EMP_APPROVE")]
+    [RequirePermission("APPROVAL_EMP_APPROVE,APPROVAL_EMP_EDIT,APPROVAL_EMP_VIEW")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Approve(
         long id,
         [FromBody] ApproveResignationRequestPayload? payload,
@@ -141,7 +141,7 @@ public class ResignationController : ControllerBase
     /// ปฏิเสธคำขอลาออก (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/reject")]
-    [RequirePermission("APPROVAL_EMP_APPROVE")]
+    [RequirePermission("APPROVAL_EMP_APPROVE,APPROVAL_EMP_EDIT,APPROVAL_EMP_VIEW")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> Reject(
         long id,
         [FromBody] RejectResignationRequestPayload payload,

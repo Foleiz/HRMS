@@ -276,12 +276,22 @@ public class CertificateService : ICertificateService
                 isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
             }
         }
+        else if (instance == null && effectiveStatus == "PENDING" && isHrOrAdmin)
+        {
+            isMyTurn = true;
+            currentApproverDisplay = "ฝ่ายทรัพยากรบุคคล (HR)";
+        }
 
         var hasAlreadyApproved = instance != null && currentEmpId.HasValue &&
             instance.Actions.Any(a => a.ApproverEmployeeId == currentEmpId.Value && a.ActionDecision == "APPROVE");
 
         var finalApproveAction = instance?.Actions
             .Where(a => a.ActionDecision == "APPROVE")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
+        var lastDecisionAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
 
@@ -306,8 +316,8 @@ public class CertificateService : ICertificateService
             CurrentApproverDisplay = currentApproverDisplay,
             IsMyTurnToApprove = isMyTurn,
             HasAlreadyApproved = hasAlreadyApproved,
-            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
-            ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
+            ApprovedByName = lastDecisionAction?.ApproverEmployee?.FullName ?? finalApproveAction?.ApproverEmployee?.FullName,
+            ApprovedAt = instance?.CompletedAt ?? lastDecisionAction?.ActionAt ?? finalApproveAction?.ActionAt,
             CanCancel = (effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin)),
             CanDownload = (effectiveStatus == "APPROVED" || effectiveStatus == "ISSUED")
         };

@@ -671,6 +671,11 @@ public partial class LeaveRequestService : ILeaveRequestService
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
 
+        var lastDecisionAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
         return new LeaveRequestDto
         {
             Id = r.Id,
@@ -702,8 +707,8 @@ public partial class LeaveRequestService : ILeaveRequestService
             CurrentApproverDisplay = currentApproverDisplay,
             IsMyTurnToApprove = isMyTurn,
             HasAlreadyApproved = hasAlreadyApproved,
-            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
-            ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
+            ApprovedByName = lastDecisionAction?.ApproverEmployee?.FullName ?? finalApproveAction?.ApproverEmployee?.FullName,
+            ApprovedAt = instance?.CompletedAt ?? lastDecisionAction?.ActionAt ?? finalApproveAction?.ActionAt,
             Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
             {
                 Id = d.Id,

@@ -313,6 +313,8 @@ public class ResignationService : IResignationService
         }
 
         request.Status = "REJECTED";
+        request.ApprovedByEmployeeId = approverId;
+        request.ApprovedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
         return (await GetRequestByIdAsync(id, cancellationToken))!;
@@ -462,6 +464,11 @@ public class ResignationService : IResignationService
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
 
+        var lastDecisionAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
         Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? timeline = null;
         if (instance != null)
         {
@@ -488,8 +495,10 @@ public class ResignationService : IResignationService
             CancelledAt = r.CancelledAt,
             CancelReason = r.CancelReason,
             ApprovedByEmployeeId = r.ApprovedByEmployeeId,
-            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null),
-            ApprovedAt = instance?.CompletedAt ?? r.ApprovedAt ?? finalApproveAction?.ActionAt,
+            ApprovedByName = (effectiveStatus == "REJECTED" ? lastDecisionAction?.ApproverEmployee?.FullName : finalApproveAction?.ApproverEmployee?.FullName)
+                ?? lastDecisionAction?.ApproverEmployee?.FullName
+                ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null),
+            ApprovedAt = instance?.CompletedAt ?? r.ApprovedAt ?? lastDecisionAction?.ActionAt ?? finalApproveAction?.ActionAt,
             ApprovalInstanceId = r.ApprovalInstanceId,
             NoticePeriodDays = noticeDays > 0 ? noticeDays : 0,
             CanCancel = effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin),

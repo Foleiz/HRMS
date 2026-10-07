@@ -89,7 +89,7 @@ public class CertificatesController : ControllerBase
     /// อนุมัติคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/approve")]
-    [RequirePermission("APPROVAL_EMP_APPROVE")]
+    [RequirePermission("APPROVAL_EMP_APPROVE,APPROVAL_EMP_EDIT,APPROVAL_EMP_VIEW")]
     public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Approve(
         long id,
         [FromBody] ApproveCertificateRequestPayload? payload,
@@ -133,7 +133,7 @@ public class CertificatesController : ControllerBase
     /// ปฏิเสธคำขอหนังสือรับรอง (สำหรับผู้อนุมัติตามสายงาน / ฝ่ายบุคคล)
     /// </summary>
     [HttpPut("requests/{id:long}/reject")]
-    [RequirePermission("APPROVAL_EMP_APPROVE")]
+    [RequirePermission("APPROVAL_EMP_APPROVE,APPROVAL_EMP_EDIT,APPROVAL_EMP_VIEW")]
     public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> Reject(
         long id,
         [FromBody] RejectCertificateRequestPayload payload,
