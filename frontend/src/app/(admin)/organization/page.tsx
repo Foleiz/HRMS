@@ -63,9 +63,8 @@ import { Bank } from '@/types/api';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
-import OrgChartView from '@/components/organization/OrgChartView';
 
-type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts' | 'orgchart';
+type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
 const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> = {
   STATUTORY: { label: 'กฎหมายแรงงาน', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Shield },
@@ -110,13 +109,12 @@ export default function OrganizationPage() {
     benefits: 'สวัสดิการและสิทธิประโยชน์',
     company: 'ข้อมูลบริษัท',
     'bank-accounts': 'บัญชีธนาคารบริษัท',
-    orgchart: 'แผนผังองค์กร',
   };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
-      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'bank-accounts', 'orgchart'].includes(tabParam)) {
+      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'bank-accounts'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
@@ -884,22 +882,11 @@ export default function OrganizationPage() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('orgchart')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'orgchart'
-                ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            แผนผังองค์กร
-          </button>
         </nav>
       </div>
 
-      {/* 4. Tab Content Panels (แท็บแผนผังองค์กรมีกรอบของตัวเอง จึงซ่อนกรอบนี้) */}
-      <div className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm ${activeTab === 'orgchart' ? 'hidden' : ''}`}>
+      {/* 4. Tab Content Panels */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
@@ -2385,11 +2372,6 @@ export default function OrganizationPage() {
             </form>
           </div>
         </div>
-      )}
-
-      {/* === TAB: แผนผังองค์กร (Org Chart) === */}
-      {activeTab === 'orgchart' && (
-        <OrgChartView />
       )}
 
       {/* Modal: Create / Edit Company Bank Account */}
