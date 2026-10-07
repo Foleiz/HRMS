@@ -65,7 +65,7 @@ echo [2/3] Launching servers in separate command windows...
 echo ==============================================================================
 
 echo - Launching Backend API (.NET 10) on http://localhost:5229 ...
-start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Backend API (Port 5229) && color 0A && echo Starting HRMS Backend API... && dotnet run --project src/Hrms.Api/Hrms.Api.csproj"
+start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Backend API (Port 5229) && color 0A && echo Starting HRMS Backend API... && dotnet run --project src/Hrms.Api/Hrms.Api.csproj --urls "http://0.0.0.0:5229""
 
 ping 127.0.0.1 -n 3 >nul
 
@@ -98,7 +98,7 @@ echo.
 echo ==============================================================================
 echo Launching Backend API (.NET 10)...
 echo ==============================================================================
-start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Backend API (Port 5229) && color 0A && echo Starting HRMS Backend API... && dotnet run --project src/Hrms.Api/Hrms.Api.csproj"
+start "HRMS [Backend API - Port 5229]" /D "%~dp0backend" cmd /k "title HRMS Backend API (Port 5229) && color 0A && echo Starting HRMS Backend API... && dotnet run --project src/Hrms.Api/Hrms.Api.csproj --urls "http://0.0.0.0:5229""
 
 ping 127.0.0.1 -n 4 >nul
 start http://localhost:5229/swagger
