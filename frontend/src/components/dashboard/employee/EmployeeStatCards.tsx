@@ -180,6 +180,9 @@ export const EmployeeStatCards: React.FC = () => {
     };
   }, [user?.employeeId]);
 
+  // ระหว่างโหลดแสดง "–" แทนค่าเริ่มต้น (เดิมโชว์ค่าตายตัว เช่น พักร้อน 0/6 จนกว่า API จะตอบ)
+  const show = (n: number) => (loading ? '–' : n);
+
   const isOverVacation = stats.vacationQuota > 0 && stats.vacationUsed > stats.vacationQuota;
   const overDays = stats.vacationUsed - stats.vacationQuota;
 
@@ -190,7 +193,7 @@ export const EmployeeStatCards: React.FC = () => {
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา ป่วย ไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {stats.sickUsed}/{stats.sickQuota}
+            {show(stats.sickUsed)}/{show(stats.sickQuota)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>
@@ -201,7 +204,7 @@ export const EmployeeStatCards: React.FC = () => {
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา กิจ ไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {stats.businessUsed}/{stats.businessQuota}
+            {show(stats.businessUsed)}/{show(stats.businessQuota)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>
@@ -216,7 +219,7 @@ export const EmployeeStatCards: React.FC = () => {
               isOverVacation ? 'text-rose-600' : 'text-slate-900'
             }`}
           >
-            {stats.vacationUsed}/{stats.vacationQuota}
+            {show(stats.vacationUsed)}/{show(stats.vacationQuota)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>
@@ -232,7 +235,7 @@ export const EmployeeStatCards: React.FC = () => {
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา พิเศษ ไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {stats.specialUsed}/{stats.specialQuota}
+            {show(stats.specialUsed)}/{show(stats.specialQuota)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>
@@ -243,7 +246,7 @@ export const EmployeeStatCards: React.FC = () => {
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา อื่นๆ ไปแล้วรวม</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {stats.otherUsed}
+            {show(stats.otherUsed)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>
@@ -254,7 +257,7 @@ export const EmployeeStatCards: React.FC = () => {
         <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลาไปแล้วทั้งหมด</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {stats.totalUsed}
+            {show(stats.totalUsed)}
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-slate-600">วัน</span>
         </div>

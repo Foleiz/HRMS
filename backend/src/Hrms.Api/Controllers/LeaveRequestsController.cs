@@ -103,14 +103,13 @@ public class LeaveRequestsController : ControllerBase
             var result = await _requestService.CreateAsync(request, cancellationToken);
             return StatusCode(StatusCodes.Status201Created, ApiResponse<LeaveRequestDto>.Ok(result, "ยื่นคำร้องขอลาสำเร็จ"));
         }
-        catch (InvalidOperationException ex)
+        catch (KeyNotFoundException ex)
         {
             return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            var detail = ex.InnerException?.Message ?? ex.Message;
-            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(detail));
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
     }
 
@@ -360,15 +359,6 @@ public class LeaveRequestsController : ControllerBase
         {
             return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
-        {
-            // ดักจับ Exception อื่น ๆ ที่ไม่คาดคิด (เช่น ปัญหาจากฐานข้อมูล) เพื่อให้ผู้ใช้เห็นสาเหตุจริง
-            // แทนที่จะได้ข้อความ 500 ทั่วไปที่ไม่มีรายละเอียดจาก ExceptionHandlingMiddleware
-            // สำหรับ DbUpdateException ตัว ex.Message เองจะเป็นข้อความกำกวมเสมอ ("An error occurred while
-            // saving the entity changes...") สาเหตุจริง (เช่น ชื่อคอลัมน์ที่ไม่มีในฐานข้อมูลจริง) จะอยู่ใน InnerException
-            var detail = ex.InnerException?.Message ?? ex.Message;
-            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(detail));
-        }
     }
 
     /// <summary>
@@ -424,11 +414,6 @@ public class LeaveRequestsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            var detail = ex.InnerException?.Message ?? ex.Message;
-            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(detail));
         }
     }
 

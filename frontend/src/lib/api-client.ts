@@ -75,7 +75,11 @@ apiClient.interceptors.response.use(
     }
 
     if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')) {
-      errorMessage = 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
+      const method = (error.config?.method || 'get').toLowerCase();
+      // "ข้อมูลอาจถูกบันทึกแล้ว" ใช้เฉพาะคำขอที่เขียนข้อมูล — คำขออ่านข้อมูล (GET) ไม่มีการบันทึก
+      errorMessage = method === 'get'
+        ? 'เซิร์ฟเวอร์ตอบช้าเกินไป (timeout) กรุณาลองใหม่อีกครั้ง'
+        : 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
       console.warn('API Timeout:', error.config?.url);
     } else if (!error.response) {
       errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';
