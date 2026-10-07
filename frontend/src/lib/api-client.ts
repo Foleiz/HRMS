@@ -29,7 +29,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 30000,
 });
 
 // Request Interceptor: แนบ JWT Token และอัปเดต baseURL ให้ตรงกับ Hostname ปัจจุบัน
@@ -38,9 +38,9 @@ apiClient.interceptors.request.use(
     if (typeof window !== 'undefined') {
       config.baseURL = getApiBaseUrl();
       // คำขอที่บันทึกข้อมูล (POST/PUT/PATCH/DELETE) ทำงานหลายขั้นในฐานข้อมูล (เช่น ยื่นใบลา + เริ่มสายอนุมัติ)
-      // ให้เวลา 45 วินาที เพื่อไม่ให้ขึ้น timeout ทั้งที่บันทึกสำเร็จ — คำขออ่านข้อมูลยังใช้ 15 วินาที
+      // ให้เวลา 45 วินาที เพื่อไม่ให้ขึ้น timeout ทั้งที่บันทึกสำเร็จ — คำขออ่านข้อมูล (GET) ใช้ 30 วินาที
       const method = (config.method || 'get').toLowerCase();
-      if (method !== 'get' && (config.timeout ?? 0) <= 15000) {
+      if (method !== 'get' && (config.timeout ?? 0) <= 30000) {
         config.timeout = 45000;
       }
       const token = localStorage.getItem('hrms_token');

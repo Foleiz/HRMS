@@ -266,21 +266,21 @@ export default function OrganizationPage() {
     setLoading(true);
     try {
       const [divs, depts, pos, lvls, comp, ben, emps, bAccounts, bList] = await Promise.all([
-        organizationService.getDivisions(),
-        organizationService.getDepartments(),
-        organizationService.getPositions(),
-        organizationService.getLevels(),
-        organizationService.getCompany(),
+        organizationService.getDivisions().catch(() => []),
+        organizationService.getDepartments().catch(() => []),
+        organizationService.getPositions().catch(() => []),
+        organizationService.getLevels().catch(() => []),
+        organizationService.getCompany().catch(() => null),
         benefitService.getAll().catch(() => []),
         employeeService.getAll().catch(() => []),
         companyBankAccountService.getAll().catch(() => []),
         bankService.getAll().catch(() => []),
       ]);
-      setDivisions(divs);
-      setDepartments(depts);
-      setPositions(pos);
-      setLevels(lvls);
-      setCompany(comp);
+      setDivisions(divs || []);
+      setDepartments(depts || []);
+      setPositions(pos || []);
+      setLevels(lvls || []);
+      setCompany(comp || null);
       setBenefits(ben || []);
       setEmployees(emps || []);
       setBankAccounts(bAccounts || []);

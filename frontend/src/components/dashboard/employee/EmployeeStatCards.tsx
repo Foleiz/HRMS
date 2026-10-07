@@ -103,6 +103,7 @@ export const EmployeeStatCards: React.FC = () => {
               otherUsed: othU,
               totalUsed: allUsedSum,
             });
+            setLoading(false);
           }
           return;
         }
@@ -190,7 +191,7 @@ export const EmployeeStatCards: React.FC = () => {
     <div data-stat-card className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
       {/* 1. ลาป่วย (Yellow) */}
       <div className="bg-[#FEF6D8] border border-[#F6E5A6] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px]">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา ป่วย ไปแล้ว</span>
+        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลาป่วยไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             {show(stats.sickUsed)}/{show(stats.sickQuota)}
@@ -201,7 +202,7 @@ export const EmployeeStatCards: React.FC = () => {
 
       {/* 2. ลากิจ (Pink) */}
       <div className="bg-[#FDE2E4] border border-[#F9C3C8] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px]">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา กิจ ไปแล้ว</span>
+        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลากิจไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             {show(stats.businessUsed)}/{show(stats.businessQuota)}
@@ -212,7 +213,7 @@ export const EmployeeStatCards: React.FC = () => {
 
       {/* 3. ลาพักร้อน (Green พร้อมเตือนตัวแดงเมื่อเกินสิทธิ) */}
       <div className="bg-[#D8F3DC] border border-[#B7E4C7] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px] relative">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา พักร้อน ไปแล้ว</span>
+        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลาพักร้อนไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span
             className={`text-xl sm:text-2xl font-black tracking-tight ${
@@ -232,7 +233,7 @@ export const EmployeeStatCards: React.FC = () => {
 
       {/* 4. ลาพิเศษ (Blue) */}
       <div className="bg-[#D9EAFD] border border-[#BFDBFE] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px]">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา พิเศษ ไปแล้ว</span>
+        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลาพิเศษไปแล้ว</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             {show(stats.specialUsed)}/{show(stats.specialQuota)}
@@ -243,7 +244,7 @@ export const EmployeeStatCards: React.FC = () => {
 
       {/* 5. ลาอื่นๆ ไปแล้วรวม (Light Green) */}
       <div className="bg-[#D7F9D9] border border-[#BCE7BF] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px]">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลา อื่นๆ ไปแล้วรวม</span>
+        <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">ลาอื่นๆ รวม</span>
         <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
           <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             {show(stats.otherUsed)}
