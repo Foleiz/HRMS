@@ -2298,40 +2298,9 @@ export default function PayrollPage() {
                     const isDone = currentStep > s.step;
                     const isPeriodCurrent = currentStep === s.step;
                     const isViewing = s.tabKey === 'BANK' ? false : processSubTab === s.tabKey;
-                    return (
-                      <button
-                        key={s.step}
-                        type="button"
-                        onClick={() => {
-                          if (s.tabKey === 'BANK') {
-                            setActiveTab('bank-transfer');
-                          } else {
-                            if (s.tabKey === 'HR' && !canAccessHrView) {
-                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายบุคคล (HR)');
-                              return;
-                            }
-                            if (s.tabKey === 'FINANCE' && !canAccessFinanceView) {
-                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายการเงิน (Finance)');
-                              return;
-                            }
-                            if (s.tabKey === 'APPROVER' && !canAccessApproverView) {
-                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างผู้บริหาร / Admin');
-                              return;
-                            }
-                            setProcessSubTab(s.tabKey);
-                            setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
-                          }
-                        }}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                          isViewing
-                            ? 'bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/50 shadow-xs'
-                            : isPeriodCurrent
-                            ? 'bg-amber-50/40 border-amber-300 shadow-2xs hover:bg-amber-50/70'
-                            : isDone
-                            ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50/90'
-                            : 'bg-slate-50/60 border-slate-200/70 hover:bg-slate-100/70'
-                        }`}
-                      >
+                    const canClick = isAdmin;
+                    const content = (
+                      <>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span
@@ -2360,6 +2329,56 @@ export default function PayrollPage() {
                         <p className={`text-[10px] mt-1 pl-7 ${isViewing ? 'text-amber-800' : isPeriodCurrent ? 'text-amber-700' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {s.desc}
                         </p>
+                      </>
+                    );
+
+                    const boxClass = `p-3 rounded-xl border text-left transition-all ${
+                      canClick ? 'cursor-pointer' : 'cursor-default select-none'
+                    } ${
+                      isViewing
+                        ? 'bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/50 shadow-xs'
+                        : isPeriodCurrent
+                        ? 'bg-amber-50/40 border-amber-300 shadow-2xs hover:bg-amber-50/70'
+                        : isDone
+                        ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50/90'
+                        : 'bg-slate-50/60 border-slate-200/70 hover:bg-slate-100/70'
+                    }`;
+
+                    if (!canClick) {
+                      return (
+                        <div key={s.step} className={boxClass}>
+                          {content}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={s.step}
+                        type="button"
+                        onClick={() => {
+                          if (s.tabKey === 'BANK') {
+                            setActiveTab('bank-transfer');
+                          } else {
+                            if (s.tabKey === 'HR' && !canAccessHrView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายบุคคล (HR)');
+                              return;
+                            }
+                            if (s.tabKey === 'FINANCE' && !canAccessFinanceView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างฝ่ายการเงิน (Finance)');
+                              return;
+                            }
+                            if (s.tabKey === 'APPROVER' && !canAccessApproverView) {
+                              showToast('คุณไม่มีสิทธิ์เข้าถึงหน้าต่างผู้บริหาร / Admin');
+                              return;
+                            }
+                            setProcessSubTab(s.tabKey);
+                            setViewMode(s.tabKey === 'APPROVER' ? 'ALL' : s.tabKey);
+                          }
+                        }}
+                        className={boxClass}
+                      >
+                        {content}
                       </button>
                     );
                   })}
