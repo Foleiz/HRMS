@@ -2229,60 +2229,62 @@ export default function PayrollPage() {
                     </p>
                   </div>
 
-                  {/* View Switcher based on Permissions / Role */}
-                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 self-start sm:self-auto">
-                    {canAccessHrView && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProcessSubTab('HR');
-                          setViewMode('HR');
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                          processSubTab === 'HR'
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <Users className="w-3.5 h-3.5 text-blue-600" />
-                        <span>ฝ่ายบุคคล (HR)</span>
-                      </button>
-                    )}
-                    {canAccessFinanceView && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProcessSubTab('FINANCE');
-                          setViewMode('FINANCE');
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                          processSubTab === 'FINANCE'
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <Landmark className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>ฝ่ายการเงิน (Finance)</span>
-                      </button>
-                    )}
-                    {canAccessApproverView && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProcessSubTab('APPROVER');
-                          setViewMode('ALL');
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                          processSubTab === 'APPROVER'
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                        <span>ผู้บริหาร / Admin</span>
-                      </button>
-                    )}
-                  </div>
+                  {/* View Switcher based on Permissions / Role (แสดงเฉพาะ Admin เท่านั้น) */}
+                  {isAdmin && (
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 self-start sm:self-auto">
+                      {canAccessHrView && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSubTab('HR');
+                            setViewMode('HR');
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            processSubTab === 'HR'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <Users className="w-3.5 h-3.5 text-blue-600" />
+                          <span>ฝ่ายบุคคล (HR)</span>
+                        </button>
+                      )}
+                      {canAccessFinanceView && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSubTab('FINANCE');
+                            setViewMode('FINANCE');
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            processSubTab === 'FINANCE'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <Landmark className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>ฝ่ายการเงิน (Finance)</span>
+                        </button>
+                      )}
+                      {canAccessApproverView && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSubTab('APPROVER');
+                            setViewMode('ALL');
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            processSubTab === 'APPROVER'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                          <span>ผู้บริหาร / Admin</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 4-Step Workflow Stepper (Clickable Interactive Tabs) */}
