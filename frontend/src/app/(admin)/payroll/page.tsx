@@ -3554,7 +3554,15 @@ export default function PayrollPage() {
                     <div className="text-2xl font-bold text-rose-600 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">กำหนดนำส่ง 7 ก.ย. 2569</span>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      กำหนดนำส่ง {(() => {
+                        if (!selectedPeriod) return '-';
+                        const nextMonth = selectedPeriod.month === 12 ? 1 : selectedPeriod.month + 1;
+                        const nextYear = selectedPeriod.month === 12 ? selectedPeriod.year + 1 : selectedPeriod.year;
+                        const nextMonthName = THAI_MONTH_NAMES[nextMonth - 1];
+                        return `7 ${nextMonthName} ${nextYear + 543}`;
+                      })()}
+                    </span>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
@@ -4289,22 +4297,31 @@ export default function PayrollPage() {
                             {/* Action */}
                             {selectedPeriod?.status !== 'PAID' && isCEO && (
                               <td className="py-3.5 px-4 text-center">
-                                <button
-                                  onClick={() => handleOpenSlipModal(item)}
-                                  disabled={isMarkingTransferred === item.payrollId}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer
-                                    ${item.paymentStatus === 'TRANSFERRED'
-                                      ? 'bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200'
-                                      : 'bg-[#0B2046] hover:bg-[#112d5e] text-white shadow-xs'
-                                    } disabled:opacity-50`}
-                                >
-                                  {isMarkingTransferred === item.payrollId ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Upload className="w-3.5 h-3.5" />
-                                  )}
-                                  {item.paymentStatus === 'TRANSFERRED' ? 'อัปเดต Slip' : 'โอนแล้ว + แนบ Slip'}
-                                </button>
+                                {!item.accountNumber || !item.bankName ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-medium bg-red-50 text-red-600 border border-red-200 cursor-not-allowed"
+                                    title="ไม่สามารถโอนได้เนื่องจากไม่มีข้อมูลบัญชีธนาคาร"
+                                  >
+                                    ⚠️ รอข้อมูลบัญชี
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleOpenSlipModal(item)}
+                                    disabled={isMarkingTransferred === item.payrollId}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer
+                                      ${item.paymentStatus === 'TRANSFERRED'
+                                        ? 'bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200'
+                                        : 'bg-[#0B2046] hover:bg-[#112d5e] text-white shadow-xs'
+                                      } disabled:opacity-50`}
+                                  >
+                                    {isMarkingTransferred === item.payrollId ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Upload className="w-3.5 h-3.5" />
+                                    )}
+                                    {item.paymentStatus === 'TRANSFERRED' ? 'อัปเดต Slip' : 'โอนแล้ว + แนบ Slip'}
+                                  </button>
+                                )}
                               </td>
                             )}
                           </tr>

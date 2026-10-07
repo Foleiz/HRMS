@@ -467,9 +467,13 @@ export default function LeaveRequestsApprovalPage() {
 
   const submitReject = async () => {
     if (!selectedForReject) return;
+    if (!rejectReason.trim()) {
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ');
+      return;
+    }
     setIsSubmittingReject(true);
     try {
-      await leaveService.rejectLeaveRequest(selectedForReject.id, rejectReason.trim() || undefined);
+      await leaveService.rejectLeaveRequest(selectedForReject.id, rejectReason.trim());
       setSelectedForReject(null);
       showToast('ปฏิเสธคำขอลาสำเร็จ');
       fetchData();
@@ -1512,8 +1516,8 @@ export default function LeaveRequestsApprovalPage() {
               <button
                 type="button"
                 onClick={submitReject}
-                disabled={isSubmittingReject}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                disabled={isSubmittingReject || !rejectReason.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmittingReject ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

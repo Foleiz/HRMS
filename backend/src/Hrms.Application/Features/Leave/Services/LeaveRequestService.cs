@@ -201,6 +201,20 @@ public partial class LeaveRequestService : ILeaveRequestService
         // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
         if (!request.IsDraft)
         {
+            // Period Lock Guard: ตรวจสอบว่างวดเงินเดือนของช่วงวันลาถูกปิดรอบหรือจ่ายเงินแล้วหรือไม่ (R2-04)
+            var leaveStartDate = DateOnly.FromDateTime(request.StartDatetime);
+            var leaveEndDate = DateOnly.FromDateTime(request.EndDatetime);
+            var isPeriodLocked = await _context.PayrollPeriods
+                .AnyAsync(p => p.StartDate <= leaveEndDate &&
+                               leaveStartDate <= p.EndDate &&
+                               (p.Status == "PAID" || p.Status == "CLOSED"),
+                          cancellationToken);
+
+            if (isPeriodLocked)
+            {
+                throw new InvalidOperationException($"ไม่สามารถยื่นคำขอลาในช่วงวันที่ {leaveStartDate:yyyy-MM-dd} ถึง {leaveEndDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (งวดเงินเดือนถูกล็อก)");
+            }
+
             // กฎการลาตามนโยบาย (ลาซ้อน, ทดลองงาน, อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ)
             await EnsureLeaveRulesAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
                 request.LeaveDays, request.AttachmentData is { Length: > 0 }, null, cancellationToken);
@@ -443,8 +457,13 @@ public partial class LeaveRequestService : ILeaveRequestService
         return (await GetByIdAsync(id, approverId, cancellationToken))!;
     }
 
-    public async Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, CancellationToken cancellationToken = default)
+    public async Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, long? approverId = null, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new InvalidOperationException("กรุณาระบุเหตุผลในการปฏิเสธคำขอลา");
+        }
+
         var request = await _context.LeaveRequests.FindAsync([id], cancellationToken);
         if (request == null)
         {
@@ -453,24 +472,24 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         if (request.ApprovalInstanceId.HasValue)
         {
-            var approverId = 1L; // fallback
+            var effectiveApproverId = approverId ?? 1L;
             try
             {
                 await _approvalWorkflow.ProcessActionAsync(
                     request.ApprovalInstanceId.Value,
-                    approverId,
+                    effectiveApproverId,
                     "REJECT",
-                    reason,
+                    reason.Trim(),
                     cancellationToken);
             }
             catch { /* Ignore if workflow status mismatch */ }
         }
 
         request.Status = "REJECTED";
-        request.CancelReason = reason;
+        request.CancelReason = reason.Trim();
         await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(id, null, cancellationToken))!;
+        return (await GetByIdAsync(id, approverId, cancellationToken))!;
     }
 
     public async Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, bool revertToDraftIfPending = false, CancellationToken cancellationToken = default)
@@ -666,10 +685,34 @@ public partial class LeaveRequestService : ILeaveRequestService
         var hasAlreadyApproved = instance != null && currentViewerEmployeeId.HasValue &&
             instance.Actions.Any(a => a.ApproverEmployeeId == currentViewerEmployeeId.Value && a.ActionDecision == "APPROVE");
 
+        var finalAction = instance?.Actions
+            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
         var finalApproveAction = instance?.Actions
             .Where(a => a.ActionDecision == "APPROVE")
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
+
+        var finalRejectAction = instance?.Actions
+            .Where(a => a.ActionDecision == "REJECT")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
+        string? operatorName = null;
+        DateTime? operatorAt = null;
+
+        if (r.Status == "APPROVED")
+        {
+            operatorName = finalApproveAction?.ApproverEmployee?.FullName;
+            operatorAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt;
+        }
+        else if (r.Status == "REJECTED")
+        {
+            operatorName = finalRejectAction?.ApproverEmployee?.FullName;
+            operatorAt = finalRejectAction?.ActionAt;
+        }
 
         return new LeaveRequestDto
         {
@@ -702,8 +745,8 @@ public partial class LeaveRequestService : ILeaveRequestService
             CurrentApproverDisplay = currentApproverDisplay,
             IsMyTurnToApprove = isMyTurn,
             HasAlreadyApproved = hasAlreadyApproved,
-            ApprovedByName = finalApproveAction?.ApproverEmployee?.FullName,
-            ApprovedAt = instance?.CompletedAt ?? finalApproveAction?.ActionAt,
+            ApprovedByName = operatorName ?? finalApproveAction?.ApproverEmployee?.FullName,
+            ApprovedAt = operatorAt ?? instance?.CompletedAt ?? finalApproveAction?.ActionAt,
             Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
             {
                 Id = d.Id,

@@ -3180,6 +3180,10 @@ public class SalaryService : ISalaryService
         if (!IsPayableRecord(payroll))
             throw new BusinessRuleException("พนักงานคนนี้ไม่มียอดเงินเดือนที่ต้องโอนในรอบนี้");
 
+        var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+        if (primaryBank == null || string.IsNullOrWhiteSpace(primaryBank.AccountNumber))
+            throw new BusinessRuleException("ไม่สามารถบันทึกการโอนเงินได้ เนื่องจากพนักงานยังไม่มีข้อมูลบัญชีธนาคารหลัก กรุณาเพิ่มข้อมูลบัญชีธนาคารของพนักงานก่อน");
+
         // Mark payroll record
         payroll.PaymentStatus = "TRANSFERRED";
         payroll.TransferredAt = DateTimeOffset.UtcNow;
@@ -3201,7 +3205,6 @@ public class SalaryService : ISalaryService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
         return new PayrollTransferItemDto
         {
             PayrollId = payroll.Id,

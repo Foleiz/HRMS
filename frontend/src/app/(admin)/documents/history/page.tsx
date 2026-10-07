@@ -635,15 +635,38 @@ export default function DocumentHistoryPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDocumentPreview(doc)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium active:scale-95 transition-all"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        ดูตัวอย่างเอกสาร
-                      </button>
+                    <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDocumentPreview(doc)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium active:scale-95 transition-all"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          ดูตัวอย่าง
+                        </button>
+
+                        {hasEdit && (
+                          <Link
+                            href={doc.editUrl!}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold active:scale-95 transition-all"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            แก้ไขต่อ
+                          </Link>
+                        )}
+
+                        {hasCancel && (
+                          <button
+                            type="button"
+                            onClick={() => handleCancel(doc)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold active:scale-95 transition-all"
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                            ถอนคำขอ
+                          </button>
+                        )}
+                      </div>
 
                       <ActionDropdown
                         menuClassName="w-56"

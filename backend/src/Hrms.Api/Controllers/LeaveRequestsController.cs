@@ -202,20 +202,26 @@ public class LeaveRequestsController : ControllerBase
 
     [HttpPut("{id:long}/reject")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> Reject(
         long id,
         [FromBody] RejectLeaveRequestModel? model,
         CancellationToken cancellationToken)
     {
+        var approverId = GetCurrentEmployeeId();
         try
         {
-            var result = await _requestService.RejectAsync(id, model?.Reason, cancellationToken);
+            var result = await _requestService.RejectAsync(id, model?.Reason, approverId > 0 ? approverId : null, cancellationToken);
             return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "ปฏิเสธคำร้องขอลาสำเร็จ"));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
         }
     }
 
