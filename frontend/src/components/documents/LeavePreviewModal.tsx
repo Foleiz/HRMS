@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -93,8 +93,8 @@ const THAI_MONTH_NAMES = [
 
 const parseDate = (value?: string | null): Date | null => {
   if (!value) return null;
-  // "YYYY-MM-DD" → ตีความเป็นวันที่ท้องถิ่น (ไม่ให้เลื่อนวันจาก timezone)
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  // "YYYY-MM-DD" date-only → ตีความเป็นวันที่ท้องถิ่น
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
   return isNaN(d.getTime()) ? null : d;
 };

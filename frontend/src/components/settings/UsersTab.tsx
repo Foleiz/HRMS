@@ -39,6 +39,7 @@ interface UsersTabProps {
   onDeleteUserClick: (user: UserAccount) => void;
   onViewAuditLogForUser: (user: UserAccount) => void;
   isLoading: boolean;
+  canCreateUser?: boolean;
 }
 
 export const UsersTab: React.FC<UsersTabProps> = ({
@@ -59,6 +60,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   onDeleteUserClick,
   onViewAuditLogForUser,
   isLoading,
+  canCreateUser = true,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
@@ -161,13 +163,15 @@ export const UsersTab: React.FC<UsersTabProps> = ({
         </div>
 
         {/* Add User Button */}
-        <button
-          onClick={onAddUserClick}
-          className="h-10 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ เพิ่มผู้ใช้งาน</span>
-        </button>
+        {canCreateUser && (
+          <button
+            onClick={onAddUserClick}
+            className="h-10 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ เพิ่มผู้ใช้งาน</span>
+          </button>
+        )}
       </div>
 
       {/* 2. User Accounts Table */}

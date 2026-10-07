@@ -14,6 +14,8 @@ public class UserService : IUserService
     private readonly IHrmsDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditLogService _auditLogService;
+    private readonly IDataScopeService _dataScopeService;
+    private readonly ICurrentUserService _currentUserService;
 
     // Cache ในหน่วยความจำเพื่อลดภาระ Database และ Network Latency
     private static readonly ConcurrentDictionary<string, (DateTime Expiry, PagedResult<UserAccountDto> Data)> _usersCache = new();
@@ -28,16 +30,21 @@ public class UserService : IUserService
     public UserService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        IDataScopeService dataScopeService,
+        ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _auditLogService = auditLogService;
+        _dataScopeService = dataScopeService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<PagedResult<UserAccountDto>> GetUsersAsync(UserQueryFilter filter, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"{filter.RoleId}_{filter.Status}_{filter.Search}_{filter.Page}_{filter.PageSize}";
+        var currentUserId = _currentUserService.UserId ?? -1;
+        var cacheKey = $"{currentUserId}_{filter.RoleId}_{filter.Status}_{filter.Search}_{filter.Page}_{filter.PageSize}";
         if (_usersCache.TryGetValue(cacheKey, out var cached) && cached.Expiry > DateTime.UtcNow)
         {
             return cached.Data;
@@ -46,6 +53,12 @@ public class UserService : IUserService
         var baseQuery = _dbContext.UserAccounts
             .AsNoTracking()
             .AsQueryable();
+
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_VIEW", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            baseQuery = baseQuery.Where(u => u.Id == currentUserId || accessibleEmployeeIds.Contains(u.EmployeeId));
+        }
 
         if (filter.RoleId.HasValue)
         {
@@ -103,8 +116,15 @@ public class UserService : IUserService
 
     public async Task<List<long>> GetAssignedEmployeeIdsAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.UserAccounts
-            .AsNoTracking()
+        var baseQuery = _dbContext.UserAccounts.AsNoTracking();
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_VIEW", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long currentUserId = _currentUserService.UserId ?? -1;
+            baseQuery = baseQuery.Where(u => u.Id == currentUserId || accessibleEmployeeIds.Contains(u.EmployeeId));
+        }
+
+        return await baseQuery
             .Select(u => u.EmployeeId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -131,6 +151,16 @@ public class UserService : IUserService
             throw new NotFoundException("UserAccount", id);
         }
 
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_VIEW", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long currentUserId = _currentUserService.UserId ?? -1;
+            if (user.Id != currentUserId && !accessibleEmployeeIds.Contains(user.EmployeeId))
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงบัญชีผู้ใช้นอกขอบเขตความรับผิดชอบ");
+            }
+        }
+
         return MapToDto(user);
     }
 
@@ -153,6 +183,12 @@ public class UserService : IUserService
         if (request.EmployeeId <= 0)
         {
             throw new ValidationException("กรุณาเลือกพนักงาน");
+        }
+
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_CREATE", cancellationToken);
+        if (accessibleEmployeeIds != null && !accessibleEmployeeIds.Contains(request.EmployeeId))
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์สร้างบัญชีให้พนักงานนอกขอบเขตความรับผิดชอบ");
         }
 
         var username = request.Username.Trim().ToLowerInvariant();
@@ -240,6 +276,16 @@ public class UserService : IUserService
             throw new NotFoundException("UserAccount", id);
         }
 
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_EDIT", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long uid = _currentUserService.UserId ?? -1;
+            if (user.Id != uid && !accessibleEmployeeIds.Contains(user.EmployeeId))
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขบัญชีผู้ใช้นอกขอบเขตความรับผิดชอบ");
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
             var oldStatus = user.Status;
@@ -321,6 +367,16 @@ public class UserService : IUserService
             throw new NotFoundException("UserAccount", id);
         }
 
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_EDIT", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long uid = _currentUserService.UserId ?? -1;
+            if (user.Id != uid && !accessibleEmployeeIds.Contains(user.EmployeeId))
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่านให้บัญชีผู้ใช้นอกขอบเขตความรับผิดชอบ");
+            }
+        }
+
         user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -340,6 +396,16 @@ public class UserService : IUserService
         if (user == null)
         {
             throw new NotFoundException("UserAccount", id);
+        }
+
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_EDIT", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long uid = _currentUserService.UserId ?? -1;
+            if (user.Id != uid && !accessibleEmployeeIds.Contains(user.EmployeeId))
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะบัญชีผู้ใช้นอกขอบเขตความรับผิดชอบ");
+            }
         }
 
         var old = user.Status;
@@ -367,6 +433,16 @@ public class UserService : IUserService
         if (user.Username.ToLower() == "admin")
         {
             throw new BusinessRuleException("ไม่อนุญาตให้ลบบัญชีผู้ดูแลระบบสูงสุด (admin)");
+        }
+
+        var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_DELETE", cancellationToken);
+        if (accessibleEmployeeIds != null)
+        {
+            long uid = _currentUserService.UserId ?? -1;
+            if (user.Id != uid && !accessibleEmployeeIds.Contains(user.EmployeeId))
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบบัญชีผู้ใช้นอกขอบเขตความรับผิดชอบ");
+            }
         }
 
         // ยิงคำสั่ง DELETE ไปยัง PostgreSQL โดยตรง เพื่อให้ Database Constraints

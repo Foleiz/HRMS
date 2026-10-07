@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { LoginRequest, UserProfile } from '@/types/auth';
 import { isPathAccessible } from '@/lib/routePermissions';
@@ -26,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const isAlertingRef = useRef(false);
   const lastSyncTimeRef = useRef<number>(0);
@@ -151,6 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => clearInterval(interval);
   }, [refreshProfile]);
+
+  // 4. ตรวจสอบสิทธิ์การเข้าถึง Route ทุกครั้งที่มีการเปลี่ยนหน้า
+  useEffect(() => {
+    if (!isLoading && user && pathname) {
+      checkRoutePermission(user);
+    }
+  }, [pathname, user, isLoading, checkRoutePermission]);
 
   const login = async (credentials: LoginRequest) => {
     setIsLoading(true);

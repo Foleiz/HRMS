@@ -583,6 +583,7 @@ export default function SettingsPage() {
               onDeleteUserClick={handleDeleteUser}
               onViewAuditLogForUser={handleViewAuditLogForUser}
               isLoading={isUsersLoading}
+              canCreateUser={hasPermission('SETTINGS_USERS_CREATE') || hasRole('ADMIN')}
             />
           )}
 

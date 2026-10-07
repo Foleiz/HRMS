@@ -100,9 +100,33 @@ export const getSlotPositions = (count: number): Array<[number, number]> => {
 
 export const toThaiShortDate = (iso?: string | null): string | null => {
   if (!iso) return null;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(iso)) return iso;
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (dateOnlyMatch) {
+    const [, y, m, d] = dateOnlyMatch;
+    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${Number(y) + 543}`;
+  }
+
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const parts = formatter.formatToParts(d);
+    const day = parts.find((p) => p.type === 'day')?.value || String(d.getDate()).padStart(2, '0');
+    const month = parts.find((p) => p.type === 'month')?.value || String(d.getMonth() + 1).padStart(2, '0');
+    const yearVal = parts.find((p) => p.type === 'year')?.value;
+    const year = yearVal ? Number(yearVal) + 543 : d.getFullYear() + 543;
+    return `${day}/${month}/${year}`;
+  } catch {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
+  }
 };
 
 /** รูปลายเซ็นของผู้อนุมัติ (แจ้ง onError เมื่อไม่มีรูป เพื่อแสดงชื่อแทน) */

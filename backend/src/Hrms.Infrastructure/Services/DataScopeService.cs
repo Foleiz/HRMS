@@ -77,11 +77,14 @@ public class DataScopeService : IDataScopeService
             string.Equals(scope, "TEAM", StringComparison.OrdinalIgnoreCase))
         {
             long? myDeptId = _currentUser.DepartmentId;
-            if (!myDeptId.HasValue) return false;
+            long? myEmpId = _currentUser.EmployeeId;
 
             return await _context.Employees
                 .AsNoTracking()
-                .AnyAsync(e => e.Id == targetEmployeeId && e.Assignments.Any(a => a.DepartmentId == myDeptId.Value && a.IsCurrent), ct);
+                .AnyAsync(e => e.Id == targetEmployeeId && e.Assignments.Any(a =>
+                    ((myDeptId.HasValue && a.DepartmentId == myDeptId.Value) ||
+                     (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value))
+                    && a.IsCurrent), ct);
         }
 
         // SELF scope แต่ targetEmployeeId ไม่ใช่ตัวเอง
@@ -117,15 +120,21 @@ public class DataScopeService : IDataScopeService
             string.Equals(scope, "TEAM", StringComparison.OrdinalIgnoreCase))
         {
             long? myDeptId = _currentUser.DepartmentId;
-            if (!myDeptId.HasValue)
+            long? myEmpId = _currentUser.EmployeeId;
+            if (!myDeptId.HasValue && !myEmpId.HasValue)
             {
                 return _currentUser.EmployeeId.HasValue ? new List<long> { _currentUser.EmployeeId.Value } : new List<long>();
             }
 
             return await _context.Employees
                 .AsNoTracking()
-                .Where(e => e.Assignments.Any(a => a.DepartmentId == myDeptId.Value && a.IsCurrent))
+                .Where(e => e.Assignments.Any(a =>
+                    ((myDeptId.HasValue && a.DepartmentId == myDeptId.Value) ||
+                     (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value) ||
+                     (myEmpId.HasValue && e.Id == myEmpId.Value))
+                    && a.IsCurrent))
                 .Select(e => e.Id)
+                .Distinct()
                 .ToListAsync(ct);
         }
 

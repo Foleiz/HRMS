@@ -18,7 +18,7 @@ export interface MasterLookups {
 /** ค่าสำรองกรณีโหลดข้อมูลหลักไม่ได้ */
 const FALLBACK: MasterLookups = {
   nationalities: NATIONALITIES.map((n) => ({ name: n.name })),
-  religions: ['พุทธ', 'คริสต์', 'อิสลาม', 'อื่นๆ'].map((name) => ({ name })),
+  religions: ['พุทธ', 'คริสต์', 'อิสลาม', 'ฮินดู', 'ซิกข์', 'อื่นๆ'].map((name) => ({ name })),
   maritalStatuses: ['โสด', 'สมรส', 'หย่าร้าง', 'หม้าย'].map((name) => ({ name })),
 };
 

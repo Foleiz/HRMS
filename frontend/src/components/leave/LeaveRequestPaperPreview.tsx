@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { X } from 'lucide-react';
@@ -23,13 +23,40 @@ const THAI_MONTHS = [
 
 const toThaiDateParts = (dateStr?: string) => {
   if (!dateStr) return { day: '', month: '', yearBE: '' };
-  const d = new Date(`${dateStr}T00:00:00`);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [y, m, day] = dateStr.split('-').map(Number);
+    return {
+      day: String(day),
+      month: THAI_MONTHS[m - 1] || '',
+      yearBE: String(y + 543),
+    };
+  }
+  const d = new Date(dateStr);
   if (isNaN(d.getTime())) return { day: '', month: '', yearBE: '' };
-  return {
-    day: String(d.getDate()),
-    month: THAI_MONTHS[d.getMonth()],
-    yearBE: String(d.getFullYear() + 543),
-  };
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+    });
+    const parts = formatter.formatToParts(d);
+    const day = parts.find((p) => p.type === 'day')?.value || String(d.getDate());
+    const monthIdx = Number(parts.find((p) => p.type === 'month')?.value || d.getMonth() + 1) - 1;
+    const yearVal = parts.find((p) => p.type === 'year')?.value;
+    const yearBE = String((yearVal ? Number(yearVal) : d.getFullYear()) + 543);
+    return {
+      day,
+      month: THAI_MONTHS[monthIdx] || '',
+      yearBE,
+    };
+  } catch {
+    return {
+      day: String(d.getDate()),
+      month: THAI_MONTHS[d.getMonth()] || '',
+      yearBE: String(d.getFullYear() + 543),
+    };
+  }
 };
 
 // ช่องข้อความแบบเส้นประ (จำลองรูปแบบฟอร์มกระดาษ) — ถ้ายังไม่มีค่าจะแสดงเป็นช่องว่างรอกรอก

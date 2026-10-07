@@ -349,9 +349,10 @@ export default function ApprovalHistoryPage() {
   }, [unifiedHistory, docTypeFilter, searchTerm]);
 
   const handleOpenLeavePreview = (req: LeaveRequest) => {
+    const reqStart = req.startDate ?? req.startDatetime ?? '';
     const lastApproved = leaveHistory
-      .filter((r) => r.employeeId === req.employeeId && r.status === 'APPROVED' && r.id !== req.id)
-      .sort((a, b) => (b.startDatetime || b.startDate || '').localeCompare(a.startDatetime || a.startDate || ''))[0];
+      .filter((r) => r.employeeId === req.employeeId && r.status === 'APPROVED' && r.id !== req.id && (r.startDate ?? r.startDatetime ?? '') < reqStart)
+      .sort((a, b) => (b.startDate ?? b.startDatetime ?? '').localeCompare(a.startDate ?? a.startDatetime ?? ''))[0];
 
     const initialData: LeavePreviewData = {
       requestId: req.id,
@@ -364,18 +365,18 @@ export default function ApprovalHistoryPage() {
       leaveTypeName: req.leaveTypeName,
       leaveFormCategory: req.formCategory || null,
       reason: req.reason,
-      startDate: req.startDate ?? (req.startDatetime ? req.startDatetime.split('T')[0] : null),
-      endDate: req.endDate ?? (req.endDatetime ? req.endDatetime.split('T')[0] : null),
+      startDate: req.startDate ?? req.startDatetime ?? null,
+      endDate: req.endDate ?? req.endDatetime ?? null,
       leaveDays: req.leaveDays ?? req.totalDays,
       isHalfDay: req.leaveDays === 0.5 || (req.leaveHours > 0 && req.leaveHours <= 4),
       contactDuringLeave: req.contactDuringLeave,
-      submissionDate: req.submittedAt ? req.submittedAt.split('T')[0] : (req.createdAt ? req.createdAt.split('T')[0] : null),
+      submissionDate: req.submittedAt ?? req.createdAt ?? null,
       lastLeave: lastApproved
         ? {
             leaveTypeCode: lastApproved.leaveTypeCode,
             leaveTypeName: lastApproved.leaveTypeName,
-            startDate: lastApproved.startDate ?? (lastApproved.startDatetime ? lastApproved.startDatetime.split('T')[0] : null),
-            endDate: lastApproved.endDate ?? (lastApproved.endDatetime ? lastApproved.endDatetime.split('T')[0] : null),
+            startDate: lastApproved.startDate ?? lastApproved.startDatetime ?? null,
+            endDate: lastApproved.endDate ?? lastApproved.endDatetime ?? null,
             leaveDays: lastApproved.leaveDays ?? lastApproved.totalDays,
           }
         : null,

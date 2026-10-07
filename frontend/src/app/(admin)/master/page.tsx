@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -33,13 +33,18 @@ import {
 } from '@/types/master';
 import { Bank } from '@/types/api';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useAuth } from '@/context/AuthContext';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 type MasterTab = 'document-types' | 'nationalities' | 'religions' | 'marital-statuses' | 'banks';
 
 export default function MasterDataHubPage() {
   const toast = useToast();
+  const { user, hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const searchParams = useSearchParams();
+
+  const canViewMasterData = hasPermission('MASTER_DATA_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
 
   const initialTab = (searchParams.get('tab') as MasterTab) || 'document-types';
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
@@ -122,12 +127,14 @@ export default function MasterDataHubPage() {
   };
 
   useEffect(() => {
+    if (!canViewMasterData) return;
     loadData();
     setSearchQuery('');
-  }, [activeTab]);
+  }, [activeTab, canViewMasterData]);
 
   // โหลดข้อมูลทุกแท็บครั้งแรกเบื้องหลัง เพื่อให้ตัวเลขบนแท็บถูกต้องตั้งแต่เปิดหน้า (เดิมเป็น 0 จนกว่าจะกดเข้าแท็บ)
   useEffect(() => {
+    if (!canViewMasterData) return;
     let cancelled = false;
     Promise.allSettled([
       masterDataService.getDocumentTypes(),
@@ -146,7 +153,7 @@ export default function MasterDataHubPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [canViewMasterData]);
 
   // Open Create Modal
   const handleOpenCreate = () => {
@@ -305,6 +312,15 @@ export default function MasterDataHubPage() {
   const filteredBanks = banks.filter(
     (b) => !q || b.bankCode.toLowerCase().includes(q) || b.bankName.toLowerCase().includes(q)
   );
+
+  if (!canViewMasterData) {
+    return (
+      <AccessDenied
+        title="คุณไม่มีสิทธิ์เข้าถึงหน้าข้อมูลหลัก"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงการจัดการข้อมูลหลัก (Master Data) กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน"
+      />
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">

@@ -14,10 +14,12 @@ namespace Hrms.Api.Controllers;
 public class DocumentTypesController : ControllerBase
 {
     private readonly IDocumentTypeService _service;
+    private readonly Hrms.Application.Common.Interfaces.ICurrentUserService _currentUser;
 
-    public DocumentTypesController(IDocumentTypeService service)
+    public DocumentTypesController(IDocumentTypeService service, Hrms.Application.Common.Interfaces.ICurrentUserService currentUser)
     {
         _service = service;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -25,11 +27,17 @@ public class DocumentTypesController : ControllerBase
         [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(status) && !_currentUser.HasRole("ADMIN") && !_currentUser.HasRole("SYSTEM_SUPER") && !_currentUser.HasPermission("MASTER_DATA_VIEW"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<DocumentTypeDto>>.Fail("คุณไม่มีสิทธิ์ในการเข้าถึงข้อมูลนี้"));
+        }
+
         var result = await _service.GetAllAsync(status, cancellationToken);
         return Ok(ApiResponse<List<DocumentTypeDto>>.Ok(result, "ดึงข้อมูลประเภทเอกสารแนบสำเร็จ"));
     }
 
     [HttpGet("{id:long}")]
+    [RequirePermission("MASTER_DATA_VIEW")]
     public async Task<ActionResult<ApiResponse<DocumentTypeDto>>> GetById(
         long id,
         CancellationToken cancellationToken)
