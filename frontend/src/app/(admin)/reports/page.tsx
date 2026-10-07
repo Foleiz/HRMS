@@ -70,7 +70,7 @@ export default function ReportsPage() {
   const canViewLateness = hasPermission('REPORT_ATT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
   const canExportLateness = hasPermission('REPORT_ATT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
 
-  const canViewTax = hasPermission('PAYROLL_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN') || hasRole('FINANCE');
+  const canViewTax = hasPermission('PAYROLL_VIEW') || hasPermission('PAYROLL_TAX_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
   // ไฟล์ ภ.ง.ด.1 / สปส.1-10 มีข้อมูลเงินได้ทุกคน — ให้ตรงกับสิทธิ์ฝั่ง Backend
   const canExportTax =
     hasPermission('PAYROLL_TAX_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_EXPORT') || hasRole('ADMIN');

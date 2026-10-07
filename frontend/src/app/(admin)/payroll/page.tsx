@@ -47,6 +47,7 @@ import {
   Sparkles,
   AlertTriangle,
   X,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -73,6 +74,8 @@ import {
   PayrollTransferItem,
   UpdateTaxBracketPayload,
   UpdateSocialSecurityRatePayload,
+  EmployeeBonus,
+  SaveEmployeeBonusesPayload,
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
@@ -91,6 +94,7 @@ type ActiveTab =
   | 'overview'
   | 'structures'
   | 'items'
+  | 'bonus'
   | 'process'
   | 'bank-transfer'
   | 'tax-sso';
@@ -268,14 +272,59 @@ const getDefaultPeriodValues = (year: number, month: number) => {
 export default function PayrollPage() {
   const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
+  // บทบาทในหน้าเงินเดือน — ใช้ชุดรหัสสิทธิ์เดียวกับ backend (PayrollAccess.cs) ไม่ผูกกับชื่อบทบาทตายตัว
+  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+
+  // สิทธิ์การเข้าถึงแต่ละแท็บย่อย (อิงตามการติ๊กสิทธิ์จริงในหน้าบทบาทและสิทธิ์)
+  const canViewBonus = isAdmin || hasPermission('PAYROLL_BONUS_VIEW');
+  const canCalculateBonus = isAdmin || hasPermission('PAYROLL_BONUS_CREATE');
+  const canEditBonus = isAdmin || hasPermission('PAYROLL_BONUS_EDIT');
+  const canApproveBonus =
+    isAdmin ||
+    hasPermission('PAYROLL_BONUS_APPROVE') ||
+    hasPermission('PAYROLL_BONUS_EDIT') ||
+    hasPermission('PAYROLL_BONUS_CREATE') ||
+    hasPermission('PAYROLL_HR_APPROVE') ||
+    hasPermission('PAYROLL_HR_CREATE');
+  const canExportBonus = isAdmin || hasPermission('PAYROLL_BONUS_VIEW') || hasPermission('PAYROLL_BANK_VIEW');
+
+  const canViewStructures = isAdmin || hasPermission('PAYROLL_STRUCTURE_VIEW') || hasPermission('PAYROLL_HR_VIEW');
+  const canViewItems = isAdmin || hasPermission('PAYROLL_ITEMS_VIEW') || hasPermission('PAYROLL_HR_VIEW');
+  const canViewBankTransfer = isAdmin || hasPermission('PAYROLL_BANK_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW');
+  const canViewTaxSso = isAdmin || hasPermission('PAYROLL_TAX_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW');
+  const canViewProcess =
+    isAdmin ||
+    hasPermission('PAYROLL_CALC_VIEW') ||
+    hasPermission('PAYROLL_HR_VIEW') ||
+    hasPermission('PAYROLL_FINANCE_VIEW') ||
+    hasPermission('PAYROLL_ADMIN_VIEW') ||
+    hasPermission('APPROVAL_PAYROLL_VIEW');
+
+  const canViewOverview =
+    isAdmin ||
+    hasPermission('PAYROLL_VIEW') ||
+    canViewProcess ||
+    canViewStructures ||
+    canViewItems ||
+    canViewBonus ||
+    canViewBankTransfer ||
+    canViewTaxSso;
+
   const canViewPayroll =
+    isAdmin ||
     hasPermission('PAYROLL_VIEW') ||
     hasPermission('PAYROLL_CALC_VIEW') ||
     hasPermission('PAYROLL_SLIP_VIEW') ||
-    hasRole('ADMIN');
+    hasPermission('PAYROLL_BONUS_VIEW') ||
+    hasPermission('PAYROLL_STRUCTURE_VIEW') ||
+    hasPermission('PAYROLL_ITEMS_VIEW') ||
+    hasPermission('PAYROLL_BANK_VIEW') ||
+    hasPermission('PAYROLL_TAX_VIEW') ||
+    hasPermission('PAYROLL_HR_VIEW') ||
+    hasPermission('PAYROLL_FINANCE_VIEW') ||
+    hasPermission('PAYROLL_ADMIN_VIEW') ||
+    hasPermission('APPROVAL_PAYROLL_VIEW');
 
-  // บทบาทในหน้าเงินเดือน — ใช้ชุดรหัสสิทธิ์เดียวกับ backend (PayrollAccess.cs) ไม่ดูจากชื่อบทบาทหรือชื่อผู้ใช้
-  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const PAYROLL_HR_PERMS = ['PAYROLL_CALC_CREATE', 'PAYROLL_CALC_EDIT', 'PAYROLL_HR_CREATE', 'PAYROLL_HR_EDIT'];
   const PAYROLL_FINANCE_PERMS = [
     'PAYROLL_FINANCE_CREATE', 'PAYROLL_FINANCE_EDIT', 'PAYROLL_FINANCE_APPROVE',
@@ -292,7 +341,7 @@ export default function PayrollPage() {
   const isHR = isAdmin || hasHrPayrollPerm;
 
   // มุมมอง (แท็บ HR / การเงิน / ผู้บริหาร): ใช้สิทธิ์ดูแบบแยก (PAYROLL_*_VIEW) ถ้าบทบาทตั้งไว้
-  // ถ้าบทบาทยังไม่ได้ตั้งสิทธิ์ดูแบบแยก → ใช้สิทธิ์ทำงานของหน้าที่นั้นแทน (ไม่เดาจากชื่อบทบาท/ชื่อผู้ใช้)
+  // ถ้าบทบาทยังไม่ได้ตั้งสิทธิ์ดูแบบแยก → ใช้สิทธิ์ทำงานของหน้าที่นั้นแทน
   const hasConfiguredExplicitViews =
     hasPermission('PAYROLL_HR_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
@@ -310,20 +359,17 @@ export default function PayrollPage() {
     (!hasConfiguredExplicitViews && (hasApproverPayrollPerm || hasPermission('APPROVAL_PAYROLL_VIEW')));
 
   const canEditTax =
+    isAdmin ||
     hasPermission('PAYROLL_TAX_EDIT') ||
     hasPermission('PAYROLL_TAX_MANAGE') ||
-    hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN') ||
-    hasRole('SYSTEM_SUPER');
+    hasPermission('PAYROLL_FINANCE_EDIT');
 
   const canEditSso =
+    isAdmin ||
     canEditTax ||
-    isFinance ||
-    hasRole('ADMIN') ||
-    hasRole('PAYROLL_ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
     hasPermission('PAYROLL_TAX_EDIT') ||
-    hasPermission('PAYROLL_TAX_MANAGE');
+    hasPermission('PAYROLL_TAX_MANAGE') ||
+    hasPermission('PAYROLL_FINANCE_EDIT');
 
   const { setBreadcrumb } = useBreadcrumb();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -516,6 +562,18 @@ export default function PayrollPage() {
   // Tab 5: Tax & SSO state
   const [taxSsoSummary, setTaxSsoSummary] = useState<TaxSsoSummary | null>(null);
 
+  // Tab: Bonus state
+  const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
+  const [bonusYear, setBonusYear] = useState<number>(2026);
+  const [bonusMultiplierInput, setBonusMultiplierInput] = useState<number>(1.5);
+  const [isCalculatingBonus, setIsCalculatingBonus] = useState<boolean>(false);
+  const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
+  const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
+  const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
+  const [isApplyBonusModalOpen, setIsApplyBonusModalOpen] = useState<boolean>(false);
+  const [selectedTargetPeriodId, setSelectedTargetPeriodId] = useState<number | null>(null);
+  const [isApplyingBonus, setIsApplyingBonus] = useState<boolean>(false);
+
   useEffect(() => {
     if (canViewPayroll) {
       loadData();
@@ -602,6 +660,23 @@ export default function PayrollPage() {
       loadTaxSsoSummary(selectedPeriod.id);
     }
   }, [activeTab, selectedPeriod]);
+
+  // Dynamic fetch when switching to Bonus tab
+  useEffect(() => {
+    if (activeTab === 'bonus') {
+      loadBonuses(bonusYear);
+    }
+  }, [activeTab, bonusYear]);
+
+  const loadBonuses = async (year?: number) => {
+    try {
+      const yr = year || bonusYear || 2026;
+      const bonusData = await salaryService.getEmployeeBonuses(yr);
+      setBonuses(bonusData || []);
+    } catch (err) {
+      console.error('Failed to load bonuses:', err);
+    }
+  };
 
   const loadBankTransfer = async (periodId: number, bankCode?: string) => {
     if (!periodId) return;
@@ -1177,6 +1252,178 @@ export default function PayrollPage() {
     }
   };
 
+  // Tab: Bonus Handlers
+  const handleCalculateBonusesSubmit = async () => {
+    try {
+      setIsCalculatingBonus(true);
+      const res = await salaryService.calculateEmployeeBonuses({
+        year: bonusYear,
+        defaultMultiplier: bonusMultiplierInput,
+      });
+      setBonuses(res || []);
+      showToast(`คำนวณและจัดสรรโบนัสประจำปี ${bonusYear + 543} (ตัวคูณ ${bonusMultiplierInput} เท่า) สำเร็จ`);
+    } catch (err: any) {
+      console.error('Failed to calculate bonuses:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณโบนัส');
+    } finally {
+      setIsCalculatingBonus(false);
+    }
+  };
+
+  const handleBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
+    setBonuses((prev) =>
+      prev.map((b) => {
+        if (b.employeeId === employeeId) {
+          const safeMult = isNaN(newMultiplier) ? 0 : Math.max(0, newMultiplier);
+          const newBonusAmount = Math.round((b.baseSalary || 0) * safeMult * 100) / 100;
+          return {
+            ...b,
+            multiplier: safeMult,
+            bonusAmount: newBonusAmount,
+            calculationMode: 'MULTIPLIER',
+          };
+        }
+        return b;
+      })
+    );
+  };
+
+  const handleBonusAmountChange = (employeeId: number, newAmount: number) => {
+    setBonuses((prev) =>
+      prev.map((b) => {
+        if (b.employeeId === employeeId) {
+          const safeAmount = isNaN(newAmount) ? 0 : Math.max(0, newAmount);
+          const newMultiplier = (b.baseSalary || 0) > 0 ? Math.round((safeAmount / b.baseSalary) * 100) / 100 : 0;
+          return {
+            ...b,
+            bonusAmount: safeAmount,
+            multiplier: newMultiplier,
+            calculationMode: 'MANUAL',
+          };
+        }
+        return b;
+      })
+    );
+  };
+
+  const handleBonusNoteChange = (employeeId: number, note: string) => {
+    setBonuses((prev) =>
+      prev.map((b) => (b.employeeId === employeeId ? { ...b, note } : b))
+    );
+  };
+
+  const handleSaveBonuses = async () => {
+    if (bonuses.length === 0) {
+      showToast('ไม่มีข้อมูลโบนัสสำหรับบันทึก');
+      return;
+    }
+    try {
+      setIsSavingBonus(true);
+      const payload: SaveEmployeeBonusesPayload = {
+        year: bonusYear,
+        calculationMode: 'MANUAL',
+        items: bonuses.map((b) => ({
+          employeeId: b.employeeId,
+          bonusAmount: b.bonusAmount,
+          multiplier: b.multiplier,
+          note: b.note || undefined,
+        })),
+      };
+      const saved = await salaryService.saveEmployeeBonuses(payload);
+      setBonuses(saved || []);
+      showToast(`บันทึกการจัดสรรโบนัสปี ${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
+    } catch (err: any) {
+      console.error('Failed to save bonuses:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลโบนัส');
+    } finally {
+      setIsSavingBonus(false);
+    }
+  };
+
+  const handleExportBonusBankFile = () => {
+    if (bonuses.length === 0) {
+      showToast('ไม่มีข้อมูลโบนัสสำหรับส่งออก กรุณากดคำนวณและจัดสรรโบนัสก่อน');
+      return;
+    }
+
+    const csvRows: string[] = [];
+    csvRows.push('ลำดับ,รหัสพนักงาน,ชื่อ-นามสกุล,แผนก,ตำแหน่ง,เงินเดือนฐาน(บาท),ตัวคูณ(เท่า),ยอดเงินโบนัส(บาท),สถานะ,หมายเหตุ');
+
+    bonuses.forEach((b, idx) => {
+      csvRows.push(
+        [
+          idx + 1,
+          `"${b.employeeCode}"`,
+          `"${b.employeeName}"`,
+          `"${b.departmentName || '-'}"`,
+          `"${b.positionName || '-'}"`,
+          (b.baseSalary || 0).toFixed(2),
+          (b.multiplier || 0).toFixed(2),
+          (b.bonusAmount || 0).toFixed(2),
+          `"${b.statusText || b.status || '-'}"`,
+          `"${b.note || '-'}"`,
+        ].join(',')
+      );
+    });
+
+    const csvContent = '\uFEFF' + csvRows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bonus_Report_${bonusYear}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showToast(`ส่งออกไฟล์ข้อมูลโบนัสปี ${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
+  };
+
+  const handleOpenApplyBonusModal = () => {
+    if (bonuses.length === 0) {
+      showToast('กรุณากดคำนวณและจัดสรรโบนัสก่อนนำเข้าสู่งวดเงินเดือน');
+      return;
+    }
+    const decPeriod = periods.find((p) => p.year === bonusYear && p.month === 12);
+    setSelectedTargetPeriodId(decPeriod ? decPeriod.id : (selectedPeriod?.id || (periods[0]?.id ?? null)));
+    setIsApplyBonusModalOpen(true);
+  };
+
+  const handleConfirmApplyBonusToPeriod = async () => {
+    if (!selectedTargetPeriodId) {
+      showToast('กรุณาเลือกงวดเงินเดือนที่ต้องการนำโบนัสไปรวมจ่าย');
+      return;
+    }
+    try {
+      setIsApplyingBonus(true);
+      await salaryService.saveEmployeeBonuses({
+        year: bonusYear,
+        calculationMode: 'MANUAL',
+        items: bonuses.map((b) => ({
+          employeeId: b.employeeId,
+          bonusAmount: b.bonusAmount,
+          multiplier: b.multiplier,
+          note: b.note || undefined,
+        })),
+      });
+
+      const res = await salaryService.addBonusPayout(selectedTargetPeriodId, bonusYear);
+      const targetPeriod = periods.find((p) => p.id === selectedTargetPeriodId);
+      showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${res.addedCount} คน รวม ฿${(res.addedAmount || 0).toLocaleString()})`);
+      setIsApplyBonusModalOpen(false);
+
+      if (selectedPeriod?.id === selectedTargetPeriodId) {
+        const pRows = await salaryService.getPayrollsByPeriod(selectedTargetPeriodId);
+        setPayrolls(pRows || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to apply bonus to period:', err);
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกโบนัสเข้างวดเงินเดือน');
+    } finally {
+      setIsApplyingBonus(false);
+    }
+  };
+
   // Tab 4 Handlers: Payroll Processing (ประมวลเงินเดือน)
   const handlePeriodChange = async (periodId: number) => {
     const p = periods.find((x) => x.id === periodId);
@@ -1397,6 +1644,8 @@ export default function PayrollPage() {
         return 'โครงสร้างเงินเดือน';
       case 'items':
         return 'รายได้และรายหัก';
+      case 'bonus':
+        return 'โบนัส';
       case 'process':
         return 'ประมวลเงินเดือน';
       case 'bank-transfer':
@@ -1409,15 +1658,23 @@ export default function PayrollPage() {
   // Filtered Payroll Items
   const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
 
-  // Dynamic subNavTabs based on viewMode
+  // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
-    { id: 'overview', label: 'ภาพรวม' },
-    ...(viewMode === 'ALL' || viewMode === 'HR' ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
-    ...(viewMode === 'ALL' || viewMode === 'HR' ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
-    { id: 'process', label: 'ประมวลเงินเดือน' },
-    ...(viewMode === 'ALL' || viewMode === 'FINANCE' ? [{ id: 'bank-transfer' as ActiveTab, label: 'โอนเงินธนาคาร' }] : []),
-    ...(viewMode === 'ALL' || viewMode === 'FINANCE' ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี & ประกันสังคม' }] : []),
+    ...(canViewOverview ? [{ id: 'overview' as ActiveTab, label: 'ภาพรวม' }] : []),
+    ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
+    ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
+    ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
+    ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
+    ...(canViewBankTransfer ? [{ id: 'bank-transfer' as ActiveTab, label: 'โอนเงินธนาคาร' }] : []),
+    ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี & ประกันสังคม' }] : []),
   ];
+
+  // Auto switch tab if current active tab is not in visible permitted tabs
+  useEffect(() => {
+    if (visibleNavTabs.length > 0 && !visibleNavTabs.some((t) => t.id === activeTab)) {
+      setActiveTab(visibleNavTabs[0].id);
+    }
+  }, [visibleNavTabs, activeTab]);
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -2167,6 +2424,356 @@ export default function PayrollPage() {
                         </tr>
                       );
                     })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === TAB: โบนัส (Annual Bonus Management) === */}
+      {activeTab === 'bonus' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-6">
+            {/* Header & Main Actions */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  <span>การจัดสรรโบนัสและเงินรางวัลประจำปี (Annual Bonus Management)</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  คำนวณและจัดสรรโบนัสประจำปีตามฐานเงินเดือนและตัวคูณ สามารถปรับแก้รายคน บันทึกข้อมูล นำส่งเข้างวดเงินเดือน หรือส่งออกไฟล์รายงานได้
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {canEditBonus && (
+                  <button
+                    type="button"
+                    onClick={handleSaveBonuses}
+                    disabled={bonuses.length === 0 || isSavingBonus}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {isSavingBonus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span>{isSavingBonus ? 'กำลังบันทึก...' : '💾 บันทึกข้อมูลโบนัส'}</span>
+                  </button>
+                )}
+
+                {canApproveBonus && (
+                  <button
+                    type="button"
+                    onClick={handleOpenApplyBonusModal}
+                    disabled={bonuses.length === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <ArrowDownToLine className="w-4 h-4 text-blue-200" />
+                    <span>📥 บันทึกเข้าสู่งวดเงินเดือน</span>
+                  </button>
+                )}
+
+                {canExportBonus && (
+                  <button
+                    type="button"
+                    onClick={handleExportBonusBankFile}
+                    disabled={bonuses.length === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4 text-emerald-100" />
+                    <span>📊 ส่งออกไฟล์ข้อมูลโบนัส</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Top Controls & Calculation Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+                {/* Year Selection */}
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">ปีประจำรอบ:</span>
+                  <select
+                    value={bonusYear}
+                    onChange={(e) => {
+                      const yr = parseInt(e.target.value) || 2026;
+                      setBonusYear(yr);
+                      loadBonuses(yr);
+                    }}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                  >
+                    {[2024, 2025, 2026, 2027].map((yr) => (
+                      <option key={yr} value={yr}>
+                        ปี {yr + 543} ({yr})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Default Multiplier */}
+                {canCalculateBonus && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">ตัวคูณโบนัสฐาน:</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={bonusMultiplierInput}
+                      onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
+                      className="w-20 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    />
+                    <span>เท่า</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Calculate Button */}
+              {canCalculateBonus && (
+                <button
+                  type="button"
+                  onClick={handleCalculateBonusesSubmit}
+                  disabled={isCalculatingBonus}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {isCalculatingBonus ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span>คำนวณและจัดสรรโบนัส</span>
+                </button>
+              )}
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/30 shadow-xs">
+                <span className="text-xs text-amber-800 dark:text-amber-300 font-semibold">ยอดรวมโบนัสที่จัดสรรทั้งหมด</span>
+                <p className="text-2xl font-bold text-amber-950 dark:text-amber-200 mt-1.5 font-mono tracking-tight">
+                  ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <span className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 block">คำนวณสำหรับปี {bonusYear + 543}</span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">จำนวนพนักงานที่ได้รับโบนัส</span>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1.5">{bonuses.length} คน</p>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">พนักงานที่มีสัญญาจ้างในปี {bonusYear + 543}</span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">โบนัสเฉลี่ยต่อคน</span>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1.5 font-mono">
+                  ฿{(bonuses.length > 0
+                    ? bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0) / bonuses.length
+                    : 0
+                  ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">เฉลี่ยของพนักงานทุกคน</span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs">
+                <span className="text-xs text-blue-800 dark:text-blue-300 font-semibold">สถานะการบันทึก</span>
+                <p className="text-2xl font-bold text-blue-950 dark:text-blue-200 mt-1.5">
+                  {bonuses.filter((b) => b.status === 'APPROVED').length}{' '}
+                  <span className="text-sm font-normal text-blue-700 dark:text-blue-300">/ {bonuses.length} คน</span>
+                </p>
+                <span className="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5 block">
+                  บันทึกอนุมัติแล้ว {bonuses.filter((b) => b.status === 'APPROVED').length} คน
+                </span>
+              </div>
+            </div>
+
+            {/* Search & Department Filter Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                {/* Search */}
+                <div className="relative min-w-[220px] max-w-sm flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาชื่อ, รหัสพนักงาน, หรือตำแหน่ง..."
+                    value={bonusSearchTerm}
+                    onChange={(e) => setBonusSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                  />
+                </div>
+
+                {/* Department Dropdown */}
+                <select
+                  value={bonusDeptFilter}
+                  onChange={(e) => setBonusDeptFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer font-medium"
+                >
+                  <option value="ALL">-- แผนกทั้งหมด --</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.departmentName}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </select>
+
+                {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBonusSearchTerm('');
+                      setBonusDeptFilter('ALL');
+                    }}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
+                  >
+                    ล้างตัวกรอง
+                  </button>
+                )}
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {bonuses.length > 0 && (
+                  <span>
+                    แสดง{' '}
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {
+                        bonuses.filter((b) => {
+                          const matchesSearch =
+                            !bonusSearchTerm ||
+                            b.employeeName.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                            b.employeeCode.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                            (b.departmentName && b.departmentName.toLowerCase().includes(bonusSearchTerm.toLowerCase())) ||
+                            (b.positionName && b.positionName.toLowerCase().includes(bonusSearchTerm.toLowerCase()));
+                          const matchesDept = bonusDeptFilter === 'ALL' || b.departmentName === bonusDeptFilter;
+                          return matchesSearch && matchesDept;
+                        }).length
+                      }
+                    </span>{' '}
+                    จาก {bonuses.length} คน
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Interactive Bonus Table */}
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <th className="py-3 px-3.5 whitespace-nowrap">รหัสพนักงาน</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">ชื่อ-นามสกุล</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                    <th className="py-3 px-3.5 text-right whitespace-nowrap">ฐานเงินเดือน</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">ตัวคูณ (เท่า)</th>
+                    <th className="py-3 px-3.5 text-right font-bold whitespace-nowrap">ยอดโบนัส (บาท)</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">สถานะ</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">หมายเหตุ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
+                  {bonuses.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-14 text-center text-slate-400">
+                        <Gift className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                        <p className="font-semibold text-slate-600 dark:text-slate-300 text-sm">ยังไม่มีข้อมูลโบนัสสำหรับปี {bonusYear + 543}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {canCalculateBonus
+                            ? 'กดปุ่ม "คำนวณและจัดสรรโบนัส" เพื่อประมวลผลโบนัสตามฐานเงินเดือน'
+                            : 'ยังไม่มีการคำนวณโบนัสสำหรับปีนี้'}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    bonuses
+                      .filter((b) => {
+                        const matchesSearch =
+                          !bonusSearchTerm ||
+                          b.employeeName.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          b.employeeCode.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          (b.departmentName && b.departmentName.toLowerCase().includes(bonusSearchTerm.toLowerCase())) ||
+                          (b.positionName && b.positionName.toLowerCase().includes(bonusSearchTerm.toLowerCase()));
+                        const matchesDept = bonusDeptFilter === 'ALL' || b.departmentName === bonusDeptFilter;
+                        return matchesSearch && matchesDept;
+                      })
+                      .map((b) => (
+                        <tr key={b.employeeId} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors">
+                          <td className="py-3 px-3.5 font-mono font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {b.employeeCode}
+                          </td>
+                          <td className="py-3 px-3.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {b.employeeName}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                            <div className="font-medium text-slate-800 dark:text-slate-200">{b.departmentName || '-'}</div>
+                            <div className="text-[11px] text-slate-400">{b.positionName || '-'}</div>
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-mono text-slate-800 dark:text-slate-200 font-medium whitespace-nowrap">
+                            ฿{(b.baseSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          {/* Multiplier */}
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
+                            {canEditBonus ? (
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <input
+                                  type="number"
+                                  step="0.05"
+                                  min="0"
+                                  max="100"
+                                  value={b.multiplier}
+                                  onChange={(e) => handleBonusMultiplierChange(b.employeeId, parseFloat(e.target.value))}
+                                  className="w-16 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                                />
+                                <span className="text-[11px] text-slate-400 font-semibold">x</span>
+                              </div>
+                            ) : (
+                              <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{b.multiplier}x</span>
+                            )}
+                          </td>
+                          {/* Bonus Amount */}
+                          <td className="py-2 px-3 text-right whitespace-nowrap">
+                            {canEditBonus ? (
+                              <div className="inline-flex items-center justify-end gap-1">
+                                <span className="text-slate-400 text-xs">฿</span>
+                                <input
+                                  type="number"
+                                  step="100"
+                                  min="0"
+                                  value={b.bonusAmount}
+                                  onChange={(e) => handleBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
+                                  className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
+                                />
+                              </div>
+                            ) : (
+                              <span className="font-mono font-bold text-amber-900 dark:text-amber-400">
+                                ฿{(b.bonusAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            )}
+                          </td>
+                          {/* Status */}
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            {b.status === 'APPROVED' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                อนุมัติแล้ว
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                คำนวณแล้ว
+                              </span>
+                            )}
+                          </td>
+                          {/* Note */}
+                          <td className="py-2 px-3 whitespace-nowrap">
+                            {canEditBonus ? (
+                              <input
+                                type="text"
+                                placeholder="หมายเหตุ..."
+                                value={b.note || ''}
+                                onChange={(e) => handleBonusNoteChange(b.employeeId, e.target.value)}
+                                className="w-36 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                            ) : (
+                              <span className="text-slate-500 dark:text-slate-400">{b.note || '-'}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -4686,6 +5293,99 @@ export default function PayrollPage() {
               >
                 ปิดหน้าต่าง
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: บันทึกโบนัสเข้าสู่งวดเงินเดือน (Apply Bonus to Payroll Period) */}
+      {isApplyBonusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center justify-center">
+                  <ArrowDownToLine className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">บันทึกโบนัสเข้าสู่งวดเงินเดือน</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">นำยอดโบนัสที่จัดสรรไปรวมจ่ายกับเงินเดือนประจำรอบ</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsApplyBonusModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 rounded-xl text-blue-900 dark:text-blue-200 space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>ระบบคำนวณภาษีและเงินได้สุทธิให้อัตโนมัติ</span>
+                </div>
+                <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
+                  ยอดโบนัสของพนักงานแต่ละคนจะถูกบันทึกเป็นรายการได้ <strong>"เงินโบนัส (INC_BONUS)"</strong> ในงวดที่เลือก พร้อมทั้งคำนวณภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และปรับยอดเงินได้สุทธิ (Net Pay) ให้อัตโนมัติทันที
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  ใส่งวดเงินเดือนเป้าหมายที่ต้องการนำโบนัสไปรวมจ่าย:
+                </label>
+                <select
+                  value={selectedTargetPeriodId || ''}
+                  onChange={(e) => setSelectedTargetPeriodId(parseInt(e.target.value) || null)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                >
+                  <option value="">-- เลือกงวดเงินเดือน --</option>
+                  {periods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.periodName} ({p.year}) - สถานะ: {p.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                  <span>ปีโบนัสที่จัดสรร:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">ปี {bonusYear + 543} ({bonusYear})</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                  <span>จำนวนพนักงานที่จะบันทึก:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">{bonuses.length} คน</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                  <span>ยอดเงินโบนัสรวมที่จะนำส่ง:</span>
+                  <span className="font-bold text-amber-900 dark:text-amber-400 font-mono text-sm">
+                    ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setIsApplyBonusModalOpen(false)}
+                  disabled={isApplyingBonus}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmApplyBonusToPeriod}
+                  disabled={isApplyingBonus || !selectedTargetPeriodId}
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {isApplyingBonus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isApplyingBonus ? 'กำลังบันทึกและคำนวณ...' : 'ยืนยันบันทึกเข้างวดเงินเดือน'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
