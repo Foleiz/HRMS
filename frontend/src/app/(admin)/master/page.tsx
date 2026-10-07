@@ -126,6 +126,28 @@ export default function MasterDataHubPage() {
     setSearchQuery('');
   }, [activeTab]);
 
+  // โหลดข้อมูลทุกแท็บครั้งแรกเบื้องหลัง เพื่อให้ตัวเลขบนแท็บถูกต้องตั้งแต่เปิดหน้า (เดิมเป็น 0 จนกว่าจะกดเข้าแท็บ)
+  useEffect(() => {
+    let cancelled = false;
+    Promise.allSettled([
+      masterDataService.getDocumentTypes(),
+      masterDataService.getNationalities(),
+      masterDataService.getReligions(),
+      masterDataService.getMaritalStatuses(),
+      bankService.getAll(),
+    ]).then(([d, n, r, m, b]) => {
+      if (cancelled) return;
+      if (d.status === 'fulfilled') setDocTypes(d.value);
+      if (n.status === 'fulfilled') setNationalities(n.value);
+      if (r.status === 'fulfilled') setReligions(r.value);
+      if (m.status === 'fulfilled') setMaritalStatuses(m.value);
+      if (b.status === 'fulfilled') setBanks(b.value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Open Create Modal
   const handleOpenCreate = () => {
     setModalMode('create');

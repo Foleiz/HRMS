@@ -5,14 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircle } from 'lucide-react';
 
-/** บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา ไม่แสดงบน production) */
+/** บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา ไม่แสดงบน production) — ใส่เฉพาะบัญชีที่มีอยู่จริงในฐานข้อมูล */
 const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
   { label: 'ผู้ดูแลระบบสูงสุด', username: 'admin', password: 'Admin#2026!Sec' },
   { label: 'ฝ่ายทรัพยากรบุคคล', username: 'hr', password: 'Hr@2026!Pass' },
-  { label: 'ฝ่ายการเงินและบัญชี', username: 'finance', password: 'Finance@Money2026' },
-  { label: 'ผู้บริหาร / ผู้อนุมัติ', username: 'approver', password: 'Approver@Flow2026' },
-  { label: 'ผู้จัดการฝ่าย', username: 'somchai.w', password: 'Somchai@Dept2026' },
-  { label: 'พนักงานทั่วไป', username: 'worameth.r', password: 'Worameth@Staff26' },
 ];
 
 const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production';
@@ -103,7 +99,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+          <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-3">
             <label className="sr-only" htmlFor="login-username">ชื่อผู้ใช้งาน</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#94A3B8]">

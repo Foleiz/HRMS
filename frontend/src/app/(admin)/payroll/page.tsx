@@ -238,6 +238,15 @@ const THAI_MONTH_NAMES = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
 
+/** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบย่อ เช่น 29 ส.ค. 2569 */
+const formatThaiShortDate = (iso?: string | null) => {
+  if (!iso) return '-';
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  const abbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  return `${d} ${abbr[m - 1]} ${y + 543}`;
+};
+
 const getDefaultPeriodValues = (year: number, month: number) => {
   const safeMonth = Math.min(Math.max(1, month || 1), 12);
   const thaiMonth = THAI_MONTH_NAMES[safeMonth - 1];
@@ -407,15 +416,12 @@ export default function PayrollPage() {
   const [deletePeriodConfirmOpen, setDeletePeriodConfirmOpen] = useState(false);
   const [isDeletingPeriod, setIsDeletingPeriod] = useState(false);
   const [isPeriodNameCustom, setIsPeriodNameCustom] = useState(false);
-  const [newPeriodForm, setNewPeriodForm] = useState(() => ({
-    year: 2026,
-    month: 8,
-    periodName: 'รอบเดือนสิงหาคม 2569',
-    startDate: '2026-08-01',
-    endDate: '2026-08-31',
-    paymentDate: '2026-08-29',
-    claimCutoffDate: '',
-  }));
+  const [newPeriodForm, setNewPeriodForm] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    return { year: y, month: m, ...getDefaultPeriodValues(y, m), claimCutoffDate: '' };
+  });
 
   const handleMonthChange = (newMonth: number) => {
     const safeMonth = Math.min(Math.max(1, newMonth || 1), 12);
@@ -1455,10 +1461,10 @@ export default function PayrollPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  ฿{overview?.currentMonthTotal?.toLocaleString() || '1,842,300'}
+                  {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString()}` : '-'}
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-400">
-                  {overview?.currentMonthPeriod || 'รอบ ส.ค. 2569'}
+                  {overview?.currentMonthPeriod || '-'}
                 </span>
               </div>
 
@@ -1480,10 +1486,10 @@ export default function PayrollPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '118/145'}
+                  {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-400">
-                  คิดเป็น {overview?.calculatedPercentage || 81}%
+                  คิดเป็น {overview?.calculatedPercentage ?? 0}%
                 </span>
               </div>
 
@@ -1497,7 +1503,7 @@ export default function PayrollPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `${overview.pendingApprovalCount} คน` : '27 คน'}
+                  {overview ? `${overview.pendingApprovalCount} คน` : '-'}
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-400">ต้องดำเนินการก่อนปิดรอบ</span>
               </div>
@@ -1512,10 +1518,10 @@ export default function PayrollPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview?.nextClosingDate || '29 ส.ค. 2569'}
+                  {overview?.nextClosingDate || '-'}
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-400">
-                  เหลืออีก {overview?.remainingDays != null ? overview.remainingDays : 2} วัน
+                  {overview?.remainingDays != null && overview.remainingDays >= 0 ? `เหลืออีก ${overview.remainingDays} วัน` : '-'}
                 </span>
               </div>
 
@@ -2460,18 +2466,14 @@ export default function PayrollPage() {
                       ช่วงเงินเดือน:{' '}
                       <span className="text-slate-600 dark:text-slate-400 font-medium">
                         {selectedPeriod
-                          ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026
-                              ? '1 ส.ค. 2569 - 31 ส.ค. 2569'
-                              : `${selectedPeriod.startDate || '-'} - ${selectedPeriod.endDate || '-'}`)
+                          ? `${formatThaiShortDate(selectedPeriod.startDate)} - ${formatThaiShortDate(selectedPeriod.endDate)}`
                           : '-'}
                       </span>
                     </span>
                     <span>
                       วันจ่ายเงิน:{' '}
                       <span className="text-slate-600 dark:text-slate-400 font-medium">
-                        {selectedPeriod?.paymentDate
-                          ? (selectedPeriod.month === 8 && selectedPeriod.year === 2026 ? '29 ส.ค. 2569' : selectedPeriod.paymentDate)
-                          : '-'}
+                        {formatThaiShortDate(selectedPeriod?.paymentDate)}
                       </span>
                     </span>
                     {selectedPeriod && (
@@ -2933,7 +2935,7 @@ export default function PayrollPage() {
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">
-                      โอนวันที่ {selectedPeriod?.paymentDate ? '29 ส.ค. 2569' : '-'}
+                      โอนวันที่ {formatThaiShortDate(selectedPeriod?.paymentDate)}
                     </span>
                   </div>
 
@@ -3897,7 +3899,7 @@ export default function PayrollPage() {
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || 'กันยายน 2569'}
+                รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || '-'}
               </p>
             </div>
 

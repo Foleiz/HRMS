@@ -558,7 +558,8 @@ public class CertificateService : ICertificateService
         var salary = includeSalary ? salaryRecord?.BaseSalary : null;
 
         var fullName = employee.FullName;
-        var position = assignment?.Position?.PositionName ?? "-";
+        // ชื่อตำแหน่งบางรายการขึ้นต้นด้วย "ตำแหน่ง" อยู่แล้ว — ตัดออกเพื่อไม่ให้เป็น "ตำแหน่ง ตำแหน่ง..."
+        var position = System.Text.RegularExpressions.Regex.Replace(assignment?.Position?.PositionName ?? "-", @"^ตำแหน่ง\s*", "");
         var department = assignment?.Department?.DepartmentName ?? "-";
         var companyName = company?.CompanyName ?? string.Empty;
         var issueDate = issuedAt ?? nowTh;

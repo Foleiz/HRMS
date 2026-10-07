@@ -24,24 +24,32 @@ export default function ProfilePage() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  const fetchEmployeeData = async () => {
-    setIsLoading(true);
-    try {
-      const targetId = user?.employeeId || 1;
-      const data = await employeeService.getById(targetId);
-      setEmployee(data);
-    } catch (err: unknown) {
-      console.error('Failed to load profile:', err);
-      toast.error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!isAuthLoading) {
-      fetchEmployeeData();
+    if (isAuthLoading) return;
+    if (!user?.employeeId) {
+      // บัญชีที่ไม่ได้ผูกกับพนักงาน — ไม่เดาเป็นพนักงานรหัส 1
+      setIsLoading(false);
+      return;
     }
+    let cancelled = false;
+    const fetchEmployeeData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await employeeService.getById(user.employeeId!);
+        if (!cancelled) setEmployee(data);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        console.error('Failed to load profile:', err);
+        toast.error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    fetchEmployeeData();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.employeeId, isAuthLoading]);
 
   if (isLoading) {
