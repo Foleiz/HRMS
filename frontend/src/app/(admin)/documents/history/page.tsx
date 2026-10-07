@@ -191,7 +191,7 @@ export default function DocumentHistoryPage() {
 
     const certRows: MyDocumentRow[] = certificateRequests.map((r) => ({
       id: `CERT-${r.id}`,
-      code: `CERT-${r.id}`,
+      code: `CERT-${String(r.id).padStart(4, '0')}`,
       submittedDate: r.requestedAt,
       detailDate: `วัตถุประสงค์: ${r.purpose || '-'}`,
       documentType: `หนังสือรับรอง (${r.certificateName || '-'})`,
@@ -397,7 +397,7 @@ export default function DocumentHistoryPage() {
   };
 
   const handleExport = () => {
-    const header = ['รหัสเอกสาร', 'วันที่ยื่นเอกสาร', 'วันที่ลา', 'ประเภทเอกสาร', 'สถานะเอกสาร'];
+    const header = ['รหัสเอกสาร', 'วันที่ยื่นเอกสาร', 'วันที่ลา / รายละเอียด', 'ประเภทเอกสาร', 'สถานะเอกสาร'];
     const rows = documents.map((d) => [
       d.code,
       formatShortDate(d.submittedDate),
@@ -494,7 +494,7 @@ export default function DocumentHistoryPage() {
                   <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
                     <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">รหัสเอกสาร</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ยื่นเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">ประเภทเอกสาร</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">สถานะเอกสาร</th>
                     <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>

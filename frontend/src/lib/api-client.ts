@@ -1,5 +1,23 @@
 import axios from 'axios';
 
+/**
+ * ฟังก์ชันสำหรับหา API Base URL แบบ Dynamic:
+ * - บน Browser: หากเปิดเว็บด้วย IP อะไร (เช่น 26.169.162.24 หรือ 192.168.1.x) จะชี้ไปที่ IP นั้นที่พอร์ต 5229 เสมอ
+ * - บน SSR / Server-side: ใช้ NEXT_PUBLIC_API_URL หรือ fallback ไปที่ http://127.0.0.1:5229/api
+ */
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    // ถ้าเข้าด้วย localhost หรือ 127.0.0.1 และมีการระบุ NEXT_PUBLIC_API_URL ใน env ให้ใช้ตามนั้น
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+    // หากเข้าผ่าน Radmin VPN, LAN, หรือ IP ภายนอก ให้ชี้ไปที่ Host เดียวกันที่พอร์ต 5229
+    return `${protocol}//${hostname}:5229/api`;
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
 
 /**
@@ -14,10 +32,11 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Request Interceptor: แนบ JWT Token เมื่อมีการล็อกอิน
+// Request Interceptor: แนบ JWT Token และอัปเดต baseURL ให้ตรงกับ Hostname ปัจจุบัน
 apiClient.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
+      config.baseURL = getApiBaseUrl();
       const token = localStorage.getItem('hrms_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -56,7 +75,11 @@ apiClient.interceptors.response.use(
     }
 
     if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')) {
-      errorMessage = 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
+      const method = (error.config?.method || 'get').toLowerCase();
+      // "ข้อมูลอาจถูกบันทึกแล้ว" ใช้เฉพาะคำขอที่เขียนข้อมูล — คำขออ่านข้อมูล (GET) ไม่มีการบันทึก
+      errorMessage = method === 'get'
+        ? 'เซิร์ฟเวอร์ตอบช้าเกินไป (timeout) กรุณาลองใหม่อีกครั้ง'
+        : 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
       console.warn('API Timeout:', error.config?.url);
     } else if (!error.response) {
       errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';
@@ -118,7 +141,7 @@ export const getAvatarUrl = (avatarUrl?: string | null): string | null => {
   ) {
     return avatarUrl;
   }
-  const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api').replace(/\/api\/?$/, '');
+  const base = getApiBaseUrl().replace(/\/api\/?$/, '');
   return `${base}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
 };
 

@@ -167,7 +167,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// 5. CORS Policy (สำหรับ Next.js Frontend ทุกพอร์ต เช่น 3000, 3001)
+// 5. CORS Policy (สำหรับ Next.js Frontend เช่น localhost, Radmin VPN 26.x.x.x, LAN)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -178,7 +178,14 @@ builder.Services.AddCors(options =>
                   try
                   {
                       var uri = new Uri(origin);
-                      return uri.Host == "localhost" || uri.Host == "127.0.0.1";
+                      var host = uri.Host;
+                      // อนุญาต localhost, 127.0.0.1, Radmin VPN (26.x.x.x), และ Private LAN IP ทั้งหมด
+                      return host == "localhost"
+                          || host == "127.0.0.1"
+                          || host.StartsWith("26.")
+                          || host.StartsWith("192.168.")
+                          || host.StartsWith("10.")
+                          || (host.StartsWith("172.") && uri.HostNameType == UriHostNameType.IPv4);
                   }
                   catch
                   {

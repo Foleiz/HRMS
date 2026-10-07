@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
@@ -10,6 +11,23 @@ public class LeaveBalanceService : ILeaveBalanceService
     private readonly IHrmsDbContext _context;
     private readonly ILeaveEntitlementSync _sync;
 
+    // ซิงค์สิทธิ์การลาตอน "อ่าน" ไม่เกิน 1 ครั้งต่อ 5 นาทีต่อขอบเขตเดียวกัน
+    // (เดิมซิงค์ทุกครั้งที่เปิดหน้า → query + บันทึกฐานข้อมูลหลายรอบ ทำให้ my-summary ช้า 9-15 วินาที)
+    // การแก้นโยบาย/ประเภทการลา/อนุมัติลา ยังเรียก ILeaveEntitlementSync ตรงเหมือนเดิม จึงไม่กระทบความถูกต้อง
+    private static readonly ConcurrentDictionary<string, DateTime> LastReadSync = new();
+    private static readonly TimeSpan ReadSyncInterval = TimeSpan.FromMinutes(5);
+
+    private async Task SyncForReadAsync(int year, long? employeeId, long? leaveTypeId, CancellationToken cancellationToken)
+    {
+        var key = $"{year}|{employeeId?.ToString() ?? "*"}|{leaveTypeId?.ToString() ?? "*"}";
+        var now = DateTime.UtcNow;
+        if (LastReadSync.TryGetValue(key, out var last) && now - last < ReadSyncInterval)
+            return;
+
+        await _sync.SyncAsync(year, employeeId.HasValue ? new[] { employeeId.Value } : null, leaveTypeId, cancellationToken);
+        LastReadSync[key] = now;
+    }
+
     public LeaveBalanceService(IHrmsDbContext context, ILeaveEntitlementSync sync)
     {
         _context = context;
@@ -20,7 +38,7 @@ public class LeaveBalanceService : ILeaveBalanceService
     {
         // คำนวณสิทธิ์ปีนี้อัตโนมัติจากสิทธิ์การลาก่อนแสดงผล (ไม่ต้องกดจัดสรรยอดประจำปี)
         var syncYear = year ?? LeavePolicyRules.ThaiToday().Year;
-        await _sync.SyncAsync(syncYear, employeeId.HasValue ? new[] { employeeId.Value } : null, leaveTypeId, cancellationToken);
+        await SyncForReadAsync(syncYear, employeeId, leaveTypeId, cancellationToken);
 
         var query = _context.LeaveBalances
             .AsNoTracking()
@@ -180,8 +198,7 @@ public class LeaveBalanceService : ILeaveBalanceService
             year -= 543;
         }
 
-        // คำนวณสิทธิ์ปีนี้อัตโนมัติก่อนสรุปยอด (หน้า ESS)
-        await _sync.SyncAsync(year, new[] { employeeId }, null, cancellationToken);
+        // คำนวณสิทธิ์ปีนี้อัตโนมัติก่อนสรุปยอด (หน้า ESS) — GetAllAsync ด้านล่างซิงค์ให้แล้ว ไม่ต้องซิงค์ซ้ำ
 
         var employee = await _context.Employees
             .AsNoTracking()

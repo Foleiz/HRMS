@@ -22,8 +22,8 @@ dotnet run --project src/Hrms.Api
 cd frontend
 npm run dev
 ```
-* **Web Portal URL**: `http://localhost:3000`
-* **Reference Feature (ข้อมูลธนาคาร)**: `http://localhost:3000/master/banks`
+* **Web Portal URL**: `http://localhost:4001`
+* **Reference Feature (ข้อมูลธนาคาร)**: `http://localhost:4001/master/banks`
 
 ---
 

@@ -1,0 +1,35 @@
+@echo off
+setlocal EnableDelayedExpansion
+
+title HRMS Stop Local Servers
+cd /d "%~dp0"
+
+echo ==============================================================================
+echo Stopping HRMS local servers (Backend Port 5229, Frontend Port 4001)...
+echo ==============================================================================
+
+:: Terminate Hrms.Api process
+taskkill /f /im Hrms.Api.exe >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    echo [OK] Terminated Hrms.Api.exe process.
+) else (
+    echo [-] Hrms.Api.exe was not running.
+)
+
+:: Terminate Port 5229
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5229" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+    echo [OK] Killed process on Port 5229 [PID %%a].
+)
+
+:: Terminate Port 4001
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":4001" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+    echo [OK] Killed process on Port 4001 [PID %%a].
+)
+
+echo.
+echo ==============================================================================
+echo [DONE] All local servers stopped successfully.
+echo ==============================================================================
+ping 127.0.0.1 -n 3 >nul

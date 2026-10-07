@@ -209,15 +209,11 @@ public partial class LeaveRequestService : ILeaveRequestService
             await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: null, cancellationToken);
         }
 
-        // Generate Request No: LR-YYYYMM-XXXX
-        var prefix = $"LR-{DateTime.UtcNow:yyyyMM}-";
-        var countThisMonth = await _context.LeaveRequests
-            .CountAsync(r => r.RequestNo.StartsWith(prefix), cancellationToken);
-        var requestNo = $"{prefix}{(countThisMonth + 1):D4}";
-
+        // เลขที่คำขอ LR-YYYYMM-{Id} สร้างจาก Id หลังบันทึก (ไม่ซ้ำแน่นอน)
+        // เดิมใช้ COUNT+1 ซึ่งชนกับเลขเดิมเมื่อมีการลบคำขอ (23505 leave_request_request_no_key)
         var leaveRequest = new LeaveRequest
         {
-            RequestNo = requestNo,
+            RequestNo = $"TMP-{Guid.NewGuid():N}",
             EmployeeId = request.EmployeeId,
             LeaveTypeId = request.LeaveTypeId,
             StartDatetime = request.StartDatetime,
@@ -241,6 +237,9 @@ public partial class LeaveRequestService : ILeaveRequestService
         }
 
         _context.LeaveRequests.Add(leaveRequest);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        leaveRequest.RequestNo = $"LR-{DateTime.UtcNow.AddHours(7):yyyyMM}-{leaveRequest.Id:D4}";
         await _context.SaveChangesAsync(cancellationToken);
 
         // ถ้ายื่นคำขอจริง ให้เริ่ม Approval Workflow ทันที

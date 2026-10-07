@@ -114,7 +114,7 @@ const CertificatePaper: React.FC<{
         <>
           <Para>
             หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า <b>{doc.fullName}</b> รหัสพนักงาน {doc.employeeCode} เป็นพนักงานของ
-            {doc.companyName} ตำแหน่ง {doc.positionName} สังกัด{doc.departmentName} โดยเริ่มปฏิบัติงานตั้งแต่วันที่{' '}
+            {doc.companyName} ตำแหน่ง {(doc.positionName || '').replace(/^ตำแหน่ง\s*/, '')} สังกัด{doc.departmentName} โดยเริ่มปฏิบัติงานตั้งแต่วันที่{' '}
             {doc.startDateText} จนถึงปัจจุบัน รวมระยะเวลา {doc.serviceDurationText}
             {includeSalary && salary != null && (
               <>
@@ -125,7 +125,7 @@ const CertificatePaper: React.FC<{
           </Para>
           {purpose && (
             <Para>
-              หนังสือรับรองฉบับนี้ออกให้{purpose.startsWith('เพื่อ') ? '' : 'เพื่อ'}
+              หนังสือรับรองฉบับนี้ออกให้{purpose.startsWith('เพื่อ') ? ' ' : 'เพื่อ '}
               {purpose} เท่านั้น
             </Para>
           )}

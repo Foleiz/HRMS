@@ -96,6 +96,17 @@ interface EmployeeDetailViewProps {
   editButtonLabel?: string;
 }
 
+/** แปลงประเภทที่อยู่ที่เป็นรหัส (จากข้อมูลตั้งต้น) เป็นข้อความไทย — ค่าที่กรอกจากฟอร์มเป็นภาษาไทยอยู่แล้ว */
+const ADDRESS_TYPE_LABELS: Record<string, string> = {
+  CURRENT: 'ที่อยู่ปัจจุบัน',
+  REGISTERED: 'ที่อยู่ตามทะเบียนบ้าน',
+  HOME: 'บ้านตัวเอง',
+  RENT: 'บ้านเช่า',
+  DORMITORY: 'หอพัก',
+  FAMILY: 'อาศัยกับครอบครัว',
+};
+const formatAddressType = (t?: string | null) => (t ? ADDRESS_TYPE_LABELS[t.toUpperCase()] ?? t : '-');
+
 export default function EmployeeDetailView({
   employee,
   onEmployeeUpdate,
@@ -678,7 +689,7 @@ export default function EmployeeDetailView({
                   <div className="space-y-3 pl-0.5">
                     <div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ประเภทที่อยู่</p>
-                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.addressType || 'บ้านตัวเอง'}</p>
+                      <p className="text-slate-600 dark:text-slate-400">{formatAddressType(primaryAddress?.addressType)}</p>
                     </div>
 
                     <div>

@@ -100,6 +100,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // ล้างแถบข้อผิดพลาดเมื่อผู้ใช้แก้ไขฟอร์ม (เดิมค้างอยู่จนกว่าจะกดส่งอีกครั้ง)
+  useEffect(() => {
+    setError(null);
+  }, [form]);
   const [showPreview, setShowPreview] = useState(false);
 
   const { leaveTypeId, startDate, endDate, leaveFormat, reason, contactDuringLeave, attachment } = form;
@@ -273,12 +277,12 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     e.preventDefault();
     setError(null);
 
-    if (!leaveTypeId) {
-      setError('กรุณาเลือกประสงค์ขอลา');
-      return;
-    }
-    if (!startDate || !endDate) {
-      setError('กรุณาระบุช่วงวันที่ลา');
+    // แจ้งทุกช่องที่ยังไม่ได้กรอกพร้อมกัน (เดิมแจ้งทีละข้อ)
+    const missing: string[] = [];
+    if (!leaveTypeId) missing.push('ประสงค์ขอลา');
+    if (!startDate || !endDate) missing.push('ช่วงวันที่ลา');
+    if (missing.length > 0) {
+      setError(`กรุณาระบุ${missing.join(' และ ')}`);
       return;
     }
     if (new Date(endDate) < new Date(startDate)) {

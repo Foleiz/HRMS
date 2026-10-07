@@ -74,22 +74,11 @@ public class ExceptionHandlingMiddleware
 
             case DbUpdateException dbEx when dbEx.InnerException?.Message.Contains("23505") == true || dbEx.Message.Contains("23505"):
                 statusCode = HttpStatusCode.BadRequest;
-                message = "ไม่สามารถบันทึกได้ เนื่องจากข้อมูลซ้ำกับที่มีอยู่แล้วในระบบ (Unique Constraint)";
-                if (env.IsDevelopment())
-                {
-                    message = $"{message} [Detail: {dbEx.InnerException?.Message ?? dbEx.Message}]";
-                }
+                message = "ไม่สามารถบันทึกได้ เนื่องจากข้อมูลซ้ำกับที่มีอยู่แล้วในระบบ";
                 break;
 
             default:
-                // เฉพาะโหมด Development: แนบข้อความ Exception จริง (รวม InnerException ซึ่งมักเป็นสาเหตุจริง
-                // เช่น จาก Postgres/EF Core) ต่อท้ายไปด้วย เพื่อให้เห็นสาเหตุที่แท้จริงได้ทันทีจากหน้าเว็บ
-                // แทนที่จะเห็นแค่ข้อความกำกวมนี้เฉย ๆ (โหมด Production จะไม่แสดง เพื่อความปลอดภัย)
-                if (env.IsDevelopment())
-                {
-                    var detail = exception.InnerException?.Message ?? exception.Message;
-                    message = $"{message} [Detail: {detail}]";
-                }
+                // ไม่ส่งข้อความ Exception ดิบ (เช่น error ของ Postgres) ให้หน้าเว็บ — ดูสาเหตุจริงได้จาก log ฝั่ง server
                 break;
         }
 
