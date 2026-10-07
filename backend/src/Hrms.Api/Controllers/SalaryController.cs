@@ -37,7 +37,7 @@ public class SalaryController : ControllerBase
         [FromQuery] long? levelId,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewStructures(_currentUser), "ดูโครงสร้างเงินเดือน");
         var result = await _salaryService.GetAllStructuresAsync(positionId, levelId, cancellationToken);
         return Ok(ApiResponse<List<SalaryStructureDto>>.Ok(result));
     }
@@ -52,7 +52,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewStructures(_currentUser), "ดูโครงสร้างเงินเดือน");
         var result = await _salaryService.GetStructureByIdAsync(id, cancellationToken);
         return Ok(ApiResponse<SalaryStructureDto>.Ok(result));
     }
@@ -115,7 +115,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> GetTaxBrackets(CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewTaxSso(_currentUser), "ดูข้อมูลขั้นบันไดภาษี");
         var result = await _salaryService.GetTaxBracketsAsync(cancellationToken);
         return Ok(ApiResponse<List<TaxBracketDto>>.Ok(result));
     }
@@ -176,7 +176,7 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<SocialSecurityRateDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<SocialSecurityRateDto>>>> GetSocialSecurityRates(CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewTaxSso(_currentUser), "ดูข้อมูลอัตราประกันสังคม");
         var result = await _salaryService.GetSocialSecurityRatesAsync(cancellationToken);
         return Ok(ApiResponse<List<SocialSecurityRateDto>>.Ok(result));
     }
@@ -302,7 +302,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string? itemType,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewItems(_currentUser), "ดูรายการประเภทรายได้และรายหัก");
         var result = await _salaryService.GetPayrollItemsAsync(itemType, cancellationToken);
         return Ok(ApiResponse<List<PayrollItemDto>>.Ok(result));
     }
@@ -517,7 +517,7 @@ public class SalaryController : ControllerBase
         [FromQuery] string? bankCode,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewBankTransfer(_currentUser), "ดูข้อมูลการโอนเงินธนาคาร");
         var result = await _salaryService.GetBankTransferSummaryAsync(id, bankCode, cancellationToken);
         return Ok(ApiResponse<BankTransferSummaryDto>.Ok(result, "ดึงข้อมูลการโอนเงินธนาคารสำเร็จ"));
     }
@@ -546,7 +546,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewTaxSso(_currentUser), "ดูข้อมูลสรุปภาษีและประกันสังคม");
         var result = await _salaryService.GetTaxSsoSummaryAsync(id, cancellationToken);
         return Ok(ApiResponse<TaxSsoSummaryDto>.Ok(result, "ดึงข้อมูลสรุปภาษีและประกันสังคมสำเร็จ"));
     }
@@ -560,7 +560,7 @@ public class SalaryController : ControllerBase
         [FromQuery] int? year,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูข้อมูลเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanViewBonus(_currentUser), "ดูข้อมูลโบนัส");
         var result = await _salaryService.GetEmployeeBonusesAsync(year, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "ดึงข้อมูลโบนัสพนักงานสำเร็จ"));
     }

@@ -120,6 +120,16 @@ public class CurrentUserService : ICurrentUserService
             permsToCheck.Add("PAYROLL_VIEW");
             permsToCheck.Add("PAYROLL_CALC_VIEW");
         }
+        else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
+                 permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("APPROVAL_PAYROLL_VIEW");
+            permsToCheck.Add("PAYROLL_VIEW");
+            permsToCheck.Add("PAYROLL_CALC_VIEW");
+            permsToCheck.Add("PAYROLL_HR_VIEW");
+            permsToCheck.Add("PAYROLL_FINANCE_VIEW");
+            permsToCheck.Add("PAYROLL_ADMIN_VIEW");
+        }
 
         var scopes = new List<string>();
         foreach (var perm in permsToCheck)
