@@ -201,19 +201,8 @@ public partial class LeaveRequestService : ILeaveRequestService
         // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
         if (!request.IsDraft)
         {
-            // Period Lock Guard: ตรวจสอบว่างวดเงินเดือนของช่วงวันลาถูกปิดรอบหรือจ่ายเงินแล้วหรือไม่ (R2-04)
-            var leaveStartDate = DateOnly.FromDateTime(request.StartDatetime);
-            var leaveEndDate = DateOnly.FromDateTime(request.EndDatetime);
-            var isPeriodLocked = await _context.PayrollPeriods
-                .AnyAsync(p => p.StartDate <= leaveEndDate &&
-                               leaveStartDate <= p.EndDate &&
-                               (p.Status == "PAID" || p.Status == "CLOSED"),
-                          cancellationToken);
-
-            if (isPeriodLocked)
-            {
-                throw new InvalidOperationException($"ไม่สามารถยื่นคำขอลาในช่วงวันที่ {leaveStartDate:yyyy-MM-dd} ถึง {leaveEndDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (งวดเงินเดือนถูกล็อก)");
-            }
+            // Period Lock Guard (R2-04): ห้ามยื่นลาในงวดเงินเดือนที่ปิดรอบ/จ่ายเงินแล้ว
+            await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "ยื่น", cancellationToken);
 
             // กฎการลาตามนโยบาย (ลาซ้อน, ทดลองงาน, อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ)
             await EnsureLeaveRulesAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
@@ -296,6 +285,9 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         if (!request.IsDraft)
         {
+            // Period Lock Guard: ส่งแบบร่างเข้าอนุมัติก็ต้องตรวจเหมือนยื่นใหม่ (เดิมไม่ได้ตรวจ ทำให้ยื่นเข้างวดที่ปิดแล้วได้)
+            await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "ยื่น", cancellationToken);
+
             var year = ToThaiDate(request.StartDatetime).Year;
             var hasAttachment = request.AttachmentData is { Length: > 0 }
                 || await _context.LeaveRequestDocuments.AnyAsync(d => d.LeaveRequestId == leaveRequest.Id, cancellationToken);
@@ -343,6 +335,16 @@ public partial class LeaveRequestService : ILeaveRequestService
 
     public async Task<LeaveRequestDto> ApproveAsync(long id, long? approverId = null, string? comment = null, CancellationToken cancellationToken = default)
     {
+        // ครอบด้วย transaction: workflow (approval_instance) กับใบลา/ยอดวันลา/ปฏิทินต้องสำเร็จพร้อมกัน
+        // เดิม workflow SaveChanges ไปก่อน แล้วถ้าขั้นตัดยอดล้ม ใบลาจะกลายเป็น APPROVED โดยไม่ถูกตัดยอด
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        var result = await ApproveCoreAsync(id, approverId, comment, cancellationToken);
+        await tx.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    private async Task<LeaveRequestDto> ApproveCoreAsync(long id, long? approverId, string? comment, CancellationToken cancellationToken)
+    {
         var request = await _context.LeaveRequests
             .Include(r => r.LeaveType)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
@@ -358,19 +360,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         }
 
         // Period Lock Guard: ป้องกันการอนุมัติวันลาย้อนหลังในรอบเงินเดือนที่ปิด/จ่ายเงินแล้ว (Data Integrity)
-        var leaveStartDate = DateOnly.FromDateTime(request.StartDatetime);
-        var leaveEndDate = DateOnly.FromDateTime(request.EndDatetime);
-
-        var isPeriodLocked = await _context.PayrollPeriods
-            .AnyAsync(p => p.StartDate <= leaveEndDate &&
-                           leaveStartDate <= p.EndDate &&
-                           (p.Status == "PAID" || p.Status == "CLOSED"),
-                      cancellationToken);
-
-        if (isPeriodLocked)
-        {
-            throw new InvalidOperationException($"ไม่สามารถอนุมัติคำขอลาในช่วงวันที่ {leaveStartDate.Day:D2}/{leaveStartDate.Month:D2}/{leaveStartDate.Year + 543} ถึง {leaveEndDate.Day:D2}/{leaveEndDate.Month:D2}/{leaveEndDate.Year + 543} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
-        }
+        await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "อนุมัติ", cancellationToken);
 
         // คำนวณวันลาใหม่ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท (แก้ค่าที่อาจนับเสาร์–อาทิตย์มาจากหน้าเว็บเดิม)
         var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, allowZero: true, cancellationToken);
@@ -459,6 +449,16 @@ public partial class LeaveRequestService : ILeaveRequestService
 
     public async Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, long? approverId = null, CancellationToken cancellationToken = default)
     {
+        // ครอบด้วย transaction: workflow (approval_instance) กับใบลา/ยอดวันลา/ปฏิทินต้องสำเร็จพร้อมกัน
+        // เดิม workflow SaveChanges ไปก่อน แล้วถ้าขั้นตัดยอดล้ม ใบลาจะกลายเป็น APPROVED โดยไม่ถูกตัดยอด
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        var result = await RejectCoreAsync(id, reason, approverId, cancellationToken);
+        await tx.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    private async Task<LeaveRequestDto> RejectCoreAsync(long id, string? reason, long? approverId, CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(reason))
         {
             throw new InvalidOperationException("กรุณาระบุเหตุผลในการปฏิเสธคำขอลา");
@@ -493,6 +493,16 @@ public partial class LeaveRequestService : ILeaveRequestService
     }
 
     public async Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, bool revertToDraftIfPending = false, CancellationToken cancellationToken = default)
+    {
+        // ครอบด้วย transaction: workflow (approval_instance) กับใบลา/ยอดวันลา/ปฏิทินต้องสำเร็จพร้อมกัน
+        // เดิม workflow SaveChanges ไปก่อน แล้วถ้าขั้นตัดยอดล้ม ใบลาจะกลายเป็น APPROVED โดยไม่ถูกตัดยอด
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        var result = await CancelCoreAsync(id, reason, cancelledBy, revertToDraftIfPending, cancellationToken);
+        await tx.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    private async Task<LeaveRequestDto> CancelCoreAsync(long id, string? reason, long? cancelledBy, bool revertToDraftIfPending, CancellationToken cancellationToken)
     {
         var request = await _context.LeaveRequests.FindAsync([id], cancellationToken);
         if (request == null)
