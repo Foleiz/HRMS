@@ -3282,30 +3282,19 @@ export default function PayrollPage() {
 
                   <div className="flex items-center gap-3">
                     {periods.length > 0 ? (
-                      <>
-                        <div className="relative inline-block">
-                          <CustomSelect
-                            value={selectedPeriod?.id || ''}
-                            onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                            className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
-                          >
-                            {periods.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.periodName}
-                              </option>
-                            ))}
-                          </CustomSelect>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setIsAllPeriodsModalOpen(true)}
-                          className="h-7 px-2 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
-                          title="ดูรอบเงินเดือนทั้งหมด"
+                      <div className="relative inline-block">
+                        <CustomSelect
+                          value={selectedPeriod?.id || ''}
+                          onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                          className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
                         >
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>ดูรอบทั้งหมด</span>
-                        </button>
-                      </>
+                          {periods.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.periodName}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-2 py-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
