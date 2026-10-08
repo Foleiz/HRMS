@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { X, Loader2, Plus, Trash2, FileDown } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -36,7 +36,38 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const [newAmount, setNewAmount] = useState<string>('');
   const [newNote, setNewNote] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDownloadPdf = async () => {
+    if (!record) return;
+    try {
+      setIsDownloadingPdf(true);
+      setError(null);
+      const blob = await salaryService.downloadPayslipPdf(record.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payslip_${record.employeeCode}_${record.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error('Failed to download payslip PDF:', err);
+      let msg = 'ไม่สามารถดาวน์โหลดสลิปเงินเดือนได้';
+      if (err?.response?.data instanceof Blob) {
+        try {
+          msg = JSON.parse(await err.response.data.text())?.message || msg;
+        } catch {}
+      } else if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      }
+      setError(msg);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   const selectableItems = payrollItems.filter(
     (i) =>
@@ -221,6 +252,22 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     : '-'}
                 </span>
               </div>
+
+              {/* ปุ่มดาวน์โหลด E-Payslip PDF */}
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf || record.status === 'DRAFT'}
+                className="w-full h-10 inline-flex items-center justify-center gap-2 bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title={record.status === 'DRAFT' ? 'รอบเงินเดือนยังไม่ได้ประมวลผล' : 'ดาวน์โหลดสลิปเงินเดือนแบบ PDF'}
+              >
+                {isDownloadingPdf ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4" />
+                )}
+                <span>{isDownloadingPdf ? 'กำลังสร้างไฟล์ PDF...' : 'ดาวน์โหลด E-Payslip (PDF)'}</span>
+              </button>
 
               {/* เพิ่มรายการรายได้/รายหักแบบระบุเอง (เฉพาะรอบ DRAFT/REVIEW) */}
               {canEdit && (
