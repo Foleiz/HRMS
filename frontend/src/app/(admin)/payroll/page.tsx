@@ -1722,7 +1722,9 @@ export default function PayrollPage() {
   }
 
   // Get Tab Display Name for Breadcrumb
-  const getTabLabel = (tab: ActiveTab) => {
+  // ใช้ function declaration (hoisted) — useEffect ด้านบนเรียกใช้ และหน้านี้ return AccessDenied ก่อนถึงบรรทัดนี้
+  // เดิมเป็น const ทำให้ผู้ไม่มีสิทธิ์เงินเดือนเจอ "Cannot access 'getTabLabel' before initialization"
+  function getTabLabel(tab: ActiveTab) {
     switch (tab) {
       case 'overview':
         return 'ภาพรวม';
@@ -1739,7 +1741,7 @@ export default function PayrollPage() {
       case 'tax-sso':
         return 'ภาษี & ประกันสังคม';
     }
-  };
+  }
 
   // Filtered Payroll Items
   const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
