@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ClipboardList,
   Search,
@@ -199,10 +199,13 @@ export default function LeaveRequestsApprovalPage() {
   }>({ isOpen: false, title: '', message: '' });
 
   // Toast
-  const [toast, setToast] = useState<string | null>(null);
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+  // error แสดงนานกว่า และอยู่เหนือ modal (z-[100]) — เดิม z-50 เท่ากับ modal ทำให้ผู้ใช้มองไม่เห็นข้อความผิดพลาด
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, type });
+    toastTimer.current = setTimeout(() => setToast(null), type === 'error' ? 7000 : 3000);
   };
 
   const closeConfirm = () => setConfirmConfig((p) => ({ ...p, isOpen: false }));
@@ -458,7 +461,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('อนุมัติคำขอลาสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติ', 'error');
     } finally {
       setIsSubmittingApprove(false);
     }
@@ -472,7 +475,7 @@ export default function LeaveRequestsApprovalPage() {
   const submitReject = async () => {
     if (!selectedForReject) return;
     if (!rejectReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ');
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
       return;
     }
     setIsSubmittingReject(true);
@@ -482,7 +485,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('ปฏิเสธคำขอลาสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธ', 'error');
     } finally {
       setIsSubmittingReject(false);
     }
@@ -506,7 +509,7 @@ export default function LeaveRequestsApprovalPage() {
           fetchData();
         } catch (err: any) {
           closeConfirm();
-          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาด');
+          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาด', 'error');
         }
       },
     });
@@ -580,7 +583,7 @@ export default function LeaveRequestsApprovalPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      showToast('ไม่สามารถดาวน์โหลดเอกสารได้');
+      showToast('ไม่สามารถดาวน์โหลดเอกสารได้', 'error');
     }
   };
 
@@ -600,7 +603,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('อนุมัติคำขอหนังสือรับรองสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ', 'error');
     } finally {
       setIsSubmittingCertApprove(false);
     }
@@ -614,7 +617,7 @@ export default function LeaveRequestsApprovalPage() {
   const submitCertReject = async () => {
     if (!selectedCertForReject) return;
     if (!rejectCertReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ');
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
       return;
     }
     setIsSubmittingCertReject(true);
@@ -624,7 +627,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('ปฏิเสธคำขอหนังสือรับรองสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ', 'error');
     } finally {
       setIsSubmittingCertReject(false);
     }
@@ -648,7 +651,7 @@ export default function LeaveRequestsApprovalPage() {
           fetchData();
         } catch (err: any) {
           closeConfirm();
-          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการยกเลิกคำขอ');
+          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการยกเลิกคำขอ', 'error');
         }
       },
     });
@@ -670,7 +673,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('อนุมัติคำขอลาออกสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ', 'error');
     } finally {
       setIsSubmittingResignApprove(false);
     }
@@ -684,7 +687,7 @@ export default function LeaveRequestsApprovalPage() {
   const submitResignReject = async () => {
     if (!selectedResignForReject) return;
     if (!rejectResignReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ');
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
       return;
     }
     setIsSubmittingResignReject(true);
@@ -694,7 +697,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('ปฏิเสธคำขอลาออกสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ');
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ', 'error');
     } finally {
       setIsSubmittingResignReject(false);
     }
@@ -718,7 +721,7 @@ export default function LeaveRequestsApprovalPage() {
           fetchData();
         } catch (err: any) {
           closeConfirm();
-          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการยกเลิกคำขอ');
+          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการยกเลิกคำขอ', 'error');
         }
       },
     });
@@ -740,7 +743,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('อนุมัติคำร้องเอกสารทั่วไปสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการอนุมัติคำร้อง');
+      showToast('เกิดข้อผิดพลาดในการอนุมัติคำร้อง', 'error');
     } finally {
       setIsSubmittingGeneralApprove(false);
     }
@@ -754,7 +757,7 @@ export default function LeaveRequestsApprovalPage() {
   const submitGeneralReject = async () => {
     if (!selectedGeneralForReject) return;
     if (!rejectGeneralReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ');
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
       return;
     }
     setIsSubmittingGeneralReject(true);
@@ -764,7 +767,7 @@ export default function LeaveRequestsApprovalPage() {
       showToast('ปฏิเสธคำร้องเอกสารทั่วไปสำเร็จ');
       fetchData();
     } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการปฏิเสธคำร้อง');
+      showToast('เกิดข้อผิดพลาดในการปฏิเสธคำร้อง', 'error');
     } finally {
       setIsSubmittingGeneralReject(false);
     }
@@ -788,7 +791,7 @@ export default function LeaveRequestsApprovalPage() {
           fetchData();
         } catch (err: any) {
           closeConfirm();
-          showToast('เกิดข้อผิดพลาดในการยกเลิกคำร้อง');
+          showToast('เกิดข้อผิดพลาดในการยกเลิกคำร้อง', 'error');
         }
       },
     });
@@ -894,9 +897,14 @@ export default function LeaveRequestsApprovalPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-slate-900 text-white rounded-xl text-sm shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          {toast}
+        <div
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          className={`fixed bottom-6 right-6 z-[100] max-w-md px-4 py-3 text-white rounded-xl text-sm shadow-lg flex items-start gap-2 animate-in slide-in-from-bottom-2 duration-200 ${toast.type === 'error' ? 'bg-rose-700' : 'bg-slate-900'}`}
+        >
+          {toast.type === 'error'
+            ? <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-white" />
+            : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />}
+          <span>{toast.msg}</span>
         </div>
       )}
 
@@ -1901,7 +1909,7 @@ export default function LeaveRequestsApprovalPage() {
                         a.click();
                         URL.revokeObjectURL(url);
                       } catch {
-                        showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้');
+                        showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้', 'error');
                       }
                     }}
                     className="font-medium text-blue-600 hover:underline truncate max-w-44 cursor-pointer"

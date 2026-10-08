@@ -17,6 +17,33 @@ public partial class LeaveRequestService
     private static string ThaiDate(DateOnly d) =>
         $"{d.Day:D2}/{d.Month:D2}/{d.Year + 543}";
 
+    /// <summary>
+    /// คืนข้อความแจ้งเตือนถ้าช่วงวันลาทับงวดเงินเดือนที่ปิดรอบ (CLOSED) หรือจ่ายเงินแล้ว (PAID) — ไม่ทับคืน null
+    /// ใช้วันที่ตามเวลาไทย (เดิมใช้วันที่ UTC ทำให้ลา 27/10 แสดงเป็น 26/10–27/10)
+    /// </summary>
+    private async Task<string?> GetLockedPayrollPeriodMessageAsync(DateTime startDatetime, DateTime endDatetime, string action, CancellationToken cancellationToken)
+    {
+        var start = ToThaiDate(startDatetime);
+        var end = ToThaiDate(endDatetime);
+        if (end < start) end = start;
+
+        var locked = await _context.PayrollPeriods.AsNoTracking()
+            .Where(p => p.StartDate <= end && start <= p.EndDate && (p.Status == "PAID" || p.Status == "CLOSED"))
+            .OrderBy(p => p.StartDate)
+            .Select(p => new { p.StartDate, p.EndDate })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (locked == null) return null;
+
+        var range = start == end ? $"วันที่ {ThaiDate(start)}" : $"ช่วงวันที่ {ThaiDate(start)} – {ThaiDate(end)}";
+        return $"ไม่สามารถ{action}คำขอลา{range} ได้ เนื่องจากงวดเงินเดือน {ThaiDate(locked.StartDate)} – {ThaiDate(locked.EndDate)} ปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว";
+    }
+
+    private async Task EnsurePayrollPeriodOpenAsync(DateTime startDatetime, DateTime endDatetime, string action, CancellationToken cancellationToken)
+    {
+        var message = await GetLockedPayrollPeriodMessageAsync(startDatetime, endDatetime, action, cancellationToken);
+        if (message != null) throw new InvalidOperationException(message);
+    }
+
     private static string Days(decimal d) => d.ToString("0.##", CultureInfo.InvariantCulture);
 
     public async Task<LeaveValidationResultDto> ValidateLeaveRequestAsync(
@@ -43,6 +70,14 @@ public partial class LeaveRequestService
             return result;
         }
         result.LeaveDays = calc.LeaveDays;
+
+        // งวดเงินเดือนที่ปิดรอบ/จ่ายเงินแล้ว — แจ้งตั้งแต่ในฟอร์ม ไม่ต้องรอไปติดตอนอนุมัติ
+        var lockedMessage = await GetLockedPayrollPeriodMessageAsync(startDatetime, endDatetime, "ยื่น", cancellationToken);
+        if (lockedMessage != null)
+        {
+            result.Errors.Add(lockedMessage);
+            return result;
+        }
 
         var startDate = ToThaiDate(startDatetime);
         var endDate = ToThaiDate(endDatetime);

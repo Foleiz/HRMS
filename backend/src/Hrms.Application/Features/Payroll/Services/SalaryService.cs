@@ -972,15 +972,24 @@ public class SalaryService : ISalaryService
             ? $"{ThaiMonths[latestPeriod.Month <= 12 ? latestPeriod.Month : 1]} {latestPeriod.Year + 543}"
             : "ไม่มีรอบเงินเดือน";
 
-        string nextClosingDate = latestPeriod?.PaymentDate?.ToString("d MMM yyyy", new System.Globalization.CultureInfo("th-TH"))
-            ?? latestPeriod?.EndDate.ToString("d MMM yyyy", new System.Globalization.CultureInfo("th-TH"))
-            ?? "-";
+        // "กำหนดปิดรอบถัดไป" = รอบที่ยังไม่ปิด/ไม่จ่าย ที่เก่าที่สุด — เดิมใช้รอบล่าสุดเสมอ แม้รอบนั้นจ่ายเงินไปแล้ว
+        var nextOpenPeriod = periods
+            .Where(p => p.Status != "PAID" && p.Status != "CLOSED" && p.Status != "CANCELLED")
+            .OrderBy(p => p.Year).ThenBy(p => p.Month)
+            .FirstOrDefault();
 
-        int remainingDays = 0;
-        if (latestPeriod != null)
+        var thaiCulture = new System.Globalization.CultureInfo("th-TH");
+        string nextClosingDate = nextOpenPeriod != null
+            ? (nextOpenPeriod.PaymentDate ?? nextOpenPeriod.EndDate).ToString("d MMM yyyy", thaiCulture)
+            : "ไม่มีรอบที่เปิดอยู่";
+
+        // -1 = ไม่มีรอบที่เปิดอยู่ (หน้าเว็บแสดง "-")
+        int remainingDays = -1;
+        if (nextOpenPeriod != null)
         {
-            var targetDate = latestPeriod.PaymentDate ?? latestPeriod.EndDate;
-            remainingDays = Math.Max(0, targetDate.DayNumber - DateOnly.FromDateTime(DateTime.UtcNow).DayNumber);
+            var targetDate = nextOpenPeriod.PaymentDate ?? nextOpenPeriod.EndDate;
+            var todayThai = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+            remainingDays = Math.Max(0, targetDate.DayNumber - todayThai.DayNumber);
         }
 
         var recentPeriods = periods.Take(5).Select(p =>

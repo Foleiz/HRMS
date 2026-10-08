@@ -128,4 +128,7 @@ public interface IHrmsDbContext
     DbSet<ResignationRequest> ResignationRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>ใช้เปิด transaction ครอบงานหลายขั้น (เช่น อนุมัติ workflow + ตัดยอดวันลา) ให้สำเร็จหรือล้มเหลวพร้อมกัน</summary>
+    Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
 }

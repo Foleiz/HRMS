@@ -129,7 +129,7 @@ public class ApprovalFlowsController : ControllerBase
             var result = await _flowService.SimulateWorkflowAsync(request, cancellationToken);
             return Ok(ApiResponse<WorkflowSimulationResultDto>.Ok(result, result.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<WorkflowSimulationResultDto>.Fail(ex.Message));
         }

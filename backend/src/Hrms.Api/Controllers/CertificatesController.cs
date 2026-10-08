@@ -123,7 +123,7 @@ public class CertificatesController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CertificateRequestDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
         }
@@ -167,7 +167,7 @@ public class CertificatesController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CertificateRequestDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<CertificateRequestDto>.Fail(ex.Message));
         }

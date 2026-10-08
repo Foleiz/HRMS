@@ -1490,7 +1490,7 @@ export default function PayrollPage() {
 
       const res = await salaryService.addBonusPayout(selectedTargetPeriodId, bonusYear);
       const targetPeriod = periods.find((p) => p.id === selectedTargetPeriodId);
-      showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${res.addedCount} คน รวม ฿${(res.addedAmount || 0).toLocaleString()})`);
+      showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${res.addedCount} คน รวม ฿${(res.addedAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
       setIsApplyBonusModalOpen(false);
 
       if (selectedPeriod?.id === selectedTargetPeriodId) {
@@ -1683,7 +1683,7 @@ export default function PayrollPage() {
       const result = await salaryService.addBonusPayout(selectedPeriod.id, effectiveBonusYear);
       setPayrolls(result.payrolls || []);
       await refreshSelectedPeriodPayrolls();
-      const parts = [`เพิ่มโบนัส ${result.addedCount} คน รวม ฿${(result.addedAmount || 0).toLocaleString()}`];
+      const parts = [`เพิ่มโบนัส ${result.addedCount} คน รวม ฿${(result.addedAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`];
       if (result.alreadyPaidCount > 0) parts.push(`จ่ายไปแล้วในรอบอื่น ${result.alreadyPaidCount} คน`);
       if (result.skippedEmployeeCodes?.length) parts.push(`ข้าม ${result.skippedEmployeeCodes.length} คนที่ไม่อยู่ในรอบนี้ (${result.skippedEmployeeCodes.slice(0, 5).join(', ')})`);
       showToast(parts.join(' · '));
@@ -1835,7 +1835,7 @@ export default function PayrollPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString()}` : '-'}
+                  {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-400">
                   {overview?.currentMonthPeriod || '-'}
@@ -2657,7 +2657,7 @@ export default function PayrollPage() {
                                 {p.employeeCount != null ? `${p.employeeCount} คน` : '-'}
                               </td>
                               <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                                {p.totalNetSalary != null ? `฿${p.totalNetSalary.toLocaleString()}` : '-'}
+                                {p.totalNetSalary != null ? `฿${p.totalNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                               </td>
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 <span
@@ -3227,8 +3227,11 @@ export default function PayrollPage() {
         const totalTax = payrolls.reduce((acc, p) => acc + (p.taxAmount || 0), 0);
         const taxAndSso = totalSso + totalTax;
         const totalNet = payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0);
-        const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
-        const pendingTransferCount = totalEmployees - transferredCount;
+        // นับเฉพาะคนที่มียอดต้องโอนจริง (สุทธิ > 0) ให้ตรงกับฝั่ง backend — คนที่ได้ 0 บาทไม่มีการโอน
+        const payableTransfers = payrolls.filter(p => (p.netPayableSalary || 0) > 0);
+        const transferTotal = payableTransfers.length;
+        const transferredCount = payableTransfers.filter(p => p.paymentStatus === 'TRANSFERRED').length;
+        const pendingTransferCount = transferTotal - transferredCount;
 
         const totalProcessCount = payrolls.length;
         const totalProcessPages = Math.max(1, Math.ceil(totalProcessCount / processPageSize));
@@ -4007,10 +4010,10 @@ export default function PayrollPage() {
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
                     <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการโอน</span>
                     <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                      {transferredCount} / {totalEmployees}
+                      {transferredCount} / {transferTotal}
                     </div>
                     <span className="text-[11px] text-slate-400 mt-1 block">
-                      {transferredCount === totalEmployees ? 'สำเร็จครบทั้งหมด' : `${pendingTransferCount} รายการรอโอน`}
+                      {transferredCount === transferTotal ? 'สำเร็จครบทั้งหมด' : `${pendingTransferCount} รายการรอโอน`}
                     </span>
                   </div>
                 </div>
@@ -5679,7 +5682,7 @@ export default function PayrollPage() {
                               {p.employeeCount != null ? `${p.employeeCount} คน` : '-'}
                             </td>
                             <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
-                              {p.totalNetSalary != null ? `฿${p.totalNetSalary.toLocaleString()}` : '-'}
+                              {p.totalNetSalary != null ? `฿${p.totalNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                             </td>
                             <td className="py-3 px-4 text-center">
                               <span

@@ -19,8 +19,13 @@ public class LeaveBalanceService : ILeaveBalanceService
     public async Task<List<LeaveBalanceDto>> GetAllAsync(long? employeeId = null, int? year = null, long? leaveTypeId = null, CancellationToken cancellationToken = default)
     {
         // คำนวณสิทธิ์ปีนี้อัตโนมัติจากสิทธิ์การลาก่อนแสดงผล (ไม่ต้องกดจัดสรรยอดประจำปี)
-        var syncYear = year ?? LeavePolicyRules.ThaiToday().Year;
-        await _sync.SyncIfStaleAsync(syncYear, employeeId, leaveTypeId, cancellationToken);
+        // ซิงก์เฉพาะปีที่สมเหตุสมผล (ปีก่อน–ปีหน้า, ค.ศ.) — เดิมส่ง year=2569 (พ.ศ.) มาแล้วระบบสร้างยอด "ปี 3112" ให้
+        var thisYear = LeavePolicyRules.ThaiToday().Year;
+        var syncYear = year ?? thisYear;
+        if (syncYear >= thisYear - 1 && syncYear <= thisYear + 1)
+        {
+            await _sync.SyncIfStaleAsync(syncYear, employeeId, leaveTypeId, cancellationToken);
+        }
 
         var query = _context.LeaveBalances
             .AsNoTracking()
