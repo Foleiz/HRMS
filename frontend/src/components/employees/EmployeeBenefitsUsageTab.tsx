@@ -29,6 +29,7 @@ import {
   Paperclip,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { confirmAction } from '@/lib/sweetalert';
 
 function paymentStatusLabel(c: BenefitClaim): string {
   switch (c.paymentStatus) {
@@ -113,7 +114,14 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   }, [fetchData]);
 
   const handleDeleteClaim = async (claimId: number) => {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการยกเลิก/ลบรายการเบิกสวัสดิการนี้?')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ลบรายการเบิกสวัสดิการ',
+      text: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิก/ลบรายการเบิกสวัสดิการนี้?',
+      confirmButtonText: 'ใช่, ลบรายการ',
+      cancelButtonText: 'ยกเลิก',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
     setDeletingClaimId(claimId);
     try {
       await benefitService.deleteClaim(claimId);
@@ -128,7 +136,14 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   };
 
   const handleCancelRequest = async (claimId: number) => {
-    if (!confirm('ยกเลิกคำขอเบิกสวัสดิการนี้ใช่หรือไม่?')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ยกเลิกคำขอเบิกสวัสดิการ',
+      text: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำขอเบิกสวัสดิการนี้?',
+      confirmButtonText: 'ใช่, ยกเลิกคำขอ',
+      cancelButtonText: 'ปิด',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
     setDeletingClaimId(claimId);
     try {
       await benefitService.cancelClaimRequest(claimId);
@@ -450,6 +465,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/70 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
+                    <th className="py-3 px-4">เลขที่คำขอ</th>
                     <th className="py-3 px-4">วันที่ใช้สิทธิ์</th>
                     <th className="py-3 px-4">รายการสวัสดิการ</th>
                     <th className="py-3 px-4">สถานพยาบาล / ผู้ให้บริการ</th>
@@ -463,6 +479,9 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {claims.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
+                      <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
+                      </td>
                       <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {c.claimDate}
                       </td>
@@ -470,9 +489,6 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {c.benefitName}
                         </span>
-                        {c.requestNo && (
-                          <span className="block text-[10px] font-mono text-slate-400">{c.requestNo}</span>
-                        )}
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                         {c.serviceProvider || '-'}
@@ -535,7 +551,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       </td>
                       <td className="py-3 px-4 text-center">
                         {isSelf ? (
-                          c.status === 'PENDING' && c.isSelfRequest ? (
+                          c.status === 'PENDING' ? (
                             <button
                               type="button"
                               onClick={() => handleCancelRequest(c.id)}

@@ -301,8 +301,12 @@ export default function LeaveRequestsApprovalPage() {
         employeeCode: cert.employeeCode,
         employeeName: cert.employeeName,
         departmentName: cert.departmentName || '-',
-        positionName: cert.positionName || '-',
-        subType: cert.certificateName || 'หนังสือรับรอง',
+        subType:
+          cert.certificateCode === 'CERT_SALARY' || cert.certificateName === 'CERT_SALARY'
+            ? 'หนังสือรับรองเงินเดือน'
+            : cert.certificateCode === 'CERT_WORK' || cert.certificateName === 'CERT_WORK' || cert.certificateCode === 'CERT_EMPLOYMENT' || cert.certificateName === 'CERT_EMPLOYMENT'
+            ? 'หนังสือรับรองการทำงาน'
+            : cert.certificateName || 'หนังสือรับรอง',
         details: cert.purpose ? `วัตถุประสงค์: ${cert.purpose}` : 'ขอหนังสือรับรอง',
         submittedAt: cert.requestedAt || null,
         status: cert.status,

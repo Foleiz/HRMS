@@ -18,11 +18,14 @@ import {
   MoreVertical,
   Trash2,
   Eye,
+  GitPullRequest,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { apiClient } from '@/lib/api-client';
+import { ApiResponse } from '@/types/api';
 import { leaveService } from '@/services/leaveService';
-import { LeaveRequest } from '@/types/leave';
+import { LeaveRequest, ApprovalTimeline } from '@/types/leave';
 import { resignationService } from '@/services/resignationService';
 import { ResignationRequest } from '@/types/resignation';
 import { certificateService } from '@/services/certificateService';
@@ -37,6 +40,7 @@ import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
+import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -111,6 +115,11 @@ export default function DocumentHistoryPage() {
 
   const [isGeneralPreviewOpen, setIsGeneralPreviewOpen] = useState(false);
   const [selectedGeneralForPreview, setSelectedGeneralForPreview] = useState<GeneralDocumentRequest | null>(null);
+
+  // Approval Timeline State
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [timelineRequestInfo, setTimelineRequestInfo] = useState<GenericApprovalRequestInfo | null>(null);
+  const [selectedLeaveForTimeline, setSelectedLeaveForTimeline] = useState<LeaveRequest | null>(null);
 
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -189,17 +198,29 @@ export default function DocumentHistoryPage() {
       canCancel: r.canCancel,
     }));
 
-    const certRows: MyDocumentRow[] = certificateRequests.map((r) => ({
-      id: `CERT-${r.id}`,
-      code: `CERT-${String(r.id).padStart(4, '0')}`,
-      submittedDate: r.requestedAt,
-      detailDate: `วัตถุประสงค์: ${r.purpose || '-'}`,
-      documentType: `หนังสือรับรอง (${r.certificateName || '-'})`,
-      status: r.status,
-      source: 'CERTIFICATE',
-      rawCertificate: r,
-      canCancel: r.canCancel,
-    }));
+    const certNameMap: Record<string, string> = {
+      CERT_SALARY: 'หนังสือรับรองเงินเดือน',
+      CERT_WORK: 'หนังสือรับรองการทำงาน',
+      CERT_EMPLOYMENT: 'หนังสือรับรองการทำงาน',
+    };
+    const certRows: MyDocumentRow[] = certificateRequests.map((r) => {
+      const docName =
+        certNameMap[r.certificateCode] ||
+        certNameMap[r.certificateName] ||
+        r.certificateName ||
+        '-';
+      return {
+        id: `CERT-${r.id}`,
+        code: `CERT-${String(r.id).padStart(4, '0')}`,
+        submittedDate: r.requestedAt,
+        detailDate: `วัตถุประสงค์: ${r.purpose || '-'}`,
+        documentType: `หนังสือรับรอง (${docName})`,
+        status: r.status,
+        source: 'CERTIFICATE',
+        rawCertificate: r,
+        canCancel: r.canCancel,
+      };
+    });
 
     const genRows: MyDocumentRow[] = generalRequests.map((r) => ({
       id: r.id,
@@ -303,6 +324,64 @@ export default function DocumentHistoryPage() {
     } else if (doc.source === 'GENERAL' && doc.rawGeneral) {
       setSelectedGeneralForPreview(doc.rawGeneral);
       setIsGeneralPreviewOpen(true);
+    }
+  };
+
+  const handleOpenTimeline = (doc: MyDocumentRow) => {
+    if (doc.source === 'LEAVE' && doc.rawLeave) {
+      setSelectedLeaveForTimeline(doc.rawLeave);
+      setTimelineRequestInfo(null);
+      setIsTimelineOpen(true);
+    } else if (doc.source === 'CERTIFICATE' && doc.rawCertificate) {
+      setSelectedLeaveForTimeline(null);
+      setTimelineRequestInfo({
+        id: doc.rawCertificate.id,
+        requestNo: doc.code,
+        employeeName: user?.fullName || 'พนักงาน',
+        subtitle: `ประเภท: ${doc.documentType}`,
+        fetchTimeline: async () => {
+          if (doc.rawCertificate?.approvalInstanceId) {
+            const res = await apiClient.get<ApiResponse<ApprovalTimeline>>(
+              `/approval-flows/instances/${doc.rawCertificate.approvalInstanceId}/timeline`
+            );
+            return res.data.data;
+          }
+          throw new Error('ไม่พบผังการอนุมัติสำหรับเอกสารนี้');
+        },
+      });
+      setIsTimelineOpen(true);
+    } else if (doc.source === 'RESIGNATION' && doc.rawResignation) {
+      setSelectedLeaveForTimeline(null);
+      setTimelineRequestInfo({
+        id: doc.rawResignation.id,
+        requestNo: doc.code,
+        employeeName: user?.fullName || 'พนักงาน',
+        subtitle: 'คำขอลาออกจากงาน',
+        fetchTimeline: async (id: number) => {
+          const detail = await resignationService.getRequestById(id);
+          if (detail.timeline) return detail.timeline as any;
+          throw new Error('ไม่พบผังการอนุมัติ');
+        },
+      });
+      setIsTimelineOpen(true);
+    } else if (doc.source === 'GENERAL' && doc.rawGeneral) {
+      setSelectedLeaveForTimeline(null);
+      setTimelineRequestInfo({
+        id: Number(doc.id) || 0,
+        requestNo: doc.code,
+        employeeName: user?.fullName || 'พนักงาน',
+        subtitle: `คำร้องเอกสารทั่วไป (${doc.rawGeneral.documentType})`,
+        fetchTimeline: async () => {
+          if (doc.rawGeneral?.approvalInstanceId) {
+            const res = await apiClient.get<ApiResponse<ApprovalTimeline>>(
+              `/approval-flows/instances/${doc.rawGeneral.approvalInstanceId}/timeline`
+            );
+            return res.data.data;
+          }
+          throw new Error('ไม่พบผังการอนุมัติสำหรับเอกสารนี้');
+        },
+      });
+      setIsTimelineOpen(true);
     }
   };
 
@@ -540,6 +619,15 @@ export default function DocumentHistoryPage() {
                                     icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
                                     onClick: () => handleOpenDocumentPreview(doc),
                                   },
+                                  ...(doc.status !== 'DRAFT'
+                                    ? [
+                                        {
+                                          label: 'ดูผังการอนุมัติ',
+                                          icon: <GitPullRequest className="w-3.5 h-3.5 text-indigo-600 shrink-0" />,
+                                          onClick: () => handleOpenTimeline(doc),
+                                        },
+                                      ]
+                                    : []),
                                   ...(hasAttachments || hasEdit || hasCancel || hasDelete
                                     ? [{ divider: true, label: '' }]
                                     : []),
@@ -848,6 +936,18 @@ export default function DocumentHistoryPage() {
         isLoading={confirmConfig.isLoading ?? false}
         onConfirm={confirmConfig.onConfirm ?? (() => {})}
         onClose={closeConfirm}
+      />
+
+      {/* ─── Modal ผังขั้นตอนการอนุมัติ (Approval Timeline Modal) ─── */}
+      <ApprovalTimelineModal
+        isOpen={isTimelineOpen}
+        onClose={() => {
+          setIsTimelineOpen(false);
+          setSelectedLeaveForTimeline(null);
+          setTimelineRequestInfo(null);
+        }}
+        leaveRequest={selectedLeaveForTimeline}
+        requestInfo={timelineRequestInfo}
       />
     </div>
   );

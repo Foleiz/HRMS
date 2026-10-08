@@ -17,6 +17,7 @@ export interface GeneralDocumentRequest {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   submittedAt: string;
   canCancel: boolean;
+  approvalInstanceId?: number;
   approvedByName?: string;
   approvedAt?: string;
   rejectReason?: string;

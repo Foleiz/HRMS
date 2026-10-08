@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -283,7 +283,7 @@ export default function CertificatePage() {
       )}
 
       {/* Main Form — การ์ดแยกซ้าย/ขวา กว้างและสูงเท่ากัน (รูปแบบเดียวกับฟอร์มยื่นใบลา) */}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         {formError && (
           <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

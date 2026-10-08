@@ -716,6 +716,11 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
 
     public async Task<bool> IsUserInWorkflowAsync(long instanceId, long employeeId, CancellationToken cancellationToken = default)
     {
+        return await IsUserInWorkflowInternalAsync(instanceId, employeeId, includeRequester: true, cancellationToken);
+    }
+
+    private async Task<bool> IsUserInWorkflowInternalAsync(long instanceId, long employeeId, bool includeRequester, CancellationToken cancellationToken = default)
+    {
         var instance = await _context.ApprovalInstances
             .AsNoTracking()
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
@@ -747,6 +752,13 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
 
         // 3. ดึงข้อมูลสังกัดของผู้ยื่นคำขอ
         var requesterEmployeeId = await GetRequesterEmployeeIdAsync(instance, cancellationToken);
+
+        // หากผู้ใช้คือ Requester (เจ้าของคำขอ) และอนุญาตให้รวมผู้ยื่นคำขอ
+        if (includeRequester && requesterEmployeeId.HasValue && requesterEmployeeId.Value == employeeId)
+        {
+            return true;
+        }
+
         var requesterAssignment = await GetAssignmentAsync(requesterEmployeeId, cancellationToken);
         var lastStepNo = instance.ApprovalFlow.Steps.Count > 0 ? instance.ApprovalFlow.Steps.Max(s => s.StepNo) : 0;
 
@@ -791,7 +803,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         var allowed = new List<long>();
         foreach (var id in instanceIds)
         {
-            if (await IsUserInWorkflowAsync(id, employeeId, cancellationToken))
+            if (await IsUserInWorkflowInternalAsync(id, employeeId, includeRequester: false, cancellationToken))
             {
                 allowed.Add(id);
             }
