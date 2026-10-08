@@ -5319,190 +5319,199 @@ export default function PayrollPage() {
 
       {/* Modal: Create Payroll Period */}
       {isCreatePeriodModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">สร้างรอบเงินเดือนใหม่</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/80 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">สร้างรอบเงินเดือนใหม่</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">กำหนดงวดการจ่ายและช่วงเวลาคำนวณประจำรอบ</p>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsCreatePeriodModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">ชื่อรอบเงินเดือน</label>
-                  {isPeriodNameCustom && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPeriodNameCustom(false);
-                        const defaults = getDefaultPeriodValues(newPeriodForm.year, newPeriodForm.month);
-                        setNewPeriodForm(prev => ({ ...prev, periodName: defaults.periodName }));
-                      }}
-                      className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
-                    >
-                      ↺ ใช้ชื่อตามระบบ
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={newPeriodForm.periodName}
-                  onChange={(e) => {
-                    setIsPeriodNameCustom(true);
-                    setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value });
-                  }}
-                  placeholder="เช่น รอบเดือนสิงหาคม 2569"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
-                />
-                <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)</span>
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            {/* Modal Body & Form */}
+            <form onSubmit={handleCreatePeriodSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 overflow-y-auto space-y-4 text-xs flex-1">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ปี (ค.ศ.)</label>
-                  <input
-                    type="number"
-                    required
-                    value={newPeriodForm.year}
-                    onChange={(e) => handleYearChange(parseInt(e.target.value) || 2026)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน (1-12)</label>
-                  <CustomSelect
-                    value={newPeriodForm.month}
-                    onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
-                  >
-                    {THAI_MONTH_NAMES.map((name, idx) => (
-                      <option key={idx + 1} value={idx + 1}>
-                        {idx + 1} - {name}
-                      </option>
-                    ))}
-                  </CustomSelect>
-                </div>
-              </div>
-
-              {/* Real-time Duplicate Period Warning Banner */}
-              {(() => {
-                const duplicate = periods.find(
-                  p => p.year === newPeriodForm.year && p.month === newPeriodForm.month
-                );
-                if (!duplicate) return null;
-                return (
-                  <div className="p-3.5 bg-amber-50/90 border border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in duration-150">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="font-bold text-amber-900 text-xs">
-                        รอบเงินเดือนประจำเดือน {THAI_MONTH_NAMES[newPeriodForm.month - 1]} {newPeriodForm.year + 543} มีอยู่ในระบบแล้ว!
-                      </div>
-                      <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                        รอบนี้มีบันทึกอยู่ในระบบแล้ว (สถานะปัจจุบัน:{' '}
-                        <span className="font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
-                          {duplicate.status}
-                        </span>
-                        ) ระบบไม่อนุญาตให้สร้างงวดเดือนเดียวกันซ้ำได้
-                      </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300">ชื่อรอบเงินเดือน</label>
+                    {isPeriodNameCustom && (
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedPeriod(duplicate);
-                          setIsCreatePeriodModalOpen(false);
-                          showToast(`สลับไปยัง ${duplicate.periodName} เรียบร้อยแล้ว`);
+                          setIsPeriodNameCustom(false);
+                          const defaults = getDefaultPeriodValues(newPeriodForm.year, newPeriodForm.month);
+                          setNewPeriodForm(prev => ({ ...prev, periodName: defaults.periodName }));
                         }}
-                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                       >
-                        <ArrowRight className="w-3.5 h-3.5" />
-                        <span>เปิดดูรอบเงินเดือนนี้ทันที</span>
+                        ↺ ใช้ชื่อตามระบบ
                       </button>
-                    </div>
+                    )}
                   </div>
-                );
-              })()}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันเริ่มคำนวณ</label>
-                  <ThaiDatePicker
-                    value={newPeriodForm.startDate}
-                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, startDate: val })}
-                    placeholder="เลือกวันเริ่มคำนวณ"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  <input
+                    type="text"
+                    required
+                    value={newPeriodForm.periodName}
+                    onChange={(e) => {
+                      setIsPeriodNameCustom(true);
+                      setNewPeriodForm({ ...newPeriodForm, periodName: e.target.value });
+                    }}
+                    placeholder="เช่น รอบเดือนสิงหาคม 2569"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
                   />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันสิ้นสุดคำนวณ</label>
-                  <ThaiDatePicker
-                    min={newPeriodForm.startDate || undefined}
-                    value={newPeriodForm.endDate}
-                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, endDate: val })}
-                    placeholder="เลือกวันสิ้นสุดคำนวณ"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันกำหนดจ่ายเงิน</label>
-                <ThaiDatePicker
-                  value={newPeriodForm.paymentDate}
-                  onChange={(val) => setNewPeriodForm({ ...newPeriodForm, paymentDate: val })}
-                  placeholder="เลือกวันกำหนดจ่ายเงิน"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันตัดรอบเงินเบิกสวัสดิการ</label>
-                <ThaiDatePicker
-                  value={newPeriodForm.claimCutoffDate}
-                  max={newPeriodForm.paymentDate || newPeriodForm.endDate || undefined}
-                  onChange={(val) => setNewPeriodForm({ ...newPeriodForm, claimCutoffDate: val })}
-                  placeholder="เลือกวันตัดรอบเงินเบิกสวัสดิการ"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  คำขอเบิกที่อนุมัติไม่เกินวันนี้จะจ่ายในรอบนี้ ที่อนุมัติหลังจากนั้นไปรอบถัดไป · เว้นว่าง = ใช้วันกำหนดจ่ายเงิน
-                </p>
-              </div>
-
-              {/* Attendance Data Integration Info */}
-              <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
-                <Calendar className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="font-semibold text-blue-900">
-                    ข้อมูลเวลาเข้างานสำหรับการประมวลผล (Attendance Integration)
-                  </div>
-                  <p className="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
-                    ระบบจะเชื่อมโยงข้อมูลเวลาเข้างานและสถิติขาด/ลา/มาสายที่อัปโหลดผ่านไฟล์ Excel ในช่วงวันที่{' '}
-                    <span className="font-bold">{newPeriodForm.startDate || '-'}</span> ถึง{' '}
-                    <span className="font-bold">{newPeriodForm.endDate || '-'}</span> มาใช้คำนวณเบี้ยขยันและรายการหักโดยอัตโนมัติ
+                  <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)</span>
                   </p>
-                  <Link
-                    href="/attendance/daily?tab=import"
-                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-semibold mt-1"
-                  >
-                    <span>อัปโหลดหรือระบุรอบไฟล์บันทึกเวลาที่นี่</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ปี (ค.ศ.)</label>
+                    <input
+                      type="number"
+                      required
+                      value={newPeriodForm.year}
+                      onChange={(e) => handleYearChange(parseInt(e.target.value) || 2026)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน (1-12)</label>
+                    <CustomSelect
+                      value={newPeriodForm.month}
+                      onChange={(e) => handleMonthChange(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                    >
+                      {THAI_MONTH_NAMES.map((name, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          {idx + 1} - {name}
+                        </option>
+                      ))}
+                    </CustomSelect>
+                  </div>
+                </div>
+
+                {/* Real-time Duplicate Period Warning Banner */}
+                {(() => {
+                  const duplicate = periods.find(
+                    p => p.year === newPeriodForm.year && p.month === newPeriodForm.month
+                  );
+                  if (!duplicate) return null;
+                  return (
+                    <div className="p-3.5 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 rounded-xl flex items-start gap-3 animate-in fade-in duration-150">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-bold text-amber-900 dark:text-amber-200 text-xs">
+                          รอบเงินเดือนประจำเดือน {THAI_MONTH_NAMES[newPeriodForm.month - 1]} {newPeriodForm.year + 543} มีอยู่ในระบบแล้ว!
+                        </div>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-1 leading-relaxed">
+                          รอบนี้มีบันทึกอยู่ในระบบแล้ว (สถานะปัจจุบัน:{' '}
+                          <span className="font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
+                            {duplicate.status}
+                          </span>
+                          ) ระบบไม่อนุญาตให้สร้างงวดเดือนเดียวกันซ้ำได้
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPeriod(duplicate);
+                            setIsCreatePeriodModalOpen(false);
+                            showToast(`สลับไปยัง ${duplicate.periodName} เรียบร้อยแล้ว`);
+                          }}
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                          <span>เปิดดูรอบเงินเดือนนี้ทันที</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันเริ่มคำนวณ</label>
+                    <ThaiDatePicker
+                      value={newPeriodForm.startDate}
+                      onChange={(val) => setNewPeriodForm({ ...newPeriodForm, startDate: val })}
+                      placeholder="เลือกวันเริ่มคำนวณ"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันสิ้นสุดคำนวณ</label>
+                    <ThaiDatePicker
+                      min={newPeriodForm.startDate || undefined}
+                      value={newPeriodForm.endDate}
+                      onChange={(val) => setNewPeriodForm({ ...newPeriodForm, endDate: val })}
+                      placeholder="เลือกวันสิ้นสุดคำนวณ"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันกำหนดจ่ายเงิน</label>
+                  <ThaiDatePicker
+                    value={newPeriodForm.paymentDate}
+                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, paymentDate: val })}
+                    placeholder="เลือกวันกำหนดจ่ายเงิน"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">วันตัดรอบเงินเบิกสวัสดิการ</label>
+                  <ThaiDatePicker
+                    value={newPeriodForm.claimCutoffDate}
+                    max={newPeriodForm.paymentDate || newPeriodForm.endDate || undefined}
+                    onChange={(val) => setNewPeriodForm({ ...newPeriodForm, claimCutoffDate: val })}
+                    placeholder="เลือกวันตัดรอบเงินเบิกสวัสดิการ"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    คำขอเบิกที่อนุมัติไม่เกินวันนี้จะจ่ายในรอบนี้ ที่อนุมัติหลังจากนั้นไปรอบถัดไป · เว้นว่าง = ใช้วันกำหนดจ่ายเงิน
+                  </p>
+                </div>
+
+                {/* Attendance Data Integration Info */}
+                <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 rounded-xl flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-200">
+                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="font-semibold text-blue-900 dark:text-blue-200">
+                      ข้อมูลเวลาเข้างานสำหรับการประมวลผล (Attendance Integration)
+                    </div>
+                    <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5 leading-relaxed">
+                      ระบบจะเชื่อมโยงข้อมูลเวลาเข้างานและสถิติขาด/ลา/มาสายที่อัปโหลดผ่านไฟล์ Excel ในช่วงวันที่{' '}
+                      <span className="font-bold">{newPeriodForm.startDate || '-'}</span> ถึง{' '}
+                      <span className="font-bold">{newPeriodForm.endDate || '-'}</span> มาใช้คำนวณเบี้ยขยันและรายการหักโดยอัตโนมัติ
+                    </p>
+                    <Link
+                      href="/attendance/daily?tab=import"
+                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold mt-1"
+                    >
+                      <span>อัปโหลดหรือระบุรอบไฟล์บันทึกเวลาที่นี่</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/80 shrink-0 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => setIsCreatePeriodModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 text-xs font-medium cursor-pointer transition-colors"
                 >
                   ยกเลิก
                 </button>
