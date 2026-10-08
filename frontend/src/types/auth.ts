@@ -12,6 +12,7 @@ export interface UserProfile {
   fullName: string;
   status: string;
   roles: string[];
+  roleNames?: string[];
   permissions: string[];
   dataScopes: RoleScope[];
 }

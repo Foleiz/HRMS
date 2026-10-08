@@ -31,6 +31,7 @@ public class UserInfoDto
     public string FullName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public List<string> Roles { get; set; } = new();
+    public List<string> RoleNames { get; set; } = new();
     public List<string> Permissions { get; set; } = new();
     public List<RoleScopeDto> DataScopes { get; set; } = new();
     /// <summary>แผนกปัจจุบันของพนักงาน (จาก employee_assignment) ใช้สำหรับ DEPARTMENT scope</summary>

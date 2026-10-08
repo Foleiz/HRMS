@@ -37,6 +37,7 @@ import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
 import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
+import { formatRoleName } from '@/lib/roleUtils';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -1038,7 +1039,7 @@ export default function EmployeeDetailView({
                         {employee.userAccount.roleNames && employee.userAccount.roleNames.length > 0
                           ? employee.userAccount.roleNames.join(', ')
                           : employee.userAccount.roles && employee.userAccount.roles.length > 0
-                          ? employee.userAccount.roles.join(', ')
+                          ? employee.userAccount.roles.map((r) => formatRoleName(r)).join(', ')
                           : 'พนักงานทั่วไป (Employee)'}
                       </p>
                     </div>

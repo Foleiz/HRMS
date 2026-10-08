@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useSidebar } from '@/context/SidebarContext';
 import { NotificationBell } from './NotificationBell';
+import { formatRoleName } from '@/lib/roleUtils';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -209,14 +210,17 @@ export const Navbar: React.FC = () => {
                   </p>
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">@{user.username}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
-                    {user.roles.map((r) => (
-                      <span
-                        key={r}
-                        className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B2046]/10 dark:bg-blue-500/20 text-[#0B2046] dark:text-blue-300"
-                      >
-                        {r}
-                      </span>
-                    ))}
+                    {user.roles.map((r, idx) => {
+                      const displayName = user.roleNames?.[idx] || formatRoleName(r);
+                      return (
+                        <span
+                          key={r + idx}
+                          className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B2046]/10 dark:bg-blue-500/20 text-[#0B2046] dark:text-blue-300"
+                        >
+                          {displayName}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 

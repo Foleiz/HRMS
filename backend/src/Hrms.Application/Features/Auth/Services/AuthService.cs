@@ -227,11 +227,16 @@ public class AuthService : IAuthService
             .Select(ur => ur.RoleId)
             .ToListAsync(cancellationToken);
 
-        var roles = await _dbContext.Roles
+        var roleEntities = await _dbContext.Roles
             .Where(r => userRoleIds.Contains(r.Id))
-            .Select(r => r.RoleCode)
+            .Select(r => new { r.RoleCode, r.RoleName })
             .Distinct()
             .ToListAsync(cancellationToken);
+
+        var roles = roleEntities.Select(r => r.RoleCode).ToList();
+        var roleNames = roleEntities
+            .Select(r => !string.IsNullOrWhiteSpace(r.RoleName) ? r.RoleName : r.RoleCode)
+            .ToList();
 
         var permissions = await (
             from rp in _dbContext.RolePermissions
@@ -279,6 +284,7 @@ public class AuthService : IAuthService
             FullName = user.Employee?.FullName ?? user.Username,
             Status = user.Status,
             Roles = roles,
+            RoleNames = roleNames,
             Permissions = permissions,
             DataScopes = dataScopes,
             DepartmentId = departmentId,
