@@ -138,14 +138,24 @@ export const RecentTransactionsTable: React.FC = () => {
 
         // 2. คำขอหนังสือรับรองของตนเอง
         if (certRes.status === 'fulfilled' && Array.isArray(certRes.value)) {
+          const certNameMap: Record<string, string> = {
+            CERT_SALARY: 'หนังสือรับรองเงินเดือน',
+            CERT_WORK: 'หนังสือรับรองการทำงาน',
+            CERT_EMPLOYMENT: 'หนังสือรับรองการทำงาน',
+          };
           certRes.value.forEach((c) => {
             const rawDate = c.requestedAt || null;
+            const docName =
+              certNameMap[c.certificateCode] ||
+              certNameMap[c.certificateName] ||
+              c.certificateName ||
+              'ขอหนังสือรับรอง';
             items.push({
               id: `cert-${c.id}`,
-              documentCode: c.certificateCode || `CR-${c.id}`,
+              documentCode: c.certificateCode && !c.certificateCode.startsWith('CERT_') ? c.certificateCode : `CR-${String(c.id).padStart(4, '0')}`,
               createdDate: formatThaiDate(rawDate),
               duration: '-',
-              documentType: c.certificateName || 'ขอหนังสือรับรอง',
+              documentType: docName,
               status: (c.status || 'PENDING').toUpperCase(),
               rawDate,
             });

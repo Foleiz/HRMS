@@ -125,7 +125,14 @@ function DailyAttendanceContent() {
   };
 
   // State: Date selection (Default to date param or today in YYYY-MM-DD)
-  const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  const initialDate = searchParams.get('date') || getTodayStr();
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
 
   // Sync state if URL searchParams change externally
@@ -455,12 +462,7 @@ function DailyAttendanceContent() {
               batchId: validBatch.id,
             });
 
-            setSelectedDate((curr) => {
-              if (curr < validBatch.dateFrom! || curr > validBatch.dateTo!) {
-                return validBatch.dateFrom!;
-              }
-              return curr;
-            });
+            // คง selectedDate เป็นวันปัจจุบันตาม requirement (ไม่ override อัตโนมัติเป็นวันที่ในไฟล์)
             return;
           }
         }
@@ -1329,15 +1331,11 @@ function DailyAttendanceContent() {
                 ]}
               />
 
-              {/* Date Picker with Min/Max Locking */}
+              {/* Date Picker */}
               <div className="flex items-center gap-2">
                 <ThaiDatePicker
-                  min={allowedDateRange.min ?? undefined}
-                  max={allowedDateRange.max ?? undefined}
                   value={selectedDate}
                   onChange={(newDate) => {
-                    if (allowedDateRange.min && newDate < allowedDateRange.min) return;
-                    if (allowedDateRange.max && newDate > allowedDateRange.max) return;
                     setSelectedDate(newDate);
                     setCurrentPage(1);
                   }}

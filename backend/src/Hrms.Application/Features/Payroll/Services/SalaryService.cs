@@ -33,6 +33,66 @@ public class SalaryService : ISalaryService
             : _crypto.MaskAccountNumber(accountNumber);
     }
 
+    /// <summary>
+    /// ดึงรายการ ID ของพนักงานที่ผู้ใช้ปัจจุบันมีสิทธิ์ดูข้อมูลเงินเดือนตาม Data Scope
+    /// คืนค่า null หากมีสิทธิ์ระดับทั้งองค์กร (ORGANIZATION หรือ ADMIN/SYSTEM_SUPER)
+    /// </summary>
+    private async Task<List<long>?> GetPermittedEmployeeIdsAsync(CancellationToken cancellationToken)
+    {
+        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
+            return null;
+
+        string scope = _currentUser.GetDataScope("PAYROLL_VIEW");
+        if (string.Equals(scope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        long? myEmpId = _currentUser.EmployeeId;
+        long? myDeptId = _currentUser.DepartmentId;
+
+        if (!myDeptId.HasValue && myEmpId.HasValue)
+        {
+            myDeptId = await _context.EmployeeAssignments
+                .Where(a => a.EmployeeId == myEmpId.Value && a.IsCurrent)
+                .Select(a => (long?)a.DepartmentId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        switch (scope?.ToUpperInvariant())
+        {
+            case "SELF":
+                return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
+
+            case "TEAM":
+            case "DEPARTMENT":
+            {
+                if (!myDeptId.HasValue)
+                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
+
+                return await _context.EmployeeAssignments
+                    .Where(a => a.DepartmentId == myDeptId.Value && a.IsCurrent)
+                    .Select(a => a.EmployeeId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+            }
+
+            case "DIVISION":
+            {
+                long? myDivId = _currentUser.DivisionId;
+                if (!myDivId.HasValue)
+                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
+
+                return await _context.EmployeeAssignments
+                    .Where(a => a.DivisionId == myDivId.Value && a.IsCurrent)
+                    .Select(a => a.EmployeeId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+            }
+
+            default:
+                return null;
+        }
+    }
+
     #region Salary Structures
 
     public async Task<List<SalaryStructureDto>> GetAllStructuresAsync(long? positionId, long? levelId, CancellationToken cancellationToken = default)
@@ -608,6 +668,12 @@ public class SalaryService : ISalaryService
             query = query.Where(e => e.Assignments.Any(a => a.DepartmentId == departmentId.Value && a.IsCurrent));
         }
 
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
+        if (permittedIds != null)
+        {
+            query = query.Where(e => permittedIds.Contains(e.Id));
+        }
+
         var employees = await query.OrderBy(e => e.EmployeeCode).ToListAsync(cancellationToken);
         var employeeIds = employees.Select(e => e.Id).ToList();
 
@@ -700,6 +766,12 @@ public class SalaryService : ISalaryService
         if (employee == null)
         {
             throw new NotFoundException("Employee", employeeId);
+        }
+
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
+        if (permittedIds != null && !permittedIds.Contains(employeeId))
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลเงินเดือนของพนักงานท่านนี้");
         }
 
         var activeAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent) ?? employee.Assignments.FirstOrDefault();
@@ -857,6 +929,8 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollOverviewDto> GetPayrollOverviewAsync(CancellationToken cancellationToken = default)
     {
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
+
         var periods = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
             .OrderByDescending(p => p.Year)
@@ -866,19 +940,31 @@ public class SalaryService : ISalaryService
 
         var latestPeriod = periods.FirstOrDefault();
 
-        var activeSalaries = await _context.EmployeeSalaries
+        var activeSalariesQuery = _context.EmployeeSalaries
             .Where(s => s.EffectiveTo == null)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .AsNoTracking();
+
+        if (permittedIds != null)
+        {
+            activeSalariesQuery = activeSalariesQuery.Where(s => permittedIds.Contains(s.EmployeeId));
+        }
+
+        var activeSalaries = await activeSalariesQuery.ToListAsync(cancellationToken);
 
         var totalSalaries = activeSalaries.Sum(s => s.BaseSalary);
-        var totalEmps = await _context.Employees.CountAsync(cancellationToken);
+        var totalEmps = permittedIds != null
+            ? permittedIds.Count
+            : await _context.Employees.CountAsync(cancellationToken);
 
-        decimal currentTotal = latestPeriod != null && latestPeriod.Payrolls.Any()
-            ? latestPeriod.Payrolls.Sum(p => p.NetPayableSalary)
+        var latestPayrolls = latestPeriod != null
+            ? (permittedIds != null ? latestPeriod.Payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList() : latestPeriod.Payrolls.ToList())
+            : new List<Domain.Entities.Payroll>();
+
+        decimal currentTotal = latestPeriod != null && latestPayrolls.Any()
+            ? latestPayrolls.Sum(p => p.NetPayableSalary)
             : totalSalaries;
 
-        int calculatedCount = latestPeriod != null ? latestPeriod.Payrolls.Count : activeSalaries.Count;
+        int calculatedCount = latestPeriod != null ? latestPayrolls.Count : activeSalaries.Count;
         int totalCount = totalEmps;
         int calcPercent = totalCount > 0 ? (int)Math.Round((double)calculatedCount / totalCount * 100) : 0;
 
@@ -899,6 +985,10 @@ public class SalaryService : ISalaryService
 
         var recentPeriods = periods.Take(5).Select(p =>
         {
+            var pPayrolls = permittedIds != null
+                ? p.Payrolls.Where(x => permittedIds.Contains(x.EmployeeId)).ToList()
+                : p.Payrolls.ToList();
+
             var statusText = p.Status switch
             {
                 "DRAFT" => "ร่าง",
@@ -917,7 +1007,7 @@ public class SalaryService : ISalaryService
             return new RecentPayrollPeriodDto
             {
                 PeriodName = $"รอบเดือน{ThaiMonths[p.Month <= 12 ? p.Month : 1]} {p.Year + 543}",
-                TotalAmount = p.Payrolls.Sum(x => x.NetPayableSalary),
+                TotalAmount = pPayrolls.Sum(x => x.NetPayableSalary),
                 Status = p.Status,
                 StatusText = statusText
             };
@@ -1124,6 +1214,7 @@ public class SalaryService : ISalaryService
 
     public async Task<List<PayrollPeriodDto>> GetPayrollPeriodsAsync(CancellationToken cancellationToken = default)
     {
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
         var periods = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
             .OrderByDescending(p => p.Year)
@@ -1131,11 +1222,12 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return periods.Select(MapPeriodToDto).ToList();
+        return periods.Select(p => MapPeriodToDto(p, permittedIds)).ToList();
     }
 
     public async Task<PayrollPeriodDto?> GetPayrollPeriodByIdAsync(long id, CancellationToken cancellationToken = default)
     {
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
         var p = await _context.PayrollPeriods
             .Include(x => x.Payrolls)
             .AsNoTracking()
@@ -1143,11 +1235,13 @@ public class SalaryService : ISalaryService
 
         if (p == null) return null;
 
-        return MapPeriodToDto(p);
+        return MapPeriodToDto(p, permittedIds);
     }
 
     public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
     {
+        var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
+
         var period = await _context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
 
@@ -1157,12 +1251,22 @@ public class SalaryService : ISalaryService
             .OrderBy(e => e.EmployeeCode)
             .ToListAsync(cancellationToken);
 
+        if (permittedIds != null)
+        {
+            activeEmployees = activeEmployees.Where(e => permittedIds.Contains(e.Id)).ToList();
+        }
+
         var payrolls = await _context.Payrolls
             .Include(p => p.Employee)
             .Include(p => p.Details).ThenInclude(d => d.PayrollItem)
             .Where(p => p.PeriodId == periodId)
             .OrderBy(p => p.Id)
             .ToListAsync(cancellationToken);
+
+        if (permittedIds != null)
+        {
+            payrolls = payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList();
+        }
 
         var existingEmployeeIds = payrolls.Select(p => p.EmployeeId).ToHashSet();
         var missingEmployees = activeEmployees.Where(e => !existingEmployeeIds.Contains(e.Id)).ToList();
@@ -1204,6 +1308,11 @@ public class SalaryService : ISalaryService
                 .OrderBy(p => p.Id)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+
+            if (permittedIds != null)
+            {
+                payrolls = payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList();
+            }
         }
 
         var employeeIds = payrolls.Select(p => p.EmployeeId).Distinct().ToList();
@@ -3071,6 +3180,10 @@ public class SalaryService : ISalaryService
         if (!IsPayableRecord(payroll))
             throw new BusinessRuleException("พนักงานคนนี้ไม่มียอดเงินเดือนที่ต้องโอนในรอบนี้");
 
+        var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+        if (primaryBank == null || string.IsNullOrWhiteSpace(primaryBank.AccountNumber))
+            throw new BusinessRuleException("ไม่สามารถบันทึกการโอนเงินได้ เนื่องจากพนักงานยังไม่มีข้อมูลบัญชีธนาคารหลัก กรุณาเพิ่มข้อมูลบัญชีธนาคารของพนักงานก่อน");
+
         // Mark payroll record
         payroll.PaymentStatus = "TRANSFERRED";
         payroll.TransferredAt = DateTimeOffset.UtcNow;
@@ -3092,7 +3205,6 @@ public class SalaryService : ISalaryService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
         return new PayrollTransferItemDto
         {
             PayrollId = payroll.Id,
@@ -3357,7 +3469,7 @@ public class SalaryService : ISalaryService
         _ => status
     };
 
-    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period)
+    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period, List<long>? permittedEmployeeIds = null)
     {
         var statusText = period.Status switch
         {
@@ -3379,7 +3491,9 @@ public class SalaryService : ISalaryService
             "DIRECT_TRANSFER" => "CEO โอนเอง",
             _ => null
         };
-        var payrolls = period.Payrolls.ToList();
+        var payrolls = period.Payrolls
+            .Where(p => permittedEmployeeIds == null || permittedEmployeeIds.Contains(p.EmployeeId))
+            .ToList();
         var payableRecords = payrolls.Where(IsPayableRecord).ToList();
         bool canConfirm = payableRecords.Count > 0
             && payableRecords.All(p => p.PaymentStatus == "TRANSFERRED" && p.SlipData != null);

@@ -54,6 +54,32 @@ public static class PayrollAccess
     public static bool CanView(ICurrentUserService u) =>
         Any(u, ViewPermissions, Array.Empty<string>()) || IsHr(u) || IsFinance(u) || IsApprover(u);
 
+    /// <summary>ดูข้อมูลโครงสร้างเงินเดือน (เฉพาะผู้มีสิทธิ์โครงสร้าง หรือ HR/Admin)</summary>
+    public static bool CanViewStructures(ICurrentUserService u) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || IsHr(u) ||
+        u.HasPermission("PAYROLL_STRUCTURE_VIEW") || u.HasPermission("PAYROLL_STRUCTURE_CREATE") || u.HasPermission("PAYROLL_STRUCTURE_EDIT");
+
+    /// <summary>ดูข้อมูลรายการได้และรายการหัก (เฉพาะผู้มีสิทธิ์รายการได้หัก หรือ HR/Admin)</summary>
+    public static bool CanViewItems(ICurrentUserService u) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || IsHr(u) ||
+        u.HasPermission("PAYROLL_ITEMS_VIEW") || u.HasPermission("PAYROLL_ITEMS_CREATE") || u.HasPermission("PAYROLL_ITEMS_EDIT");
+
+    /// <summary>ดูข้อมูลการโอนเงินธนาคาร (เฉพาะฝ่ายการเงิน หรือผู้มีสิทธิ์โอนเงิน)</summary>
+    public static bool CanViewBankTransfer(ICurrentUserService u) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || IsFinance(u) ||
+        u.HasPermission("PAYROLL_BANK_VIEW") || u.HasPermission("PAYROLL_BANK_CREATE") || u.HasPermission("PAYROLL_BANK_EDIT");
+
+    /// <summary>ดูข้อมูลภาษีและประกันสังคม (เฉพาะฝ่ายการเงิน หรือผู้มีสิทธิ์ภาษี)</summary>
+    public static bool CanViewTaxSso(ICurrentUserService u) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || IsFinance(u) ||
+        u.HasPermission("PAYROLL_TAX_VIEW") || u.HasPermission("PAYROLL_TAX_MANAGE") || u.HasPermission("PAYROLL_TAX_EDIT");
+
+    /// <summary>ดูข้อมูลโบนัส (เฉพาะผู้มีสิทธิ์โบนัส หรือ Admin)</summary>
+    public static bool CanViewBonus(ICurrentUserService u) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") ||
+        u.HasPermission("PAYROLL_BONUS_VIEW") || u.HasPermission("PAYROLL_BONUS_CREATE") ||
+        u.HasPermission("PAYROLL_BONUS_EDIT") || u.HasPermission("PAYROLL_BONUS_APPROVE");
+
     /// <summary>จัดการข้อมูลตั้งค่าเฉพาะหมวด (เช่น PAYROLL_STRUCTURE, PAYROLL_ITEMS, PAYROLL_BONUS, PAYROLL_TAX) หรือเป็น HR</summary>
     public static bool CanManage(ICurrentUserService u, string prefix) =>
         IsHr(u) || u.HasPermission($"{prefix}_CREATE") || u.HasPermission($"{prefix}_EDIT");

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -137,7 +137,15 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                  รายละเอียดเอกสารคำขอลา
+                  {effectiveRequest.subtitle?.includes('ย้าย')
+                    ? 'ผังขั้นตอนการอนุมัติคำขอย้าย/เลื่อนตำแหน่ง'
+                    : effectiveRequest.requestNo?.startsWith('CERT')
+                    ? 'ผังขั้นตอนการอนุมัติหนังสือรับรอง'
+                    : effectiveRequest.requestNo?.startsWith('RES')
+                    ? 'ผังขั้นตอนการอนุมัติคำขอลาออก'
+                    : effectiveRequest.requestNo?.startsWith('BC')
+                    ? 'ผังขั้นตอนการอนุมัติเบิกสวัสดิการ'
+                    : 'ผังขั้นตอนการอนุมัติ'}
                 </h3>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 dark:text-slate-300 font-medium">
                   {effectiveRequest.requestNo}

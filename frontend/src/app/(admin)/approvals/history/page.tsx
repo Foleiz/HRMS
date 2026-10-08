@@ -249,7 +249,12 @@ export default function ApprovalHistoryPage() {
         employeeName: c.employeeName,
         employeeCode: c.employeeCode,
         departmentName: c.departmentName || '-',
-        subType: c.certificateName || 'หนังสือรับรอง',
+        subType:
+          c.certificateCode === 'CERT_SALARY' || c.certificateName === 'CERT_SALARY'
+            ? 'หนังสือรับรองเงินเดือน'
+            : c.certificateCode === 'CERT_WORK' || c.certificateName === 'CERT_WORK' || c.certificateCode === 'CERT_EMPLOYMENT' || c.certificateName === 'CERT_EMPLOYMENT'
+            ? 'หนังสือรับรองการทำงาน'
+            : c.certificateName || 'หนังสือรับรอง',
         details: c.purpose ? `วัตถุประสงค์: ${c.purpose}` : 'ขอหนังสือรับรอง',
         status: c.status,
         approvedByName: c.approvedByName ?? (c.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),

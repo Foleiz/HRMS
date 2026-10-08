@@ -36,7 +36,7 @@ public interface ILeaveRequestService
     Task<LeaveValidationResultDto> ValidateLeaveRequestAsync(long employeeId, long leaveTypeId, DateTime startDatetime, DateTime endDatetime, decimal requestedDays, bool hasAttachment, long? excludeRequestId, CancellationToken cancellationToken = default);
 
     Task<LeaveRequestDto> ApproveAsync(long id, long? approverId = null, string? comment = null, CancellationToken cancellationToken = default);
-    Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, CancellationToken cancellationToken = default);
+    Task<LeaveRequestDto> RejectAsync(long id, string? reason = null, long? approverId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// ยกเลิกคำขอลา — ถ้าเคยอนุมัติแล้วจะคืนยอดวันลาให้อัตโนมัติแล้วตั้งสถานะเป็น CANCELLED

@@ -15,6 +15,7 @@ import { confirmDelete } from '@/lib/sweetalert';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import {
   Search,
   Plus,
@@ -229,16 +230,8 @@ export default function EmployeesPage() {
     accountNumber: '',
     positionName: '',
     employeeType: '',
-    familyMembers: [
-      {
-        relationshipType: 'บิดา',
-        prefix: '',
-        firstName: '',
-        lastName: '',
-        citizenId: '',
-        birthDate: '',
-      },
-    ],
+    managerEmployeeId: null,
+    familyMembers: [],
     emergencyContact: {
       relationship: 'บิดา',
       prefix: '',
@@ -450,10 +443,9 @@ export default function EmployeesPage() {
 
   const handleRemoveFamilyMember = (indexToRemove: number) => {
     const current = formData.familyMembers || [];
-    if (current.length <= 1) return;
     const updated = current.filter((_, idx) => idx !== indexToRemove);
     setFormData({ ...formData, familyMembers: updated });
-    setActiveFamilyIndex(Math.max(0, indexToRemove - 1));
+    setActiveFamilyIndex(Math.max(0, updated.length - 1));
   };
 
   const personalErrorKeys = [
@@ -528,7 +520,12 @@ export default function EmployeesPage() {
 
     if (!data.gender || data.gender === 'เลือกเพศ') errors.gender = 'กรุณาเลือกเพศ';
     if (!data.nationality || data.nationality === 'เลือกสัญชาติ') errors.nationality = 'กรุณาเลือกสัญชาติ';
-    if (!data.birthDate?.trim()) errors.birthDate = 'กรุณาเลือกวันเกิด';
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (!data.birthDate?.trim()) {
+      errors.birthDate = 'กรุณาเลือกวันเกิด';
+    } else if (data.birthDate > todayStr) {
+      errors.birthDate = 'วันเกิดต้องไม่ใช่วันในอนาคต';
+    }
     if (!data.maritalStatus || data.maritalStatus === 'เลือกสถานภาพ') errors.maritalStatus = 'กรุณาเลือกสถานภาพสมรส';
     if (!data.militaryStatus || data.militaryStatus === 'เลือกสถานภาพทางทหาร') errors.militaryStatus = 'กรุณาเลือกสถานภาพทางทหาร';
 
@@ -594,22 +591,32 @@ export default function EmployeesPage() {
     if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
     if (!data.employeeType || data.employeeType === 'เลือกประเภท') errors.employeeType = 'กรุณาเลือกประเภทพนักงาน';
 
-    // 2. Tab Family - สมาชิกครอบครัว
+    // 2. Tab Family - สมาชิกครอบครัว (ไม่บังคับ แต่ถ้ากรอกข้อมูลคนใดคนหนึ่ง ต้องกรอกชื่อและข้อมูลให้สมบูรณ์)
     if (data.familyMembers && data.familyMembers.length > 0) {
       data.familyMembers.forEach((fm, idx) => {
-        if (!fm.relationshipType) errors[`family_${idx}_relationshipType`] = 'กรุณาเลือกความสัมพันธ์';
-        if (!fm.prefix || fm.prefix === 'เลือกคำนำหน้า') errors[`family_${idx}_prefix`] = 'กรุณาเลือกคำนำหน้า';
-        if (!fm.firstName?.trim()) errors[`family_${idx}_firstName`] = 'กรุณากรอกชื่อ';
-        if (!fm.lastName?.trim()) errors[`family_${idx}_lastName`] = 'กรุณากรอกนามสกุล';
+        const hasAnyData = Boolean(
+          fm.firstName?.trim() ||
+          fm.lastName?.trim() ||
+          fm.citizenId?.trim() ||
+          fm.birthDate?.trim() ||
+          (fm.prefix && fm.prefix !== 'เลือกคำนำหน้า')
+        );
 
-        const fmCitizenDigits = (fm.citizenId || '').replace(/\D/g, '');
-        if (!fm.citizenId?.trim()) {
-          errors[`family_${idx}_citizenId`] = 'กรุณากรอกเลขบัตรประชาชน';
-        } else if (fmCitizenDigits.length !== 13) {
-          errors[`family_${idx}_citizenId`] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+        if (hasAnyData) {
+          if (!fm.relationshipType) errors[`family_${idx}_relationshipType`] = 'กรุณาเลือกความสัมพันธ์';
+          if (!fm.prefix || fm.prefix === 'เลือกคำนำหน้า') errors[`family_${idx}_prefix`] = 'กรุณาเลือกคำนำหน้า';
+          if (!fm.firstName?.trim()) errors[`family_${idx}_firstName`] = 'กรุณากรอกชื่อ';
+          if (!fm.lastName?.trim()) errors[`family_${idx}_lastName`] = 'กรุณากรอกนามสกุล';
+
+          const fmCitizenDigits = (fm.citizenId || '').replace(/\D/g, '');
+          if (fm.citizenId?.trim() && fmCitizenDigits.length !== 13) {
+            errors[`family_${idx}_citizenId`] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+          }
+
+          if (fm.birthDate?.trim() && fm.birthDate > todayStr) {
+            errors[`family_${idx}_birthDate`] = 'วันเกิดต้องไม่ใช่วันในอนาคต';
+          }
         }
-
-        if (!fm.birthDate?.trim()) errors[`family_${idx}_birthDate`] = 'กรุณาเลือกวันเกิด';
       });
     }
 
@@ -760,6 +767,8 @@ export default function EmployeesPage() {
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
         positionId: formData.positionId,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
+        managerEmployeeId: formData.managerEmployeeId || null,
+        setManager: true,
         addresses: [addressItem],
         familyMembers: formData.familyMembers?.filter((f) => f.firstName?.trim()).map((f) => ({
           ...f,
@@ -1750,6 +1759,22 @@ export default function EmployeesPage() {
 
                         <div>
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                            หัวหน้างานโดยตรง (Direct Manager)
+                          </label>
+                          <EmployeeSelect
+                            employees={employees}
+                            value={formData.managerEmployeeId ?? ''}
+                            onChange={(empId) => setFormData((prev) => ({ ...prev, managerEmployeeId: empId === '' ? null : empId }))}
+                            emptyLabel="ไม่มีหัวหน้างาน (ไม่มี)"
+                            placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
+                          />
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                            ใช้สำหรับสายการอนุมัติคำขอ (เช่น การลา, เอกสาร)
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                             คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
                           </label>
                           <CustomSelect
@@ -1897,6 +1922,7 @@ export default function EmployeesPage() {
                               setFormData({ ...formData, birthDate: val });
                               clearFieldError('birthDate');
                             }}
+                            maxDate={new Date().toISOString().split('T')[0]}
                             error={hasAttemptedSubmit && Boolean(formErrors['birthDate'])}
                           />
                           {renderFieldError('birthDate')}
@@ -2308,180 +2334,194 @@ export default function EmployeesPage() {
                       </h3>
                     </div>
 
-                    <div className="space-y-4">
-                      {/* Family Member Switcher Tabs */}
-                      <div className="flex items-center gap-2 mb-2">
-                        {formData.familyMembers?.map((_, idx) => {
-                          const memberHasErrors = hasAttemptedSubmit && Object.keys(formErrors).some((k) => k.startsWith(`family_${idx}_`));
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setActiveFamilyIndex(idx)}
-                              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
-                                activeFamilyIndex === idx
-                                  ? 'bg-slate-900 text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                              } ${memberHasErrors ? 'ring-2 ring-rose-500 border border-rose-500' : ''}`}
-                            >
-                              {idx + 1}
-                              {memberHasErrors && (
-                                <span className="w-2 h-2 rounded-full bg-rose-500 absolute -top-0.5 -right-0.5 ring-2 ring-white"></span>
-                              )}
-                            </button>
-                          );
-                        })}
-
-                        {/* ปุ่ม + เพิ่มสมาชิกครอบครัว */}
+                    {(!formData.familyMembers || formData.familyMembers.length === 0) ? (
+                      <div className="py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">ยังไม่มีข้อมูลสมาชิกในครอบครัว (ไม่บังคับ)</p>
                         <button
                           type="button"
                           onClick={handleAddFamilyMember}
-                          className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
-                          title="เพิ่มสมาชิกครอบครัวคนถัดไป"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5" /> เพิ่มข้อมูลสมาชิกครอบครัว
                         </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Family Member Switcher Tabs */}
+                        <div className="flex items-center gap-2 mb-2">
+                          {formData.familyMembers.map((_, idx) => {
+                            const memberHasErrors = hasAttemptedSubmit && Object.keys(formErrors).some((k) => k.startsWith(`family_${idx}_`));
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setActiveFamilyIndex(idx)}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
+                                  activeFamilyIndex === idx
+                                    ? 'bg-slate-900 text-white shadow-xs'
+                                    : 'bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                                } ${memberHasErrors ? 'ring-2 ring-rose-500 border border-rose-500' : ''}`}
+                              >
+                                {idx + 1}
+                                {memberHasErrors && (
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 absolute -top-0.5 -right-0.5 ring-2 ring-white"></span>
+                                )}
+                              </button>
+                            );
+                          })}
 
-                        {formData.familyMembers && formData.familyMembers.length > 1 && (
+                          {/* ปุ่ม + เพิ่มสมาชิกครอบครัว */}
                           <button
                             type="button"
-                            onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
-                            className="text-[11px] text-rose-500 hover:underline ml-auto cursor-pointer"
+                            onClick={handleAddFamilyMember}
+                            className="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-600 hover:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 flex items-center justify-center transition-all cursor-pointer"
+                            title="เพิ่มสมาชิกครอบครัวคนถัดไป"
                           >
-                            ลบสมาชิกคนที่ {activeFamilyIndex + 1}
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
+
+                          {formData.familyMembers.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
+                              className="text-[11px] text-rose-500 hover:underline ml-auto cursor-pointer"
+                            >
+                              ลบสมาชิกคนที่ {activeFamilyIndex + 1}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
+                        {formData.familyMembers[activeFamilyIndex] && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
+                              </label>
+                              <CustomSelect
+                                value={formData.familyMembers[activeFamilyIndex].relationshipType}
+                                onChange={(e) => {
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].relationshipType = e.target.value;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_relationshipType`);
+                                }}
+                                className={`${getFieldClass(`family_${activeFamilyIndex}_relationshipType`)} cursor-pointer`}
+                              >
+                                <option value="">เลือกความสัมพันธ์</option>
+                                <option value="บิดา">บิดา</option>
+                                <option value="มารดา">มารดา</option>
+                                <option value="คู่สมรส">คู่สมรส</option>
+                                <option value="บุตร">บุตร</option>
+                                <option value="พี่น้อง">พี่น้อง</option>
+                              </CustomSelect>
+                              {renderFieldError(`family_${activeFamilyIndex}_relationshipType`)}
+                            </div>
+
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                              </label>
+                              <CustomSelect
+                                value={formData.familyMembers[activeFamilyIndex].prefix || ''}
+                                onChange={(e) => {
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].prefix = e.target.value;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_prefix`);
+                                }}
+                                className={`${getFieldClass(`family_${activeFamilyIndex}_prefix`)} cursor-pointer`}
+                              >
+                                <option value="">เลือกคำนำหน้า</option>
+                                <option value="นาย">นาย</option>
+                                <option value="นางสาว">นางสาว</option>
+                                <option value="นาง">นาง</option>
+                                <option value="เด็กชาย">เด็กชาย</option>
+                                <option value="เด็กหญิง">เด็กหญิง</option>
+                              </CustomSelect>
+                              {renderFieldError(`family_${activeFamilyIndex}_prefix`)}
+                            </div>
+
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                ชื่อ (First Name) <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="กรอกชื่อ"
+                                value={formData.familyMembers[activeFamilyIndex].firstName}
+                                onChange={(e) => {
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].firstName = e.target.value;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_firstName`);
+                                }}
+                                className={getFieldClass(`family_${activeFamilyIndex}_firstName`)}
+                              />
+                              {renderFieldError(`family_${activeFamilyIndex}_firstName`)}
+                            </div>
+
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="กรอกนามสกุล"
+                                value={formData.familyMembers[activeFamilyIndex].lastName || ''}
+                                onChange={(e) => {
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].lastName = e.target.value;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_lastName`);
+                                }}
+                                className={getFieldClass(`family_${activeFamilyIndex}_lastName`)}
+                              />
+                              {renderFieldError(`family_${activeFamilyIndex}_lastName`)}
+                            </div>
+
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                เลขบัตรประชาชน (National ID)
+                              </label>
+                              <input
+                                type="text"
+                                maxLength={13}
+                                placeholder="เลขบัตรประชาชน 13 หลัก"
+                                value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].citizenId = val;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_citizenId`);
+                                }}
+                                className={getFieldClass(`family_${activeFamilyIndex}_citizenId`, true)}
+                              />
+                              {renderFieldError(`family_${activeFamilyIndex}_citizenId`)}
+                            </div>
+
+                            <div>
+                              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                วันเกิด (Date of Birth)
+                              </label>
+                              <ThaiDatePicker
+                                value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
+                                onChange={(val) => {
+                                  const list = [...(formData.familyMembers || [])];
+                                  list[activeFamilyIndex].birthDate = val;
+                                  setFormData({ ...formData, familyMembers: list });
+                                  clearFieldError(`family_${activeFamilyIndex}_birthDate`);
+                                }}
+                                maxDate={new Date().toISOString().split('T')[0]}
+                                error={hasAttemptedSubmit && Boolean(formErrors[`family_${activeFamilyIndex}_birthDate`])}
+                              />
+                              {renderFieldError(`family_${activeFamilyIndex}_birthDate`)}
+                            </div>
+                          </div>
                         )}
                       </div>
-
-                      {/* ฟิลด์สมาชิกครอบครัวตาม Index ที่เลือก */}
-                      {formData.familyMembers && formData.familyMembers[activeFamilyIndex] && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              ความสัมพันธ์ (Relationship) <span className="text-rose-500">*</span>
-                            </label>
-                            <CustomSelect
-                              value={formData.familyMembers[activeFamilyIndex].relationshipType}
-                              onChange={(e) => {
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].relationshipType = e.target.value;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_relationshipType`);
-                              }}
-                              className={`${getFieldClass(`family_${activeFamilyIndex}_relationshipType`)} cursor-pointer`}
-                            >
-                              <option value="">เลือกความสัมพันธ์</option>
-                              <option value="บิดา">บิดา</option>
-                              <option value="มารดา">มารดา</option>
-                              <option value="คู่สมรส">คู่สมรส</option>
-                              <option value="บุตร">บุตร</option>
-                              <option value="พี่น้อง">พี่น้อง</option>
-                            </CustomSelect>
-                            {renderFieldError(`family_${activeFamilyIndex}_relationshipType`)}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
-                            </label>
-                            <CustomSelect
-                              value={formData.familyMembers[activeFamilyIndex].prefix || ''}
-                              onChange={(e) => {
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].prefix = e.target.value;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_prefix`);
-                              }}
-                              className={`${getFieldClass(`family_${activeFamilyIndex}_prefix`)} cursor-pointer`}
-                            >
-                              <option value="">เลือกคำนำหน้า</option>
-                              <option value="นาย">นาย</option>
-                              <option value="นางสาว">นางสาว</option>
-                              <option value="นาง">นาง</option>
-                              <option value="เด็กชาย">เด็กชาย</option>
-                              <option value="เด็กหญิง">เด็กหญิง</option>
-                            </CustomSelect>
-                            {renderFieldError(`family_${activeFamilyIndex}_prefix`)}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              ชื่อ (First Name) <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="กรอกชื่อ"
-                              value={formData.familyMembers[activeFamilyIndex].firstName}
-                              onChange={(e) => {
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].firstName = e.target.value;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_firstName`);
-                              }}
-                              className={getFieldClass(`family_${activeFamilyIndex}_firstName`)}
-                            />
-                            {renderFieldError(`family_${activeFamilyIndex}_firstName`)}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              นามสกุล (Last Name) <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="กรอกนามสกุล"
-                              value={formData.familyMembers[activeFamilyIndex].lastName || ''}
-                              onChange={(e) => {
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].lastName = e.target.value;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_lastName`);
-                              }}
-                              className={getFieldClass(`family_${activeFamilyIndex}_lastName`)}
-                            />
-                            {renderFieldError(`family_${activeFamilyIndex}_lastName`)}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              maxLength={13}
-                              placeholder="เลขบัตรประชาชน 13 หลัก"
-                              value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '').slice(0, 13);
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].citizenId = val;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_citizenId`);
-                              }}
-                              className={getFieldClass(`family_${activeFamilyIndex}_citizenId`, true)}
-                            />
-                            {renderFieldError(`family_${activeFamilyIndex}_citizenId`)}
-                          </div>
-
-                          <div>
-                            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                              วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
-                            </label>
-                            <ThaiDatePicker
-                              value={formData.familyMembers[activeFamilyIndex].birthDate || ''}
-                              onChange={(val) => {
-                                const list = [...(formData.familyMembers || [])];
-                                list[activeFamilyIndex].birthDate = val;
-                                setFormData({ ...formData, familyMembers: list });
-                                clearFieldError(`family_${activeFamilyIndex}_birthDate`);
-                              }}
-                              error={hasAttemptedSubmit && Boolean(formErrors[`family_${activeFamilyIndex}_birthDate`])}
-                            />
-                            {renderFieldError(`family_${activeFamilyIndex}_birthDate`)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
 

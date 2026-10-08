@@ -5,6 +5,9 @@ using Hrms.Application.Features.Transfers.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Features.Approvals.Services;
+
 namespace Hrms.Api.Controllers;
 
 /// <summary>
@@ -16,10 +19,17 @@ namespace Hrms.Api.Controllers;
 public class EmployeeTransfersController : ControllerBase
 {
     private readonly IEmployeeTransferService _transferService;
+    private readonly IApprovalWorkflowService _approvalWorkflowService;
+    private readonly ICurrentUserService _currentUser;
 
-    public EmployeeTransfersController(IEmployeeTransferService transferService)
+    public EmployeeTransfersController(
+        IEmployeeTransferService transferService,
+        IApprovalWorkflowService approvalWorkflowService,
+        ICurrentUserService currentUser)
     {
         _transferService = transferService;
+        _approvalWorkflowService = approvalWorkflowService;
+        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -122,19 +132,43 @@ public class EmployeeTransfersController : ControllerBase
 
     /// <summary>
     /// ดูประวัติ/ผังสายการอนุมัติ (Approval Timeline)
+    /// เจ้าของคำขอ (Requester หรือ พนักงานที่ถูกย้าย), ผู้อนุมัติในสาย และฝ่ายบุคคลสามารถดูได้
     /// </summary>
     [HttpGet("{id:long}/approval-timeline")]
     [ProducesResponseType(typeof(ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>), StatusCodes.Status200OK)]
-    [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<ActionResult<ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>>> GetApprovalTimeline(
         long id,
         CancellationToken cancellationToken)
     {
-        var timeline = await _transferService.GetApprovalTimelineAsync(id, cancellationToken);
-        if (timeline == null)
-            return NotFound(ApiResponse<object>.Fail("ไม่พบข้อมูลสายการอนุมัติสำหรับคำขอนี้"));
+        var currentEmpId = GetCurrentEmployeeId();
+        var isPrivileged = _currentUser.HasRole("ADMIN")
+            || _currentUser.HasRole("SYSTEM_SUPER")
+            || _currentUser.HasPermission("EMP_TRANSFER_VIEW")
+            || _currentUser.HasPermission("APPROVAL_EMP_VIEW")
+            || _currentUser.HasPermission("APPROVAL_EMP_APPROVE");
 
-        return Ok(ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>.Ok(timeline, "ดึงข้อมูลผังการอนุมัติสำเร็จ"));
+        try
+        {
+            var transfer = await _transferService.GetByIdAsync(id, cancellationToken);
+            var isOwner = currentEmpId > 0 && transfer.EmployeeId == currentEmpId;
+            var inWorkflow = currentEmpId > 0 && transfer.ApprovalInstanceId.HasValue
+                && await _approvalWorkflowService.IsUserInWorkflowAsync(transfer.ApprovalInstanceId.Value, currentEmpId, cancellationToken);
+
+            if (!isPrivileged && !isOwner && !inWorkflow)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("คุณไม่มีสิทธิ์เข้าถึงผังการอนุมัติสำหรับคำขอนี้"));
+            }
+
+            var timeline = await _transferService.GetApprovalTimelineAsync(id, cancellationToken);
+            if (timeline == null)
+                return NotFound(ApiResponse<object>.Fail("ไม่พบข้อมูลสายการอนุมัติสำหรับคำขอนี้"));
+
+            return Ok(ApiResponse<Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto>.Ok(timeline, "ดึงข้อมูลผังการอนุมัติสำเร็จ"));
+        }
+        catch (Hrms.Application.Common.Exceptions.NotFoundException)
+        {
+            return NotFound(ApiResponse<object>.Fail("ไม่พบคำขอย้าย/เลื่อนตำแหน่งที่ระบุ"));
+        }
     }
 
     /// <summary>

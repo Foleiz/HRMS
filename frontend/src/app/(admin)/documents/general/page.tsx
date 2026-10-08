@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -47,6 +47,22 @@ const formatThaiShort = (s: string): string => {
   const [y, m, d] = parts.map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+};
+
+const isAttachmentMandatory = (docType: string): boolean => {
+  if (!docType) return false;
+  const t = docType.trim().toLowerCase();
+  return (
+    t.includes('สำเนา') ||
+    t.includes('บัตรประจำตัวประชาชน') ||
+    t.includes('บัตรประชาชน') ||
+    t.includes('ใบรับรองแพทย์') ||
+    t.includes('ทะเบียนบ้าน') ||
+    t.includes('สมุดบัญชี') ||
+    t.includes('วุฒิการศึกษา') ||
+    t.includes('ทรานสคริปต์') ||
+    t.includes('50 ทวิ')
+  );
 };
 
 export default function GeneralDocumentPage() {
@@ -258,20 +274,31 @@ export default function GeneralDocumentPage() {
     }
   };
 
+  const isFileRequired = isAttachmentMandatory(isCustomType ? customDocumentType : documentType);
+
   // ยื่นคำร้องเอกสารทั่วไป
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalDocType = isCustomType ? customDocumentType.trim() : documentType;
     if (!finalDocType) {
       setFormError('กรุณาระบุประเภทเอกสาร');
+      toast.error('กรุณาระบุประเภทเอกสาร');
       return;
     }
     if (!purpose.trim()) {
       setFormError('กรุณาระบุรายละเอียดของคำขอ');
+      toast.error('กรุณาระบุรายละเอียดของคำขอ');
       return;
     }
     if (expiryRequired && !effectiveExpiry) {
       setFormError('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
+      toast.error('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
+      return;
+    }
+    if (isFileRequired && !selectedFile) {
+      const msg = `เอกสารประเภท "${finalDocType}" จำเป็นต้องแนบไฟล์เอกสารประกอบ`;
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -351,7 +378,7 @@ export default function GeneralDocumentPage() {
       )}
 
       {/* Main Form (ออกแบบตาม Figma เป๊ะๆ: ข้อมูลทั่วไป + แนบเอกสารสีเหลืองอ่อนทางซ้าย, รายละเอียดทางขวา) */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
         {formError && (
           <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -470,10 +497,23 @@ export default function GeneralDocumentPage() {
             </div>
 
             {/* กล่องแนบเอกสาร (สีเหลืองอ่อนพาสเทลตาม Figma: bg-amber-50 / bg-[#FEF9C3]) */}
-            <div className="bg-[#FEF9C3]/80 border border-[#FDE047] rounded-2xl p-5 space-y-3">
+            <div className={`rounded-2xl p-5 space-y-3 border transition-colors ${
+              isFileRequired && !selectedFile
+                ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20'
+                : 'bg-[#FEF9C3]/80 dark:bg-amber-950/20 border-[#FDE047] dark:border-amber-700/50'
+            }`}>
               <div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-slate-100">แนบเอกสาร</h4>
-                <p className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">กรุณาแนบเอกสารด้านล่างนี้</p>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <span>แนบเอกสาร</span>
+                  {isFileRequired ? (
+                    <span className="text-rose-500 font-bold text-xs">* (จำเป็นสำหรับเอกสารประเภทนี้)</span>
+                  ) : (
+                    <span className="text-slate-400 font-normal text-xs">(ไม่บังคับ)</span>
+                  )}
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">
+                  {isFileRequired ? 'เอกสารประเภทนี้กำหนดให้ต้องแนบไฟล์เอกสารประกอบคำขอ' : 'กรุณาแนบเอกสารด้านล่างนี้ (ถ้ามี)'}
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-xl border border-amber-200">
@@ -567,11 +607,22 @@ export default function GeneralDocumentPage() {
           </div>
         </div>
 
+        {/* Error alert at bottom if validation fails */}
+        {formError && (
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm rounded-xl flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+            <span>{formError}</span>
+          </div>
+        )}
+
         {/* ─── แถบปุ่มสั่งการด้านล่าง (ตาม Figma และตามสไตล์เมนูอื่นๆ: ดูตัวอย่าง / บันทึกแบบร่าง / ถัดไป-ยื่นคำขอ) ─── */}
-        <div className="flex items-center justify-center sm:justify-end gap-3 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-center sm:justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
           <button
             type="button"
-            onClick={() => setIsPreviewOpen(true)}
+            onClick={() => {
+              setFormError(null);
+              setIsPreviewOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
           >
             <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
@@ -602,7 +653,10 @@ export default function GeneralDocumentPage() {
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-            onClick={() => setShowSuccessModal(false)}
+            onClick={() => {
+              setFormError(null);
+              setShowSuccessModal(false);
+            }}
           />
 
           <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
@@ -619,6 +673,7 @@ export default function GeneralDocumentPage() {
               <button
                 type="button"
                 onClick={() => {
+                  setFormError(null);
                   setShowSuccessModal(false);
                   router.push('/documents/history');
                 }}
@@ -628,7 +683,10 @@ export default function GeneralDocumentPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowSuccessModal(false)}
+                onClick={() => {
+                  setFormError(null);
+                  setShowSuccessModal(false);
+                }}
                 className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
@@ -641,7 +699,10 @@ export default function GeneralDocumentPage() {
       {/* General Document Preview Modal */}
       <GeneralDocumentPreviewModal
         isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
+        onClose={() => {
+          setFormError(null);
+          setIsPreviewOpen(false);
+        }}
         data={{
           employeeName: profile.fullName,
           employeeCode: profile.employeeCode,
