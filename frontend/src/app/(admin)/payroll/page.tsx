@@ -1110,9 +1110,18 @@ export default function PayrollPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       showToast(`ส่งออกไฟล์โอนเงินธนาคาร (${bankCode}) สำเร็จเรียบร้อย`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to download bank transfer file:', err);
-      showToast('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์โอนเงิน');
+      let message: string | undefined = err?.response?.data?.message;
+      const data = err?.response?.data;
+      if (!message && data instanceof Blob) {
+        try {
+          message = JSON.parse(await data.text())?.message;
+        } catch {
+          /* ignore parse error */
+        }
+      }
+      showToast(message || 'เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์โอนเงิน');
     } finally {
       setIsExportingBankFile(false);
     }
@@ -3219,6 +3228,7 @@ export default function PayrollPage() {
         const totalNet = payrolls.reduce((acc, p) => acc + (p.netPayableSalary || 0), 0);
         const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
         const pendingTransferCount = totalEmployees - transferredCount;
+        const zeroSalaryCount = payrolls.filter(p => !p.netPayableSalary || p.netPayableSalary === 0).length;
 
         const totalProcessCount = payrolls.length;
         const totalProcessPages = Math.max(1, Math.ceil(totalProcessCount / processPageSize));
@@ -3770,6 +3780,35 @@ export default function PayrollPage() {
                 </div>
               </div>
             </div>
+
+            {/* Warning Banner: พนักงานที่ยังไม่มีฐานเงินเดือน */}
+            {zeroSalaryCount > 0 && selectedPeriod?.status !== 'CLOSED' && (
+              <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+                <div className="flex items-start sm:items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 font-bold">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-amber-900 dark:text-amber-200">
+                      พบพนักงาน {zeroSalaryCount} คนที่ยอดเงินเดือนเป็น ฿0.00 (ยังไม่มีฐานเงินเดือนเริ่มต้น)
+                    </div>
+                    <div className="text-amber-700 dark:text-amber-400 text-[11px] mt-0.5">
+                      พนักงานเหล่านี้จะไม่มีรายการเงินเดือนสุทธิ หากต้องการกำหนดเงินเดือน สามารถไปที่แท็บ &ldquo;ข้อมูลเงินเดือนพนักงาน&rdquo; ได้
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('structures');
+                    setStructureSubTab('employees');
+                  }}
+                  className="self-start sm:self-auto px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+                >
+                  จัดการฐานเงินเดือน →
+                </button>
+              </div>
+            )}
 
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* 🟢 VIEW 1: HR VIEW (Pre-Payroll Verification)                  */}

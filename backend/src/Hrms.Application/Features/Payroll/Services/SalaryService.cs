@@ -608,28 +608,15 @@ public class SalaryService : ISalaryService
             _context.SocialSecurityRates.RemoveRange(existing);
         }
 
-        // ค่ามาตรฐานตามกฎหมาย: เก็บประวัติไว้ เพื่อให้รอบเงินเดือนย้อนหลังคำนวณด้วยอัตราที่ถูกต้อง
-        // - ถึง 31 ธ.ค. 2568: ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท)
-        // - ตั้งแต่ 1 ม.ค. 2569: ฐานค่าจ้าง 1,650 - 17,500 บาท (สูงสุด 875 บาท)
+        // ค่ามาตรฐานตามกฎหมายปัจจุบัน (มาตรา 33): ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท)
         _context.SocialSecurityRates.Add(new SocialSecurityRate
         {
-            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33) เพดาน 15,000 บาท",
+            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33) 5% เพดาน 15,000 บาท",
             EmployeeContributionPercent = 0.0500m,
             EmployerContributionPercent = 0.0500m,
             MinWageBaseAmount = 1650.00m,
             MaxWageBaseAmount = 15000.00m,
             EffectiveFrom = new DateOnly(2024, 1, 1),
-            EffectiveTo = new DateOnly(2025, 12, 31),
-            Status = "ACTIVE"
-        });
-        _context.SocialSecurityRates.Add(new SocialSecurityRate
-        {
-            RateName = "อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33) เพดาน 17,500 บาท",
-            EmployeeContributionPercent = 0.0500m,
-            EmployerContributionPercent = 0.0500m,
-            MinWageBaseAmount = 1650.00m,
-            MaxWageBaseAmount = 17500.00m,
-            EffectiveFrom = new DateOnly(2026, 1, 1),
             EffectiveTo = null,
             Status = "ACTIVE"
         });
@@ -2434,10 +2421,10 @@ public class SalaryService : ISalaryService
     /// <summary>อัตราประกันสังคมที่ใช้ในการคำนวณ (หน่วยเป็น % เช่น 5 = 5%)</summary>
     private sealed record SsoRateInfo(decimal EmployeePercent, decimal EmployerPercent, decimal MinWage, decimal MaxWage);
 
-    // ค่าตั้งต้นตามกฎหมาย ปี 2569 (ใช้เมื่อยังไม่มีการตั้งค่าในระบบ): 5% ฐานค่าจ้าง 1,650 - 17,500 บาท
+    // ค่าตั้งต้นตามกฎหมายปัจจุบัน (ใช้เมื่อยังไม่มีการตั้งค่าในระบบ): 5% ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท)
     private const decimal DefaultSsoPercent = 5.0m;
     private const decimal DefaultSsoMinWage = 1650.0m;
-    private const decimal DefaultSsoMaxWage = 17500.0m;
+    private const decimal DefaultSsoMaxWage = 15000.0m;
 
     private static bool IsPayableRecord(Domain.Entities.Payroll p) => p.Status == "CALCULATED" && p.NetPayableSalary > 0;
 

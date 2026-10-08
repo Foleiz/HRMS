@@ -168,6 +168,14 @@ export const salaryService = {
     return res.data.data;
   },
 
+  /** ดาวน์โหลดสลิปเงินเดือน E-Payslip PDF */
+  async downloadPayslipPdf(payrollId: number): Promise<Blob> {
+    const res = await apiClient.get(`/salary/payrolls/${payrollId}/payslip-pdf`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
   async updatePayrollPeriodStatus(periodId: number, status: string): Promise<PayrollPeriod> {
     const res = await apiClient.put<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/status`, { status });
     return res.data.data;
