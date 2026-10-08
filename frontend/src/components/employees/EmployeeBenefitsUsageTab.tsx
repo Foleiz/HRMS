@@ -49,6 +49,16 @@ function paymentStatusLabel(c: BenefitClaim): string {
   }
 }
 
+function formatThaiShortDate(dateStr?: string | null): string {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear() + 543;
+  return `${day}/${month}/${year}`;
+}
+
 const CLAIM_STATUS_BADGE: Record<string, { label: string; className: string }> = {
   APPROVED: {
     label: 'อนุมัติแล้ว',
@@ -395,7 +405,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                   {(hasQuota || isYearly) && (!isSelf || (b.category !== 'ALLOWANCE' && b.category !== 'STATUTORY')) && (
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                        {b.lastClaimDate ? `ใช้ล่าสุดเมื่อ: ${b.lastClaimDate}` : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
+                        {b.lastClaimDate ? `ใช้ล่าสุดเมื่อ: ${formatThaiShortDate(b.lastClaimDate)}` : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
                       </span>
                       <button
                         type="button"
@@ -464,7 +474,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                   {claims.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
                       <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {c.claimDate}
+                        {formatThaiShortDate(c.claimDate)}
                       </td>
                       <td className="py-3 px-4">
                         <span className="font-semibold text-slate-900 dark:text-slate-100">

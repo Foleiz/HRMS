@@ -182,9 +182,6 @@ const menuGroups: MenuGroup[] = [
         icon: Gift,
         requiredPermissions: [
           'BENEFIT_BALANCE_VIEW',
-          'ORG_BENEFIT_VIEW',
-          'EMP_PROFILE_VIEW',
-          'EMP_VIEW',
         ],
       },
       {

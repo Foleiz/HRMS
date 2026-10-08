@@ -355,7 +355,7 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         if (isPeriodLocked)
         {
-            throw new InvalidOperationException($"ไม่สามารถอนุมัติคำขอลาในช่วงวันที่ {leaveStartDate:yyyy-MM-dd} ถึง {leaveEndDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
+            throw new InvalidOperationException($"ไม่สามารถอนุมัติคำขอลาในช่วงวันที่ {leaveStartDate.Day:D2}/{leaveStartDate.Month:D2}/{leaveStartDate.Year + 543} ถึง {leaveEndDate.Day:D2}/{leaveEndDate.Month:D2}/{leaveEndDate.Year + 543} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
         }
 
         // คำนวณวันลาใหม่ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท (แก้ค่าที่อาจนับเสาร์–อาทิตย์มาจากหน้าเว็บเดิม)

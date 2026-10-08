@@ -322,7 +322,7 @@ public class AttendanceDailyService : IAttendanceDailyService
 
         if (isPeriodLocked)
         {
-            throw new InvalidOperationException($"ไม่สามารถแก้ไขบันทึกเวลาของวันที่ {record.WorkDate:yyyy-MM-dd} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
+            throw new InvalidOperationException($"ไม่สามารถแก้ไขบันทึกเวลาของวันที่ {record.WorkDate.Day:D2}/{record.WorkDate.Month:D2}/{record.WorkDate.Year + 543} ได้ เนื่องจากงวดเงินเดือนดังกล่าวถูกปิดรอบหรือจ่ายเงินเรียบร้อยแล้ว (Period Locked)");
         }
 
         if (request.ShiftId.HasValue)

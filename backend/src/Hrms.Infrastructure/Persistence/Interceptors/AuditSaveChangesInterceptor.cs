@@ -200,6 +200,12 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                     // หากไม่มีคอลัมน์ใดเปลี่ยนแปลงเลย ไม่ต้องบันทึก AuditLog
                     if (changedColumns.Count == 0) break;
 
+                    // ข้ามการบันทึก AuditLog สำหรับการอัปเดต LastLoginAt / UpdatedAt ประจำรอบล็อกอิน เพื่อป้องกัน log บวม
+                    if (entry.Entity is UserAccount && changedColumns.All(c => c == "LastLoginAt" || c == "UpdatedAt"))
+                    {
+                        break;
+                    }
+
                     long? entityId = null;
                     var pkProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
                     if (pkProp?.CurrentValue != null && long.TryParse(pkProp.CurrentValue.ToString(), out var id))

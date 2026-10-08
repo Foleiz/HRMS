@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Utilities;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Auth.Dtos;
+using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.Application.Features.Auth.Services;
@@ -14,6 +16,7 @@ public class AuthService : IAuthService
     private readonly IHrmsDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly ICurrentUserService _currentUserService;
 
     public static readonly Dictionary<string, string> DefaultAccountPasswords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -34,11 +37,13 @@ public class AuthService : IAuthService
     public AuthService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
@@ -89,11 +94,43 @@ public class AuthService : IAuthService
 
         if (!passwordValid)
         {
+            var failLog = new AuditLog
+            {
+                Action = "LOGIN",
+                EntityType = "AUTH",
+                EntityId = user.Id,
+                FieldName = "เข้าสู่ระบบไม่สำเร็จ",
+                OldValue = null,
+                NewValue = JsonSerializer.Serialize(new { status = "FAILED", username = user.Username }),
+                UserId = user.Id,
+                IpAddress = _currentUserService.IpAddress,
+                UserAgent = _currentUserService.UserAgent,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.AuditLogs.Add(failLog);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             throw new ValidationException("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
         }
 
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
+
+        var loginLog = new AuditLog
+        {
+            Action = "LOGIN",
+            EntityType = "AUTH",
+            EntityId = user.Id,
+            FieldName = "เข้าสู่ระบบ",
+            OldValue = null,
+            NewValue = JsonSerializer.Serialize(new { username = user.Username }),
+            UserId = user.Id,
+            IpAddress = _currentUserService.IpAddress,
+            UserAgent = _currentUserService.UserAgent,
+            CreatedAt = DateTime.UtcNow
+        };
+        _dbContext.AuditLogs.Add(loginLog);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         // 3. โหลดสิทธิ์และโปรไฟล์แบบแยกคิวรีที่รวดเร็ว

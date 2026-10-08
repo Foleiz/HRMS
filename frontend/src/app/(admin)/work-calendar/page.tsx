@@ -65,6 +65,16 @@ function formatThaiDate(dateStr: string): string {
   return `${dayName} ${day} ${thaiMonths[month]} ${thaiYear}`;
 }
 
+function formatThaiShortDate(dateStr: string): string {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const year = parseInt(parts[0], 10);
+  const month = parts[1].padStart(2, '0');
+  const day = parts[2].padStart(2, '0');
+  return `${day}/${month}/${year + 543}`;
+}
+
 export default function WorkCalendarPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
@@ -520,7 +530,7 @@ export default function WorkCalendarPage() {
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 px-2 py-0.5 rounded-md dark:text-slate-100 dark:bg-slate-800">
-                              {h.holidayDate}
+                              {formatThaiShortDate(h.holidayDate)}
                             </span>
                             <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">
                               ({formatThaiDate(h.holidayDate)})

@@ -36,6 +36,7 @@ import { confirmDelete } from '@/lib/sweetalert';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
 import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
 import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
+import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -46,7 +47,7 @@ const formatThaiDate = (dateStr?: string) => {
       'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
       'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
     ];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   } catch {
     return dateStr;
   }
@@ -734,7 +735,9 @@ export default function EmployeeDetailView({
                     </div>
                     <div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">เลขที่บัญชี</p>
-                      <p className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{primaryBank?.accountNumber || '-'}</p>
+                      <div className="text-slate-700 dark:text-slate-300 font-mono font-semibold">
+                        <MaskedDataViewer value={primaryBank?.accountNumber} type="bankAccount" />
+                      </div>
                     </div>
                     {primaryBank?.accountName && (
                       <div>
@@ -745,8 +748,8 @@ export default function EmployeeDetailView({
                     {pendingBank && (
                       <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 space-y-1.5">
                         <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">บัญชีใหม่รอยืนยัน</p>
-                        <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                          {pendingBank.bankName} <span className="font-mono">{pendingBank.accountNumber}</span>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                          {pendingBank.bankName} <MaskedDataViewer value={pendingBank.accountNumber} type="bankAccount" />
                           {pendingBank.requestedAt ? ` · ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')}` : ''}
                         </p>
                         <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80">ระหว่างรอ เงินเดือนยังโอนเข้าบัญชีเดิม</p>
@@ -804,8 +807,8 @@ export default function EmployeeDetailView({
                       </div>
                     )}
                     {!pendingBank && rejectedBank && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400">
-                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                        คำขอเปลี่ยนเป็นบัญชี <MaskedDataViewer value={rejectedBank.accountNumber} type="bankAccount" /> ไม่ได้รับอนุมัติ
                         {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
                       </p>
                     )}

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import AccessDenied from '@/components/common/AccessDenied';
 import { benefitService } from '@/services/benefitService';
 import { EmployeeBenefitOverview, BenefitUsageItem, BenefitClaim } from '@/types/benefit';
 import { useToast } from '@/context/ToastContext';
@@ -26,6 +28,8 @@ import {
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function EmployeeBenefitBalancesPage() {
+  const { hasPermission, hasRole } = useAuth();
+  const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 
@@ -52,6 +56,10 @@ export default function EmployeeBenefitBalancesPage() {
   }, [setBreadcrumb]);
 
   const fetchOverview = useCallback(async () => {
+    if (!canView) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await benefitService.getEmployeesBenefitOverview({
@@ -178,6 +186,15 @@ export default function EmployeeBenefitBalancesPage() {
   const totalBenefitItemsCount = useMemo(() => {
     return overviewList.reduce((acc, curr) => acc + curr.benefits.length, 0);
   }, [overviewList]);
+
+  if (!canView) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์เข้าถึงยอดสวัสดิการพนักงาน"
+        message="คุณไม่มีสิทธิ์ในการดูข้อมูลยอดสวัสดิการพนักงาน (ต้องการสิทธิ์: BENEFIT_BALANCE_VIEW)"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 font-sans">

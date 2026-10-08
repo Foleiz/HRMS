@@ -269,6 +269,20 @@ export default function EssAttendancePage() {
     }
   };
 
+  const formatThaiShortDate = (dateStr: string) => {
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${y + 543}`;
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const renderStatusBadge = (status?: string, isAbsent?: boolean) => {
     if (isAbsent || status === 'ABSENT') {
       return (
@@ -514,7 +528,7 @@ export default function EssAttendancePage() {
                         <tr key={rec.id || rec.workDate} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3 px-4 font-medium text-slate-800">
                             {formatThaiDate(rec.workDate)}
-                            <span className="block text-xs font-mono text-slate-400">{rec.workDate}</span>
+                            <span className="block text-xs font-mono text-slate-400">{formatThaiShortDate(rec.workDate)}</span>
                           </td>
                           <td className="py-3 px-4 text-xs text-slate-600">
                             <span className="font-semibold block text-slate-700">{rec.shiftName || 'กะปกติ'}</span>
@@ -568,7 +582,7 @@ export default function EssAttendancePage() {
                           <div className="font-semibold text-slate-900 text-sm">
                             {formatThaiDate(rec.workDate)}
                           </div>
-                          <span className="text-xs font-mono text-slate-400">{rec.workDate}</span>
+                          <span className="text-xs font-mono text-slate-400">{formatThaiShortDate(rec.workDate)}</span>
                         </div>
                         <div>
                           {renderStatusBadge(rec.status, rec.isAbsent)}
@@ -660,7 +674,7 @@ export default function EssAttendancePage() {
                       {adjustmentsList.map((adj) => (
                         <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3 px-4 font-semibold text-slate-800">
-                            {adj.workDate}
+                            {formatThaiShortDate(adj.workDate)}
                           </td>
                           <td className="py-3 px-4 font-mono text-xs text-slate-500">
                             {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
@@ -703,7 +717,7 @@ export default function EssAttendancePage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <span className="font-semibold text-slate-900 text-sm">
-                            วันที่ขอปรับ: {adj.workDate}
+                            วันที่ขอปรับ: {formatThaiShortDate(adj.workDate)}
                           </span>
                           <span className="block text-2xs text-slate-400 font-mono mt-0.5">
                             ยื่นเมื่อ: {adj.createdAt ? new Date(adj.createdAt).toLocaleString('th-TH') : '-'}

@@ -630,10 +630,14 @@ export default function DocumentHistoryPage() {
                         <span className="text-slate-400">ประเภท:</span>
                         <span className="font-semibold text-slate-800">{doc.documentType}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">ช่วงวันที่:</span>
-                        <span className="font-medium text-slate-700">{doc.detailDate}</span>
-                      </div>
+                      {doc.detailDate && doc.detailDate.trim() !== '' && doc.detailDate !== '-' && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">
+                            {doc.source === 'LEAVE' ? 'ช่วงวันที่:' : 'รายละเอียด:'}
+                          </span>
+                          <span className="font-medium text-slate-700">{doc.detailDate}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between pt-1">

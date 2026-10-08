@@ -62,6 +62,13 @@ export const isImportantLog = (item: AuditLogItem) => {
   const act = (item.action || '').toUpperCase();
   const desc = (item.description || '').toLowerCase();
   const ent = (item.entityType || '').toLowerCase();
+  const field = (item.fieldName || '').toLowerCase();
+
+  // ข้ามการอัปเดต LastLoginAt ไม่ให้เป็นเหตุการณ์สำคัญ
+  if (field.includes('lastloginat') || field.includes('last_login_at')) {
+    return false;
+  }
+
   return (
     act === 'DELETE' ||
     act === 'LOGIN_FAILED' ||
@@ -606,7 +613,15 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
 
       {/* Summary Count Text */}
       <div className="text-xs text-slate-500 pt-0.5">
-        พบ {displayLogs.length} รายการ (จากทั้งหมด {totalCount.toLocaleString()} ในฐานข้อมูล)
+        {selectedUserId !== 'ทั้งหมด' ? (
+          <span>
+            พบ <strong className="text-slate-700">{totalCount.toLocaleString()}</strong> รายการของผู้ใช้ <span className="font-semibold text-blue-600">{users.find((u) => String(u.id) === String(selectedUserId))?.username || selectedUserId}</span> (แสดง {displayLogs.length} รายการในหน้านี้)
+          </span>
+        ) : (
+          <span>
+            พบ <strong className="text-slate-700">{totalCount.toLocaleString()}</strong> รายการ (แสดง {displayLogs.length} รายการในหน้านี้)
+          </span>
+        )}
       </div>
 
       {/* 3. Grouped Date List */}

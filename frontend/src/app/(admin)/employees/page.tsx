@@ -84,6 +84,17 @@ export const formatPhoneNumber = (val?: string | null): string => {
   return clean;
 };
 
+export const formatBirthDate = (val?: string | null): string => {
+  if (!val) return '-';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return d.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  } catch {
+    return val;
+  }
+};
+
 export const autoFormatPhone = (val: string): string => {
   const digits = val.replace(/\D/g, '').slice(0, 10);
   if (digits.length > 6) {
@@ -1240,7 +1251,7 @@ export default function EmployeesPage() {
 
                       {/* 7. วันเกิด */}
                       <td className="py-3 px-3.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {emp.birthDate || '-'}
+                        {formatBirthDate(emp.birthDate)}
                       </td>
 
                       {/* 8. เพศ */}
@@ -1510,7 +1521,7 @@ export default function EmployeesPage() {
                 <div>
                   <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 block">วันเดือนปีเกิด</span>
                   <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
-                    {selectedEmployee.birthDate || '-'}
+                    {formatBirthDate(selectedEmployee.birthDate)}
                   </span>
                 </div>
                 <div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Calendar, CalendarDays, FileSpreadsheet, Loader2, Users } from 'lucide-react';
@@ -262,6 +262,20 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             )}
           </div>
         </>
+      )}
+
+      {!loading && !data && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-12 text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-3">
+            <FileSpreadsheet className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
+            {failedKey ? 'คุณไม่มีสิทธิ์เข้าถึงรายงานการลา หรือโหลดข้อมูลไม่สำเร็จ' : 'ไม่มีข้อมูลรายงานการลา'}
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            {failedKey ? 'โปรดติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์เข้าถึง (REPORT_LEAVE_VIEW)' : 'ไม่พบข้อมูลการลาในช่วงเวลาที่เลือก'}
+          </p>
+        </div>
       )}
     </div>
   );

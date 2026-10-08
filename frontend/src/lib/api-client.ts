@@ -40,7 +40,10 @@ apiClient.interceptors.request.use(
       // คำขอที่บันทึกข้อมูล (POST/PUT/PATCH/DELETE) ทำงานหลายขั้นในฐานข้อมูล (เช่น ยื่นใบลา + เริ่มสายอนุมัติ)
       // ให้เวลา 45 วินาที เพื่อไม่ให้ขึ้น timeout ทั้งที่บันทึกสำเร็จ — คำขออ่านข้อมูล (GET) ใช้ 30 วินาที
       const method = (config.method || 'get').toLowerCase();
-      if (method !== 'get' && (config.timeout ?? 0) <= 30000) {
+      const isLogin = config.url?.includes('/auth/login');
+      if (isLogin) {
+        config.timeout = config.timeout || 20000;
+      } else if (method !== 'get' && (config.timeout ?? 0) <= 30000) {
         config.timeout = 45000;
       }
       const token = localStorage.getItem('hrms_token');
@@ -80,12 +83,17 @@ apiClient.interceptors.response.use(
       errorMessage = error.message;
     }
 
-    if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')) {
-      const method = (error.config?.method || 'get').toLowerCase();
-      // "ข้อมูลอาจถูกบันทึกแล้ว" ใช้เฉพาะคำขอที่เขียนข้อมูล — คำขออ่านข้อมูล (GET) ไม่มีการบันทึก
-      errorMessage = method === 'get'
-        ? 'เซิร์ฟเวอร์ตอบช้าเกินไป (timeout) กรุณาลองใหม่อีกครั้ง'
-        : 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
+    if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.message?.includes('timeout'))) {
+      const isLogin = error.config?.url?.includes('/auth/login');
+      if (isLogin) {
+        errorMessage = 'เซิร์ฟเวอร์ไม่ตอบสนอง กรุณาลองใหม่อีกครั้ง';
+      } else {
+        const method = (error.config?.method || 'get').toLowerCase();
+        // "ข้อมูลอาจถูกบันทึกแล้ว" ใช้เฉพาะคำขอที่เขียนข้อมูล — คำขออ่านข้อมูล (GET) ไม่มีการบันทึก
+        errorMessage = method === 'get'
+          ? 'เซิร์ฟเวอร์ตอบช้าเกินไป (timeout) กรุณาลองใหม่อีกครั้ง'
+          : 'เซิร์ฟเวอร์ใช้เวลาประมวลผลนานเกินไป (timeout) ข้อมูลอาจถูกบันทึกแล้ว กรุณารีเฟรชหน้าเพื่อตรวจสอบ';
+      }
       console.warn('API Timeout:', error.config?.url);
     } else if (!error.response) {
       errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่หรือไม่';

@@ -42,7 +42,10 @@ export default function LoginPage() {
       await login({ username, password });
       toast.success('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับเข้าสู่ระบบ HRMS');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง';
+      let msg = err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง';
+      if (typeof msg === 'string' && (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('econnaborted') || msg.toLowerCase().includes('network error'))) {
+        msg = 'เซิร์ฟเวอร์ไม่ตอบสนอง กรุณาลองใหม่อีกครั้ง';
+      }
       setError(msg);
       toast.error(msg);
     } finally {

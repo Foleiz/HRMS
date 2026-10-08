@@ -10,7 +10,9 @@ export const authService = {
    * เข้าสู่ระบบด้วย username & password
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', credentials, {
+      timeout: 20000,
+    });
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.message || 'เข้าสู่ระบบไม่สำเร็จ');
     }

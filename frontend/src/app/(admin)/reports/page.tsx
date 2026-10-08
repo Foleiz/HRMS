@@ -57,6 +57,21 @@ import {
   FileText,
 } from 'lucide-react';
 
+const formatThaiDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${y + 543}`;
+    }
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+};
+
 export default function ReportsPage() {
   const { hasPermission, hasRole } = useAuth();
   const toast = useToast();
@@ -80,7 +95,7 @@ export default function ReportsPage() {
   const canExportTurnover = hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
 
   // รายงานการลา: ใช้สิทธิ์ REPORT_LEAVE_VIEW ตามระบบ Permissions
-  const canViewLeave = hasPermission('REPORT_LEAVE_VIEW') || hasPermission('REPORT_LEAVE') || hasPermission('REPORT_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewLeave = hasPermission('REPORT_LEAVE_VIEW') || hasPermission('REPORT_LEAVE') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const handleLeaveReportError = useCallback((message: string) => toastRef.current.error(message), []);
 
   const canViewAnyReport = canViewHeadcount || canViewLateness || canViewTax || canViewTurnover || canViewLeave;
@@ -677,7 +692,7 @@ export default function ReportsPage() {
           {headcountData && headcountData.totalPresent === 0 && (headcountData.totalExpected ?? headcountData.totalEmployees) > 0 && (
             <div className="flex items-center gap-2 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-              วันที่ {selectedDate} ยังไม่มีการลงเวลาทำงานในระบบ — ถ้าเป็นวันที่ผ่านมาแล้ว ตรวจสอบว่านำเข้าข้อมูลเครื่องสแกนแล้วหรือยัง
+              วันที่ {formatThaiDate(selectedDate)} ยังไม่มีการลงเวลาทำงานในระบบ — ถ้าเป็นวันที่ผ่านมาแล้ว ตรวจสอบว่านำเข้าข้อมูลเครื่องสแกนแล้วหรือยัง
             </div>
           )}
 
@@ -1562,6 +1577,9 @@ export default function ReportsPage() {
                     (คงอยู่ {turnoverData.overallRetentionRate}%)
                   </span>
                 </div>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                  *สูตร: ลาออก ÷ เฉลี่ยต้น-สิ้นงวด | คงอยู่: (ต้นงวด - ลาออก) ÷ ต้นงวด
+                </p>
               </div>
             </div>
           )}

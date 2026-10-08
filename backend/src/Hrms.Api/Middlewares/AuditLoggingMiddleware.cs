@@ -38,32 +38,8 @@ public class AuditLoggingMiddleware
         {
             try
             {
-                // ตรวจจับการเข้าสู่ระบบสำเร็จ (LOGIN)
-                if (path.Contains("/api/auth/login") && method == "POST")
-                {
-                    var userId = currentUserService.UserId;
-                    // หากในคำขอแรก Token เพิ่งถูกสร้าง ให้ลองดึงจาก Claims ใน Response หรือ User ถ้ามี
-                    if (userId == null && context.User.Identity?.IsAuthenticated == true)
-                    {
-                        var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                        if (long.TryParse(sub, out var parsedId)) userId = parsedId;
-                    }
-
-                    await auditLogService.LogAsync(
-                        action: "LOGIN",
-                        entityType: "AUTH",
-                        entityId: userId,
-                        fieldName: "Session",
-                        oldValue: null,
-                        newValue: "{\"status\": \"SUCCESS\"}",
-                        userId: userId,
-                        ipAddress: currentUserService.IpAddress,
-                        userAgent: currentUserService.UserAgent);
-
-                    _logger.LogInformation("AuditLog: บันทึกการเข้าสู่ระบบสำเร็จสำหรับผู้ใช้งาน ID {UserId}", userId);
-                }
                 // ตรวจจับการออกจากระบบ (LOGOUT)
-                else if (path.Contains("/api/auth/logout") && method == "POST")
+                if (path.Contains("/api/auth/logout") && method == "POST")
                 {
                     await auditLogService.LogAsync(
                         action: "LOGOUT",
