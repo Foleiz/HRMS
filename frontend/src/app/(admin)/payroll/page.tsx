@@ -2572,18 +2572,6 @@ export default function PayrollPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                {canAccessHrView && (
-                  <button
-                    type="button"
-                    onClick={handleOpenCreatePeriodModal}
-                    className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>สร้างรอบใหม่</span>
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Table Content */}
