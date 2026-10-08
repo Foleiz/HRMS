@@ -635,8 +635,12 @@ export default function PayrollPage() {
 
       if (periodsData && periodsData.length > 0) {
         const today = new Date();
+        const openPeriods = periodsData.filter((p) => p.status !== 'CLOSED');
         const targetPeriod =
-          periodsData.find((p) => p.year === today.getFullYear() && p.month === today.getMonth() + 1) || periodsData[0];
+          openPeriods.find((p) => p.year === today.getFullYear() && p.month === today.getMonth() + 1) ||
+          openPeriods[0] ||
+          periodsData.find((p) => p.year === today.getFullYear() && p.month === today.getMonth() + 1) ||
+          periodsData[0];
         setSelectedPeriod(targetPeriod);
         const pRows = await salaryService.getPayrollsByPeriod(targetPeriod.id).catch(() => []);
         setPayrolls(pRows || []);
@@ -3454,20 +3458,14 @@ export default function PayrollPage() {
                   )}
 
                   <div className="flex items-center gap-3">
-                    {periods.length > 0 ? (
-                      <div className="relative inline-block">
-                        <CustomSelect
-                          value={selectedPeriod?.id || ''}
-                          onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                          className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-sm bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
-                        >
-                          {periods.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.periodName}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      </div>
+                    {selectedPeriod ? (
+                      <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                        {selectedPeriod.periodName}
+                      </h2>
+                    ) : periods.length > 0 ? (
+                      <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                        {periods[0].periodName}
+                      </h2>
                     ) : (
                       <div className="flex items-center gap-2 py-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
