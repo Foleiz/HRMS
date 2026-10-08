@@ -1839,79 +1839,82 @@ export default function PayrollPage() {
       {/* === TAB 1: ภาพรวม (Overview) - Matches uploaded screenshot exactly === */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-          {/* 4 Stacked Full-Width Status Cards */}
-          <div className="space-y-3">
+          {/* 4 Summary Stat Cards in Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between relative hover:border-slate-200 transition-all">
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString()}` : '-'}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString()}` : '-'}
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400 dark:text-slate-400">
-                  {overview?.currentMonthPeriod || '-'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl border-2 border-blue-400 bg-blue-50/50 text-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Wallet className="w-5 h-5" />
                 </div>
-                <button
-                  type="button"
-                  className="text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+                <span>{overview?.currentMonthPeriod || '-'}</span>
               </div>
             </div>
 
             {/* Card 2: พนักงานที่คำนวณแล้ว */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400 dark:text-slate-400">
+                <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-400 dark:text-slate-400">
+                <span>ความคืบหน้า</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                   คิดเป็น {overview?.calculatedPercentage ?? 0}%
                 </span>
-              </div>
-
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
-                <Users className="w-4 h-4" />
               </div>
             </div>
 
             {/* Card 3: รอตรวจสอบ/อนุมัติ */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview ? `${overview.pendingApprovalCount} คน` : '-'}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {overview ? `${overview.pendingApprovalCount} คน` : '-'}
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400 dark:text-slate-400">ต้องดำเนินการก่อนปิดรอบ</span>
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
               </div>
-
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
-                <Clock className="w-4 h-4" />
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+                <span>ต้องดำเนินการก่อนปิดรอบ</span>
               </div>
             </div>
 
             {/* Card 4: กำหนดปิดรอบถัดไป */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs flex items-center justify-between hover:border-slate-200 transition-all">
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {overview?.nextClosingDate || '-'}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {overview?.nextClosingDate || '-'}
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400 dark:text-slate-400">
+                <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+                <span>
                   {overview?.remainingDays != null && overview.remainingDays >= 0 ? `เหลืออีก ${overview.remainingDays} วัน` : '-'}
                 </span>
-              </div>
-
-              <div className="w-9 h-9 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-400 dark:text-slate-300 flex items-center justify-center">
-                <Calendar className="w-4 h-4" />
               </div>
             </div>
           </div>
@@ -1934,16 +1937,6 @@ export default function PayrollPage() {
               <div className="py-8 text-center">
                 <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีรอบเงินเดือนในระบบ</p>
-                {canAccessHrView && (
-                  <button
-                    type="button"
-                    onClick={handleOpenCreatePeriodModal}
-                    className="mt-3 px-3.5 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>สร้างรอบเงินเดือนแรก</span>
-                  </button>
-                )}
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -3229,6 +3222,7 @@ export default function PayrollPage() {
         const transferredCount = payrolls.filter(p => p.paymentStatus === 'TRANSFERRED').length;
         const pendingTransferCount = totalEmployees - transferredCount;
         const zeroSalaryCount = payrolls.filter(p => !p.netPayableSalary || p.netPayableSalary === 0).length;
+        const openPeriods = periods.filter(p => p.status !== 'CLOSED');
 
         const totalProcessCount = payrolls.length;
         const totalProcessPages = Math.max(1, Math.ceil(totalProcessCount / processPageSize));
@@ -3456,18 +3450,33 @@ export default function PayrollPage() {
                   )}
 
                   <div className="flex items-center gap-3">
-                    {selectedPeriod ? (
+                    {openPeriods.length > 0 ? (
+                      <div className="relative inline-block">
+                        <CustomSelect
+                          value={selectedPeriod?.id || openPeriods[0].id}
+                          onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                          className="appearance-none font-bold text-slate-900 dark:text-slate-100 text-base bg-transparent pr-8 py-1 focus:outline-none cursor-pointer"
+                        >
+                          {selectedPeriod && selectedPeriod.status === 'CLOSED' && (
+                            <option value={selectedPeriod.id} className="text-slate-500 dark:text-slate-400 dark:bg-slate-800">
+                              {selectedPeriod.periodName} (ปิดรอบแล้ว)
+                            </option>
+                          )}
+                          {openPeriods.map((p) => (
+                            <option key={p.id} value={p.id} className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">
+                              {p.periodName}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                      </div>
+                    ) : selectedPeriod ? (
                       <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">
                         {selectedPeriod.periodName}
-                      </h2>
-                    ) : periods.length > 0 ? (
-                      <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                        {periods[0].periodName}
                       </h2>
                     ) : (
                       <div className="flex items-center gap-2 py-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
-                        <span>ยังไม่มีรอบเงินเดือนในระบบ</span>
+                        <span>ยังไม่มีรอบเงินเดือนที่เปิดอยู่</span>
                       </div>
                     )}
 
