@@ -547,17 +547,6 @@ export default function EmployeeDetailView({
                 </div>
               </div>
 
-              {/* ทีม */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ท
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ทีม</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">-</p>
-                </div>
-              </div>
-
               {/* ตำแหน่ง */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
