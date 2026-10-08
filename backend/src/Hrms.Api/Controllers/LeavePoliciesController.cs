@@ -56,7 +56,7 @@ public class LeavePoliciesController : ControllerBase
             var result = await _policyService.CreateAsync(request, cancellationToken);
             return StatusCode(StatusCodes.Status201Created, ApiResponse<LeavePolicyDto>.Ok(result, "สร้างนโยบายการลาสำเร็จ"));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<LeavePolicyDto>.Fail(ex.Message));
         }
@@ -80,7 +80,7 @@ public class LeavePoliciesController : ControllerBase
         {
             return NotFound(ApiResponse<LeavePolicyDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<LeavePolicyDto>.Fail(ex.Message));
         }

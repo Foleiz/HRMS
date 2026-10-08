@@ -545,21 +545,14 @@ public partial class LeaveRequestService : ILeaveRequestService
                 .OrderByDescending(t => t.Id)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            LeaveBalance? balance;
-            if (usedTx != null)
-            {
-                balance = await _context.LeaveBalances.FirstOrDefaultAsync(b => b.Id == usedTx.LeaveBalanceId, cancellationToken);
-            }
-            else
-            {
-                var year = ToThaiDate(request.StartDatetime).Year;
-                balance = await _context.LeaveBalances
-                    .FirstOrDefaultAsync(b => b.EmployeeId == request.EmployeeId && b.LeaveTypeId == request.LeaveTypeId && b.Year == year, cancellationToken);
-            }
+            // คืนยอดเฉพาะกรณีที่มีรายการตัดยอด (USED) จริง — ไม่มีรายการตัด = ไม่เคยถูกตัด ห้ามคืน (กันยอดเพี้ยน)
+            LeaveBalance? balance = usedTx != null
+                ? await _context.LeaveBalances.FirstOrDefaultAsync(b => b.Id == usedTx.LeaveBalanceId, cancellationToken)
+                : null;
 
             if (balance != null)
             {
-                var refundDays = usedTx != null ? Math.Abs(usedTx.Amount) : request.LeaveDays;
+                var refundDays = Math.Abs(usedTx!.Amount);
                 balance.UsedDays = Math.Max(0, balance.UsedDays - refundDays);
                 RecalculateNetRemaining(balance);
 

@@ -112,7 +112,7 @@ public class LeaveBalancesController : ControllerBase
         {
             return NotFound(ApiResponse<LeaveBalanceDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
             return BadRequest(ApiResponse<LeaveBalanceDto>.Fail(ex.Message));
         }

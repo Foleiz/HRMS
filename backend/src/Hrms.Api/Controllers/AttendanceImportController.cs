@@ -229,9 +229,9 @@ public class AttendanceImportController : ControllerBase
             // ยกเลิกไม่ได้ตามเงื่อนไข เช่น งวดเงินเดือนล็อกแล้ว / ยกเลิกไปแล้ว
             return BadRequest(ApiResponse<RevertBatchResultDto>.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Microsoft.EntityFrameworkCore.DbUpdateException and not System.Data.Common.DbException)
         {
-            var detail = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
+            var detail = ex.Message; // ไม่แนบ InnerException (อาจเป็นข้อความดิบจากฐานข้อมูล)
             return StatusCode(500, ApiResponse<RevertBatchResultDto>.Fail($"เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล: {detail}"));
         }
     }
