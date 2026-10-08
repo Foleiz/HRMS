@@ -300,7 +300,7 @@ export const RecentTransactionsTable: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col flex-1 h-full">
       {/* Table Header & Filters */}
       <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 space-y-3.5 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -384,9 +384,9 @@ export const RecentTransactionsTable: React.FC = () => {
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto flex-1 flex flex-col justify-between min-h-0">
-        <table className="w-full min-w-[700px] text-left text-xs text-slate-600 flex-1 whitespace-nowrap">
-          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100 shrink-0 whitespace-nowrap">
+      <div className="overflow-x-auto flex-1 min-h-0">
+        <table className="w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+          <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0 whitespace-nowrap">
             <tr>
               <th className="py-3 px-5 whitespace-nowrap">รหัสเอกสาร</th>
               <th className="py-3 px-5 whitespace-nowrap">วันที่กรอกเอกสาร</th>
@@ -395,30 +395,30 @@ export const RecentTransactionsTable: React.FC = () => {
               <th className="py-3 px-5 whitespace-nowrap">สถานะเอกสาร</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 flex-1">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
             {loading ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="w-6 h-6 text-[#0B2046] animate-spin" />
+                    <Loader2 className="w-6 h-6 text-[#0B2046] dark:text-blue-400 animate-spin" />
                     <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
                   </div>
                 </td>
               </tr>
             ) : paginatedItems.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-1.5 py-4">
-                    <FileText className="w-8 h-8 text-slate-300 stroke-[1.5]" />
+                    <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
                   </div>
                 </td>
               </tr>
             ) : (
               paginatedItems.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-5 font-semibold text-[#0B2046]">
+                <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                  <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400">
                     {item.documentCode}
                   </td>
                   <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400">
@@ -442,7 +442,7 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Pagination Bar */}
       <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-auto shrink-0">
-        <div className="flex-1 text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
+        <div className="flex-1 text-[11px] text-slate-400 dark:text-slate-500">
           {!loading && filtered.length > 0 && (
             <span>ทั้งหมด {filtered.length} รายการ</span>
           )}
