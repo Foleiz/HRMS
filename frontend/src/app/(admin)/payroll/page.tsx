@@ -514,10 +514,13 @@ export default function PayrollPage() {
 
   const handleOpenCreatePeriodModal = () => {
     setIsPeriodNameCustom(false);
-    const defaults = getDefaultPeriodValues(2026, 8);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const defaults = getDefaultPeriodValues(currentYear, currentMonth);
     setNewPeriodForm({
-      year: 2026,
-      month: 8,
+      year: currentYear,
+      month: currentMonth,
       periodName: defaults.periodName,
       startDate: defaults.startDate,
       endDate: defaults.endDate,
