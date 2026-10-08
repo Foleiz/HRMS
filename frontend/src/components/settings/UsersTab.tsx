@@ -20,6 +20,7 @@ import {
 import { UserAccount, RoleSummary } from '@/types/settings';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { formatRoleName } from '@/lib/roleUtils';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -157,7 +158,10 @@ export const UsersTab: React.FC<UsersTabProps> = ({
             className="min-w-[150px]"
             options={[
               { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
-              ...roles.map((r) => ({ value: r.roleCode, label: r.roleCode })),
+              ...roles.map((r) => ({
+                value: r.roleCode,
+                label: r.roleName ? `${r.roleName} (${r.roleCode})` : formatRoleName(r.roleCode),
+              })),
             ]}
           />
         </div>
@@ -251,7 +255,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                               key={i}
                               className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20/80 text-blue-700 dark:text-blue-400 border border-blue-200/60 rounded text-[10px] font-semibold tracking-wide"
                             >
-                              {r.roleCode}
+                              {r.roleName || formatRoleName(r.roleCode)}
                             </span>
                           ))}
                         </div>

@@ -30,7 +30,7 @@ import {
   Gift,
   Network,
 } from 'lucide-react';
-
+import { formatRoleName } from '@/lib/roleUtils';
 
 interface MenuItem {
   title: string;
@@ -506,7 +506,7 @@ export const Sidebar: React.FC = () => {
                   {user?.fullName || user?.username || 'ผู้ใช้งาน'}
                 </p>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
-                  {user?.roles?.[0] || 'พนักงาน'}
+                  {user?.roleNames?.[0] || formatRoleName(user?.roles?.[0] || '') || 'พนักงาน'}
                 </p>
               </div>
             </div>
