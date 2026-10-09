@@ -104,6 +104,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isEdit = Boolean(initialData);
+  const [hasInitializedForm, setHasInitializedForm] = useState(false);
 
   // Load available active benefits
   useEffect(() => {
@@ -111,6 +112,17 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
       loadBenefits();
       setBenefitSearch('');
       setSelectedCategoryTab('ALL');
+
+      // Auto re-fetch latest benefits whenever user switches back to this browser tab
+      const handleWindowFocus = () => {
+        loadBenefits();
+      };
+      window.addEventListener('focus', handleWindowFocus);
+      return () => {
+        window.removeEventListener('focus', handleWindowFocus);
+      };
+    } else {
+      setHasInitializedForm(false);
     }
   }, [isOpen]);
 
@@ -127,6 +139,8 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   };
 
   useEffect(() => {
+    if (!isOpen) return;
+
     if (initialData) {
       setTypeCode(initialData.typeCode || '');
       setTypeName(initialData.typeName || '');
@@ -153,9 +167,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           if (b.benefitCode === 'OT' && initialData.hasOvertime) ids.push(b.id);
           if (b.benefitCode === 'PVD' && initialData.hasProvidentFund) ids.push(b.id);
         });
-        setSelectedBenefitIds(ids);
+        if (ids.length > 0) {
+          setSelectedBenefitIds(ids);
+        }
       }
-    } else {
+      setHasInitializedForm(true);
+    } else if (!hasInitializedForm) {
       setTypeCode('');
       setTypeName('');
       setWageType('MONTHLY');
@@ -166,9 +183,10 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
         .filter((b) => b.isStatutory || ['SSO', 'LEAVE', 'OT'].includes(b.benefitCode))
         .map((b) => b.id);
       setSelectedBenefitIds(defaultIds);
+      setHasInitializedForm(true);
     }
     setErrorMessage(null);
-  }, [initialData, isOpen, availableBenefits.length]);
+  }, [initialData, isOpen, availableBenefits.length, hasInitializedForm]);
 
   // Derived selected list
   const selectedBenefits = useMemo(() => {
@@ -392,7 +410,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 required
                 value={typeName}
                 onChange={(e) => setTypeName(e.target.value)}
-                placeholder="เช่น พนักงานประจำ, พนักงานสัญญาจ้าง, พาร์ทไทม์"
+                placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก, พนักงานประจำ"
                 className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               />
             </div>
@@ -468,17 +486,30 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 </div>
               </div>
 
-              <Link
-                href="/organization?tab=benefits"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-[#0B2046] dark:text-cyan-400 hover:underline font-semibold inline-flex items-center gap-1 self-start sm:self-auto cursor-pointer"
-                title="เปิดหน้าจัดการสวัสดิการกลางในโครงสร้างองค์กร (แท็บใหม่)"
-              >
-                <Gift className="w-3.5 h-3.5" />
-                <span>จัดการสวัสดิการกลาง</span>
-                <ExternalLink className="w-3 h-3" />
-              </Link>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={loadBenefits}
+                  disabled={loadingBenefits}
+                  className="text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  title="ดึงข้อมูลสวัสดิการล่าสุดจากฐานข้อมูลทันที"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${loadingBenefits ? 'animate-spin text-blue-600' : ''}`} />
+                  <span>รีเฟรชสวัสดิการ</span>
+                </button>
+
+                <Link
+                  href="/organization?tab=benefits"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-[#0B2046] dark:text-cyan-400 hover:underline font-semibold inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
+                  title="เปิดหน้าจัดการสวัสดิการกลางในโครงสร้างองค์กร (แท็บใหม่)"
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>จัดการสวัสดิการกลาง</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
 
             {/* Selected items quick badges tray (Always visible if any selected) */}
