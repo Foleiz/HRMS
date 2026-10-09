@@ -26,7 +26,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
 export default function TransfersPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
   // Sync breadcrumb
@@ -124,11 +124,14 @@ export default function TransfersPage() {
 
   const totalPages = Math.ceil(filteredTransfers.length / pageSize) || 1;
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
+  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
+
+  const canCreateTransfers = hasPermission('EMP_TRANSFER_CREATE') || hasPermission('EMP_MANAGE') || isSuper;
 
   // Sub-Navigation Tabs
   const subNavTabs = [
@@ -211,15 +214,17 @@ export default function TransfersPage() {
       </div>
 
       {/* 3. Primary Action Button (+ บันทึกคำสั่งแต่งตั้ง/โยกย้าย) */}
-      <div className="flex items-center justify-end">
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="h-10 px-5 bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
-        </button>
-      </div>
+      {canCreateTransfers && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="h-10 px-5 bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
+          </button>
+        </div>
+      )}
 
       {/* 4. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">

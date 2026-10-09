@@ -41,22 +41,40 @@ export default function SettingsPage() {
   const { user, hasPermission, hasRole, refreshProfile } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+
   // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง)
   const canViewUsersTab =
     hasPermission('SETTINGS_USERS_VIEW') ||
-    hasRole('ADMIN');
+    isSuper;
+
+  const canCreateUser =
+    hasPermission('SETTINGS_USERS_CREATE') ||
+    isSuper;
+
+  const canEditUser =
+    hasPermission('SETTINGS_USERS_EDIT') ||
+    isSuper;
 
   const canViewRolesTab =
     hasPermission('SETTINGS_ROLES_VIEW') ||
-    hasRole('ADMIN');
+    isSuper;
+
+  const canCreateRole =
+    hasPermission('SETTINGS_ROLES_CREATE') ||
+    isSuper;
+
+  const canEditRole =
+    hasPermission('SETTINGS_ROLES_EDIT') ||
+    isSuper;
 
   const canViewAuditLogTab =
     hasPermission('SETTINGS_AUDIT_VIEW') ||
-    hasRole('ADMIN');
+    isSuper;
 
   const canViewApprovalFlowsTab =
     hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
-    hasRole('ADMIN');
+    isSuper;
 
   const [activeTab, setActiveTab] = useState<TabType>('users');
 
@@ -583,7 +601,8 @@ export default function SettingsPage() {
               onDeleteUserClick={handleDeleteUser}
               onViewAuditLogForUser={handleViewAuditLogForUser}
               isLoading={isUsersLoading}
-              canCreateUser={hasPermission('SETTINGS_USERS_CREATE') || hasRole('ADMIN')}
+              canCreateUser={canCreateUser}
+              canEditUser={canEditUser}
             />
           )}
 
@@ -604,6 +623,8 @@ export default function SettingsPage() {
               onDeleteRoleClick={handleDeleteRole}
               isLoading={isRolesLoading}
               isSavingMatrix={isSavingMatrix}
+              canCreateRole={canCreateRole}
+              canEditRole={canEditRole}
             />
           )}
 

@@ -29,6 +29,7 @@ import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { AccessDenied } from '@/components/common/AccessDenied';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -153,9 +154,17 @@ function EmployeeEditPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const { hasRole, hasPermission } = useAuth();
   const employeeId = Number(params.id);
   const isFromProfile = searchParams.get('from') === 'profile';
   const returnUrl = searchParams.get('returnUrl') || (isFromProfile ? '/profile' : `/employees/${employeeId}`);
+
+  const canEdit =
+    isFromProfile ||
+    hasRole('ADMIN') ||
+    hasRole('SYSTEM_SUPER') ||
+    hasPermission('EMP_PROFILE_EDIT') ||
+    hasPermission('EMP_EDIT');
 
   const { setBreadcrumb } = useBreadcrumb();
 
@@ -266,9 +275,8 @@ function EmployeeEditPageContent() {
     },
   });
 
-  const { hasPermission } = useAuth();
   const canEditEmployeeType =
-    hasPermission('EMP_PROFILE_EDIT') || hasPermission('EMP_EDIT') || hasPermission('EMP_MANAGE');
+    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_PROFILE_EDIT') || hasPermission('EMP_EDIT') || hasPermission('EMP_MANAGE');
   const employeeTypeOptions = useEmployeeTypeOptions(formData.employeeType);
 
   // โหลดข้อมูลพนักงานเดิม
@@ -517,6 +525,15 @@ function EmployeeEditPageContent() {
       setIsSubmitting(false);
     }
   };
+
+  if (!canEdit) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการแก้ไขข้อมูลพนักงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   if (loading) {
     return (

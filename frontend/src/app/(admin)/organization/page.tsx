@@ -81,11 +81,21 @@ export default function OrganizationPage() {
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
 
-  const canViewStruct = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
-  const canViewPos = hasPermission('ORG_POS_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
-  const canViewBenefits = hasPermission('ORG_BENEFIT_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
-  const canViewCompany = hasPermission('ORG_COMP_VIEW') || hasPermission('ORG_VIEW') || hasRole('ADMIN');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewStruct = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
+  const canViewPos = hasPermission('ORG_POS_VIEW') || hasPermission('ORG_VIEW') || isSuper;
+  const canViewBenefits = hasPermission('ORG_BENEFIT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
+  const canViewCompany = hasPermission('ORG_COMP_VIEW') || hasPermission('ORG_VIEW') || isSuper;
   const canViewAnyOrg = canViewStruct || canViewPos || canViewBenefits || canViewCompany;
+
+  const canCreateStruct = hasPermission('ORG_STRUCT_CREATE') || isSuper;
+  const canEditStruct = hasPermission('ORG_STRUCT_EDIT') || isSuper;
+  const canCreatePos = hasPermission('ORG_POS_CREATE') || isSuper;
+  const canEditPos = hasPermission('ORG_POS_EDIT') || isSuper;
+  const canCreateBenefit = hasPermission('ORG_BENEFIT_CREATE') || isSuper;
+  const canEditBenefit = hasPermission('ORG_BENEFIT_EDIT') || isSuper;
+  const canCreateCompany = hasPermission('ORG_COMP_CREATE') || isSuper;
+  const canEditCompany = hasPermission('ORG_COMP_EDIT') || isSuper;
 
   const defaultTab: TabType = canViewStruct
     ? 'divisions'
@@ -915,13 +925,15 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenDivisionModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มฝ่าย
-              </button>
+              {canCreateStruct && (
+                <button
+                  onClick={() => handleOpenDivisionModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มฝ่าย
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -982,22 +994,26 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenDivisionModal(div)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditStruct ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenDivisionModal(div)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1035,13 +1051,15 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenDeptModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มแผนก
-              </button>
+              {canCreateStruct && (
+                <button
+                  onClick={() => handleOpenDeptModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มแผนก
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1104,22 +1122,26 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenDeptModal(dept)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditStruct ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenDeptModal(dept)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1158,13 +1180,15 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenPosModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มตำแหน่ง
-              </button>
+              {canCreatePos && (
+                <button
+                  onClick={() => handleOpenPosModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มตำแหน่ง
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1246,22 +1270,26 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenPosModal(pos)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditPos ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenPosModal(pos)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1289,13 +1317,15 @@ export default function OrganizationPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => handleOpenLevelModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มระดับพนักงาน
-              </button>
+              {canCreatePos && (
+                <button
+                  onClick={() => handleOpenLevelModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มระดับพนักงาน
+                </button>
+              )}
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1348,22 +1378,26 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenLevelModal(lvl)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditPos ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenLevelModal(lvl)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1405,13 +1439,15 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenBenefitModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มสวัสดิการใหม่
-              </button>
+              {canCreateBenefit && (
+                <button
+                  onClick={() => handleOpenBenefitModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มสวัสดิการใหม่
+                </button>
+              )}
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1526,22 +1562,26 @@ export default function OrganizationPage() {
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => handleOpenBenefitModal(ben)}
-                                title="แก้ไข"
-                                className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
-                                title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            {canEditBenefit ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleOpenBenefitModal(ben)}
+                                  title="แก้ไข"
+                                  className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
+                                  title="ลบ"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1692,14 +1732,16 @@ export default function OrganizationPage() {
               </div>
             </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all"
-              >
-                บันทึกข้อมูลบริษัท
-              </button>
-            </div>
+            {canEditCompany && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer"
+                >
+                  บันทึกข้อมูลบริษัท
+                </button>
+              </div>
+            )}
           </form>
         )}
 
@@ -1721,14 +1763,16 @@ export default function OrganizationPage() {
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleOpenBankAccountModal()}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มบัญชีธนาคาร
-              </button>
+              {canCreateCompany && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenBankAccountModal()}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มบัญชีธนาคาร
+                </button>
+              )}
             </div>
 
             {/* Search Filter */}
@@ -1832,34 +1876,38 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenBankAccountModal(acc)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไขข้อมูลบัญชี"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            {/* บัญชีหลักปิดใช้งานไม่ได้ (ต้องตั้งบัญชีอื่นเป็นบัญชีหลักก่อน) / บัญชีที่ปิดแล้วเปิดใหม่ได้ผ่านปุ่มแก้ไข */}
-                            {acc.isPrimaryPayrollAccount ? (
-                              <span
-                                className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
-                                title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
-                              >
-                                <PowerOff className="w-3.5 h-3.5" />
-                              </span>
-                            ) : acc.status === 'ACTIVE' ? (
+                          {canEditCompany ? (
+                            <div className="inline-flex items-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title="ปิดใช้งานบัญชี"
+                                onClick={() => handleOpenBankAccountModal(acc)}
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                                title="แก้ไขข้อมูลบัญชี"
                               >
-                                <PowerOff className="w-3.5 h-3.5" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                            ) : null}
-                          </div>
+                              {/* บัญชีหลักปิดใช้งานไม่ได้ (ต้องตั้งบัญชีอื่นเป็นบัญชีหลักก่อน) / บัญชีที่ปิดแล้วเปิดใหม่ได้ผ่านปุ่มแก้ไข */}
+                              {acc.isPrimaryPayrollAccount ? (
+                                <span
+                                  className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                                  title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
+                                >
+                                  <PowerOff className="w-3.5 h-3.5" />
+                                </span>
+                              ) : acc.status === 'ACTIVE' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  title="ปิดใช้งานบัญชี"
+                                >
+                                  <PowerOff className="w-3.5 h-3.5" />
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))}

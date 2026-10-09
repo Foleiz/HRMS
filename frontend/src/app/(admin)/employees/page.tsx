@@ -872,11 +872,14 @@ export default function EmployeesPage() {
     'bg-indigo-600 text-white',
   ];
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
+  const canCreateEmp = hasPermission('EMP_PROFILE_CREATE') || isSuper;
+  const canEditEmp = hasPermission('EMP_PROFILE_EDIT') || isSuper;
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
+  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
 
   useEffect(() => {
     if (!canViewProfile) {
@@ -971,7 +974,7 @@ export default function EmployeesPage() {
 
         {/* Right Side: + เพิ่มพนักงาน Button */}
         <div className="w-full sm:w-auto flex justify-end">
-          {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_CREATE')) && (
+          {canCreateEmp && (
             <button
               onClick={handleOpenCreateModal}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
@@ -1315,7 +1318,7 @@ export default function EmployeesPage() {
                               </Link>
 
                               {/* 2. แก้ไขข้อมูลพนักงาน */}
-                              {(hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_PROFILE_EDIT')) && (
+                              {canEditEmp && (
                                 <Link
                                   href={`/employees/${emp.id}/edit`}
                                   onClick={close}
@@ -1327,7 +1330,7 @@ export default function EmployeesPage() {
                               )}
 
                               {/* 4. เปลี่ยนสถานะการจ้างงาน */}
-                              {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_EDIT')) && (
+                              {canEditEmp && (
                                 <div className="border-t border-slate-100 dark:border-slate-700/60 pt-1">
                                   <p className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wide">เปลี่ยนสถานะ</p>
                                   {[
@@ -1360,7 +1363,7 @@ export default function EmployeesPage() {
                               )}
 
                               {/* 5. ลบข้อมูล */}
-                              {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_EDIT')) && (
+                              {canEditEmp && (
                                 <button
                                   type="button"
                                   onClick={() => {

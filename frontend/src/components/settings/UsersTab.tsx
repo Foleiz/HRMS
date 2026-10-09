@@ -41,6 +41,7 @@ interface UsersTabProps {
   onViewAuditLogForUser: (user: UserAccount) => void;
   isLoading: boolean;
   canCreateUser?: boolean;
+  canEditUser?: boolean;
 }
 
 export const UsersTab: React.FC<UsersTabProps> = ({
@@ -62,6 +63,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   onViewAuditLogForUser,
   isLoading,
   canCreateUser = true,
+  canEditUser = true,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
@@ -294,30 +296,34 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                           menuClassName="w-44"
                           triggerClassName="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
                           items={[
-                            {
-                              label: 'แก้ไขข้อมูล / บทบาท',
-                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />,
-                              onClick: () => onEditUserClick(user),
-                            },
-                            {
-                              label: 'รีเซ็ตรหัสผ่าน',
-                              icon: <KeyRound className="w-3.5 h-3.5 text-amber-500" />,
-                              onClick: () => onResetPasswordClick(user),
-                            },
-                            {
-                              divider: true,
-                              label: user.status === 'ACTIVE' ? 'ระงับการใช้งาน' : 'เปิดใช้งานบัญชี',
-                              icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
-                              className: user.status === 'ACTIVE' ? 'text-slate-600 dark:text-slate-400' : 'text-emerald-600',
-                              onClick: () => onToggleStatusClick(user, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'),
-                            },
+                            ...(canEditUser
+                              ? [
+                                  {
+                                    label: 'แก้ไขข้อมูล / บทบาท',
+                                    icon: <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />,
+                                    onClick: () => onEditUserClick(user),
+                                  },
+                                  {
+                                    label: 'รีเซ็ตรหัสผ่าน',
+                                    icon: <KeyRound className="w-3.5 h-3.5 text-amber-500" />,
+                                    onClick: () => onResetPasswordClick(user),
+                                  },
+                                  {
+                                    divider: true,
+                                    label: user.status === 'ACTIVE' ? 'ระงับการใช้งาน' : 'เปิดใช้งานบัญชี',
+                                    icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
+                                    className: user.status === 'ACTIVE' ? 'text-slate-600 dark:text-slate-400' : 'text-emerald-600',
+                                    onClick: () => onToggleStatusClick(user, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'),
+                                  },
+                                ]
+                              : []),
                             {
                               label: 'ดูประวัติการใช้งาน',
                               icon: <FileSearch className="w-3.5 h-3.5 text-blue-500" />,
                               className: 'text-blue-600',
                               onClick: () => onViewAuditLogForUser(user),
                             },
-                            ...(user.username.toLowerCase() !== 'admin'
+                            ...(canEditUser && user.username.toLowerCase() !== 'admin'
                               ? [
                                   {
                                     divider: true,

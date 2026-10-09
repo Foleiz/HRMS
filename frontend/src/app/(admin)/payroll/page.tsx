@@ -306,8 +306,19 @@ export default function PayrollPage() {
     hasPermission('PAYROLL_HR_CREATE');
   const canExportBonus = hasPermission('PAYROLL_BONUS_VIEW') || hasPermission('PAYROLL_BANK_VIEW');
 
-  const canViewStructures = hasPermission('PAYROLL_STRUCTURE_VIEW');
-  const canViewItems = hasPermission('PAYROLL_ITEMS_VIEW');
+  const canViewStructures = hasPermission('PAYROLL_STRUCTURE_VIEW') || isAdmin;
+  const canCreateStructure = hasPermission('PAYROLL_STRUCTURE_CREATE') || isAdmin;
+  const canEditStructure = hasPermission('PAYROLL_STRUCTURE_EDIT') || isAdmin;
+
+  const canViewItems = hasPermission('PAYROLL_ITEMS_VIEW') || isAdmin;
+  const canCreateItem = hasPermission('PAYROLL_ITEMS_CREATE') || isAdmin;
+  const canEditItem = hasPermission('PAYROLL_ITEMS_EDIT') || isAdmin;
+
+  const canAdjustSalary =
+    hasPermission('PAYROLL_CALC_EDIT') ||
+    hasPermission('PAYROLL_CALC_CREATE') ||
+    hasPermission('PAYROLL_SALARY_EDIT') ||
+    isAdmin;
   const canViewBankTransfer = hasPermission('PAYROLL_BANK_VIEW');
   const canViewTaxSso = hasPermission('PAYROLL_TAX_VIEW');
   const canViewProcess =
@@ -2045,7 +2056,7 @@ export default function PayrollPage() {
               </div>
             </div>
 
-            {structureSubTab === 'positions' && (
+            {structureSubTab === 'positions' && canCreateStructure && (
               <button
                 onClick={handleOpenCreateStructure}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
@@ -2100,7 +2111,9 @@ export default function PayrollPage() {
                         return (
                           <tr
                             key={s.id}
-                            onDoubleClick={() => handleOpenEditStructure(s)}
+                            onDoubleClick={() => {
+                              if (canEditStructure) handleOpenEditStructure(s);
+                            }}
                             className="hover:bg-slate-50/60 transition-colors"
                           >
                             <td className="py-4 px-5 font-medium text-slate-800 dark:text-slate-200">
@@ -2129,41 +2142,45 @@ export default function PayrollPage() {
                               )}
                             </td>
                             <td className="py-4 px-5 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {/* ปุ่มลัดแก้ไขตรง (Quick Edit) */}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEditStructure(s);
-                                  }}
-                                  title="แก้ไขโครงสร้างเงินเดือน"
-                                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5 text-amber-500" />
-                                </button>
+                              {canEditStructure ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {/* ปุ่มลัดแก้ไขตรง (Quick Edit) */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditStructure(s);
+                                    }}
+                                    title="แก้ไขโครงสร้างเงินเดือน"
+                                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-amber-500" />
+                                  </button>
 
-                                {/* ปุ่ม Option Dropdown 3 จุด */}
-                                <ActionDropdown
-                                  menuClassName="w-28"
-                                  items={[
-                                    {
-                                      label: 'แก้ไข',
-                                      icon: <Edit2 className="w-3.5 h-3.5 text-amber-500" />,
-                                      onClick: () => handleOpenEditStructure(s),
-                                    },
-                                    {
-                                      label: 'ลบ',
-                                      icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
-                                      danger: true,
-                                      onClick: () => {
-                                        setStructureToDelete(s);
-                                        setDeleteConfirmOpen(true);
+                                  {/* ปุ่ม Option Dropdown 3 จุด */}
+                                  <ActionDropdown
+                                    menuClassName="w-28"
+                                    items={[
+                                      {
+                                        label: 'แก้ไข',
+                                        icon: <Edit2 className="w-3.5 h-3.5 text-amber-500" />,
+                                        onClick: () => handleOpenEditStructure(s),
                                       },
-                                    },
-                                  ]}
-                                />
-                              </div>
+                                      {
+                                        label: 'ลบ',
+                                        icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                        danger: true,
+                                        onClick: () => {
+                                          setStructureToDelete(s);
+                                          setDeleteConfirmOpen(true);
+                                        },
+                                      },
+                                    ]}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-xs">-</span>
+                              )}
                             </td>
                           </tr>
                         );
@@ -2294,12 +2311,14 @@ export default function PayrollPage() {
                             </td>
                             <td className="py-3.5 px-4 text-center">
                               <div className="inline-flex items-center gap-2">
-                                <button
-                                  onClick={() => handleOpenAdjustSalary(emp)}
-                                  className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                                >
-                                  {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                                </button>
+                                {canAdjustSalary && (
+                                  <button
+                                    onClick={() => handleOpenAdjustSalary(emp)}
+                                    className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                  >
+                                    {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleOpenSalaryHistory(emp)}
                                   title="ดูประวัติการปรับเงินเดือน"
@@ -2386,15 +2405,17 @@ export default function PayrollPage() {
           </div>
 
           {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleOpenCreateItem}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
-            </button>
-          </div>
+          {canCreateItem && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleOpenCreateItem}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
+              </button>
+            </div>
+          )}
 
           {/* Table Container */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
@@ -2550,25 +2571,29 @@ export default function PayrollPage() {
                             )}
                           </td>
                           <td className="py-3.5 px-5 text-center">
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleOpenEditItem(item)}
-                                title="แก้ไข"
-                                className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setItemToDelete(item);
-                                  setDeleteItemConfirmOpen(true);
-                                }}
-                                title="ลบ"
-                                className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            {canEditItem ? (
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  onClick={() => handleOpenEditItem(item)}
+                                  title="แก้ไข"
+                                  className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setItemToDelete(item);
+                                    setDeleteItemConfirmOpen(true);
+                                  }}
+                                  title="ลบ"
+                                  className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-xs">-</span>
+                            )}
                           </td>
                         </tr>
                       );

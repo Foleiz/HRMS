@@ -61,11 +61,15 @@ export default function EmployeeTypesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
+  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
+
+  const canCreateTypes = hasPermission('EMP_TYPE_CREATE') || hasPermission('EMP_MANAGE') || isSuper;
+  const canEditTypes = hasPermission('EMP_TYPE_EDIT') || hasPermission('EMP_MANAGE') || isSuper;
 
   // Sub-Navigation Tabs matching Design System
   const subNavTabs = [
@@ -224,18 +228,20 @@ export default function EmployeeTypesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <button
-            onClick={() => {
-              setSelectedTypeForEdit(null);
-              setIsCreateModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
-          </button>
-        </div>
+        {canCreateTypes && (
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              onClick={() => {
+                setSelectedTypeForEdit(null);
+                setIsCreateModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. KPI Stat Cards (3 Cards matching theme) */}
@@ -456,26 +462,30 @@ export default function EmployeeTypesPage() {
 
                       {/* จัดการ (3 Dots Action Menu) */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <ActionDropdown
-                          menuClassName="w-44"
-                          items={[
-                            {
-                              label: 'แก้ไขประเภทสัญญา',
-                              icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
-                              onClick: () => {
-                                setSelectedTypeForEdit(item);
-                                setIsCreateModalOpen(true);
+                        {canEditTypes ? (
+                          <ActionDropdown
+                            menuClassName="w-44"
+                            items={[
+                              {
+                                label: 'แก้ไขประเภทสัญญา',
+                                icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
+                                onClick: () => {
+                                  setSelectedTypeForEdit(item);
+                                  setIsCreateModalOpen(true);
+                                },
                               },
-                            },
-                            {
-                              label: item.status === 'ACTIVE' ? 'ปิดการใช้งาน' : 'เปิดใช้งาน',
-                              icon: <Power className="w-3.5 h-3.5" />,
-                              danger: item.status === 'ACTIVE',
-                              className: item.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50',
-                              onClick: () => handleToggleStatus(item),
-                            },
-                          ]}
-                        />
+                              {
+                                label: item.status === 'ACTIVE' ? 'ปิดการใช้งาน' : 'เปิดใช้งาน',
+                                icon: <Power className="w-3.5 h-3.5" />,
+                                danger: item.status === 'ACTIVE',
+                                className: item.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50',
+                                onClick: () => handleToggleStatus(item),
+                              },
+                            ]}
+                          />
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                        )}
                       </td>
                     </tr>
                   );

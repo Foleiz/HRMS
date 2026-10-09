@@ -24,6 +24,7 @@ import { useToast } from '@/context/ToastContext';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useAuth } from '@/context/AuthContext';
 import {
   WorkWeekDay,
   Holiday,
@@ -78,6 +79,12 @@ function formatThaiShortDate(dateStr: string): string {
 export default function WorkCalendarPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
+  const { hasPermission, hasRole } = useAuth();
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewCalendar = hasPermission('WORK_CALENDAR_VIEW') || isSuper;
+  const canCreateCalendar = hasPermission('WORK_CALENDAR_CREATE') || isSuper;
+  const canEditCalendar = hasPermission('WORK_CALENDAR_EDIT') || isSuper;
+
   const [activeTab, setActiveTab] = useState<TabType>('work-week');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -425,14 +432,16 @@ export default function WorkCalendarPage() {
                 ใช้กับพนักงานที่ไม่ได้ผูกกะ — บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
               </span>
 
-              <button
-                onClick={handleSaveWorkWeek}
-                disabled={saving || loading}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all disabled:opacity-50"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                บันทึกการตั้งค่าวันทำงาน
-              </button>
+              {canEditCalendar && (
+                <button
+                  onClick={handleSaveWorkWeek}
+                  disabled={saving || loading}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  บันทึกการตั้งค่าวันทำงาน
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -486,13 +495,15 @@ export default function WorkCalendarPage() {
               </div>
 
               {/* Add Holiday Button */}
-              <button
-                onClick={handleOpenCreateModal}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                เพิ่มวันหยุดประจำปี
-              </button>
+              {canCreateCalendar && (
+                <button
+                  onClick={handleOpenCreateModal}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  เพิ่มวันหยุดประจำปี
+                </button>
+              )}
             </div>
 
             {/* Holidays Table */}
@@ -554,22 +565,26 @@ export default function WorkCalendarPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditModal(h)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(h)}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditCalendar ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditModal(h)}
+                                title="แก้ไข"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleConfirmDelete(h)}
+                                title="ลบ"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                          )}
                         </td>
                       </tr>
                     ))

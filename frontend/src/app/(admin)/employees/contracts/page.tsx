@@ -140,11 +140,15 @@ export default function ContractsPage() {
   const totalPages = Math.ceil(contracts.length / pageSize) || 1;
   const paginatedContracts = contracts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
+  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
+
+  const canCreateContracts = hasPermission('EMP_CONTRACT_CREATE') || hasPermission('EMP_MANAGE') || isSuper;
+  const canEditContracts = hasPermission('EMP_CONTRACT_EDIT') || hasPermission('EMP_MANAGE') || isSuper;
 
   // Sub-Navigation Tabs matching Mockup
   const subNavTabs = [
@@ -186,15 +190,17 @@ export default function ContractsPage() {
       </div>
 
       {/* 2. Header Action Bar */}
-      <div className="flex items-center justify-end">
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-sm font-medium rounded-xl shadow-xs transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>สร้างสัญญาใหม่</span>
-        </button>
-      </div>
+      {canCreateContracts && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-sm font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>สร้างสัญญาใหม่</span>
+          </button>
+        </div>
+      )}
 
       {/* 4. KPI Stat Cards (3 Cards ตรงตาม Mockup) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -425,14 +431,18 @@ export default function ContractsPage() {
                               setIsDetailModalOpen(true);
                             },
                           },
-                          {
-                            label: contract.hasDocument ? 'เปลี่ยนเอกสารสัญญา' : 'แนบเอกสารสัญญา',
-                            icon: <Paperclip className="w-3.5 h-3.5 text-indigo-600" />,
-                            onClick: () => {
-                              setSelectedContractForAttach(contract);
-                              setIsAttachModalOpen(true);
-                            },
-                          },
+                          ...(canEditContracts
+                            ? [
+                                {
+                                  label: contract.hasDocument ? 'เปลี่ยนเอกสารสัญญา' : 'แนบเอกสารสัญญา',
+                                  icon: <Paperclip className="w-3.5 h-3.5 text-indigo-600" />,
+                                  onClick: () => {
+                                    setSelectedContractForAttach(contract);
+                                    setIsAttachModalOpen(true);
+                                  },
+                                },
+                              ]
+                            : []),
                           ...(contract.hasDocument
                             ? [
                                 {
@@ -465,7 +475,7 @@ export default function ContractsPage() {
                                 },
                               ]
                             : []),
-                          ...(contract.status === 'ACTIVE'
+                          ...(contract.status === 'ACTIVE' && canEditContracts
                             ? [
                                 {
                                   label: 'สิ้นสุดสัญญา',

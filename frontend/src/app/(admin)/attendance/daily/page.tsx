@@ -89,10 +89,11 @@ function DailyAttendanceContent() {
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  const canViewDaily = hasPermission('TIME_DAILY_VIEW');
-  const canViewImport = hasPermission('TIME_IMPORT_VIEW');
-  const canViewAnyTime = canViewDaily || canViewImport;
-  const canEditTime = hasPermission('TIME_DAILY_EDIT');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewDaily = hasPermission('TIME_DAILY_VIEW') || isSuper;
+  const canViewImport = hasPermission('TIME_IMPORT_VIEW') || isSuper;
+  const canViewAnyTime = canViewDaily || canViewImport || isSuper;
+  const canEditTime = hasPermission('TIME_DAILY_EDIT') || isSuper;
 
   // Active Tab: 'daily' | 'import' | 'adjustments' | 'monthly'
   const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments' | 'monthly') || (canViewDaily ? 'daily' : 'import');

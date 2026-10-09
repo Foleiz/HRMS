@@ -50,12 +50,18 @@ type ActiveTab = 'types' | 'policies' | 'balances';
 
 export default function LeaveManagementPage() {
   const { hasPermission, hasRole } = useAuth();
-  const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
-  const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
-  const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || hasRole('ADMIN');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
+  const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
+  const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
   const canViewAnyLeave = canViewTypes || canViewPolicies || canViewBalances;
-  // ปิดยอดวันลาสิ้นปี: ใช้สิทธิ์ LEAVE_BALANCE_EDIT ตามระบบ Permissions
-  const canCloseYear = hasPermission('LEAVE_BALANCE_EDIT') || hasPermission('LEAVE_EDIT') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+
+  const canCreateType = hasPermission('LEAVE_TYPE_CREATE') || hasPermission('LEAVE_MANAGE') || isSuper;
+  const canEditType = hasPermission('LEAVE_TYPE_EDIT') || hasPermission('LEAVE_MANAGE') || isSuper;
+  const canCreatePolicy = hasPermission('LEAVE_POLICY_CREATE') || hasPermission('LEAVE_MANAGE') || isSuper;
+  const canEditPolicy = hasPermission('LEAVE_POLICY_EDIT') || hasPermission('LEAVE_MANAGE') || isSuper;
+  const canAdjustBalance = hasPermission('LEAVE_BALANCE_EDIT') || hasPermission('LEAVE_MANAGE') || isSuper;
+  const canCloseYear = hasPermission('LEAVE_BALANCE_EDIT') || hasPermission('LEAVE_EDIT') || isSuper;
   const [isYearEndOpen, setIsYearEndOpen] = useState(false);
 
   const defaultTab: ActiveTab = canViewTypes
@@ -484,12 +490,14 @@ export default function LeaveManagementPage() {
             {/* Action Bar */}
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">ประเภทการลา</h2>
-              <button
-                onClick={handleOpenCreateType}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
-              >
-                <Plus className="w-4 h-4" /> เพิ่มประเภทการลา
-              </button>
+              {canCreateType && (
+                <button
+                  onClick={handleOpenCreateType}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> เพิ่มประเภทการลา
+                </button>
+              )}
             </div>
 
             {/* Table */}
@@ -554,27 +562,31 @@ export default function LeaveManagementPage() {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditType(type)}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteType(type)}
-                              className={`p-1.5 rounded-lg transition-colors ${
-                                type.canDelete === false
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-rose-600 hover:bg-rose-50'
-                              }`}
-                              title={type.canDelete === false ? type.deleteBlockedReason || 'ลบไม่ได้ เพราะถูกใช้งานแล้ว' : 'ลบถาวร'}
-                              aria-disabled={type.canDelete === false}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditType ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditType(type)}
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="แก้ไข"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteType(type)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  type.canDelete === false
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-rose-600 hover:bg-rose-50'
+                                }`}
+                                title={type.canDelete === false ? type.deleteBlockedReason || 'ลบไม่ได้ เพราะถูกใช้งานแล้ว' : 'ลบถาวร'}
+                                aria-disabled={type.canDelete === false}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -591,12 +603,14 @@ export default function LeaveManagementPage() {
             {/* Action Bar */}
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">สิทธิ์การลา</h2>
-              <button
-                onClick={handleOpenCreatePolicy}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
-              >
-                <Plus className="w-4 h-4" /> เพิ่มสิทธิ์การลา
-              </button>
+              {canCreatePolicy && (
+                <button
+                  onClick={handleOpenCreatePolicy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> เพิ่มสิทธิ์การลา
+                </button>
+              )}
             </div>
 
             {/* Table */}
@@ -667,22 +681,26 @@ export default function LeaveManagementPage() {
                           )}
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditPolicy(policy)}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePolicy(policy)}
-                              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {canEditPolicy ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditPolicy(policy)}
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="แก้ไข"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePolicy(policy)}
+                                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="ลบ"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -906,16 +924,18 @@ export default function LeaveManagementPage() {
                                     </td>
                                     <td className="py-3 px-3 text-center">
                                       <div className="inline-flex items-center gap-1">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOpenAdjustBalance(b);
-                                          }}
-                                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                          title="ปรับยอดวันลา"
-                                        >
-                                          <ArrowRightLeft className="w-3.5 h-3.5" />
-                                        </button>
+                                        {canAdjustBalance && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenAdjustBalance(b);
+                                            }}
+                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                            title="ปรับยอดวันลา"
+                                          >
+                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();

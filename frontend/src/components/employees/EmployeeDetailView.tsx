@@ -165,6 +165,8 @@ export default function EmployeeDetailView({
 
   const canEditEmployee =
     isProfilePage ||
+    hasRole('ADMIN') ||
+    hasRole('SYSTEM_SUPER') ||
     hasPermission('EMP_PROFILE_EDIT') ||
     hasPermission('EMP_EDIT');
 

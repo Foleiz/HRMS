@@ -180,8 +180,12 @@ function SchedulesContent() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
-
-  const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
+  const canCreateSchedule = hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
+  const canEditSchedule = hasPermission('TIME_SCHEDULE_EDIT') || isSuper;
+  const canCreateShift = hasPermission('TIME_SHIFT_CREATE') || isSuper;
+  const canEditShift = hasPermission('TIME_SHIFT_EDIT') || isSuper;
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
@@ -989,27 +993,30 @@ function SchedulesContent() {
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setBatchModalOpen(true);
-                    setBatchResult(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:text-slate-300 text-xs font-medium transition shadow-xs whitespace-nowrap dark:bg-slate-800 dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300"
-                >
-                  <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span>มอบหมายกะกลุ่ม</span>
-                </button>
-                <button
-                  onClick={() => openSingleAssignCreate()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>มอบหมายกะเดี่ยว</span>
-                </button>
-              </div>
+              {canCreateSchedule && (
+                <>
+                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setBatchModalOpen(true);
+                        setBatchResult(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:text-slate-300 text-xs font-medium transition shadow-xs whitespace-nowrap dark:bg-slate-800 dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300"
+                    >
+                      <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>มอบหมายกะกลุ่ม</span>
+                    </button>
+                    <button
+                      onClick={() => openSingleAssignCreate()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>มอบหมายกะเดี่ยว</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1164,17 +1171,19 @@ function SchedulesContent() {
                                       {dayShifts.length} คน
                                     </span>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openSingleAssignCreate(undefined, dateStr);
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition"
-                                    title="มอบหมายกะในวันนี้"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </button>
+                                  {canCreateSchedule && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openSingleAssignCreate(undefined, dateStr);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#0B2046] hover:bg-slate-200/70 rounded transition"
+                                      title="มอบหมายกะในวันนี้"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
 
@@ -1329,30 +1338,34 @@ function SchedulesContent() {
                             </span>
                           </td>
                           <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => openSingleAssignEdit(a)}
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition dark:text-slate-400"
-                                title="แก้ไขช่วงเวลากะ"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setItemToDelete({
-                                    type: 'assignment',
-                                    id: a.id,
-                                    title: `ยกเลิกการมอบหมายกะ: ${a.employeeName}`,
-                                    subtitle: `กะ ${a.shiftName} (${a.shiftCode})`,
-                                  });
-                                  setDeleteConfirmOpen(true);
-                                }}
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition dark:text-slate-400"
-                                title="ยกเลิกการมอบหมายกะ"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            {canEditSchedule ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => openSingleAssignEdit(a)}
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition dark:text-slate-400"
+                                  title="แก้ไขช่วงเวลากะ"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setItemToDelete({
+                                      type: 'assignment',
+                                      id: a.id,
+                                      title: `ยกเลิกการมอบหมายกะ: ${a.employeeName}`,
+                                      subtitle: `กะ ${a.shiftName} (${a.shiftCode})`,
+                                    });
+                                    setDeleteConfirmOpen(true);
+                                  }}
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition dark:text-slate-400"
+                                  title="ยกเลิกการมอบหมายกะ"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1459,15 +1472,18 @@ function SchedulesContent() {
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
-
-              <button
-                onClick={openShiftCreate}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>เพิ่มกะการทำงานใหม่</span>
-              </button>
+              {canCreateShift && (
+                <>
+                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+                  <button
+                    onClick={openShiftCreate}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition shadow-xs shadow-[#0B2046]/20 whitespace-nowrap"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>เพิ่มกะการทำงานใหม่</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -1574,30 +1590,32 @@ function SchedulesContent() {
                             setEmployeeModalOpen(true);
                           },
                         },
-                        {
+                        ...(canCreateShift ? [{
                           label: 'คัดลอกกะการทำงาน',
                           icon: <Copy className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
                           onClick: () => handleDuplicateShift(shift),
-                        },
-                        {
-                          label: 'แก้ไขกะการทำงาน',
-                          icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
-                          onClick: () => openShiftEdit(shift),
-                        },
-                        {
-                          label: 'ลบข้อมูลกะ',
-                          icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
-                          danger: true,
-                          onClick: () => {
-                            setItemToDelete({
-                              type: 'shift',
-                              id: shift.id,
-                              title: `ลบกะการทำงาน: ${shift.shiftName}`,
-                              subtitle: `รหัสกะ: ${shift.shiftCode} (${shift.startTime.substring(0, 5)} - ${shift.endTime.substring(0, 5)})`,
-                            });
-                            setDeleteConfirmOpen(true);
+                        }] : []),
+                        ...(canEditShift ? [
+                          {
+                            label: 'แก้ไขกะการทำงาน',
+                            icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
+                            onClick: () => openShiftEdit(shift),
                           },
-                        },
+                          {
+                            label: 'ลบข้อมูลกะ',
+                            icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                            danger: true,
+                            onClick: () => {
+                              setItemToDelete({
+                                type: 'shift',
+                                id: shift.id,
+                                title: `ลบกะการทำงาน: ${shift.shiftName}`,
+                                subtitle: `รหัสกะ: ${shift.shiftCode} (${shift.startTime.substring(0, 5)} - ${shift.endTime.substring(0, 5)})`,
+                              });
+                              setDeleteConfirmOpen(true);
+                            },
+                          },
+                        ] : []),
                       ]}
                     />
                   </div>
@@ -1683,30 +1701,32 @@ function SchedulesContent() {
                                   setEmployeeModalOpen(true);
                                 },
                               },
-                              {
+                              ...(canCreateShift ? [{
                                 label: 'คัดลอกกะการทำงาน',
                                 icon: <Copy className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
                                 onClick: () => handleDuplicateShift(s),
-                              },
-                              {
-                                label: 'แก้ไขกะการทำงาน',
-                                icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
-                                onClick: () => openShiftEdit(s),
-                              },
-                              {
-                                label: 'ลบข้อมูลกะ',
-                                icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
-                                danger: true,
-                                onClick: () => {
-                                  setItemToDelete({
-                                    type: 'shift',
-                                    id: s.id,
-                                    title: `ลบกะการทำงาน: ${s.shiftName}`,
-                                    subtitle: `รหัสกะ: ${s.shiftCode}`,
-                                  });
-                                  setDeleteConfirmOpen(true);
+                              }] : []),
+                              ...(canEditShift ? [
+                                {
+                                  label: 'แก้ไขกะการทำงาน',
+                                  icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
+                                  onClick: () => openShiftEdit(s),
                                 },
-                              },
+                                {
+                                  label: 'ลบข้อมูลกะ',
+                                  icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                                  danger: true,
+                                  onClick: () => {
+                                    setItemToDelete({
+                                      type: 'shift',
+                                      id: s.id,
+                                      title: `ลบกะการทำงาน: ${s.shiftName}`,
+                                      subtitle: `รหัสกะ: ${s.shiftCode}`,
+                                    });
+                                    setDeleteConfirmOpen(true);
+                                  },
+                                },
+                              ] : []),
                             ]}
                           />
                         </td>
@@ -2784,18 +2804,20 @@ function SchedulesContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const dStr = `${selectedCalendarDay.year}-${String(selectedCalendarDay.month).padStart(2, '0')}-${String(selectedCalendarDay.day).padStart(2, '0')}`;
-                    setSelectedCalendarDay(null);
-                    openSingleAssignCreate(undefined, dStr);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>มอบหมายกะในวันนี้</span>
-                </button>
+                {canCreateSchedule && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const dStr = `${selectedCalendarDay.year}-${String(selectedCalendarDay.month).padStart(2, '0')}-${String(selectedCalendarDay.day).padStart(2, '0')}`;
+                      setSelectedCalendarDay(null);
+                      openSingleAssignCreate(undefined, dStr);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B2046] hover:bg-[#0B2046]/90 text-white text-xs font-semibold transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>มอบหมายกะในวันนี้</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setSelectedCalendarDay(null)}
