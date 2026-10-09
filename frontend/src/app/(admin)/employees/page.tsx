@@ -2295,7 +2295,6 @@ export default function EmployeesPage() {
                                 <option key={b.id} value={b.bankName}>
                                   {b.bankName}
                                   {b.shortName ? ` (${b.shortName})` : ''}
-                                  {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
                                 </option>
                               ))}
                             </CustomSelect>

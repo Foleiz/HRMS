@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check, X, User } from 'lucide-react';
@@ -14,6 +14,7 @@ interface EmployeeSelectProps {
   hasError?: boolean;
   emptyLabel?: string;
   excludeEmployeeIds?: number[];
+  buttonClassName?: string;
 }
 
 export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -26,6 +27,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   hasError = false,
   emptyLabel = 'ไม่ระบุ / คงเดิม',
   excludeEmployeeIds,
+  buttonClassName = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,7 +111,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
             : isOpen
             ? 'border-[#0B2046] ring-2 ring-blue-500/20'
             : 'border-slate-200 dark:border-slate-700 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 dark:hover:border-slate-600'
-        } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900 dark:bg-slate-900' : 'cursor-pointer'}`}
+        } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900 dark:bg-slate-900' : 'cursor-pointer'} ${buttonClassName}`}
       >
         <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500 dark:text-slate-400'}`}>
           {selectedEmployee ? (

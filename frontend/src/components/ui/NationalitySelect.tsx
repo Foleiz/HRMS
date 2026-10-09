@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
@@ -111,7 +111,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
             setSearchQuery('');
           }}
           onKeyDown={handleKeyDown}
-          className="w-full pl-8 pr-14 py-2 bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
+          className="w-full h-full pl-8 pr-14 py-2 bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
         />
 
         {/* Action Icons: Clear & Chevron */}
