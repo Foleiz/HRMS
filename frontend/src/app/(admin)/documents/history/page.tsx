@@ -18,7 +18,6 @@ import {
   MoreVertical,
   Trash2,
   Eye,
-  GitPullRequest,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -620,15 +619,6 @@ export default function DocumentHistoryPage() {
                                     icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
                                     onClick: () => handleOpenDocumentPreview(doc),
                                   },
-                                  ...(doc.status !== 'DRAFT'
-                                    ? [
-                                        {
-                                          label: 'ดูผังการอนุมัติ',
-                                          icon: <GitPullRequest className="w-3.5 h-3.5 text-indigo-600 shrink-0" />,
-                                          onClick: () => handleOpenTimeline(doc),
-                                        },
-                                      ]
-                                    : []),
                                   ...(hasAttachments || hasEdit || hasCancel || hasDelete
                                     ? [{ divider: true, label: '' }]
                                     : []),
