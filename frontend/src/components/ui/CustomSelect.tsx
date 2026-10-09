@@ -16,6 +16,7 @@ export interface CustomSelectProps {
   children?: React.ReactNode;
   placeholder?: string;
   className?: string;
+  buttonClassName?: string;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
   align?: 'left' | 'right';
@@ -106,6 +107,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   children,
   placeholder = 'เลือกรายการ',
   className = '',
+  buttonClassName = '',
   disabled = false,
   size,
   align = 'left',
@@ -238,7 +240,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           isOpen
             ? 'border-[#0B2046] dark:border-blue-500 ring-2 ring-[#0B2046]/10 dark:ring-blue-500/20'
             : 'hover:border-slate-300 dark:hover:border-slate-600'
-        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : 'cursor-pointer'}`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : 'cursor-pointer'} ${buttonClassName}`}
       >
         <span
           className={`truncate font-medium ${
