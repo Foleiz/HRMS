@@ -649,7 +649,7 @@ function EmployeeEditPageContent() {
                       placeholder="เช่น EMP001"
                       value={formData.employeeCode}
                       onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
@@ -664,7 +664,7 @@ function EmployeeEditPageContent() {
                       placeholder="เช่น 100001"
                       value={formData.biometricId || ''}
                       onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
@@ -681,6 +681,7 @@ function EmployeeEditPageContent() {
                       emptyLabel="ไม่มีหัวหน้างาน"
                       placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
                       excludeEmployeeIds={[employeeId]}
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     />
                   </div>
 
@@ -698,7 +699,8 @@ function EmployeeEditPageContent() {
                       <CustomSelect
                         value={formData.employeeType || ''}
                         onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                        className="w-full cursor-pointer"
+                        buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                       >
                         {!formData.employeeType && <option value="">เลือกประเภท</option>}
                         {employeeTypeOptions.map((name) => (
@@ -708,7 +710,7 @@ function EmployeeEditPageContent() {
                         ))}
                       </CustomSelect>
                     ) : (
-                      <div className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                      <div className="w-full h-10 px-3.5 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
                         {formData.employeeType || '-'}
                       </div>
                     )}
@@ -730,9 +732,9 @@ function EmployeeEditPageContent() {
                         }
                         setFormData({ ...formData, prefix: val, gender: autoGender });
                       }}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full cursor-pointer"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
-                      <option value="">เลือกคำนำหน้า</option>
                       <option value="นาย">นาย</option>
                       <option value="นางสาว">นางสาว</option>
                       <option value="นาง">นาง</option>
@@ -750,7 +752,7 @@ function EmployeeEditPageContent() {
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
@@ -765,7 +767,7 @@ function EmployeeEditPageContent() {
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
                 </div>
@@ -784,106 +786,108 @@ function EmployeeEditPageContent() {
                       placeholder="เลขบัตรประชาชน 13 หลัก"
                       value={formData.citizenId || ''}
                       onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
                   {/* วันเกิด */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>วันเกิด (Date of Birth) <span className="text-rose-500">*</span></span>
                     </label>
                     <ThaiDatePicker
                       value={formData.birthDate}
                       onChange={(val) => setFormData({ ...formData, birthDate: val })}
+                      className="w-full"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     />
                   </div>
 
                   {/* เพศ */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      เพศ (Gender) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>เพศ (Gender) <span className="text-rose-500">*</span></span>
                     </label>
                     <CustomSelect
                       value={formData.gender}
                       onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full cursor-pointer"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
                       <option value="">เลือกเพศ</option>
                       <option value="ชาย">ชาย</option>
                       <option value="หญิง">หญิง</option>
-                      <option value="ไม่ระบุ">ไม่ระบุ</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
                     </CustomSelect>
                   </div>
 
                   {/* สัญชาติ */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      สัญชาติ (Nationality) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>สัญชาติ (Nationality) <span className="text-rose-500">*</span></span>
                     </label>
                     <NationalitySelect
                       value={formData.nationality}
                       onChange={(val) => setFormData({ ...formData, nationality: val })}
+                      className="!h-10"
                     />
                   </div>
 
                   {/* ศาสนา */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>ศาสนา (Religion) (ไม่บังคับ)</span>
                     </label>
                     <CustomSelect
                       value={formData.religion}
                       onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full cursor-pointer"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
                       <option value="">ไม่ระบุ</option>
-                      {lookups.religions.map((r) => (
-                        <option key={r.id ?? r.name} value={r.name}>
-                          {r.name}
-                        </option>
-                      ))}
-                      {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
-                        <option value={formData.religion}>{formData.religion}</option>
-                      )}
+                      <option value="พุทธ">พุทธ</option>
+                      <option value="คริสต์">คริสต์</option>
+                      <option value="อิสลาม">อิสลาม</option>
+                      <option value="ฮินดู">ฮินดู</option>
+                      <option value="ซิกข์">ซิกข์</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
                     </CustomSelect>
                   </div>
 
                   {/* สถานภาพสมรส */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span></span>
                     </label>
                     <CustomSelect
                       value={formData.maritalStatus}
                       onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full cursor-pointer"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
                       <option value="">เลือกสถานภาพ</option>
-                      {lookups.maritalStatuses.map((m) => (
-                        <option key={m.id ?? m.name} value={m.name}>
-                          {m.name}
-                        </option>
-                      ))}
-                      {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
-                        <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
-                      )}
+                      <option value="โสด">โสด</option>
+                      <option value="สมรส">สมรส</option>
+                      <option value="หย่าร้าง">หย่าร้าง</option>
+                      <option value="หม้าย">หม้าย</option>
                     </CustomSelect>
                   </div>
 
                   {/* สถานภาพทางทหาร */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span></span>
                     </label>
                     <CustomSelect
                       value={formData.militaryStatus}
                       onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className="w-full cursor-pointer"
+                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
                       <option value="">เลือกสถานภาพทางทหาร</option>
-                      <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
                       <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
+                      <option value="ผ่านการเกณฑ์ทหารแล้ว">ผ่านการเกณฑ์ทหารแล้ว</option>
+                      <option value="ศึกษาวิชาทหาร (รด.)">ศึกษาวิชาทหาร (รด.)</option>
                       <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
                     </CustomSelect>
                   </div>
@@ -891,38 +895,38 @@ function EmployeeEditPageContent() {
 
                 {/* --- คอลัมน์ที่ 3 --- */}
                 <div className="space-y-4">
-                  {/* อีเมล์ */}
+                  {/* อีเมลส่วนตัว */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      อีเมล์ (E-mail) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>อีเมล (E-mail) <span className="text-rose-500">*</span></span>
                     </label>
                     <input
                       type="email"
                       placeholder="test001@gmail.com"
                       value={formData.personalEmail}
                       onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* อีเมลองค์กร */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span></span>
                     </label>
                     <input
                       type="email"
                       placeholder="name@company.com"
                       value={formData.organizationEmail}
                       onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                     />
                   </div>
 
                   {/* เบอร์โทรศัพท์ส่วนตัว */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                      เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span></span>
                     </label>
                     <input
                       type="text"
@@ -930,29 +934,31 @@ function EmployeeEditPageContent() {
                       placeholder="08X-XXX-XXXX"
                       value={formData.personalPhone}
                       onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                     />
                   </div>
 
-                  {/* ที่อยู่ (Address) */}
-                  <div className="pt-1 space-y-3">
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                  {/* ข้อมูลที่อยู่ (Address) */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block text-xs">
                       ที่อยู่ (Address) <span className="text-rose-500">*</span>
                     </label>
 
-                    {/* ประเภทที่อยู่ Radio Buttons */}
+                    {/* ประเภทที่อยู่ */}
                     <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
-                      <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">
+                        ประเภทที่อยู่
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                          <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 text-xs">
+                          <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                             <input
                               type="radio"
                               name="addressType"
                               value={t}
                               checked={formData.addressType === t}
                               onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                              className="accent-[#0B2046]"
+                              className="text-[#0B2046] focus:ring-[#0B2046]"
                             />
                             <span>{t}</span>
                           </label>
@@ -960,21 +966,20 @@ function EmployeeEditPageContent() {
                       </div>
                     </div>
 
-                    {/* บ้านเลขที่ */}
+                    {/* ที่อยู่ตามทะเบียนบ้าน */}
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                        บ้านเลขที่ <span className="text-rose-500">*</span>
+                        บ้านเลขที่ / อาคาร <span className="text-rose-500">*</span>
                       </span>
                       <input
                         type="text"
                         placeholder="บ้านเลขที่ 4"
                         value={formData.addressLine}
                         onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
-                    {/* ตำบล / แขวง */}
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         ตำบล / แขวง <span className="text-rose-500">*</span>
@@ -984,11 +989,10 @@ function EmployeeEditPageContent() {
                         placeholder="แขวงหัวหมาก"
                         value={formData.subDistrict}
                         onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
-                    {/* อำเภอ / เขต */}
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
                         อำเภอ / เขต <span className="text-rose-500">*</span>
@@ -998,11 +1002,10 @@ function EmployeeEditPageContent() {
                         placeholder="บางกะปิ"
                         value={formData.district}
                         onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
                     </div>
 
-                    {/* จังหวัด และ รหัสไปรษณีย์ */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
@@ -1013,7 +1016,7 @@ function EmployeeEditPageContent() {
                           placeholder="กรุงเทพมหานคร"
                           value={formData.province}
                           onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
                       </div>
                       <div>
@@ -1026,7 +1029,7 @@ function EmployeeEditPageContent() {
                           placeholder="10240"
                           value={formData.postalCode}
                           onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                         />
                       </div>
                     </div>
@@ -1064,7 +1067,8 @@ function EmployeeEditPageContent() {
                           const bank = banks.find((b) => b.id === id);
                           setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
                         }}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                        className="w-full cursor-pointer"
+                        buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                       >
                         <option value="">เลือกธนาคาร</option>
                         {banks.map((b) => (
@@ -1101,7 +1105,7 @@ function EmployeeEditPageContent() {
                           }
                         }}
                         onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
                     </div>
                   </div>
