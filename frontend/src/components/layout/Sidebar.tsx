@@ -30,7 +30,6 @@ import {
   Gift,
   Network,
 } from 'lucide-react';
-import { formatRoleName } from '@/lib/roleUtils';
 
 interface MenuItem {
   title: string;
@@ -514,42 +513,6 @@ export const Sidebar: React.FC = () => {
           </div>
         ))}
       </nav>
-
-      {/* 4. Bottom User Profile Card (like in modern sidebar design) */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-        {(!isCollapsed || !isDesktop) ? (
-          <Link
-            href="/profile"
-            onClick={handleSelectMenu}
-            className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors group"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-400 font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15 dark:border-blue-500/20">
-                {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight group-hover:text-[#0B2046] dark:group-hover:text-blue-400">
-                  {user?.fullName || user?.username || 'ผู้ใช้งาน'}
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
-                  {user?.roleNames?.[0] || formatRoleName(user?.roles?.[0] || '') || 'พนักงาน'}
-                </p>
-              </div>
-            </div>
-          </Link>
-        ) : (
-          <Link
-            href="/profile"
-            onClick={handleSelectMenu}
-            title={user?.fullName || user?.username || 'โปรไฟล์'}
-            className="flex justify-center p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-400 font-semibold text-xs flex items-center justify-center shrink-0 border border-[#0B2046]/15 dark:border-blue-500/20">
-              {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
-            </div>
-          </Link>
-        )}
-      </div>
     </>
   );
 
