@@ -9,9 +9,6 @@ import {
   Upload,
   FileText,
   Trash2,
-  GitPullRequest,
-  Archive,
-  Info,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
@@ -41,7 +38,6 @@ export default function CreateTransferModal({
   const [error, setError] = useState<string | null>(null);
 
   // Form states
-  const [recordType, setRecordType] = useState<'REQUEST' | 'ARCHIVE'>('REQUEST');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [transferType, setTransferType] = useState<string>('DEPARTMENT_TRANSFER');
   const [fromDisplay, setFromDisplay] = useState<string>('');
@@ -53,7 +49,6 @@ export default function CreateTransferModal({
   );
   const [orderNo, setOrderNo] = useState<string>('');
   const [reason, setReason] = useState<string>('');
-  const [autoApprove, setAutoApprove] = useState<boolean>(false);
 
   // File state for document archiving
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -159,11 +154,6 @@ export default function CreateTransferModal({
       setError('กรุณาระบุวันที่มีผล');
       return;
     }
-    if (recordType === 'ARCHIVE' && !orderNo.trim()) {
-      setError('กรุณาระบุเลขที่คำสั่งย้ายสำหรับการบันทึกย้อนหลัง');
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError(null);
@@ -180,8 +170,8 @@ export default function CreateTransferModal({
         effectiveDate,
         orderNo: orderNo.trim() || undefined,
         reason: reason.trim() || undefined,
-        autoApprove: recordType === 'ARCHIVE' ? true : autoApprove,
-        recordType,
+        autoApprove: true,
+        recordType: 'ARCHIVE',
         documentName: attachedFile ? attachedFile.name : undefined,
         documentContentType: attachedFile ? attachedFile.type : undefined,
         documentBase64: fileBase64 || undefined,
@@ -191,8 +181,8 @@ export default function CreateTransferModal({
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error('Failed to create transfer request:', err);
-      setError(err.response?.data?.message || err.message || 'ไม่สามารถสร้างคำขอย้ายได้');
+      console.error('Failed to create transfer order:', err);
+      setError(err.response?.data?.message || err.message || 'ไม่สามารถบันทึกคำสั่งโยกย้ายได้');
     } finally {
       setSubmitting(false);
     }
@@ -207,17 +197,15 @@ export default function CreateTransferModal({
         <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
-              {recordType === 'ARCHIVE' ? 'บันทึกคำสั่งย้ายย้อนหลัง' : 'สร้างคำขอย้าย / เลื่อนตำแหน่ง'}
+              บันทึกคำสั่งแต่งตั้ง / โยกย้ายพนักงาน
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
-              {recordType === 'ARCHIVE'
-                ? 'บันทึกประวัติคำสั่งแต่งตั้ง/โยกย้าย พร้อมแนบไฟล์เอกสาร'
-                : 'ยื่นคำขอย้ายแผนกเพื่อดำเนินการตามสายการอนุมัติ'}
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+              บันทึกคำสั่งการโอนย้าย เลื่อนตำแหน่ง และปรับโครงสร้างสังกัดพนักงาน
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -229,63 +217,6 @@ export default function CreateTransferModal({
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-800 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
-            </div>
-          )}
-
-          {/* Mode Segmented Switcher */}
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setRecordType('REQUEST');
-                setAutoApprove(false);
-              }}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                recordType === 'REQUEST'
-                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <GitPullRequest className="w-3.5 h-3.5" />
-              <span>ยื่นขออนุมัติตามสายงาน</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setRecordType('ARCHIVE');
-                setAutoApprove(true);
-              }}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                recordType === 'ARCHIVE'
-                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] shadow-xs'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <Archive className="w-3.5 h-3.5" />
-              <span>บันทึกคำสั่งย้อนหลัง</span>
-            </button>
-          </div>
-
-          {/* Mode Explanatory Banner */}
-          {recordType === 'REQUEST' ? (
-            <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-800 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold">ระบบส่งต่อสายการอนุมัติ (Workflow):</span>
-                <p className="text-blue-700 text-[11px] mt-0.5">
-                  คำขอจะถูกส่งให้หัวหน้างานและผู้มีอำนาจอนุมัติตามลำดับขั้น เช่นเดียวกับใบลา
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs text-emerald-800 flex items-start gap-2.5">
-              <Archive className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold">บันทึกคำสั่งแต่งตั้ง/โยกย้ายย้อนหลัง:</span>
-                <p className="text-emerald-700 text-[11px] mt-0.5">
-                  บันทึกข้อมูลและแนบไฟล์คำสั่งเป็นหลักฐาน ระบบจะอัปเดตประวัติตำแหน่งงานทันทีโดยไม่ต้องรอขั้นตอนอนุมัติ
-                </p>
-              </div>
             </div>
           )}
 
@@ -304,10 +235,10 @@ export default function CreateTransferModal({
             />
           </div>
 
-          {/* 2. ประเภทคำขอ * */}
+          {/* 2. ประเภทการปรับเปลี่ยน * */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
-              ประเภทคำขอ <span className="text-rose-500">*</span>
+              ประเภทการปรับเปลี่ยน <span className="text-rose-500">*</span>
             </label>
             <CustomSelect
               value={transferType}
@@ -388,15 +319,14 @@ export default function CreateTransferModal({
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
-                เลขที่คำสั่ง {recordType === 'ARCHIVE' && <span className="text-rose-500">*</span>}
+                เลขที่คำสั่ง
               </label>
               <input
                 type="text"
                 value={orderNo}
                 onChange={(e) => setOrderNo(e.target.value)}
-                placeholder={recordType === 'ARCHIVE' ? 'เช่น คำสั่งที่ 15/2569' : 'เช่น คำสั่งที่ 15/2569 (ถ้ามี)'}
+                placeholder="เช่น คำสั่งที่ 15/2569 (ถ้ามี)"
                 className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
-                required={recordType === 'ARCHIVE'}
               />
             </div>
           </div>
@@ -416,13 +346,13 @@ export default function CreateTransferModal({
             />
           </div>
 
-          {/* 7. อัปโหลดไฟล์เอกสารคำสั่งย้าย (สำหรับ RecordType = ARCHIVE หรือแนบประกอบคำขอ) */}
+          {/* 7. อัปโหลดไฟล์เอกสารคำสั่งแต่งตั้ง/โยกย้าย */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center justify-between">
               <span>
-                เอกสารคำสั่งแต่งตั้ง/โยกย้าย {recordType === 'ARCHIVE' ? '(แนบไฟล์หลักฐาน)' : '(แนบเอกสารเพิ่มเติมถ้ามี)'}
+                เอกสารคำสั่งแต่งตั้ง/โยกย้าย (แนบไฟล์หลักฐานถ้ามี)
               </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
             </label>
 
             {!attachedFile ? (
@@ -437,19 +367,19 @@ export default function CreateTransferModal({
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 dark:text-slate-400 mx-auto mb-1.5" />
+                <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 mx-auto mb-1.5" />
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
               </div>
             ) : (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="truncate">
                     <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">{attachedFile.name}</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
                       {(attachedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
@@ -457,7 +387,7 @@ export default function CreateTransferModal({
                 <button
                   type="button"
                   onClick={removeFile}
-                  className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                  className="text-slate-400 dark:text-slate-500 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                   title="ลบไฟล์"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -480,29 +410,13 @@ export default function CreateTransferModal({
             />
           </div>
 
-          {/* 9. ตัวเลือกมีผลทันที (แสดงเฉพาะใน REQUEST mode เพื่อให้สิทธิ์ HR ข้าม workflow ได้) */}
-          {recordType === 'REQUEST' && (
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="autoApprove"
-                checked={autoApprove}
-                onChange={(e) => setAutoApprove(e.target.checked)}
-                className="w-4 h-4 text-[#0B2046] border-slate-300 dark:border-slate-600 rounded focus:ring-[#0B2046]"
-              />
-              <label htmlFor="autoApprove" className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
-                อนุมัติและปรับปรุงประวัติตำแหน่งงานทันที (Auto-Approve ข้ามสายการอนุมัติ)
-              </label>
-            </div>
-          )}
-
           {/* Footer Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-200/70 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>
@@ -512,7 +426,7 @@ export default function CreateTransferModal({
               className="px-6 py-2.5 rounded-xl text-xs font-medium text-white bg-[#0B2046] hover:bg-[#081836] transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{recordType === 'ARCHIVE' ? 'บันทึกคำสั่งย้อนหลัง' : 'ส่งคำขอย้าย'}</span>
+              <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
             </button>
           </div>
         </form>
