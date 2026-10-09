@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 const THAI_MONTHS_FULL = [
@@ -41,6 +42,49 @@ export const formatThaiDate = (s: string): string => {
   return `${day}/${month}/${year}`;
 };
 
+function filterContainerClasses(className: string): string {
+  if (!className) return '';
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const containerTokens: string[] = [];
+
+  for (const token of tokens) {
+    if (
+      /^p[xytblr]?-/.test(token) ||
+      /^border/.test(token) ||
+      /^dark:border/.test(token) ||
+      /^bg-/.test(token) ||
+      /^dark:bg-/.test(token) ||
+      /^ring/.test(token) ||
+      /^dark:ring/.test(token) ||
+      /^focus:/.test(token) ||
+      /^dark:focus:/.test(token) ||
+      /^hover:/.test(token) ||
+      /^dark:hover:/.test(token) ||
+      /^text-(slate|gray|zinc|neutral|black|white)/.test(token) ||
+      /^dark:text-/.test(token) ||
+      /^rounded/.test(token) ||
+      token === 'appearance-none' ||
+      token === 'cursor-pointer' ||
+      token === 'outline-none' ||
+      token === 'shadow-sm' ||
+      token === 'shadow' ||
+      token === 'shadow-2xs' ||
+      token === 'font-medium' ||
+      token === 'font-semibold' ||
+      token === 'text-xs' ||
+      token === 'text-sm' ||
+      token === 'text-base' ||
+      token === 'h-8' ||
+      token === 'h-9' ||
+      token === 'h-10'
+    ) {
+      continue;
+    }
+    containerTokens.push(token);
+  }
+  return containerTokens.join(' ');
+}
+
 export interface ThaiDatePickerProps {
   /** วันที่ รูปแบบ 'YYYY-MM-DD' หรือ '' */
   value?: string;
@@ -48,6 +92,7 @@ export interface ThaiDatePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  buttonClassName?: string;
   disabled?: boolean;
   minDate?: string;
   maxDate?: string;
@@ -58,6 +103,7 @@ export interface ThaiDatePickerProps {
   required?: boolean;
   align?: 'left' | 'right';
   error?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 /**
@@ -69,6 +115,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
   onChange,
   placeholder = 'dd/mm/yyyy',
   className = 'w-full',
+  buttonClassName = '',
   disabled = false,
   minDate: propMinDate,
   maxDate: propMaxDate,
@@ -79,32 +126,117 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
   required = false,
   align = 'left',
   error = false,
+  size,
 }) => {
   const minDate = min ?? propMinDate;
   const maxDate = max ?? propMaxDate;
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
   const [viewDate, setViewDate] = useState<Date>(() => parseInputDate(value) || new Date());
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [yearGridStart, setYearGridStart] = useState(() => (parseInputDate(value) || new Date()).getFullYear() - 5);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const closeAll = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const closeAll = useCallback(() => {
     setOpen(false);
     setMonthPickerOpen(false);
     setYearPickerOpen(false);
-  };
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const popoverHeight = 360;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      closeAll();
+      return;
+    }
+
+    const openUpward = spaceBelow < popoverHeight && spaceAbove > spaceBelow;
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      zIndex: 99999,
+    };
+
+    if (openUpward) {
+      style.bottom = `${Math.max(8, window.innerHeight - rect.top + 6)}px`;
+    } else {
+      style.top = `${Math.max(8, rect.bottom + 6)}px`;
+    }
+
+    const popoverWidth = 320;
+    if (align === 'right') {
+      const rightSpace = window.innerWidth - rect.right;
+      if (rect.right - popoverWidth < 8) {
+        style.left = '8px';
+      } else {
+        style.right = `${Math.max(8, rightSpace)}px`;
+      }
+    } else {
+      let leftPos = Math.max(8, rect.left);
+      if (leftPos + popoverWidth > window.innerWidth - 8) {
+        leftPos = Math.max(8, window.innerWidth - popoverWidth - 8);
+      }
+      style.left = `${leftPos}px`;
+    }
+
+    setPopoverStyle(style);
+  }, [align, closeAll]);
 
   useEffect(() => {
     if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    updatePosition();
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        containerRef.current?.contains(target) ||
+        triggerRef.current?.contains(target) ||
+        popoverRef.current?.contains(target)
+      ) {
+        return;
+      }
+      closeAll();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         closeAll();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+
+    const handleScroll = (e: Event) => {
+      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+        return;
+      }
+      updatePosition();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [open, updatePosition, closeAll]);
 
   const handleToggleOpen = () => {
     if (disabled) return;
@@ -117,6 +249,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
     setYearGridStart(target.getFullYear() - 5);
     setMonthPickerOpen(false);
     setYearPickerOpen(false);
+    updatePosition();
     setOpen(true);
   };
 
@@ -139,21 +272,45 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
 
   const todayStr = toInputDate(new Date());
 
+  const effectiveSize: 'sm' | 'md' | 'lg' =
+    size ||
+    (className.includes('h-8') || className.includes('text-xs') || className.includes('py-1.5')
+      ? 'sm'
+      : className.includes('h-10')
+      ? 'lg'
+      : 'md');
+
+  const sizeClasses = {
+    sm: 'h-8 px-2.5 text-xs rounded-lg gap-1.5',
+    md: 'px-3 py-2 sm:px-3.5 sm:py-2.5 text-sm rounded-xl gap-2',
+    lg: 'h-10 px-3.5 text-sm rounded-xl gap-2',
+  }[effectiveSize];
+
   const borderClass = error
     ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 dark:text-slate-100'
     : 'border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600';
 
+  const containerClasses = filterContainerClasses(className);
+  const isExplicitWidth =
+    className.includes('w-') ||
+    className.includes('min-w-') ||
+    className.includes('max-w-');
+
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div
+      className={`relative ${isExplicitWidth ? '' : 'w-full'} ${containerClasses}`}
+      ref={containerRef}
+    >
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         name={name}
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl ${borderClass} focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800 transition-colors ${
+        className={`w-full flex items-center justify-between ${sizeClasses} ${borderClass} focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-colors ${
           disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900' : 'cursor-pointer'
-        } dark:text-slate-100`}
+        } dark:text-slate-100 ${buttonClassName}`}
       >
         <span className={value ? 'text-gray-800 dark:text-slate-200 font-medium' : 'text-gray-400 dark:text-slate-500'}>
           {value ? formatThaiDate(value) : placeholder}
@@ -173,11 +330,12 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
         />
       )}
 
-      {open && (
+      {open && mounted && createPortal(
         <div
-          className={`absolute z-50 mt-1.5 w-[310px] sm:w-[320px] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 ${
-            align === 'right' ? 'right-0' : 'left-0'
-          }`}
+          ref={popoverRef}
+          style={popoverStyle}
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-in fade-in zoom-in-95 duration-100"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header: เลื่อนเดือน + ตัวเลือกเดือน/ปี */}
           <div className="flex items-center justify-between mb-3">
@@ -359,7 +517,8 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
               <Trash2 className="w-3.5 h-3.5" /> ล้าง
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -371,12 +530,14 @@ export interface ThaiDateRangePickerProps {
   onChange: (startDate: string, endDate: string) => void;
   placeholder?: string;
   className?: string;
+  buttonClassName?: string;
   disabled?: boolean;
   minDate?: string;
   maxDate?: string;
   min?: string;
   max?: string;
   align?: 'left' | 'right';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 /**
@@ -389,40 +550,126 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
   onChange,
   placeholder = 'dd/mm/yyyy',
   className = 'w-full sm:w-[320px]',
+  buttonClassName = '',
   disabled = false,
   minDate: propMinDate,
   maxDate: propMaxDate,
   min,
   max,
   align = 'left',
+  size,
 }) => {
   const minDate = min ?? propMinDate;
   const maxDate = max ?? propMaxDate;
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
   const [viewDate, setViewDate] = useState<Date>(() => parseInputDate(startDate) || new Date());
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [yearGridStart, setYearGridStart] = useState(() => (parseInputDate(startDate) || new Date()).getFullYear() - 5);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const closeAll = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const closeAll = useCallback(() => {
     setOpen(false);
     setMonthPickerOpen(false);
     setYearPickerOpen(false);
     setHoverDate(null);
-  };
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const popoverHeight = 360;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      closeAll();
+      return;
+    }
+
+    const openUpward = spaceBelow < popoverHeight && spaceAbove > spaceBelow;
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      zIndex: 99999,
+    };
+
+    if (openUpward) {
+      style.bottom = `${Math.max(8, window.innerHeight - rect.top + 6)}px`;
+    } else {
+      style.top = `${Math.max(8, rect.bottom + 6)}px`;
+    }
+
+    const popoverWidth = 320;
+    if (align === 'right') {
+      const rightSpace = window.innerWidth - rect.right;
+      if (rect.right - popoverWidth < 8) {
+        style.left = '8px';
+      } else {
+        style.right = `${Math.max(8, rightSpace)}px`;
+      }
+    } else {
+      let leftPos = Math.max(8, rect.left);
+      if (leftPos + popoverWidth > window.innerWidth - 8) {
+        leftPos = Math.max(8, window.innerWidth - popoverWidth - 8);
+      }
+      style.left = `${leftPos}px`;
+    }
+
+    setPopoverStyle(style);
+  }, [align, closeAll]);
 
   useEffect(() => {
     if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    updatePosition();
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        containerRef.current?.contains(target) ||
+        triggerRef.current?.contains(target) ||
+        popoverRef.current?.contains(target)
+      ) {
+        return;
+      }
+      closeAll();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         closeAll();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+
+    const handleScroll = (e: Event) => {
+      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+        return;
+      }
+      updatePosition();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [open, updatePosition, closeAll]);
 
   const handleToggleOpen = () => {
     if (disabled) return;
@@ -436,6 +683,7 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
     setMonthPickerOpen(false);
     setYearPickerOpen(false);
     setHoverDate(null);
+    updatePosition();
     setOpen(true);
   };
 
@@ -449,10 +697,10 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
       onChange(dayStr, '');
     } else if (dayStr < startDate) {
       onChange(dayStr, startDate);
-      setOpen(false);
+      closeAll();
     } else {
       onChange(startDate, dayStr);
-      setOpen(false);
+      closeAll();
     }
   };
 
@@ -471,15 +719,39 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
   const previewStart = isMidSelecting && hoverStr ? (hoverStr < startDate ? hoverStr : startDate) : null;
   const previewEnd = isMidSelecting && hoverStr ? (hoverStr < startDate ? startDate : hoverStr) : null;
 
+  const effectiveSize: 'sm' | 'md' | 'lg' =
+    size ||
+    (className.includes('h-8') || className.includes('text-xs') || className.includes('py-1.5')
+      ? 'sm'
+      : className.includes('h-10')
+      ? 'lg'
+      : 'md');
+
+  const sizeClasses = {
+    sm: 'h-8 px-2.5 text-xs rounded-lg gap-1.5',
+    md: 'px-3 py-2 sm:px-3.5 sm:py-2.5 text-sm rounded-xl gap-2',
+    lg: 'h-10 px-3.5 text-sm rounded-xl gap-2',
+  }[effectiveSize];
+
+  const containerClasses = filterContainerClasses(className);
+  const isExplicitWidth =
+    className.includes('w-') ||
+    className.includes('min-w-') ||
+    className.includes('max-w-');
+
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div
+      className={`relative ${isExplicitWidth ? '' : 'w-full sm:w-[320px]'} ${containerClasses}`}
+      ref={containerRef}
+    >
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800 transition-colors ${
+        className={`w-full flex items-center justify-between ${sizeClasses} border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-colors ${
           disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900' : 'cursor-pointer hover:border-gray-300 dark:hover:border-slate-600'
-        } dark:text-slate-100`}
+        } dark:text-slate-100 ${buttonClassName}`}
       >
         <span className={startDate || endDate ? 'text-gray-800 dark:text-slate-200 font-medium' : 'text-gray-400 dark:text-slate-500'}>
           {startDate ? formatThaiDate(startDate) : placeholder}
@@ -489,11 +761,12 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
         <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
-          className={`absolute z-50 mt-1.5 w-[310px] sm:w-[320px] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 ${
-            align === 'right' ? 'right-0' : 'left-0'
-          }`}
+          ref={popoverRef}
+          style={popoverStyle}
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-in fade-in zoom-in-95 duration-100"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
@@ -696,7 +969,8 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
               <Trash2 className="w-3.5 h-3.5" /> ล้าง
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

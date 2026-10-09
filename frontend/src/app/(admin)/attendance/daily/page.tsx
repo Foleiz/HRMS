@@ -1355,7 +1355,8 @@ function DailyAttendanceContent() {
                     setSelectedDate(newDate);
                     setCurrentPage(1);
                   }}
-                  className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium text-slate-700 dark:text-slate-300 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-300"
+                  size="sm"
+                  className="w-[145px] sm:w-[155px]"
                 />
 
                 {allowedDateRange.min && allowedDateRange.max && (

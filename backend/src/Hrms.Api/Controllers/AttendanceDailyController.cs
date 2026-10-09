@@ -203,6 +203,28 @@ public class AttendanceDailyController : ControllerBase
     }
 
     /// <summary>
+    /// [ESS] สั่งคำนวณเวลาและกะการทำงานของตนเองใหม่สำหรับเดือนที่เลือก
+    /// </summary>
+    [HttpPost("my/recalculate")]
+    public async Task<IActionResult> RecalculateMyAttendance(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<int>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var targetYear = year ?? nowThai.Year;
+        var targetMonth = month ?? nowThai.Month;
+
+        var count = await _service.RecalculateMyAttendanceAsync(employeeId, targetYear, targetMonth, cancellationToken);
+        return Ok(ApiResponse<int>.Ok(count, $"คำนวณเวลาของรอบเดือน {targetMonth:D2}/{targetYear} ใหม่เรียบร้อยแล้ว ({count} รายการ)"));
+    }
+
+    /// <summary>
     /// [ESS] บันทึกเวลาเข้างานของตนเอง (ใช้เวลาปัจจุบัน)
     /// </summary>
     [HttpPost("my/clock-in")]

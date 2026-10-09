@@ -8,6 +8,7 @@ using Hrms.Application.Features.Schedule.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Hrms.Application.Features.Attendance.Services;
 
 namespace Hrms.Application.Features.Schedule.Services;
 
@@ -242,6 +243,8 @@ public class EmployeeShiftService : IEmployeeShiftService
         es.Employee = employee;
         es.Shift = shift;
 
+        await SyncAttendanceRecordsForEmployeeShiftAsync(request.EmployeeId, shift, from, to);
+
         var assignmentMap = await GetEmployeeAssignmentInfoMapAsync();
         return MapToDto(es, assignmentMap);
     }
@@ -308,6 +311,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
                 _context.EmployeeShifts.Add(es);
                 await _context.SaveChangesAsync();
+                await SyncAttendanceRecordsForEmployeeShiftAsync(empId, shift, from, to);
                 result.SuccessCount++;
             }
             catch (Exception ex)
@@ -360,6 +364,8 @@ public class EmployeeShiftService : IEmployeeShiftService
         _logger.LogInformation("แก้ไขการมอบหมายกะสำเร็จ: Id {Id}, พนักงาน {EmpCode} -> กะ {ShiftCode}",
             id, es.Employee?.EmployeeCode, shift.ShiftCode);
 
+        await SyncAttendanceRecordsForEmployeeShiftAsync(es.EmployeeId, shift, from, to);
+
         var assignmentMap = await GetEmployeeAssignmentInfoMapAsync();
         return MapToDto(es, assignmentMap);
     }
@@ -369,10 +375,16 @@ public class EmployeeShiftService : IEmployeeShiftService
         var es = await _context.EmployeeShifts.FindAsync(id);
         if (es == null) return false;
 
+        var empId = es.EmployeeId;
+        var from = es.EffectiveFrom;
+        var to = es.EffectiveTo;
+
         _context.EmployeeShifts.Remove(es);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("ลบการมอบหมายกะสำเร็จ: Id {Id}", id);
+
+        await RevertAttendanceRecordsForDeletedShiftAsync(empId, from, to);
         return true;
     }
 
@@ -557,5 +569,72 @@ public class EmployeeShiftService : IEmployeeShiftService
                 WageType = t.WageType
             })
             .ToListAsync();
+    }
+
+    private async Task SyncAttendanceRecordsForEmployeeShiftAsync(long employeeId, Domain.Entities.Shift shift, DateOnly from, DateOnly? to, CancellationToken cancellationToken = default)
+    {
+        var targetEnd = to ?? DateOnly.MaxValue;
+        var records = await _context.AttendanceDailies
+            .Where(a => a.EmployeeId == employeeId && a.WorkDate >= from && a.WorkDate <= targetEnd)
+            .ToListAsync(cancellationToken);
+
+        if (records.Count == 0) return;
+
+        foreach (var rec in records)
+        {
+            rec.ShiftId = shift.Id;
+            rec.Shift = shift;
+            AttendanceDailyService.PopulateScheduledTimes(rec, shift, rec.WorkDate);
+            if (rec.ActualIn != null || rec.ActualOut != null)
+            {
+                AttendanceDailyService.RecalculateAttendance(rec, shift);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task RevertAttendanceRecordsForDeletedShiftAsync(long employeeId, DateOnly from, DateOnly? to, CancellationToken cancellationToken = default)
+    {
+        var targetEnd = to ?? DateOnly.MaxValue;
+        var records = await _context.AttendanceDailies
+            .Where(a => a.EmployeeId == employeeId && a.WorkDate >= from && a.WorkDate <= targetEnd)
+            .ToListAsync(cancellationToken);
+
+        if (records.Count == 0) return;
+
+        var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+        var otherShifts = await _context.EmployeeShifts
+            .Include(es => es.Shift)
+            .Where(es => es.EmployeeId == employeeId && es.EffectiveFrom <= targetEnd && (es.EffectiveTo == null || es.EffectiveTo >= from))
+            .OrderByDescending(es => es.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        foreach (var rec in records)
+        {
+            var match = otherShifts.FirstOrDefault(es => es.EffectiveFrom <= rec.WorkDate && (es.EffectiveTo == null || es.EffectiveTo >= rec.WorkDate));
+            if (match?.Shift != null)
+            {
+                rec.ShiftId = match.ShiftId;
+                rec.Shift = match.Shift;
+                AttendanceDailyService.PopulateScheduledTimes(rec, match.Shift, rec.WorkDate);
+                if (rec.ActualIn != null || rec.ActualOut != null)
+                {
+                    AttendanceDailyService.RecalculateAttendance(rec, match.Shift);
+                }
+            }
+            else
+            {
+                rec.ShiftId = null;
+                rec.Shift = null;
+                companySchedule.PopulateScheduledTimes(rec, rec.WorkDate);
+                if (rec.ActualIn != null || rec.ActualOut != null)
+                {
+                    AttendanceDailyService.RecalculateAttendance(rec);
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

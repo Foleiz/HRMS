@@ -42,5 +42,6 @@ attendance_*.xlsx
 Claude outputs/
 __pycache__/
 *.pyc
+scratch/
 
 
